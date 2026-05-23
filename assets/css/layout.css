@@ -32,3 +32,31 @@
     flex:1;
     padding:20px;
 }
+
+.sidebar-logo{
+    font-size:24px;
+    font-weight:bold;
+    margin-bottom:30px;
+}
+
+.sidebar-menu{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.menu-item{
+
+    color:white;
+    text-decoration:none;
+
+    padding:12px 15px;
+
+    border-radius:var(--radius-sm);
+
+    transition:0.2s;
+}
+
+.menu-item:hover{
+    background:rgba(255,255,255,0.1);
+}
