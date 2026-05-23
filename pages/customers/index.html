@@ -5,35 +5,53 @@
 
     <title>Customers - CM_Pro</title>
 
-    <link rel="stylesheet" href="../../assets/css/main.css">
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <link
+        rel="stylesheet"
+        href="../../assets/css/main.css"
+    >
 
 </head>
 
 <body>
 
-    <div class="app-layout">
+    <!-- Topbar -->
+    <div id="topbar-container"></div>
 
-        <div id="sidebar-container"></div>
+    <!-- Page -->
+    <div class="dashboard-container">
 
-        <div class="main-content">
+        <h1
+            style="
+                color:white;
+                margin-bottom:20px;
+            "
+        >
+            Customer Search
+        </h1>
 
-            <div id="header-container"></div>
+        <div
+            style="
+                background:white;
+                border-radius:20px;
+                padding:20px;
+            "
+        >
 
-            <div class="page-content">
-
-                <h1>Customers</h1>
-
-                <br>
-
-                <p>
-                    Customer management module.
-                </p>
-
-            </div>
+            Customer module ready.
 
         </div>
 
     </div>
+
+    <!-- Bottom Nav -->
+    <div id="bottomnav-container"></div>
 
     <script>
 
@@ -47,13 +65,13 @@
         }
 
         loadComponent(
-            "sidebar-container",
-            "../../components/sidebar.html"
+            "topbar-container",
+            "../../components/topbar.html"
         );
 
         loadComponent(
-            "header-container",
-            "../../components/header.html"
+            "bottomnav-container",
+            "../../components/bottomnav.html"
         );
 
     </script>
