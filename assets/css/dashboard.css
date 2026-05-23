@@ -1,0 +1,45 @@
+/* =========================
+   Dashboard Layout
+========================= */
+
+.dashboard-container{
+
+    padding:20px;
+    padding-bottom:100px;
+
+}
+
+.dashboard-grid{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+    gap:20px;
+
+}
+
+/* Tablet */
+@media (min-width:768px){
+
+    .dashboard-grid{
+
+        grid-template-columns:
+            repeat(3, 1fr);
+
+    }
+
+}
+
+/* Desktop */
+@media (min-width:1200px){
+
+    .dashboard-grid{
+
+        grid-template-columns:
+            repeat(4, 1fr);
+
+    }
+
+}
