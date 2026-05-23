@@ -317,26 +317,26 @@
             try{
 
                 const response =
-                    await fetch(
+    await fetch(
 
-                        API.BASE_URL +
-                        "/api/login",
+        API.BASE_URL +
+        "api/auth/login",
 
-                        {
-                            method:"POST",
+        {
+            method:"POST",
 
-                            headers:{
-                                "Content-Type":
-                                    "application/json"
-                            },
+            headers:{
+                "Content-Type":
+                    "application/json"
+            },
 
-                            body:
-                                JSON.stringify({
-                                    username,
-                                    password
-                                })
-                        }
-                    );
+            body:
+                JSON.stringify({
+                    username,
+                    password
+                })
+        }
+    );
 
                 const data =
                     await response.json();
