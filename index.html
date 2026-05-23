@@ -5,62 +5,25 @@
 
     <title>CM_Pro</title>
 
-    <link rel="stylesheet" href="./assets/css/main.css">
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./assets/css/main.css"
+    >
 
 </head>
 
 <body>
 
-    <div class="app-layout">
-
-        <!-- Sidebar -->
-        <div id="sidebar-container"></div>
-
-        <!-- Main -->
-        <div class="main-content">
-
-            <!-- Header -->
-            <div id="header-container"></div>
-
-            <!-- Content -->
-            <div class="page-content">
-
-                <h1>Dashboard</h1>
-
-                <br>
-
-                <p>
-                    Welcome to CM_Pro Enterprise Credit Monitoring System.
-                </p>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <script>
-
-        async function loadComponent(id, file){
-
-            const response = await fetch(file);
-
-            const html = await response.text();
-
-            document.getElementById(id).innerHTML = html;
-        }
-
-        loadComponent(
-            "sidebar-container",
-            "./components/sidebar.html"
-        );
-
-        loadComponent(
-            "header-container",
-            "./components/header.html"
-        );
-
-    </script>
+    <h1 style="padding:30px;">
+        CM_Pro Loading...
+    </h1>
 
 </body>
 
