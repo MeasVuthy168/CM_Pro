@@ -5,7 +5,8 @@
 
     if(!token){
 
-        location.href = "/login.html";
+        window.location.replace("/CM_Pro/login.html");
+
     }
 
 })();
