@@ -65,3 +65,15 @@
     object-fit:contain;
 
 }
+
+.bottom-nav-item.active{
+
+    color:#FFD700;
+
+}
+
+.bottom-nav-item.active img{
+
+    transform:scale(1.1);
+
+}
