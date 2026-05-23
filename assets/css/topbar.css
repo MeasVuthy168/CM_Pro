@@ -8,7 +8,9 @@
 
     color:white;
 
-    padding:12px 18px;
+    padding:10px 14px;
+
+    width:100%;
 
     display:flex;
 
@@ -16,28 +18,31 @@
 
     align-items:center;
 
-    min-height:85px;
+    min-height:78px;
+
+    box-sizing:border-box;
 
 }
 
+/* Left */
 .topbar-left{
 
     display:flex;
 
     align-items:center;
 
-    gap:12px;
+}
+
+/* ACLEDA Logo */
+.topbar-logo{
+
+    height:42px;
+
+    object-fit:contain;
 
 }
 
-.topbar-left h2{
-
-    font-size:20px;
-
-    color:white;
-
-}
-
+/* Right */
 .topbar-right{
 
     display:flex;
@@ -46,14 +51,17 @@
 
     align-items:center;
 
-    gap:4px;
+    justify-content:center;
+
+    gap:3px;
 
 }
 
+/* Profile */
 .topbar-profile{
 
-    width:55px;
-    height:55px;
+    width:52px;
+    height:52px;
 
     border-radius:50%;
 
@@ -65,12 +73,17 @@
 
 }
 
+/* Username */
 .topbar-name{
 
     color:#FFD700;
 
-    font-size:14px;
+    font-size:13px;
 
-    font-weight:600;
+    font-family:'KRASAR', sans-serif;
+
+    text-align:center;
+
+    line-height:1.2;
 
 }
