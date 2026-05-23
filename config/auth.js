@@ -5,7 +5,9 @@
 
     if(!token){
 
-        window.location.replace("/CM_Pro/login.html");
+        window.location.replace(
+            "/CM_Pro/login.html"
+        );
 
     }
 
