@@ -4,7 +4,7 @@
 
 .assistant-box{
 
-    margin-top:30px;
+    margin-top:28px;
 
     background:#003B8B;
 
@@ -12,15 +12,15 @@
 
     border-radius:24px;
 
-    padding:20px;
+    padding:18px;
 
     color:#FFD700;
 
     display:flex;
 
-    gap:15px;
+    gap:14px;
 
-    align-items:flex-start;
+    align-items:center;
 
     box-shadow:
         0 4px 12px rgba(0,0,0,0.2);
@@ -29,10 +29,12 @@
 
 .assistant-icon{
 
-    width:60px;
-    height:60px;
+    width:55px;
+    height:55px;
 
     object-fit:contain;
+
+    flex-shrink:0;
 
 }
 
@@ -40,8 +42,8 @@
 
     flex:1;
 
-    line-height:1.7;
+    line-height:1.6;
 
-    font-size:16px;
+    font-size:15px;
 
 }
