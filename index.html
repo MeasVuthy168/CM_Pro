@@ -21,6 +21,25 @@
     
 <script src="./config/auth.js"></script>
     
+<script>
+
+    function logout(){
+
+        const confirmLogout =
+            confirm("Logout CM_Pro ?");
+
+        if(confirmLogout){
+
+            sessionStorage.clear();
+
+            location.href =
+                "./login.html";
+        }
+
+    }
+
+</script>   
+    
 <body>
 
     <!-- Topbar -->
