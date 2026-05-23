@@ -2,7 +2,7 @@
 window.API = {
 
     BASE_URL:
-        "https://cm-backend-new.onrender.com/",
+        "https://cm-backend-new.onrender.com",
 
     async post(endpoint, data){
 
