@@ -18,29 +18,33 @@
     >
 
 </head>
-    
-<script src="./config/auth.js"></script>
-    
-<script>
 
-    function logout(){
+<body>
 
-        const confirmLogout =
-            confirm("Logout CM_Pro ?");
+    <!-- Auth Guard -->
+    <script src="./config/auth.js"></script>
 
-        if(confirmLogout){
+    <!-- Logout Function -->
+    <script>
 
-            sessionStorage.clear();
+        function logout(){
 
-            location.href =
-                "./login.html";
+            const confirmLogout =
+                confirm("Logout CM_Pro ?");
+
+            if(confirmLogout){
+
+                sessionStorage.clear();
+
+                window.location.replace(
+                    "/CM_Pro/login.html"
+                );
+
+            }
+
         }
 
-    }
-
-</script>   
-    
-<body>
+    </script>
 
     <!-- Topbar -->
     <div id="topbar-container"></div>
@@ -48,9 +52,10 @@
     <!-- Dashboard -->
     <div class="dashboard-container">
 
+        <!-- Dashboard Grid -->
         <div class="dashboard-grid">
 
-            <!-- Card 1 -->
+            <!-- Customer -->
             <a
                 href="./pages/customers/index.html"
                 class="dashboard-card"
@@ -61,12 +66,14 @@
                 >
 
                 <div class="dashboard-card-title">
+
                     Customer Search
+
                 </div>
 
             </a>
 
-            <!-- Card 2 -->
+            <!-- Arrears -->
             <a
                 href="./pages/arrears/index.html"
                 class="dashboard-card"
@@ -77,12 +84,14 @@
                 >
 
                 <div class="dashboard-card-title">
+
                     Daily Arrears
+
                 </div>
 
             </a>
 
-            <!-- Card 3 -->
+            <!-- Turnover -->
             <a
                 href="./pages/turnover/index.html"
                 class="dashboard-card"
@@ -93,12 +102,14 @@
                 >
 
                 <div class="dashboard-card-title">
+
                     Average Turnover
+
                 </div>
 
             </a>
 
-            <!-- Card 4 -->
+            <!-- Spot Check -->
             <a
                 href="./pages/spotcheck/index.html"
                 class="dashboard-card"
@@ -109,12 +120,14 @@
                 >
 
                 <div class="dashboard-card-title">
+
                     Spot Check
+
                 </div>
 
             </a>
 
-                </div>
+        </div>
 
         <!-- Assistant Box -->
         <div class="assistant-box">
@@ -138,15 +151,32 @@
     <!-- Bottom Navigation -->
     <div id="bottomnav-container"></div>
 
+    <!-- Component Loader -->
     <script>
 
         async function loadComponent(id, file){
 
-            const response = await fetch(file);
+            try{
 
-            const html = await response.text();
+                const response =
+                    await fetch(file);
 
-            document.getElementById(id).innerHTML = html;
+                const html =
+                    await response.text();
+
+                document
+                    .getElementById(id)
+                    .innerHTML = html;
+
+            }catch(error){
+
+                console.error(
+                    "Component load error:",
+                    error
+                );
+
+            }
+
         }
 
         loadComponent(
