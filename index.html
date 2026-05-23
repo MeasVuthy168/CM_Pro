@@ -21,9 +21,107 @@
 
 <body>
 
-    <h1 style="padding:30px;">
-        CM_Pro Loading...
-    </h1>
+    <!-- Topbar -->
+    <div id="topbar-container"></div>
+
+    <!-- Dashboard -->
+    <div class="dashboard-container">
+
+        <div class="dashboard-grid">
+
+            <!-- Card 1 -->
+            <a
+                href="#"
+                class="dashboard-card"
+            >
+
+                <img
+                    src="./assets/icons/customer.png"
+                >
+
+                <div class="dashboard-card-title">
+                    Customer Search
+                </div>
+
+            </a>
+
+            <!-- Card 2 -->
+            <a
+                href="#"
+                class="dashboard-card"
+            >
+
+                <img
+                    src="./assets/icons/arrears.png"
+                >
+
+                <div class="dashboard-card-title">
+                    Daily Arrears
+                </div>
+
+            </a>
+
+            <!-- Card 3 -->
+            <a
+                href="#"
+                class="dashboard-card"
+            >
+
+                <img
+                    src="./assets/icons/turnover.png"
+                >
+
+                <div class="dashboard-card-title">
+                    Average Turnover
+                </div>
+
+            </a>
+
+            <!-- Card 4 -->
+            <a
+                href="#"
+                class="dashboard-card"
+            >
+
+                <img
+                    src="./assets/icons/spotcheck.png"
+                >
+
+                <div class="dashboard-card-title">
+                    Spot Check
+                </div>
+
+            </a>
+
+        </div>
+
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div id="bottomnav-container"></div>
+
+    <script>
+
+        async function loadComponent(id, file){
+
+            const response = await fetch(file);
+
+            const html = await response.text();
+
+            document.getElementById(id).innerHTML = html;
+        }
+
+        loadComponent(
+            "topbar-container",
+            "./components/topbar.html"
+        );
+
+        loadComponent(
+            "bottomnav-container",
+            "./components/bottomnav.html"
+        );
+
+    </script>
 
 </body>
 
