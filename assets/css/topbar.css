@@ -1,0 +1,70 @@
+/* =========================
+   Topbar
+========================= */
+
+.topbar{
+
+    background:#002D6B;
+
+    color:white;
+
+    padding:20px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+}
+
+.topbar-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+}
+
+.topbar-logo{
+
+    height:45px;
+
+}
+
+.topbar-right{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    gap:5px;
+
+}
+
+.topbar-profile{
+
+    width:65px;
+    height:65px;
+
+    border-radius:50%;
+
+    border:3px solid #D4AF37;
+
+    object-fit:cover;
+
+}
+
+.topbar-name{
+
+    color:#FFD700;
+
+    font-size:16px;
+
+    font-weight:600;
+
+}
