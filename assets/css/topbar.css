@@ -10,7 +10,11 @@
 
     padding:10px 14px;
 
-    width:100%;
+    width:100vw;
+
+    margin:0;
+
+    border-radius:0;
 
     display:flex;
 
