@@ -1,33 +1,67 @@
-<div class="bottom-nav">
+/* =========================
+   Bottom Navigation
+========================= */
 
-    <a href="#" class="bottom-nav-item">
+.bottom-nav{
 
-        <img
-            src="./assets/icons/bottomnav/home.png"
-        >
+    position:fixed;
 
-        <span>Home</span>
+    bottom:0;
+    left:0;
 
-    </a>
+    width:100%;
 
-    <a href="#" class="bottom-nav-item">
+    height:78px;
 
-        <img
-            src="./assets/icons/bottomnav/setting.png"
-        >
+    background:#002D6B;
 
-        <span>Setting</span>
+    display:flex;
 
-    </a>
+    justify-content:space-around;
 
-    <a href="#" class="bottom-nav-item">
+    align-items:center;
 
-        <img
-            src="./assets/icons/bottomnav/notification.png"
-        >
+    z-index:999;
 
-        <span>Notification</span>
+    box-shadow:
+        0 -3px 12px rgba(0,0,0,0.2);
 
-    </a>
+}
 
-</div>
+.bottom-nav-item{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:4px;
+
+    color:white;
+
+    text-decoration:none;
+
+    font-size:13px;
+
+    transition:0.2s;
+
+}
+
+.bottom-nav-item:hover{
+
+    transform:
+        translateY(-2px);
+
+}
+
+.bottom-nav-item img{
+
+    width:28px;
+    height:28px;
+
+    object-fit:contain;
+
+}
