@@ -1,0 +1,47 @@
+/* =========================
+   Assistant Box
+========================= */
+
+.assistant-box{
+
+    margin-top:30px;
+
+    background:#003B8B;
+
+    border:2px solid #D4AF37;
+
+    border-radius:24px;
+
+    padding:20px;
+
+    color:#FFD700;
+
+    display:flex;
+
+    gap:15px;
+
+    align-items:flex-start;
+
+    box-shadow:
+        0 4px 12px rgba(0,0,0,0.2);
+
+}
+
+.assistant-icon{
+
+    width:60px;
+    height:60px;
+
+    object-fit:contain;
+
+}
+
+.assistant-text{
+
+    flex:1;
+
+    line-height:1.7;
+
+    font-size:16px;
+
+}
