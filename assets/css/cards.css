@@ -71,3 +71,9 @@
     line-height:1.4;
 
 }
+
+.dashboard-card:active{
+
+    transform:scale(0.96);
+
+}
