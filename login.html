@@ -1,424 +1,308 @@
 <!DOCTYPE html>
-<html lang="km">
-
+<html lang="en">
 <head>
-
-    <meta charset="UTF-8">
-
-    <title>CM_Pro Login</title>
-
-    <meta
-        name="viewport"
-        content="
-            width=device-width,
-            initial-scale=1.0,
-            maximum-scale=1.0,
-            user-scalable=no
-        "
-    >
-
-    <link
-        rel="stylesheet"
-        href="./assets/css/main.css"
-    >
-
-    <style>
-
-        body{
-
-            background:#002D6B;
-
-            display:flex;
-
-            justify-content:center;
-
-            align-items:center;
-
-            min-height:100vh;
-
-        }
-
-        .login-box{
-
-            background:white;
-
-            width:90%;
-
-            max-width:380px;
-
-            border-radius:24px;
-
-            padding:30px 24px;
-
-            box-shadow:
-                0 6px 20px rgba(0,0,0,0.25);
-
-            text-align:center;
-
-        }
-
-        .login-logo{
-
-            width:80px;
-
-            margin-bottom:12px;
-
-        }
-
-        .login-title{
-
-            font-size:28px;
-
-            color:#002D6B;
-
-            margin-bottom:5px;
-
-        }
-
-        .login-version{
-
-            color:#777;
-
-            margin-bottom:25px;
-
-            font-size:14px;
-
-        }
-
-        .login-input{
-
-            width:100%;
-
-            padding:14px;
-
-            border:none;
-
-            border-radius:12px;
-
-            background:#F1F5F9;
-
-            margin-bottom:14px;
-
-            font-size:16px;
-
-            font-family:'KRASAR', sans-serif;
-
-        }
-
-        .login-btn{
-
-            width:100%;
-
-            padding:14px;
-
-            border:none;
-
-            border-radius:14px;
-
-            background:#002D6B;
-
-            color:white;
-
-            font-size:17px;
-
-            font-family:'KRASAR', sans-serif;
-
-            cursor:pointer;
-
-        }
-
-        .login-btn:active{
-
-            transform:scale(0.98);
-
-        }
-
-        .remember-box{
-
-            display:flex;
-
-            align-items:center;
-
-            gap:8px;
-
-            margin-bottom:18px;
-
-            color:#444;
-
-        }
-
-        .error-text{
-
-            color:red;
-
-            margin-top:15px;
-
-            min-height:20px;
-
-        }
-
-        #loading{
-
-            position:fixed;
-
-            inset:0;
-
-            background:
-                rgba(0,0,0,0.4);
-
-            display:none;
-
-            justify-content:center;
-
-            align-items:center;
-
-            z-index:9999;
-
-        }
-
-        .spinner{
-
-            width:40px;
-            height:40px;
-
-            border:
-                4px solid rgba(255,255,255,0.2);
-
-            border-top:
-                4px solid #FFD700;
-
-            border-radius:50%;
-
-            animation:
-                spin 0.7s linear infinite;
-
-        }
-
-        @keyframes spin{
-
-            to{
-                transform:rotate(360deg);
-            }
-
-        }
-
-    </style>
-
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>Credit Monitoring Login</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Segoe UI,Arial,sans-serif;
+}
+
+body{
+    background:#f2f5fa;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+}
+
+.login-card{
+    width:100%;
+    max-width:380px;
+    background:#fff;
+    border-radius:22px;
+    padding:35px 25px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.08);
+}
+
+.logo{
+    width:90px;
+    height:90px;
+    margin:auto;
+    display:block;
+    object-fit:contain;
+}
+
+.title{
+    text-align:center;
+    margin-top:15px;
+    font-size:24px;
+    font-weight:700;
+    color:#1d3557;
+}
+
+.subtitle{
+    text-align:center;
+    color:#777;
+    font-size:14px;
+    margin-top:6px;
+    margin-bottom:30px;
+}
+
+.input-group{
+    margin-bottom:18px;
+}
+
+.input-label{
+    display:block;
+    margin-bottom:7px;
+    font-size:14px;
+    color:#444;
+    font-weight:600;
+}
+
+.input-box{
+    width:100%;
+    height:50px;
+    border:1px solid #dcdcdc;
+    border-radius:14px;
+    padding:0 15px;
+    font-size:16px;
+    outline:none;
+    transition:0.2s;
+}
+
+.input-box:focus{
+    border-color:#2b7cff;
+    box-shadow:0 0 0 3px rgba(43,124,255,0.15);
+}
+
+.login-btn{
+    width:100%;
+    height:52px;
+    border:none;
+    border-radius:14px;
+    background:#2b7cff;
+    color:#fff;
+    font-size:17px;
+    font-weight:700;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.login-btn:hover{
+    opacity:0.95;
+}
+
+.login-btn:disabled{
+    opacity:0.6;
+    cursor:not-allowed;
+}
+
+.status-box{
+    margin-top:18px;
+    text-align:center;
+    font-size:14px;
+    min-height:20px;
+    font-weight:600;
+}
+
+.success{
+    color:#0a9b43;
+}
+
+.error{
+    color:#d90429;
+}
+
+.footer{
+    text-align:center;
+    margin-top:25px;
+    font-size:12px;
+    color:#888;
+}
+
+.loading{
+    display:none;
+    margin:auto;
+    margin-top:15px;
+    width:32px;
+    height:32px;
+    border:4px solid #ddd;
+    border-top:4px solid #2b7cff;
+    border-radius:50%;
+    animation:spin 0.8s linear infinite;
+}
+
+@keyframes spin{
+    100%{
+        transform:rotate(360deg);
+    }
+}
+</style>
 </head>
 
 <body>
 
-    <!-- Loading -->
-    <div id="loading">
+<div class="login-card">
 
-        <div class="spinner"></div>
+    <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="logo">
 
-    </div>
+    <div class="title">Credit Monitoring</div>
+    <div class="subtitle">Secure Login System</div>
 
-    <!-- Login Box -->
-    <div class="login-box">
+    <form id="loginForm">
 
-        <img
-            src="./assets/images/LogoAC.png"
-            class="login-logo"
-        >
-
-        <div class="login-title">
-            ជំនួយការឥណទាន
-        </div>
-
-        <div class="login-version">
-        ​  SVG Credit Monitoring System
-        </div>
-
-        <input
-            type="text"
-            id="username"
-            class="login-input"
-            placeholder="Username"
-        >
-
-        <input
-            type="password"
-            id="password"
-            class="login-input"
-            placeholder="Password"
-        >
-
-        <div class="remember-box">
-
+        <div class="input-group">
+            <label class="input-label">Username</label>
             <input
-                type="checkbox"
-                id="rememberMe"
+                type="text"
+                id="username"
+                class="input-box"
+                placeholder="Enter username"
+                autocomplete="username"
+                required
             >
-
-            <label for="rememberMe">
-
-                Remember Me
-
-            </label>
-
         </div>
 
-        <button
-            class="login-btn"
-            onclick="login()"
-        >
+        <div class="input-group">
+            <label class="input-label">Password</label>
+            <input
+                type="password"
+                id="password"
+                class="input-box"
+                placeholder="Enter password"
+                autocomplete="current-password"
+                required
+            >
+        </div>
 
-            ចូលប្រើកម្មវិធី
-
+        <button type="submit" class="login-btn" id="loginBtn">
+            Login
         </button>
 
-        <div
-            class="error-text"
-            id="errorText"
-        ></div>
+        <div class="loading" id="loading"></div>
 
+        <div class="status-box" id="statusBox"></div>
+
+    </form>
+
+    <div class="footer">
+        © 2026 Credit Monitoring
     </div>
 
-<script src="./config/api.js"></script>
+</div>
 
 <script>
 
-    // Auto redirect if already logged in
-    if(sessionStorage.getItem("token")){
+const API_BASE = "https://cm-backend-new.onrender.com";
 
-        location.href = "./index.html";
+const form = document.getElementById("loginForm");
+const btn = document.getElementById("loginBtn");
+const loading = document.getElementById("loading");
+const statusBox = document.getElementById("statusBox");
+
+function showMessage(message, type){
+
+    statusBox.innerText = message;
+    statusBox.className = "status-box " + type;
+}
+
+function setLoading(isLoading){
+
+    btn.disabled = isLoading;
+
+    loading.style.display = isLoading ? "block" : "none";
+
+    btn.innerText = isLoading ? "Please wait..." : "Login";
+}
+
+form.addEventListener("submit", async (e)=>{
+
+    e.preventDefault();
+
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+
+    if(!username || !password){
+        showMessage("Please enter username and password","error");
+        return;
     }
 
-    async function login(){
+    try{
 
-        const username =
-            document
-            .getElementById("username")
-            .value
-            .trim();
+        setLoading(true);
+        showMessage("","");
 
-        const password =
-            document
-            .getElementById("password")
-            .value
-            .trim();
+        const response = await fetch(`${API_BASE}/api/auth/login`,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                username,
+                password
+            })
+        });
 
-        const loading =
-            document
-            .getElementById("loading");
+        const data = await response.json();
 
-        const errorText =
-            document
-            .getElementById("errorText");
+        if(!response.ok || !data.ok){
 
-        // Clear old message
-        errorText.textContent = "";
+            console.log("LOGIN FAILED:", data);
 
-        // Validate
-        if(!username || !password){
-
-            errorText.textContent =
-                "Please enter username and password";
+            showMessage(
+                data.message || "Login failed",
+                "error"
+            );
 
             return;
         }
 
-        // Show loading
-        loading.style.display = "flex";
+        // SAVE TOKEN
+        localStorage.setItem("token", data.token);
 
-        try{
+        // SAVE USER
+        localStorage.setItem("loggedInUser", JSON.stringify({
+            username: data.username || "",
+            fullname: data.fullname || "",
+            role: data.role || "user"
+        }));
 
-            console.log(
-                "Connecting to:",
-                API.BASE_URL + "/api/auth/login"
-            );
+        showMessage("Login successful","success");
 
-            const response =
-                await fetch(
+        console.log("LOGIN SUCCESS:", data);
 
-                    API.BASE_URL + "/api/auth/login",
+        // REDIRECT
+        setTimeout(()=>{
+            window.location.href = "home.html";
+        },800);
 
-                    {
-                        method:"POST",
+    }catch(err){
 
-                        headers:{
-                            "Content-Type":
-                                "application/json"
-                        },
+        console.error("LOGIN ERROR:", err);
 
-                        body:
-                            JSON.stringify({
-                                username,
-                                password
-                            })
-                    }
-                );
+        showMessage(
+            "Cannot connect to server",
+            "error"
+        );
 
-            console.log(
-                "Response status:",
-                response.status
-            );
+    }finally{
 
-            // Read raw response first
-            const text =
-                await response.text();
+        setLoading(false);
 
-            console.log(
-                "Raw response:",
-                text
-            );
-
-            // Parse JSON safely
-            let data;
-
-            try{
-
-                data = JSON.parse(text);
-
-            }catch(parseError){
-
-                throw new Error(
-                    "Server returned invalid JSON"
-                );
-            }
-
-            // Success login
-            if(data.success){
-
-                sessionStorage.setItem(
-                    "token",
-                    data.token
-                );
-
-                sessionStorage.setItem(
-                    "loggedInUser",
-                    JSON.stringify(data)
-                );
-
-                location.href =
-                    "./index.html";
-
-            }else{
-
-                errorText.textContent =
-                    data.message ||
-                    "Login failed";
-            }
-
-        }catch(err){
-
-            console.error(err);
-
-            errorText.textContent =
-                err.message ||
-                "Cannot connect server";
-
-        }finally{
-
-            // ALWAYS hide spinner
-            loading.style.display = "none";
-        }
     }
 
-</script>
-    
-</body>
+});
 
+</script>
+
+</body>
 </html>
