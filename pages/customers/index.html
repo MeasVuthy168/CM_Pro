@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Customers - CM_Pro</title>
+
+    <link rel="stylesheet" href="../../assets/css/main.css">
+
+</head>
+
+<body>
+
+    <div class="app-layout">
+
+        <div id="sidebar-container"></div>
+
+        <div class="main-content">
+
+            <div id="header-container"></div>
+
+            <div class="page-content">
+
+                <h1>Customers</h1>
+
+                <br>
+
+                <p>
+                    Customer management module.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        async function loadComponent(id, file){
+
+            const response = await fetch(file);
+
+            const html = await response.text();
+
+            document.getElementById(id).innerHTML = html;
+        }
+
+        loadComponent(
+            "sidebar-container",
+            "../../components/sidebar.html"
+        );
+
+        loadComponent(
+            "header-container",
+            "../../components/header.html"
+        );
+
+    </script>
+
+</body>
+
+</html>
