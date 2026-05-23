@@ -278,9 +278,17 @@
 
     <script src="./config/api.js"></script>
 
-    <script>
+<script>
 
-        async function login(){
+    // Auto redirect if already logged in
+    if(
+        sessionStorage.getItem("token")
+    ){
+
+        location.href = "./index.html";
+    }
+
+    async function login(){
 
             const username =
                 document
