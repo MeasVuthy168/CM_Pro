@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -127,9 +127,9 @@
 
             position:absolute;
 
-            right:15px;
+            right:18px;
 
-            top:18px;
+            top:20px;
 
             font-size:14px;
 
@@ -184,11 +184,19 @@
 
             cursor:pointer;
 
+            transition:0.2s;
+
         }
 
         .login-btn:disabled{
 
             opacity:0.7;
+
+        }
+
+        .login-btn:hover{
+
+            opacity:0.95;
 
         }
 
@@ -344,7 +352,10 @@
     // =========================
 
     const existingToken =
-        localStorage.getItem("token");
+
+        localStorage.getItem("token") ||
+
+        sessionStorage.getItem("token");
 
     if(existingToken){
 
@@ -380,16 +391,26 @@
         document.getElementById("rememberMe");
 
     // =========================
-    // LOAD REMEMBERED USER
+    // LOAD REMEMBERED LOGIN
     // =========================
 
-    const savedUsername =
-        localStorage.getItem("remember_username");
+    const rememberedLogin =
 
-    if(savedUsername){
+        JSON.parse(
+            localStorage.getItem(
+                "remember_login"
+            )
+        );
+
+    if(rememberedLogin){
 
         document.getElementById("username").value =
-            savedUsername;
+
+            rememberedLogin.username || "";
+
+        document.getElementById("password").value =
+
+            rememberedLogin.password || "";
 
         rememberMe.checked = true;
 
@@ -521,16 +542,28 @@
                 // SAVE TOKEN
                 // =========================
 
-                localStorage.setItem(
-                    "token",
-                    data.token
-                );
+                if(rememberMe.checked){
+
+                    localStorage.setItem(
+                        "token",
+                        data.token
+                    );
+
+                }else{
+
+                    sessionStorage.setItem(
+                        "token",
+                        data.token
+                    );
+
+                }
 
                 // =========================
                 // SAVE USER
                 // =========================
 
                 localStorage.setItem(
+
                     "loggedInUser",
 
                     JSON.stringify({
@@ -548,20 +581,27 @@
                 );
 
                 // =========================
-                // REMEMBER USERNAME
+                // REMEMBER LOGIN
                 // =========================
 
                 if(rememberMe.checked){
 
                     localStorage.setItem(
-                        "remember_username",
-                        username
+
+                        "remember_login",
+
+                        JSON.stringify({
+
+                            username,
+                            password
+
+                        })
                     );
 
                 }else{
 
                     localStorage.removeItem(
-                        "remember_username"
+                        "remember_login"
                     );
 
                 }
@@ -604,4 +644,4 @@
 
 </body>
 
-</html>
+</html>    
