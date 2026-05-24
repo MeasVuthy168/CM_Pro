@@ -393,13 +393,23 @@ if(existingToken){
     // LOAD REMEMBERED LOGIN
     // =========================
 
-    const rememberedLogin =
+    let rememberedLogin = null;
 
-        JSON.parse(
-            localStorage.getItem(
-                "remember_login"
-            )
-        );
+try{
+
+    rememberedLogin = JSON.parse(
+
+        localStorage.getItem(
+            "remember_login"
+        )
+
+    );
+
+}catch(e){
+
+    rememberedLogin = null;
+
+}
 
     if(rememberedLogin){
 
