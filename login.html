@@ -1,309 +1,607 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-<title>Credit Monitoring Login</title>
+    <meta charset="UTF-8">
 
-<style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Segoe UI,Arial,sans-serif;
-}
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-body{
-    background:#f2f5fa;
-    min-height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    padding:20px;
-}
+    <title>CM_Pro Login</title>
 
-.login-card{
-    width:100%;
-    max-width:380px;
-    background:#fff;
-    border-radius:22px;
-    padding:35px 25px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.08);
-}
+    <!-- API -->
+    <script src="./config/api.js"></script>
 
-.logo{
-    width:90px;
-    height:90px;
-    margin:auto;
-    display:block;
-    object-fit:contain;
-}
+    <style>
 
-.title{
-    text-align:center;
-    margin-top:15px;
-    font-size:24px;
-    font-weight:700;
-    color:#1d3557;
-}
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:Segoe UI, Arial, sans-serif;
+        }
 
-.subtitle{
-    text-align:center;
-    color:#777;
-    font-size:14px;
-    margin-top:6px;
-    margin-bottom:30px;
-}
+        body{
 
-.input-group{
-    margin-bottom:18px;
-}
+            background:#032d73;
 
-.input-label{
-    display:block;
-    margin-bottom:7px;
-    font-size:14px;
-    color:#444;
-    font-weight:600;
-}
+            min-height:100vh;
 
-.input-box{
-    width:100%;
-    height:50px;
-    border:1px solid #dcdcdc;
-    border-radius:14px;
-    padding:0 15px;
-    font-size:16px;
-    outline:none;
-    transition:0.2s;
-}
+            display:flex;
 
-.input-box:focus{
-    border-color:#2b7cff;
-    box-shadow:0 0 0 3px rgba(43,124,255,0.15);
-}
+            justify-content:center;
 
-.login-btn{
-    width:100%;
-    height:52px;
-    border:none;
-    border-radius:14px;
-    background:#2b7cff;
-    color:#fff;
-    font-size:17px;
-    font-weight:700;
-    cursor:pointer;
-    transition:0.2s;
-}
+            align-items:center;
 
-.login-btn:hover{
-    opacity:0.95;
-}
+            padding:20px;
 
-.login-btn:disabled{
-    opacity:0.6;
-    cursor:not-allowed;
-}
+        }
 
-.status-box{
-    margin-top:18px;
-    text-align:center;
-    font-size:14px;
-    min-height:20px;
-    font-weight:600;
-}
+        .login-card{
 
-.success{
-    color:#0a9b43;
-}
+            width:100%;
 
-.error{
-    color:#d90429;
-}
+            max-width:420px;
 
-.footer{
-    text-align:center;
-    margin-top:25px;
-    font-size:12px;
-    color:#888;
-}
+            background:#fff;
 
-.loading{
-    display:none;
-    margin:auto;
-    margin-top:15px;
-    width:32px;
-    height:32px;
-    border:4px solid #ddd;
-    border-top:4px solid #2b7cff;
-    border-radius:50%;
-    animation:spin 0.8s linear infinite;
-}
+            border-radius:28px;
 
-@keyframes spin{
-    100%{
-        transform:rotate(360deg);
-    }
-}
-</style>
+            padding:35px 25px;
+
+            box-shadow:
+                0 10px 30px rgba(0,0,0,0.18);
+
+        }
+
+        .logo{
+
+            width:120px;
+
+            display:block;
+
+            margin:auto;
+
+            margin-bottom:20px;
+
+        }
+
+        .title{
+
+            text-align:center;
+
+            font-size:22px;
+
+            color:#17356f;
+
+            margin-bottom:10px;
+
+            font-weight:500;
+
+        }
+
+        .subtitle{
+
+            text-align:center;
+
+            color:#888;
+
+            margin-bottom:35px;
+
+            font-size:14px;
+
+        }
+
+        .input-box{
+
+            width:100%;
+
+            height:60px;
+
+            border:none;
+
+            background:#f2f4f8;
+
+            border-radius:16px;
+
+            padding:0 18px;
+
+            font-size:18px;
+
+            outline:none;
+
+            margin-bottom:20px;
+
+        }
+
+        .password-wrapper{
+
+            position:relative;
+
+        }
+
+        .show-password{
+
+            position:absolute;
+
+            right:15px;
+
+            top:18px;
+
+            font-size:14px;
+
+            color:#032d73;
+
+            cursor:pointer;
+
+            user-select:none;
+
+            font-weight:600;
+
+        }
+
+        .remember-row{
+
+            display:flex;
+
+            align-items:center;
+
+            gap:10px;
+
+            margin-bottom:25px;
+
+            color:#444;
+
+            font-size:15px;
+
+        }
+
+        .remember-row input{
+
+            width:20px;
+            height:20px;
+
+        }
+
+        .login-btn{
+
+            width:100%;
+
+            height:68px;
+
+            border:none;
+
+            border-radius:18px;
+
+            background:#032d73;
+
+            color:#fff;
+
+            font-size:22px;
+
+            cursor:pointer;
+
+        }
+
+        .login-btn:disabled{
+
+            opacity:0.7;
+
+        }
+
+        .status-box{
+
+            margin-top:22px;
+
+            text-align:center;
+
+            min-height:24px;
+
+            font-size:15px;
+
+            font-weight:600;
+
+        }
+
+        .success{
+            color:#10a844;
+        }
+
+        .error{
+            color:#d90429;
+        }
+
+        .loading{
+
+            display:none;
+
+            width:35px;
+
+            height:35px;
+
+            margin:auto;
+
+            margin-top:20px;
+
+            border:4px solid #ddd;
+
+            border-top:4px solid #032d73;
+
+            border-radius:50%;
+
+            animation:spin .8s linear infinite;
+
+        }
+
+        @keyframes spin{
+
+            100%{
+                transform:rotate(360deg);
+            }
+
+        }
+
+    </style>
+
 </head>
 
 <body>
 
-<div class="login-card">
+    <div class="login-card">
 
-    <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="logo">
+        <img
+            src="./assets/images/logo.png"
+            class="logo"
+        >
 
-    <div class="title">Credit Monitoring</div>
-    <div class="subtitle">Secure Login System</div>
+        <div class="title">
+            ប្រព័ន្ធតាមដាន
+        </div>
 
-    <form id="loginForm">
+        <div class="subtitle">
+            SVG Credit Monitoring System
+        </div>
 
-        <div class="input-group">
-            <label class="input-label">Username</label>
+        <form id="loginForm">
+
+            <!-- Username -->
             <input
                 type="text"
                 id="username"
                 class="input-box"
-                placeholder="Enter username"
+                placeholder="Username"
                 autocomplete="username"
                 required
             >
-        </div>
 
-        <div class="input-group">
-            <label class="input-label">Password</label>
-            <input
-                type="password"
-                id="password"
-                class="input-box"
-                placeholder="Enter password"
-                autocomplete="current-password"
-                required
+            <!-- Password -->
+            <div class="password-wrapper">
+
+                <input
+                    type="password"
+                    id="password"
+                    class="input-box"
+                    placeholder="Password"
+                    autocomplete="current-password"
+                    required
+                >
+
+                <span
+                    class="show-password"
+                    id="togglePassword"
+                >
+                    Show
+                </span>
+
+            </div>
+
+            <!-- Remember -->
+            <div class="remember-row">
+
+                <input
+                    type="checkbox"
+                    id="rememberMe"
+                >
+
+                <label for="rememberMe">
+                    Remember Me
+                </label>
+
+            </div>
+
+            <!-- Login -->
+            <button
+                type="submit"
+                class="login-btn"
+                id="loginBtn"
             >
-        </div>
+                ចូលប្រើប្រាស់
+            </button>
 
-        <button type="submit" class="login-btn" id="loginBtn">
-            Login
-        </button>
+            <!-- Loading -->
+            <div
+                class="loading"
+                id="loading"
+            ></div>
 
-        <div class="loading" id="loading"></div>
+            <!-- Status -->
+            <div
+                class="status-box"
+                id="statusBox"
+            ></div>
 
-        <div class="status-box" id="statusBox"></div>
+        </form>
 
-    </form>
-
-    <div class="footer">
-        © 2026 Credit Monitoring
     </div>
-
-</div>
 
 <script>
 
-const API_BASE = "https://cm-backend-new.onrender.com";
+    // =========================
+    // AUTO LOGIN
+    // =========================
 
-const form = document.getElementById("loginForm");
-const btn = document.getElementById("loginBtn");
-const loading = document.getElementById("loading");
-const statusBox = document.getElementById("statusBox");
+    const existingToken =
+        localStorage.getItem("token");
 
-function showMessage(message, type){
+    if(existingToken){
 
-    statusBox.innerText = message;
-    statusBox.className = "status-box " + type;
-}
-
-function setLoading(isLoading){
-
-    btn.disabled = isLoading;
-
-    loading.style.display = isLoading ? "block" : "none";
-
-    btn.innerText = isLoading ? "Please wait..." : "Login";
-}
-
-form.addEventListener("submit", async (e)=>{
-
-    e.preventDefault();
-
-    const username = document.getElementById("username").value.trim();
-    const password = document.getElementById("password").value;
-
-    if(!username || !password){
-        showMessage("Please enter username and password","error");
-        return;
-    }
-
-    try{
-
-        setLoading(true);
-        showMessage("","");
-
-        const response = await fetch(`${API_BASE}/api/auth/login`,{
-            method:"POST",
-            headers:{
-                "Content-Type":"application/json"
-            },
-            body:JSON.stringify({
-                username,
-                password
-            })
-        });
-
-        const data = await response.json();
-
-        if(!response.ok || !data.ok){
-
-            console.log("LOGIN FAILED:", data);
-
-            showMessage(
-                data.message || "Login failed",
-                "error"
-            );
-
-            return;
-        }
-
-        // SAVE TOKEN
-        localStorage.setItem("token", data.token);
-
-        // SAVE USER
-        localStorage.setItem("loggedInUser", JSON.stringify({
-            username: data.username || "",
-            fullname: data.fullname || "",
-            role: data.role || "user"
-        }));
-
-        showMessage("Login successful","success");
-
-        console.log("LOGIN SUCCESS:", data);
-
-        // REDIRECT
-        setTimeout(()=>{
-            window.location.href = "/CM_Pro/index.html";
-        },800);
-
-    }catch(err){
-
-        console.error("LOGIN ERROR:", err);
-
-        showMessage(
-            "Cannot connect to server",
-            "error"
+        window.location.replace(
+            "/CM_Pro/index.html"
         );
 
-    }finally{
+    }
 
-        setLoading(false);
+    // =========================
+    // ELEMENTS
+    // =========================
+
+    const form =
+        document.getElementById("loginForm");
+
+    const btn =
+        document.getElementById("loginBtn");
+
+    const loading =
+        document.getElementById("loading");
+
+    const statusBox =
+        document.getElementById("statusBox");
+
+    const passwordInput =
+        document.getElementById("password");
+
+    const togglePassword =
+        document.getElementById("togglePassword");
+
+    const rememberMe =
+        document.getElementById("rememberMe");
+
+    // =========================
+    // LOAD REMEMBERED USER
+    // =========================
+
+    const savedUsername =
+        localStorage.getItem("remember_username");
+
+    if(savedUsername){
+
+        document.getElementById("username").value =
+            savedUsername;
+
+        rememberMe.checked = true;
 
     }
 
-});
+    // =========================
+    // SHOW PASSWORD
+    // =========================
+
+    togglePassword.addEventListener(
+        "click",
+        ()=>{
+
+            if(passwordInput.type === "password"){
+
+                passwordInput.type = "text";
+
+                togglePassword.innerText = "Hide";
+
+            }else{
+
+                passwordInput.type = "password";
+
+                togglePassword.innerText = "Show";
+
+            }
+
+        }
+    );
+
+    // =========================
+    // MESSAGE
+    // =========================
+
+    function showMessage(message, type){
+
+        statusBox.innerText = message;
+
+        statusBox.className =
+            "status-box " + type;
+
+    }
+
+    // =========================
+    // LOADING
+    // =========================
+
+    function setLoading(isLoading){
+
+        btn.disabled = isLoading;
+
+        loading.style.display =
+            isLoading ? "block" : "none";
+
+    }
+
+    // =========================
+    // LOGIN
+    // =========================
+
+    form.addEventListener(
+        "submit",
+        async (e)=>{
+
+            e.preventDefault();
+
+            const username =
+                document
+                    .getElementById("username")
+                    .value
+                    .trim();
+
+            const password =
+                passwordInput.value;
+
+            if(!username || !password){
+
+                showMessage(
+                    "Please enter username/password",
+                    "error"
+                );
+
+                return;
+
+            }
+
+            try{
+
+                setLoading(true);
+
+                showMessage("", "");
+
+                const response =
+                    await fetch(
+
+                        `${API.BASE_URL}/api/auth/login`,
+
+                        {
+                            method:"POST",
+
+                            headers:{
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body:JSON.stringify({
+                                username,
+                                password
+                            })
+                        }
+                    );
+
+                const data =
+                    await response.json();
+
+                if(!response.ok || !data.ok){
+
+                    showMessage(
+                        data.message ||
+                        "Login failed",
+                        "error"
+                    );
+
+                    return;
+
+                }
+
+                // =========================
+                // SAVE TOKEN
+                // =========================
+
+                localStorage.setItem(
+                    "token",
+                    data.token
+                );
+
+                // =========================
+                // SAVE USER
+                // =========================
+
+                localStorage.setItem(
+                    "loggedInUser",
+
+                    JSON.stringify({
+
+                        username:
+                            data.username || "",
+
+                        fullname:
+                            data.fullname || "",
+
+                        role:
+                            data.role || "user"
+
+                    })
+                );
+
+                // =========================
+                // REMEMBER USERNAME
+                // =========================
+
+                if(rememberMe.checked){
+
+                    localStorage.setItem(
+                        "remember_username",
+                        username
+                    );
+
+                }else{
+
+                    localStorage.removeItem(
+                        "remember_username"
+                    );
+
+                }
+
+                showMessage(
+                    "Login successful",
+                    "success"
+                );
+
+                // =========================
+                // REDIRECT
+                // =========================
+
+                setTimeout(()=>{
+
+                    window.location.href =
+                        "/CM_Pro/index.html";
+
+                },700);
+
+            }catch(error){
+
+                console.error(error);
+
+                showMessage(
+                    "Cannot connect to server",
+                    "error"
+                );
+
+            }finally{
+
+                setLoading(false);
+
+            }
+
+        }
+    );
 
 </script>
 
 </body>
+
 </html>
