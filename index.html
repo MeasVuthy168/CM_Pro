@@ -29,21 +29,21 @@
 
         function logout(){
 
-            const confirmLogout =
-                confirm("Logout CM_Pro ?");
+    const confirmLogout =
+        confirm("Logout CM_Pro ?");
 
-            if(confirmLogout){
+    if(confirmLogout){
 
-                sessionStorage.clear();
+        localStorage.clear();
+        sessionStorage.clear();
 
-                window.location.replace(
-                    "/CM_Pro/login.html"
-                );
+        window.location.replace(
+            "/login.html"
+        );
 
-            }
+    }
 
-        }
-
+}
     </script>
 
     <!-- Topbar -->
