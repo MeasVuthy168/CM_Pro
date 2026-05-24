@@ -357,13 +357,17 @@ const existingToken =
 
     sessionStorage.getItem("token");
 
+// ONLY auto redirect if token exists
+
 if(existingToken){
 
-    window.location.href =
-        "/CM_Pro/index.html";
+    window.location.replace(
+        "/CM_Pro/index.html"
+    );
 
 }
 
+    
     // =========================
     // ELEMENTS
     // =========================
