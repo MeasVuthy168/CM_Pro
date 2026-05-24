@@ -1,14 +1,7 @@
-(function(){
+const token = localStorage.getItem("token");
 
-    const token =
-        sessionStorage.getItem("token");
+if(!token){
 
-    if(!token){
+    window.location.replace("/login.html");
 
-        window.location.replace(
-            "/CM_Pro/login.html"
-        );
-
-    }
-
-})();
+}
