@@ -348,22 +348,21 @@
 <script>
 
     // =========================
-    // AUTO LOGIN
-    // =========================
+// AUTO LOGIN
+// =========================
 
-    const existingToken =
+const existingToken =
 
-        localStorage.getItem("token") ||
+    localStorage.getItem("token") ||
 
-        sessionStorage.getItem("token");
+    sessionStorage.getItem("token");
 
-    if(existingToken){
+if(existingToken){
 
-        window.location.replace(
-            "/CM_Pro/index.html"
-        );
+    window.location.href =
+        "/CM_Pro/index.html";
 
-    }
+}
 
     // =========================
     // ELEMENTS
@@ -539,24 +538,32 @@
                 }
 
                 // =========================
-                // SAVE TOKEN
-                // =========================
+// CLEAR OLD TOKEN
+// =========================
 
-                if(rememberMe.checked){
+localStorage.removeItem("token");
 
-                    localStorage.setItem(
-                        "token",
-                        data.token
-                    );
+sessionStorage.removeItem("token");
 
-                }else{
+// =========================
+// SAVE TOKEN
+// =========================
 
-                    sessionStorage.setItem(
-                        "token",
-                        data.token
-                    );
+if(rememberMe.checked){
 
-                }
+    localStorage.setItem(
+        "token",
+        data.token
+    );
+
+}else{
+
+    sessionStorage.setItem(
+        "token",
+        data.token
+    );
+
+}
 
                 // =========================
                 // SAVE USER
