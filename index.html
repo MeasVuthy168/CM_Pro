@@ -251,18 +251,130 @@
 
         }
 
-        loadComponent(
-            "topbar-container",
-            "./components/topbar.html"
-        );
+        <script>
 
-        loadComponent(
-            "bottomnav-container",
-            "./components/bottomnav.html"
-        );
+    async function loadComponent(id, file){
 
-    </script>
+        try{
 
+            const response =
+                await fetch(file);
+
+            const html =
+                await response.text();
+
+            document
+                .getElementById(id)
+                .innerHTML = html;
+
+            // =========================
+            // AFTER TOPBAR LOAD
+            // =========================
+
+            if(id === "topbar-container"){
+
+                loadTopbarUser();
+
+            }
+
+        }catch(error){
+
+            console.error(
+                "Component load error:",
+                error
+            );
+
+        }
+
+    }
+
+    // =========================
+    // LOAD USER TO TOPBAR
+    // =========================
+
+    function loadTopbarUser(){
+
+        try{
+
+            const loggedInUser = JSON.parse(
+
+                localStorage.getItem(
+                    "loggedInUser"
+                ) || "{}"
+
+            );
+
+            console.log(
+                "TOPBAR USER:",
+                loggedInUser
+            );
+
+            const fullname =
+
+                loggedInUser.fullname ||
+
+                loggedInUser.username ||
+
+                "User";
+
+            const topbarName =
+                document.getElementById(
+                    "topbarName"
+                );
+
+            if(topbarName){
+
+                topbarName.innerText =
+                    `សួស្តី, ${fullname}`;
+
+            }
+
+            // PROFILE IMAGE
+
+            if(loggedInUser.image){
+
+                const profile =
+                    document.getElementById(
+                        "topbarProfile"
+                    );
+
+                if(profile){
+
+                    profile.src =
+                        loggedInUser.image;
+
+                }
+
+            }
+
+        }catch(error){
+
+            console.error(
+                "Topbar user error:",
+                error
+            );
+
+        }
+
+    }
+
+    // =========================
+    // LOAD COMPONENTS
+    // =========================
+
+    loadComponent(
+        "topbar-container",
+        "./components/topbar.html"
+    );
+
+    loadComponent(
+        "bottomnav-container",
+        "./components/bottomnav.html"
+    );
+
+</script>
+
+        
 </body>
 
 </html>
