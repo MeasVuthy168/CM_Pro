@@ -1,78 +1,72 @@
-<div class="topbar">
-
-    <div class="topbar-left">
-
-        <img
-            src="./assets/images/acleda-logo.PNG"
-            class="topbar-logo"
-        >
-
-    </div>
-
-    <div
-        class="topbar-right"
-        onclick="logout()"
-    >
-
-        <img
-            src="./assets/images/profile.jpg"
-            class="topbar-profile"
-            id="topbarProfile"
-        >
-
-        <div
-            class="topbar-name"
-            id="topbarName"
-        >
-            សួស្តី, User
-        </div>
-
-    </div>
-
-</div>
-
 <script>
 
-    // =========================
-    // LOAD USER
-    // =========================
+setTimeout(()=>{
 
-    const loggedInUser = JSON.parse(
+    try{
 
-        localStorage.getItem("loggedInUser") ||
+        const loggedInUser = JSON.parse(
 
-        "{}"
+            localStorage.getItem(
+                "loggedInUser"
+            ) || "{}"
 
-    );
+        );
 
-    // =========================
-    // USERNAME
-    // =========================
+        console.log(
+            "TOPBAR USER:",
+            loggedInUser
+        );
 
-    const fullname =
+        const fullname =
 
-        loggedInUser.fullname ||
+            loggedInUser.fullname ||
 
-        loggedInUser.username ||
+            loggedInUser.username ||
 
-        "User";
+            "User";
 
-    document.getElementById(
-        "topbarName"
-    ).innerText =
+        const topbarName =
 
-        `សួស្តី, ${fullname}`;
+            document.getElementById(
+                "topbarName"
+            );
 
-    // =========================
-    // PROFILE IMAGE (OPTIONAL)
-    // =========================
+        if(topbarName){
 
-    if(loggedInUser.image){
+            topbarName.innerText =
 
-        document.getElementById(
-            "topbarProfile"
-        ).src = loggedInUser.image;
+                `សួស្តី, ${fullname}`;
+
+        }
+
+        // PROFILE IMAGE
+
+        if(loggedInUser.image){
+
+            const profile =
+
+                document.getElementById(
+                    "topbarProfile"
+                );
+
+            if(profile){
+
+                profile.src =
+                    loggedInUser.image;
+
+            }
+
+        }
+
+    }catch(error){
+
+        console.error(
+            "TOPBAR ERROR:",
+            error
+        );
 
     }
+
+},100);
 
 </script>
