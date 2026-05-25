@@ -24,55 +24,141 @@
             class="topbar-name"
             id="topbarName"
         >
-            សួស្តី, User
+            Loading...
         </div>
 
     </div>
 
 </div>
 
+<!-- TEMP DEBUG -->
+<div
+    id="debugBox"
+    style="
+        position:fixed;
+        top:80px;
+        left:10px;
+        right:10px;
+        background:#fff;
+        color:#000;
+        z-index:99999;
+        padding:10px;
+        font-size:12px;
+        border-radius:10px;
+        box-shadow:0 0 10px rgba(0,0,0,.2);
+        word-break:break-all;
+    "
+></div>
+
 <script>
 
     // =========================
-    // LOAD USER
+    // RAW STORAGE
     // =========================
 
-    const loggedInUser = JSON.parse(
+    const rawUser =
 
-        localStorage.getItem("loggedInUser") ||
+        localStorage.getItem(
+            "loggedInUser"
+        );
 
-        "{}"
+    // =========================
+    // DEBUG
+    // =========================
 
+    console.log(
+        "RAW USER:",
+        rawUser
+    );
+
+    let loggedInUser = {};
+
+    try{
+
+        loggedInUser = JSON.parse(
+            rawUser || "{}"
+        );
+
+    }catch(err){
+
+        console.error(
+            "JSON PARSE ERROR:",
+            err
+        );
+
+    }
+
+    console.log(
+        "PARSED USER:",
+        loggedInUser
     );
 
     // =========================
-    // USERNAME
+    // USER INFO
     // =========================
 
     const fullname =
 
-        loggedInUser.fullname ||
+        loggedInUser.fullname;
 
-        loggedInUser.username ||
+    const username =
 
-        "User";
+        loggedInUser.username;
+
+    // =========================
+    // TOPBAR NAME
+    // =========================
 
     document.getElementById(
         "topbarName"
     ).innerText =
 
-        `សួស្តី, ${fullname}`;
+        `សួស្តី, ${
+            fullname ||
+            username ||
+            "User"
+        }`;
 
     // =========================
-    // PROFILE IMAGE (OPTIONAL)
+    // PROFILE
     // =========================
 
     if(loggedInUser.image){
 
         document.getElementById(
             "topbarProfile"
-        ).src = loggedInUser.image;
+        ).src =
+            loggedInUser.image;
 
     }
+
+    // =========================
+    // DEBUG BOX
+    // =========================
+
+    document.getElementById(
+        "debugBox"
+    ).innerHTML =
+
+        `
+        <b>RAW localStorage:</b><br>
+        ${rawUser}
+        <hr>
+
+        <b>fullname:</b>
+        ${fullname}
+        <br>
+
+        <b>username:</b>
+        ${username}
+        <br>
+
+        <b>Final Display:</b>
+        ${
+            fullname ||
+            username ||
+            "User"
+        }
+        `;
 
 </script>
