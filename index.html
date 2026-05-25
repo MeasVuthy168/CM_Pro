@@ -19,6 +19,67 @@
 
 </head>
 
+
+
+
+
+<!-- DEBUG -->
+<div
+    id="debugBox"
+    style="
+        position:fixed;
+        top:120px;
+        left:10px;
+        right:10px;
+        z-index:99999;
+        background:#fff;
+        color:#000;
+        padding:15px;
+        border-radius:12px;
+        font-size:12px;
+        word-break:break-word;
+        box-shadow:0 0 10px rgba(0,0,0,0.3);
+    "
+></div>
+
+<script>
+
+    // =========================
+    // DEBUG USER STORAGE
+    // =========================
+
+    const debugUser = localStorage.getItem(
+        "loggedInUser"
+    );
+
+    const debugToken = localStorage.getItem(
+        "token"
+    );
+
+    document.getElementById(
+        "debugBox"
+    ).innerHTML = `
+
+        <b>loggedInUser:</b><br>
+        ${debugUser}<br><br>
+
+        <b>token exists:</b><br>
+        ${debugToken ? "YES" : "NO"}
+
+    `;
+
+    console.log(
+        "loggedInUser:",
+        debugUser
+    );
+
+</script>
+
+
+
+
+
+    
 <body>
 
     <!-- Auth Guard -->
