@@ -19,103 +19,99 @@
 
 </head>
 
-
-
-
-
-<!-- DEBUG -->
-<div
-    id="debugBox"
-    style="
-        position:fixed;
-        top:120px;
-        left:10px;
-        right:10px;
-        z-index:99999;
-        background:#fff;
-        color:#000;
-        padding:15px;
-        border-radius:12px;
-        font-size:12px;
-        word-break:break-word;
-        box-shadow:0 0 10px rgba(0,0,0,0.3);
-    "
-></div>
-
-<script>
-
-    // =========================
-    // DEBUG USER STORAGE
-    // =========================
-
-    const debugUser = localStorage.getItem(
-        "loggedInUser"
-    );
-
-    const debugToken = localStorage.getItem(
-        "token"
-    );
-
-    document.getElementById(
-        "debugBox"
-    ).innerHTML = `
-
-        <b>loggedInUser:</b><br>
-        ${debugUser}<br><br>
-
-        <b>token exists:</b><br>
-        ${debugToken ? "YES" : "NO"}
-
-    `;
-
-    console.log(
-        "loggedInUser:",
-        debugUser
-    );
-
-</script>
-
-
-
-
-
-    
 <body>
+
+    <!-- DEBUG -->
+    <div
+        id="debugBox"
+        style="
+            position:fixed;
+            top:120px;
+            left:10px;
+            right:10px;
+            z-index:99999;
+            background:#fff;
+            color:#000;
+            padding:15px;
+            border-radius:12px;
+            font-size:12px;
+            word-break:break-word;
+            box-shadow:0 0 10px rgba(0,0,0,0.3);
+        "
+    ></div>
+
+    <!-- DEBUG SCRIPT -->
+    <script>
+
+        const debugUser =
+            localStorage.getItem(
+                "loggedInUser"
+            );
+
+        const debugToken =
+
+            localStorage.getItem(
+                "token"
+            ) ||
+
+            sessionStorage.getItem(
+                "token"
+            );
+
+        document.getElementById(
+            "debugBox"
+        ).innerHTML = `
+
+            <b>loggedInUser:</b><br>
+            ${debugUser}<br><br>
+
+            <b>token exists:</b><br>
+            ${debugToken ? "YES" : "NO"}
+
+        `;
+
+        console.log(
+            "loggedInUser:",
+            debugUser
+        );
+
+    </script>
 
     <!-- Auth Guard -->
     <script src="./config/auth.js"></script>
 
-    <!-- Logout Function -->
+    <!-- Logout -->
     <script>
 
         function logout(){
 
-    const confirmLogout =
-        confirm("Logout CM_Pro ?");
+            const confirmLogout =
+                confirm("Logout CM_Pro ?");
 
-    if(confirmLogout){
+            if(confirmLogout){
 
-        // REMOVE LOGIN ONLY
+                // REMOVE LOGIN ONLY
 
-        localStorage.removeItem(
-            "token"
-        );
+                localStorage.removeItem(
+                    "token"
+                );
 
-        localStorage.removeItem(
-            "loggedInUser"
-        );
+                localStorage.removeItem(
+                    "loggedInUser"
+                );
 
-        sessionStorage.clear();
+                sessionStorage.clear();
 
-        // KEEP remember_login
+                // KEEP remember_login
 
-        window.location.replace(
-            "/CM_Pro/login.html"
-        );
+                window.location.replace(
+                    "/CM_Pro/login.html"
+                );
 
-    }
+            }
 
-}
+        }
+
     </script>
 
     <!-- Topbar -->
@@ -138,9 +134,7 @@
                 >
 
                 <div class="dashboard-card-title">
-
                     Customer Search
-
                 </div>
 
             </a>
@@ -156,9 +150,7 @@
                 >
 
                 <div class="dashboard-card-title">
-
                     Daily Arrears
-
                 </div>
 
             </a>
@@ -174,9 +166,7 @@
                 >
 
                 <div class="dashboard-card-title">
-
                     Average Turnover
-
                 </div>
 
             </a>
@@ -192,16 +182,14 @@
                 >
 
                 <div class="dashboard-card-title">
-
                     Spot Check
-
                 </div>
 
             </a>
 
         </div>
 
-        <!-- Assistant Box -->
+        <!-- Assistant -->
         <div class="assistant-box">
 
             <img
@@ -240,6 +228,16 @@
                     .getElementById(id)
                     .innerHTML = html;
 
+                // =========================
+                // AFTER TOPBAR LOAD
+                // =========================
+
+                if(id === "topbar-container"){
+
+                    loadTopbarUser();
+
+                }
+
             }catch(error){
 
                 console.error(
@@ -251,130 +249,92 @@
 
         }
 
-        <script>
+        // =========================
+        // LOAD USER TO TOPBAR
+        // =========================
 
-    async function loadComponent(id, file){
+        function loadTopbarUser(){
 
-        try{
+            try{
 
-            const response =
-                await fetch(file);
+                const loggedInUser = JSON.parse(
 
-            const html =
-                await response.text();
+                    localStorage.getItem(
+                        "loggedInUser"
+                    ) || "{}"
 
-            document
-                .getElementById(id)
-                .innerHTML = html;
-
-            // =========================
-            // AFTER TOPBAR LOAD
-            // =========================
-
-            if(id === "topbar-container"){
-
-                loadTopbarUser();
-
-            }
-
-        }catch(error){
-
-            console.error(
-                "Component load error:",
-                error
-            );
-
-        }
-
-    }
-
-    // =========================
-    // LOAD USER TO TOPBAR
-    // =========================
-
-    function loadTopbarUser(){
-
-        try{
-
-            const loggedInUser = JSON.parse(
-
-                localStorage.getItem(
-                    "loggedInUser"
-                ) || "{}"
-
-            );
-
-            console.log(
-                "TOPBAR USER:",
-                loggedInUser
-            );
-
-            const fullname =
-
-                loggedInUser.fullname ||
-
-                loggedInUser.username ||
-
-                "User";
-
-            const topbarName =
-                document.getElementById(
-                    "topbarName"
                 );
 
-            if(topbarName){
+                console.log(
+                    "TOPBAR USER:",
+                    loggedInUser
+                );
 
-                topbarName.innerText =
-                    `សួស្តី, ${fullname}`;
+                const fullname =
 
-            }
+                    loggedInUser.fullname ||
 
-            // PROFILE IMAGE
+                    loggedInUser.username ||
 
-            if(loggedInUser.image){
+                    "User";
 
-                const profile =
+                const topbarName =
                     document.getElementById(
-                        "topbarProfile"
+                        "topbarName"
                     );
 
-                if(profile){
+                if(topbarName){
 
-                    profile.src =
-                        loggedInUser.image;
+                    topbarName.innerText =
+                        `សួស្តី, ${fullname}`;
 
                 }
 
+                // PROFILE IMAGE
+
+                if(loggedInUser.image){
+
+                    const profile =
+                        document.getElementById(
+                            "topbarProfile"
+                        );
+
+                    if(profile){
+
+                        profile.src =
+                            loggedInUser.image;
+
+                    }
+
+                }
+
+            }catch(error){
+
+                console.error(
+                    "Topbar user error:",
+                    error
+                );
+
             }
-
-        }catch(error){
-
-            console.error(
-                "Topbar user error:",
-                error
-            );
 
         }
 
-    }
+        // =========================
+        // LOAD COMPONENTS
+        // =========================
 
-    // =========================
-    // LOAD COMPONENTS
-    // =========================
+        loadComponent(
+            "topbar-container",
+            "./components/topbar.html"
+        );
 
-    loadComponent(
-        "topbar-container",
-        "./components/topbar.html"
-    );
+        loadComponent(
+            "bottomnav-container",
+            "./components/bottomnav.html"
+        );
 
-    loadComponent(
-        "bottomnav-container",
-        "./components/bottomnav.html"
-    );
+    </script>
 
-</script>
-
-        
 </body>
 
 </html>
