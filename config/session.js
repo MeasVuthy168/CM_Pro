@@ -1,100 +1,94 @@
-<script>
+// =========================
+// AUTO LOGOUT TIMER
+// =========================
 
-    // =========================
-    // AUTO LOGOUT TIMER
-    // =========================
+const SESSION_TIMEOUT =
+    1 * 60 * 1000;
 
-    const SESSION_TIMEOUT =
-        1 * 60 * 1000;
+// 1 minute test
 
-    // 15 minutes
+let inactivityTimer;
 
-    let inactivityTimer;
+// =========================
+// RESET TIMER
+// =========================
 
-    // =========================
-    // RESET TIMER
-    // =========================
+function resetSessionTimer(){
 
-    function resetSessionTimer(){
+    clearTimeout(
+        inactivityTimer
+    );
 
-        clearTimeout(
-            inactivityTimer
-        );
+    inactivityTimer = setTimeout(
 
-        inactivityTimer = setTimeout(
+        autoLogout,
 
-            autoLogout,
+        SESSION_TIMEOUT
 
-            SESSION_TIMEOUT
+    );
 
-        );
+}
 
-    }
+// =========================
+// AUTO LOGOUT
+// =========================
 
-    // =========================
-    // AUTO LOGOUT
-    // =========================
+function autoLogout(){
 
-    function autoLogout(){
+    alert(
+        "Session expired due to inactivity"
+    );
 
-        alert(
-            "Session expired due to inactivity"
-        );
+    // REMOVE TOKEN ONLY
 
-        // REMOVE TOKEN ONLY
+    localStorage.removeItem(
+        "token"
+    );
 
-        localStorage.removeItem(
-            "token"
-        );
+    localStorage.removeItem(
+        "loggedInUser"
+    );
 
-        localStorage.removeItem(
-            "loggedInUser"
-        );
+    sessionStorage.clear();
 
-        sessionStorage.clear();
+    // KEEP remember_login
 
-        // KEEP remember_login
+    window.location.replace(
+        "/CM_Pro/login.html"
+    );
 
-        window.location.replace(
-            "/CM_Pro/login.html"
-        );
+}
 
-    }
+// =========================
+// TRACK USER ACTIVITY
+// =========================
 
-    // =========================
-    // TRACK USER ACTIVITY
-    // =========================
+[
+    "click",
+    "touchstart",
+    "mousemove",
+    "keydown",
+    "scroll"
+].forEach(eventType => {
 
-    [
+    document.addEventListener(
 
-        "click",
+        eventType,
 
-        "touchstart",
+        resetSessionTimer,
 
-        "mousemove",
+        true
 
-        "keydown",
+    );
 
-        "scroll"
+});
 
-    ].forEach(eventType => {
+// =========================
+// START TIMER
+// =========================
 
-        document.addEventListener(
+console.log(
+    "Session timeout started"
+);
 
-            eventType,
-
-            resetSessionTimer,
-
-            true
-
-        );
-
-    });
-
-    // =========================
-    // START TIMER
-    // =========================
-
-    resetSessionTimer();
-
-</script>
+resetSessionTimer();
