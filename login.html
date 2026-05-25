@@ -580,26 +580,47 @@ if(rememberMe.checked){
 }
 
                 // =========================
-                // SAVE USER
-                // =========================
+// SAVE USER
+// =========================
 
-                localStorage.setItem(
+localStorage.setItem(
 
-                    "loggedInUser",
+    "loggedInUser",
 
-                    JSON.stringify({
+    JSON.stringify({
 
-                        username:
-                            data.username || "",
+        username:
 
-                        fullname:
-                            data.fullname || "",
+            data.user?.username ||
 
-                        role:
-                            data.role || "user"
+            data.username ||
 
-                    })
-                );
+            "",
+
+        fullname:
+
+            data.user?.fullname ||
+
+            data.fullname ||
+
+            "",
+
+        role:
+
+            data.user?.role ||
+
+            data.role ||
+
+            "user",
+
+        image:
+
+            data.user?.image ||
+
+            ""
+
+    })
+);
 
                 // =========================
                 // REMEMBER LOGIN
