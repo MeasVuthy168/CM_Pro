@@ -1,72 +1,33 @@
-<script>
 
-setTimeout(()=>{
+<div class="topbar">
 
-    try{
+    <div class="topbar-left">
 
-        const loggedInUser = JSON.parse(
+        <img
+            src="./assets/images/acleda-logo.PNG"
+            class="topbar-logo"
+        >
 
-            localStorage.getItem(
-                "loggedInUser"
-            ) || "{}"
+    </div>
 
-        );
+    <div
+        class="topbar-right"
+        onclick="logout()"
+    >
 
-        console.log(
-            "TOPBAR USER:",
-            loggedInUser
-        );
+        <img
+            src="./assets/images/profile.jpg"
+            class="topbar-profile"
+            id="topbarProfile"
+        >
 
-        const fullname =
+        <div
+            class="topbar-name"
+            id="topbarName"
+        >
+            សួស្តី, User
+        </div>
 
-            loggedInUser.fullname ||
+    </div>
 
-            loggedInUser.username ||
-
-            "User";
-
-        const topbarName =
-
-            document.getElementById(
-                "topbarName"
-            );
-
-        if(topbarName){
-
-            topbarName.innerText =
-
-                `សួស្តី, ${fullname}`;
-
-        }
-
-        // PROFILE IMAGE
-
-        if(loggedInUser.image){
-
-            const profile =
-
-                document.getElementById(
-                    "topbarProfile"
-                );
-
-            if(profile){
-
-                profile.src =
-                    loggedInUser.image;
-
-            }
-
-        }
-
-    }catch(error){
-
-        console.error(
-            "TOPBAR ERROR:",
-            error
-        );
-
-    }
-
-},100);
-
-</script>
+</div>
