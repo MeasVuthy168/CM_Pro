@@ -10,19 +10,69 @@
     </div>
 
     <div
-    class="topbar-right"
-    onclick="logout()"
+        class="topbar-right"
+        onclick="logout()"
     >
 
         <img
             src="./assets/images/profile.jpg"
             class="topbar-profile"
+            id="topbarProfile"
         >
 
-        <div class="topbar-name">
-            សួស្តី, មាស វុទ្ធី
+        <div
+            class="topbar-name"
+            id="topbarName"
+        >
+            សួស្តី, User
         </div>
 
     </div>
 
 </div>
+
+<script>
+
+    // =========================
+    // LOAD USER
+    // =========================
+
+    const loggedInUser = JSON.parse(
+
+        localStorage.getItem("loggedInUser") ||
+
+        "{}"
+
+    );
+
+    // =========================
+    // USERNAME
+    // =========================
+
+    const fullname =
+
+        loggedInUser.fullname ||
+
+        loggedInUser.username ||
+
+        "User";
+
+    document.getElementById(
+        "topbarName"
+    ).innerText =
+
+        `សួស្តី, ${fullname}`;
+
+    // =========================
+    // PROFILE IMAGE (OPTIONAL)
+    // =========================
+
+    if(loggedInUser.image){
+
+        document.getElementById(
+            "topbarProfile"
+        ).src = loggedInUser.image;
+
+    }
+
+</script>
