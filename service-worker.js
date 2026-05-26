@@ -64,10 +64,10 @@ function toJSONSafe(text){
 function buildOptions(data){
 
     const defaultIcon =
-        "/CM_Pro/assets/images/logo.png";
+        "/CM_Pro/assets/images/LogoAC.png";
 
     const defaultBadge =
-        "/CM_Pro/assets/images/logo.png";
+        "/CM_Pro/assets/images/LogoAC.png";
 
     return {
 
