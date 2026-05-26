@@ -84,7 +84,7 @@ window.PushNotification = {
 
                 const publicKey =
 
-                    "YOUR_PUBLIC_VAPID_KEY";
+                    "BJKtfYLpS5SGXyuAcM3kR7wt_1dHcg1apVIrT8lQ5fXJDDxNml6acZD4PAheC5j36xc3qlDg0L8C7p3kiuydrQo";
 
                 subscription =
 
