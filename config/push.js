@@ -4,24 +4,40 @@
 
 window.PushNotification = {
 
-    // =================================================
-    // INIT
-    // =================================================
-
     async init(){
 
         try{
 
+            console.log(
+                "Push init started"
+            );
+
+            // =========================================
+            // SUPPORT CHECK
+            // =========================================
+
             if(
 
-                !("serviceWorker" in navigator) ||
+                !("serviceWorker" in navigator)
+
+            ){
+
+                console.log(
+                    "No serviceWorker support"
+                );
+
+                return;
+
+            }
+
+            if(
 
                 !("PushManager" in window)
 
             ){
 
                 console.log(
-                    "Push not supported"
+                    "No PushManager support"
                 );
 
                 return;
@@ -37,17 +53,16 @@ window.PushNotification = {
                 await navigator
                     .serviceWorker
                     .register(
-
                         "/CM_Pro/service-worker.js"
-
                     );
 
             console.log(
-                "SW registered"
+                "SW REGISTERED:",
+                registration
             );
 
             // =========================================
-            // ASK PERMISSION
+            // PERMISSION
             // =========================================
 
             const permission =
@@ -56,11 +71,15 @@ window.PushNotification = {
                     .requestPermission();
 
             console.log(
-                "Notification permission:",
+                "NOTIFICATION PERMISSION:",
                 permission
             );
 
             if(permission !== "granted"){
+
+                console.log(
+                    "Permission denied"
+                );
 
                 return;
 
@@ -76,15 +95,25 @@ window.PushNotification = {
                     .pushManager
                     .getSubscription();
 
+            console.log(
+                "EXISTING SUB:",
+                subscription
+            );
+
             // =========================================
-            // CREATE SUB
+            // CREATE NEW SUB
             // =========================================
 
             if(!subscription){
 
                 const publicKey =
 
-                    "BJKtfYLpS5SGXyuAcM3kR7wt_1dHcg1apVIrT8lQ5fXJDDxNml6acZD4PAheC5j36xc3qlDg0L8C7p3kiuydrQo";
+"BJKtfYLpS5SGXyuAcM3kR7wt_1dHcg1apVIrT8lQ5fXJDDxNml6acZD4PAheC5j36xc3qlDg0L8C7p3kiuydrQo";
+
+                console.log(
+                    "PUBLIC KEY:",
+                    publicKey
+                );
 
                 subscription =
 
@@ -103,19 +132,14 @@ window.PushNotification = {
                         });
 
                 console.log(
-                    "Push subscribed"
-                );
-
-            }else{
-
-                console.log(
-                    "Existing push subscription"
+                    "NEW SUB CREATED:",
+                    subscription
                 );
 
             }
 
             // =========================================
-            // SAVE TO BACKEND
+            // TOKEN
             // =========================================
 
             const token =
@@ -124,7 +148,16 @@ window.PushNotification = {
 
                 sessionStorage.getItem("token");
 
-            await fetch(
+            console.log(
+                "TOKEN EXISTS:",
+                !!token
+            );
+
+            // =========================================
+            // SEND TO BACKEND
+            // =========================================
+
+            const response = await fetch(
 
                 `${API.BASE_URL}/api/push/subscribe`,
 
@@ -150,14 +183,18 @@ window.PushNotification = {
 
             );
 
+            const result =
+                await response.json();
+
             console.log(
-                "Push subscription saved"
+                "SUBSCRIBE RESPONSE:",
+                result
             );
 
         }catch(error){
 
             console.error(
-                "Push init error:",
+                "PUSH ERROR:",
                 error
             );
 
@@ -194,13 +231,9 @@ window.PushNotification = {
             );
 
         for(
-
             let i = 0;
-
             i < rawData.length;
-
             ++i
-
         ){
 
             outputArray[i] =
