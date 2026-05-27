@@ -58,7 +58,6 @@
     <!-- API -->
     <script src="./config/api.js"></script>
 
-
     <style>
 
         *{
@@ -68,22 +67,26 @@
             font-family:Segoe UI, Arial, sans-serif;
         }
 
-            /* =========================
-               FULLSCREEN PWA FIX
-            ========================= */
-            
-            html,
-            body{
-            
-                width:100%;
-                height:100%;
-                overflow:hidden;
-                overscroll-behavior:none;
-                -webkit-user-select:none;
-                -webkit-tap-highlight-color:transparent;
-            }
+        /* =========================
+           FULLSCREEN PWA FIX
+        ========================= */
 
-        
+        html,
+        body{
+
+            width:100%;
+            height:100%;
+
+            overflow:hidden;
+
+            overscroll-behavior:none;
+
+            -webkit-user-select:none;
+
+            -webkit-tap-highlight-color:transparent;
+
+        }
+
         body{
 
             background:#032d73;
@@ -432,9 +435,6 @@
 
     );
 
-
-
-    
     // =========================
     // AUTO LOGIN
     // =========================
@@ -444,8 +444,6 @@
         localStorage.getItem("token") ||
 
         sessionStorage.getItem("token");
-
-    // ONLY auto redirect if token exists
 
     if(existingToken){
 
@@ -697,15 +695,6 @@
                             userData.image || ""
 
                     })
-                );
-
-                console.log(
-                    "SAVED USER:",
-                    JSON.parse(
-                        localStorage.getItem(
-                            "loggedInUser"
-                        )
-                    )
                 );
 
                 // =========================
