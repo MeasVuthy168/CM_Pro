@@ -12,49 +12,17 @@
 
     <title>CM_Pro Login</title>
 
-    <!-- PWA -->
     <link
         rel="manifest"
         href="/CM_Pro/manifest.json"
     >
-
+    
     <meta
         name="theme-color"
         content="#032d73"
     >
 
-    <!-- IOS PWA -->
-    <meta
-        name="apple-mobile-web-app-capable"
-        content="yes"
-    >
-
-    <meta
-        name="apple-mobile-web-app-status-bar-style"
-        content="black-translucent"
-    >
-
-    <meta
-        name="apple-mobile-web-app-title"
-        content="CM_Pro"
-    >
-
-    <link
-        rel="apple-touch-icon"
-        href="/CM_Pro/assets/images/LogoAC.png"
-    >
-
-    <meta
-        name="mobile-web-app-capable"
-        content="yes"
-    >
-
-    <!-- REDUCE GOOGLE PASSWORD POPUP -->
-    <meta
-        name="google"
-        content="notranslate"
-    >
-
+    
     <!-- API -->
     <script src="./config/api.js"></script>
 
@@ -65,26 +33,6 @@
             padding:0;
             box-sizing:border-box;
             font-family:Segoe UI, Arial, sans-serif;
-        }
-
-        /* =========================
-           FULLSCREEN PWA FIX
-        ========================= */
-
-        html,
-        body{
-
-            width:100%;
-            height:100%;
-
-            overflow:hidden;
-
-            overscroll-behavior:none;
-
-            -webkit-user-select:none;
-
-            -webkit-tap-highlight-color:transparent;
-
         }
 
         body{
@@ -336,10 +284,7 @@
             SVG Credit Monitoring System
         </div>
 
-        <form
-            id="loginForm"
-            autocomplete="off"
-        >
+        <form id="loginForm">
 
             <!-- Username -->
             <input
@@ -347,9 +292,7 @@
                 id="username"
                 class="input-box"
                 placeholder="Username"
-                autocomplete="off"
-                autocapitalize="off"
-                spellcheck="false"
+                autocomplete="username"
                 required
             >
 
@@ -361,7 +304,7 @@
                     id="password"
                     class="input-box"
                     placeholder="Password"
-                    autocomplete="off"
+                    autocomplete="current-password"
                     required
                 >
 
@@ -416,43 +359,26 @@
 <script>
 
     // =========================
-    // BLOCK INSTALL POPUP
-    // =========================
+// AUTO LOGIN
+// =========================
 
-    window.addEventListener(
+const existingToken =
 
-        "beforeinstallprompt",
+    localStorage.getItem("token") ||
 
-        (e)=>{
+    sessionStorage.getItem("token");
 
-            e.preventDefault();
+// ONLY auto redirect if token exists
 
-            console.log(
-                "Install prompt blocked"
-            );
+if(existingToken){
 
-        }
-
+    window.location.replace(
+        "/CM_Pro/index.html"
     );
 
-    // =========================
-    // AUTO LOGIN
-    // =========================
+}
 
-    const existingToken =
-
-        localStorage.getItem("token") ||
-
-        sessionStorage.getItem("token");
-
-    if(existingToken){
-
-        window.location.replace(
-            "/CM_Pro/index.html"
-        );
-
-    }
-
+    
     // =========================
     // ELEMENTS
     // =========================
@@ -484,21 +410,21 @@
 
     let rememberedLogin = null;
 
-    try{
+try{
 
-        rememberedLogin = JSON.parse(
+    rememberedLogin = JSON.parse(
 
-            localStorage.getItem(
-                "remember_login"
-            )
+        localStorage.getItem(
+            "remember_login"
+        )
 
-        );
+    );
 
-    }catch(e){
+}catch(e){
 
-        rememberedLogin = null;
+    rememberedLogin = null;
 
-    }
+}
 
     if(rememberedLogin){
 
@@ -637,65 +563,74 @@
                 }
 
                 // =========================
-                // CLEAR OLD TOKEN
+// CLEAR OLD TOKEN
+// =========================
+
+localStorage.removeItem("token");
+
+sessionStorage.removeItem("token");
+
+// =========================
+// SAVE TOKEN
+// =========================
+
+if(rememberMe.checked){
+
+    localStorage.setItem(
+        "token",
+        data.token
+    );
+
+}else{
+
+    sessionStorage.setItem(
+        "token",
+        data.token
+    );
+
+}
+
                 // =========================
+// SAVE USER
+// =========================
 
-                localStorage.removeItem("token");
+const userData =
 
-                sessionStorage.removeItem("token");
+    data.user ||
 
-                // =========================
-                // SAVE TOKEN
-                // =========================
+    data.data ||
 
-                if(rememberMe.checked){
+    data;
 
-                    localStorage.setItem(
-                        "token",
-                        data.token
-                    );
+localStorage.setItem(
 
-                }else{
+    "loggedInUser",
 
-                    sessionStorage.setItem(
-                        "token",
-                        data.token
-                    );
+    JSON.stringify({
 
-                }
+        username:
+            userData.username || "",
 
-                // =========================
-                // SAVE USER
-                // =========================
+        fullname:
+            userData.fullname || "",
 
-                const userData =
+        role:
+            userData.role || "user",
 
-                    data.user ||
+        image:
+            userData.image || ""
 
-                    data.data ||
+    })
+);
 
-                    data;
-
-                localStorage.setItem(
-
-                    "loggedInUser",
-
-                    JSON.stringify({
-
-                        username:
-                            userData.username || "",
-
-                        fullname:
-                            userData.fullname || "",
-
-                        role:
-                            userData.role || "user",
-
-                        image:
-                            userData.image || ""
-
-                    })
-                );
+console.log(
+    "SAVED USER:",
+    JSON.parse(
+        localStorage.getItem(
+            "loggedInUser"
+        )
+    )
+);
 
                 // =========================
                 // REMEMBER LOGIN
@@ -761,4 +696,4 @@
 
 </body>
 
-</html>
+</html>    
