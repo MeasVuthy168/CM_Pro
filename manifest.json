@@ -1,13 +1,36 @@
 {
   "name": "CM_Pro Credit Monitoring",
+
   "short_name": "CM_Pro",
+
   "description": "SVG Credit Monitoring System",
+
   "start_url": "/CM_Pro/login.html",
+
   "scope": "/CM_Pro/",
+
   "display": "standalone",
+
+  "display_override": [
+    "standalone",
+    "window-controls-overlay"
+  ],
+
   "orientation": "portrait",
+
   "background_color": "#032d73",
+
   "theme_color": "#032d73",
+
+  "lang": "en",
+
+  "dir": "ltr",
+
+  "categories": [
+    "business",
+    "finance",
+    "productivity"
+  ],
 
   "icons": [
 
