@@ -12,17 +12,23 @@
 
     <title>CM_Pro Login</title>
 
+    <!-- PWA -->
     <link
         rel="manifest"
         href="/CM_Pro/manifest.json"
     >
-    
+
     <meta
         name="theme-color"
         content="#032d73"
     >
 
-    
+    <!-- REDUCE GOOGLE PASSWORD POPUP -->
+    <meta
+        name="google"
+        content="notranslate"
+    >
+
     <!-- API -->
     <script src="./config/api.js"></script>
 
@@ -284,7 +290,10 @@
             SVG Credit Monitoring System
         </div>
 
-        <form id="loginForm">
+        <form
+            id="loginForm"
+            autocomplete="off"
+        >
 
             <!-- Username -->
             <input
@@ -292,7 +301,9 @@
                 id="username"
                 class="input-box"
                 placeholder="Username"
-                autocomplete="username"
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
                 required
             >
 
@@ -304,7 +315,7 @@
                     id="password"
                     class="input-box"
                     placeholder="Password"
-                    autocomplete="current-password"
+                    autocomplete="off"
                     required
                 >
 
@@ -359,26 +370,25 @@
 <script>
 
     // =========================
-// AUTO LOGIN
-// =========================
+    // AUTO LOGIN
+    // =========================
 
-const existingToken =
+    const existingToken =
 
-    localStorage.getItem("token") ||
+        localStorage.getItem("token") ||
 
-    sessionStorage.getItem("token");
+        sessionStorage.getItem("token");
 
-// ONLY auto redirect if token exists
+    // ONLY auto redirect if token exists
 
-if(existingToken){
+    if(existingToken){
 
-    window.location.replace(
-        "/CM_Pro/index.html"
-    );
+        window.location.replace(
+            "/CM_Pro/index.html"
+        );
 
-}
+    }
 
-    
     // =========================
     // ELEMENTS
     // =========================
@@ -410,21 +420,21 @@ if(existingToken){
 
     let rememberedLogin = null;
 
-try{
+    try{
 
-    rememberedLogin = JSON.parse(
+        rememberedLogin = JSON.parse(
 
-        localStorage.getItem(
-            "remember_login"
-        )
+            localStorage.getItem(
+                "remember_login"
+            )
 
-    );
+        );
 
-}catch(e){
+    }catch(e){
 
-    rememberedLogin = null;
+        rememberedLogin = null;
 
-}
+    }
 
     if(rememberedLogin){
 
@@ -563,74 +573,74 @@ try{
                 }
 
                 // =========================
-// CLEAR OLD TOKEN
-// =========================
+                // CLEAR OLD TOKEN
+                // =========================
 
-localStorage.removeItem("token");
+                localStorage.removeItem("token");
 
-sessionStorage.removeItem("token");
-
-// =========================
-// SAVE TOKEN
-// =========================
-
-if(rememberMe.checked){
-
-    localStorage.setItem(
-        "token",
-        data.token
-    );
-
-}else{
-
-    sessionStorage.setItem(
-        "token",
-        data.token
-    );
-
-}
+                sessionStorage.removeItem("token");
 
                 // =========================
-// SAVE USER
-// =========================
+                // SAVE TOKEN
+                // =========================
 
-const userData =
+                if(rememberMe.checked){
 
-    data.user ||
+                    localStorage.setItem(
+                        "token",
+                        data.token
+                    );
 
-    data.data ||
+                }else{
 
-    data;
+                    sessionStorage.setItem(
+                        "token",
+                        data.token
+                    );
 
-localStorage.setItem(
+                }
 
-    "loggedInUser",
+                // =========================
+                // SAVE USER
+                // =========================
 
-    JSON.stringify({
+                const userData =
 
-        username:
-            userData.username || "",
+                    data.user ||
 
-        fullname:
-            userData.fullname || "",
+                    data.data ||
 
-        role:
-            userData.role || "user",
+                    data;
 
-        image:
-            userData.image || ""
+                localStorage.setItem(
 
-    })
-);
+                    "loggedInUser",
 
-console.log(
-    "SAVED USER:",
-    JSON.parse(
-        localStorage.getItem(
-            "loggedInUser"
-        )
-    )
-);
+                    JSON.stringify({
+
+                        username:
+                            userData.username || "",
+
+                        fullname:
+                            userData.fullname || "",
+
+                        role:
+                            userData.role || "user",
+
+                        image:
+                            userData.image || ""
+
+                    })
+                );
+
+                console.log(
+                    "SAVED USER:",
+                    JSON.parse(
+                        localStorage.getItem(
+                            "loggedInUser"
+                        )
+                    )
+                );
 
                 // =========================
                 // REMEMBER LOGIN
@@ -696,4 +706,4 @@ console.log(
 
 </body>
 
-</html>    
+</html>
