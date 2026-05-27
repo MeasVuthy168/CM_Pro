@@ -412,6 +412,35 @@
 
 <script>
 
+
+
+
+
+<script>
+
+    // =========================
+    // BLOCK INSTALL POPUP
+    // =========================
+
+    window.addEventListener(
+
+        "beforeinstallprompt",
+
+        (e)=>{
+
+            e.preventDefault();
+
+            console.log(
+                "Install prompt blocked"
+            );
+
+        }
+
+    );
+
+
+
+    
     // =========================
     // AUTO LOGIN
     // =========================
