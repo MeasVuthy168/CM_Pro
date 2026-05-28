@@ -1,1 +1,168 @@
+<!-- =========================================================
+FILE: /pages/notifications/index.html
+========================================================= -->
 
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"
+>
+
+<title>Notifications - CM_Pro</title>
+
+<meta name="theme-color" content="#032d73">
+
+<link
+rel="stylesheet"
+href="../../assets/css/notification.css"
+>
+
+</head>
+
+<body>
+
+<!-- HEADER -->
+
+<div class="notify-header">
+
+<button
+class="back-btn"
+onclick="history.back()"
+>
+←
+</button>
+
+<div class="notify-title">
+
+🔔 Notifications
+
+</div>
+
+<button
+class="readall-btn"
+id="readAllBtn"
+>
+
+Read All
+
+</button>
+
+</div>
+
+<!-- SUMMARY -->
+
+<div class="notify-summary">
+
+<div class="summary-card">
+
+<div class="summary-label">
+Unread
+</div>
+
+<div
+class="summary-value"
+id="unreadCount"
+>
+0
+</div>
+
+</div>
+
+<div class="summary-card">
+
+<div class="summary-label">
+Total
+</div>
+
+<div
+class="summary-value"
+id="totalCount"
+>
+0
+</div>
+
+</div>
+
+</div>
+
+<!-- REFRESH -->
+
+<div class="refresh-row">
+
+<button
+class="refresh-btn"
+id="refreshBtn"
+>
+
+⟳ Refresh
+
+</button>
+
+</div>
+
+<!-- LIST -->
+
+<div
+class="notify-list"
+id="notifyList"
+></div>
+
+<!-- EMPTY -->
+
+<div
+class="empty-box"
+id="emptyBox"
+style="display:none;"
+>
+
+<img
+src="../../assets/images/robot.svg"
+class="empty-img"
+>
+
+<div class="empty-title">
+
+No Notifications
+
+</div>
+
+<div class="empty-subtitle">
+
+Everything is up to date 🎉
+
+</div>
+
+</div>
+
+<!-- LOADING -->
+
+<div
+class="loading-box"
+id="loadingBox"
+>
+
+<div class="spinner"></div>
+
+</div>
+
+<!-- API -->
+
+<script src="../../config/api.js"></script>
+
+<!-- AUTH -->
+
+<script src="../../config/auth.js"></script>
+
+<!-- JS -->
+
+<script src="../../assets/js/notification.js"></script>
+
+</body>
+
+</html>
