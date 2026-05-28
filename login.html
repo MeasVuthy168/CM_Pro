@@ -1,21 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"
+>
+
 <title>CM_Pro Login</title>
 
-<link rel="manifest" href="/CM_Pro/manifest.json">
+<link
+rel="manifest"
+href="/CM_Pro/manifest.json"
+>
 
-<meta name="theme-color" content="#032d73">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="CM_Pro">
-<meta name="mobile-web-app-capable" content="yes">
+<meta
+name="theme-color"
+content="#032d73"
+>
 
-<link rel="apple-touch-icon" href="/CM_Pro/assets/images/icon-192.png">
+<meta
+name="apple-mobile-web-app-capable"
+content="yes"
+>
+
+<meta
+name="apple-mobile-web-app-status-bar-style"
+content="black-translucent"
+>
+
+<meta
+name="apple-mobile-web-app-title"
+content="CM_Pro"
+>
+
+<meta
+name="mobile-web-app-capable"
+content="yes"
+>
+
+<link
+rel="apple-touch-icon"
+href="/CM_Pro/assets/images/icon-192.png"
+>
 
 <script src="./config/api.js"></script>
+
+<!-- GLOBAL SPLASH -->
+<link
+rel="stylesheet"
+href="/CM_Pro/assets/css/global-splash.css"
+>
 
 <style>
 
@@ -157,33 +195,12 @@ animation:spin .8s linear infinite;
 }
 
 @keyframes spin{
-100%{transform:rotate(360deg);}
+100%{
+transform:rotate(360deg);
+}
 }
 
-#splashScreen{
-position:fixed;
-inset:0;
-background:#032d73;
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-z-index:99999;
-transition:.4s;
-}
-
-.splash-title{
-color:#fff;
-font-size:32px;
-font-weight:700;
-margin-bottom:10px;
-}
-
-.splash-subtitle{
-color:#d7d7d7;
-font-size:16px;
-}
-
+/* IOS INSTALL */
 #iosInstallBanner{
 position:fixed;
 left:15px;
@@ -223,110 +240,256 @@ font-size:17px;
 }
 
 @keyframes slideUp{
-from{transform:translateY(100px);opacity:0;}
-to{transform:translateY(0);opacity:1;}
+from{
+transform:translateY(100px);
+opacity:0;
+}
+to{
+transform:translateY(0);
+opacity:1;
+}
 }
 
 </style>
+
 </head>
 
 <body>
 
+<!-- IOS INSTALL -->
 <div id="iosInstallBanner">
-<div class="ios-title">📲 Install CM_Pro</div>
-<div class="ios-text">Tap <b>Share</b> then <b>Add to Home Screen</b></div>
-<button id="closeIOSBanner">OK</button>
+
+<div class="ios-title">
+📲 Install CM_Pro
 </div>
 
-<div id="splashScreen">
-<img src="./assets/images/LogoAC.png" style="width:120px;margin-bottom:20px;">
-<div class="splash-title">CM_Pro</div>
-<div class="splash-subtitle">SVG Credit Monitoring</div>
+<div class="ios-text">
+Tap <b>Share</b> then
+<b>Add to Home Screen</b>
 </div>
 
+<button id="closeIOSBanner">
+OK
+</button>
+
+</div>
+
+<!-- LOGIN CARD -->
 <div class="login-card">
 
-<img src="./assets/images/LogoAC.png" class="logo">
+<img
+src="./assets/images/LogoAC.png"
+class="logo"
+>
 
-<div class="title">ប្រព័ន្ធតាមដាន</div>
-<div class="subtitle">SVG Credit Monitoring System</div>
+<div class="title">
+ប្រព័ន្ធតាមដាន
+</div>
+
+<div class="subtitle">
+SVG Credit Monitoring System
+</div>
 
 <form id="loginForm">
 
-<input type="text" id="username" class="input-box" placeholder="Username" autocomplete="username" required>
+<input
+type="text"
+id="username"
+class="input-box"
+placeholder="Username"
+autocomplete="username"
+required
+>
 
 <div class="password-wrapper">
-<input type="password" id="password" class="input-box" placeholder="Password" autocomplete="current-password" required>
-<span class="show-password" id="togglePassword">Show</span>
+
+<input
+type="password"
+id="password"
+class="input-box"
+placeholder="Password"
+autocomplete="current-password"
+required
+>
+
+<span
+class="show-password"
+id="togglePassword"
+>
+Show
+</span>
+
 </div>
 
 <div class="remember-row">
-<input type="checkbox" id="rememberMe">
-<label for="rememberMe">Remember Me</label>
+
+<input
+type="checkbox"
+id="rememberMe"
+>
+
+<label for="rememberMe">
+Remember Me
+</label>
+
 </div>
 
-<button type="submit" class="login-btn" id="loginBtn">ចូលប្រើប្រាស់</button>
+<button
+type="submit"
+class="login-btn"
+id="loginBtn"
+>
+ចូលប្រើប្រាស់
+</button>
 
-<div class="loading" id="loading"></div>
+<div
+class="loading"
+id="loading"
+></div>
 
-<div class="status-box" id="statusBox"></div>
+<div
+class="status-box"
+id="statusBox"
+></div>
 
 </form>
+
 </div>
+
+<!-- GLOBAL SPLASH -->
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
 
 <script>
 
+//
 // SERVICE WORKER
+//
 if("serviceWorker" in navigator){
-window.addEventListener("load",()=>{
-navigator.serviceWorker.register("/CM_Pro/service-worker.js")
-.then(reg=>console.log("✅ SW:",reg.scope))
-.catch(err=>console.error("❌ SW Error:",err));
+
+window.addEventListener(
+"load",
+()=>{
+
+navigator.serviceWorker
+.register("/CM_Pro/service-worker.js")
+
+.then(reg=>{
+
+console.log(
+"✅ SW:",
+reg.scope
+);
+
+})
+
+.catch(err=>{
+
+console.error(
+"❌ SW Error:",
+err
+);
+
 });
+
+});
+
 }
 
+//
 // AUTO LOGIN
-const existingToken=localStorage.getItem("token")||sessionStorage.getItem("token");
+//
+const existingToken =
+
+localStorage.getItem("token")
+
+||
+
+sessionStorage.getItem("token");
 
 if(existingToken){
 
 try{
 
-const user=JSON.parse(localStorage.getItem("loggedInUser")||"{}");
-const role=(user.role||"user").toLowerCase();
+const user = JSON.parse(
+
+localStorage.getItem(
+"loggedInUser"
+) || "{}"
+
+);
+
+const role =
+
+(user.role || "user")
+.toLowerCase();
 
 window.location.replace(
-role==="admin"
-?"/CM_Pro/Admin/adminupload.html"
-:"/CM_Pro/index.html"
+
+role === "admin"
+
+? "/CM_Pro/Admin/adminupload.html"
+
+: "/CM_Pro/index.html"
+
 );
 
 }catch{
 
-window.location.replace("/CM_Pro/index.html");
+window.location.replace(
+"/CM_Pro/index.html"
+);
 
 }
 
 }
 
+//
 // IOS DETECT
+//
 function isIOS(){
-return /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+return /iphone|ipad|ipod/i
+.test(navigator.userAgent);
+
 }
 
 function isInStandaloneMode(){
-return window.navigator.standalone===true;
+
+return window.navigator.standalone === true;
+
 }
 
+//
 // IOS INSTALL GUIDE
-window.addEventListener("load",()=>{
+//
+window.addEventListener(
+"load",
+()=>{
 
-if(isIOS()&&!isInStandaloneMode()){
+if(
 
-if(!localStorage.getItem("iosInstallShown")){
+isIOS()
+
+&&
+
+!isInStandaloneMode()
+
+){
+
+if(
+
+!localStorage.getItem(
+"iosInstallShown"
+)
+
+){
 
 setTimeout(()=>{
-document.getElementById("iosInstallBanner").style.display="block";
+
+document.getElementById(
+"iosInstallBanner"
+).style.display = "block";
+
 },2500);
 
 }
@@ -335,25 +498,41 @@ document.getElementById("iosInstallBanner").style.display="block";
 
 });
 
+//
 // CLOSE IOS GUIDE
-document.getElementById("closeIOSBanner").addEventListener("click",()=>{
+//
+document
+.getElementById("closeIOSBanner")
 
-document.getElementById("iosInstallBanner").style.display="none";
+.addEventListener(
+"click",
+()=>{
 
-localStorage.setItem("iosInstallShown","true");
+document.getElementById(
+"iosInstallBanner"
+).style.display = "none";
+
+localStorage.setItem(
+"iosInstallShown",
+"true"
+);
 
 });
 
+//
 // INSTALL PROMPT
+//
 let deferredPrompt;
 
-window.addEventListener("beforeinstallprompt",(e)=>{
+window.addEventListener(
+"beforeinstallprompt",
+(e)=>{
 
 if(isIOS()) return;
 
 e.preventDefault();
 
-deferredPrompt=e;
+deferredPrompt = e;
 
 showInstallButton();
 
@@ -361,110 +540,226 @@ showInstallButton();
 
 function showInstallButton(){
 
-if(document.getElementById("installBtn")) return;
+if(
+document.getElementById(
+"installBtn"
+)
+) return;
 
-const btn=document.createElement("button");
+const btn =
+document.createElement("button");
 
-btn.id="installBtn";
-btn.innerText="📲 Install App";
+btn.id = "installBtn";
+
+btn.innerText =
+"📲 Install App";
 
 Object.assign(btn.style,{
+
 position:"fixed",
 bottom:"20px",
 left:"50%",
 transform:"translateX(-50%)",
 zIndex:"9999",
+
 width:"220px",
 height:"55px",
+
 border:"none",
 borderRadius:"16px",
+
 background:"#ffd700",
 color:"#032d73",
+
 fontSize:"18px",
 fontWeight:"600",
-boxShadow:"0 4px 15px rgba(0,0,0,.25)"
+
+boxShadow:
+"0 4px 15px rgba(0,0,0,.25)"
+
 });
 
 document.body.appendChild(btn);
 
-btn.addEventListener("click",async()=>{
+btn.addEventListener(
+"click",
+async()=>{
 
 btn.remove();
 
 deferredPrompt.prompt();
 
-const choice=await deferredPrompt.userChoice;
+const choice =
+await deferredPrompt.userChoice;
 
 console.log(choice.outcome);
 
-deferredPrompt=null;
+deferredPrompt = null;
 
 });
 
 }
 
+//
 // ELEMENTS
-const form=document.getElementById("loginForm");
-const btn=document.getElementById("loginBtn");
-const loading=document.getElementById("loading");
-const statusBox=document.getElementById("statusBox");
-const passwordInput=document.getElementById("password");
-const togglePassword=document.getElementById("togglePassword");
-const rememberMe=document.getElementById("rememberMe");
+//
+const form =
+document.getElementById(
+"loginForm"
+);
 
+const btn =
+document.getElementById(
+"loginBtn"
+);
+
+const loading =
+document.getElementById(
+"loading"
+);
+
+const statusBox =
+document.getElementById(
+"statusBox"
+);
+
+const passwordInput =
+document.getElementById(
+"password"
+);
+
+const togglePassword =
+document.getElementById(
+"togglePassword"
+);
+
+const rememberMe =
+document.getElementById(
+"rememberMe"
+);
+
+//
 // REMEMBER LOGIN
-let rememberedLogin=null;
+//
+let rememberedLogin = null;
 
 try{
-rememberedLogin=JSON.parse(localStorage.getItem("remember_login"));
+
+rememberedLogin = JSON.parse(
+
+localStorage.getItem(
+"remember_login"
+)
+
+);
+
 }catch{
-rememberedLogin=null;
+
+rememberedLogin = null;
+
 }
 
 if(rememberedLogin){
 
-document.getElementById("username").value=rememberedLogin.username||"";
-document.getElementById("password").value=rememberedLogin.password||"";
-rememberMe.checked=true;
+document.getElementById(
+"username"
+).value =
+
+rememberedLogin.username || "";
+
+document.getElementById(
+"password"
+).value =
+
+rememberedLogin.password || "";
+
+rememberMe.checked = true;
 
 }
 
+//
 // SHOW PASSWORD
-togglePassword.addEventListener("click",()=>{
+//
+togglePassword.addEventListener(
+"click",
+()=>{
 
-if(passwordInput.type==="password"){
-passwordInput.type="text";
-togglePassword.innerText="Hide";
+if(
+passwordInput.type
+=== "password"
+){
+
+passwordInput.type = "text";
+
+togglePassword.innerText =
+"Hide";
+
 }else{
-passwordInput.type="password";
-togglePassword.innerText="Show";
+
+passwordInput.type =
+"password";
+
+togglePassword.innerText =
+"Show";
+
 }
 
 });
 
+//
 // MESSAGE
+//
 function showMessage(message,type){
-statusBox.innerText=message;
-statusBox.className="status-box "+type;
+
+statusBox.innerText = message;
+
+statusBox.className =
+"status-box " + type;
+
 }
 
+//
 // LOADING
+//
 function setLoading(isLoading){
-btn.disabled=isLoading;
-loading.style.display=isLoading?"block":"none";
+
+btn.disabled = isLoading;
+
+loading.style.display =
+
+isLoading
+? "block"
+: "none";
+
 }
 
+//
 // LOGIN
-form.addEventListener("submit",async(e)=>{
+//
+form.addEventListener(
+"submit",
+async(e)=>{
 
 e.preventDefault();
 
-const username=document.getElementById("username").value.trim();
-const password=passwordInput.value;
+const username =
 
-if(!username||!password){
-showMessage("Please enter username/password","error");
+document.getElementById(
+"username"
+).value.trim();
+
+const password =
+passwordInput.value;
+
+if(!username || !password){
+
+showMessage(
+"Please enter username/password",
+"error"
+);
+
 return;
+
 }
 
 try{
@@ -473,65 +768,160 @@ setLoading(true);
 
 showMessage("","");
 
-const response=await fetch(`${API.BASE_URL}/api/auth/login`,{
+const response =
+await fetch(
+
+`${API.BASE_URL}/api/auth/login`,
+
+{
 method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({username,password})
-});
 
-const data=await response.json();
+headers:{
+"Content-Type":
+"application/json"
+},
 
-if(!response.ok||!data.ok){
-showMessage(data.message||"Login failed","error");
-return;
-}
-
-// CLEAR TOKEN
-localStorage.removeItem("token");
-sessionStorage.removeItem("token");
-
-// SAVE TOKEN
-if(rememberMe.checked){
-localStorage.setItem("token",data.token);
-}else{
-sessionStorage.setItem("token",data.token);
-}
-
-// USER DATA
-const userData=data.user||data.data||data;
-
-localStorage.setItem("loggedInUser",JSON.stringify({
-username:userData.username||"",
-fullname:userData.fullname||"",
-role:userData.role||"user",
-image:userData.image||""
-}));
-
-// REMEMBER LOGIN
-if(rememberMe.checked){
-
-localStorage.setItem("remember_login",JSON.stringify({
+body:JSON.stringify({
 username,
 password
-}));
-
-}else{
-
-localStorage.removeItem("remember_login");
+})
 
 }
 
-showMessage("Login successful","success");
+);
 
+const data =
+await response.json();
+
+if(
+!response.ok
+||
+!data.ok
+){
+
+showMessage(
+
+data.message
+||
+"Login failed",
+
+"error"
+
+);
+
+return;
+
+}
+
+//
+// CLEAR TOKEN
+//
+localStorage.removeItem(
+"token"
+);
+
+sessionStorage.removeItem(
+"token"
+);
+
+//
+// SAVE TOKEN
+//
+if(rememberMe.checked){
+
+localStorage.setItem(
+"token",
+data.token
+);
+
+}else{
+
+sessionStorage.setItem(
+"token",
+data.token
+);
+
+}
+
+//
+// USER DATA
+//
+const userData =
+
+data.user
+||
+data.data
+||
+data;
+
+localStorage.setItem(
+
+"loggedInUser",
+
+JSON.stringify({
+
+username:
+userData.username || "",
+
+fullname:
+userData.fullname || "",
+
+role:
+userData.role || "user",
+
+image:
+userData.image || ""
+
+})
+
+);
+
+//
+// REMEMBER LOGIN
+//
+if(rememberMe.checked){
+
+localStorage.setItem(
+
+"remember_login",
+
+JSON.stringify({
+username,
+password
+})
+
+);
+
+}else{
+
+localStorage.removeItem(
+"remember_login"
+);
+
+}
+
+showMessage(
+"Login successful",
+"success"
+);
+
+//
 // REDIRECT
+//
 setTimeout(()=>{
 
-const role=(userData.role||"user").toLowerCase();
+const role =
 
-window.location.href=
-role==="admin"
-?"/CM_Pro/Admin/adminupload.html"
-:"/CM_Pro/index.html";
+(userData.role || "user")
+.toLowerCase();
+
+window.location.href =
+
+role === "admin"
+
+? "/CM_Pro/Admin/adminupload.html"
+
+: "/CM_Pro/index.html";
 
 },700);
 
@@ -539,7 +929,10 @@ role==="admin"
 
 console.error(error);
 
-showMessage("Cannot connect to server","error");
+showMessage(
+"Cannot connect to server",
+"error"
+);
 
 }finally{
 
@@ -549,20 +942,23 @@ setLoading(false);
 
 });
 
-// SPLASH
-window.addEventListener("load",()=>{
+//
+// HIDE SPLASH
+//
+window.addEventListener(
+"load",
+()=>{
 
 setTimeout(()=>{
 
-const splash=document.getElementById("splashScreen");
+if(
+typeof hideGlobalSplash
+=== "function"
+){
 
-splash.style.opacity="0";
+hideGlobalSplash();
 
-setTimeout(()=>{
-
-splash.remove();
-
-},400);
+}
 
 },700);
 
