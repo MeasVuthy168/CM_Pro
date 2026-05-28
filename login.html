@@ -284,6 +284,48 @@
 
         }
 
+        #splashScreen{
+
+    position:fixed;
+
+    inset:0;
+
+    background:#032d73;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    z-index:99999;
+
+    transition:0.4s;
+
+}
+
+.splash-title{
+
+    color:#fff;
+
+    font-size:32px;
+
+    font-weight:700;
+
+    margin-bottom:10px;
+
+}
+
+.splash-subtitle{
+
+    color:#d7d7d7;
+
+    font-size:16px;
+
+}
+
     </style>
 
 </head>
@@ -323,6 +365,28 @@ if("serviceWorker" in navigator){
 
 </script>
 <body>
+
+
+
+    <div id="splashScreen">
+
+    <img
+        src="./assets/images/LogoAC.png"
+        style="
+            width:120px;
+            margin-bottom:20px;
+        "
+    >
+
+    <div class="splash-title">
+        CM_Pro
+    </div>
+
+    <div class="splash-subtitle">
+        SVG Credit Monitoring
+    </div>
+
+</div>
 
     <div class="login-card">
 
@@ -863,6 +927,35 @@ if(role === "admin"){
 
         }
     );
+
+
+    window.addEventListener(
+
+    "load",
+
+    ()=>{
+
+        setTimeout(()=>{
+
+            const splash =
+
+                document.getElementById(
+                    "splashScreen"
+                );
+
+            splash.style.opacity = "0";
+
+            setTimeout(()=>{
+
+                splash.remove();
+
+            },400);
+
+        },1200);
+
+    }
+
+);
 
 </script>
 
