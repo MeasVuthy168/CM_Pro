@@ -821,8 +821,28 @@ console.log(
 
                 setTimeout(()=>{
 
-                    window.location.href =
-                        "/CM_Pro/index.html";
+                    const role =
+
+    (
+        userData.role ||
+
+        "user"
+
+    ).toLowerCase();
+
+if(role === "admin"){
+
+    window.location.href =
+
+        "/CM_Pro/Admin/adminupload.html";
+
+}else{
+
+    window.location.href =
+
+        "/CM_Pro/index.html";
+
+}
 
                 },700);
 
