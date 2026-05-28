@@ -433,6 +433,103 @@ if(existingToken){
 
 }
 
+
+// =========================
+// INSTALL PROMPT
+// =========================
+
+let deferredPrompt;
+
+window.addEventListener(
+
+    "beforeinstallprompt",
+
+    (e)=>{
+
+        e.preventDefault();
+
+        deferredPrompt = e;
+
+        showInstallButton();
+
+    }
+
+);
+
+function showInstallButton(){
+
+    // prevent duplicate
+    if(
+        document.getElementById(
+            "installBtn"
+        )
+    ) return;
+
+    const btn =
+        document.createElement("button");
+
+    btn.id = "installBtn";
+
+    btn.innerText =
+        "📲 Install App";
+
+    btn.style.position = "fixed";
+
+    btn.style.bottom = "20px";
+
+    btn.style.left = "50%";
+
+    btn.style.transform =
+        "translateX(-50%)";
+
+    btn.style.zIndex = "9999";
+
+    btn.style.width = "220px";
+
+    btn.style.height = "55px";
+
+    btn.style.border = "none";
+
+    btn.style.borderRadius = "16px";
+
+    btn.style.background = "#ffd700";
+
+    btn.style.color = "#032d73";
+
+    btn.style.fontSize = "18px";
+
+    btn.style.fontWeight = "600";
+
+    btn.style.boxShadow =
+        "0 4px 15px rgba(0,0,0,0.25)";
+
+    document.body.appendChild(btn);
+
+    btn.addEventListener(
+
+        "click",
+
+        async ()=>{
+
+            btn.remove();
+
+            deferredPrompt.prompt();
+
+            const choice =
+                await deferredPrompt.userChoice;
+
+            console.log(choice.outcome);
+
+            deferredPrompt = null;
+
+        }
+
+    );
+
+}
+
+
+
     
     // =========================
     // ELEMENTS
