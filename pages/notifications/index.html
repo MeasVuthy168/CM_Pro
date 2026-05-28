@@ -1,223 +1,649 @@
 <!-- =========================================================
 FILE: /pages/notifications/index.html
 ========================================================= -->
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Notifications - CM_Pro</title>
-    <meta name="theme-color" content="#032d73">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta charset="UTF-8">
 
-    <!-- MAIN CSS -->
-    <link rel="stylesheet" href="../../assets/css/main.css">
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"
+>
 
-    <!-- NOTIFICATION CSS -->
-    <link rel="stylesheet" href="../../assets/css/notification.css">
+<title>Notifications - CM_Pro</title>
 
-    <!-- GLOBAL SPLASH -->
-    <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+<meta name="theme-color" content="#032d73">
 
-    <style>
-        /* OFFLINE */
-        #offlineBanner {
-            position: fixed;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #d90429;
-            color: #fff;
-            padding: 10px 18px;
-            border-radius: 14px;
-            font-size: 14px;
-            font-weight: 600;
-            z-index: 999999;
-            display: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,.2);
-        }
-    </style>
+<meta
+name="apple-mobile-web-app-capable"
+content="yes"
+>
+
+<meta
+name="apple-mobile-web-app-status-bar-style"
+content="black-translucent"
+>
+
+<!-- MAIN CSS -->
+
+<link
+rel="stylesheet"
+href="/CM_Pro/assets/css/main.css"
+>
+
+<!-- NOTIFICATION CSS -->
+
+<link
+rel="stylesheet"
+href="/CM_Pro/assets/css/notification.css"
+>
+
+<!-- GLOBAL SPLASH -->
+
+<link
+rel="stylesheet"
+href="/CM_Pro/assets/css/global-splash.css"
+>
+
+<style>
+
+/* PAGE */
+
+html,
+body{
+width:100%;
+height:100%;
+overflow:hidden;
+background:#f4f6fb;
+}
+
+body{
+display:flex;
+flex-direction:column;
+}
+
+/* CONTENT */
+
+.page-container{
+flex:1;
+overflow:hidden;
+display:flex;
+flex-direction:column;
+}
+
+/* OFFLINE */
+
+#offlineBanner{
+position:fixed;
+top:12px;
+left:50%;
+transform:translateX(-50%);
+background:#d90429;
+color:#fff;
+padding:10px 18px;
+border-radius:14px;
+font-size:14px;
+font-weight:600;
+z-index:999999;
+display:none;
+box-shadow:0 4px 15px rgba(0,0,0,.2);
+}
+
+/* PAGE TITLE */
+
+.page-title{
+padding:20px 18px 10px;
+font-size:28px;
+font-weight:700;
+color:#17356f;
+}
+
+/* SUMMARY */
+
+.notify-summary{
+display:flex;
+gap:15px;
+padding:0 18px 18px;
+}
+
+.summary-card{
+flex:1;
+background:#fff;
+border-radius:22px;
+padding:20px;
+box-shadow:0 4px 15px rgba(0,0,0,.06);
+}
+
+.summary-label{
+font-size:14px;
+color:#666;
+margin-bottom:10px;
+}
+
+.summary-value{
+font-size:30px;
+font-weight:700;
+color:#032d73;
+}
+
+/* ACTIONS */
+
+.action-row{
+display:flex;
+gap:12px;
+padding:0 18px 18px;
+}
+
+.action-btn{
+flex:1;
+height:52px;
+border:none;
+border-radius:16px;
+background:#032d73;
+color:#fff;
+font-size:15px;
+font-weight:600;
+}
+
+/* LIST */
+
+.notify-list{
+flex:1;
+overflow-y:auto;
+padding:0 18px 120px;
+}
+
+/* EMPTY */
+
+.empty-box{
+flex:1;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+padding:30px;
+text-align:center;
+}
+
+.empty-img{
+width:140px;
+margin-bottom:20px;
+opacity:.8;
+}
+
+.empty-title{
+font-size:24px;
+font-weight:700;
+color:#17356f;
+margin-bottom:10px;
+}
+
+.empty-subtitle{
+font-size:15px;
+line-height:1.6;
+color:#666;
+}
+
+/* LOADING */
+
+.loading-box{
+position:fixed;
+inset:0;
+background:rgba(255,255,255,.75);
+display:flex;
+justify-content:center;
+align-items:center;
+z-index:99999;
+}
+
+.spinner{
+width:45px;
+height:45px;
+border:4px solid #ddd;
+border-top:4px solid #032d73;
+border-radius:50%;
+animation:spin .7s linear infinite;
+}
+
+@keyframes spin{
+100%{
+transform:rotate(360deg);
+}
+}
+
+</style>
 
 </head>
+
 <body>
 
-    <!-- OFFLINE -->
-    <div id="offlineBanner">⚠️ No Internet Connection</div>
+<!-- OFFLINE -->
 
-    <!-- API -->
-    <script src="../../config/api.js"></script>
+<div id="offlineBanner">
 
-    <!-- AUTH -->
-    <script src="../../config/auth.js"></script>
+⚠️ No Internet Connection
 
-    <!-- SESSION -->
-    <script src="../../config/session.js"></script>
+</div>
 
-    <!-- PUSH -->
-    <script src="../../config/push.js"></script>
+<!-- API -->
 
-    <!-- GLOBAL SPLASH -->
-    <script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/config/api.js"></script>
 
-    <!-- LOGOUT -->
-    <script>
-        function logout(){
-            if(confirm("Logout CM_Pro ?")){
-                localStorage.removeItem("token");
-                localStorage.removeItem("loggedInUser");
-                sessionStorage.clear();
-                window.location.replace("/CM_Pro/login.html");
-            }
-        }
-    </script>
+<!-- AUTH -->
 
-    <!-- TOPBAR -->
-    <div id="topbar-container"></div>
+<script src="/CM_Pro/config/auth.js"></script>
 
-    <!-- PAGE CONTENT -->
-    <div class="page-container">
+<!-- SESSION -->
 
-        <!-- HEADER -->
-        <div class="notify-header">
-            <button class="back-btn" onclick="history.back()">←</button>
-            <div class="notify-title">🔔 Notifications</div>
-            <button class="readall-btn" id="readAllBtn">Read All</button>
-        </div>
+<script src="/CM_Pro/config/session.js"></script>
 
-        <!-- SUMMARY -->
-        <div class="notify-summary">
-            <div class="summary-card">
-                <div class="summary-label">Unread</div>
-                <div class="summary-value" id="unreadCount">0</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">Total</div>
-                <div class="summary-value" id="totalCount">0</div>
-            </div>
-        </div>
+<!-- PUSH -->
 
-        <!-- REFRESH -->
-        <div class="refresh-row">
-            <button class="refresh-btn" id="refreshBtn">⟳ Refresh</button>
-        </div>
+<script src="/CM_Pro/config/push.js"></script>
 
-        <!-- LIST -->
-        <div class="notify-list" id="notifyList"></div>
+<!-- GLOBAL SPLASH -->
 
-        <!-- EMPTY -->
-        <div class="empty-box" id="emptyBox" style="display:none;">
-            <img src="../../assets/images/robot.svg" class="empty-img">
-            <div class="empty-title">No Notifications</div>
-            <div class="empty-subtitle">Everything is up to date 🎉</div>
-        </div>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
 
-        <!-- LOADING -->
-        <div class="loading-box" id="loadingBox">
-            <div class="spinner"></div>
-        </div>
+<!-- TOPBAR -->
 
-    </div>
+<div id="topbar-container"></div>
 
-    <!-- BOTTOM NAV -->
-    <div id="bottomnav-container"></div>
+<!-- PAGE -->
 
-    <!-- MAIN SCRIPT -->
-    <script>
+<div class="page-container">
 
-        // =========================
-        // COMPONENT LOADER
-        // =========================
-        let loaded = 0;
+<!-- TITLE -->
 
-        async function loadComponent(id, file){
-            try{
-                const cached = sessionStorage.getItem("comp_" + id);
-                if(cached){
-                    document.getElementById(id).innerHTML = cached;
-                    if(id === "topbar-container") loadTopbarUser();
-                } else {
-                    const response = await fetch(file);
-                    const html = await response.text();
-                    document.getElementById(id).innerHTML = html;
-                    sessionStorage.setItem("comp_" + id, html);
-                    if(id === "topbar-container") loadTopbarUser();
-                }
-            }catch(error){
-                console.error("Component load error:", error);
-            }finally{
-                loaded++;
-                if(loaded >= 2){
-                    setTimeout(()=>{
-                        if(typeof hideGlobalSplash === "function"){
-                            hideGlobalSplash();
-                        }
-                    }, 300);
-                }
-            }
-        }
+<div class="page-title">
 
-        // =========================
-        // LOAD USER TO TOPBAR
-        // =========================
-        function loadTopbarUser(){
-            try{
-                const loggedInUser = JSON.parse(
-                    localStorage.getItem("loggedInUser") || "{}"
-                );
-                const fullname =
-                    loggedInUser.fullname ||
-                    loggedInUser.username ||
-                    "User";
-                const topbarName = document.getElementById("topbarName");
-                if(topbarName) topbarName.innerText = `សួស្តី, ${fullname}`;
-                if(loggedInUser.image){
-                    const profile = document.getElementById("topbarProfile");
-                    if(profile) profile.src = loggedInUser.image;
-                }
-            }catch(error){
-                console.error("Topbar user error:", error);
-            }
-        }
+🔔 Notifications
 
-        // =========================
-        // OFFLINE DETECT
-        // =========================
-        function updateOnlineStatus(){
-            const banner = document.getElementById("offlineBanner");
-            banner.style.display = navigator.onLine ? "none" : "block";
-        }
-        window.addEventListener("online", updateOnlineStatus);
-        window.addEventListener("offline", updateOnlineStatus);
-        updateOnlineStatus();
+</div>
 
-        // =========================
-        // LOAD COMPONENTS
-        // =========================
-        loadComponent("topbar-container", "/CM_Pro/components/topbar.html");
-        loadComponent("bottomnav-container", "/CM_Pro/components/bottomnav.html");
+<!-- SUMMARY -->
 
-        // =========================
-        // PUSH INIT
-        // =========================
-        PushNotification.init();
+<div class="notify-summary">
 
-        // =========================
-        // FAILSAFE SPLASH
-        // =========================
-        window.addEventListener("load", ()=>{
-            setTimeout(()=>{
-                if(typeof hideGlobalSplash === "function"){
-                    hideGlobalSplash();
-                }
-            }, 2500);
-        });
+<div class="summary-card">
 
-    </script>
+<div class="summary-label">
 
-    <!-- NOTIFICATION JS -->
-    <script src="../../assets/js/notification.js"></script>
+Unread
+
+</div>
+
+<div
+class="summary-value"
+id="unreadCount"
+>
+
+0
+
+</div>
+
+</div>
+
+<div class="summary-card">
+
+<div class="summary-label">
+
+Total
+
+</div>
+
+<div
+class="summary-value"
+id="totalCount"
+>
+
+0
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ACTION -->
+
+<div class="action-row">
+
+<button
+class="action-btn"
+id="refreshBtn"
+>
+
+⟳ Refresh
+
+</button>
+
+<button
+class="action-btn"
+id="readAllBtn"
+>
+
+✓ Read All
+
+</button>
+
+</div>
+
+<!-- LIST -->
+
+<div
+class="notify-list"
+id="notifyList"
+></div>
+
+<!-- EMPTY -->
+
+<div
+class="empty-box"
+id="emptyBox"
+style="display:none;"
+>
+
+<img
+src="/CM_Pro/assets/images/robot.svg"
+class="empty-img"
+>
+
+<div class="empty-title">
+
+No Notifications
+
+</div>
+
+<div class="empty-subtitle">
+
+Everything is up to date 🎉
+
+</div>
+
+</div>
+
+<!-- LOADING -->
+
+<div
+class="loading-box"
+id="loadingBox"
+>
+
+<div class="spinner"></div>
+
+</div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+
+<div id="bottomnav-container"></div>
+
+<!-- MAIN -->
+
+<script>
+
+// =========================
+// LOGOUT
+// =========================
+
+function logout(){
+
+if(confirm("Logout CM_Pro ?")){
+
+localStorage.removeItem("token");
+
+localStorage.removeItem(
+"loggedInUser"
+);
+
+sessionStorage.clear();
+
+window.location.replace(
+"/CM_Pro/login.html"
+);
+
+}
+
+}
+
+// =========================
+// COMPONENT LOADER
+// =========================
+
+let loaded=0;
+
+async function loadComponent(id,file){
+
+try{
+
+const cached=
+
+sessionStorage.getItem(
+"comp_"+id
+);
+
+if(cached){
+
+document
+.getElementById(id)
+.innerHTML=cached;
+
+if(id==="topbar-container"){
+loadTopbarUser();
+}
+
+}else{
+
+const response=
+await fetch(file);
+
+const html=
+await response.text();
+
+document
+.getElementById(id)
+.innerHTML=html;
+
+sessionStorage.setItem(
+"comp_"+id,
+html
+);
+
+if(id==="topbar-container"){
+loadTopbarUser();
+}
+
+}
+
+}catch(error){
+
+console.error(
+"Component load error:",
+error
+);
+
+}finally{
+
+loaded++;
+
+if(loaded>=2){
+
+setTimeout(()=>{
+
+if(
+typeof hideGlobalSplash
+==="function"
+){
+hideGlobalSplash();
+}
+
+},300);
+
+}
+
+}
+
+}
+
+// =========================
+// TOPBAR USER
+// =========================
+
+function loadTopbarUser(){
+
+try{
+
+const loggedInUser=
+
+JSON.parse(
+
+localStorage.getItem(
+"loggedInUser"
+)||"{}"
+
+);
+
+const fullname=
+
+loggedInUser.fullname||
+
+loggedInUser.username||
+
+"User";
+
+const topbarName=
+
+document.getElementById(
+"topbarName"
+);
+
+if(topbarName){
+
+topbarName.innerText=
+`សួស្តី, ${fullname}`;
+
+}
+
+if(loggedInUser.image){
+
+const profile=
+
+document.getElementById(
+"topbarProfile"
+);
+
+if(profile){
+
+profile.src=
+loggedInUser.image;
+
+}
+
+}
+
+}catch(error){
+
+console.error(
+"Topbar user error:",
+error
+);
+
+}
+
+}
+
+// =========================
+// OFFLINE
+// =========================
+
+function updateOnlineStatus(){
+
+const banner=
+
+document.getElementById(
+"offlineBanner"
+);
+
+banner.style.display=
+
+navigator.onLine
+
+? "none"
+
+: "block";
+
+}
+
+window.addEventListener(
+"online",
+updateOnlineStatus
+);
+
+window.addEventListener(
+"offline",
+updateOnlineStatus
+);
+
+updateOnlineStatus();
+
+// =========================
+// LOAD COMPONENTS
+// =========================
+
+loadComponent(
+"topbar-container",
+"/CM_Pro/components/topbar.html"
+);
+
+loadComponent(
+"bottomnav-container",
+"/CM_Pro/components/bottomnav.html"
+);
+
+// =========================
+// PUSH INIT
+// =========================
+
+if(window.PushNotification){
+
+PushNotification.init();
+
+}
+
+// =========================
+// FAILSAFE SPLASH
+// =========================
+
+window.addEventListener(
+"load",
+()=>{
+
+setTimeout(()=>{
+
+if(
+typeof hideGlobalSplash
+==="function"
+){
+hideGlobalSplash();
+}
+
+},2500);
+
+}
+);
+
+</script>
+
+<!-- NOTIFICATION JS -->
+
+<script src="/CM_Pro/assets/js/notification.js"></script>
 
 </body>
+
 </html>
