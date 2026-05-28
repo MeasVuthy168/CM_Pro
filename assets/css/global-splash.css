@@ -1,0 +1,33 @@
+#globalSplash{
+    position:fixed;
+    inset:0;
+    background:#032d73;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    z-index:999999;
+    transition:opacity .4s ease;
+}
+
+.global-splash-logo{
+    width:120px;
+    margin-bottom:20px;
+}
+
+.global-splash-title{
+    font-size:32px;
+    font-weight:700;
+    color:#fff;
+    margin-bottom:10px;
+}
+
+.global-splash-subtitle{
+    font-size:15px;
+    color:#d7d7d7;
+}
+
+.global-splash-hide{
+    opacity:0;
+    pointer-events:none;
+}
