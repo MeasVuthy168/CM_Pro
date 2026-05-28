@@ -1,168 +1,223 @@
 <!-- =========================================================
 FILE: /pages/notifications/index.html
 ========================================================= -->
-
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Notifications - CM_Pro</title>
+    <meta name="theme-color" content="#032d73">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-<meta
-name="viewport"
-content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"
->
+    <!-- MAIN CSS -->
+    <link rel="stylesheet" href="../../assets/css/main.css">
 
-<title>Notifications - CM_Pro</title>
+    <!-- NOTIFICATION CSS -->
+    <link rel="stylesheet" href="../../assets/css/notification.css">
 
-<meta name="theme-color" content="#032d73">
+    <!-- GLOBAL SPLASH -->
+    <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
 
-<link
-rel="stylesheet"
-href="../../assets/css/notification.css"
->
+    <style>
+        /* OFFLINE */
+        #offlineBanner {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #d90429;
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 999999;
+            display: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,.2);
+        }
+    </style>
 
 </head>
-
 <body>
 
-<!-- HEADER -->
+    <!-- OFFLINE -->
+    <div id="offlineBanner">⚠️ No Internet Connection</div>
 
-<div class="notify-header">
+    <!-- API -->
+    <script src="../../config/api.js"></script>
 
-<button
-class="back-btn"
-onclick="history.back()"
->
-←
-</button>
+    <!-- AUTH -->
+    <script src="../../config/auth.js"></script>
 
-<div class="notify-title">
+    <!-- SESSION -->
+    <script src="../../config/session.js"></script>
 
-🔔 Notifications
+    <!-- PUSH -->
+    <script src="../../config/push.js"></script>
 
-</div>
+    <!-- GLOBAL SPLASH -->
+    <script src="/CM_Pro/assets/js/global-splash.js"></script>
 
-<button
-class="readall-btn"
-id="readAllBtn"
->
+    <!-- LOGOUT -->
+    <script>
+        function logout(){
+            if(confirm("Logout CM_Pro ?")){
+                localStorage.removeItem("token");
+                localStorage.removeItem("loggedInUser");
+                sessionStorage.clear();
+                window.location.replace("/CM_Pro/login.html");
+            }
+        }
+    </script>
 
-Read All
+    <!-- TOPBAR -->
+    <div id="topbar-container"></div>
 
-</button>
+    <!-- PAGE CONTENT -->
+    <div class="page-container">
 
-</div>
+        <!-- HEADER -->
+        <div class="notify-header">
+            <button class="back-btn" onclick="history.back()">←</button>
+            <div class="notify-title">🔔 Notifications</div>
+            <button class="readall-btn" id="readAllBtn">Read All</button>
+        </div>
 
-<!-- SUMMARY -->
+        <!-- SUMMARY -->
+        <div class="notify-summary">
+            <div class="summary-card">
+                <div class="summary-label">Unread</div>
+                <div class="summary-value" id="unreadCount">0</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Total</div>
+                <div class="summary-value" id="totalCount">0</div>
+            </div>
+        </div>
 
-<div class="notify-summary">
+        <!-- REFRESH -->
+        <div class="refresh-row">
+            <button class="refresh-btn" id="refreshBtn">⟳ Refresh</button>
+        </div>
 
-<div class="summary-card">
+        <!-- LIST -->
+        <div class="notify-list" id="notifyList"></div>
 
-<div class="summary-label">
-Unread
-</div>
+        <!-- EMPTY -->
+        <div class="empty-box" id="emptyBox" style="display:none;">
+            <img src="../../assets/images/robot.svg" class="empty-img">
+            <div class="empty-title">No Notifications</div>
+            <div class="empty-subtitle">Everything is up to date 🎉</div>
+        </div>
 
-<div
-class="summary-value"
-id="unreadCount"
->
-0
-</div>
+        <!-- LOADING -->
+        <div class="loading-box" id="loadingBox">
+            <div class="spinner"></div>
+        </div>
 
-</div>
+    </div>
 
-<div class="summary-card">
+    <!-- BOTTOM NAV -->
+    <div id="bottomnav-container"></div>
 
-<div class="summary-label">
-Total
-</div>
+    <!-- MAIN SCRIPT -->
+    <script>
 
-<div
-class="summary-value"
-id="totalCount"
->
-0
-</div>
+        // =========================
+        // COMPONENT LOADER
+        // =========================
+        let loaded = 0;
 
-</div>
+        async function loadComponent(id, file){
+            try{
+                const cached = sessionStorage.getItem("comp_" + id);
+                if(cached){
+                    document.getElementById(id).innerHTML = cached;
+                    if(id === "topbar-container") loadTopbarUser();
+                } else {
+                    const response = await fetch(file);
+                    const html = await response.text();
+                    document.getElementById(id).innerHTML = html;
+                    sessionStorage.setItem("comp_" + id, html);
+                    if(id === "topbar-container") loadTopbarUser();
+                }
+            }catch(error){
+                console.error("Component load error:", error);
+            }finally{
+                loaded++;
+                if(loaded >= 2){
+                    setTimeout(()=>{
+                        if(typeof hideGlobalSplash === "function"){
+                            hideGlobalSplash();
+                        }
+                    }, 300);
+                }
+            }
+        }
 
-</div>
+        // =========================
+        // LOAD USER TO TOPBAR
+        // =========================
+        function loadTopbarUser(){
+            try{
+                const loggedInUser = JSON.parse(
+                    localStorage.getItem("loggedInUser") || "{}"
+                );
+                const fullname =
+                    loggedInUser.fullname ||
+                    loggedInUser.username ||
+                    "User";
+                const topbarName = document.getElementById("topbarName");
+                if(topbarName) topbarName.innerText = `សួស្តី, ${fullname}`;
+                if(loggedInUser.image){
+                    const profile = document.getElementById("topbarProfile");
+                    if(profile) profile.src = loggedInUser.image;
+                }
+            }catch(error){
+                console.error("Topbar user error:", error);
+            }
+        }
 
-<!-- REFRESH -->
+        // =========================
+        // OFFLINE DETECT
+        // =========================
+        function updateOnlineStatus(){
+            const banner = document.getElementById("offlineBanner");
+            banner.style.display = navigator.onLine ? "none" : "block";
+        }
+        window.addEventListener("online", updateOnlineStatus);
+        window.addEventListener("offline", updateOnlineStatus);
+        updateOnlineStatus();
 
-<div class="refresh-row">
+        // =========================
+        // LOAD COMPONENTS
+        // =========================
+        loadComponent("topbar-container", "/CM_Pro/components/topbar.html");
+        loadComponent("bottomnav-container", "/CM_Pro/components/bottomnav.html");
 
-<button
-class="refresh-btn"
-id="refreshBtn"
->
+        // =========================
+        // PUSH INIT
+        // =========================
+        PushNotification.init();
 
-⟳ Refresh
+        // =========================
+        // FAILSAFE SPLASH
+        // =========================
+        window.addEventListener("load", ()=>{
+            setTimeout(()=>{
+                if(typeof hideGlobalSplash === "function"){
+                    hideGlobalSplash();
+                }
+            }, 2500);
+        });
 
-</button>
+    </script>
 
-</div>
-
-<!-- LIST -->
-
-<div
-class="notify-list"
-id="notifyList"
-></div>
-
-<!-- EMPTY -->
-
-<div
-class="empty-box"
-id="emptyBox"
-style="display:none;"
->
-
-<img
-src="../../assets/images/robot.svg"
-class="empty-img"
->
-
-<div class="empty-title">
-
-No Notifications
-
-</div>
-
-<div class="empty-subtitle">
-
-Everything is up to date 🎉
-
-</div>
-
-</div>
-
-<!-- LOADING -->
-
-<div
-class="loading-box"
-id="loadingBox"
->
-
-<div class="spinner"></div>
-
-</div>
-
-<!-- API -->
-
-<script src="../../config/api.js"></script>
-
-<!-- AUTH -->
-
-<script src="../../config/auth.js"></script>
-
-<!-- JS -->
-
-<script src="../../assets/js/notification.js"></script>
+    <!-- NOTIFICATION JS -->
+    <script src="../../assets/js/notification.js"></script>
 
 </body>
-
 </html>
