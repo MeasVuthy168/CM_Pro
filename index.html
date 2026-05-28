@@ -1,218 +1,430 @@
 <!DOCTYPE html>
 <html>
 <head>
+
     <title>CM_Pro</title>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="manifest" href="/CM_Pro/manifest.json">
-    <meta name="theme-color" content="#032d73">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="CM_Pro">
-    <meta name="mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" href="/CM_Pro/assets/images/icon-192.png">
-    <link rel="stylesheet" href="./assets/css/main.css">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+
+    <link
+        rel="manifest"
+        href="/CM_Pro/manifest.json"
+    >
+
+    <meta
+        name="theme-color"
+        content="#032d73"
+    >
+
+    <meta
+        name="apple-mobile-web-app-capable"
+        content="yes"
+    >
+
+    <meta
+        name="apple-mobile-web-app-status-bar-style"
+        content="black-translucent"
+    >
+
+    <meta
+        name="apple-mobile-web-app-title"
+        content="CM_Pro"
+    >
+
+    <meta
+        name="mobile-web-app-capable"
+        content="yes"
+    >
+
+    <link
+        rel="apple-touch-icon"
+        href="/CM_Pro/assets/images/icon-192.png"
+    >
+
+    <!-- MAIN CSS -->
+    <link
+        rel="stylesheet"
+        href="./assets/css/main.css"
+    >
+
+    <!-- GLOBAL SPLASH -->
+    <link
+        rel="stylesheet"
+        href="/CM_Pro/assets/css/global-splash.css"
+    >
 
     <style>
-        /* SPLASH */
-        #appSplash {
-            position: fixed;
-            inset: 0;
-            background: #032d73;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 999999;
-            transition: opacity .4s;
-        }
-        #appSplash img { width: 130px; margin-bottom: 20px; }
-        .splash-title { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 10px; }
-        .splash-subtitle { font-size: 15px; color: #d7d7d7; }
 
         /* OFFLINE */
-        #offlineBanner {
-            position: fixed;
-            top: 10px; left: 50%;
-            transform: translateX(-50%);
-            background: #d90429;
-            color: #fff;
-            padding: 10px 18px;
-            border-radius: 14px;
-            font-size: 14px; font-weight: 600;
-            z-index: 999999;
-            display: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,.2);
+        #offlineBanner{
+            position:fixed;
+            top:10px;
+            left:50%;
+            transform:translateX(-50%);
+            background:#d90429;
+            color:#fff;
+            padding:10px 18px;
+            border-radius:14px;
+            font-size:14px;
+            font-weight:600;
+            z-index:999999;
+            display:none;
+            box-shadow:0 4px 15px rgba(0,0,0,.2);
         }
+
     </style>
+
 </head>
 
 <body>
 
-    <!-- SPLASH -->
-    <div id="appSplash">
-        <img src="./assets/images/LogoAC.png">
-        <div class="splash-title">CM_Pro</div>
-        <div class="splash-subtitle">SVG Credit Monitoring</div>
-    </div>
-
     <!-- OFFLINE -->
-    <div id="offlineBanner">⚠️ No Internet Connection</div>
+    <div id="offlineBanner">
+        ⚠️ No Internet Connection
+    </div>
 
     <!-- API -->
     <script src="./config/api.js"></script>
-    <!-- Auth -->
+
+    <!-- AUTH -->
     <script src="./config/auth.js"></script>
-    <!-- Session -->
+
+    <!-- SESSION -->
     <script src="./config/session.js"></script>
-    <!-- Push -->
+
+    <!-- PUSH -->
     <script src="./config/push.js"></script>
 
-    <!-- Logout -->
+    <!-- GLOBAL SPLASH -->
+    <script src="/CM_Pro/assets/js/global-splash.js"></script>
+
+    <!-- LOGOUT -->
     <script>
-        function logout() {
-            if (confirm("Logout CM_Pro ?")) {
+
+        function logout(){
+
+            if(confirm("Logout CM_Pro ?")){
+
                 localStorage.removeItem("token");
+
                 localStorage.removeItem("loggedInUser");
+
                 sessionStorage.clear();
-                window.location.replace("/CM_Pro/login.html");
+
+                window.location.replace(
+                    "/CM_Pro/login.html"
+                );
+
             }
+
         }
+
     </script>
 
-    <!-- Topbar -->
+    <!-- TOPBAR -->
     <div id="topbar-container"></div>
 
-    <!-- Dashboard -->
+    <!-- DASHBOARD -->
     <div class="dashboard-container">
+
         <div class="dashboard-grid">
 
-            <a href="./pages/customers/index.html" class="dashboard-card">
+            <a
+                href="./pages/customers/index.html"
+                class="dashboard-card"
+            >
+
                 <img src="./assets/icons/customer.PNG">
-                <div class="dashboard-card-title">Customer Search</div>
+
+                <div class="dashboard-card-title">
+                    Customer Search
+                </div>
+
             </a>
 
-            <a href="./pages/arrears/index.html" class="dashboard-card">
+            <a
+                href="./pages/arrears/index.html"
+                class="dashboard-card"
+            >
+
                 <img src="./assets/icons/arrears.PNG">
-                <div class="dashboard-card-title">Daily Arrears</div>
+
+                <div class="dashboard-card-title">
+                    Daily Arrears
+                </div>
+
             </a>
 
-            <a href="./pages/turnover/index.html" class="dashboard-card">
+            <a
+                href="./pages/turnover/index.html"
+                class="dashboard-card"
+            >
+
                 <img src="./assets/icons/turnover.PNG">
-                <div class="dashboard-card-title">Average Turnover</div>
+
+                <div class="dashboard-card-title">
+                    Average Turnover
+                </div>
+
             </a>
 
-            <a href="./pages/spotcheck/index.html" class="dashboard-card">
+            <a
+                href="./pages/spotcheck/index.html"
+                class="dashboard-card"
+            >
+
                 <img src="./assets/icons/spotcheck.PNG">
-                <div class="dashboard-card-title">Spot Check</div>
+
+                <div class="dashboard-card-title">
+                    Spot Check
+                </div>
+
             </a>
 
         </div>
 
-        <!-- Assistant -->
+        <!-- ASSISTANT -->
         <div class="assistant-box">
-            <img src="./assets/images/robot.svg" class="assistant-icon">
+
+            <img
+                src="./assets/images/robot.svg"
+                class="assistant-icon"
+            >
+
             <div class="assistant-text">
                 សូមស្វាគមន៍ មកកាន់ប្រព័ន្ធតាមដានឥណទាន CM_Pro 🎉
             </div>
+
         </div>
+
     </div>
 
-    <!-- Bottom Navigation -->
+    <!-- BOTTOM NAV -->
     <div id="bottomnav-container"></div>
 
-    <!-- Component Loader -->
+    <!-- MAIN SCRIPT -->
     <script>
-
-        // =========================
-        // SPLASH HIDE
-        // =========================
-        function hideSplash() {
-            const splash = document.getElementById("appSplash");
-            if (!splash) return;
-            splash.style.opacity = "0";
-            setTimeout(() => splash.remove(), 400);
-        }
-
-        // Guaranteed: always hide after 2s
-        setTimeout(hideSplash, 2000);
 
         // =========================
         // COMPONENT LOADER
         // =========================
         let loaded = 0;
 
-        async function loadComponent(id, file) {
-            try {
+        async function loadComponent(id,file){
+
+            try{
+
                 const response = await fetch(file);
+
                 const html = await response.text();
+
                 document.getElementById(id).innerHTML = html;
-                if (id === "topbar-container") {
+
+                if(id === "topbar-container"){
+
                     loadTopbarUser();
+
                 }
-            } catch(error) {
-                console.error("Component load error:", error);
-            } finally {
+
+            }catch(error){
+
+                console.error(
+                    "Component load error:",
+                    error
+                );
+
+            }finally{
+
                 loaded++;
-                if (loaded >= 2) {
-                    // Both components done → hide splash
-                    setTimeout(hideSplash, 300);
+
+                // BOTH COMPONENTS READY
+                if(loaded >= 2){
+
+                    setTimeout(()=>{
+
+                        if(
+                            typeof hideGlobalSplash
+                            === "function"
+                        ){
+
+                            hideGlobalSplash();
+
+                        }
+
+                    },300);
+
                 }
+
             }
+
         }
 
         // =========================
-        // LOAD USER TO TOPBAR
+        // LOAD USER
         // =========================
-        function loadTopbarUser() {
-            try {
+        function loadTopbarUser(){
+
+            try{
+
                 const loggedInUser = JSON.parse(
-                    localStorage.getItem("loggedInUser") || "{}"
+
+                    localStorage.getItem(
+                        "loggedInUser"
+                    ) || "{}"
+
                 );
+
                 const fullname =
+
                     loggedInUser.fullname ||
+
                     loggedInUser.username ||
+
                     "User";
-                const topbarName = document.getElementById("topbarName");
-                if (topbarName) {
-                    topbarName.innerText = `សួស្តី, ${fullname}`;
+
+                const topbarName =
+
+                    document.getElementById(
+                        "topbarName"
+                    );
+
+                if(topbarName){
+
+                    topbarName.innerText =
+                        `សួស្តី, ${fullname}`;
+
                 }
-                if (loggedInUser.image) {
-                    const profile = document.getElementById("topbarProfile");
-                    if (profile) profile.src = loggedInUser.image;
+
+                if(loggedInUser.image){
+
+                    const profile =
+
+                        document.getElementById(
+                            "topbarProfile"
+                        );
+
+                    if(profile){
+
+                        profile.src =
+                            loggedInUser.image;
+
+                    }
+
                 }
-            } catch(error) {
-                console.error("Topbar user error:", error);
+
+            }catch(error){
+
+                console.error(
+                    "Topbar user error:",
+                    error
+                );
+
             }
+
         }
 
         // =========================
         // OFFLINE DETECT
         // =========================
-        function updateOnlineStatus() {
-            const banner = document.getElementById("offlineBanner");
-            banner.style.display = navigator.onLine ? "none" : "block";
+        function updateOnlineStatus(){
+
+            const banner =
+
+                document.getElementById(
+                    "offlineBanner"
+                );
+
+            banner.style.display =
+
+                navigator.onLine
+                ? "none"
+                : "block";
+
         }
-        window.addEventListener("online", updateOnlineStatus);
-        window.addEventListener("offline", updateOnlineStatus);
+
+        window.addEventListener(
+            "online",
+            updateOnlineStatus
+        );
+
+        window.addEventListener(
+            "offline",
+            updateOnlineStatus
+        );
+
         updateOnlineStatus();
 
         // =========================
         // CARD VIBRATION
         // =========================
-        document.addEventListener("click", (e) => {
-            if (e.target.closest(".dashboard-card") && navigator.vibrate) {
-                navigator.vibrate(20);
+        document.addEventListener(
+            "click",
+            (e)=>{
+
+                if(
+
+                    e.target.closest(
+                        ".dashboard-card"
+                    )
+
+                    &&
+
+                    navigator.vibrate
+
+                ){
+
+                    navigator.vibrate(20);
+
+                }
+
             }
-        });
+        );
 
         // =========================
         // LOAD COMPONENTS
         // =========================
-        loadComponent("topbar-container", "./components/topbar.html");
-        loadComponent("bottomnav-container", "./components/bottomnav.html");
+        loadComponent(
+            "topbar-container",
+            "./components/topbar.html"
+        );
 
+        loadComponent(
+            "bottomnav-container",
+            "./components/bottomnav.html"
+        );
+
+        // =========================
+        // PUSH INIT
+        // =========================
         PushNotification.init();
+
+        // =========================
+        // FAILSAFE SPLASH
+        // =========================
+        window.addEventListener(
+            "load",
+            ()=>{
+
+                setTimeout(()=>{
+
+                    if(
+                        typeof hideGlobalSplash
+                        === "function"
+                    ){
+
+                        hideGlobalSplash();
+
+                    }
+
+                },2500);
+
+            }
+        );
 
     </script>
 
