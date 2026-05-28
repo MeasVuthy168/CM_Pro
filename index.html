@@ -1,582 +1,287 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>CM_Pro</title>
+  <link rel="manifest" href="/CM_Pro/manifest.json">
+  <meta name="theme-color" content="#032d73">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CM_Pro">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="/CM_Pro/assets/images/icon-192.png">
+  <link rel="stylesheet" href="./assets/css/main.css">
 
-<meta charset="UTF-8">
+  <style>
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden; overscroll-behavior: none;
+      -webkit-user-select: none; -webkit-touch-callout: none;
+      background: #f5f7fb;
+    }
+    body { display: flex; flex-direction: column; }
 
-<meta
-name="viewport"
-content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"
->
+    /* SPLASH */
+    #appSplash {
+      position: fixed; inset: 0; background: #032d73;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      z-index: 999999;
+      transition: opacity .4s;
+    }
+    #appSplash img { width: 130px; margin-bottom: 20px; }
+    .splash-title { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 10px; }
+    .splash-subtitle { font-size: 15px; color: #d7d7d7; }
 
-<title>CM_Pro</title>
+    /* DASHBOARD */
+    .dashboard-container {
+      flex: 1; overflow-y: auto; padding-bottom: 100px;
+      animation: fadeIn .4s ease;
+    }
+    .dashboard-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 18px; padding: 18px;
+    }
+    .dashboard-card {
+      background: #fff; border-radius: 24px; padding: 22px 12px;
+      text-decoration: none; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,.08);
+      transition: .2s; min-height: 160px;
+    }
+    .dashboard-card:active { transform: scale(.96); }
+    .dashboard-card img { width: 72px; height: 72px; object-fit: contain; margin-bottom: 14px; }
+    .dashboard-card-title { font-size: 15px; font-weight: 600; color: #17356f; text-align: center; line-height: 1.4; }
 
-<link rel="manifest" href="/CM_Pro/manifest.json">
+    /* ASSISTANT */
+    .assistant-box {
+      margin: 0 18px 30px; background: #fff; border-radius: 24px;
+      padding: 18px; display: flex; align-items: center; gap: 15px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.08);
+      animation: floatRobot 3s ease-in-out infinite;
+    }
+    .assistant-icon { width: 75px; height: 75px; }
+    .assistant-text { font-size: 15px; line-height: 1.6; color: #333; font-weight: 500; }
 
-<meta name="theme-color" content="#032d73">
+    /* OFFLINE */
+    #offlineBanner {
+      position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+      background: #d90429; color: #fff; padding: 10px 18px;
+      border-radius: 14px; font-size: 14px; font-weight: 600;
+      z-index: 999999; display: none;
+      box-shadow: 0 4px 15px rgba(0,0,0,.2);
+    }
 
-<meta name="apple-mobile-web-app-capable" content="yes">
-
-<meta
-name="apple-mobile-web-app-status-bar-style"
-content="black-translucent"
->
-
-<meta
-name="apple-mobile-web-app-title"
-content="CM_Pro"
->
-
-<meta
-name="mobile-web-app-capable"
-content="yes"
->
-
-<link
-rel="apple-touch-icon"
-href="/CM_Pro/assets/images/icon-192.png"
->
-
-<link
-rel="stylesheet"
-href="./assets/css/main.css"
->
-
-<style>
-
-html,body{
-width:100%;
-height:100%;
-overflow:hidden;
-overscroll-behavior:none;
--webkit-user-select:none;
--webkit-touch-callout:none;
-background:#f5f7fb;
-}
-
-body{
-display:flex;
-flex-direction:column;
-}
-
-/* SPLASH */
-
-#appSplash{
-position:fixed;
-inset:0;
-background:#032d73;
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-z-index:999999;
-transition:.4s;
-}
-
-#appSplash img{
-width:130px;
-margin-bottom:20px;
-}
-
-.splash-title{
-font-size:32px;
-font-weight:700;
-color:#fff;
-margin-bottom:10px;
-}
-
-.splash-subtitle{
-font-size:15px;
-color:#d7d7d7;
-}
-
-/* DASHBOARD */
-
-.dashboard-container{
-flex:1;
-overflow-y:auto;
-padding-bottom:100px;
-animation:fadeIn .4s ease;
-}
-
-.dashboard-grid{
-display:grid;
-grid-template-columns:repeat(2,1fr);
-gap:18px;
-padding:18px;
-}
-
-.dashboard-card{
-background:#fff;
-border-radius:24px;
-padding:22px 12px;
-text-decoration:none;
-display:flex;
-flex-direction:column;
-align-items:center;
-justify-content:center;
-box-shadow:0 4px 20px rgba(0,0,0,.08);
-transition:.2s;
-min-height:160px;
-}
-
-.dashboard-card:active{
-transform:scale(.96);
-}
-
-.dashboard-card img{
-width:72px;
-height:72px;
-object-fit:contain;
-margin-bottom:14px;
-}
-
-.dashboard-card-title{
-font-size:15px;
-font-weight:600;
-color:#17356f;
-text-align:center;
-line-height:1.4;
-}
-
-/* ASSISTANT */
-
-.assistant-box{
-margin:0 18px 30px;
-background:#fff;
-border-radius:24px;
-padding:18px;
-display:flex;
-align-items:center;
-gap:15px;
-box-shadow:0 4px 20px rgba(0,0,0,.08);
-animation:floatRobot 3s ease-in-out infinite;
-}
-
-.assistant-icon{
-width:75px;
-height:75px;
-}
-
-.assistant-text{
-font-size:15px;
-line-height:1.6;
-color:#333;
-font-weight:500;
-}
-
-/* OFFLINE */
-
-#offlineBanner{
-position:fixed;
-top:10px;
-left:50%;
-transform:translateX(-50%);
-background:#d90429;
-color:#fff;
-padding:10px 18px;
-border-radius:14px;
-font-size:14px;
-font-weight:600;
-z-index:999999;
-display:none;
-box-shadow:0 4px 15px rgba(0,0,0,.2);
-}
-
-/* ANIMATION */
-
-@keyframes fadeIn{
-from{opacity:0;transform:translateY(10px);}
-to{opacity:1;transform:translateY(0);}
-}
-
-@keyframes floatRobot{
-0%{transform:translateY(0);}
-50%{transform:translateY(-4px);}
-100%{transform:translateY(0);}
-}
-
-</style>
-
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes floatRobot {
+      0%   { transform: translateY(0); }
+      50%  { transform: translateY(-4px); }
+      100% { transform: translateY(0); }
+    }
+  </style>
 </head>
 
 <body>
 
-<!-- SPLASH -->
-
-<div id="appSplash">
-
-<img src="./assets/images/LogoAC.png">
-
-<div class="splash-title">
-CM_Pro
-</div>
-
-<div class="splash-subtitle">
-SVG Credit Monitoring
-</div>
-
-</div>
-
-<!-- OFFLINE -->
-
-<div id="offlineBanner">
-⚠️ No Internet Connection
-</div>
-
-<!-- API -->
-
-<script src="./config/api.js"></script>
-
-<!-- AUTH -->
-
-<script src="./config/auth.js"></script>
-
-<!-- SESSION -->
-
-<script src="./config/session.js"></script>
-
-<!-- PUSH -->
-
-<script src="./config/push.js"></script>
-
-<!-- TOPBAR -->
-
-<div id="topbar-container"></div>
-
-<!-- DASHBOARD -->
-
-<div class="dashboard-container">
-
-<div class="dashboard-grid">
-
-<a href="./pages/customers/index.html" class="dashboard-card">
-<img src="./assets/icons/customer.PNG">
-<div class="dashboard-card-title">
-Customer Search
-</div>
-</a>
-
-<a href="./pages/arrears/index.html" class="dashboard-card">
-<img src="./assets/icons/arrears.PNG">
-<div class="dashboard-card-title">
-Daily Arrears
-</div>
-</a>
-
-<a href="./pages/turnover/index.html" class="dashboard-card">
-<img src="./assets/icons/turnover.PNG">
-<div class="dashboard-card-title">
-Average Turnover
-</div>
-</a>
-
-<a href="./pages/spotcheck/index.html" class="dashboard-card">
-<img src="./assets/icons/spotcheck.PNG">
-<div class="dashboard-card-title">
-Spot Check
-</div>
-</a>
-
-</div>
-
-<!-- ASSISTANT -->
-
-<div class="assistant-box">
-
-<img
-src="./assets/images/robot.svg"
-class="assistant-icon"
->
-
-<div class="assistant-text">
-
-សូមស្វាគមន៍ មកកាន់ប្រព័ន្ធតាមដានឥណទាន
-CM_Pro 🎉
-
-</div>
-
-</div>
-
-</div>
-
-<!-- BOTTOM NAV -->
-
-<div id="bottomnav-container"></div>
-
-<script>
-
-// =========================
-// AUTH CHECK
-// =========================
-
-const token=
-
-localStorage.getItem("token")||
-
-sessionStorage.getItem("token");
-
-if(!token){
-
-window.location.replace(
-"/CM_Pro/login.html"
-);
-
-}
-
-// =========================
-// LOGOUT
-// =========================
-
-function logout(){
-
-const confirmLogout=
-
-confirm("Logout CM_Pro ?");
-
-if(confirmLogout){
-
-localStorage.removeItem("token");
-
-localStorage.removeItem("loggedInUser");
-
-sessionStorage.clear();
-
-window.location.replace(
-"/CM_Pro/login.html"
-);
-
-}
-
-}
-
-// =========================
-// LOAD COMPONENT
-// =========================
-
-async function loadComponent(id,file){
-
-try{
-
-const response=await fetch(file);
-
-const html=await response.text();
-
-document.getElementById(id).innerHTML=html;
-
-if(id==="topbar-container"){
-loadTopbarUser();
-}
-
-}catch(error){
-
-console.error(
-"Component load error:",
-error
-);
-
-}
-
-}
-
-// =========================
-// TOPBAR USER
-// =========================
-
-function loadTopbarUser(){
-
-try{
-
-const loggedInUser=JSON.parse(
-
-localStorage.getItem("loggedInUser")||
-
-"{}"
-
-);
-
-const fullname=
-
-loggedInUser.fullname||
-
-loggedInUser.username||
-
-"User";
-
-const topbarName=
-
-document.getElementById("topbarName");
-
-if(topbarName){
-
-topbarName.innerText=
-`សួស្តី, ${fullname}`;
-
-}
-
-if(loggedInUser.image){
-
-const profile=
-
-document.getElementById(
-"topbarProfile"
-);
-
-if(profile){
-
-profile.src=
-loggedInUser.image;
-
-}
-
-}
-
-}catch(error){
-
-console.error(
-"Topbar user error:",
-error
-);
-
-}
-
-}
-
-// =========================
-// OFFLINE DETECT
-// =========================
-
-function updateOnlineStatus(){
-
-const banner=
-
-document.getElementById(
-"offlineBanner"
-);
-
-if(navigator.onLine){
-
-banner.style.display="none";
-
-}else{
-
-banner.style.display="block";
-
-}
-
-}
-
-window.addEventListener(
-"online",
-updateOnlineStatus
-);
-
-window.addEventListener(
-"offline",
-updateOnlineStatus
-);
-
-updateOnlineStatus();
-
-// =========================
-// SPLASH
-// =========================
-
-window.addEventListener("load",()=>{
-
-setTimeout(()=>{
-
-const splash=
-
-document.getElementById(
-"appSplash"
-);
-
-splash.style.opacity="0";
-
-setTimeout(()=>{
-
-splash.remove();
-
-},400);
-
-},600);
-
-});
-
-// =========================
-// CARD CLICK VIBRATION
-// =========================
-
-document.addEventListener("click",(e)=>{
-
-const card=e.target.closest(
-".dashboard-card"
-);
-
-if(card && navigator.vibrate){
-
-navigator.vibrate(20);
-
-}
-
-});
-
-// =========================
-// LOAD COMPONENTS
-// =========================
-
-loadComponent(
-"topbar-container",
-"./components/topbar.html"
-);
-
-loadComponent(
-"bottomnav-container",
-"./components/bottomnav.html"
-);
-
-// =========================
-// PUSH INIT
-// =========================
-
-if(window.PushNotification){
-
-PushNotification.init();
-
-}
-
-// =========================
-// PRELOAD PAGES
-// =========================
-
-const preloadPages=[
-
-"./pages/customers/index.html",
-
-"./pages/arrears/index.html",
-
-"./pages/turnover/index.html",
-
-"./pages/spotcheck/index.html"
-
-];
-
-preloadPages.forEach(page=>{
-
-const link=document.createElement("link");
-
-link.rel="prefetch";
-
-link.href=page;
-
-document.head.appendChild(link);
-
-});
-
-</script>
-
+  <!-- SPLASH -->
+  <div id="appSplash">
+    <img src="./assets/images/LogoAC.png">
+    <div class="splash-title">CM_Pro</div>
+    <div class="splash-subtitle">SVG Credit Monitoring</div>
+  </div>
+
+  <!-- OFFLINE -->
+  <div id="offlineBanner">⚠️ No Internet Connection</div>
+
+  <!-- API / AUTH / SESSION / PUSH -->
+  <script src="./config/api.js"></script>
+  <script src="./config/auth.js"></script>
+  <script src="./config/session.js"></script>
+  <script src="./config/push.js"></script>
+
+  <!-- TOPBAR -->
+  <div id="topbar-container"></div>
+
+  <!-- DASHBOARD -->
+  <div class="dashboard-container">
+    <div class="dashboard-grid">
+      <a href="./pages/customers/index.html" class="dashboard-card">
+        <img src="./assets/icons/customer.PNG">
+        <div class="dashboard-card-title">Customer Search</div>
+      </a>
+      <a href="./pages/arrears/index.html" class="dashboard-card">
+        <img src="./assets/icons/arrears.PNG">
+        <div class="dashboard-card-title">Daily Arrears</div>
+      </a>
+      <a href="./pages/turnover/index.html" class="dashboard-card">
+        <img src="./assets/icons/turnover.PNG">
+        <div class="dashboard-card-title">Average Turnover</div>
+      </a>
+      <a href="./pages/spotcheck/index.html" class="dashboard-card">
+        <img src="./assets/icons/spotcheck.PNG">
+        <div class="dashboard-card-title">Spot Check</div>
+      </a>
+    </div>
+
+    <!-- ASSISTANT -->
+    <div class="assistant-box">
+      <img src="./assets/images/robot.svg" class="assistant-icon">
+      <div class="assistant-text">
+        សូមស្វាគមន៍ មកកាន់ប្រព័ន្ធតាមដានឥណទាន CM_Pro 🎉
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div id="bottomnav-container"></div>
+
+  <script>
+
+    // =========================
+    // AUTH CHECK
+    // =========================
+    const token =
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("token");
+
+    if (!token) {
+      window.location.replace("/CM_Pro/login.html");
+    }
+
+    // =========================
+    // SPLASH CONTROL
+    // =========================
+    let splashHidden = false;
+
+    function hideSplash() {
+      if (splashHidden) return;
+      splashHidden = true;
+      const splash = document.getElementById("appSplash");
+      if (!splash) return;
+      splash.style.opacity = "0";
+      setTimeout(() => splash.remove(), 400);
+    }
+
+    // Guaranteed fallback: hide after 2s no matter what
+    setTimeout(hideSplash, 2000);
+
+    // Normal path: hide after components finish loading
+    // (handled at bottom of loadComponent calls)
+
+    // =========================
+    // LOGOUT
+    // =========================
+    function logout() {
+      if (confirm("Logout CM_Pro ?")) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("loggedInUser");
+        sessionStorage.clear();
+        window.location.replace("/CM_Pro/login.html");
+      }
+    }
+
+    // =========================
+    // LOAD COMPONENT
+    // =========================
+    let componentsLoaded = 0;
+    const totalComponents = 2;
+
+    async function loadComponent(id, file) {
+      try {
+        const response = await fetch(file);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const html = await response.text();
+        document.getElementById(id).innerHTML = html;
+        if (id === "topbar-container") {
+          loadTopbarUser();
+        }
+      } catch (error) {
+        console.error("Component load error:", id, error);
+        // Don't block the app if a component fails
+      } finally {
+        componentsLoaded++;
+        if (componentsLoaded >= totalComponents) {
+          // Both components done (or failed) → hide splash
+          setTimeout(hideSplash, 300);
+        }
+      }
+    }
+
+    // =========================
+    // TOPBAR USER
+    // =========================
+    function loadTopbarUser() {
+      try {
+        const loggedInUser = JSON.parse(
+          localStorage.getItem("loggedInUser") || "{}"
+        );
+        const fullname =
+          loggedInUser.fullname || loggedInUser.username || "User";
+
+        const topbarName = document.getElementById("topbarName");
+        if (topbarName) topbarName.innerText = `សួស្តី, ${fullname}`;
+
+        if (loggedInUser.image) {
+          const profile = document.getElementById("topbarProfile");
+          if (profile) profile.src = loggedInUser.image;
+        }
+      } catch (error) {
+        console.error("Topbar user error:", error);
+      }
+    }
+
+    // =========================
+    // OFFLINE DETECT
+    // =========================
+    function updateOnlineStatus() {
+      const banner = document.getElementById("offlineBanner");
+      banner.style.display = navigator.onLine ? "none" : "block";
+    }
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
+    updateOnlineStatus();
+
+    // =========================
+    // CARD CLICK VIBRATION
+    // =========================
+    document.addEventListener("click", (e) => {
+      const card = e.target.closest(".dashboard-card");
+      if (card && navigator.vibrate) navigator.vibrate(20);
+    });
+
+    // =========================
+    // LOAD COMPONENTS
+    // =========================
+    loadComponent("topbar-container", "./components/topbar.html");
+    loadComponent("bottomnav-container", "./components/bottomnav.html");
+
+    // =========================
+    // PUSH INIT
+    // =========================
+    if (window.PushNotification) {
+      PushNotification.init();
+    }
+
+    // =========================
+    // PRELOAD PAGES
+    // =========================
+    const preloadPages = [
+      "./pages/customers/index.html",
+      "./pages/arrears/index.html",
+      "./pages/turnover/index.html",
+      "./pages/spotcheck/index.html"
+    ];
+    preloadPages.forEach(page => {
+      const link = document.createElement("link");
+      link.rel = "prefetch";
+      link.href = page;
+      document.head.appendChild(link);
+    });
+
+  </script>
 </body>
-
 </html>
