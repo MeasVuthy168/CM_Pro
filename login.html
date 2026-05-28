@@ -1,764 +1,334 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-
+<!--HEAD -->
 <meta charset="UTF-8">
 
-<meta
-    name="viewport"
-    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
->
-
-<title>CM_Pro Login</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 
 <meta name="theme-color" content="#032d73">
 
-<meta name="mobile-web-app-capable" content="yes">
-
 <meta name="apple-mobile-web-app-capable" content="yes">
 
-<meta
-    name="apple-mobile-web-app-status-bar-style"
-    content="black-translucent"
->
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-<meta
-    name="apple-mobile-web-app-title"
-    content="CM_Pro"
->
+<meta name="apple-mobile-web-app-title" content="CM_Pro">
 
-<link
-    rel="manifest"
-    href="/CM_Pro/manifest.json"
->
+<meta name="mobile-web-app-capable" content="yes">
 
-<link
-    rel="apple-touch-icon"
-    href="/CM_Pro/assets/images/icon-192.png"
->
+<link rel="manifest" href="/CM_Pro/manifest.json">
+
+<link rel="apple-touch-icon" href="/CM_Pro/assets/images/icon-192.png">
 
 <script src="./config/api.js"></script>
 
+<!-- SERVICE WORKER -->
+<script>
+if("serviceWorker" in navigator){
+window.addEventListener("load",()=>{
+navigator.serviceWorker.register("/CM_Pro/service-worker.js")
+.then(reg=>console.log("✅ SW:",reg.scope))
+.catch(err=>console.error("❌ SW Error:",err));
+});
+}
+</script>
+
 <style>
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Segoe UI,Arial,sans-serif;
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,Arial,sans-serif}
 
 body{
-    background:#032d73;
-    min-height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    padding:20px 20px 100px;
-    overflow:hidden;
-    overscroll-behavior:none;
-    -webkit-user-select:none;
+background:#032d73;
+min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+padding:20px 20px 100px;
+overflow:hidden;
+overscroll-behavior:none;
+-webkit-user-select:none;
+-webkit-touch-callout:none;
 }
 
 .login-card{
-    width:100%;
-    max-width:420px;
-    background:#fff;
-    border-radius:28px;
-    padding:35px 25px;
-    box-shadow:0 10px 30px rgba(0,0,0,.18);
+width:100%;
+max-width:420px;
+background:#fff;
+border-radius:28px;
+padding:35px 25px;
+box-shadow:0 10px 30px rgba(0,0,0,.18);
 }
 
-.logo{
-    width:120px;
-    display:block;
-    margin:auto auto 20px;
-}
+.logo{width:120px;display:block;margin:auto auto 20px}
 
-.title{
-    text-align:center;
-    font-size:22px;
-    color:#17356f;
-    margin-bottom:10px;
-}
+.title{text-align:center;font-size:22px;color:#17356f;margin-bottom:10px;font-weight:500}
 
-.subtitle{
-    text-align:center;
-    color:#777;
-    margin-bottom:35px;
-}
+.subtitle{text-align:center;color:#888;margin-bottom:35px;font-size:14px}
 
 .input-box{
-    width:100%;
-    height:60px;
-    border:none;
-    background:#f2f4f8;
-    border-radius:16px;
-    padding:0 18px;
-    font-size:18px;
-    margin-bottom:20px;
-    outline:none;
+width:100%;
+height:60px;
+border:none;
+background:#f2f4f8;
+border-radius:16px;
+padding:0 18px;
+font-size:18px;
+outline:none;
+margin-bottom:20px;
 }
 
-.password-wrapper{
-    position:relative;
-}
+.password-wrapper{position:relative}
 
 .show-password{
-    position:absolute;
-    right:18px;
-    top:20px;
-    cursor:pointer;
-    color:#032d73;
-    font-size:14px;
-    font-weight:600;
+position:absolute;
+right:18px;
+top:20px;
+font-size:14px;
+color:#032d73;
+cursor:pointer;
+font-weight:600;
 }
 
 .remember-row{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin-bottom:25px;
+display:flex;
+align-items:center;
+gap:10px;
+margin-bottom:25px;
+color:#444;
+font-size:15px;
 }
 
-.login-btn,
-#closeIOSBanner{
-    width:100%;
-    height:60px;
-    border:none;
-    border-radius:16px;
-    background:#032d73;
-    color:#fff;
-    font-size:18px;
-    cursor:pointer;
+.remember-row input{width:20px;height:20px}
+
+.login-btn{
+width:100%;
+height:68px;
+border:none;
+border-radius:18px;
+background:#032d73;
+color:#fff;
+font-size:22px;
+cursor:pointer;
 }
 
-.loading{
-    display:none;
-    width:35px;
-    height:35px;
-    margin:20px auto;
-    border:4px solid #ddd;
-    border-top:4px solid #032d73;
-    border-radius:50%;
-    animation:spin .8s linear infinite;
-}
+.login-btn:disabled{opacity:.7}
 
 .status-box{
-    text-align:center;
-    min-height:24px;
-    font-weight:600;
+margin-top:22px;
+text-align:center;
+min-height:24px;
+font-size:15px;
+font-weight:600;
 }
 
-.success{color:#10a844;}
-.error{color:#d90429;}
+.success{color:#10a844}
+.error{color:#d90429}
 
-@keyframes spin{
-    to{transform:rotate(360deg);}
+.loading{
+display:none;
+width:35px;
+height:35px;
+margin:20px auto 0;
+border:4px solid #ddd;
+border-top:4px solid #032d73;
+border-radius:50%;
+animation:spin .8s linear infinite;
 }
 
-/* SPLASH */
+@keyframes spin{100%{transform:rotate(360deg)}}
 
 #splashScreen{
-    position:fixed;
-    inset:0;
-    background:#032d73;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    z-index:99999;
-    transition:.4s;
+position:fixed;
+inset:0;
+background:#032d73;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+z-index:99999;
+transition:.4s;
 }
 
-.splash-title{
-    color:#fff;
-    font-size:32px;
-    font-weight:700;
-    margin:10px 0;
-}
+.splash-title{color:#fff;font-size:32px;font-weight:700;margin-bottom:10px}
 
-.splash-subtitle{
-    color:#ddd;
-}
-
-/* IOS INSTALL */
+.splash-subtitle{color:#d7d7d7;font-size:16px}
 
 #iosInstallBanner{
-    position:fixed;
-    left:15px;
-    right:15px;
-    bottom:20px;
-    background:#fff;
-    border-radius:20px;
-    padding:20px;
-    z-index:99999;
-    display:none;
-    box-shadow:0 8px 30px rgba(0,0,0,.25);
+position:fixed;
+left:15px;
+right:15px;
+bottom:20px;
+background:#fff;
+border-radius:20px;
+padding:20px;
+z-index:99999;
+box-shadow:0 8px 30px rgba(0,0,0,.25);
+display:none;
+animation:slideUp .3s ease;
 }
 
-.ios-title{
-    font-size:20px;
-    font-weight:700;
-    color:#032d73;
-    margin-bottom:10px;
+.ios-title{font-size:20px;font-weight:700;color:#032d73;margin-bottom:10px}
+
+.ios-text{color:#444;line-height:1.5;font-size:15px}
+
+#closeIOSBanner{
+margin-top:18px;
+width:100%;
+height:50px;
+border:none;
+border-radius:14px;
+background:#032d73;
+color:#fff;
+font-size:17px;
 }
 
-.ios-text{
-    line-height:1.5;
-    color:#444;
+@keyframes slideUp{
+from{transform:translateY(100px);opacity:0}
+to{transform:translateY(0);opacity:1}
 }
 
 </style>
 
-</head>
-
-<body>
+<!-- IOS INSTALL -->
+<div id="iosInstallBanner">
+<div class="ios-title">📲 Install CM_Pro</div>
+<div class="ios-text">Tap <b>Share</b> then <b>Add to Home Screen</b></div>
+<button id="closeIOSBanner">OK</button>
+</div>
 
 <!-- SPLASH -->
-
 <div id="splashScreen">
-
-    <img
-        src="./assets/images/LogoAC.png"
-        style="width:120px"
-    >
-
-    <div class="splash-title">
-        CM_Pro
-    </div>
-
-    <div class="splash-subtitle">
-        SVG Credit Monitoring
-    </div>
-
-</div>
-
-<!-- IOS INSTALL -->
-
-<div id="iosInstallBanner">
-
-    <div class="ios-title">
-        📲 Install CM_Pro
-    </div>
-
-    <div class="ios-text">
-        Tap <b>Share</b> then
-        <b>Add to Home Screen</b>
-    </div>
-
-    <button id="closeIOSBanner">
-        OK
-    </button>
-
-</div>
-
-<!-- LOGIN -->
-
-<div class="login-card">
-
-    <img
-        src="./assets/images/LogoAC.png"
-        class="logo"
-    >
-
-    <div class="title">
-        ប្រព័ន្ធតាមដាន
-    </div>
-
-    <div class="subtitle">
-        SVG Credit Monitoring System
-    </div>
-
-    <form id="loginForm">
-
-        <input
-            type="text"
-            id="username"
-            class="input-box"
-            placeholder="Username"
-            autocomplete="username"
-            required
-        >
-
-        <div class="password-wrapper">
-
-            <input
-                type="password"
-                id="password"
-                class="input-box"
-                placeholder="Password"
-                autocomplete="current-password"
-                required
-            >
-
-            <span
-                class="show-password"
-                id="togglePassword"
-            >
-                Show
-            </span>
-
-        </div>
-
-        <div class="remember-row">
-
-            <input
-                type="checkbox"
-                id="rememberMe"
-            >
-
-            <label for="rememberMe">
-                Remember Me
-            </label>
-
-        </div>
-
-        <button
-            type="submit"
-            class="login-btn"
-            id="loginBtn"
-        >
-            ចូលប្រើប្រាស់
-        </button>
-
-        <div
-            class="loading"
-            id="loading"
-        ></div>
-
-        <div
-            class="status-box"
-            id="statusBox"
-        ></div>
-
-    </form>
-
+<img src="./assets/images/LogoAC.png" style="width:120px;margin-bottom:20px">
+<div class="splash-title">CM_Pro</div>
+<div class="splash-subtitle">SVG Credit Monitoring</div>
 </div>
 
 <script>
 
-// =========================
-// SHORTCUTS
-// =========================
+// AUTO LOGIN
+const existingToken=localStorage.getItem("token")||sessionStorage.getItem("token");
 
-const $ = id => document.getElementById(id);
+if(existingToken){
+try{
+const user=JSON.parse(localStorage.getItem("loggedInUser")||"{}");
+const role=(user.role||"user").toLowerCase();
 
-const form = $("loginForm");
+if(role==="admin"){
+window.location.replace("/CM_Pro/Admin/adminupload.html");
+}else{
+window.location.replace("/CM_Pro/index.html");
+}
 
-const loading = $("loading");
+}catch{
+window.location.replace("/CM_Pro/index.html");
+}
+}
 
-const statusBox = $("statusBox");
+// IOS DETECT
+function isIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent)}
+function isInStandaloneMode(){return window.navigator.standalone===true}
 
-const passwordInput = $("password");
+// IOS INSTALL GUIDE
+window.addEventListener("load",()=>{
 
-// =========================
-// SERVICE WORKER
-// =========================
+if(isIOS()&&!isInStandaloneMode()){
 
-if("serviceWorker" in navigator){
+if(!localStorage.getItem("iosInstallShown")){
 
-    navigator.serviceWorker
-        .register("/CM_Pro/service-worker.js");
+setTimeout(()=>{
+document.getElementById("iosInstallBanner").style.display="block";
+},1800);
 
 }
 
-// =========================
-// SPLASH
-// =========================
-
-window.addEventListener("load",()=>{
-
-    setTimeout(()=>{
-
-        $("splashScreen").style.opacity="0";
-
-        setTimeout(()=>{
-
-            $("splashScreen").remove();
-
-        },400);
-
-    },700);
+}
 
 });
 
-// =========================
-// IOS DETECT
-// =========================
+// CLOSE IOS BANNER
+document.getElementById("closeIOSBanner").addEventListener("click",()=>{
 
-const isIOS = ()=>
-    /iphone|ipad|ipod/i
-    .test(navigator.userAgent);
+document.getElementById("iosInstallBanner").style.display="none";
 
-const standalone = ()=>
-    window.navigator.standalone === true;
+localStorage.setItem("iosInstallShown","true");
 
-// =========================
-// IOS INSTALL
-// =========================
+});
 
-if(
-    isIOS() &&
-    !standalone() &&
-    !localStorage.getItem("iosInstallShown")
-){
-
-    window.addEventListener("load",()=>{
-
-        setTimeout(()=>{
-
-            $("iosInstallBanner").style.display="block";
-
-        },2500);
-
-    });
-
-}
-
-$("closeIOSBanner").onclick=()=>{
-
-    $("iosInstallBanner").style.display="none";
-
-    localStorage.setItem(
-        "iosInstallShown",
-        "true"
-    );
-
-};
-
-// =========================
-// ANDROID INSTALL
-// =========================
-
+// INSTALL PROMPT
 let deferredPrompt;
 
-window.addEventListener(
+window.addEventListener("beforeinstallprompt",(e)=>{
 
-    "beforeinstallprompt",
+if(isIOS()) return;
 
-    e=>{
+e.preventDefault();
 
-        if(isIOS()) return;
+deferredPrompt=e;
 
-        e.preventDefault();
+showInstallButton();
 
-        deferredPrompt=e;
+});
 
-        const btn=document.createElement("button");
+function showInstallButton(){
 
-        btn.innerText="📲 Install App";
+if(document.getElementById("installBtn")) return;
 
-        Object.assign(btn.style,{
+const btn=document.createElement("button");
 
-            position:"fixed",
-            bottom:"20px",
-            left:"50%",
-            transform:"translateX(-50%)",
-            zIndex:"9999",
-            width:"220px",
-            height:"55px",
-            border:"none",
-            borderRadius:"16px",
-            background:"#ffd700",
-            color:"#032d73",
-            fontSize:"18px",
-            fontWeight:"600"
+btn.id="installBtn";
 
-        });
+btn.innerText="📲 Install App";
 
-        document.body.appendChild(btn);
+Object.assign(btn.style,{
+position:"fixed",
+bottom:"20px",
+left:"50%",
+transform:"translateX(-50%)",
+zIndex:"9999",
+width:"220px",
+height:"55px",
+border:"none",
+borderRadius:"16px",
+background:"#ffd700",
+color:"#032d73",
+fontSize:"18px",
+fontWeight:"600",
+boxShadow:"0 4px 15px rgba(0,0,0,.25)"
+});
 
-        btn.onclick=async()=>{
+document.body.appendChild(btn);
 
-            btn.remove();
+btn.addEventListener("click",async()=>{
 
-            deferredPrompt.prompt();
+btn.remove();
 
-            await deferredPrompt.userChoice;
+deferredPrompt.prompt();
 
-            deferredPrompt=null;
+const choice=await deferredPrompt.userChoice;
 
-        };
+console.log(choice.outcome);
 
-    }
+deferredPrompt=null;
 
-);
-
-// =========================
-// AUTO LOGIN
-// =========================
-
-const token =
-    localStorage.getItem("token") ||
-    sessionStorage.getItem("token");
-
-if(token){
-
-    try{
-
-        const user=JSON.parse(
-
-            localStorage.getItem(
-                "loggedInUser"
-            ) || "{}"
-
-        );
-
-        location.replace(
-
-            user.role==="admin"
-
-            ? "/CM_Pro/Admin/adminupload.html"
-
-            : "/CM_Pro/index.html"
-
-        );
-
-    }catch{
-
-        location.replace(
-            "/CM_Pro/index.html"
-        );
-
-    }
+});
 
 }
 
-// =========================
-// REMEMBER LOGIN
-// =========================
+// SPLASH HIDE
+window.addEventListener("load",()=>{
 
-const saved = JSON.parse(
+setTimeout(()=>{
 
-    localStorage.getItem(
-        "remember_login"
-    ) || "null"
+const splash=document.getElementById("splashScreen");
 
-);
+splash.style.opacity="0";
 
-if(saved){
+setTimeout(()=>{splash.remove()},400);
 
-    $("username").value=saved.username||"";
+},700);
 
-    $("password").value=saved.password||"";
-
-    $("rememberMe").checked=true;
-
-}
-
-// =========================
-// SHOW PASSWORD
-// =========================
-
-$("togglePassword").onclick=()=>{
-
-    const isPass=
-        passwordInput.type==="password";
-
-    passwordInput.type=
-        isPass ? "text":"password";
-
-    $("togglePassword").innerText=
-        isPass ? "Hide":"Show";
-
-};
-
-// =========================
-// MESSAGE
-// =========================
-
-function msg(text,type){
-
-    statusBox.innerText=text;
-
-    statusBox.className=
-        "status-box "+type;
-
-}
-
-// =========================
-// LOADING
-// =========================
-
-function setLoading(v){
-
-    $("loginBtn").disabled=v;
-
-    loading.style.display=
-        v ? "block":"none";
-
-}
-
-// =========================
-// LOGIN
-// =========================
-
-form.addEventListener(
-
-    "submit",
-
-    async e=>{
-
-        e.preventDefault();
-
-        const username=
-            $("username").value.trim();
-
-        const password=
-            $("password").value;
-
-        if(!username || !password){
-
-            return msg(
-                "Enter username/password",
-                "error"
-            );
-
-        }
-
-        try{
-
-            setLoading(true);
-
-            const res=await fetch(
-
-                `${API.BASE_URL}/api/auth/login`,
-
-                {
-                    method:"POST",
-
-                    headers:{
-                        "Content-Type":
-                        "application/json"
-                    },
-
-                    body:JSON.stringify({
-                        username,
-                        password
-                    })
-
-                }
-
-            );
-
-            const data=await res.json();
-
-            if(!res.ok || !data.ok){
-
-                return msg(
-                    data.message ||
-                    "Login failed",
-                    "error"
-                );
-
-            }
-
-            localStorage.removeItem("token");
-
-            sessionStorage.removeItem("token");
-
-            (
-                $("rememberMe").checked
-
-                ? localStorage
-
-                : sessionStorage
-
-            ).setItem("token",data.token);
-
-            const user =
-
-                data.user ||
-
-                data.data ||
-
-                data;
-
-            localStorage.setItem(
-
-                "loggedInUser",
-
-                JSON.stringify({
-
-                    username:
-                        user.username || "",
-
-                    fullname:
-                        user.fullname || "",
-
-                    role:
-                        user.role || "user",
-
-                    image:
-                        user.image || ""
-
-                })
-
-            );
-
-            if($("rememberMe").checked){
-
-                localStorage.setItem(
-
-                    "remember_login",
-
-                    JSON.stringify({
-                        username,
-                        password
-                    })
-
-                );
-
-            }else{
-
-                localStorage.removeItem(
-                    "remember_login"
-                );
-
-            }
-
-            msg(
-                "Login successful",
-                "success"
-            );
-
-            setTimeout(()=>{
-
-                location.href=
-
-                    user.role==="admin"
-
-                    ? "/CM_Pro/Admin/adminupload.html"
-
-                    : "/CM_Pro/index.html";
-
-            },500);
-
-        }catch(err){
-
-            console.error(err);
-
-            msg(
-                "Cannot connect server",
-                "error"
-            );
-
-        }finally{
-
-            setLoading(false);
-
-        }
-
-    }
-
-);
+});
 
 </script>
-
-</body>
-
-</html>
 ```
