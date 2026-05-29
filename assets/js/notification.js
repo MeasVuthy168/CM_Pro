@@ -34,7 +34,7 @@ localStorage.getItem("token") ||
 
 sessionStorage.getItem("token");
 
-if(!token){
+if(!notificationToken){
 
 window.location.replace(
 "/CM_Pro/login.html"
