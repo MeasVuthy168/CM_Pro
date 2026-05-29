@@ -1,3 +1,4 @@
+```css
 /* =========================
    Topbar
 ========================= */
@@ -8,36 +9,72 @@
 
     color:white;
 
-    padding:10px 14px;
-
     width:100vw;
+
+    min-height:78px;
+
+    padding:10px 14px;
 
     margin:0;
 
     border-radius:0;
 
-    display:flex;
+    box-sizing:border-box;
 
-    justify-content:space-between;
+    display:flex;
 
     align-items:center;
 
-    min-height:78px;
-
-    box-sizing:border-box;
+    justify-content:space-between;
 
 }
 
-/* Left */
+/* =========================
+   Left
+========================= */
+
 .topbar-left{
 
     display:flex;
 
     align-items:center;
 
+    gap:10px;
+
 }
 
-/* ACLEDA Logo */
+/* Back Button */
+
+.topbar-back-btn{
+
+    width:42px;
+
+    height:42px;
+
+    border:none;
+
+    border-radius:12px;
+
+    background:rgba(255,255,255,.15);
+
+    color:#fff;
+
+    font-size:20px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+}
+
+.topbar-back-btn:active{
+
+    transform:scale(.95);
+
+}
+
+/* Logo */
+
 .topbar-logo{
 
     height:42px;
@@ -46,8 +83,99 @@
 
 }
 
-/* Right */
+/* =========================
+   Center
+========================= */
+
+.topbar-center{
+
+    flex:1;
+
+    text-align:center;
+
+    overflow:hidden;
+
+    padding:0 10px;
+
+}
+
+.topbar-title{
+
+    color:#fff;
+
+    font-size:18px;
+
+    font-weight:700;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+}
+
+.topbar-name{
+
+    color:#FFD700;
+
+    font-size:13px;
+
+    font-family:'KRASAR',sans-serif;
+
+    line-height:1.2;
+
+    text-align:center;
+
+}
+
+/* =========================
+   Right
+========================= */
+
 .topbar-right{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+}
+
+/* Action Button */
+
+.topbar-action-btn{
+
+    height:40px;
+
+    padding:0 14px;
+
+    border:none;
+
+    border-radius:12px;
+
+    background:rgba(255,255,255,.15);
+
+    color:#fff;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+}
+
+.topbar-action-btn:active{
+
+    transform:scale(.95);
+
+}
+
+/* Profile Container */
+
+.topbar-user-box{
 
     display:flex;
 
@@ -57,14 +185,16 @@
 
     justify-content:center;
 
-    gap:3px;
+    cursor:pointer;
 
 }
 
 /* Profile */
+
 .topbar-profile{
 
     width:52px;
+
     height:52px;
 
     border-radius:50%;
@@ -77,17 +207,53 @@
 
 }
 
-/* Username */
-.topbar-name{
+/* Optional Left Profile */
 
-    color:#FFD700;
+#topbarProfileLeft{
 
-    font-size:13px;
+    width:42px;
 
-    font-family:'KRASAR', sans-serif;
+    height:42px;
 
-    text-align:center;
+    border-radius:50%;
 
-    line-height:1.2;
+    border:2px solid #D4AF37;
+
+    object-fit:cover;
 
 }
+
+/* Mobile */
+
+@media(max-width:480px){
+
+    .topbar{
+
+        min-height:72px;
+
+        padding:8px 10px;
+
+    }
+
+    .topbar-title{
+
+        font-size:16px;
+
+    }
+
+    .topbar-name{
+
+        font-size:12px;
+
+    }
+
+    .topbar-profile{
+
+        width:46px;
+
+        height:46px;
+
+    }
+
+}
+```
