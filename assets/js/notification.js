@@ -271,6 +271,12 @@ notificationId:id
 
 );
 
+if(typeof loadNotificationBadge === "function"){
+
+    loadNotificationBadge();
+
+}
+
 }catch(error){
 
 console.error(error);
@@ -302,6 +308,12 @@ Authorization:`Bearer ${token}`
 );
 
 loadNotifications();
+
+if(typeof loadNotificationBadge === "function"){
+
+    loadNotificationBadge();
+
+}
 
 }catch(error){
 
