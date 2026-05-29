@@ -1,63 +1,251 @@
 
-<div class="topbar">
+/* =========================
+   TOPBAR
+========================= */
 
-    <!-- LEFT -->
+.topbar{
 
-    <div class="topbar-left">
+    position:sticky;
 
-        <button
-            id="topbarBackBtn"
-            class="topbar-back-btn"
-            style="display:none;"
-        >
-            ←
-        </button>
+    top:0;
 
-        <img
-            src="/CM_Pro/assets/images/acleda-logo.PNG"
-            class="topbar-logo"
-            id="topbarLogo"
-        >
+    z-index:1000;
 
-    </div>
+    height:65px;
 
-    <!-- CENTER -->
+    background:#032d73;
 
-    <div
-        class="topbar-center"
-        id="topbarCenter"
-    >
+    display:flex;
 
-        <div
-            class="topbar-title"
-            id="topbarTitle"
-        >
-            CM_Pro
-        </div>
+    align-items:center;
 
-    </div>
+    justify-content:space-between;
 
-    <!-- RIGHT -->
+    padding:0 12px;
 
-    <div class="topbar-right">
+    color:#fff;
 
-        <button
-            id="topbarActionBtn"
-            class="topbar-action-btn"
-            style="display:none;"
-        >
-            Action
-        </button>
+    box-shadow:
+        0 2px 10px rgba(0,0,0,.15);
 
-        <div
-            class="topbar-name"
-            id="topbarName"
-            onclick="logout()"
-        >
-            សួស្តី, User
-        </div>
+}
 
-    </div>
+/* =========================
+   LEFT
+========================= */
 
-</div>
+.topbar-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    min-width:60px;
+
+}
+
+.topbar-logo{
+
+    width:38px;
+
+    height:38px;
+
+    object-fit:contain;
+
+    flex-shrink:0;
+
+}
+
+/* =========================
+   CENTER
+========================= */
+
+.topbar-center{
+
+    flex:1;
+
+    text-align:center;
+
+    overflow:hidden;
+
+    padding:0 10px;
+
+}
+
+.topbar-title{
+
+    font-size:18px;
+
+    font-weight:700;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+}
+
+/* =========================
+   RIGHT
+========================= */
+
+.topbar-right{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    min-width:60px;
+
+    justify-content:flex-end;
+
+}
+
+.topbar-user-info{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    cursor:pointer;
+
+}
+
+.topbar-profile{
+
+    width:40px;
+
+    height:40px;
+
+    border-radius:50%;
+
+    object-fit:cover;
+
+    border:2px solid rgba(255,255,255,.25);
+
+    flex-shrink:0;
+
+}
+
+.topbar-name{
+
+    font-size:14px;
+
+    font-weight:600;
+
+    white-space:nowrap;
+
+    max-width:140px;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+}
+
+/* =========================
+   BUTTONS
+========================= */
+
+.topbar-back-btn,
+.topbar-action-btn{
+
+    height:38px;
+
+    min-width:38px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:rgba(255,255,255,.15);
+
+    color:#fff;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    padding:0 14px;
+
+    cursor:pointer;
+
+    transition:.15s;
+
+}
+
+.topbar-back-btn:hover,
+.topbar-action-btn:hover{
+
+    background:rgba(255,255,255,.22);
+
+}
+
+.topbar-back-btn:active,
+.topbar-action-btn:active{
+
+    transform:scale(.95);
+
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width:768px){
+
+    .topbar{
+
+        height:60px;
+
+        padding:0 10px;
+
+    }
+
+    .topbar-logo{
+
+        width:34px;
+
+        height:34px;
+
+    }
+
+    .topbar-profile{
+
+        width:36px;
+
+        height:36px;
+
+    }
+
+    .topbar-title{
+
+        font-size:17px;
+
+    }
+
+    .topbar-name{
+
+        max-width:90px;
+
+        font-size:13px;
+
+    }
+
+    .topbar-action-btn{
+
+        padding:0 10px;
+
+        font-size:13px;
+
+    }
+
+}
 
