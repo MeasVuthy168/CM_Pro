@@ -29,6 +29,11 @@ window.initTopbar = function(config={}){
             "topbarTitle"
         );
 
+    const centerEl =
+        document.querySelector(
+            ".topbar-center"
+        );
+
     const logoEl =
         document.getElementById(
             "topbarLogo"
@@ -60,15 +65,21 @@ window.initTopbar = function(config={}){
 
     if(dashboardMode){
 
-    if(titleEl){
+        if(titleEl){
 
-        titleEl.innerHTML = "";
+            titleEl.innerHTML = "";
 
-        titleEl.style.display =
-            "none";
+            titleEl.style.display =
+                "none";
 
-    }
+        }
 
+        if(centerEl){
+
+            centerEl.style.display =
+                "none";
+
+        }
 
         if(profileName){
 
@@ -87,6 +98,13 @@ window.initTopbar = function(config={}){
     // =========================
 
     else{
+
+        if(centerEl){
+
+            centerEl.style.display =
+                "block";
+
+        }
 
         if(titleEl){
 
