@@ -60,12 +60,15 @@ window.initTopbar = function(config={}){
 
     if(dashboardMode){
 
-        if(titleEl){
+    if(titleEl){
 
-            titleEl.style.display =
-                "none";
+        titleEl.innerHTML = "";
 
-        }
+        titleEl.style.display =
+            "none";
+
+    }
+
 
         if(profileName){
 
