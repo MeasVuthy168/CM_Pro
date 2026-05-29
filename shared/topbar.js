@@ -1,86 +1,163 @@
-```js
 window.initTopbar = function(config={}){
 
     const {
 
-        title = "CM_Pro",
+        title = "",
 
-        subtitle = "",
+        userName = "",
+
+        dashboardMode = false,
 
         showBack = false,
 
-        actionText = "",
-
-        actionHandler = null,
-
         showProfile = true,
 
-        showLogo = true
+        showLogo = true,
+
+        actionText = "",
+
+        actionHandler = null
 
     } = config;
 
-    // TITLE
+    // =========================
+    // ELEMENTS
+    // =========================
 
     const titleEl =
         document.getElementById(
             "topbarTitle"
         );
 
-    if(titleEl){
-
-        titleEl.innerText = title;
-
-    }
-
-    // SUBTITLE
-
-    const subtitleEl =
+    const logoEl =
         document.getElementById(
-            "topbarName"
+            "topbarLogo"
         );
 
-    if(subtitleEl){
+    const profileBox =
+        document.getElementById(
+            "topbarUserBox"
+        );
 
-        if(subtitle){
-
-            subtitleEl.innerText =
-                subtitle;
-
-            subtitleEl.style.display =
-                "block";
-
-        }else{
-
-            subtitleEl.style.display =
-                "none";
-
-        }
-
-    }
-
-    // BACK
+    const profileName =
+        document.getElementById(
+            "topbarUserName"
+        );
 
     const backBtn =
         document.getElementById(
             "topbarBackBtn"
         );
 
+    const actionBtn =
+        document.getElementById(
+            "topbarActionBtn"
+        );
+
+    // =========================
+    // DASHBOARD MODE
+    // =========================
+
+    if(dashboardMode){
+
+        if(titleEl){
+
+            titleEl.style.display =
+                "none";
+
+        }
+
+        if(profileName){
+
+            profileName.style.display =
+                "block";
+
+            profileName.innerText =
+                userName || "User";
+
+        }
+
+    }
+
+    // =========================
+    // NORMAL PAGE MODE
+    // =========================
+
+    else{
+
+        if(titleEl){
+
+            titleEl.style.display =
+                "block";
+
+            titleEl.innerText =
+                title || "CM_Pro";
+
+        }
+
+        if(profileName){
+
+            profileName.style.display =
+                "none";
+
+        }
+
+    }
+
+    // =========================
+    // LOGO
+    // =========================
+
+    if(logoEl){
+
+        logoEl.style.display =
+
+            showLogo
+
+            ? "block"
+
+            : "none";
+
+    }
+
+    // =========================
+    // PROFILE
+    // =========================
+
+    if(profileBox){
+
+        profileBox.style.display =
+
+            showProfile
+
+            ? "flex"
+
+            : "none";
+
+    }
+
+    // =========================
+    // BACK BUTTON
+    // =========================
+
     if(backBtn){
 
         backBtn.style.display =
-            showBack ? "block" : "none";
+
+            showBack
+
+            ? "block"
+
+            : "none";
 
         backBtn.onclick =
             ()=>history.back();
 
     }
 
-    // ACTION
-
-    const actionBtn =
-        document.getElementById(
-            "topbarActionBtn"
-        );
+    // =========================
+    // ACTION BUTTON
+    // =========================
 
     if(actionBtn){
 
@@ -93,7 +170,7 @@ window.initTopbar = function(config={}){
                 actionText;
 
             actionBtn.onclick =
-                actionHandler || null;
+                actionHandler;
 
         }else{
 
@@ -104,37 +181,4 @@ window.initTopbar = function(config={}){
 
     }
 
-    // PROFILE
-
-    const userBox =
-        document.getElementById(
-            "topbarUserBox"
-        );
-
-    if(userBox){
-
-        userBox.style.display =
-            showProfile
-            ? "flex"
-            : "none";
-
-    }
-
-    // LOGO
-
-    const logo =
-        document.getElementById(
-            "topbarLogo"
-        );
-
-    if(logo){
-
-        logo.style.display =
-            showLogo
-            ? "block"
-            : "none";
-
-    }
-
 };
-```
