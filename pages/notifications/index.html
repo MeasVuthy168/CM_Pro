@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -42,26 +43,45 @@ href="/CM_Pro/assets/css/global-splash.css"
 <style>
 
 #offlineBanner{
-position:fixed;
-top:10px;
-left:50%;
-transform:translateX(-50%);
-background:#d90429;
-color:#fff;
-padding:10px 18px;
-border-radius:14px;
-font-size:14px;
-font-weight:600;
-z-index:999999;
-display:none;
-box-shadow:0 4px 15px rgba(0,0,0,.2);
+
+    position:fixed;
+
+    top:10px;
+
+    left:50%;
+
+    transform:translateX(-50%);
+
+    background:#d90429;
+
+    color:#fff;
+
+    padding:10px 18px;
+
+    border-radius:14px;
+
+    font-size:14px;
+
+    font-weight:600;
+
+    z-index:999999;
+
+    display:none;
+
+    box-shadow:0 4px 15px rgba(0,0,0,.2);
+
 }
 
 .page-container{
-flex:1;
-display:flex;
-flex-direction:column;
-overflow:hidden;
+
+    flex:1;
+
+    display:flex;
+
+    flex-direction:column;
+
+    overflow:hidden;
+
 }
 
 </style>
@@ -73,7 +93,9 @@ overflow:hidden;
 <!-- OFFLINE -->
 
 <div id="offlineBanner">
+
 ⚠️ No Internet Connection
+
 </div>
 
 <!-- API -->
@@ -96,7 +118,7 @@ overflow:hidden;
 
 <script src="/CM_Pro/shared/topbar.js"></script>
 
-<!-- GLOBAL SPLASH -->
+<!-- SPLASH -->
 
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 
@@ -104,11 +126,11 @@ overflow:hidden;
 
 <div id="topbar-container"></div>
 
-<!-- PAGE -->
+<!-- CONTENT -->
 
 <div class="page-container">
 
-    <!-- Hidden Button (used by topbar action) -->
+    <!-- HIDDEN READ ALL -->
 
     <button
         id="readAllBtn"
@@ -124,14 +146,18 @@ overflow:hidden;
         <div class="summary-card">
 
             <div class="summary-label">
+
                 Unread
+
             </div>
 
             <div
                 class="summary-value"
                 id="unreadCount"
             >
+
                 0
+
             </div>
 
         </div>
@@ -139,14 +165,18 @@ overflow:hidden;
         <div class="summary-card">
 
             <div class="summary-label">
+
                 Total
+
             </div>
 
             <div
                 class="summary-value"
                 id="totalCount"
             >
+
                 0
+
             </div>
 
         </div>
@@ -161,7 +191,9 @@ overflow:hidden;
             class="refresh-btn"
             id="refreshBtn"
         >
+
             ⟳ Refresh
+
         </button>
 
     </div>
@@ -187,11 +219,15 @@ overflow:hidden;
         >
 
         <div class="empty-title">
+
             No Notifications
+
         </div>
 
         <div class="empty-subtitle">
+
             Everything is up to date 🎉
+
         </div>
 
     </div>
@@ -221,10 +257,7 @@ overflow:hidden;
 
 let loaded = 0;
 
-async function loadComponent(
-    id,
-    file
-){
+async function loadComponent(id,file){
 
     try{
 
@@ -260,7 +293,7 @@ async function loadComponent(
         }
 
         // =====================
-        // TOPBAR CONFIG
+        // TOPBAR
         // =====================
 
         if(id === "topbar-container"){
@@ -272,6 +305,8 @@ async function loadComponent(
                 showBack:true,
 
                 showProfile:false,
+
+                showLogo:false,
 
                 actionText:"Read All",
 
@@ -323,7 +358,7 @@ async function loadComponent(
 }
 
 // =========================
-// OFFLINE STATUS
+// OFFLINE
 // =========================
 
 function updateOnlineStatus(){
@@ -410,10 +445,10 @@ window.addEventListener(
 
 </script>
 
-<!-- NOTIFICATION JS -->
+<!-- NOTIFICATION LOGIC -->
 
 <script src="../../assets/js/notification.js"></script>
 
 </body>
+
 </html>
-```
