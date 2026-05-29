@@ -421,46 +421,15 @@ if(id === "topbar-container"){
         // =========================
         // LOAD COMPONENTS
         // =========================
-        loadComponent(
-            "topbar-container",
-            "./components/topbar.html"
-        );
+loadComponent(
+    "topbar-container",
+    "./components/topbar.html"
+);
 
-setTimeout(()=>{
-
-    const user = JSON.parse(
-
-        localStorage.getItem(
-            "loggedInUser"
-        ) || "{}"
-
-    );
-
-    initTopbar({
-
-        dashboardMode:true,
-
-        userName:
-            user.fullname ||
-            user.username ||
-            "User",
-
-        showLogo:true,
-
-        showProfile:true,
-
-        showBack:false
-
-    });
-
-},100);
-        
-
-        
-        loadComponent(
-            "bottomnav-container",
-            "./components/bottomnav.html"
-        );
+loadComponent(
+    "bottomnav-container",
+    "./components/bottomnav.html"
+);
 
         // =========================
         // PUSH INIT
