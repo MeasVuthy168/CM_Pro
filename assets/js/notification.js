@@ -28,9 +28,9 @@ document.getElementById("readAllBtn");
 // TOKEN
 // =========================================================
 
-const token=
+const notificationToken =
 
-localStorage.getItem("token")||
+localStorage.getItem("token") ||
 
 sessionStorage.getItem("token");
 
@@ -59,7 +59,7 @@ async function loadNotifications(){
             {
                 headers:{
                     Authorization:
-                    `Bearer ${token}`
+                    `Bearer ${notificationToken}`
                 }
             }
 
