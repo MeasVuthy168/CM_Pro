@@ -1,4 +1,7 @@
+```html
 <div class="topbar">
+
+    <!-- LEFT -->
 
     <div class="topbar-left">
 
@@ -11,30 +14,41 @@
         </button>
 
         <img
-            id="topbarProfile"
+            src="/CM_Pro/assets/images/acleda-logo.PNG"
+            class="topbar-logo"
+            id="topbarLogo"
+        >
+
+        <img
+            src="/CM_Pro/assets/images/profile.jpg"
             class="topbar-profile"
-            src="/CM_Pro/assets/images/default-profile.png"
+            id="topbarProfileLeft"
+            style="display:none;"
         >
 
     </div>
 
+    <!-- CENTER -->
+
     <div class="topbar-center">
 
         <div
-            id="topbarTitle"
             class="topbar-title"
+            id="topbarTitle"
         >
             CM_Pro
         </div>
 
         <div
+            class="topbar-name"
             id="topbarName"
-            class="topbar-subtitle"
         >
-            Welcome
+            សួស្តី, User
         </div>
 
     </div>
+
+    <!-- RIGHT -->
 
     <div class="topbar-right">
 
@@ -46,6 +60,21 @@
             Action
         </button>
 
+        <div
+            id="topbarUserBox"
+            class="topbar-user-box"
+            onclick="logout()"
+        >
+
+            <img
+                src="/CM_Pro/assets/images/profile.jpg"
+                class="topbar-profile"
+                id="topbarProfile"
+            >
+
+        </div>
+
     </div>
 
 </div>
+```
