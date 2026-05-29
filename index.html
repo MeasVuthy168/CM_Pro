@@ -225,11 +225,39 @@
 
                 document.getElementById(id).innerHTML = html;
 
-                if(id === "topbar-container"){
+if(id === "topbar-container"){
 
-                    loadTopbarUser();
+    loadTopbarUser();
 
-                }
+    const user = JSON.parse(
+
+        localStorage.getItem(
+            "loggedInUser"
+        ) || "{}"
+
+    );
+
+    initTopbar({
+
+        dashboardMode:true,
+
+        userName:
+
+            user.fullname ||
+
+            user.username ||
+
+            "User",
+
+        showLogo:true,
+
+        showProfile:true,
+
+        showBack:false
+
+    });
+
+}
 
             }catch(error){
 
@@ -269,65 +297,70 @@
         // =========================
         function loadTopbarUser(){
 
-            try{
+    try{
 
-                const loggedInUser = JSON.parse(
+        const loggedInUser = JSON.parse(
 
-                    localStorage.getItem(
-                        "loggedInUser"
-                    ) || "{}"
+            localStorage.getItem(
+                "loggedInUser"
+            ) || "{}"
 
-                );
+        );
 
-                const fullname =
+        const fullname =
 
-                    loggedInUser.fullname ||
+            loggedInUser.fullname ||
 
-                    loggedInUser.username ||
+            loggedInUser.username ||
 
-                    "User";
+            "User";
 
-                const topbarName =
+        // PROFILE IMAGE
 
-                    document.getElementById(
-                        "topbarName"
-                    );
+        const profile =
 
-                if(topbarName){
+            document.getElementById(
+                "topbarProfile"
+            );
 
-                    topbarName.innerText =
-                        `សួស្តី, ${fullname}`;
+        if(
 
-                }
+            profile &&
 
-                if(loggedInUser.image){
+            loggedInUser.image
 
-                    const profile =
+        ){
 
-                        document.getElementById(
-                            "topbarProfile"
-                        );
-
-                    if(profile){
-
-                        profile.src =
-                            loggedInUser.image;
-
-                    }
-
-                }
-
-            }catch(error){
-
-                console.error(
-                    "Topbar user error:",
-                    error
-                );
-
-            }
+            profile.src =
+                loggedInUser.image;
 
         }
 
+        // USER NAME
+
+        const userName =
+
+            document.getElementById(
+                "topbarUserName"
+            );
+
+        if(userName){
+
+            userName.innerText =
+                fullname;
+
+        }
+
+    }catch(error){
+
+        console.error(
+            "Topbar user error:",
+            error
+        );
+
+    }
+
+}
         // =========================
         // OFFLINE DETECT
         // =========================
