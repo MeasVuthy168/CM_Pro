@@ -1,15 +1,14 @@
-
 /* =========================
-   Topbar
+   TOPBAR
 ========================= */
 
 .topbar{
 
     background:#002D6B;
 
-    color:white;
+    color:#fff;
 
-    width:100vw;
+    width:100%;
 
     min-height:78px;
 
@@ -17,20 +16,22 @@
 
     margin:0;
 
-    border-radius:0;
-
-    box-sizing:border-box;
-
     display:flex;
 
     align-items:center;
 
     justify-content:space-between;
 
+    box-sizing:border-box;
+
+    position:relative;
+
+    z-index:100;
+
 }
 
 /* =========================
-   Left
+   LEFT
 ========================= */
 
 .topbar-left{
@@ -41,50 +42,12 @@
 
     gap:10px;
 
-}
-
-/* Back Button */
-
-.topbar-back-btn{
-
-    width:42px;
-
-    height:42px;
-
-    border:none;
-
-    border-radius:12px;
-
-    background:rgba(255,255,255,.15);
-
-    color:#fff;
-
-    font-size:20px;
-
-    font-weight:bold;
-
-    cursor:pointer;
-
-}
-
-.topbar-back-btn:active{
-
-    transform:scale(.95);
-
-}
-
-/* Logo */
-
-.topbar-logo{
-
-    height:42px;
-
-    object-fit:contain;
+    min-width:60px;
 
 }
 
 /* =========================
-   Center
+   CENTER
 ========================= */
 
 .topbar-center{
@@ -127,10 +90,12 @@
 
     text-align:center;
 
+    display:none;
+
 }
 
 /* =========================
-   Right
+   RIGHT
 ========================= */
 
 .topbar-right{
@@ -139,11 +104,65 @@
 
     align-items:center;
 
+    justify-content:flex-end;
+
     gap:10px;
+
+    min-width:60px;
 
 }
 
-/* Action Button */
+/* =========================
+   LOGO
+========================= */
+
+.topbar-logo{
+
+    height:42px;
+
+    width:auto;
+
+    object-fit:contain;
+
+}
+
+/* =========================
+   BACK BUTTON
+========================= */
+
+.topbar-back-btn{
+
+    width:42px;
+
+    height:42px;
+
+    border:none;
+
+    border-radius:12px;
+
+    background:rgba(255,255,255,.15);
+
+    color:#fff;
+
+    font-size:20px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+    transition:.15s;
+
+}
+
+.topbar-back-btn:active{
+
+    transform:scale(.95);
+
+}
+
+/* =========================
+   ACTION BUTTON
+========================= */
 
 .topbar-action-btn{
 
@@ -165,6 +184,8 @@
 
     cursor:pointer;
 
+    transition:.15s;
+
 }
 
 .topbar-action-btn:active{
@@ -173,7 +194,9 @@
 
 }
 
-/* Profile Container */
+/* =========================
+   USER BOX
+========================= */
 
 .topbar-user-box{
 
@@ -189,7 +212,9 @@
 
 }
 
-/* Profile */
+/* =========================
+   PROFILE
+========================= */
 
 .topbar-profile{
 
@@ -203,11 +228,13 @@
 
     object-fit:cover;
 
-    background:white;
+    background:#fff;
 
 }
 
-/* Optional Left Profile */
+/* =========================
+   OPTIONAL LEFT PROFILE
+========================= */
 
 #topbarProfileLeft{
 
@@ -223,7 +250,9 @@
 
 }
 
-/* Mobile */
+/* =========================
+   MOBILE
+========================= */
 
 @media(max-width:480px){
 
@@ -238,6 +267,10 @@
     .topbar-title{
 
         font-size:16px;
+
+        max-width:180px;
+
+        margin:auto;
 
     }
 
@@ -255,5 +288,24 @@
 
     }
 
+    .topbar-back-btn{
+
+        width:38px;
+
+        height:38px;
+
+        font-size:18px;
+
+    }
+
+    .topbar-action-btn{
+
+        height:36px;
+
+        padding:0 10px;
+
+        font-size:12px;
+
+    }
+
 }
-```
