@@ -6,13 +6,13 @@ async function loadNotificationBadge(){
 
     try{
 
-        const token =
+        const badgeToken =
 
             localStorage.getItem("token") ||
 
             sessionStorage.getItem("token");
 
-        if(!token) return;
+        if(!badgeToken) return;
 
         const badge =
 
@@ -31,7 +31,7 @@ async function loadNotificationBadge(){
                 headers:{
 
                     Authorization:
-                        `Bearer ${token}`
+                        `Bearer ${badgeToken}`
 
                 }
 
@@ -39,14 +39,26 @@ async function loadNotificationBadge(){
 
         );
 
+        if(!response.ok){
+
+            throw new Error(
+                `HTTP ${response.status}`
+            );
+
+        }
+
         const data =
             await response.json();
 
-        const count =
+        const count = Number(
 
-            Number(
-                data.unreadCount || 0
-            );
+            data.unreadCount ||
+
+            data.count ||
+
+            0
+
+        );
 
         if(count > 0){
 
@@ -69,8 +81,11 @@ async function loadNotificationBadge(){
     }catch(error){
 
         console.error(
+
             "Notification Badge Error:",
+
             error
+
         );
 
     }
