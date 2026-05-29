@@ -392,19 +392,36 @@
             "topbar-container",
             "./components/topbar.html"
         );
+
 setTimeout(()=>{
+
+    const user = JSON.parse(
+
+        localStorage.getItem(
+            "loggedInUser"
+        ) || "{}"
+
+    );
 
     initTopbar({
 
-        title:"CM_Pro",
+        dashboardMode:true,
 
-        showBack:false,
+        userName:
+            user.fullname ||
+            user.username ||
+            "User",
 
-        showProfile:true
+        showLogo:true,
+
+        showProfile:true,
+
+        showBack:false
 
     });
 
 },100);
+        
 
         
         loadComponent(
