@@ -1,7 +1,4 @@
-<!-- =========================================================
-FILE: /pages/notifications/index.html
-========================================================= -->
-
+```html
 <!DOCTYPE html>
 <html lang="en">
 
@@ -28,21 +25,15 @@ name="apple-mobile-web-app-status-bar-style"
 content="black-translucent"
 >
 
-<!-- MAIN CSS -->
+<link
+rel="stylesheet"
+href="../../assets/css/main.css"
+>
 
 <link
 rel="stylesheet"
-href="/CM_Pro/assets/css/main.css"
+href="../../assets/css/notification.css"
 >
-
-<!-- NOTIFICATION CSS -->
-
-<link
-rel="stylesheet"
-href="/CM_Pro/assets/css/notification.css"
->
-
-<!-- GLOBAL SPLASH -->
 
 <link
 rel="stylesheet"
@@ -51,168 +42,46 @@ href="/CM_Pro/assets/css/global-splash.css"
 
 <style>
 
-/* PAGE */
+#offlineBanner{
 
-html,
-body{
-width:100%;
-height:100%;
-overflow:hidden;
-background:#f4f6fb;
+position:fixed;
+
+top:10px;
+
+left:50%;
+
+transform:translateX(-50%);
+
+background:#d90429;
+
+color:#fff;
+
+padding:10px 18px;
+
+border-radius:14px;
+
+font-size:14px;
+
+font-weight:600;
+
+z-index:999999;
+
+display:none;
+
+box-shadow:0 4px 15px rgba(0,0,0,.2);
+
 }
-
-body{
-display:flex;
-flex-direction:column;
-}
-
-/* CONTENT */
 
 .page-container{
+
 flex:1;
+
+display:flex;
+
+flex-direction:column;
+
 overflow:hidden;
-display:flex;
-flex-direction:column;
-}
 
-/* OFFLINE */
-
-#offlineBanner{
-position:fixed;
-top:12px;
-left:50%;
-transform:translateX(-50%);
-background:#d90429;
-color:#fff;
-padding:10px 18px;
-border-radius:14px;
-font-size:14px;
-font-weight:600;
-z-index:999999;
-display:none;
-box-shadow:0 4px 15px rgba(0,0,0,.2);
-}
-
-/* PAGE TITLE */
-
-.page-title{
-padding:20px 18px 10px;
-font-size:28px;
-font-weight:700;
-color:#17356f;
-}
-
-/* SUMMARY */
-
-.notify-summary{
-display:flex;
-gap:15px;
-padding:0 18px 18px;
-}
-
-.summary-card{
-flex:1;
-background:#fff;
-border-radius:22px;
-padding:20px;
-box-shadow:0 4px 15px rgba(0,0,0,.06);
-}
-
-.summary-label{
-font-size:14px;
-color:#666;
-margin-bottom:10px;
-}
-
-.summary-value{
-font-size:30px;
-font-weight:700;
-color:#032d73;
-}
-
-/* ACTIONS */
-
-.action-row{
-display:flex;
-gap:12px;
-padding:0 18px 18px;
-}
-
-.action-btn{
-flex:1;
-height:52px;
-border:none;
-border-radius:16px;
-background:#032d73;
-color:#fff;
-font-size:15px;
-font-weight:600;
-}
-
-/* LIST */
-
-.notify-list{
-flex:1;
-overflow-y:auto;
-padding:0 18px 120px;
-}
-
-/* EMPTY */
-
-.empty-box{
-flex:1;
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-padding:30px;
-text-align:center;
-}
-
-.empty-img{
-width:140px;
-margin-bottom:20px;
-opacity:.8;
-}
-
-.empty-title{
-font-size:24px;
-font-weight:700;
-color:#17356f;
-margin-bottom:10px;
-}
-
-.empty-subtitle{
-font-size:15px;
-line-height:1.6;
-color:#666;
-}
-
-/* LOADING */
-
-.loading-box{
-position:fixed;
-inset:0;
-background:rgba(255,255,255,.75);
-display:flex;
-justify-content:center;
-align-items:center;
-z-index:99999;
-}
-
-.spinner{
-width:45px;
-height:45px;
-border:4px solid #ddd;
-border-top:4px solid #032d73;
-border-radius:50%;
-animation:spin .7s linear infinite;
-}
-
-@keyframes spin{
-100%{
-transform:rotate(360deg);
-}
 }
 
 </style>
@@ -231,39 +100,57 @@ transform:rotate(360deg);
 
 <!-- API -->
 
-<script src="/CM_Pro/config/api.js"></script>
+<script src="../../config/api.js"></script>
 
 <!-- AUTH -->
 
-<script src="/CM_Pro/config/auth.js"></script>
+<script src="../../config/auth.js"></script>
 
 <!-- SESSION -->
 
-<script src="/CM_Pro/config/session.js"></script>
+<script src="../../config/session.js"></script>
 
 <!-- PUSH -->
 
-<script src="/CM_Pro/config/push.js"></script>
+<script src="../../config/push.js"></script>
 
 <!-- GLOBAL SPLASH -->
 
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 
-<!-- TOPBAR -->
+<!-- LOGOUT -->
 
-<div id="topbar-container"></div>
+<script>
+
+function logout(){
+
+if(confirm("Logout CM_Pro ?")){
+
+localStorage.removeItem("token");
+
+localStorage.removeItem("loggedInUser");
+
+sessionStorage.clear();
+
+window.location.replace(
+"/CM_Pro/login.html"
+);
+
+}
+
+}
+
+</script>
+
+<!-- NOTIFICATION TOPBAR -->
+
+<div
+id="notification-topbar-container"
+></div>
 
 <!-- PAGE -->
 
 <div class="page-container">
-
-<!-- TITLE -->
-
-<div class="page-title">
-
-🔔 Notifications
-
-</div>
 
 <!-- SUMMARY -->
 
@@ -309,25 +196,16 @@ id="totalCount"
 
 </div>
 
-<!-- ACTION -->
+<!-- REFRESH -->
 
-<div class="action-row">
+<div class="refresh-row">
 
 <button
-class="action-btn"
+class="refresh-btn"
 id="refreshBtn"
 >
 
 ⟳ Refresh
-
-</button>
-
-<button
-class="action-btn"
-id="readAllBtn"
->
-
-✓ Read All
 
 </button>
 
@@ -349,7 +227,7 @@ style="display:none;"
 >
 
 <img
-src="/CM_Pro/assets/images/robot.svg"
+src="../../assets/images/robot.svg"
 class="empty-img"
 >
 
@@ -384,80 +262,49 @@ id="loadingBox"
 
 <div id="bottomnav-container"></div>
 
-<!-- MAIN -->
-
 <script>
-
-// =========================
-// LOGOUT
-// =========================
-
-function logout(){
-
-if(confirm("Logout CM_Pro ?")){
-
-localStorage.removeItem("token");
-
-localStorage.removeItem(
-"loggedInUser"
-);
-
-sessionStorage.clear();
-
-window.location.replace(
-"/CM_Pro/login.html"
-);
-
-}
-
-}
 
 // =========================
 // COMPONENT LOADER
 // =========================
 
-let loaded=0;
+let loaded = 0;
 
-async function loadComponent(id,file){
+async function loadComponent(
+id,
+file
+){
 
 try{
 
-const cached=
+const cached =
 
 sessionStorage.getItem(
-"comp_"+id
+"comp_" + id
 );
 
 if(cached){
 
 document
 .getElementById(id)
-.innerHTML=cached;
-
-if(id==="topbar-container"){
-loadTopbarUser();
-}
+.innerHTML = cached;
 
 }else{
 
-const response=
+const response =
 await fetch(file);
 
-const html=
+const html =
 await response.text();
 
 document
 .getElementById(id)
-.innerHTML=html;
+.innerHTML = html;
 
 sessionStorage.setItem(
-"comp_"+id,
+"comp_" + id,
 html
 );
-
-if(id==="topbar-container"){
-loadTopbarUser();
-}
 
 }
 
@@ -472,15 +319,18 @@ error
 
 loaded++;
 
-if(loaded>=2){
+if(loaded >= 2){
 
 setTimeout(()=>{
 
 if(
 typeof hideGlobalSplash
-==="function"
+===
+"function"
 ){
+
 hideGlobalSplash();
+
 }
 
 },300);
@@ -492,85 +342,18 @@ hideGlobalSplash();
 }
 
 // =========================
-// TOPBAR USER
-// =========================
-
-function loadTopbarUser(){
-
-try{
-
-const loggedInUser=
-
-JSON.parse(
-
-localStorage.getItem(
-"loggedInUser"
-)||"{}"
-
-);
-
-const fullname=
-
-loggedInUser.fullname||
-
-loggedInUser.username||
-
-"User";
-
-const topbarName=
-
-document.getElementById(
-"topbarName"
-);
-
-if(topbarName){
-
-topbarName.innerText=
-`សួស្តី, ${fullname}`;
-
-}
-
-if(loggedInUser.image){
-
-const profile=
-
-document.getElementById(
-"topbarProfile"
-);
-
-if(profile){
-
-profile.src=
-loggedInUser.image;
-
-}
-
-}
-
-}catch(error){
-
-console.error(
-"Topbar user error:",
-error
-);
-
-}
-
-}
-
-// =========================
-// OFFLINE
+// OFFLINE STATUS
 // =========================
 
 function updateOnlineStatus(){
 
-const banner=
+const banner =
 
 document.getElementById(
 "offlineBanner"
 );
 
-banner.style.display=
+banner.style.display =
 
 navigator.onLine
 
@@ -597,17 +380,23 @@ updateOnlineStatus();
 // =========================
 
 loadComponent(
-"topbar-container",
-"/CM_Pro/components/topbar.html"
+
+"notification-topbar-container",
+
+"/CM_Pro/components/topbar_notifications.html"
+
 );
 
 loadComponent(
+
 "bottomnav-container",
+
 "/CM_Pro/components/bottomnav.html"
+
 );
 
 // =========================
-// PUSH INIT
+// PUSH
 // =========================
 
 if(window.PushNotification){
@@ -617,33 +406,78 @@ PushNotification.init();
 }
 
 // =========================
+// READ ALL BUTTON
+// =========================
+
+document.addEventListener(
+
+"click",
+
+(e)=>{
+
+if(
+
+e.target.id ===
+
+"topbarReadAllBtn"
+
+){
+
+const btn =
+
+document.getElementById(
+"readAllBtn"
+);
+
+if(btn){
+
+btn.click();
+
+}
+
+}
+
+}
+
+);
+
+// =========================
 // FAILSAFE SPLASH
 // =========================
 
 window.addEventListener(
+
 "load",
+
 ()=>{
 
 setTimeout(()=>{
 
 if(
+
 typeof hideGlobalSplash
-==="function"
+===
+"function"
+
 ){
+
 hideGlobalSplash();
+
 }
 
 },2500);
 
 }
+
 );
 
 </script>
 
 <!-- NOTIFICATION JS -->
 
-<script src="/CM_Pro/assets/js/notification.js"></script>
+<script src="../../assets/js/notification.js"></script>
 
 </body>
 
 </html>
+```
