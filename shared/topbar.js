@@ -1,8 +1,11 @@
+```js
 window.initTopbar = function(config={}){
 
     const {
 
         title = "CM_Pro",
+
+        subtitle = "",
 
         showBack = false,
 
@@ -10,9 +13,13 @@ window.initTopbar = function(config={}){
 
         actionHandler = null,
 
-        showProfile = true
+        showProfile = true,
+
+        showLogo = true
 
     } = config;
+
+    // TITLE
 
     const titleEl =
         document.getElementById(
@@ -24,6 +31,34 @@ window.initTopbar = function(config={}){
         titleEl.innerText = title;
 
     }
+
+    // SUBTITLE
+
+    const subtitleEl =
+        document.getElementById(
+            "topbarName"
+        );
+
+    if(subtitleEl){
+
+        if(subtitle){
+
+            subtitleEl.innerText =
+                subtitle;
+
+            subtitleEl.style.display =
+                "block";
+
+        }else{
+
+            subtitleEl.style.display =
+                "none";
+
+        }
+
+    }
+
+    // BACK
 
     const backBtn =
         document.getElementById(
@@ -40,6 +75,8 @@ window.initTopbar = function(config={}){
 
     }
 
+    // ACTION
+
     const actionBtn =
         document.getElementById(
             "topbarActionBtn"
@@ -55,12 +92,8 @@ window.initTopbar = function(config={}){
             actionBtn.innerText =
                 actionText;
 
-            if(actionHandler){
-
-                actionBtn.onclick =
-                    actionHandler;
-
-            }
+            actionBtn.onclick =
+                actionHandler || null;
 
         }else{
 
@@ -71,18 +104,37 @@ window.initTopbar = function(config={}){
 
     }
 
-    const profile =
+    // PROFILE
+
+    const userBox =
         document.getElementById(
-            "topbarProfile"
+            "topbarUserBox"
         );
 
-    if(profile){
+    if(userBox){
 
-        profile.style.display =
+        userBox.style.display =
             showProfile
+            ? "flex"
+            : "none";
+
+    }
+
+    // LOGO
+
+    const logo =
+        document.getElementById(
+            "topbarLogo"
+        );
+
+    if(logo){
+
+        logo.style.display =
+            showLogo
             ? "block"
             : "none";
 
     }
 
 };
+```
