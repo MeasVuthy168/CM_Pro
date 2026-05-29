@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 
@@ -43,45 +42,26 @@ href="/CM_Pro/assets/css/global-splash.css"
 <style>
 
 #offlineBanner{
-
 position:fixed;
-
 top:10px;
-
 left:50%;
-
 transform:translateX(-50%);
-
 background:#d90429;
-
 color:#fff;
-
 padding:10px 18px;
-
 border-radius:14px;
-
 font-size:14px;
-
 font-weight:600;
-
 z-index:999999;
-
 display:none;
-
 box-shadow:0 4px 15px rgba(0,0,0,.2);
-
 }
 
 .page-container{
-
 flex:1;
-
 display:flex;
-
 flex-direction:column;
-
 overflow:hidden;
-
 }
 
 </style>
@@ -93,9 +73,7 @@ overflow:hidden;
 <!-- OFFLINE -->
 
 <div id="offlineBanner">
-
 ⚠️ No Internet Connection
-
 </div>
 
 <!-- API -->
@@ -114,147 +92,120 @@ overflow:hidden;
 
 <script src="../../config/push.js"></script>
 
+<!-- TOPBAR -->
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+
 <!-- GLOBAL SPLASH -->
 
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 
-<!-- LOGOUT -->
+<!-- TOPBAR -->
 
-<script>
-
-function logout(){
-
-if(confirm("Logout CM_Pro ?")){
-
-localStorage.removeItem("token");
-
-localStorage.removeItem("loggedInUser");
-
-sessionStorage.clear();
-
-window.location.replace(
-"/CM_Pro/login.html"
-);
-
-}
-
-}
-
-</script>
-
-<!-- NOTIFICATION TOPBAR -->
-
-<div
-id="notification-topbar-container"
-></div>
+<div id="topbar-container"></div>
 
 <!-- PAGE -->
 
 <div class="page-container">
 
-<!-- SUMMARY -->
+    <!-- Hidden Button (used by topbar action) -->
 
-<div class="notify-summary">
+    <button
+        id="readAllBtn"
+        style="display:none;"
+    >
+        Read All
+    </button>
 
-<div class="summary-card">
+    <!-- SUMMARY -->
 
-<div class="summary-label">
+    <div class="notify-summary">
 
-Unread
+        <div class="summary-card">
 
-</div>
+            <div class="summary-label">
+                Unread
+            </div>
 
-<div
-class="summary-value"
-id="unreadCount"
->
+            <div
+                class="summary-value"
+                id="unreadCount"
+            >
+                0
+            </div>
 
-0
+        </div>
 
-</div>
+        <div class="summary-card">
 
-</div>
+            <div class="summary-label">
+                Total
+            </div>
 
-<div class="summary-card">
+            <div
+                class="summary-value"
+                id="totalCount"
+            >
+                0
+            </div>
 
-<div class="summary-label">
+        </div>
 
-Total
+    </div>
 
-</div>
+    <!-- REFRESH -->
 
-<div
-class="summary-value"
-id="totalCount"
->
+    <div class="refresh-row">
 
-0
+        <button
+            class="refresh-btn"
+            id="refreshBtn"
+        >
+            ⟳ Refresh
+        </button>
 
-</div>
+    </div>
 
-</div>
+    <!-- LIST -->
 
-</div>
+    <div
+        class="notify-list"
+        id="notifyList"
+    ></div>
 
-<!-- REFRESH -->
+    <!-- EMPTY -->
 
-<div class="refresh-row">
+    <div
+        class="empty-box"
+        id="emptyBox"
+        style="display:none;"
+    >
 
-<button
-class="refresh-btn"
-id="refreshBtn"
->
+        <img
+            src="../../assets/images/robot.svg"
+            class="empty-img"
+        >
 
-⟳ Refresh
+        <div class="empty-title">
+            No Notifications
+        </div>
 
-</button>
+        <div class="empty-subtitle">
+            Everything is up to date 🎉
+        </div>
 
-</div>
+    </div>
 
-<!-- LIST -->
+    <!-- LOADING -->
 
-<div
-class="notify-list"
-id="notifyList"
-></div>
+    <div
+        class="loading-box"
+        id="loadingBox"
+    >
 
-<!-- EMPTY -->
+        <div class="spinner"></div>
 
-<div
-class="empty-box"
-id="emptyBox"
-style="display:none;"
->
-
-<img
-src="../../assets/images/robot.svg"
-class="empty-img"
->
-
-<div class="empty-title">
-
-No Notifications
-
-</div>
-
-<div class="empty-subtitle">
-
-Everything is up to date 🎉
-
-</div>
-
-</div>
-
-<!-- LOADING -->
-
-<div
-class="loading-box"
-id="loadingBox"
->
-
-<div class="spinner"></div>
-
-</div>
+    </div>
 
 </div>
 
@@ -271,73 +222,103 @@ id="loadingBox"
 let loaded = 0;
 
 async function loadComponent(
-id,
-file
+    id,
+    file
 ){
 
-try{
+    try{
 
-const cached =
+        const cached =
 
-sessionStorage.getItem(
-"comp_" + id
-);
+            sessionStorage.getItem(
+                "comp_" + id
+            );
 
-if(cached){
+        if(cached){
 
-document
-.getElementById(id)
-.innerHTML = cached;
+            document
+                .getElementById(id)
+                .innerHTML = cached;
 
-}else{
+        }else{
 
-const response =
-await fetch(file);
+            const response =
+                await fetch(file);
 
-const html =
-await response.text();
+            const html =
+                await response.text();
 
-document
-.getElementById(id)
-.innerHTML = html;
+            document
+                .getElementById(id)
+                .innerHTML = html;
 
-sessionStorage.setItem(
-"comp_" + id,
-html
-);
+            sessionStorage.setItem(
+                "comp_" + id,
+                html
+            );
 
-}
+        }
 
-}catch(error){
+        // =====================
+        // TOPBAR CONFIG
+        // =====================
 
-console.error(
-"Component load error:",
-error
-);
+        if(id === "topbar-container"){
 
-}finally{
+            initTopbar({
 
-loaded++;
+                title:"Notifications",
 
-if(loaded >= 2){
+                showBack:true,
 
-setTimeout(()=>{
+                showProfile:false,
 
-if(
-typeof hideGlobalSplash
-===
-"function"
-){
+                actionText:"Read All",
 
-hideGlobalSplash();
+                actionHandler:()=>{
 
-}
+                    document
+                        .getElementById(
+                            "readAllBtn"
+                        )
+                        .click();
 
-},300);
+                }
 
-}
+            });
 
-}
+        }
+
+    }catch(error){
+
+        console.error(
+            "Component load error:",
+            error
+        );
+
+    }finally{
+
+        loaded++;
+
+        if(loaded >= 2){
+
+            setTimeout(()=>{
+
+                if(
+                    typeof hideGlobalSplash
+                    ===
+                    "function"
+                ){
+
+                    hideGlobalSplash();
+
+                }
+
+            },300);
+
+        }
+
+    }
 
 }
 
@@ -347,30 +328,30 @@ hideGlobalSplash();
 
 function updateOnlineStatus(){
 
-const banner =
+    const banner =
 
-document.getElementById(
-"offlineBanner"
-);
+        document.getElementById(
+            "offlineBanner"
+        );
 
-banner.style.display =
+    banner.style.display =
 
-navigator.onLine
+        navigator.onLine
 
-? "none"
+        ? "none"
 
-: "block";
+        : "block";
 
 }
 
 window.addEventListener(
-"online",
-updateOnlineStatus
+    "online",
+    updateOnlineStatus
 );
 
 window.addEventListener(
-"offline",
-updateOnlineStatus
+    "offline",
+    updateOnlineStatus
 );
 
 updateOnlineStatus();
@@ -380,19 +361,13 @@ updateOnlineStatus();
 // =========================
 
 loadComponent(
-
-"notification-topbar-container",
-
-"/CM_Pro/components/topbar_notifications.html"
-
+    "topbar-container",
+    "/CM_Pro/components/topbar.html"
 );
 
 loadComponent(
-
-"bottomnav-container",
-
-"/CM_Pro/components/bottomnav.html"
-
+    "bottomnav-container",
+    "/CM_Pro/components/bottomnav.html"
 );
 
 // =========================
@@ -401,45 +376,9 @@ loadComponent(
 
 if(window.PushNotification){
 
-PushNotification.init();
+    PushNotification.init();
 
 }
-
-// =========================
-// READ ALL BUTTON
-// =========================
-
-document.addEventListener(
-
-"click",
-
-(e)=>{
-
-if(
-
-e.target.id ===
-
-"topbarReadAllBtn"
-
-){
-
-const btn =
-
-document.getElementById(
-"readAllBtn"
-);
-
-if(btn){
-
-btn.click();
-
-}
-
-}
-
-}
-
-);
 
 // =========================
 // FAILSAFE SPLASH
@@ -447,27 +386,25 @@ btn.click();
 
 window.addEventListener(
 
-"load",
+    "load",
 
-()=>{
+    ()=>{
 
-setTimeout(()=>{
+        setTimeout(()=>{
 
-if(
+            if(
+                typeof hideGlobalSplash
+                ===
+                "function"
+            ){
 
-typeof hideGlobalSplash
-===
-"function"
+                hideGlobalSplash();
 
-){
+            }
 
-hideGlobalSplash();
+        },2500);
 
-}
-
-},2500);
-
-}
+    }
 
 );
 
@@ -478,6 +415,5 @@ hideGlobalSplash();
 <script src="../../assets/js/notification.js"></script>
 
 </body>
-
 </html>
 ```
