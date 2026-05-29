@@ -1,6 +1,3 @@
-/* =========================================================
-FILE: /assets/js/notification.js
-========================================================= */
 
 // =========================================================
 // ELEMENTS
@@ -51,45 +48,72 @@ window.location.replace(
 
 async function loadNotifications(){
 
-try{
+    try{
 
-showLoading(true);
+        showLoading(true);
 
-const response=await fetch(
+        const response = await fetch(
 
-`${API.BASE_URL}/api/notifications/my`,
+            `${API.BASE_URL}/api/notifications/my`,
 
-{
-headers:{
-Authorization:`Bearer ${token}`
-}
-}
+            {
+                headers:{
+                    Authorization:
+                    `Bearer ${token}`
+                }
+            }
 
-);
+        );
 
-const data=await response.json();
+        if(!response.ok){
 
-const notifications=
+            throw new Error(
+                `HTTP ${response.status}`
+            );
 
-data.notifications||
+        }
 
-data.data||
+        const data =
+            await response.json();
 
-[];
+        console.log(
+            "Notifications API:",
+            data
+        );
 
-renderNotifications(notifications);
+        const notifications =
 
-}catch(error){
+            data.items ||
 
-console.error(error);
+            data.notifications ||
 
-showEmpty();
+            data.data ||
 
-}finally{
+            [];
 
-showLoading(false);
+        console.log(
+            "Notifications:",
+            notifications
+        );
 
-}
+        renderNotifications(
+            notifications
+        );
+
+    }catch(error){
+
+        console.error(
+            "Notification Error:",
+            error
+        );
+
+        showEmpty();
+
+    }finally{
+
+        showLoading(false);
+
+    }
 
 }
 
