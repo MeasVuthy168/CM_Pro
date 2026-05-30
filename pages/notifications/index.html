@@ -372,63 +372,93 @@ async function loadComponent(id,file){
     }
 
 }
-
 // =========================
-// NOTIFICATION MENU
+// MENU EVENTS
 // =========================
 
-function toggleNotificationMenu(){
+setTimeout(()=>{
 
-    const menu =
+    // READ ALL
+
+    const readBtn =
+
         document.getElementById(
-            "notificationMenu"
+            "menuReadAll"
         );
 
-    if(!menu) return;
+    if(readBtn){
 
-    menu.style.display =
+        readBtn.onclick = ()=>{
 
-        menu.style.display === "block"
+            document
+                .getElementById(
+                    "readAllBtn"
+                )
+                .click();
 
-        ? "none"
-
-        : "block";
-
-}
-
-document.addEventListener(
-
-    "click",
-
-    (e)=>{
-
-        const menu =
-
-            document.getElementById(
-                "notificationMenu"
-            );
-
-        if(!menu) return;
-
-        if(
-
-            !menu.contains(e.target)
-
-            &&
-
-            e.target.id !==
-            "topbarActionBtn"
-
-        ){
-
-            menu.style.display =
-                "none";
-
-        }
+        };
 
     }
 
-);
+    // DELETE ALL
+
+    const deleteBtn =
+
+        document.getElementById(
+            "menuDeleteAll"
+        );
+
+    if(deleteBtn){
+
+        deleteBtn.onclick = async ()=>{
+
+            if(
+                !confirm(
+                    "Delete all notifications?"
+                )
+            ) return;
+
+            try{
+
+                await fetch(
+
+                    `${API.BASE_URL}/api/notifications/delete-all`,
+
+                    {
+
+                        method:"POST",
+
+                        headers:{
+                            Authorization:
+                            `Bearer ${token}`
+                        }
+
+                    }
+
+                );
+
+                loadNotifications();
+
+                if(
+                    typeof loadNotificationBadge
+                    === "function"
+                ){
+
+                    loadNotificationBadge();
+
+                }
+
+            }catch(error){
+
+                console.error(error);
+
+            }
+
+        };
+
+    }
+
+},1000);
     
 // =========================
 // OFFLINE
