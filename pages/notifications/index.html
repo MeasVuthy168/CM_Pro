@@ -90,64 +90,6 @@ href="/CM_Pro/assets/css/global-splash.css"
 
 <body>
 
-// =========================
-// NOTIFICATION MENU
-// =========================
-
-function toggleNotificationMenu(){
-
-    const menu =
-
-        document.getElementById(
-            "notificationMenu"
-        );
-
-    if(!menu) return;
-
-    menu.style.display =
-
-        menu.style.display === "block"
-
-        ? "none"
-
-        : "block";
-
-}
-
-document.addEventListener(
-
-    "click",
-
-    (e)=>{
-
-        const menu =
-
-            document.getElementById(
-                "notificationMenu"
-            );
-
-        if(!menu) return;
-
-        if(
-
-            !menu.contains(e.target)
-
-            &&
-
-            e.target.id !==
-            "topbarActionBtn"
-
-        ){
-
-            menu.style.display =
-                "none";
-
-        }
-
-    }
-
-);
-
 
 <!-- OFFLINE -->
 
@@ -431,6 +373,33 @@ async function loadComponent(id,file){
 
 }
 
+// =========================
+// NOTIFICATION MENU
+// =========================
+
+function toggleNotificationMenu(){
+
+    const menu =
+        document.getElementById(
+            "notificationMenu"
+        );
+
+    if(!menu) return;
+
+    menu.style.display =
+        menu.style.display === "block"
+        ? "none"
+        : "block";
+
+}
+
+document.addEventListener(
+    "click",
+    (e)=>{
+        ...
+    }
+);
+    
 // =========================
 // OFFLINE
 // =========================
