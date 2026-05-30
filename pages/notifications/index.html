@@ -300,27 +300,19 @@ async function loadComponent(id,file){
 
             initTopbar({
 
-                title:"Notifications",
+    title:"Notifications",
 
-                showBack:true,
+    showBack:true,
 
-                showProfile:false,
+    showProfile:false,
 
-                showLogo:false,
+    showLogo:false,
 
-                actionText:"Read All",
+    actionText:"⋮",
 
-                actionHandler:()=>{
+    actionHandler:toggleNotificationMenu
 
-                    document
-                        .getElementById(
-                            "readAllBtn"
-                        )
-                        .click();
-
-                }
-
-            });
+});
 
         }
 
