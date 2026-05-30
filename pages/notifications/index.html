@@ -421,6 +421,34 @@ loadComponent(
 );
 
 // =========================
+// MENU EVENTS
+// =========================
+
+setTimeout(()=>{
+
+    const btn =
+
+        document.getElementById(
+            "menuReadAll"
+        );
+
+    if(btn){
+
+        btn.onclick = ()=>{
+
+            document
+                .getElementById(
+                    "readAllBtn"
+                )
+                .click();
+
+        };
+
+    }
+
+},1000);  
+
+// =========================
 // PUSH
 // =========================
 
