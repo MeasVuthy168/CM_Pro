@@ -285,11 +285,15 @@ async function loadComponent(id,file){
 
     try{
 
-        const cached =
+        const useCache =
+    id !== "topbar-container";
 
-            sessionStorage.getItem(
-                "comp_" + id
-            );
+const cached =
+    useCache
+    ? sessionStorage.getItem(
+        "comp_" + id
+      )
+    : null;
 
         if(cached){
 
