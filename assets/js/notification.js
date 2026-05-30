@@ -207,14 +207,13 @@ ${escapeHtml(item.message || "")}
 
 <div class="notify-user">
 
-👤 Uploaded By:
-<b>
-${escapeHtml(
-    item.createdBy ||
-    item.username ||
-    "Unknown"
-)}
-</b>
+👤 ${
+    escapeHtml(
+        item.createdBy ||
+        item.username ||
+        "Unknown"
+    )
+}
 
 </div>
 
