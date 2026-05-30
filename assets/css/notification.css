@@ -331,3 +331,31 @@ transform:translateY(0);
     font-weight:600;
 
 }
+
+.notify-card{
+
+    touch-action:pan-y;
+
+    transition:
+        transform .2s ease,
+        opacity .2s ease;
+
+}
+
+.notify-card.swiping{
+
+    transition:none;
+
+}
+
+.notify-card.delete-action{
+
+    background:#ffe8e8;
+
+}
+
+.notify-card.read-action{
+
+    background:#e8fff0;
+
+}
