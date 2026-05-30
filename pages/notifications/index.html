@@ -313,10 +313,15 @@ const cached =
                 .getElementById(id)
                 .innerHTML = html;
 
-            sessionStorage.setItem(
-                "comp_" + id,
-                html
-            );
+
+            if(useCache){
+
+    sessionStorage.setItem(
+        "comp_" + id,
+        html
+    );
+
+}
 
         }
 
