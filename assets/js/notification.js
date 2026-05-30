@@ -150,6 +150,8 @@ createNotificationCard(item);
 
 attachCardEvents();
 
+enableSwipeCards();
+
 }
 
 // =========================================================
