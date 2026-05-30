@@ -295,7 +295,7 @@ method:"POST",
 
 headers:{
 "Content-Type":"application/json",
-Authorization:`Bearer ${token}`
+Authorization:`Bearer ${notificationToken}`
 },
 
 body:JSON.stringify({
@@ -336,7 +336,7 @@ await fetch(
 method:"POST",
 
 headers:{
-Authorization:`Bearer ${token}`
+Authorization:`Bearer ${notificationToken}`
 }
 }
 
