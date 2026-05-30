@@ -515,6 +515,64 @@ loadNotifications();
 
 });
 
+
+
+
+// =========================================================
+// Detelete one by one
+// =========================================================
+
+async function deleteNotification(id){
+
+    try{
+
+        await fetch(
+
+            `${API.BASE_URL}/api/notifications/delete`,
+
+            {
+
+                method:"POST",
+
+                headers:{
+                    "Content-Type":
+                    "application/json",
+
+                    Authorization:
+                    `Bearer ${notificationToken}`
+                },
+
+                body:JSON.stringify({
+
+                    notificationId:id
+
+                })
+
+            }
+
+        );
+
+        if(
+            typeof loadNotificationBadge
+            === "function"
+        ){
+
+            loadNotificationBadge();
+
+        }
+
+    }catch(error){
+
+        console.error(error);
+
+    }
+
+}
+
+
+
+
+
 // =========================================================
 // EMPTY
 // =========================================================
