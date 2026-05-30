@@ -75,11 +75,13 @@ async function loadNotifications(){
 
         const data =
             await response.json();
-
-        console.log(
-            "Notifications API:",
-            data
-        );
+console.log(
+    JSON.stringify(
+        data,
+        null,
+        2
+    )
+);
 
         const notifications =
 
