@@ -454,3 +454,59 @@ loadNotifications();
 // =========================================================
 
 loadNotifications();
+
+function toggleNotificationMenu(){
+
+    const menu =
+
+        document.getElementById(
+            "notificationMenu"
+        );
+
+    if(!menu) return;
+
+    menu.style.display =
+
+        menu.style.display === "block"
+
+        ? "none"
+
+        : "block";
+
+}
+
+// click outside
+
+document.addEventListener(
+
+    "click",
+
+    (e)=>{
+
+        const menu =
+
+            document.getElementById(
+                "notificationMenu"
+            );
+
+        if(!menu) return;
+
+        if(
+
+            !menu.contains(e.target)
+
+            &&
+
+            e.target.id !==
+            "topbarActionBtn"
+
+        ){
+
+            menu.style.display =
+                "none";
+
+        }
+
+    }
+
+);
