@@ -202,4 +202,40 @@ window.initTopbar = function(config={}){
 
     }
 
+   // =========================
+// COMPACT PAGE MODE
+// =========================
+
+const leftBox =
+    document.querySelector(
+        ".topbar-left"
+    );
+
+const rightBox =
+    document.querySelector(
+        ".topbar-right"
+    );
+
+if(
+    showBack &&
+    !showLogo &&
+    !showProfile
+){
+
+    if(leftBox){
+
+        leftBox.style.minWidth =
+            "60px";
+
+    }
+
+    if(rightBox){
+
+        rightBox.style.minWidth =
+            "60px";
+
+    }
+
+} 
+
 };
