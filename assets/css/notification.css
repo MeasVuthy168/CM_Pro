@@ -312,3 +312,22 @@ transform:translateY(0);
     background:#f3f5fa;
 
 }
+.notify-user{
+
+    margin-top:8px;
+
+    display:inline-block;
+
+    padding:4px 10px;
+
+    border-radius:12px;
+
+    background:#f0f4ff;
+
+    color:#0a3d91;
+
+    font-size:12px;
+
+    font-weight:600;
+
+}
