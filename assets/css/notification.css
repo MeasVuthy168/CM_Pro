@@ -263,3 +263,52 @@ opacity:1;
 transform:translateY(0);
 }
 }
+
+.notification-menu{
+
+    position:fixed;
+
+    top:80px;
+
+    right:15px;
+
+    background:#fff;
+
+    border-radius:14px;
+
+    overflow:hidden;
+
+    box-shadow:
+        0 6px 20px rgba(0,0,0,.15);
+
+    z-index:99999;
+
+    display:none;
+
+    min-width:170px;
+
+}
+
+.notification-menu-item{
+
+    width:100%;
+
+    border:none;
+
+    background:#fff;
+
+    padding:14px;
+
+    text-align:left;
+
+    font-size:14px;
+
+    cursor:pointer;
+
+}
+
+.notification-menu-item:hover{
+
+    background:#f3f5fa;
+
+}
