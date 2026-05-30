@@ -278,6 +278,151 @@ window.location.href=url;
 
 }
 
+function enableSwipeCards(){
+
+    document
+    .querySelectorAll(".notify-card")
+
+    .forEach(card=>{
+
+        let startX = 0;
+        let currentX = 0;
+
+        card.addEventListener(
+
+            "touchstart",
+
+            (e)=>{
+
+                startX =
+                    e.touches[0].clientX;
+
+                card.classList.add(
+                    "swiping"
+                );
+
+            },
+
+            {passive:true}
+
+        );
+
+        card.addEventListener(
+
+            "touchmove",
+
+            (e)=>{
+
+                currentX =
+                    e.touches[0].clientX;
+
+                const diff =
+                    currentX - startX;
+
+                card.style.transform =
+                    `translateX(${diff}px)`;
+
+                if(diff < -80){
+
+                    card.classList.add(
+                        "delete-action"
+                    );
+
+                }else{
+
+                    card.classList.remove(
+                        "delete-action"
+                    );
+
+                }
+
+                if(diff > 80){
+
+                    card.classList.add(
+                        "read-action"
+                    );
+
+                }else{
+
+                    card.classList.remove(
+                        "read-action"
+                    );
+
+                }
+
+            },
+
+            {passive:true}
+
+        );
+
+        card.addEventListener(
+
+            "touchend",
+
+            async ()=>{
+
+                const diff =
+                    currentX - startX;
+
+                const id =
+                    card.dataset.id;
+
+                card.classList.remove(
+                    "swiping"
+                );
+
+                card.classList.remove(
+                    "delete-action"
+                );
+
+                card.classList.remove(
+                    "read-action"
+                );
+
+                // Swipe Left
+                if(diff < -120){
+
+                    await deleteNotification(
+                        id
+                    );
+
+                    card.style.opacity=0;
+
+                    setTimeout(()=>{
+
+                        card.remove();
+
+                    },200);
+
+                }
+
+                // Swipe Right
+                else if(diff > 120){
+
+                    await markRead(id);
+
+                    card.classList.remove(
+                        "unread"
+                    );
+
+                }
+
+                card.style.transform =
+                    "translateX(0)";
+
+                startX = 0;
+                currentX = 0;
+
+            }
+
+        );
+
+    });
+
+}
+
+
 // =========================================================
 // MARK READ
 // =========================================================
