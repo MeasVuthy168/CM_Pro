@@ -2,7 +2,7 @@
    CM_Pro – Production Service Worker
 ========================================================= */
 
-const SW_VERSION = "v5";
+const SW_VERSION = "v6";
 
 const CACHE_NAME = `cm-pro-cache-${SW_VERSION}`;
 
