@@ -293,9 +293,15 @@ card.dataset.url;
 
 await markRead(id);
 
+card.classList.remove(
+    "unread"
+);
+
+updateSummary();
+
 if(url){
 
-window.location.href=url;
+    window.location.href=url;
 
 }
 
