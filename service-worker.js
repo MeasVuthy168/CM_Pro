@@ -284,9 +284,10 @@ const selectedIcon =
 
         body:
 
-            data.body ||
+`${data.body || ""}
 
-            "មានទិន្នន័យថ្មី",
+Uploaded By:
+${data.createdBy || "System"}`
 
         icon:
 
