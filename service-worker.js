@@ -2,7 +2,7 @@
    CM_Pro – Production Service Worker
 ========================================================= */
 
-const SW_VERSION = "v4";
+const SW_VERSION = "v5";
 
 const CACHE_NAME = `cm-pro-cache-${SW_VERSION}`;
 
@@ -282,53 +282,50 @@ const selectedIcon =
     defaultIcon;
     return {
 
-        body:
+    body:
 
 `${data.body || ""}
 
 Uploaded By:
 ${data.createdBy || "System"}`,
 
-        icon: selectedIcon,
+    icon: selectedIcon,
 
-        badge: selectedIcon,
+    badge: selectedIcon,
 
-        image:
+    image:
 
-            data.image || "",
+        data.image || "",
 
-        vibrate: [200,100,200],
+    vibrate:[200,100,200],
 
-        tag:"cm-pro-updates",
+    tag:"cm-pro-updates",
 
-        renotify:true,
+    renotify:true,
 
+    timestamp:Date.now(),
 
-timestamp:
-Date.now()
-           
+    requireInteraction:false,
 
-        requireInteraction: false,
+    data:{
 
-        data: {
+        url:
 
-            url:
+            data.url ||
 
-                data.url ||
+            "/CM_Pro/index.html",
 
-                "/CM_Pro/index.html",
+        moduleCode:
 
-            moduleCode:
+            data.moduleCode || "",
 
-                data.moduleCode || "",
+        createdAt:
 
-            createdAt:
+            data.createdAt || ""
 
-                data.createdAt || ""
+    }
 
-        }
-
-    };
+};
 
 }
 
