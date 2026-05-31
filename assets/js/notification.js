@@ -437,7 +437,7 @@ setTimeout(()=>{
 
                 // Swipe Right
                 else if(diff > 120){
-
+                    vibrate(40)
                     await markRead(id);
 
                     card.style.transform =
