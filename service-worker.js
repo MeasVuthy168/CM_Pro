@@ -287,19 +287,11 @@ const selectedIcon =
 `${data.body || ""}
 
 Uploaded By:
-${data.createdBy || "System"}`
+${data.createdBy || "System"}`,
 
-        icon:
+        icon: selectedIcon,
 
-            data.icon ||
-
-            defaultIcon,
-
-        badge:
-
-            data.badge ||
-
-            defaultIcon,
+        badge: selectedIcon,
 
         image:
 
@@ -307,14 +299,10 @@ ${data.createdBy || "System"}`
 
         vibrate: [200,100,200],
 
-        tag:"cm-pro-updates"
+        tag:"cm-pro-updates",
 
         renotify:true,
 
-
-
-badge:
-selectedIcon,
 
 timestamp:
 Date.now()
