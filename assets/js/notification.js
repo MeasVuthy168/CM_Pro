@@ -773,3 +773,19 @@ document.addEventListener(
     }
 
 );
+
+// =========================================================
+// HAPTIC FEEDBACK
+// =========================================================
+
+function vibrate(ms = 30){
+
+    if(
+        navigator.vibrate
+    ){
+
+        navigator.vibrate(ms);
+
+    }
+
+}
