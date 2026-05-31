@@ -254,10 +254,32 @@ function toJSONSafe(text){
 
 function buildOptions(data){
 
-    const defaultIcon =
+    const moduleIcons = {
 
-        "/CM_Pro/assets/images/LogoAC.png";
+    Upload_ArreasT24ByCO:
+    "/CM_Pro/assets/images/notification-icons/arrears.png",
 
+    Upload_Overdue:
+    "/CM_Pro/assets/images/notification-icons/overdue.png",
+
+    Upload_OS:
+    "/CM_Pro/assets/images/notification-icons/os.png",
+
+    Upload_ListBlocked:
+    "/CM_Pro/assets/images/notification-icons/blocked.png"
+
+};
+
+const defaultIcon =
+"/CM_Pro/assets/images/notification-icons/default.png";
+
+const selectedIcon =
+
+    moduleIcons[data.moduleCode]
+
+    ||
+
+    defaultIcon;
     return {
 
         body:
