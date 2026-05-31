@@ -2,7 +2,7 @@
    CM_Pro – Production Service Worker
 ========================================================= */
 
-const SW_VERSION = "v3";
+const SW_VERSION = "v4";
 
 const CACHE_NAME = `cm-pro-cache-${SW_VERSION}`;
 
@@ -357,13 +357,39 @@ self.addEventListener(
 
         event.waitUntil(
 
-            self.registration
-                .showNotification(
-                    title,
-                    options
-                )
+    Promise.all([
 
-        );
+        self.registration
+            .showNotification(
+                title,
+                options
+            ),
+
+        self.clients.matchAll({
+
+            type:"window",
+
+            includeUncontrolled:true
+
+        })
+
+        .then(clients=>{
+
+            clients.forEach(client=>{
+
+                client.postMessage({
+
+                    type:"REFRESH_BADGE"
+
+                });
+
+            });
+
+        })
+
+    ])
+
+);
 
     }
 
