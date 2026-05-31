@@ -334,28 +334,96 @@ transform:translateY(0);
 
 .notify-card{
 
-    touch-action:pan-y;
+    position:relative;
 
-    transition:
-        transform .2s ease,
-        opacity .2s ease;
+    overflow:hidden;
+
+}
+
+.notify-card::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    z-index:0;
+
+    opacity:0;
+
+    transition:.2s;
+
+}
+
+.notify-card.read-action::before{
+
+    opacity:1;
+
+    background:#28a745;
+
+}
+
+.notify-card.delete-action::before{
+
+    opacity:1;
+
+    background:#dc3545;
+
+}
+
+.notify-card::after{
+
+    position:absolute;
+
+    top:50%;
+
+    transform:translateY(-50%);
+
+    font-size:32px;
+
+    font-weight:bold;
+
+    color:#fff;
+
+    opacity:0;
+
+    transition:.2s;
+
+    z-index:1;
+
+}
+
+.notify-card.read-action::after{
+
+    content:"✓";
+
+    left:25px;
+
+    opacity:1;
+
+}
+
+.notify-card.delete-action::after{
+
+    content:"🗑";
+
+    right:25px;
+
+    opacity:1;
+
+}
+
+.notify-card > *{
+
+    position:relative;
+
+    z-index:2;
 
 }
 
 .notify-card.swiping{
 
     transition:none;
-
-}
-
-.notify-card.delete-action{
-
-    background:#ffe8e8;
-
-}
-
-.notify-card.read-action{
-
-    background:#e8fff0;
 
 }
