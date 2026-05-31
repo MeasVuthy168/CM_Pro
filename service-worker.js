@@ -345,6 +345,68 @@ ${uploadedBy}`,
 
                 "/CM_Pro/index.html",
 
+// =========================================================
+// BUILD NOTIFICATION
+// =========================================================
+
+function buildOptions(data){
+
+    console.log(
+        "PUSH DATA:",
+        data
+    );
+
+    const uploadedBy =
+
+        data.createdBy ||
+
+        data.uploadedBy ||
+
+        data.username ||
+
+        data.fullname ||
+
+        "System";
+
+    return {
+
+        body:
+
+`${data.body || ""}
+
+Uploaded By:
+${uploadedBy}`,
+
+        // Fixed app icon
+        icon:
+            "/CM_Pro/assets/images/LogoAC.png",
+
+        badge:
+            "/CM_Pro/assets/images/icon-192.png",
+
+        image:
+            "",
+
+        vibrate:[200,100,200],
+
+        // unique notification
+        tag:
+            `cm-pro-${Date.now()}`,
+
+        renotify:false,
+
+        timestamp:Date.now(),
+
+        requireInteraction:false,
+
+        data:{
+
+            url:
+
+                data.url ||
+
+                "/CM_Pro/index.html",
+
             moduleCode:
 
                 data.moduleCode ||
@@ -366,7 +428,6 @@ ${uploadedBy}`,
     };
 
 }
-
 // =========================================================
 // PUSH
 // =========================================================
