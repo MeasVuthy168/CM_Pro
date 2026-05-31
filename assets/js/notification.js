@@ -155,6 +155,31 @@ enableSwipeCards();
 }
 
 // =========================================================
+// UPDATE SUMMARY
+// =========================================================
+
+function updateSummary(){
+
+    const cards =
+
+        document.querySelectorAll(
+            ".notify-card"
+        );
+
+    const unread =
+
+        document.querySelectorAll(
+            ".notify-card.unread"
+        );
+
+    totalCount.innerText =
+        cards.length;
+
+    unreadCount.innerText =
+        unread.length;
+
+
+// =========================================================
 // CARD
 // =========================================================
 
