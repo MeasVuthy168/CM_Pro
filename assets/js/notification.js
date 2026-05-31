@@ -420,15 +420,18 @@ function enableSwipeCards(){
                         id
                     );
 
-                    card.style.opacity=0;
+                    card.style.transform =
+    "translateX(-120%)";
 
-                    setTimeout(()=>{
+card.style.opacity = 0;
 
-                    card.remove();
+setTimeout(()=>{
 
-                    updateSummary();
+    card.remove();
 
-                    },200);
+    updateSummary();
+
+},250);
 
                 }
 
