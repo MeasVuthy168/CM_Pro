@@ -31,7 +31,7 @@ async function loadNotificationBadge(){
                 headers:{
 
                     Authorization:
-                        `Bearer ${badgeToken}`
+                    `Bearer ${badgeToken}`
 
                 }
 
@@ -92,9 +92,9 @@ async function loadNotificationBadge(){
 
 }
 
-// =========================
+// =========================================================
 // INITIAL
-// =========================
+// =========================================================
 
 window.addEventListener(
 
@@ -102,17 +102,92 @@ window.addEventListener(
 
     ()=>{
 
-
         loadNotificationBadge();
+
+    }
+
+);
+
+// =========================================================
+// AUTO REFRESH
+// =========================================================
 
 setInterval(
 
-    loadNotificationBadge,
+    ()=>{
+
+        loadNotificationBadge();
+
+    },
 
     60000
 
 );
 
+// =========================================================
+// PAGE BECOME ACTIVE
+// =========================================================
+
+document.addEventListener(
+
+    "visibilitychange",
+
+    ()=>{
+
+        if(
+
+            document.visibilityState ===
+
+            "visible"
+
+        ){
+
+            loadNotificationBadge();
+
+        }
+
     }
 
 );
+
+// =========================================================
+// SERVICE WORKER REALTIME
+// =========================================================
+
+if(
+
+    "serviceWorker" in navigator
+
+){
+
+    navigator.serviceWorker
+
+    .addEventListener(
+
+        "message",
+
+        event=>{
+
+            if(
+
+                event.data?.type ===
+
+                "REFRESH_BADGE"
+
+            ){
+
+                console.log(
+
+                    "Realtime Badge Refresh"
+
+                );
+
+                loadNotificationBadge();
+
+            }
+
+        }
+
+    );
+
+}
