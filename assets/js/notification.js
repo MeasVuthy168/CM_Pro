@@ -418,7 +418,9 @@ function enableSwipeCards(){
 
                     setTimeout(()=>{
 
-                        card.remove();
+                    card.remove();
+
+                    updateSummary();
 
                     },200);
 
@@ -432,7 +434,7 @@ function enableSwipeCards(){
                     card.classList.remove(
                         "unread"
                     );
-
+                   updateSummary();
                 }
 
                 card.style.transform =
