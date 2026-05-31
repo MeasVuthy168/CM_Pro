@@ -2,7 +2,7 @@
    CM_Pro – Production Service Worker
 ========================================================= */
 
-const SW_VERSION = "v6";
+const SW_VERSION = "v7";
 
 const CACHE_NAME = `cm-pro-cache-${SW_VERSION}`;
 
@@ -254,78 +254,116 @@ function toJSONSafe(text){
 
 function buildOptions(data){
 
+    console.log(
+        "PUSH DATA:",
+        data
+    );
+
     const moduleIcons = {
 
-    Upload_ArreasT24ByCO:
-    "/CM_Pro/assets/images/notification-icons/arrears.png",
+        Upload_ArreasT24ByCO:
+            "/CM_Pro/assets/images/notification-icons/arrears.png",
 
-    Upload_Overdue:
-    "/CM_Pro/assets/images/notification-icons/overdue.png",
+        Upload_Overdue:
+            "/CM_Pro/assets/images/notification-icons/overdue.png",
 
-    Upload_OS:
-    "/CM_Pro/assets/images/notification-icons/os.png",
+        Upload_OS:
+            "/CM_Pro/assets/images/notification-icons/os.png",
 
-    Upload_ListBlocked:
-    "/CM_Pro/assets/images/notification-icons/blocked.png"
+        Upload_ListBlocked:
+            "/CM_Pro/assets/images/notification-icons/blocked.png"
 
-};
+    };
 
-const defaultIcon =
-"/CM_Pro/assets/images/notification-icons/default.png";
+    console.log(
+        "MODULE CODE:",
+        data.moduleCode
+    );
 
-const selectedIcon =
+    const selectedIcon =
 
-    moduleIcons[data.moduleCode]
+        moduleIcons[data.moduleCode]
 
-    ||
+        ||
 
-    defaultIcon;
+        "/CM_Pro/assets/images/notification-icons/default.png";
+
+    const uploadedBy =
+
+        data.createdBy
+
+        ||
+
+        data.uploadedBy
+
+        ||
+
+        data.username
+
+        ||
+
+        data.fullname
+
+        ||
+
+        "System";
+
     return {
 
-    body:
+        body:
 
 `${data.body || ""}
 
 Uploaded By:
-${data.createdBy || "System"}`,
+${uploadedBy}`,
 
-    icon: selectedIcon,
+        icon: selectedIcon,
 
-    badge: selectedIcon,
+        badge:
+            "/CM_Pro/assets/images/icon-192.png",
 
-    image:
+        image:
+            data.image || "",
 
-        data.image || "",
+        vibrate: [200,100,200],
 
-    vibrate:[200,100,200],
+        tag:
 
-    tag:"cm-pro-updates",
+            `${data.moduleCode || "general"}-${Date.now()}`,
 
-    renotify:true,
+        renotify: false,
 
-    timestamp:Date.now(),
+        timestamp: Date.now(),
 
-    requireInteraction:false,
+        requireInteraction: false,
 
-    data:{
+        data: {
 
-        url:
+            url:
 
-            data.url ||
+                data.url ||
 
-            "/CM_Pro/index.html",
+                "/CM_Pro/index.html",
 
-        moduleCode:
+            moduleCode:
 
-            data.moduleCode || "",
+                data.moduleCode ||
 
-        createdAt:
+                "",
 
-            data.createdAt || ""
+            createdBy:
 
-    }
+                uploadedBy,
 
-};
+            createdAt:
+
+                data.createdAt ||
+
+                ""
+
+        }
+
+    };
 
 }
 
