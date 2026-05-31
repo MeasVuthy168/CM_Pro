@@ -415,7 +415,7 @@ function enableSwipeCards(){
 
                 // Swipe Left
                 if(diff < -120){
-
+                 vibrate([50,50,50]);
                     await deleteNotification(
                         id
                     );
