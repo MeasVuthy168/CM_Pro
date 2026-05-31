@@ -440,10 +440,21 @@ setTimeout(()=>{
 
                     await markRead(id);
 
-                    card.classList.remove(
-                        "unread"
-                    );
-                   updateSummary();
+                    card.style.transform =
+    "translateX(100%)";
+
+setTimeout(()=>{
+
+    card.style.transform =
+        "translateX(0)";
+
+    card.classList.remove(
+        "unread"
+    );
+
+    updateSummary();
+
+},150);
                 }
 
                 card.style.transform =
