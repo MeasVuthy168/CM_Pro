@@ -2,7 +2,7 @@
    CM_Pro – Production Service Worker
 ========================================================= */
 
-const SW_VERSION = "v7";
+const SW_VERSION = "v8";
 
 const CACHE_NAME = `cm-pro-cache-${SW_VERSION}`;
 
@@ -259,103 +259,6 @@ function buildOptions(data){
         data
     );
 
-    const moduleIcons = {
-
-        Upload_ArreasT24ByCO:
-            "/CM_Pro/assets/images/notification-icons/arrears.png",
-
-        Upload_Overdue:
-            "/CM_Pro/assets/images/notification-icons/overdue.png",
-
-        Upload_OS:
-            "/CM_Pro/assets/images/notification-icons/os.png",
-
-        Upload_ListBlocked:
-            "/CM_Pro/assets/images/notification-icons/blocked.png"
-
-    };
-
-    console.log(
-        "MODULE CODE:",
-        data.moduleCode
-    );
-
-    const selectedIcon =
-
-        moduleIcons[data.moduleCode]
-
-        ||
-
-        "/CM_Pro/assets/images/notification-icons/default.png";
-
-    const uploadedBy =
-
-        data.createdBy
-
-        ||
-
-        data.uploadedBy
-
-        ||
-
-        data.username
-
-        ||
-
-        data.fullname
-
-        ||
-
-        "System";
-
-    return {
-
-        body:
-
-`${data.body || ""}
-
-Uploaded By:
-${uploadedBy}`,
-
-        icon: selectedIcon,
-
-        badge:
-            "/CM_Pro/assets/images/icon-192.png",
-
-        image:
-            data.image || "",
-
-        vibrate: [200,100,200],
-
-        tag:
-
-            `${data.moduleCode || "general"}-${Date.now()}`,
-
-        renotify: false,
-
-        timestamp: Date.now(),
-
-        requireInteraction: false,
-
-        data: {
-
-            url:
-
-                data.url ||
-
-                "/CM_Pro/index.html",
-
-// =========================================================
-// BUILD NOTIFICATION
-// =========================================================
-
-function buildOptions(data){
-
-    console.log(
-        "PUSH DATA:",
-        data
-    );
-
     const uploadedBy =
 
         data.createdBy ||
@@ -428,6 +331,7 @@ ${uploadedBy}`,
     };
 
 }
+
 // =========================================================
 // PUSH
 // =========================================================
