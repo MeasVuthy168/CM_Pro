@@ -307,13 +307,18 @@ ${data.createdBy || "System"}`
 
         vibrate: [200,100,200],
 
-        tag:
+        tag:"cm-pro-updates"
 
-            data.tag ||
+        renotify:true,
 
-            "cm-pro",
 
-        renotify: false,
+
+badge:
+selectedIcon,
+
+timestamp:
+Date.now()
+           
 
         requireInteraction: false,
 
