@@ -102,15 +102,16 @@ window.addEventListener(
 
     ()=>{
 
+
         loadNotificationBadge();
 
-        setInterval(
+setInterval(
 
-            loadNotificationBadge,
+    loadNotificationBadge,
 
-            10000
+    60000
 
-        );
+);
 
     }
 
