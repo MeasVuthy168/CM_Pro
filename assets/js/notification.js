@@ -355,7 +355,7 @@ function enableSwipeCards(){
                 card.style.transform =
                     `translateX(${diff}px)`;
 
-                if(diff < -80){
+                if(diff < -40){
 
                     card.classList.add(
                         "delete-action"
@@ -369,7 +369,7 @@ function enableSwipeCards(){
 
                 }
 
-                if(diff > 80){
+                if(diff > 40){
 
                     card.classList.add(
                         "read-action"
