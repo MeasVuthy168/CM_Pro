@@ -8,77 +8,73 @@ window.PushNotification = {
 
         try{
 
-            console.log(
-                "Push init started"
-            );
+            console.log("🚀 Push init started");
 
             // =========================================
             // SUPPORT CHECK
             // =========================================
 
-            if(
+            if(!("serviceWorker" in navigator)){
 
-                !("serviceWorker" in navigator)
-
-            ){
-
-                console.log(
-                    "No serviceWorker support"
-                );
-
+                console.log("❌ ServiceWorker not supported");
                 return;
 
             }
 
-            if(
+            if(!("PushManager" in window)){
 
-                !("PushManager" in window)
-
-            ){
-
-                console.log(
-                    "No PushManager support"
-                );
-
+                console.log("❌ PushManager not supported");
                 return;
 
             }
 
             // =========================================
-            // REGISTER SW
+            // REGISTER SERVICE WORKER
             // =========================================
 
             const registration =
-
-                await navigator
-                    .serviceWorker
-                    .register(
-                        "/CM_Pro/service-worker.js"
-                    );
+                await navigator.serviceWorker.register(
+                    "/CM_Pro/service-worker.js"
+                );
 
             console.log(
-                "SW REGISTERED:",
+                "✅ SW REGISTERED",
                 registration
             );
 
             // =========================================
-            // PERMISSION
+            // WAIT UNTIL SW READY
             // =========================================
 
-            const permission =
-
-                await Notification
-                    .requestPermission();
+            await navigator.serviceWorker.ready;
 
             console.log(
-                "NOTIFICATION PERMISSION:",
+                "✅ SW READY"
+            );
+
+            // =========================================
+            // NOTIFICATION PERMISSION
+            // =========================================
+
+            let permission =
+                Notification.permission;
+
+            if(permission !== "granted"){
+
+                permission =
+                    await Notification.requestPermission();
+
+            }
+
+            console.log(
+                "🔔 Permission:",
                 permission
             );
 
             if(permission !== "granted"){
 
                 console.log(
-                    "Permission denied"
+                    "❌ Notification denied"
                 );
 
                 return;
@@ -86,57 +82,59 @@ window.PushNotification = {
             }
 
             // =========================================
-            // EXISTING SUB
+            // REMOVE OLD SUB (TEST MODE)
             // =========================================
 
-            let subscription =
+            const oldSubscription =
+                await registration.pushManager.getSubscription();
 
-                await registration
-                    .pushManager
-                    .getSubscription();
-
-            console.log(
-                "EXISTING SUB:",
-                subscription
-            );
-
-            // =========================================
-            // CREATE NEW SUB
-            // =========================================
-
-            if(!subscription){
-
-                const publicKey =
-
-"BJKtfYLpS5SGXyuAcM3kR7wt_1dHcg1apVIrT8lQ5fXJDDxNml6acZD4PAheC5j36xc3qlDg0L8C7p3kiuydrQo";
+            if(oldSubscription){
 
                 console.log(
-                    "PUBLIC KEY:",
-                    publicKey
+                    "🗑 Removing old subscription"
                 );
 
-                subscription =
+                try{
 
-                    await registration
-                        .pushManager
-                        .subscribe({
+                    await oldSubscription.unsubscribe();
 
-                            userVisibleOnly: true,
+                }catch(err){
 
-                            applicationServerKey:
+                    console.warn(
+                        "Old unsubscribe failed",
+                        err
+                    );
 
-                                this.urlBase64ToUint8Array(
-                                    publicKey
-                                )
-
-                        });
-
-                console.log(
-                    "NEW SUB CREATED:",
-                    subscription
-                );
+                }
 
             }
+
+            // =========================================
+            // CREATE NEW SUBSCRIPTION
+            // =========================================
+
+            const publicKey =
+"BJKtfYLpS5SGXyuAcM3kR7wt_1dHcg1apVIrT8lQ5fXJDDxNml6acZD4PAheC5j36xc3qlDg0L8C7p3kiuydrQo";
+
+            const subscription =
+                await registration.pushManager.subscribe({
+
+                    userVisibleOnly:true,
+
+                    applicationServerKey:
+                        this.urlBase64ToUint8Array(
+                            publicKey
+                        )
+
+                });
+
+            console.log(
+                "✅ NEW SUB CREATED"
+            );
+
+            console.log(
+                subscription
+            );
 
             // =========================================
             // TOKEN
@@ -149,12 +147,22 @@ window.PushNotification = {
                 sessionStorage.getItem("token");
 
             console.log(
-                "TOKEN EXISTS:",
+                "🔑 Token exists:",
                 !!token
             );
 
+            if(!token){
+
+                console.error(
+                    "❌ No token found"
+                );
+
+                return;
+
+            }
+
             // =========================================
-            // SEND TO BACKEND
+            // SEND SUB TO SERVER
             // =========================================
 
             const response = await fetch(
@@ -163,19 +171,17 @@ window.PushNotification = {
 
                 {
 
-                    method: "POST",
+                    method:"POST",
 
-                    headers: {
+                    headers:{
 
-                        "Content-Type":
-                            "application/json",
+                        "Content-Type":"application/json",
 
-                        Authorization:
-                            `Bearer ${token}`
+                        Authorization:`Bearer ${token}`
 
                     },
 
-                    body: JSON.stringify(
+                    body:JSON.stringify(
                         subscription
                     )
 
@@ -187,14 +193,27 @@ window.PushNotification = {
                 await response.json();
 
             console.log(
-                "SUBSCRIBE RESPONSE:",
+                "✅ SUBSCRIBE RESPONSE",
                 result
             );
 
-        }catch(error){
+            // =========================================
+            // DEBUG CURRENT SUB
+            // =========================================
+
+            const verifySub =
+                await registration.pushManager.getSubscription();
+
+            console.log(
+                "📌 ACTIVE SUB:",
+                verifySub?.endpoint
+            );
+
+        }
+        catch(error){
 
             console.error(
-                "PUSH ERROR:",
+                "❌ PUSH INIT ERROR",
                 error
             );
 
@@ -203,23 +222,19 @@ window.PushNotification = {
     },
 
     // =================================================
-    // VAPID HELPER
+    // BASE64 TO UINT8
     // =================================================
 
     urlBase64ToUint8Array(base64String){
 
         const padding =
-
             "=".repeat(
                 (4 - base64String.length % 4) % 4
             );
 
         const base64 =
-
             (base64String + padding)
-
             .replace(/\-/g, "+")
-
             .replace(/_/g, "/");
 
         const rawData =
