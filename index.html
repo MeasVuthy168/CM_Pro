@@ -448,6 +448,20 @@ loadComponent(
     ("Notification" in window)
 );
 
+Notification
+.requestPermission()
+.then(result=>{
+
+    alert(
+        "Permission Result: " +
+        result
+    );
+
+});
+
+
+        
+
 
     
         // =========================
