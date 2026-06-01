@@ -330,9 +330,16 @@ self.addEventListener(
 
     (event)=>{
 
-        console.log(
-            "📩 Push received"
-        );
+        console.log("📩 PUSH RECEIVED");
+
+        if(event.data){
+
+            console.log(
+                "📦 PUSH DATA:",
+                event.data.text()
+            );
+
+        }
 
         let data = {};
 
