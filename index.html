@@ -442,6 +442,72 @@ loadComponent(
         // =========================
         PushNotification.init();
 
+
+
+
+
+
+// =========================
+// IOS PUSH DEBUG
+// =========================
+window.addEventListener(
+
+    "load",
+
+    async ()=>{
+
+        try{
+
+            const reg =
+
+                await navigator
+                    .serviceWorker
+                    .ready;
+
+            const sub =
+
+                await reg
+                    .pushManager
+                    .getSubscription();
+
+            alert(
+
+                "Permission: "
+
+                + Notification.permission
+
+                + "\nStandalone: "
+
+                + navigator.standalone
+
+                + "\nSubscribed: "
+
+                + !!sub
+
+            );
+
+        }catch(err){
+
+            alert(
+                "ERROR:\n" + err.message
+            );
+
+        }
+
+    }
+
+);
+
+
+
+
+
+
+
+
+
+
+        
         // =========================
         // FAILSAFE SPLASH
         // =========================
