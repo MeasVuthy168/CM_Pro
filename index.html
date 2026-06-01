@@ -106,6 +106,77 @@
     <!-- GLOBAL SPLASH -->
     <script src="/CM_Pro/assets/js/global-splash.js"></script>
 
+
+
+
+
+
+
+
+
+
+
+async function testPush(){
+
+    try{
+
+        const reg =
+
+            await navigator
+                .serviceWorker
+                .ready;
+
+        const sub =
+
+            await reg
+                .pushManager
+                .subscribe({
+
+                    userVisibleOnly:true,
+
+                    applicationServerKey:
+
+                        PushNotification
+                        .urlBase64ToUint8Array(
+
+"BJKtfYLpS5SGXyuAcM3kR7wt_1dHcg1apVIrT8lQ5fXJDDxNml6acZD4PAheC5j36xc3qlDg0L8C7p3kiuydrQo"
+
+                        )
+
+                });
+
+        alert(
+
+            JSON.stringify(
+                sub
+            )
+
+        );
+
+    }catch(err){
+
+        alert(
+
+            "SUB ERROR:\n" +
+
+            err.message
+
+        );
+
+    }
+
+}
+
+
+
+
+    
+
+
+
+
+
+    
     <!-- LOGOUT -->
     <script>
 
