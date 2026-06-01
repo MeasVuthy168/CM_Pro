@@ -479,13 +479,39 @@ loadComponent(
 
 
 
+
+
+
+
+        
         
 
 
         
 
 
-    
+    async function testPermission(){
+
+    try{
+
+        const result =
+
+            await Notification
+                .requestPermission();
+
+        alert(
+            "Permission = " + result
+        );
+
+    }catch(err){
+
+        alert(
+            "ERROR = " + err.message
+        );
+
+    }
+
+}
         // =========================
         // PUSH INIT
         // =========================
