@@ -273,62 +273,47 @@ function buildOptions(data){
 
     return {
 
-        body:
+    body:
 
-`${data.body || ""}
+`By ${uploadedBy} • ${data.body || ""}`,
 
-Uploaded By:
-${uploadedBy}`,
+    icon:
+        "/CM_Pro/assets/images/LogoAC.png",
 
-        // Fixed app icon
-        icon:
-            "/CM_Pro/assets/images/LogoAC.png",
+    badge:
+        "/CM_Pro/assets/images/icon-192.png",
 
-        badge:
-            "/CM_Pro/assets/images/icon-192.png",
+    image:"",
 
-        image:
-            "",
+    vibrate:[200,100,200],
 
-        vibrate:[200,100,200],
+    tag:
+        `cm-pro-${Date.now()}`,
 
-        // unique notification
-        tag:
-            `cm-pro-${Date.now()}`,
+    renotify:false,
 
-        renotify:false,
+    timestamp:Date.now(),
 
-        timestamp:Date.now(),
+    requireInteraction:false,
 
-        requireInteraction:false,
+    data:{
 
-        data:{
+        url:
+            data.url ||
+            "/CM_Pro/index.html",
 
-            url:
+        moduleCode:
+            data.moduleCode || "",
 
-                data.url ||
+        createdBy:
+            uploadedBy,
 
-                "/CM_Pro/index.html",
+        createdAt:
+            data.createdAt || ""
 
-            moduleCode:
+    }
 
-                data.moduleCode ||
-
-                "",
-
-            createdBy:
-
-                uploadedBy,
-
-            createdAt:
-
-                data.createdAt ||
-
-                ""
-
-        }
-
-    };
+};
 
 }
 
