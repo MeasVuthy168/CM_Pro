@@ -320,14 +320,8 @@
 
 if(id === "topbar-container"){
 
-    loadTopbarUser();
-
     const user = JSON.parse(
-
-        localStorage.getItem(
-            "loggedInUser"
-        ) || "{}"
-
+        localStorage.getItem("loggedInUser") || "{}"
     );
 
     initTopbar({
@@ -335,23 +329,19 @@ if(id === "topbar-container"){
         dashboardMode:true,
 
         userName:
-
             user.fullname ||
-
             user.username ||
-
             "User",
 
         showLogo:true,
-
         showProfile:true,
-
         showBack:false
 
     });
 
-}
+    loadTopbarUser();
 
+}
             }catch(error){
 
                 console.error(
