@@ -239,3 +239,63 @@ if(
 } 
 
 };
+
+
+// =========================
+// LOAD USER PHOTO
+// =========================
+window.loadTopbarPhoto = async function(){
+
+    try{
+
+        const user = JSON.parse(
+            localStorage.getItem("loggedInUser") || "{}"
+        );
+
+        if(!user.username) return;
+
+        const img = document.getElementById("topbarProfile");
+
+        if(!img) return;
+
+        const token = API.getToken();
+
+        const response = await fetch(
+
+            `${API.BASE_URL}/assets/user-photo/${encodeURIComponent(user.username)}`,
+
+            {
+                headers:{
+                    Authorization:`Bearer ${token}`
+                }
+            }
+
+        );
+
+        if(!response.ok){
+
+            img.src = "/CM_Pro/assets/images/profile.jpg";
+            return;
+
+        }
+
+        const blob = await response.blob();
+
+        img.src = URL.createObjectURL(blob);
+
+    }
+    catch(err){
+
+        console.error("Load photo:",err);
+
+        const img = document.getElementById("topbarProfile");
+
+        if(img){
+            img.src="/CM_Pro/assets/images/profile.jpg";
+        }
+
+    }
+
+};
+
+
