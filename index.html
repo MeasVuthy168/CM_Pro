@@ -394,53 +394,41 @@ if(id === "topbar-container"){
 
         const loggedInUser = JSON.parse(
 
-            localStorage.getItem(
-                "loggedInUser"
-            ) || "{}"
+            localStorage.getItem("loggedInUser") || "{}"
 
         );
 
         const fullname =
-
             loggedInUser.fullname ||
-
             loggedInUser.username ||
-
             "User";
 
-        // PROFILE IMAGE
-
-        const profile =
-
-            document.getElementById(
-                "topbarProfile"
-            );
-
-        if(
-
-            profile &&
-
-            loggedInUser.image
-
-        ){
-
-            profile.src =
-                loggedInUser.image;
-
-        }
+        const username =
+            loggedInUser.username || "";
 
         // USER NAME
-
         const userName =
-
-            document.getElementById(
-                "topbarUserName"
-            );
+            document.getElementById("topbarUserName");
 
         if(userName){
+            userName.innerText = fullname;
+        }
 
-            userName.innerText =
-                fullname;
+        // PROFILE PHOTO
+        const profile =
+            document.getElementById("topbarProfile");
+
+        if(profile && username){
+
+            profile.src =
+                `${API.BASE_URL}/assets/user-photo/${encodeURIComponent(username)}?t=${Date.now()}`;
+
+            profile.onerror = function(){
+
+                this.src =
+                    "/CM_Pro/assets/images/profile.jpg";
+
+            };
 
         }
 
@@ -454,6 +442,9 @@ if(id === "topbar-container"){
     }
 
 }
+
+        
+      
         // =========================
         // OFFLINE DETECT
         // =========================
