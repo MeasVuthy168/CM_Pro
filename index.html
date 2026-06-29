@@ -321,7 +321,9 @@
 if(id === "topbar-container"){
 
     const user = JSON.parse(
+
         localStorage.getItem("loggedInUser") || "{}"
+
     );
 
     initTopbar({
@@ -340,6 +342,8 @@ if(id === "topbar-container"){
     });
 
     loadTopbarUser();
+
+    loadTopbarPhoto();
 
 }
             }catch(error){
@@ -378,25 +382,19 @@ if(id === "topbar-container"){
         // =========================
         // LOAD USER
         // =========================
-        function loadTopbarUser(){
+   function loadTopbarUser(){
 
     try{
 
-        const loggedInUser = JSON.parse(
-
+        const user = JSON.parse(
             localStorage.getItem("loggedInUser") || "{}"
-
         );
 
         const fullname =
-            loggedInUser.fullname ||
-            loggedInUser.username ||
+            user.fullname ||
+            user.username ||
             "User";
 
-        const username =
-            loggedInUser.username || "";
-
-        // USER NAME
         const userName =
             document.getElementById("topbarUserName");
 
@@ -404,36 +402,13 @@ if(id === "topbar-container"){
             userName.innerText = fullname;
         }
 
-        // PROFILE PHOTO
-        const profile =
-            document.getElementById("topbarProfile");
-
-        if(profile && username){
-
-            profile.src =
-                `${API.BASE_URL}/assets/user-photo/${encodeURIComponent(username)}?t=${Date.now()}`;
-
-            profile.onerror = function(){
-
-                this.src =
-                    "/CM_Pro/assets/images/profile.jpg";
-
-            };
-
-        }
-
     }catch(error){
 
-        console.error(
-            "Topbar user error:",
-            error
-        );
+        console.error(error);
 
     }
 
-}
-
-        
+}     
       
         // =========================
         // OFFLINE DETECT
