@@ -1,32 +1,101 @@
-// ========================
-// COMPONENTS
-// ========================
+// =========================
+// COMPONENT LOADER
+// =========================
 
-async function loadComponent(id,file){
+let loaded = 0;
 
-    const response = await fetch(file);
+async function loadComponent(id, file){
 
-    const html = await response.text();
+    try{
 
-    document.getElementById(id).innerHTML = html;
+        const useCache =
+            id !== "topbar-container";
 
-    if(id==="topbar-container"){
+        const cached =
+            useCache
+            ? sessionStorage.getItem(
+                "comp_" + id
+              )
+            : null;
 
-        initTopbar({
+        if(cached){
 
-            title:"Setting",
+            document
+                .getElementById(id)
+                .innerHTML = cached;
 
-            showBack:true,
+        }else{
 
-            showLogo:false,
+            const response =
+                await fetch(file);
 
-            showProfile:false
+            const html =
+                await response.text();
 
-        });
+            document
+                .getElementById(id)
+                .innerHTML = html;
+
+            if(useCache){
+
+                sessionStorage.setItem(
+                    "comp_" + id,
+                    html
+                );
+
+            }
+
+        }
+
+        // =====================
+        // TOPBAR
+        // =====================
+
+        if(id==="topbar-container"){
+
+            initTopbar({
+
+                title:"Setting",
+
+                showBack:true,
+
+                showLogo:false,
+
+                showProfile:false
+
+            });
+
+        }
+
+    }catch(err){
+
+        console.error(err);
+
+    }finally{
+
+        loaded++;
+
+        if(loaded>=2){
+
+            setTimeout(()=>{
+
+                if(typeof hideGlobalSplash==="function"){
+
+                    hideGlobalSplash();
+
+                }
+
+            },300);
+
+        }
 
     }
 
 }
+
+// =========================
+// LOAD COMPONENTS
+// =========================
 
 loadComponent(
     "topbar-container",
@@ -36,4 +105,38 @@ loadComponent(
 loadComponent(
     "bottomnav-container",
     "/CM_Pro/components/bottomnav.html"
+);
+
+// =========================
+// PUSH
+// =========================
+
+if(window.PushNotification){
+
+    PushNotification.init();
+
+}
+
+// =========================
+// FAILSAFE SPLASH
+// =========================
+
+window.addEventListener(
+
+    "load",
+
+    ()=>{
+
+        setTimeout(()=>{
+
+            if(typeof hideGlobalSplash==="function"){
+
+                hideGlobalSplash();
+
+            }
+
+        },2500);
+
+    }
+
 );
