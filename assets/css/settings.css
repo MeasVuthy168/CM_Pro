@@ -1,0 +1,86 @@
+.setting-page{
+
+    padding-top:80px;
+    padding-bottom:100px;
+
+}
+
+.profile-card{
+
+    background:white;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:18px;
+
+    padding:22px;
+
+    margin-bottom:14px;
+
+}
+
+.profile-photo{
+
+    width:90px;
+
+    height:90px;
+
+    border-radius:50%;
+
+    border:4px solid #002D6B;
+
+    object-fit:cover;
+
+}
+
+.profile-name{
+
+    font-size:28px;
+
+    color:#c28a00;
+
+    font-weight:bold;
+
+}
+
+.profile-role{
+
+    font-size:18px;
+
+    color:#555;
+
+}
+
+.setting-list{
+
+    background:white;
+
+}
+
+.setting-item{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:18px 22px;
+
+    border-bottom:1px solid #eee;
+
+    font-size:20px;
+
+    cursor:pointer;
+
+}
+
+.logout{
+
+    color:red;
+
+    font-weight:bold;
+
+}
