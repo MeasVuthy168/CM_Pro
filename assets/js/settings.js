@@ -140,3 +140,17 @@ window.addEventListener(
     }
 
 );
+
+// =========================
+// ACTIVE NAV
+// =========================
+
+setTimeout(()=>{
+
+    document.querySelectorAll(".bottom-nav-item")
+        .forEach(item=>item.classList.remove("active"));
+
+    document.querySelectorAll(".bottom-nav-item")[1]
+        ?.classList.add("active");
+
+},300);
