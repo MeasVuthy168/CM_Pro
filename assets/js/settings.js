@@ -140,6 +140,77 @@ window.addEventListener(
     }
 
 );
+// =========================
+// LOAD USER INFO
+// =========================
+
+async function loadUserProfile(){
+
+    try{
+
+        const user = JSON.parse(
+            localStorage.getItem("loggedInUser") || "{}"
+        );
+
+        document.getElementById("settingFullname").innerText =
+            user.fullname ||
+            user.username ||
+            "Unknown";
+
+        document.getElementById("settingUsername").innerText =
+            user.username || "";
+
+        // role
+        if(!document.getElementById("settingRole")){
+
+            const role = document.createElement("div");
+
+            role.id = "settingRole";
+
+            role.className = "profile-role";
+
+            document
+                .querySelector(".profile-info")
+                .appendChild(role);
+
+        }
+
+        document.getElementById("settingRole").innerText =
+            user.role || "";
+
+        // photo
+        if(user.username){
+
+            const img =
+                document.getElementById("settingPhoto");
+
+            img.src =
+                `${API.BASE_URL}/assets/user-photo/${user.username}`;
+
+            img.onerror = function(){
+
+                this.src =
+                "/CM_Pro/assets/images/default-user.png";
+
+            };
+
+        }
+
+    }catch(err){
+
+        console.error(err);
+
+    }
+
+}
+
+window.addEventListener(
+
+    "load",
+
+    loadUserProfile
+
+);
 
 // =========================
 // ACTIVE NAV
