@@ -227,51 +227,40 @@ setTimeout(()=>{
 
 },300);
 
+
 // =========================
-// NOTIFICATION TOGGLE
+// NOTIFICATION SWITCH
 // =========================
 
-window.addEventListener("load", initNotificationToggle);
+window.addEventListener("load",initNotificationSwitch);
 
-async function initNotificationToggle(){
+async function initNotificationSwitch(){
 
 const toggle=document.getElementById("notifyToggle");
 
 if(!toggle)return;
 
-// Current status
-toggle.checked=(Notification.permission==="granted");
+toggle.checked=
+await PushNotification.isEnabled();
 
-// User changed switch
-toggle.addEventListener("change",async function(){
+toggle.onchange=async function(){
 
-// Turn ON
 if(this.checked){
 
-const permission=await Notification.requestPermission();
+localStorage.setItem(
+"notificationEnabled",
+"true"
+);
 
-if(permission==="granted"){
-
-localStorage.setItem("notificationEnabled","true");
+await PushNotification.enable();
 
 }else{
 
-this.checked=false;
-
-localStorage.setItem("notificationEnabled","false");
+await PushNotification.disable();
 
 }
 
-return;
-
-}
-
-// Turn OFF
-this.checked=true;
-
-alert("Please disable notification from your browser settings.");
-
-});
+};
 
 }
 // =========================
