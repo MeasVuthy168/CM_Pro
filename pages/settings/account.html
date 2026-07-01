@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>My Account - CM_Pro</title>
+
+<meta
+name="theme-color"
+content="#032d73">
+
+<style>
+
+*{
+
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+
+}
+
+html,
+body{
+
+    width:100%;
+    height:100%;
+
+    font-family:Arial,sans-serif;
+
+    background:#082d69;
+
+}
+
+.wrapper{
+
+    width:100%;
+    min-height:100vh;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:24px;
+
+}
+
+.card{
+
+    width:100%;
+
+    max-width:420px;
+
+    background:#fff;
+
+    border-radius:28px;
+
+    padding:28px;
+
+    box-shadow:
+    0 10px 30px rgba(0,0,0,.18);
+
+}
+
+.header{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:22px;
+
+}
+
+.photo{
+
+    width:110px;
+
+    height:110px;
+
+    border-radius:50%;
+
+    object-fit:cover;
+
+    border:5px solid #0c3677;
+
+}
+
+.name{
+
+    font-size:34px;
+
+    font-weight:bold;
+
+    color:#222;
+
+    line-height:1.2;
+
+}
+
+.line{
+
+    margin:22px 0;
+
+    height:4px;
+
+    background:#c99a1d;
+
+    border-radius:10px;
+
+}
+
+.row{
+
+    display:flex;
+
+    margin-bottom:24px;
+
+    align-items:center;
+
+}
+
+.label{
+
+    width:165px;
+
+    font-size:22px;
+
+    color:#222;
+
+    font-weight:600;
+
+}
+
+.value{
+
+    flex:1;
+
+    font-size:22px;
+
+    color:#c99a1d;
+
+}
+
+.backBtn{
+
+    margin-top:28px;
+
+    width:100%;
+
+    height:66px;
+
+    border:none;
+
+    border-radius:14px;
+
+    background:#1b3568;
+
+    color:#fff;
+
+    font-size:30px;
+
+    cursor:pointer;
+
+}
+
+.backBtn:active{
+
+    transform:scale(.98);
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="wrapper">
+
+<div class="card">
+
+<div class="header">
+
+<img
+id="photo"
+class="photo"
+src="/CM_Pro/assets/images/default-user.png">
+
+<div>
+
+<div
+id="fullname"
+class="name">
+
+Loading...
+
+</div>
+
+</div>
+
+</div>
+
+<div class="line"></div>
+
+<div class="row">
+
+<div class="label">
+
+ឈ្មោះ:
+
+</div>
+
+<div
+id="username"
+class="value">
+
+-
+
+</div>
+
+</div>
+
+<div class="row">
+
+<div class="label">
+
+លេខកូដ:
+
+</div>
+
+<div
+id="employeeId"
+class="value">
+
+-
+
+</div>
+
+</div>
+
+<div class="row">
+
+<div class="label">
+
+សាខា:
+
+</div>
+
+<div
+id="branch"
+class="value">
+
+-
+
+</div>
+
+</div>
+
+<div class="row">
+
+<div class="label">
+
+លេខទូរស័ព្ទ:
+
+</div>
+
+<div
+id="phone"
+class="value">
+
+-
+
+</div>
+
+</div>
+
+<button
+class="backBtn"
+onclick="history.back()">
+
+បិទ
+
+</button>
+
+</div>
+
+</div>
+
+<script src="../../config/api.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<// =========================
+// LOAD USER
+// =========================
+
+try{
+
+    const user = JSON.parse(
+
+        localStorage.getItem("loggedInUser") || "{}"
+
+    );
+
+    document.getElementById(
+        "fullname"
+    ).innerText =
+
+        user.fullname ||
+        user.username ||
+        "Unknown";
+
+    document.getElementById(
+        "username"
+    ).innerText =
+
+        user.username || "-";
+
+    document.getElementById(
+        "employeeId"
+    ).innerText =
+
+        user.employeeId ||
+        user.employeeID ||
+        user.staffId ||
+        user.staffID ||
+        "-";
+
+    document.getElementById(
+        "branch"
+    ).innerText =
+
+        user.branch ||
+        user.branchName ||
+        "-";
+
+    document.getElementById(
+        "phone"
+    ).innerText =
+
+        user.phone ||
+        user.phoneNumber ||
+        "-";
+
+    if(user.username){
+
+        const img =
+
+            document.getElementById(
+                "photo"
+            );
+
+        img.src =
+
+            `${API.BASE_URL}/assets/user-photo/${user.username}`;
+
+        img.onerror = function(){
+
+            this.src =
+            "/CM_Pro/assets/images/default-user.png";
+
+        };
+
+    }
+
+}catch(err){
+
+    console.error(err);
+
+}
+
+</script>
+
+</body>
+
+</html>
