@@ -1,3 +1,4 @@
+
 // =========================
 // COMPONENT LOADER
 // =========================
@@ -225,3 +226,34 @@ setTimeout(()=>{
         ?.classList.add("active");
 
 },300);
+
+// =========================
+// LOGOUT DIALOG
+// =========================
+
+const logoutBtn=document.getElementById("logoutBtn");
+const logoutDialog=document.getElementById("logoutDialog");
+const btnLogoutYes=document.getElementById("btnLogoutYes");
+const btnLogoutNo=document.getElementById("btnLogoutNo");
+
+logoutBtn.onclick=function(){
+
+logoutDialog.classList.add("show");
+
+};
+
+btnLogoutNo.onclick=function(){
+
+logoutDialog.classList.remove("show");
+
+};
+
+btnLogoutYes.onclick=function(){
+
+localStorage.removeItem("token");
+localStorage.removeItem("loggedInUser");
+sessionStorage.clear();
+
+window.location.replace("/CM_Pro/login.html");
+
+};
