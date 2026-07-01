@@ -231,24 +231,31 @@ setTimeout(()=>{
 // LOGOUT DIALOG
 // =========================
 
+window.addEventListener("load",()=>{
+
 const logoutBtn=document.getElementById("logoutBtn");
 const logoutDialog=document.getElementById("logoutDialog");
 const btnLogoutYes=document.getElementById("btnLogoutYes");
 const btnLogoutNo=document.getElementById("btnLogoutNo");
 
-logoutBtn.onclick=function(){
+if(!logoutBtn||!logoutDialog||!btnLogoutYes||!btnLogoutNo){
+console.error("Logout dialog elements not found.");
+return;
+}
+
+logoutBtn.addEventListener("click",()=>{
 
 logoutDialog.classList.add("show");
 
-};
+});
 
-btnLogoutNo.onclick=function(){
+btnLogoutNo.addEventListener("click",()=>{
 
 logoutDialog.classList.remove("show");
 
-};
+});
 
-btnLogoutYes.onclick=function(){
+btnLogoutYes.addEventListener("click",()=>{
 
 localStorage.removeItem("token");
 localStorage.removeItem("loggedInUser");
@@ -256,4 +263,6 @@ sessionStorage.clear();
 
 window.location.replace("/CM_Pro/login.html");
 
-};
+});
+
+});
