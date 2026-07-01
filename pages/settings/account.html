@@ -17,6 +17,14 @@ content="#032d73">
 
 <style>
 
+@font-face{
+
+    font-family:"Krasar";
+
+    src:url("/CM_Pro/assets/fonts/Krasar-Regular.ttf") format("truetype");
+
+}
+
 *{
 
     margin:0;
@@ -73,17 +81,15 @@ body{
 
     display:flex;
 
-    align-items:center;
-
-    gap:22px;
+    justify-content:center;
 
 }
 
 .photo{
 
-    width:110px;
+    width:120px;
 
-    height:110px;
+    height:120px;
 
     border-radius:50%;
 
@@ -95,19 +101,25 @@ body{
 
 .name{
 
-    font-size:34px;
+    margin-top:18px;
+
+    margin-bottom:8px;
+
+    text-align:center;
+
+    font-size:38px;
 
     font-weight:bold;
 
     color:#222;
 
-    line-height:1.2;
+    line-height:1.15;
 
 }
 
 .line{
 
-    margin:22px 0;
+    margin:24px 0;
 
     height:4px;
 
@@ -121,21 +133,21 @@ body{
 
     display:flex;
 
-    margin-bottom:24px;
-
     align-items:center;
+
+    margin-bottom:24px;
 
 }
 
 .label{
 
-    width:165px;
+    width:160px;
 
-    font-size:22px;
+    font-family:"Krasar",Arial,sans-serif;
+
+    font-size:26px;
 
     color:#222;
-
-    font-weight:600;
 
 }
 
@@ -151,7 +163,7 @@ body{
 
 .backBtn{
 
-    margin-top:28px;
+    margin-top:20px;
 
     width:100%;
 
@@ -164,6 +176,8 @@ body{
     background:#1b3568;
 
     color:#fff;
+
+    font-family:"Krasar",Arial,sans-serif;
 
     font-size:30px;
 
@@ -194,7 +208,7 @@ id="photo"
 class="photo"
 src="/CM_Pro/assets/images/default-user.png">
 
-<div>
+</div>
 
 <div
 id="fullname"
@@ -204,35 +218,13 @@ Loading...
 
 </div>
 
-</div>
-
-</div>
-
 <div class="line"></div>
 
 <div class="row">
 
 <div class="label">
 
-ឈ្មោះ:
-
-</div>
-
-<div
-id="username"
-class="value">
-
--
-
-</div>
-
-</div>
-
-<div class="row">
-
-<div class="label">
-
-លេខកូដ:
+ID:
 
 </div>
 
@@ -250,7 +242,25 @@ class="value">
 
 <div class="label">
 
-សាខា:
+Role:
+
+</div>
+
+<div
+id="role"
+class="value">
+
+-
+
+</div>
+
+</div>
+
+<div class="row">
+
+<div class="label">
+
+Branch:
 
 </div>
 
@@ -268,7 +278,7 @@ class="value">
 
 <div class="label">
 
-លេខទូរស័ព្ទ:
+Tell:
 
 </div>
 
@@ -295,10 +305,13 @@ onclick="history.back()">
 </div>
 
 <script src="../../config/api.js"></script>
+
 <script src="../../config/auth.js"></script>
+
 <script src="../../config/session.js"></script>
 
 <script>
+
 // =========================
 // LOAD USER
 // =========================
@@ -311,19 +324,23 @@ try{
 
     );
 
+    // =====================
+    // FULL NAME
+    // =====================
+
     document.getElementById(
         "fullname"
     ).innerText =
 
         user.fullname ||
+        user.fullName ||
+        user.name ||
         user.username ||
         "Unknown";
 
-    document.getElementById(
-        "username"
-    ).innerText =
-
-        user.username || "-";
+    // =====================
+    // EMPLOYEE ID
+    // =====================
 
     document.getElementById(
         "employeeId"
@@ -333,7 +350,23 @@ try{
         user.employeeID ||
         user.staffId ||
         user.staffID ||
+        user.username ||
         "-";
+
+    // =====================
+    // ROLE
+    // =====================
+
+    document.getElementById(
+        "role"
+    ).innerText =
+
+        user.role ||
+        "User";
+
+    // =====================
+    // BRANCH
+    // =====================
 
     document.getElementById(
         "branch"
@@ -343,13 +376,22 @@ try{
         user.branchName ||
         "-";
 
+    // =====================
+    // PHONE
+    // =====================
+
     document.getElementById(
         "phone"
     ).innerText =
 
         user.phone ||
         user.phoneNumber ||
+        user.mobile ||
         "-";
+
+    // =====================
+    // PHOTO
+    // =====================
 
     if(user.username){
 
@@ -374,11 +416,15 @@ try{
 
 }catch(err){
 
-    console.error(err);
+    console.error(
+        "Account Load Error:",
+        err
+    );
 
 }
+
 </script>
 
 </body>
 
-</html>
+</html>    
