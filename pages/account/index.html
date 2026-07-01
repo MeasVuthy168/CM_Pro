@@ -9,9 +9,11 @@
 name="viewport"
 content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 
-<title>Account - CM_Pro</title>
+<title>Setting - CM_Pro</title>
 
-<meta name="theme-color" content="#032d73">
+<meta
+name="theme-color"
+content="#032d73">
 
 <link
 rel="stylesheet"
@@ -19,7 +21,7 @@ href="../../assets/css/main.css">
 
 <link
 rel="stylesheet"
-href="../../assets/css/account.css">
+href="../../assets/css/settings.css">
 
 <link
 rel="stylesheet"
@@ -30,100 +32,112 @@ href="/CM_Pro/assets/css/global-splash.css">
 <body>
 
 <!-- TOPBAR -->
+
 <div id="topbar-container"></div>
 
 <!-- PAGE -->
 
-<div class="account-page">
+<div class="setting-page">
 
-    <div class="account-header">
+    <!-- PROFILE -->
+
+    <div class="profile-card">
 
         <img
-        id="accountPhoto"
+        id="settingPhoto"
         src="/CM_Pro/assets/images/default-user.png"
-        class="account-photo">
+        class="profile-photo">
 
-        <div
-        id="accountFullname"
-        class="account-name">
+        <div class="profile-info">
 
-            Loading...
+            <div
+            id="settingFullname"
+            class="profile-name">
 
-        </div>
+                Loading...
 
-        <div
-        id="accountUsername"
-        class="account-username">
+            </div>
 
-            ...
+            <div
+            id="settingUsername"
+            class="profile-role">
+
+                ...
+
+            </div>
 
         </div>
 
     </div>
 
-    <div class="account-list">
+    <!-- SETTING LIST -->
 
-        <div class="account-row">
+    <div class="setting-list">
 
-            <div class="account-label">
-                Full Name
-            </div>
+        <!-- ACCOUNT -->
 
-            <div
-            id="accountFullname2"
-            class="account-value">
+        <div
+        class="setting-item"
+        onclick="location.href='/CM_Pro/pages/account/'">
 
-                -
+            <span>
 
-            </div>
+                👤 Account
 
-        </div>
+            </span>
 
-        <div class="account-row">
+            <span>
 
-            <div class="account-label">
-                Username
-            </div>
+                ›
 
-            <div
-            id="accountUsername2"
-            class="account-value">
-
-                -
-
-            </div>
+            </span>
 
         </div>
 
-        <div class="account-row">
+        <!-- ABOUT -->
 
-            <div class="account-label">
-                Role
-            </div>
+        <div
+        class="setting-item">
 
-            <div
-            id="accountRole"
-            class="account-value">
+            <span>
 
-                -
+                ℹ About
 
-            </div>
+            </span>
+
+            <span>
+
+                ›
+
+            </span>
 
         </div>
 
-        <div class="account-row">
+        <!-- NOTIFICATION -->
 
-            <div class="account-label">
-                Phone
-            </div>
+        <div
+        class="setting-item">
 
-            <div
-            id="accountPhone"
-            class="account-value">
+            <span>
 
-                -
+                🔔 Notification
 
-            </div>
+            </span>
+
+            <span>
+
+                ›
+
+            </span>
+
+        </div>
+
+        <!-- LOGOUT -->
+
+        <div
+        class="setting-item logout">
+
+            Logout
 
         </div>
 
@@ -131,22 +145,41 @@ href="/CM_Pro/assets/css/global-splash.css">
 
 </div>
 
-<!-- Bottom Navigation -->
+<!-- BOTTOM NAVIGATION -->
 
 <div id="bottomnav-container"></div>
 
+<!-- API -->
+
 <script src="../../config/api.js"></script>
+
+<!-- AUTH -->
+
 <script src="../../config/auth.js"></script>
+
+<!-- SESSION -->
+
 <script src="../../config/session.js"></script>
+
+<!-- PUSH -->
+
 <script src="../../config/push.js"></script>
+
+<!-- TOPBAR -->
 
 <script src="/CM_Pro/shared/topbar.js"></script>
 
+<!-- GLOBAL SPLASH -->
+
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
+
+<!-- NOTIFICATION BADGE -->
 
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
 
-<script src="../../assets/js/account.js"></script>
+<!-- SETTINGS -->
+
+<script src="../../assets/js/settings.js"></script>
 
 </body>
 
