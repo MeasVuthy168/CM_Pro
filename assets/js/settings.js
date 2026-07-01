@@ -228,6 +228,53 @@ setTimeout(()=>{
 },300);
 
 // =========================
+// NOTIFICATION TOGGLE
+// =========================
+
+window.addEventListener("load", initNotificationToggle);
+
+async function initNotificationToggle(){
+
+const toggle=document.getElementById("notifyToggle");
+
+if(!toggle)return;
+
+// Current status
+toggle.checked=(Notification.permission==="granted");
+
+// User changed switch
+toggle.addEventListener("change",async function(){
+
+// Turn ON
+if(this.checked){
+
+const permission=await Notification.requestPermission();
+
+if(permission==="granted"){
+
+localStorage.setItem("notificationEnabled","true");
+
+}else{
+
+this.checked=false;
+
+localStorage.setItem("notificationEnabled","false");
+
+}
+
+return;
+
+}
+
+// Turn OFF
+this.checked=true;
+
+alert("Please disable notification from your browser settings.");
+
+});
+
+}
+// =========================
 // LOGOUT DIALOG
 // =========================
 
