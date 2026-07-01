@@ -2,228 +2,161 @@
 // PUSH NOTIFICATION
 // =====================================================
 
-window.PushNotification = {
+window.PushNotification={
 
-    async enable(){
+publicKey:"BJKtfYLpS5SGXyuAcM3kR7wt_1dHcg1apVIrT8lQ5fXJDDxNml6acZD4PAheC5j36xc3qlDg0L8C7p3kiuydrQo",
 
-        try{
+// =====================================================
+// ENABLE
+// =====================================================
 
-            console.log("🚀 Push init started");
+async enable(){
 
-            // =========================================
-            // SUPPORT CHECK
-            // =========================================
+try{
 
-            if(!("serviceWorker" in navigator)){
+if(!("serviceWorker" in navigator)) return false;
+if(!("PushManager" in window)) return false;
 
-                console.log("❌ ServiceWorker not supported");
-                return;
+const registration=
+await navigator.serviceWorker.register(
+"/CM_Pro/service-worker.js"
+);
 
-            }
+await navigator.serviceWorker.ready;
 
-            if(!("PushManager" in window)){
+// -------------------------
+// Permission
+// -------------------------
 
-                console.log("❌ PushManager not supported");
-                return;
+let permission=Notification.permission;
 
-            }
+if(permission!=="granted"){
 
-            // =========================================
-            // REGISTER SERVICE WORKER
-            // =========================================
+permission=
+await Notification.requestPermission();
 
-            const registration =
-                await navigator.serviceWorker.register(
-                    "/CM_Pro/service-worker.js"
-                );
+}
 
-            console.log(
-                "✅ SW REGISTERED",
-                registration
-            );
+if(permission!=="granted"){
 
-            // =========================================
-            // WAIT UNTIL SW READY
-            // =========================================
+localStorage.setItem(
+"notificationEnabled",
+"false"
+);
 
-            await navigator.serviceWorker.ready;
+return false;
 
-            console.log(
-                "✅ SW READY"
-            );
+}
 
-            // =========================================
-            // NOTIFICATION PERMISSION
-            // =========================================
+// -------------------------
+// Existing Subscription
+// -------------------------
 
-            let permission =
-                Notification.permission;
+let subscription=
+await registration.pushManager.getSubscription();
 
-            if(permission !== "granted"){
+// -------------------------
+// Create only if needed
+// -------------------------
 
-                permission =
-                    await Notification.requestPermission();
+if(!subscription){
 
-            }
+subscription=
+await registration.pushManager.subscribe({
 
-            console.log(
-                "🔔 Permission:",
-                permission
-            );
+userVisibleOnly:true,
 
-            if(permission !== "granted"){
+applicationServerKey:
+this.urlBase64ToUint8Array(
+this.publicKey
+)
 
-                console.log(
-                    "❌ Notification denied"
-                );
+});
 
-                return;
+console.log(
+"✅ New Push Subscription Created"
+);
 
-            }
+}else{
 
-            // =========================================
-            // REMOVE OLD SUB (TEST MODE)
-            // =========================================
+console.log(
+"✅ Existing Push Subscription Found"
+);
 
-            const oldSubscription =
-                await registration.pushManager.getSubscription();
+}
 
-            if(oldSubscription){
+// -------------------------
+// Token
+// -------------------------
 
-                console.log(
-                    "🗑 Removing old subscription"
-                );
+const token=
+localStorage.getItem("token")||
+sessionStorage.getItem("token");
 
-                try{
+if(!token){
 
-                    await oldSubscription.unsubscribe();
+console.error("No token");
 
-                }catch(err){
+return false;
 
-                    console.warn(
-                        "Old unsubscribe failed",
-                        err
-                    );
+}
 
-                }
+// -------------------------
+// Save to Server
+// -------------------------
 
-            }
+const response=
+await fetch(
 
-            // =========================================
-            // CREATE NEW SUBSCRIPTION
-            // =========================================
+`${API.BASE_URL}/api/push/subscribe`,
 
-            const publicKey =
-"BJKtfYLpS5SGXyuAcM3kR7wt_1dHcg1apVIrT8lQ5fXJDDxNml6acZD4PAheC5j36xc3qlDg0L8C7p3kiuydrQo";
+{
 
-            const subscription =
-                await registration.pushManager.subscribe({
+method:"POST",
 
-                    userVisibleOnly:true,
+headers:{
 
-                    applicationServerKey:
-                        this.urlBase64ToUint8Array(
-                            publicKey
-                        )
+"Content-Type":"application/json",
 
-                });
+Authorization:`Bearer ${token}`
 
-            console.log(
-                "✅ NEW SUB CREATED"
-            );
+},
 
-            console.log(
-                subscription
-            );
+body:JSON.stringify(subscription)
 
-            // =========================================
-            // TOKEN
-            // =========================================
+}
 
-            const token =
+);
 
-                localStorage.getItem("token") ||
+const result=
+await response.json();
 
-                sessionStorage.getItem("token");
+console.log(result);
 
-            console.log(
-                "🔑 Token exists:",
-                !!token
-            );
+localStorage.setItem(
+"notificationEnabled",
+"true"
+);
 
-            if(!token){
+return true;
 
-                console.error(
-                    "❌ No token found"
-                );
+}
+catch(err){
 
-                return;
+console.error(
+"Push Enable Error",
+err
+);
 
-            }
+return false;
 
-            // =========================================
-            // SEND SUB TO SERVER
-            // =========================================
+}
 
-            const response = await fetch(
+},
 
-                `${API.BASE_URL}/api/push/subscribe`,
-
-                {
-
-                    method:"POST",
-
-                    headers:{
-
-                        "Content-Type":"application/json",
-
-                        Authorization:`Bearer ${token}`
-
-                    },
-
-                    body:JSON.stringify(
-                        subscription
-                    )
-
-                }
-
-            );
-
-            const result =
-                await response.json();
-
-            console.log(
-                "✅ SUBSCRIBE RESPONSE",
-                result
-            );
-
-            // =========================================
-            // DEBUG CURRENT SUB
-            // =========================================
-
-            const verifySub =
-                await registration.pushManager.getSubscription();
-
-            console.log(
-                "📌 ACTIVE SUB:",
-                verifySub?.endpoint
-            );
-
-        }
-        catch(error){
-
-            console.error(
-                "❌ PUSH INIT ERROR",
-                error
-            );
-
-        }
-
-    },
-
-    // =========================================
-// DISABLE PUSH
-// =========================================
+// =====================================================
+// DISABLE
+// =====================================================
 
 async disable(){
 
@@ -239,7 +172,29 @@ if(subscription){
 
 await subscription.unsubscribe();
 
-console.log("🔕 Push unsubscribed");
+console.log(
+"🔕 Push Unsubscribed"
+);
+
+// Optional backend remove
+/*
+const token=
+localStorage.getItem("token")||
+sessionStorage.getItem("token");
+
+await fetch(
+`${API.BASE_URL}/api/push/unsubscribe`,
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+Authorization:`Bearer ${token}`
+},
+body:JSON.stringify({
+endpoint:subscription.endpoint
+})
+});
+*/
 
 }
 
@@ -248,17 +203,25 @@ localStorage.setItem(
 "false"
 );
 
-}catch(err){
+return true;
 
-console.error(err);
+}
+catch(err){
+
+console.error(
+"Push Disable Error",
+err
+);
+
+return false;
 
 }
 
 },
 
-// =========================================
+// =====================================================
 // STATUS
-// =========================================
+// =====================================================
 
 async isEnabled(){
 
@@ -272,7 +235,8 @@ await registration.pushManager.getSubscription();
 
 return !!subscription;
 
-}catch{
+}
+catch{
 
 return false;
 
@@ -280,43 +244,53 @@ return false;
 
 },
 
-    // =================================================
-    // BASE64 TO UINT8
-    // =================================================
+// =====================================================
+// INIT
+// =====================================================
 
-    urlBase64ToUint8Array(base64String){
+async init(){
 
-        const padding =
-            "=".repeat(
-                (4 - base64String.length % 4) % 4
-            );
+if(
+localStorage.getItem("notificationEnabled")==="true"
+){
 
-        const base64 =
-            (base64String + padding)
-            .replace(/\-/g, "+")
-            .replace(/_/g, "/");
+await this.enable();
 
-        const rawData =
-            window.atob(base64);
+}
 
-        const outputArray =
-            new Uint8Array(
-                rawData.length
-            );
+},
 
-        for(
-            let i = 0;
-            i < rawData.length;
-            ++i
-        ){
+// =====================================================
+// BASE64
+// =====================================================
 
-            outputArray[i] =
-                rawData.charCodeAt(i);
+urlBase64ToUint8Array(base64String){
 
-        }
+const padding=
+"=".repeat(
+(4-base64String.length%4)%4
+);
 
-        return outputArray;
+const base64=
+(base64String+padding)
+.replace(/\-/g,"+")
+.replace(/_/g,"/");
 
-    }
+const rawData=
+window.atob(base64);
+
+const outputArray=
+new Uint8Array(rawData.length);
+
+for(let i=0;i<rawData.length;i++){
+
+outputArray[i]=
+rawData.charCodeAt(i);
+
+}
+
+return outputArray;
+
+}
 
 };
