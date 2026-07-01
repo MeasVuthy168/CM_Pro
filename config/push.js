@@ -4,7 +4,7 @@
 
 window.PushNotification = {
 
-    async init(){
+    async enable(){
 
         try{
 
@@ -220,6 +220,65 @@ window.PushNotification = {
         }
 
     },
+
+    // =========================================
+// DISABLE PUSH
+// =========================================
+
+async disable(){
+
+try{
+
+const registration=
+await navigator.serviceWorker.ready;
+
+const subscription=
+await registration.pushManager.getSubscription();
+
+if(subscription){
+
+await subscription.unsubscribe();
+
+console.log("🔕 Push unsubscribed");
+
+}
+
+localStorage.setItem(
+"notificationEnabled",
+"false"
+);
+
+}catch(err){
+
+console.error(err);
+
+}
+
+},
+
+// =========================================
+// STATUS
+// =========================================
+
+async isEnabled(){
+
+try{
+
+const registration=
+await navigator.serviceWorker.ready;
+
+const subscription=
+await registration.pushManager.getSubscription();
+
+return !!subscription;
+
+}catch{
+
+return false;
+
+}
+
+},
 
     // =================================================
     // BASE64 TO UINT8
