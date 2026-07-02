@@ -1,4 +1,20 @@
 /* =========================
+   Dashboard Grid
+========================= */
+
+.dashboard-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(3,1fr);
+
+    gap:14px;
+
+    padding:16px;
+
+}
+
+/* =========================
    Dashboard Cards
 ========================= */
 
@@ -11,69 +27,137 @@
             #002D6B
         );
 
-    border:
-        2px solid #D4AF37;
+    border:2px solid #D4AF37;
 
-    border-radius:
-        24px;
+    border-radius:24px;
 
-   min-height:
-         145px;
+    aspect-ratio:1/1;
 
-    padding:
-        16px;
+    padding:16px 10px;
 
     display:flex;
 
     flex-direction:column;
 
-    align-items:center;
-
     justify-content:center;
 
-    gap:10px;
+    align-items:center;
 
     text-align:center;
 
-    color:white;
-
     text-decoration:none;
 
-    transition:0.2s;
+    color:#fff;
+
+    transition:.2s;
 
     box-shadow:
-        0 4px 10px rgba(0,0,0,0.2);
+        0 4px 12px rgba(0,0,0,.25);
+
+    user-select:none;
+
+    -webkit-tap-highlight-color:transparent;
 
 }
 
 .dashboard-card:hover{
 
-    transform:
-        translateY(-3px);
-
-}
-
-.dashboard-card img{
-
-    width:52px;
-    height:52px;
-
-    object-fit:contain;
-
-}
-
-.dashboard-card-title{
-
-    font-size:13px;
-
-    font-weight:600;
-
-    line-height:1.4;
+    transform:translateY(-3px);
 
 }
 
 .dashboard-card:active{
 
-    transform:scale(0.96);
+    transform:scale(.96);
+
+}
+
+/* =========================
+   Card Icon
+========================= */
+
+.dashboard-card img{
+
+    width:60px;
+
+    height:60px;
+
+    object-fit:contain;
+
+    margin-bottom:12px;
+
+    pointer-events:none;
+
+}
+
+/* =========================
+   Card Title
+========================= */
+
+.dashboard-card-title{
+
+    font-size:15px;
+
+    font-weight:600;
+
+    line-height:1.25;
+
+    color:#fff;
+
+    text-align:center;
+
+    word-break:break-word;
+
+}
+
+/* =========================
+   Tablet
+========================= */
+
+@media (min-width:768px){
+
+.dashboard-grid{
+
+    gap:18px;
+
+    padding:22px;
+
+}
+
+.dashboard-card{
+
+    border-radius:28px;
+
+}
+
+.dashboard-card img{
+
+    width:72px;
+
+    height:72px;
+
+}
+
+.dashboard-card-title{
+
+    font-size:18px;
+
+}
+
+}
+
+/* =========================
+   Desktop
+========================= */
+
+@media (min-width:1200px){
+
+.dashboard-grid{
+
+    max-width:1000px;
+
+    margin:auto;
+
+}
 
 }
