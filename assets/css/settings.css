@@ -65,7 +65,9 @@
 
     align-items:center;
 
-    padding:18px 22px;
+    padding:14px 22px;
+
+    min-height:66px;
 
     border-bottom:1px solid #eee;
 
@@ -101,7 +103,47 @@
     font-weight:bold;
 
 }
+.setting-left{
 
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+}
+
+.setting-icon{
+
+    width:34px;
+
+    height:34px;
+
+    object-fit:contain;
+
+    flex-shrink:0;
+
+}
+
+.setting-arrow{
+
+    font-size:34px;
+
+    color:#333;
+
+    line-height:1;
+
+}
+
+.notify-right{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:flex-end;
+
+}
 .switch{
 position:relative;
 display:inline-block;
