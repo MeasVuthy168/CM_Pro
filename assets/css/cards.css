@@ -8,9 +8,9 @@
 
     grid-template-columns:repeat(3,1fr);
 
-    gap:14px;
+    gap:10px;
 
-    padding:16px;
+    padding:10px;
 
 }
 
@@ -33,7 +33,7 @@
 
     aspect-ratio:1/1;
 
-    padding:16px 10px;
+    padding:10px 6px;
 
     display:flex;
 
@@ -78,13 +78,13 @@
 
 .dashboard-card img{
 
-    width:60px;
+    width:46px;
 
-    height:60px;
+    height:46px;
 
     object-fit:contain;
 
-    margin-bottom:12px;
+    margin-bottom:8px;
 
     pointer-events:none;
 
@@ -96,7 +96,7 @@
 
 .dashboard-card-title{
 
-    font-size:15px;
+    font-size:11px;
 
     font-weight:600;
 
@@ -126,7 +126,7 @@
 
 .dashboard-card{
 
-    border-radius:28px;
+    border-radius:20px;
 
 }
 
