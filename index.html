@@ -189,7 +189,29 @@ showBack:false
 
 loadTopbarUser();
 loadTopbarPhoto();
+// =========================
+// PROFILE PHOTO CLICK
+// =========================
 
+setTimeout(()=>{
+
+const profile=document.getElementById("topbarProfile");
+
+if(profile){
+
+profile.style.cursor="pointer";
+
+profile.onclick=function(){
+
+window.location.href=
+"/CM_Pro/pages/settings/account.html";
+
+};
+
+}
+
+},100);
+    
 }
 }catch(error){
 
