@@ -55,9 +55,13 @@ padding:24px;
 
 width:100%;
 max-width:430px;
+
 background:#fff;
+
 border-radius:28px;
-padding:22px;
+
+padding:24px;
+
 box-shadow:0 10px 30px rgba(0,0,0,.18);
 
 }
@@ -74,10 +78,12 @@ margin-bottom:18px;
 
 .logo{
 
-width:72px;
-height:72px;
-display:block;
-margin:0 auto;
+width:74px;
+height:74px;
+
+border-radius:18px;
+
+flex-shrink:0;
 
 }
 
@@ -91,75 +97,84 @@ flex:1;
 
 font-size:22px;
 font-weight:bold;
+
 color:#1b3568;
-margin-top:8px;
 
-}
-
-.appSub{
-
-font-size:14px;
-color:#666;
-margin-top:2px;
+margin-bottom:2px;
 
 }
 
 .version{
 
-margin-top:10px;
-font-size:16px;
+font-size:18px;
 font-weight:bold;
+
 color:#c99a1d;
 
 }
 
 .line{
 
-margin:18px 0;
 height:4px;
+
 background:#c99a1d;
+
 border-radius:20px;
+
+margin:18px 0 20px;
 
 }
 
 .section{
 
-margin-bottom:18px;
+margin-bottom:20px;
 
 }
 
 .sectionTitle{
 
-font-size:17px;
+font-size:18px;
 font-weight:bold;
+
 color:#1b3568;
-margin-bottom:6px;
+
+margin-bottom:8px;
 
 }
 
 .sectionBody{
 
-font-size:14px;
+font-size:15px;
+
 line-height:1.55;
+
 color:#444;
+
 text-align:justify;
-
-}
-
-.feature{
-
-font-size:14px;
-line-height:1.45;
-margin-bottom:4px;
-color:#444;
 
 }
 
 .backBtn{
 
-margin-top:18px;
-height:56px;
-font-size:22px;
+display:block;
+
+width:100%;
+
+height:52px;
+
+margin-top:20px;
+
+border:none;
+
+border-radius:14px;
+
+background:#1b3568;
+
+color:#fff;
+
+font-size:20px;
+
+cursor:pointer;
 
 }
 
@@ -197,7 +212,7 @@ CM_Pro
 id="appVersion"
 class="version">
 
-Loading Version...
+Loading...
 
 </div>
 
@@ -217,16 +232,7 @@ Loading Version...
 
 <div class="sectionBody">
 
-CM_Pro គឺជាប្រព័ន្ធតាមដានឥណទាន
-(Credit Monitoring System)
-ដែលត្រូវបានបង្កើតឡើង
-សម្រាប់បុគ្គលិកឥណទាន
-ACLEDA Bank
-ដើម្បីស្វែងរកព័ត៌មានអតិថិជន
-តាមដានបំណុលយឺត
-ពិនិត្យ Average Turnover
-Spot Check និងព័ត៌មានឥណទានផ្សេងៗ
-បានគ្រប់ពេលវេលា និងគ្រប់ទីកន្លែង។
+CM_Pro គឺជាប្រព័ន្ធតាមដានឥណទាន (Credit Monitoring System) ដែលត្រូវបានបង្កើតឡើងសម្រាប់បុគ្គលិកឥណទានរបស់ ACLEDA Bank ដើម្បីស្វែងរកព័ត៌មានអតិថិជន តាមដានបំណុលយឺត ពិនិត្យ Average Turnover, Spot Check និងព័ត៌មានឥណទានផ្សេងៗបានគ្រប់ពេលវេលា និងគ្រប់ទីកន្លែង។
 
 </div>
 
@@ -242,12 +248,7 @@ Spot Check និងព័ត៌មានឥណទានផ្សេងៗ
 
 <div class="sectionBody">
 
-CM_Pro ប្រើប្រាស់ព័ត៌មានអ្នកប្រើប្រាស់
-ដូចជា ឈ្មោះ អត្តលេខ និងសិទ្ធិប្រើប្រាស់
-សម្រាប់ផ្ទៀងផ្ទាត់អត្តសញ្ញាណ
-និងការពារសុវត្ថិភាពប្រព័ន្ធ។
-ព័ត៌មានទាំងអស់ត្រូវបានរក្សាទុក
-និងបញ្ជូនដោយសុវត្ថិភាព។
+CM_Pro ប្រើប្រាស់ព័ត៌មានអ្នកប្រើប្រាស់ ដូចជា ឈ្មោះ អត្តលេខ និងសិទ្ធិប្រើប្រាស់ សម្រាប់ការផ្ទៀងផ្ទាត់អត្តសញ្ញាណ ការកំណត់សិទ្ធិប្រើប្រាស់ និងការពារសុវត្ថិភាពប្រព័ន្ធ។ ព័ត៌មានទាំងអស់ត្រូវបានរក្សាទុក និងបញ្ជូនដោយសុវត្ថិភាព។
 
 </div>
 
@@ -283,11 +284,9 @@ onclick="history.back()">
 
 </div>
 
-<script src="../../config/api.js"></script>
-
-<script src="../../config/auth.js"></script>
-
-<script src="../../config/session.js"></script>
+<script src="/CM_Pro/config/api.js"></script>
+<script src="/CM_Pro/config/auth.js"></script>
+<script src="/CM_Pro/config/session.js"></script>
 
 <script>
 
@@ -299,46 +298,49 @@ async function loadVersion(){
 
 try{
 
-const response=
-await fetch(
-`${API.BASE_URL}/api/app/version`
-);
-
-if(!response.ok){
-
-throw new Error(
-"Unable to load version."
-);
-
-}
-
 const data=
-await response.json();
+await API.get(
+"/api/app/version?app=CM_Pro"
+);
 
-const version=
+console.log(data);
 
-data.version||
-data.latestVersion||
-data.appVersion||
-"-";
+if(!data.ok||!data.hasVersion){
 
 document.getElementById(
 "appVersion"
-).innerText=
-
-"Version "+version;
+).innerText="Version -";
 
 document.getElementById(
 "versionHistory"
 ).innerHTML=
 
 `
-<b>Version ${version}</b>
+មិនទាន់មានព័ត៌មានអំពីកំណែ
+`;
+
+return;
+
+}
+
+document.getElementById(
+"appVersion"
+).innerText=
+
+"Version "+data.latestVersion;
+
+document.getElementById(
+"versionHistory"
+).innerHTML=
+
+`
+<b>Version ${data.latestVersion}</b>
 <br><br>
-សូមធ្វើបច្ចុប្បន្នភាពទៅកំណែចុងក្រោយ
-ដើម្បីទទួលបានមុខងារថ្មីៗ
-ការកែលម្អប្រសិទ្ធភាព
-និងការជួសជុលបញ្ហាផ្សេងៗ។
+
+${data.notes||
+
+"សូមធ្វើបច្ចុប្បន្នភាពទៅកំណែចុងក្រោយ ដើម្បីទទួលបានមុខងារថ្មីៗ ការកែលម្អប្រសិទ្ធភាព និងការជួសជុលបញ្ហាផ្សេងៗ។"}
+
 `;
 
 }catch(err){
@@ -356,9 +358,7 @@ document.getElementById(
 ).innerHTML=
 
 `
-<b>Version -</b>
-<br><br>
-Unable to load version.
+មិនអាចទាញយកព័ត៌មាន Version បាន។
 `;
 
 }
@@ -369,10 +369,13 @@ Unable to load version.
 // START
 // ========================================
 
-loadVersion();
+window.addEventListener(
+"load",
+loadVersion
+);
 
 </script>
 
 </body>
 
-</html>
+</html>  
