@@ -15,242 +15,168 @@ content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no
 name="theme-color"
 content="#032d73">
 
+<link
+rel="stylesheet"
+href="../../assets/css/main.css">
+
 <style>
-
-@font-face{
-
-    font-family:"Krasar";
-
-    src:url("/CM_Pro/assets/fonts/Krasar-Regular.ttf") format("truetype");
-
-}
 
 *{
 
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
+margin:0;
+padding:0;
+box-sizing:border-box;
 
 }
 
 html,
 body{
 
-    width:100%;
-    min-height:100%;
-
-    background:#082d69;
-
-    font-family:Arial,sans-serif;
+width:100%;
+min-height:100%;
+background:#082d69;
 
 }
 
 .wrapper{
 
-    width:100%;
+width:100%;
+min-height:100vh;
 
-    min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
 
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    padding:24px;
+padding:24px;
 
 }
 
 .card{
 
-    width:100%;
+width:100%;
+max-width:430px;
 
-    max-width:430px;
+background:#fff;
 
-    background:#fff;
+border-radius:28px;
 
-    border-radius:28px;
+padding:28px;
 
-    padding:28px;
+box-shadow:0 10px 30px rgba(0,0,0,.18);
 
-    box-shadow:
-    0 10px 30px rgba(0,0,0,.18);
+}
+
+.header{
+
+display:flex;
+align-items:center;
+gap:18px;
+
+margin-bottom:18px;
 
 }
 
 .logo{
 
-    width:90px;
+width:80px;
+height:80px;
 
-    height:90px;
+border-radius:50%;
 
-    display:block;
+}
 
-    margin:0 auto;
+.header-right{
+
+flex:1;
 
 }
 
 .appName{
 
-    margin-top:16px;
+font-size:28px;
+font-weight:bold;
 
-    text-align:center;
-
-    font-size:28px;
-
-    font-weight:bold;
-
-    color:#1b3568;
-
-}
-
-.appSub{
-
-    margin-top:6px;
-
-    text-align:center;
-
-    font-size:14px;
-
-    color:#666;
+color:#1b3568;
 
 }
 
 .version{
 
-    margin-top:18px;
+margin-top:4px;
 
-    text-align:center;
+font-size:17px;
 
-    font-size:18px;
-
-    font-weight:bold;
-
-    color:#c99a1d;
+color:#c99a1d;
 
 }
 
 .line{
 
-    margin:24px 0;
+margin:22px 0;
 
-    height:4px;
+height:4px;
 
-    background:#c99a1d;
+background:#c99a1d;
 
-    border-radius:20px;
+border-radius:20px;
 
 }
 
 .section{
 
-    margin-bottom:24px;
+margin-bottom:26px;
 
 }
 
 .sectionTitle{
 
-    margin-bottom:10px;
+font-size:22px;
 
-    font-size:28px;
+color:#1b3568;
 
-    font-weight:bold;
+margin-bottom:10px;
 
-    color:#1b3568;
+font-weight:bold;
 
 }
 
 .sectionBody{
 
-    font-size:19px;
+font-size:16px;
 
-    line-height:1.7;
+line-height:1.9;
 
-    color:#444;
+color:#444;
 
-}
-
-.feature{
-
-    margin-bottom:10px;
-
-    font-size:19px;
-
-    color:#444;
-
-}
-
-.devTable{
-
-    width:100%;
-
-    border-collapse:collapse;
-
-}
-
-.devTable td{
-
-    padding:8px 0;
-
-    font-size:20px;
-
-}
-
-.devLabel{
-
-    width:130px;
-
-    font-family:"Krasar",Arial,sans-serif;
-
-    color:#222;
-
-}
-
-.devValue{
-
-    color:#c99a1d;
-
-}
-
-.footer{
-
-    margin-top:20px;
-
-    text-align:center;
-
-    font-size:16px;
-
-    color:#777;
+text-align:justify;
 
 }
 
 .backBtn{
 
-    margin-top:28px;
+margin-top:20px;
 
-    width:100%;
+width:100%;
 
-    height:66px;
+height:58px;
 
-    border:none;
+border:none;
 
-    border-radius:14px;
+border-radius:14px;
 
-    background:#1b3568;
+background:#1b3568;
 
-    color:#fff;
+color:#fff;
 
-    font-family:"Krasar",Arial,sans-serif;
+font-size:22px;
 
-    font-size:30px;
-
-    cursor:pointer;
+cursor:pointer;
 
 }
 
 .backBtn:active{
 
-    transform:scale(.98);
+transform:scale(.98);
 
 }
 
@@ -264,19 +190,17 @@ body{
 
 <div class="card">
 
+<div class="header">
+
 <img
 class="logo"
 src="/CM_Pro/assets/images/icon-192.png">
 
+<div class="header-right">
+
 <div class="appName">
 
 CM_Pro
-
-</div>
-
-<div class="appSub">
-
-Credit Monitoring Pro
 
 </div>
 
@@ -288,25 +212,32 @@ Loading Version...
 
 </div>
 
+</div>
+
+</div>
+
 <div class="line"></div>
 
 <div class="section">
 
 <div class="sectionTitle">
 
-About
+អំពីកម្មវិធី
 
 </div>
 
 <div class="sectionBody">
 
-CM_Pro is a Credit Monitoring application
-developed to help Credit Officers manage
-customers, monitor daily arrears,
-analyze average turnover,
-perform spot checks,
-and access credit information
-securely from anywhere.
+CM_Pro គឺជាប្រព័ន្ធតាមដានឥណទាន
+(Credit Monitoring System)
+ដែលត្រូវបានបង្កើតឡើង
+សម្រាប់បុគ្គលិកឥណទាន
+ACLEDA Bank
+ដើម្បីស្វែងរកព័ត៌មានអតិថិជន
+តាមដានបំណុលយឺត
+ពិនិត្យ Average Turnover
+Spot Check និងព័ត៌មានឥណទានផ្សេងៗ
+បានគ្រប់ពេលវេលា និងគ្រប់ទីកន្លែង។
 
 </div>
 
@@ -316,49 +247,18 @@ securely from anywhere.
 
 <div class="sectionTitle">
 
-Features
+លក្ខខណ្ឌប្រើប្រាស់
 
 </div>
 
-<div class="feature">
+<div class="sectionBody">
 
-• Customer Search
-
-</div>
-
-<div class="feature">
-
-• Daily Arrears
-
-</div>
-
-<div class="feature">
-
-• Average Turnover
-
-</div>
-
-<div class="feature">
-
-• Spot Check
-
-</div>
-
-<div class="feature">
-
-• Push Notification
-
-</div>
-
-<div class="feature">
-
-• Secure Login
-
-</div>
-
-<div class="feature">
-
-• Offline PWA Support
+CM_Pro ប្រើប្រាស់ព័ត៌មានអ្នកប្រើប្រាស់
+ដូចជា ឈ្មោះ អត្តលេខ និងសិទ្ធិប្រើប្រាស់
+សម្រាប់ផ្ទៀងផ្ទាត់អត្តសញ្ញាណ
+និងការពារសុវត្ថិភាពប្រព័ន្ធ។
+ព័ត៌មានទាំងអស់ត្រូវបានរក្សាទុក
+និងបញ្ជូនដោយសុវត្ថិភាព។
 
 </div>
 
@@ -368,123 +268,17 @@ Features
 
 <div class="sectionTitle">
 
-Developer
+ប្រវត្តិកំណែ
 
 </div>
 
-<table class="devTable">
+<div
+id="versionHistory"
+class="sectionBody">
 
-<tr>
-
-<td class="devLabel">
-
-Name
-
-</td>
-
-<td class="devValue">
-
-Meas Vuthy
-
-</td>
-
-</tr>
-
-<tr>
-
-<td class="devLabel">
-
-Position
-
-</td>
-
-<td class="devValue">
-
-Assistant Branch Credit Manager
-
-</td>
-
-</tr>
-
-<tr>
-
-<td class="devLabel">
-
-Branch
-
-</td>
-
-<td class="devValue">
-
-Svay Rieng Branch
-
-</td>
-
-</tr>
-
-</table>
+Loading...
 
 </div>
-
-<div class="section">
-
-<div class="sectionTitle">
-
-Technology
-
-</div>
-
-<div class="feature">
-
-• HTML5
-
-</div>
-
-<div class="feature">
-
-• CSS3
-
-</div>
-
-<div class="feature">
-
-• JavaScript
-
-</div>
-
-<div class="feature">
-
-• Node.js
-
-</div>
-
-<div class="feature">
-
-• MongoDB
-
-</div>
-
-<div class="feature">
-
-• GitHub Pages
-
-</div>
-
-<div class="feature">
-
-• Render
-
-</div>
-
-</div>
-
-<div class="footer">
-
-© 2026 CM_Pro
-
-<br>
-
-All Rights Reserved.
 
 </div>
 
@@ -514,48 +308,71 @@ onclick="history.back()">
 
 async function loadVersion(){
 
-    try{
+try{
 
-        const response = await fetch(
+const response=
+await fetch(
+`${API.BASE_URL}/api/app/version`
+);
 
-            `${API.BASE_URL}/api/app/version`
+if(!response.ok){
 
-        );
+throw new Error(
+"Unable to load version."
+);
 
-        if(!response.ok){
+}
 
-            throw new Error(
-                "Unable to load version."
-            );
+const data=
+await response.json();
 
-        }
+const version=
 
-        const data = await response.json();
+data.version||
+data.latestVersion||
+data.appVersion||
+"-";
 
-        document.getElementById(
-            "appVersion"
-        ).innerText =
+document.getElementById(
+"appVersion"
+).innerText=
 
-            "Version " +
+"Version "+version;
 
-            (
-                data.version ||
-                data.latestVersion ||
-                data.appVersion ||
-                "-"
-            );
+document.getElementById(
+"versionHistory"
+).innerHTML=
 
-    }catch(error){
+`
+<b>Version ${version}</b>
+<br><br>
+សូមធ្វើបច្ចុប្បន្នភាពទៅកំណែចុងក្រោយ
+ដើម្បីទទួលបានមុខងារថ្មីៗ
+ការកែលម្អប្រសិទ្ធភាព
+និងការជួសជុលបញ្ហាផ្សេងៗ។
+`;
 
-        console.error(error);
+}catch(err){
 
-        document.getElementById(
-            "appVersion"
-        ).innerText =
+console.error(err);
 
-            "Version -";
+document.getElementById(
+"appVersion"
+).innerText=
 
-    }
+"Version -";
+
+document.getElementById(
+"versionHistory"
+).innerHTML=
+
+`
+<b>Version -</b>
+<br><br>
+Unable to load version.
+`;
+
+}
 
 }
 
@@ -569,4 +386,4 @@ loadVersion();
 
 </body>
 
-</html>  
+</html>
