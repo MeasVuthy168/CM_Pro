@@ -174,6 +174,23 @@ reportDates:reportDates
 
 );
 
+console.log("Request reportDates:",reportDates);
+console.log("API Result:",result);
+
+"/api/debitturnover/ave-turnover",
+
+{
+
+source:REPORT_SOURCE,
+
+cif:cif,
+
+reportDates:reportDates
+
+}
+
+);
+
 if(!result.ok){
 
 throw new Error(
