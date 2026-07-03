@@ -363,13 +363,13 @@ function renderTable(items){
         // --------------------------
 
         const debit =
-            parseFloat(values[9]) || 0;
+            parseFloat(values[16]) || 0;
 
         const currentOD =
             parseFloat(values[10]) || 0;
 
         const turnover =
-            parseFloat(values[11]) || 0;
+            parseFloat(values[14]) || 0;
 
         const effectiveDate =
             formatExcelDate(values[17]);
