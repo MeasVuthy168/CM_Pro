@@ -1,436 +1,722 @@
 // ========================================
 // Average Debit Turnover
+// Step 3.1
 // ========================================
 
-const REPORT_SOURCE="DebitTurnOver";
+const REPORT_SOURCE = "DebitTurnOver";
 
 // ========================================
 // PAGE LOAD
 // ========================================
 
-window.addEventListener("load",()=>{
+window.addEventListener("load", () => {
 
-loadReportDates();
+    const d = new Date();
 
-});
-
-// ========================================
-// LOAD REPORT DATES
-// ========================================
-
-async function loadReportDates(){
-
-const ddl=document.getElementById("preparedDate");
-
-ddl.innerHTML="<option>Loading...</option>";
-
-try{
-
-const result=await API.get(
-`/api/debitturnover/report-dates?source=${REPORT_SOURCE}`
-);
-
-if(!result.ok){
-
-throw new Error(
-result.message||"Cannot load report dates."
-);
-
-}
-
-ddl.innerHTML="";
-
-if(!result.dates.length){
-
-ddl.innerHTML=
-"<option>No Report</option>";
-
-return;
-
-}
-
-result.dates.forEach(date=>{
-
-const opt=document.createElement("option");
-
-opt.value=date;
-
-opt.text=date;
-
-ddl.appendChild(opt);
+    document.getElementById("preparedDate").value =
+        d.toISOString().split("T")[0];
 
 });
 
-ddl.selectedIndex=0;
-
-}
-catch(err){
-
-console.error(err);
-
-ddl.innerHTML=
-"<option>Error Loading</option>";
-
-}
-
-}
-
 // ========================================
-// Generate Previous 12 Month Ends
+// SEARCH BUTTON
 // ========================================
 
-function getLast12MonthEnds(preparedDate){
-
-const months=[];
-
-let d=new Date(preparedDate);
-
-d.setDate(1);
-
-for(let i=0;i<12;i++){
-
-d.setMonth(d.getMonth()-1);
-
-const lastDay=new Date(
-
-d.getFullYear(),
-
-d.getMonth()+1,
-
-0
-
-);
-
-const dd=String(lastDay.getDate())
-.padStart(2,"0");
-
-const mm=String(lastDay.getMonth()+1)
-.padStart(2,"0");
-
-const yy=String(lastDay.getFullYear())
-.slice(-2);
-
-months.push(`${dd}-${mm}-${yy}`);
-
-}
-
-return months;
-
-}
+document
+.getElementById("btnSearch")
+.onclick = searchTurnover;
 
 // ========================================
 // SEARCH
 // ========================================
 
-document
-.getElementById("btnSearch")
-.onclick=searchTurnover;
-
 async function searchTurnover(){
 
-const cif=document
-.getElementById("inputCIF")
-.value
-.trim();
+    const cif =
+        document
+        .getElementById("inputCIF")
+        .value
+        .trim();
 
-if(!cif){
+    if(!cif){
 
-alert("Please input CIF.");
+        alert("Please input CIF.");
 
-return;
+        return;
 
-}
+    }
 
-const prepared=document
-.getElementById("preparedDate")
-.value;
+    const preparedDate =
+        document
+        .getElementById("preparedDate")
+        .value;
 
-if(!prepared){
+    if(!preparedDate){
 
-alert("Please select Prepared Date.");
+        alert("Please select Prepared Date.");
 
-return;
+        return;
 
-}
+    }
 
-try{
+    showLoading(true);
 
-const reportDates=
-getLast12MonthEnds(prepared);
+    try{
 
-const result=await API.post(
+        const reportDates =
+            getLast12MonthEnds(preparedDate);
 
-"/api/debitturnover/ave-turnover",
+        const result =
+            await API.post(
 
-{
+                "/api/debitturnover/ave-turnover",
 
-source:REPORT_SOURCE,
+                {
 
-cif:cif,
+                    source: REPORT_SOURCE,
 
-reportDates:reportDates
+                    cif: cif,
 
-}
+                    reportDates: reportDates
 
-);
+                }
 
-console.log("Request reportDates:",reportDates);
-console.log("API Result:",result);
+            );
 
-"/api/debitturnover/ave-turnover",
+        if(!result.ok){
 
-{
+            throw new Error(
 
-source:REPORT_SOURCE,
+                result.message ||
 
-cif:cif,
+                "Unable to load data."
 
-reportDates:reportDates
+            );
 
-}
+        }
 
-);
+        renderTable(result.items || []);
 
-if(!result.ok){
+    }
 
-throw new Error(
+    catch(err){
 
-result.message||
+        console.error(err);
 
-"Search failed."
+        alert(err.message);
 
-);
+    }
 
-}
+    finally{
 
-renderTable(result.items);
+        showLoading(false);
 
-}
-catch(err){
-
-console.error(err);
-
-alert(err.message);
-
-}
+    }
 
 }
 
 // ========================================
-// Render Table
+// GENERATE LAST 12 MONTH ENDS
+// Example:
+// Prepared = 2026-07-03
+//
+// 30-06-26
+// 31-05-26
+// 30-04-26
+// ...
 // ========================================
 
-function renderTable(items){
+function getLast12MonthEnds(prepared){
 
-const tbody=document
-.getElementById("tbodyTurnover");
+    const arr = [];
 
-tbody.innerHTML="";
+    let d = new Date(prepared);
 
-let totalDebit=0;
+    d.setDate(1);
 
-let totalOD=0;
+    for(let i=0;i<12;i++){
 
-let totalTurn=0;
+        d.setMonth(d.getMonth()-1);
 
-let count=0;
+        const lastDay =
 
-let customerName="";
+            new Date(
 
-items.forEach((row,index)=>{
+                d.getFullYear(),
 
-const v=row.values||[];
+                d.getMonth()+1,
 
-if(!v.length){
+                0
 
-const tr=document.createElement("tr");
+            );
 
-tr.innerHTML=`
+        const dd =
 
-<td>${row.requestText}</td>
+            String(lastDay.getDate())
 
-<td colspan="4">
+            .padStart(2,"0");
 
-No Data
+        const mm =
 
-</td>
+            String(lastDay.getMonth()+1)
 
-`;
+            .padStart(2,"0");
 
-tbody.appendChild(tr);
+        const yy =
 
-return;
+            String(lastDay.getFullYear())
 
-}
+            .slice(-2);
 
-if(!customerName){
+        arr.push(
 
-customerName=v[4];
+            `${dd}-${mm}-${yy}`
 
-}
+        );
 
-const debit=parseFloat(v[9])||0;
+    }
 
-const od=parseFloat(v[10])||0;
-
-const turnover=parseFloat(v[11])||0;
-
-const month=row.requestText;
-
-const effective=formatExcelDate(v[17]);
-
-totalDebit+=debit;
-
-totalOD+=od;
-
-totalTurn+=turnover;
-
-count++;
-
-const tr=document.createElement("tr");
-
-if(index===0){
-
-tr.style.background="#dff7df";
-
-tr.style.fontWeight="bold";
-
-}
-
-if(index===items.length-1){
-
-tr.style.background="#f2f2f2";
-
-}
-
-tr.innerHTML=`
-
-<td>${month}</td>
-
-<td>${formatNumber(debit)}</td>
-
-<td>${formatNumber(od)}</td>
-
-<td>${turnover.toFixed(2)}%</td>
-
-<td>${effective}</td>
-
-`;
-
-tbody.appendChild(tr);
-
-});
-
-document
-.getElementById("customerName")
-.value=customerName;
-
-document
-.getElementById("avgDebit")
-.innerHTML=
-
-count
-
-?
-
-formatNumber(totalDebit/count)
-
-:
-
-"-";
-
-document
-.getElementById("avgOD")
-.innerHTML=
-
-count
-
-?
-
-formatNumber(totalOD/count)
-
-:
-
-"-";
-
-document
-.getElementById("avgTurnover")
-.innerHTML=
-
-count
-
-?
-
-(totalTurn/count).toFixed(2)+"%"
-
-:
-
-"-";
+    return arr;
 
 }
 
 // ========================================
-// Helpers
+// FORMAT NUMBER
 // ========================================
 
 function formatNumber(v){
 
-return Number(v)
-.toLocaleString(
+    return Number(v || 0)
 
-undefined,
+    .toLocaleString(
 
-{
+        undefined,
 
-minimumFractionDigits:2,
+        {
 
-maximumFractionDigits:2
+            minimumFractionDigits:2,
 
-}
+            maximumFractionDigits:2
 
-);
+        }
 
-}
-
-function formatExcelDate(serial){
-
-serial=Number(serial);
-
-if(!serial)return "";
-
-const utc=Math.floor(serial-25569);
-
-const d=new Date(utc*86400000);
-
-const dd=String(d.getDate())
-.padStart(2,"0");
-
-const mm=String(d.getMonth()+1)
-.padStart(2,"0");
-
-const yy=String(d.getFullYear())
-.slice(-2);
-
-return `${dd}-${mm}-${yy}`;
+    );
 
 }
 
 // ========================================
-// EXPORT
+// FORMAT EXCEL DATE
+// Excel Serial -> dd-mm-yy
+// ========================================
+
+function formatExcelDate(serial){
+
+    serial = Number(serial);
+
+    if(!serial){
+
+        return "";
+
+    }
+
+    const utc =
+
+        Math.floor(serial - 25569);
+
+    const d =
+
+        new Date(
+
+            utc * 86400000
+
+        );
+
+    const dd =
+
+        String(d.getDate())
+
+        .padStart(2,"0");
+
+    const mm =
+
+        String(d.getMonth()+1)
+
+        .padStart(2,"0");
+
+    const yy =
+
+        String(d.getFullYear())
+
+        .slice(-2);
+
+    return `${dd}-${mm}-${yy}`;
+
+}
+
+// ========================================
+// LOADING
+// ========================================
+
+function showLoading(show){
+
+    let box =
+
+        document.getElementById(
+
+            "loadingBox"
+
+        );
+
+    if(!box){
+
+        box = document.createElement("div");
+
+        box.id = "loadingBox";
+
+        box.className = "loading-box";
+
+        box.innerHTML =
+
+            '<div class="spinner"></div>';
+
+        document.body.appendChild(box);
+
+    }
+
+    box.style.display =
+
+        show
+
+        ? "flex"
+
+        : "none";
+
+}
+
+// ========================================
+// RENDER TABLE
+// ========================================
+
+function renderTable(items){
+
+    const tbody =
+        document.getElementById(
+            "tbodyTurnover"
+        );
+
+    tbody.innerHTML = "";
+
+    let customerName = "";
+
+    let totalDebit = 0;
+    let totalOD = 0;
+    let totalTurnover = 0;
+    let totalCount = 0;
+
+    items.forEach((item,index)=>{
+
+        const values = item.values || [];
+
+        // --------------------------
+        // No data for this month
+        // --------------------------
+
+        if(values.length===0){
+
+            const tr =
+                document.createElement("tr");
+
+            tr.className="row-nodata";
+
+            tr.innerHTML=`
+
+                <td>${item.requestText}</td>
+
+                <td colspan="4">
+                    No Data
+                </td>
+
+            `;
+
+            tbody.appendChild(tr);
+
+            return;
+
+        }
+
+        // --------------------------
+        // Customer Name
+        // values[5] = English Name
+        // values[4] = Khmer Name
+        // --------------------------
+
+        if(!customerName){
+
+            customerName =
+                values[5] ||
+                values[4] ||
+                "";
+
+        }
+
+        // --------------------------
+        // Mongo Columns
+        // --------------------------
+
+        const debit =
+            parseFloat(values[9]) || 0;
+
+        const currentOD =
+            parseFloat(values[10]) || 0;
+
+        const turnover =
+            parseFloat(values[11]) || 0;
+
+        const effectiveDate =
+            formatExcelDate(values[17]);
+
+        const month =
+            formatExcelDate(values[36]);
+
+        // --------------------------
+        // Average
+        // --------------------------
+
+        totalDebit += debit;
+        totalOD += currentOD;
+        totalTurnover += turnover;
+        totalCount++;
+
+        // --------------------------
+        // Create Row
+        // --------------------------
+
+        const tr =
+            document.createElement("tr");
+
+        // newest report
+
+        if(index===0){
+
+            tr.classList.add("row-newest");
+
+        }
+
+        // oldest report
+
+        if(index===items.length-1){
+
+            tr.classList.add("row-oldest");
+
+        }
+
+        tr.innerHTML=`
+
+            <td>${month}</td>
+
+            <td>
+
+                ${formatNumber(debit)}
+
+            </td>
+
+            <td>
+
+                ${formatNumber(currentOD)}
+
+            </td>
+
+            <td>
+
+                ${(turnover*100).toFixed(2)}%
+
+            </td>
+
+            <td>
+
+                ${effectiveDate}
+
+            </td>
+
+        `;
+
+        tbody.appendChild(tr);
+
+    });
+
+    // --------------------------
+    // Customer Name
+    // --------------------------
+
+    document
+    .getElementById(
+        "customerName"
+    )
+    .value =
+    customerName;
+
+    // --------------------------
+    // Average
+    // --------------------------
+
+    document
+    .getElementById(
+        "avgDebit"
+    )
+    .innerHTML =
+
+        totalCount
+
+        ?
+
+        formatNumber(
+            totalDebit/totalCount
+        )
+
+        :
+
+        "-";
+
+    document
+    .getElementById(
+        "avgOD"
+    )
+    .innerHTML =
+
+        totalCount
+
+        ?
+
+        formatNumber(
+            totalOD/totalCount
+        )
+
+        :
+
+        "-";
+
+    document
+    .getElementById(
+        "avgTurnover"
+    )
+    .innerHTML =
+
+        totalCount
+
+        ?
+
+        ((totalTurnover/totalCount)*100)
+        .toFixed(2)+"%"
+
+        :
+
+        "-";
+
+}
+
+// ========================================
+// EXPORT TO EXCEL
 // ========================================
 
 document
 .getElementById("btnExcel")
 .onclick=function(){
 
-alert("Phase 3 : Export Excel");
+alert("Export Excel will be added in Phase 4.");
 
 };
+
+// ========================================
+// EXPORT TO PDF
+// ========================================
 
 document
 .getElementById("btnPDF")
 .onclick=function(){
 
-alert("Phase 3 : Export PDF");
+alert("Export PDF will be added in Phase 4.");
 
 };
+
+// ========================================
+// OFFLINE DETECT
+// ========================================
+
+function updateOnlineStatus(){
+
+const banner=document.getElementById(
+"offlineBanner"
+);
+
+if(!banner)return;
+
+banner.style.display=
+
+navigator.onLine
+
+?
+
+"none"
+
+:
+
+"block";
+
+}
+
+window.addEventListener(
+
+"online",
+
+updateOnlineStatus
+
+);
+
+window.addEventListener(
+
+"offline",
+
+updateOnlineStatus
+
+);
+
+updateOnlineStatus();
+
+// ========================================
+// ENTER KEY = SEARCH
+// ========================================
+
+document
+.getElementById("inputCIF")
+.addEventListener(
+
+"keydown",
+
+function(e){
+
+if(e.key==="Enter"){
+
+searchTurnover();
+
+}
+
+}
+
+);
+
+// ========================================
+// DEFAULT DATE
+// Today
+// ========================================
+
+(function(){
+
+const txt=document.getElementById(
+"preparedDate"
+);
+
+if(txt && !txt.value){
+
+txt.value=
+
+new Date()
+
+.toISOString()
+
+.substring(0,10);
+
+}
+
+})();
+
+// ========================================
+// CLEAR TABLE
+// ========================================
+
+function clearTable(){
+
+document
+.getElementById("tbodyTurnover")
+.innerHTML=
+
+`
+
+<tr>
+
+<td colspan="5">
+
+No Data
+
+</td>
+
+</tr>
+
+`;
+
+document
+.getElementById("customerName")
+.value="";
+
+document
+.getElementById("avgDebit")
+.innerHTML="-";
+
+document
+.getElementById("avgOD")
+.innerHTML="-";
+
+document
+.getElementById("avgTurnover")
+.innerHTML="-";
+
+}
+
+// ========================================
+// AUTO CLEAR WHEN CIF EMPTY
+// ========================================
+
+document
+.getElementById("inputCIF")
+.addEventListener(
+
+"input",
+
+function(){
+
+if(this.value.trim()===""){
+
+clearTable();
+
+}
+
+}
+
+);
+
+// ========================================
+// FORMAT CIF
+// ========================================
+
+document
+.getElementById("inputCIF")
+.addEventListener(
+
+"blur",
+
+function(){
+
+this.value=this.value.trim();
+
+}
+
+);
+
+// ========================================
+// PAGE READY
+// ========================================
+
+console.log(
+
+"Average Debit Turnover Ready."
+
+);
