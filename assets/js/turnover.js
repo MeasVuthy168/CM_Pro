@@ -688,7 +688,19 @@ clearTable();
 // ========================================
 
 function exportPDF(){
+const user =
+JSON.parse(
+localStorage.getItem("loggedInUser") || "{}"
+);
 
+const preparedBy =
+user.fullname ||
+user.username ||
+"Unknown";
+
+const generatedAt =
+new Date().toLocaleString();
+    
 const prepared=
 
 document.getElementById(
