@@ -122,7 +122,7 @@ async function searchTurnover(){
 // 30-06-26
 // 31-05-26
 // 30-04-26
-// ...
+// .....
 // ========================================
 
 function getLast12MonthEnds(prepared){
