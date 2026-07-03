@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>Average Debit Turnover</title>
+
+<meta name="theme-color" content="#032d73">
+
+<link rel="stylesheet" href="../../assets/css/main.css">
+<link rel="stylesheet" href="../../assets/css/turnover.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+
+</head>
+
+<body>
+
+<div id="offlineBanner">
+⚠️ No Internet Connection
+</div>
+
+<script src="../../config/api.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+
+<div id="topbar-container"></div>
+
+<div class="page-container">
+
+<div class="form-card">
+
+<div class="form-group">
+
+<label>Prepared Date</label>
+
+<select id="preparedDate">
+
+<option>Select Report Date</option>
+
+</select>
+
+</div>
+
+<div class="form-group">
+
+<label>CIF</label>
+
+<input
+type="text"
+id="inputCIF"
+placeholder="Input CIF">
+
+</div>
+
+<div class="form-group">
+
+<label>Customer Name</label>
+
+<input
+type="text"
+id="customerName"
+readonly>
+
+</div>
+
+<div class="button-row">
+
+<button id="btnSearch">
+Search
+</button>
+
+<button id="btnExcel">
+Excel
+</button>
+
+<button id="btnPDF">
+PDF
+</button>
+
+</div>
+
+</div>
+
+<div class="table-card">
+
+<table id="turnoverTable">
+
+<thead>
+
+<tr>
+
+<th>Month</th>
+<th>Debit</th>
+<th>Current OD</th>
+<th>Turnover</th>
+<th>Effective Date</th>
+
+</tr>
+
+</thead>
+
+<tbody id="tbodyTurnover">
+
+<tr>
+
+<td colspan="5">
+
+No Data
+
+</td>
+
+</tr>
+
+</tbody>
+
+<tfoot>
+
+<tr>
+
+<td>Average</td>
+<td id="avgDebit"></td>
+<td id="avgOD"></td>
+<td id="avgTurnover"></td>
+<td></td>
+
+</tr>
+
+</tfoot>
+
+</table>
+
+</div>
+
+</div>
+
+<div id="bottomnav-container"></div>
+
+<script>
+
+let loaded=0;
+
+async function loadComponent(id,file){
+
+try{
+
+const response=await fetch(file);
+
+document.getElementById(id).innerHTML=
+await response.text();
+
+if(id==="topbar-container"){
+
+initTopbar({
+
+title:"Average Turnover",
+
+showBack:true,
+
+showProfile:false,
+
+showLogo:false
+
+});
+
+}
+
+}catch(e){
+
+console.error(e);
+
+}finally{
+
+loaded++;
+
+if(loaded>=2){
+
+setTimeout(()=>{
+
+hideGlobalSplash();
+
+},300);
+
+}
+
+}
+
+}
+
+function updateOnlineStatus(){
+
+document.getElementById("offlineBanner").style.display=
+
+navigator.onLine
+
+?
+
+"none"
+
+:
+
+"block";
+
+}
+
+window.addEventListener("online",updateOnlineStatus);
+
+window.addEventListener("offline",updateOnlineStatus);
+
+updateOnlineStatus();
+
+loadComponent(
+
+"topbar-container",
+
+"/CM_Pro/components/topbar.html"
+
+);
+
+loadComponent(
+
+"bottomnav-container",
+
+"/CM_Pro/components/bottomnav.html"
+
+);
+
+</script>
+
+<script src="../../assets/js/turnover.js"></script>
+
+</body>
+
+</html>
