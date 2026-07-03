@@ -4,75 +4,43 @@
 
 const REPORT_SOURCE="DebitTurnOver";
 
-// ========================================
-// PAGE LOAD
-// ========================================
 
-window.addEventListener("load",()=>{
+function getLast12MonthEnds(preparedDate){
 
-loadReportDates();
+const months=[];
 
-});
+let d=new Date(preparedDate);
 
-// ========================================
-// LOAD REPORT DATES
-// ========================================
+d.setDate(1);
 
-async function loadReportDates(){
+for(let i=0;i<12;i++){
 
-const ddl=document.getElementById("preparedDate");
+d.setMonth(d.getMonth()-1);
 
-ddl.innerHTML="<option>Loading...</option>";
+const lastDay=new Date(
 
-try{
+d.getFullYear(),
 
-const result=await API.get(
-`/api/debitturnover/report-dates?source=${REPORT_SOURCE}`
+d.getMonth()+1,
+
+0
+
 );
 
-if(!result.ok){
+const dd=String(lastDay.getDate())
+.padStart(2,"0");
 
-throw new Error(
-result.message||"Cannot load report dates."
-);
+const mm=String(lastDay.getMonth()+1)
+.padStart(2,"0");
 
-}
+const yy=String(lastDay.getFullYear())
+.slice(-2);
 
-ddl.innerHTML="";
-
-if(!result.dates.length){
-
-ddl.innerHTML=
-"<option>No Report</option>";
-
-return;
+months.push(`${dd}-${mm}-${yy}`);
 
 }
 
-result.dates.forEach(date=>{
-
-const opt=document.createElement("option");
-
-opt.value=date;
-
-opt.text=date;
-
-ddl.appendChild(opt);
-
-});
-
-// newest report
-ddl.selectedIndex=0;
-
-}
-catch(err){
-
-console.error(err);
-
-ddl.innerHTML=
-"<option>Error Loading</option>";
-
-}
+return months;
 
 }
 
@@ -116,35 +84,9 @@ try{
 // =====================================
 // Generate last 12 report dates
 // =====================================
+const reportDates=
 
-const reportDates=[];
-
-let d=new Date(prepared);
-
-for(let i=0;i<12;i++){
-
-const lastDay=new Date(
-d.getFullYear(),
-d.getMonth()+1,
-0
-);
-
-const dd=String(lastDay.getDate())
-.padStart(2,"0");
-
-const mm=String(lastDay.getMonth()+1)
-.padStart(2,"0");
-
-const yy=String(lastDay.getFullYear())
-.slice(-2);
-
-reportDates.push(
-`${dd}-${mm}-${yy}`
-);
-
-d.setMonth(d.getMonth()-1);
-
-}
+getLast12MonthEnds(prepared);
 
 // =====================================
 // Call API
@@ -211,7 +153,7 @@ if(!v.length)return;
 
 if(!customerName){
 
-customerName=v[5];
+customerName=v[4];
 
 }
 
