@@ -519,11 +519,7 @@ function renderTable(items){
 
 document
 .getElementById("btnExcel")
-.onclick=function(){
-
-alert("Export Excel will be added in Phase 4.");
-
-};
+.onclick=exportExcel;
 
 // ========================================
 // EXPORT TO PDF
@@ -691,6 +687,302 @@ clearTable();
 }
 
 );
+// ========================================
+// EXPORT EXCEL
+// ========================================
+
+function exportExcel(){
+
+const wb=XLSX.utils.book_new();
+
+const ws={};
+
+const prepared=
+
+document.getElementById(
+"preparedDate"
+).value;
+
+const cif=
+
+document.getElementById(
+"inputCIF"
+).value;
+
+const customer=
+
+document.getElementById(
+"customerName"
+).value;
+
+const data=[];
+
+// Title
+
+data.push([
+"Average Debit Turnover"
+]);
+
+// Information
+
+data.push([
+"Prepared Date",
+prepared
+]);
+
+data.push([
+"CIF",
+cif
+]);
+
+data.push([
+"Customer Name",
+customer
+]);
+
+data.push([]);
+
+data.push([
+
+"Month",
+
+"AMT_IN",
+
+"CURRENT_OD",
+
+"TURNOVER",
+
+"EFFECTIVE_DATE"
+
+]);
+
+// Table
+
+const rows=
+
+document.querySelectorAll(
+"#tbodyTurnover tr"
+);
+
+rows.forEach(r=>{
+
+const row=[];
+
+r.querySelectorAll("td")
+.forEach(td=>{
+
+row.push(td.innerText);
+
+});
+
+data.push(row);
+
+});
+
+// Average
+
+data.push([]);
+
+data.push([
+
+"Average",
+
+document.getElementById("avgDebit").innerText,
+
+document.getElementById("avgOD").innerText,
+
+document.getElementById("avgTurnover").innerText,
+
+""
+
+]);
+
+const sheet=
+
+XLSX.utils.aoa_to_sheet(data);
+
+// Column Width
+
+sheet["!cols"]=[
+
+{wch:14},
+
+{wch:16},
+
+{wch:16},
+
+{wch:14},
+
+{wch:18}
+
+];
+
+// Merge title
+
+sheet["!merges"]=[
+
+{
+
+s:{r:0,c:0},
+
+e:{r:0,c:4}
+
+}
+
+];
+
+// Style Title
+
+applyTitleStyle(sheet);
+
+// Style Header
+
+applyHeaderStyle(sheet);
+
+// Style Average
+
+applyAverageStyle(sheet,data.length);
+
+XLSX.utils.book_append_sheet(
+
+wb,
+
+sheet,
+
+"Turnover"
+
+);
+
+XLSX.writeFile(
+
+wb,
+
+`Average_Debit_Turnover_${cif}.xlsx`
+
+);
+
+}
+// ========================================
+// TITLE STYLE
+// ========================================
+
+function applyTitleStyle(ws){
+
+if(ws.A1){
+
+ws.A1.s={
+
+font:{
+
+bold:true,
+
+sz:16,
+
+color:{rgb:"FFFFFF"}
+
+},
+
+fill:{
+
+fgColor:{rgb:"032D73"}
+
+},
+
+alignment:{
+
+horizontal:"center"
+
+}
+
+};
+
+}
+
+}
+
+// ========================================
+// HEADER STYLE
+// ========================================
+
+function applyHeaderStyle(ws){
+
+const row=6;
+
+["A","B","C","D","E"]
+
+.forEach(col=>{
+
+const cell=ws[col+row];
+
+if(cell){
+
+cell.s={
+
+font:{
+
+bold:true,
+
+color:{rgb:"FFFFFF"}
+
+},
+
+fill:{
+
+fgColor:{rgb:"032D73"}
+
+},
+
+alignment:{
+
+horizontal:"center"
+
+}
+
+};
+
+}
+
+});
+
+}
+
+// ========================================
+// AVERAGE STYLE
+// ========================================
+
+function applyAverageStyle(ws,lastRow){
+
+const r=lastRow;
+
+["A","B","C","D","E"]
+
+.forEach(col=>{
+
+const cell=ws[col+r];
+
+if(cell){
+
+cell.s={
+
+font:{
+
+bold:true
+
+},
+
+fill:{
+
+fgColor:{rgb:"FFF2CC"}
+
+}
+
+};
+
+}
+
+});
+
+}
 
 // ========================================
 // FORMAT CIF
