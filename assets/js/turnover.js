@@ -4,6 +4,80 @@
 
 const REPORT_SOURCE="DebitTurnOver";
 
+// ========================================
+// PAGE LOAD
+// ========================================
+
+window.addEventListener("load",()=>{
+
+loadReportDates();
+
+});
+
+// ========================================
+// LOAD REPORT DATES
+// ========================================
+
+async function loadReportDates(){
+
+const ddl=document.getElementById("preparedDate");
+
+ddl.innerHTML="<option>Loading...</option>";
+
+try{
+
+const result=await API.get(
+`/api/debitturnover/report-dates?source=${REPORT_SOURCE}`
+);
+
+if(!result.ok){
+
+throw new Error(
+result.message||"Cannot load report dates."
+);
+
+}
+
+ddl.innerHTML="";
+
+if(!result.dates.length){
+
+ddl.innerHTML=
+"<option>No Report</option>";
+
+return;
+
+}
+
+result.dates.forEach(date=>{
+
+const opt=document.createElement("option");
+
+opt.value=date;
+
+opt.text=date;
+
+ddl.appendChild(opt);
+
+});
+
+ddl.selectedIndex=0;
+
+}
+catch(err){
+
+console.error(err);
+
+ddl.innerHTML=
+"<option>Error Loading</option>";
+
+}
+
+}
+
+// ========================================
+// Generate Previous 12 Month Ends
+// ========================================
 
 function getLast12MonthEnds(preparedDate){
 
@@ -73,7 +147,7 @@ const prepared=document
 
 if(!prepared){
 
-alert("Please select report date.");
+alert("Please select Prepared Date.");
 
 return;
 
@@ -81,16 +155,8 @@ return;
 
 try{
 
-// =====================================
-// Generate last 12 report dates
-// =====================================
 const reportDates=
-
 getLast12MonthEnds(prepared);
-
-// =====================================
-// Call API
-// =====================================
 
 const result=await API.post(
 
@@ -110,7 +176,13 @@ reportDates:reportDates
 
 if(!result.ok){
 
-throw new Error(result.message);
+throw new Error(
+
+result.message||
+
+"Search failed."
+
+);
 
 }
 
@@ -139,8 +211,11 @@ const tbody=document
 tbody.innerHTML="";
 
 let totalDebit=0;
+
 let totalOD=0;
+
 let totalTurn=0;
+
 let count=0;
 
 let customerName="";
@@ -149,7 +224,27 @@ items.forEach((row,index)=>{
 
 const v=row.values||[];
 
-if(!v.length)return;
+if(!v.length){
+
+const tr=document.createElement("tr");
+
+tr.innerHTML=`
+
+<td>${row.requestText}</td>
+
+<td colspan="4">
+
+No Data
+
+</td>
+
+`;
+
+tbody.appendChild(tr);
+
+return;
+
+}
 
 if(!customerName){
 
@@ -163,7 +258,7 @@ const od=parseFloat(v[10])||0;
 
 const turnover=parseFloat(v[11])||0;
 
-const month=formatExcelDate(v[36]);
+const month=row.requestText;
 
 const effective=formatExcelDate(v[17]);
 
@@ -177,17 +272,17 @@ count++;
 
 const tr=document.createElement("tr");
 
-if(index==0){
+if(index===0){
 
-tr.style.background="#e6ffe6";
+tr.style.background="#dff7df";
 
 tr.style.fontWeight="bold";
 
 }
 
-if(index==items.length-1){
+if(index===items.length-1){
 
-tr.style.background="#f4f4f4";
+tr.style.background="#f2f2f2";
 
 }
 
@@ -225,7 +320,7 @@ formatNumber(totalDebit/count)
 
 :
 
-"";
+"-";
 
 document
 .getElementById("avgOD")
@@ -239,7 +334,7 @@ formatNumber(totalOD/count)
 
 :
 
-"";
+"-";
 
 document
 .getElementById("avgTurnover")
@@ -253,7 +348,7 @@ count
 
 :
 
-"";
+"-";
 
 }
 
@@ -296,9 +391,10 @@ const dd=String(d.getDate())
 const mm=String(d.getMonth()+1)
 .padStart(2,"0");
 
-const yyyy=d.getFullYear();
+const yy=String(d.getFullYear())
+.slice(-2);
 
-return `${dd}/${mm}/${yyyy}`;
+return `${dd}-${mm}-${yy}`;
 
 }
 
@@ -310,7 +406,7 @@ document
 .getElementById("btnExcel")
 .onclick=function(){
 
-alert("Phase 3");
+alert("Phase 3 : Export Excel");
 
 };
 
@@ -318,6 +414,6 @@ document
 .getElementById("btnPDF")
 .onclick=function(){
 
-alert("Phase 3");
+alert("Phase 3 : Export PDF");
 
 };
