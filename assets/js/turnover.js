@@ -29,7 +29,6 @@ document
 // ========================================
 // SEARCH
 // ========================================
-
 async function searchTurnover(){
 
     const cif =
