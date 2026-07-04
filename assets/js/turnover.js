@@ -688,127 +688,181 @@ clearTable();
 // ========================================
 
 function exportPDF(){
-const user =
+
+const user=
 JSON.parse(
-localStorage.getItem("loggedInUser") || "{}"
+localStorage.getItem("loggedInUser")||"{}"
 );
 
-const preparedBy =
-user.fullname ||
-user.username ||
+const preparedBy=
+user.fullname||
+user.username||
 "Unknown";
 
-const generatedAt =
+const generatedAt=
 new Date().toLocaleString();
-    
-const prepared=
 
-document.getElementById(
-"preparedDate"
-).value;
+const prepared=
+document.getElementById("preparedDate").value;
 
 const cif=
-
-document.getElementById(
-"inputCIF"
-).value;
+document.getElementById("inputCIF").value;
 
 const customer=
+document.getElementById("customerName").value;
 
-document.getElementById(
-"customerName"
-).value;
+const avgDebit=
+document.getElementById("avgDebit").innerText;
+
+const avgOD=
+document.getElementById("avgOD").innerText;
+
+const avgTurnover=
+document.getElementById("avgTurnover").innerText;
+
+let tableRows="";
+
+document
+.querySelectorAll("#tbodyTurnover tr")
+.forEach(r=>{
+
+tableRows+="<tr>";
+
+r.querySelectorAll("td").forEach(td=>{
+
+tableRows+=`
+<td style="
+padding:6px;
+border:1px solid #999;
+text-align:center;
+">
+${td.innerText}
+</td>
+`;
+
+});
+
+tableRows+="</tr>";
+
+});
 
 let html=`
 
-<div
-style="
-
+<div style="
 font-family:Arial,sans-serif;
-
 padding:20px;
-
 color:#222;
-
 ">
 
-<h2
-style="
+<table style="
+width:100%;
+border-collapse:collapse;
+margin-bottom:15px;
+">
 
-text-align:center;
+<tr>
 
+<td>
+
+<h2 style="
+margin:0;
+font-size:24px;
 color:#032d73;
-
-margin-bottom:6px;
-
 ">
 
-Average Debit Turnover
+YEARLY AVERAGE OF DEBIT TURNOVER
 
 </h2>
 
-<table
-style="
+</td>
 
-width:100%;
-
-margin-bottom:15px;
-
-font-size:13px;
-
+<td style="
+text-align:right;
+width:90px;
 ">
 
-<tr>
+<img
+src="${ACLEDA_LOGO}"
+style="
+width:70px;
+height:70px;
+">
 
-<td><b>Prepared Date</b></td>
-
-<td>${prepared}</td>
-
-</tr>
-
-<tr>
-
-<td><b>CIF</b></td>
-
-<td>${cif}</td>
-
-</tr>
-
-<tr>
-
-<td><b>Customer Name</b></td>
-
-<td>${customer}</td>
+</td>
 
 </tr>
 
 </table>
 
-<table
-
-style="
-
+<table style="
 width:100%;
+margin-bottom:15px;
+">
 
+<tr>
+
+<td width="150">
+
+Prepared Date
+
+</td>
+
+<td>
+
+: ${prepared}
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+
+CIF
+
+</td>
+
+<td>
+
+: ${cif}
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+
+Customer Name
+
+</td>
+
+<td>
+
+: ${customer}
+
+</td>
+
+</tr>
+
+</table>
+
+<hr>
+
+<table
+style="
+width:100%;
 border-collapse:collapse;
-
 font-size:12px;
-
-"
-
-border="1"
-
->
+">
 
 <thead>
 
-<tr
-style="
-
+<tr style="
 background:#032d73;
-
 color:white;
-
 ">
 
 <th>Month</th>
@@ -819,7 +873,7 @@ color:white;
 
 <th>TURNOVER</th>
 
-<th>EFFECTIVE_DATE</th>
+<th>EFFECTIVE DATE</th>
 
 </tr>
 
@@ -827,85 +881,24 @@ color:white;
 
 <tbody>
 
-`;
-
-document
-
-.querySelectorAll(
-
-"#tbodyTurnover tr"
-
-)
-
-.forEach(r=>{
-
-html+="<tr>";
-
-r.querySelectorAll("td")
-
-.forEach(td=>{
-
-html+=`
-
-<td
-style="
-
-padding:5px;
-
-text-align:center;
-
-">
-
-${td.innerText}
-
-</td>
-
-`;
-
-});
-
-html+="</tr>";
-
-});
-
-html+=`
+${tableRows}
 
 </tbody>
 
 <tfoot>
 
-<tr
-style="
-
-background:#FFF4C4;
-
+<tr style="
+background:#eeeeee;
 font-weight:bold;
-
 ">
 
-<td>
+<td>Average</td>
 
-Average
+<td>${avgDebit}</td>
 
-</td>
+<td>${avgOD}</td>
 
-<td>
-
-${document.getElementById("avgDebit").innerText}
-
-</td>
-
-<td>
-
-${document.getElementById("avgOD").innerText}
-
-</td>
-
-<td>
-
-${document.getElementById("avgTurnover").innerText}
-
-</td>
+<td>${avgTurnover}</td>
 
 <td></td>
 
@@ -915,54 +908,71 @@ ${document.getElementById("avgTurnover").innerText}
 
 </table>
 
+<hr style="margin-top:20px;">
+
+<table style="
+width:100%;
+font-size:12px;
+">
+
+<tr>
+
+<td>
+
+Prepared By :
+<b>${preparedBy}</b>
+
+</td>
+
+<td style="
+text-align:right;
+">
+
+Generated At :
+${generatedAt}
+
+</td>
+
+</tr>
+
+<tr>
+
+<td colspan="2"
+style="
+padding-top:20px;
+font-size:11px;
+color:#666;
+">
+
+CM_Pro Credit Monitoring System
+
+</td>
+
+</tr>
+
+</table>
+
 </div>
 
 `;
 
 const container=
-
 document.createElement("div");
 
 container.innerHTML=html;
 
 html2pdf()
-
 .from(container)
-
 .set({
-
 margin:0.4,
-
-filename:
-
-`Average_Debit_Turnover_${cif}.pdf`,
-
-image:{
-
-type:"jpeg",
-
-quality:1
-
-},
-
-html2canvas:{
-
-scale:2
-
-},
-
+filename:`Average_Debit_Turnover_${cif}.pdf`,
+html2canvas:{scale:2},
 jsPDF:{
-
 unit:"in",
-
 format:"a4",
-
 orientation:"portrait"
-
 }
-
 })
-
 .save();
 
 }
