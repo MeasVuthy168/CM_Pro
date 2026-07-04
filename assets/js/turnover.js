@@ -1418,3 +1418,12 @@ console.log(
 "Average Debit Turnover Ready."
 
 );
+CMToast.show({
+
+type:"success",
+
+title:"Welcome",
+
+message:"Average Debit Turnover page loaded successfully."
+
+});
