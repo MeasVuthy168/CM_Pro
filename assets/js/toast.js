@@ -457,9 +457,9 @@ passive:true
 
 if ("serviceWorker" in navigator) {
 
-    navigator.serviceWorker.ready.then(reg => {
+    navigator.serviceWorker.ready.then(() => {
 
-        const receive = event => {
+        const receive = (event) => {
 
             console.log("📩 Toast received:", event.data);
 
@@ -478,37 +478,42 @@ if ("serviceWorker" in navigator) {
             }
 
             // Show Toast
-                if(msg.type==="NEW_NOTIFICATION"){
-                
-                    console.log("NEW_NOTIFICATION RECEIVED");
-                
-                    const n = msg.notification || {};
-                
-                    console.log(n);
-                
-                    console.log(CMToast);
-                
-                    CMToast.show({
-                
-                        type:n.type || "info",
-                
-                        title:n.title || "Notification",
-                
-                        message:n.message || "",
-                
-                        duration:5000,
-                
-                        onDetail(){
-                
-                            location.href=n.url || "/CM_Pro/pages/notifications/";
-                
-                        }
-                
-                    });
-                
-                    console.log("CMToast.show called");
-                
-                }
+            if (msg.type === "NEW_NOTIFICATION") {
+
+                console.log("NEW_NOTIFICATION RECEIVED");
+
+                const n = msg.notification || {};
+
+                console.log(n);
+                console.log(CMToast);
+
+                CMToast.show({
+
+                    type: n.type || "info",
+
+                    title: n.title || "Notification",
+
+                    message: n.message || "",
+
+                    uploadedBy: n.uploadedBy,
+
+                    createdAt: n.createdAt,
+
+                    duration: 5000,
+
+                    onDetail() {
+
+                        location.href =
+                            n.url ||
+                            "/CM_Pro/pages/notifications/";
+
+                    }
+
+                });
+
+                console.log("CMToast.show called");
+
+            }
 
         };
 
