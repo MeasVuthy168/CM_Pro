@@ -1,536 +1,467 @@
 // ===========================================
 // CM_Pro Toast
-// Version 2.0 
+// Version 2.0
 // ===========================================
 
-const CMToast={
+const CMToast = {
 
-queue:[],
+  version: "3.0",
 
-busy:false,
+  queue: [],
 
-active:null,
+  busy: false,
 
-timer:null,
+  container: null,
 
-remaining:0,
+  active: null,
 
-startTime:0,
+  timer: null,
 
-show(options={}){
+  remaining: 0,
 
-this.queue.push(options);
+  startTime: 0,
 
-if(!this.busy){
+  // =====================================
+  // SHOW
+  // =====================================
 
-this.next();
+  show(options = {}) {
 
-}
+    this.queue.push(options);
 
-},
+    if (!this.busy) {
 
-next(){
+      this.next();
 
-if(this.queue.length===0){
+    }
 
-this.busy=false;
+  },
 
-return;
+  // =====================================
+  // NEXT
+  // =====================================
 
-}
+  next() {
 
-this.busy=true;
+    if (this.queue.length === 0) {
 
-this.render(this.queue.shift());
+      this.busy = false;
 
-},
+      return;
 
-// =====================================
-// ICON
-// =====================================
+    }
 
-getIcon(type){
+    this.busy = true;
 
-switch(type){
+    this.render(this.queue.shift());
 
-case "upload":
-return "📤";
+  },
 
-case "backup":
-return "💾";
+  // =====================================
+  // CONTAINER
+  // =====================================
 
-case "warning":
-return "⚠️";
+  getContainer() {
 
-case "update":
-return "⬆️";
+    if (this.container) {
 
-case "delete":
-return "🗑️";
+      return this.container;
 
-case "system":
-return "🖥️";
+    }
 
-case "success":
-return "✅";
+    let box = document.querySelector(".cm-toast-container");
 
-case "error":
-return "❌";
+    if (!box) {
 
-default:
-return "🔔";
+      box = document.createElement("div");
 
-}
+      box.className = "cm-toast-container";
 
-},
+      document.body.appendChild(box);
 
-// =====================================
-// TIME
-// =====================================
+    }
 
-timeAgo(date){
+    this.container = box;
 
-if(!date) return "Just now";
+    return box;
 
-const d=new Date(date);
+  },
 
-const diff=Math.floor((Date.now()-d.getTime())/1000);
+  // =====================================
+  // ICON
+  // =====================================
 
-if(diff<60) return "Just now";
+  getIcon(type) {
 
-if(diff<3600)
+    switch (type) {
 
-return Math.floor(diff/60)+" min ago";
+      case "backup":
+        return "💾";
 
-if(diff<86400)
+      case "upload":
+        return "📤";
 
-return Math.floor(diff/3600)+" hr ago";
+      case "warning":
+        return "⚠️";
 
-return d.toLocaleString();
+      case "error":
+        return "❌";
 
-},
+      case "success":
+        return "✅";
 
-// =====================================
-// RENDER
-// =====================================
+      case "update":
+        return "⬆️";
 
-render(opt){
+      case "delete":
+        return "🗑️";
 
-const type=
-opt.type||"info";
+      case "system":
+        return "🖥️";
 
-const icon=
-this.getIcon(type);
+      default:
+        return "🔔";
 
-const title=
-opt.title||"Notification";
+    }
 
-const message=
-opt.message||"";
+  },
 
-const uploadedBy=
-opt.uploadedBy||
-"System";
+  // =====================================
+  // USER PHOTO
+  // =====================================
 
-const time=
-this.timeAgo(
-opt.createdAt
-);
+  getUserPhoto() {
 
-const duration=
-opt.duration||5000;
+    try {
 
-const showDetail=
-typeof opt.onDetail==="function";
+      const user =
+        JSON.parse(
+          localStorage.getItem("loggedInUser") || "{}"
+        );
 
-const toast=
-document.createElement("div");
+      return (
+        user.image ||
+        user.photo ||
+        "/CM_Pro/assets/images/default-user.png"
+      );
 
-toast.className=
-`cm-toast toast-${type}`;
+    } catch {
 
-toast.innerHTML=`
+      return "/CM_Pro/assets/images/default-user.png";
 
-<div class="cm-toast-left">
+    }
 
-<div class="cm-toast-icon">
+  },
 
-${icon}
+  // =====================================
+  // TIME AGO
+  // =====================================
 
-</div>
+  timeAgo(date) {
 
-</div>
+    if (!date) {
 
-<div class="cm-toast-center">
+      return "Just now";
 
-<div class="cm-toast-title">
+    }
 
-${title}
+    const d = new Date(date);
 
-</div>
+    const diff =
+      Math.floor(
+        (Date.now() - d.getTime()) / 1000
+      );
 
-<div class="cm-toast-message">
+    if (diff < 60) {
 
-${message}
+      return "Just now";
 
-</div>
+    }
 
-<div class="cm-toast-meta">
+    if (diff < 3600) {
 
-<span>
+      return Math.floor(diff / 60) + " min ago";
 
-👤 ${uploadedBy}
+    }
 
-</span>
+    if (diff < 86400) {
 
-<span>
+      return Math.floor(diff / 3600) + " hr ago";
 
-${time}
+    }
 
-</span>
+    return d.toLocaleString();
 
-</div>
+  },
 
-<div class="cm-toast-progress">
+  // =====================================
+  // RENDER
+  // =====================================
 
-<div class="cm-toast-bar"></div>
+  render(opt) {
 
-</div>
+    const container = this.getContainer();
 
-</div>
+    const type = opt.type || "info";
 
-<div class="cm-toast-right">
+    const title = opt.title || "Notification";
 
-<button class="cm-toast-close">
+    const message = opt.message || "";
 
-✕
+    const uploadedBy = opt.uploadedBy || "System";
 
-</button>
+    const createdAt = opt.createdAt || new Date().toISOString();
 
-</div>
+    const photo = opt.photo || this.getUserPhoto();
 
-`;
+    const icon = this.getIcon(type);
 
-document.body.appendChild(toast);
+    const duration = opt.duration || 5000;
 
-requestAnimationFrame(()=>{
+    const toast = document.createElement("div");
 
-toast.classList.add("show");
+    toast.className = `cm-toast toast-${type}`;
 
-});
+    toast.innerHTML = `
+      <div class="cm-toast-left">
+        <div class="cm-toast-icon">
+          ${icon}
+        </div>
+      </div>
 
-this.active=toast;
+      <div class="cm-toast-center">
+        <div class="cm-toast-title">
+          ${title}
+        </div>
 
-this.remaining=duration;
+        <div class="cm-toast-message">
+          ${message}
+        </div>
 
-this.startTime=Date.now();
+        <div class="cm-toast-meta">
+          <div class="cm-toast-user">
+            <img
+              class="cm-toast-avatar"
+              src="${photo}"
+              onerror="this.src='/CM_Pro/assets/images/default-user.png'">
+            <span class="cm-toast-username">
+              ${uploadedBy}
+            </span>
+          </div>
 
+          <div class="cm-toast-time">
+            ${this.timeAgo(createdAt)}
+          </div>
+        </div>
 
-// =====================================
-// PROGRESS BAR
-// =====================================
+        <div class="cm-toast-progress">
+          <div class="cm-toast-bar"></div>
+        </div>
+      </div>
 
-const bar=
-toast.querySelector(
-".cm-toast-bar"
-);
+      <div class="cm-toast-right">
+        <button class="cm-toast-close">✕</button>
+      </div>
+    `;
 
-bar.style.animationDuration=
-duration+"ms";
+    container.appendChild(toast);
 
-bar.classList.add(
-"run"
-);
+    this.active = toast;
 
-// =====================================
-// CLOSE
-// =====================================
+    this.remaining = duration;
 
-const close=()=>{
+    this.startTime = Date.now();
 
-if(!this.active) return;
+    // ========================
+    // Slide animation
+    // ========================
 
-clearTimeout(this.timer);
+    requestAnimationFrame(() => {
 
-toast.classList.remove(
-"show"
-);
+      toast.classList.add("show");
 
-setTimeout(()=>{
+    });
 
-toast.remove();
+    // ========================
+    // Progress bar
+    // ========================
 
-this.active=null;
+    const bar = toast.querySelector(".cm-toast-bar");
 
-this.busy=false;
+    bar.style.animationDuration = duration + "ms";
 
-this.next();
+    bar.classList.add("run");
 
-},300);
+    toast._bar = bar;
+
+    // ========================
+    // Detail callback
+    // ========================
+
+    toast._detail =
+      typeof opt.onDetail === "function"
+        ? opt.onDetail
+        : null;
+
+    // ========================
+    // Close button
+    // ========================
+
+    const closeBtn = toast.querySelector(".cm-toast-close");
+
+    closeBtn.addEventListener("click", (e) => {
+
+      e.stopPropagation();
+
+      this.close();
+
+    });
+
+    // ========================
+    // Click to open detail
+    // ========================
+
+    toast.addEventListener("click", () => {
+
+      if (toast._detail) {
+
+        toast._detail();
+
+      }
+
+    });
+
+    // ========================
+    // Auto-dismiss timer
+    // ========================
+
+    clearTimeout(this.timer);
+
+    this.timer = setTimeout(() => {
+
+      this.close();
+
+    }, duration);
+
+  },
+
+  // =====================================
+  // CLOSE
+  // =====================================
+
+  close() {
+
+    if (!this.active) {
+
+      return;
+
+    }
+
+    clearTimeout(this.timer);
+
+    const toast = this.active;
+
+    toast.classList.remove("show");
+
+    toast.classList.add("hide");
+
+    setTimeout(() => {
+
+      toast.remove();
+
+      this.active = null;
+
+      this.busy = false;
+
+      this.next();
+
+    }, 300);
+
+  }
 
 };
-
-// =====================================
-// AUTO CLOSE
-// =====================================
-
-this.timer=setTimeout(
-
-close,
-
-duration
-
-);
-
-// =====================================
-// PAUSE TIMER
-// Desktop
-// =====================================
-
-toast.addEventListener(
-
-"mouseenter",
-
-()=>{
-
-clearTimeout(
-this.timer
-);
-
-this.remaining-=
-
-Date.now()-
-
-this.startTime;
-
-bar.style.animationPlayState=
-"paused";
-
-}
-
-);
-
-toast.addEventListener(
-
-"mouseleave",
-
-()=>{
-
-this.startTime=
-Date.now();
-
-bar.style.animationPlayState=
-"running";
-
-this.timer=
-
-setTimeout(
-
-close,
-
-this.remaining
-
-);
-
-}
-
-);
-
-// =====================================
-// CLICK ANYWHERE
-// =====================================
-
-toast.addEventListener(
-
-"click",
-
-(e)=>{
-
-if(
-
-e.target.classList.contains(
-"cm-toast-close"
-)
-
-){
-
-return;
-
-}
-
-if(showDetail){
-
-opt.onDetail();
-
-}
-
-close();
-
-}
-
-);
-
-// =====================================
-// CLOSE BUTTON
-// =====================================
-
-toast
-
-.querySelector(
-
-".cm-toast-close"
-
-)
-
-.onclick=(e)=>{
-
-e.stopPropagation();
-
-close();
-
-};
-
-// =====================================
-// MOBILE SWIPE UP
-// =====================================
-
-let startY=0;
-
-toast.addEventListener(
-
-"touchstart",
-
-(e)=>{
-
-startY=
-
-e.touches[0].clientY;
-
-},
-
-{
-
-passive:true
-
-}
-
-);
-
-toast.addEventListener(
-
-"touchend",
-
-(e)=>{
-
-const diff=
-
-startY-
-
-e.changedTouches[0].clientY;
-
-if(diff>70){
-
-close();
-
-}
-
-},
-
-{
-
-passive:true
-
-}
-
-);
-
-}
-
-};
-
-
-
 
 // ===========================================
-// Listen Service Worker Message
+// Service Worker Listener
+// Version 3.0
 // ===========================================
 
 if ("serviceWorker" in navigator) {
 
-    navigator.serviceWorker.ready.then(() => {
+  navigator.serviceWorker.ready.then(() => {
 
-        const receive = (event) => {
+    navigator.serviceWorker.addEventListener(
 
-            console.log("📩 Toast received:", event.data);
+      "message",
 
-            const msg = event.data;
+      (event) => {
 
-            if (!msg) return;
+        const msg = event.data;
 
-            // Refresh Badge
-            if (msg.type === "REFRESH_BADGE") {
+        if (!msg) {
 
-                if (typeof loadNotificationBadge === "function") {
-                    loadNotificationBadge();
-                }
-
-                return;
-            }
-
-            // Show Toast
-            if (msg.type === "NEW_NOTIFICATION") {
-
-                console.log("NEW_NOTIFICATION RECEIVED");
-
-                const n = msg.notification || {};
-
-                console.log(n);
-                console.log(CMToast);
-
-                CMToast.show({
-
-                    type: n.type || "info",
-
-                    title: n.title || "Notification",
-
-                    message: n.message || "",
-
-                    uploadedBy: n.uploadedBy,
-
-                    createdAt: n.createdAt,
-
-                    duration: 5000,
-
-                    onDetail() {
-
-                        location.href =
-                            n.url ||
-                            "/CM_Pro/pages/notifications/";
-
-                    }
-
-                });
-
-                console.log("CMToast.show called");
-
-            }
-
-        };
-
-        navigator.serviceWorker.addEventListener(
-            "message",
-            receive
-        );
-
-        if (navigator.serviceWorker.controller) {
-
-            navigator.serviceWorker.controller.addEventListener(
-                "message",
-                receive
-            );
+          return;
 
         }
 
-    });
+        // =====================================
+        // Refresh Badge
+        // =====================================
+
+        if (msg.type === "REFRESH_BADGE") {
+
+          console.log("🔔 Refresh Badge");
+
+          if (typeof loadNotificationBadge === "function") {
+
+            loadNotificationBadge();
+
+          }
+
+          return;
+
+        }
+
+        // =====================================
+        // Toast
+        // =====================================
+
+        if (msg.type === "NEW_NOTIFICATION") {
+
+          console.log("📢 Toast Notification");
+
+          const n = msg.notification || {};
+
+          CMToast.show({
+
+            type: n.type || "info",
+
+            title: n.title || "Notification",
+
+            message: n.message || "",
+
+            uploadedBy: n.uploadedBy || "System",
+
+            createdAt: n.createdAt || new Date().toISOString(),
+
+            photo: n.photo || n.image || "",
+
+            duration: 5000,
+
+            onDetail() {
+
+              location.href = n.url || "/CM_Pro/pages/notifications/";
+
+            }
+
+          });
+
+        }
+
+      }
+
+    );
+
+  });
 
 }
