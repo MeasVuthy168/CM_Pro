@@ -687,6 +687,10 @@ clearTable();
 // EXPORT PDF
 // ========================================
 
+// ========================================
+// EXPORT PDF
+// ========================================
+
 function exportPDF(){
 
 const user=
@@ -695,12 +699,7 @@ localStorage.getItem("loggedInUser")||"{}"
 );
 
 const preparedBy=
-user.fullname||
-user.username||
-"Unknown";
-
-const generatedAt=
-new Date().toLocaleString();
+(user.fullname||user.username||"Unknown").toUpperCase();
 
 const prepared=
 document.getElementById("preparedDate").value;
@@ -709,7 +708,7 @@ const cif=
 document.getElementById("inputCIF").value;
 
 const customer=
-document.getElementById("customerName").value;
+document.getElementById("customerName").value.toUpperCase();
 
 const avgDebit=
 document.getElementById("avgDebit").innerText;
@@ -720,6 +719,27 @@ document.getElementById("avgOD").innerText;
 const avgTurnover=
 document.getElementById("avgTurnover").innerText;
 
+// -------------------------------------
+// Format Date
+// -------------------------------------
+
+const reportDate=
+new Date(prepared);
+
+const preparedText=
+reportDate.toLocaleDateString(
+"en-GB",
+{
+day:"2-digit",
+month:"short",
+year:"numeric"
+}
+);
+
+// -------------------------------------
+// Table Rows
+// -------------------------------------
+
 let tableRows="";
 
 document
@@ -728,16 +748,22 @@ document
 
 tableRows+="<tr>";
 
-r.querySelectorAll("td").forEach(td=>{
+r.querySelectorAll("td")
+.forEach(td=>{
 
 tableRows+=`
-<td style="
-padding:6px;
+
+<td
+style="
 border:1px solid #999;
+padding:6px;
 text-align:center;
 ">
+
 ${td.innerText}
+
 </td>
+
 `;
 
 });
@@ -746,46 +772,63 @@ tableRows+="</tr>";
 
 });
 
+// -------------------------------------
+// Report HTML
+// -------------------------------------
+
 let html=`
 
-<div style="
+<div
+style="
+width:100%;
+height:1030px;
+box-sizing:border-box;
+
+display:flex;
+flex-direction:column;
+
 font-family:Arial,sans-serif;
-padding:20px;
 color:#222;
+padding:25px;
 ">
 
-<table style="
+<!-- Header -->
+
+<table
+style="
 width:100%;
 border-collapse:collapse;
-margin-bottom:15px;
+margin-bottom:18px;
 ">
 
 <tr>
 
-<td>
-
-<h2 style="
-margin:0;
-font-size:24px;
+<td
+style="
+text-align:center;
+font-size:20px;
+font-weight:bold;
 color:#032d73;
 ">
 
 YEARLY AVERAGE OF DEBIT TURNOVER
 
-</h2>
-
 </td>
 
-<td style="
-text-align:right;
+<td
+style="
 width:90px;
+text-align:right;
 ">
 
 <img
-src="${ACLEDA_LOGO}"
+
+src="${window.ACLEDA_LOGO}"
+
 style="
-width:70px;
-height:70px;
+width:65px;
+height:65px;
+object-fit:contain;
 ">
 
 </td>
@@ -794,14 +837,24 @@ height:70px;
 
 </table>
 
-<table style="
+<!-- Information -->
+
+<table
+style="
 width:100%;
-margin-bottom:15px;
+font-size:13px;
+border-collapse:collapse;
+margin-bottom:18px;
 ">
 
 <tr>
 
-<td width="150">
+<td
+style="
+width:160px;
+padding:5px 0;
+font-weight:bold;
+">
 
 Prepared Date
 
@@ -809,7 +862,7 @@ Prepared Date
 
 <td>
 
-: ${prepared}
+: ${preparedText}
 
 </td>
 
@@ -817,7 +870,11 @@ Prepared Date
 
 <tr>
 
-<td>
+<td
+style="
+padding:5px 0;
+font-weight:bold;
+">
 
 CIF
 
@@ -833,7 +890,11 @@ CIF
 
 <tr>
 
-<td>
+<td
+style="
+padding:5px 0;
+font-weight:bold;
+">
 
 Customer Name
 
@@ -849,7 +910,7 @@ Customer Name
 
 </table>
 
-<hr>
+<!-- Table -->
 
 <table
 style="
@@ -860,20 +921,36 @@ font-size:12px;
 
 <thead>
 
-<tr style="
+<tr
+style="
 background:#032d73;
 color:white;
 ">
 
-<th>Month</th>
+<th
+style="padding:7px;border:1px solid #999;">
+Month
+</th>
 
-<th>AMT_IN</th>
+<th
+style="padding:7px;border:1px solid #999;">
+AMT_IN
+</th>
 
-<th>CURRENT_OD</th>
+<th
+style="padding:7px;border:1px solid #999;">
+CURRENT_OD
+</th>
 
-<th>TURNOVER</th>
+<th
+style="padding:7px;border:1px solid #999;">
+TURNOVER
+</th>
 
-<th>EFFECTIVE DATE</th>
+<th
+style="padding:7px;border:1px solid #999;">
+EFFECTIVE DATE
+</th>
 
 </tr>
 
@@ -887,20 +964,35 @@ ${tableRows}
 
 <tfoot>
 
-<tr style="
-background:#eeeeee;
+<tr
+style="
+background:#efefef;
 font-weight:bold;
 ">
 
-<td>Average</td>
+<td
+style="padding:7px;border:1px solid #999;">
+Average
+</td>
 
-<td>${avgDebit}</td>
+<td
+style="padding:7px;border:1px solid #999;">
+${avgDebit}
+</td>
 
-<td>${avgOD}</td>
+<td
+style="padding:7px;border:1px solid #999;">
+${avgOD}
+</td>
 
-<td>${avgTurnover}</td>
+<td
+style="padding:7px;border:1px solid #999;">
+${avgTurnover}
+</td>
 
-<td></td>
+<td
+style="border:1px solid #999;">
+</td>
 
 </tr>
 
@@ -908,49 +1000,38 @@ font-weight:bold;
 
 </table>
 
-<hr style="margin-top:20px;">
+<!-- Footer -->
 
-<table style="
-width:100%;
-font-size:12px;
+<div
+style="
+margin-top:auto;
+padding-top:18px;
+border-top:2px solid #888;
 ">
 
-<tr>
-
-<td>
+<div
+style="
+font-size:13px;
+">
 
 Prepared By :
 <b>${preparedBy}</b>
 
-</td>
+</div>
 
-<td style="
-text-align:right;
-">
-
-Generated At :
-${generatedAt}
-
-</td>
-
-</tr>
-
-<tr>
-
-<td colspan="2"
+<div
 style="
-padding-top:20px;
+margin-top:28px;
 font-size:11px;
 color:#666;
+text-align:left;
 ">
 
 CM_Pro Credit Monitoring System
 
-</td>
+</div>
 
-</tr>
-
-</table>
+</div>
 
 </div>
 
@@ -964,14 +1045,30 @@ container.innerHTML=html;
 html2pdf()
 .from(container)
 .set({
-margin:0.4,
-filename:`Average_Debit_Turnover_${cif}.pdf`,
-html2canvas:{scale:2},
+
+margin:0.3,
+
+filename:
+`Average_Debit_Turnover_${cif}.pdf`,
+
+html2canvas:{
+
+scale:2,
+
+useCORS:true
+
+},
+
 jsPDF:{
+
 unit:"in",
+
 format:"a4",
+
 orientation:"portrait"
+
 }
+
 })
 .save();
 
