@@ -830,15 +830,14 @@ margin-bottom:18px;
 <div
 style="
 flex:1;
-text-align:center;
-font-size:20px;
+text-align:left;
+font-size:18px;
 font-weight:bold;
 color:#032d73;
-letter-spacing:.5px;
+padding-top:18px;
+letter-spacing:.3px;
 ">
-
 YEARLY AVERAGE OF DEBIT TURNOVER
-
 </div>
 
 <div
@@ -1034,11 +1033,12 @@ font-weight:bold;
 style="
 margin-top:12px;
 font-size:13px;
+text-align:right;
 ">
 
 <b>Prepared By :</b>
 
-${preparedBy}
+${preparedBy.toUpperCase()}
 
 </div>
 
