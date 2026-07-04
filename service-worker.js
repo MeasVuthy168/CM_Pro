@@ -387,13 +387,55 @@ self.addEventListener(
         .then(clients=>{
 
             clients.forEach(client=>{
-
+            
+                // Refresh badge
                 client.postMessage({
-
+            
                     type:"REFRESH_BADGE"
-
+            
                 });
-
+            
+                // Show Toast immediately
+                client.postMessage({
+            
+                    type:"NEW_NOTIFICATION",
+            
+                    notification:{
+            
+                        title:data.title || "Notification",
+            
+                        message:data.body || data.message || "",
+            
+                        type:data.type || "info",
+            
+                        uploadedBy:
+            
+                            data.createdBy ||
+            
+                            data.uploadedBy ||
+            
+                            data.username ||
+            
+                            data.fullname ||
+            
+                            "System",
+            
+                        createdAt:
+            
+                            data.createdAt ||
+            
+                            new Date().toISOString(),
+            
+                        url:
+            
+                            data.url ||
+            
+                            "/CM_Pro/pages/notifications/"
+            
+                    }
+            
+                });
+            
             });
 
         })
