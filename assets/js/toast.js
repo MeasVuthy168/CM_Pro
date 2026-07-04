@@ -479,11 +479,37 @@ if ("serviceWorker" in navigator) {
             }
 
             // Show Toast
-            if (msg.type === "NEW_NOTIFICATION") {
-
-                const n = msg.notification || {};
-
-                CMToast.show({
+                if(msg.type==="NEW_NOTIFICATION"){
+                
+                    console.log("NEW_NOTIFICATION RECEIVED");
+                
+                    const n = msg.notification || {};
+                
+                    console.log(n);
+                
+                    console.log(CMToast);
+                
+                    CMToast.show({
+                
+                        type:n.type || "info",
+                
+                        title:n.title || "Notification",
+                
+                        message:n.message || "",
+                
+                        duration:5000,
+                
+                        onDetail(){
+                
+                            location.href=n.url || "/CM_Pro/pages/notifications/";
+                
+                        }
+                
+                    });
+                
+                    console.log("CMToast.show called");
+                
+                }
 
                     type: n.type || "info",
 
