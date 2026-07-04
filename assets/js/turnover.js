@@ -686,94 +686,125 @@ clearTable();
 // ========================================
 // EXPORT PDF
 // ========================================
-// ========================================
-// EXPORT PDF
-// ========================================
+async function exportPDF(){
 
-function exportPDF(){
-    
-const logoPath="/CM_Pro/assets/images/acleda-logo.png";
-await new Promise(resolve=>{
-const img=new Image();
-img.onload=resolve;
-img.onerror=resolve;
-img.src=logoPath;
-});
-    
-const user=
-JSON.parse(localStorage.getItem("loggedInUser")||"{}");
+    // ==========================
+    // Load logo and convert to Base64
+    // ==========================
 
-const preparedBy=
-(user.fullname||user.username||"Unknown").toUpperCase();
+    async function loadLogo(){
 
-const prepared=
-document.getElementById("preparedDate").value;
+        try{
 
-const cif=
-document.getElementById("inputCIF").value;
+            const response = await fetch("/CM_Pro/assets/images/acleda-logo.png");
 
-const customer=
-document.getElementById("customerName").value.toUpperCase();
+            const blob = await response.blob();
 
-const avgDebit=
-document.getElementById("avgDebit").innerText;
+            return await new Promise(resolve=>{
 
-const avgOD=
-document.getElementById("avgOD").innerText;
+                const reader = new FileReader();
 
-const avgTurnover=
-document.getElementById("avgTurnover").innerText;
+                reader.onloadend = ()=>resolve(reader.result);
 
-const preparedText=
-new Date(prepared).toLocaleDateString(
-"en-GB",
-{
-day:"2-digit",
-month:"short",
-year:"numeric"
-}
-);
+                reader.readAsDataURL(blob);
 
-// ---------------------------
-// Build table rows
-// ---------------------------
+            });
 
-let rows="";
+        }catch{
 
-document
-.querySelectorAll("#tbodyTurnover tr")
-.forEach(r=>{
+            return "";
 
-rows+="<tr>";
+        }
 
-r.querySelectorAll("td").forEach(td=>{
+    }
 
-rows+=`
+    const logo = await loadLogo();
 
-<td
-style="
-border:1px solid #999;
-padding:6px;
-text-align:center;
-">
+    // ==========================
 
-${td.innerText}
+    const user =
+    JSON.parse(
+        localStorage.getItem("loggedInUser") || "{}"
+    );
 
-</td>
+    const preparedBy =
+    (
+        user.fullname ||
+        user.username ||
+        "Unknown"
+    ).toUpperCase();
 
-`;
+    const prepared =
+    document.getElementById("preparedDate").value;
 
-});
+    const preparedText =
+    new Date(prepared)
+    .toLocaleDateString(
+        "en-GB",
+        {
+            day:"2-digit",
+            month:"short",
+            year:"numeric"
+        }
+    );
 
-rows+="</tr>";
+    const cif =
+    document.getElementById("inputCIF").value;
 
-});
+    const customer =
+    document
+    .getElementById("customerName")
+    .value
+    .toUpperCase();
 
-// ---------------------------
-// HTML
-// ---------------------------
+    const avgDebit =
+    document.getElementById("avgDebit").innerText;
 
-const html=`
+    const avgOD =
+    document.getElementById("avgOD").innerText;
+
+    const avgTurnover =
+    document.getElementById("avgTurnover").innerText;
+
+    // ==========================
+    // Table
+    // ==========================
+
+    let rows="";
+
+    document
+    .querySelectorAll("#tbodyTurnover tr")
+    .forEach(r=>{
+
+        rows+="<tr>";
+
+        r.querySelectorAll("td").forEach(td=>{
+
+            rows+=`
+
+            <td style="
+            border:1px solid #999;
+            padding:6px;
+            text-align:center;
+            ">
+
+            ${td.innerText}
+
+            </td>
+
+            `;
+
+        });
+
+        rows+="</tr>";
+
+    });
+
+    // ==========================
+    // HTML
+    // ==========================
+
+    const html = `
 
 <div
 style="
@@ -782,117 +813,157 @@ height:1030px;
 padding:25px;
 box-sizing:border-box;
 font-family:Arial,sans-serif;
-
 display:flex;
 flex-direction:column;
 ">
 
 <!-- HEADER -->
 
-<table
+<div
 style="
-width:100%;
-margin-bottom:20px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:18px;
 ">
 
-<tr>
-
-<td
+<div
 style="
-font-size:20px;
+flex:1;
+text-align:center;
+font-size:24px;
 font-weight:bold;
 color:#032d73;
-text-align:center;
 ">
 
 YEARLY AVERAGE OF DEBIT TURNOVER
 
-</td>
+</div>
 
-<td
+<div
 style="
-width:80px;
+width:75px;
 text-align:right;
 ">
 
+${logo?`
+
 <img
-src="${logoPath}"
+src="${logo}"
 style="
-width:65px;
-height:65px;
+width:60px;
+height:60px;
 object-fit:contain;
-display:block;
 ">
 
-</td>
+`:""}
 
-</tr>
+</div>
 
-</table>
+</div>
 
 <!-- INFORMATION -->
 
 <div
 style="
 font-size:14px;
-line-height:28px;
-margin-bottom:18px;
+margin-bottom:20px;
+line-height:30px;
 ">
 
 <div>
 
-<b>Prepared Date</b>
+<span
+style="
+display:inline-block;
+width:150px;
+font-weight:bold;
+">
+
+Prepared Date
+
+</span>
 
 <span
 style="
 display:inline-block;
-width:18px;
-text-align:center;
+width:20px;
 ">
 
 :
 
 </span>
+
+<span
+style="
+text-align:left;
+">
 
 ${preparedText}
 
+</span>
+
 </div>
 
 <div>
 
-<b>CIF</b>
+<span
+style="
+display:inline-block;
+width:150px;
+font-weight:bold;
+">
+
+CIF
+
+</span>
 
 <span
 style="
 display:inline-block;
-width:108px;
-text-align:right;
+width:20px;
 ">
 
 :
 
 </span>
+
+<span>
 
 ${cif}
 
+</span>
+
 </div>
 
 <div>
 
-<b>Customer Name</b>
+<span
+style="
+display:inline-block;
+width:150px;
+font-weight:bold;
+">
+
+Customer Name
+
+</span>
 
 <span
 style="
 display:inline-block;
-width:30px;
-text-align:right;
+width:20px;
 ">
 
 :
 
 </span>
 
+<span>
+
 ${customer}
+
+</span>
 
 </div>
 
@@ -915,15 +986,15 @@ background:#032d73;
 color:white;
 ">
 
-<th style="border:1px solid #999;padding:7px;">Month</th>
+<th style="padding:7px;border:1px solid #999;">Month</th>
 
-<th style="border:1px solid #999;padding:7px;">AMT_IN</th>
+<th style="padding:7px;border:1px solid #999;">AMT_IN</th>
 
-<th style="border:1px solid #999;padding:7px;">CURRENT_OD</th>
+<th style="padding:7px;border:1px solid #999;">CURRENT_OD</th>
 
-<th style="border:1px solid #999;padding:7px;">TURNOVER</th>
+<th style="padding:7px;border:1px solid #999;">TURNOVER</th>
 
-<th style="border:1px solid #999;padding:7px;">EFFECTIVE DATE</th>
+<th style="padding:7px;border:1px solid #999;">EFFECTIVE DATE</th>
 
 </tr>
 
@@ -939,7 +1010,7 @@ ${rows}
 
 <tr
 style="
-background:#efefef;
+background:#eeeeee;
 font-weight:bold;
 ">
 
@@ -959,7 +1030,7 @@ font-weight:bold;
 
 </table>
 
-<!-- PREPARED BY -->
+<!-- Prepared By -->
 
 <div
 style="
@@ -973,16 +1044,15 @@ ${preparedBy}
 
 </div>
 
-<!-- FOOTER -->
+<!-- Footer -->
 
 <div
 style="
 margin-top:auto;
-text-align:left;
+padding-top:8px;
+border-top:2px solid #999;
 font-size:11px;
 color:#666;
-border-top:2px solid #999;
-padding-top:8px;
 ">
 
 CM_Pro Credit Monitoring System
@@ -993,34 +1063,39 @@ CM_Pro Credit Monitoring System
 
 `;
 
-const div=document.createElement("div");
+    const div=document.createElement("div");
 
-div.innerHTML=html;
+    div.innerHTML=html;
 
-html2pdf()
-.from(div)
-.set({
+    html2pdf()
+    .from(div)
+    .set({
 
-margin:0.3,
+        margin:0.3,
 
-filename:`Average_Debit_Turnover_${cif}.pdf`,
+        filename:`Average_Debit_Turnover_${cif}.pdf`,
 
-html2canvas:{
-scale:2,
-useCORS:true
-},
+        image:{
+            type:"jpeg",
+            quality:1
+        },
 
-jsPDF:{
-unit:"in",
-format:"a4",
-orientation:"portrait"
+        html2canvas:{
+            scale:2,
+            useCORS:true,
+            allowTaint:true
+        },
+
+        jsPDF:{
+            unit:"in",
+            format:"a4",
+            orientation:"portrait"
+        }
+
+    })
+    .save();
+
 }
-
-})
-.save();
-
-}
-
 // ========================================
 // EXPORT EXCEL
 // ========================================
