@@ -696,7 +696,7 @@ async function exportPDF(){
 
         try{
 
-            const response = await fetch("../../assets/images/acleda-logo.PNG");
+            const response = await fetch("../../assets/images/acleda-logo-whiteBG.png");
 
             const blob = await response.blob();
 
