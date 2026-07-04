@@ -686,7 +686,6 @@ clearTable();
 // ========================================
 // EXPORT PDF
 // ========================================
-
 // ========================================
 // EXPORT PDF
 // ========================================
@@ -694,9 +693,7 @@ clearTable();
 function exportPDF(){
 
 const user=
-JSON.parse(
-localStorage.getItem("loggedInUser")||"{}"
-);
+JSON.parse(localStorage.getItem("loggedInUser")||"{}");
 
 const preparedBy=
 (user.fullname||user.username||"Unknown").toUpperCase();
@@ -719,15 +716,8 @@ document.getElementById("avgOD").innerText;
 const avgTurnover=
 document.getElementById("avgTurnover").innerText;
 
-// -------------------------------------
-// Format Date
-// -------------------------------------
-
-const reportDate=
-new Date(prepared);
-
 const preparedText=
-reportDate.toLocaleDateString(
+new Date(prepared).toLocaleDateString(
 "en-GB",
 {
 day:"2-digit",
@@ -736,22 +726,21 @@ year:"numeric"
 }
 );
 
-// -------------------------------------
-// Table Rows
-// -------------------------------------
+// ---------------------------
+// Build table rows
+// ---------------------------
 
-let tableRows="";
+let rows="";
 
 document
 .querySelectorAll("#tbodyTurnover tr")
 .forEach(r=>{
 
-tableRows+="<tr>";
+rows+="<tr>";
 
-r.querySelectorAll("td")
-.forEach(td=>{
+r.querySelectorAll("td").forEach(td=>{
 
-tableRows+=`
+rows+=`
 
 <td
 style="
@@ -768,47 +757,44 @@ ${td.innerText}
 
 });
 
-tableRows+="</tr>";
+rows+="</tr>";
 
 });
 
-// -------------------------------------
-// Report HTML
-// -------------------------------------
+// ---------------------------
+// HTML
+// ---------------------------
 
-let html=`
+const html=`
 
 <div
 style="
 width:100%;
 height:1030px;
+padding:25px;
 box-sizing:border-box;
+font-family:Arial,sans-serif;
 
 display:flex;
 flex-direction:column;
-
-font-family:Arial,sans-serif;
-color:#222;
-padding:25px;
 ">
 
-<!-- Header -->
+<!-- HEADER -->
 
 <table
 style="
 width:100%;
-border-collapse:collapse;
-margin-bottom:18px;
+margin-bottom:20px;
 ">
 
 <tr>
 
 <td
 style="
-text-align:center;
 font-size:20px;
 font-weight:bold;
 color:#032d73;
+text-align:center;
 ">
 
 YEARLY AVERAGE OF DEBIT TURNOVER
@@ -817,18 +803,15 @@ YEARLY AVERAGE OF DEBIT TURNOVER
 
 <td
 style="
-width:90px;
+width:80px;
 text-align:right;
 ">
 
 <img
-
 src="${window.ACLEDA_LOGO}"
-
 style="
 width:65px;
 height:65px;
-object-fit:contain;
 ">
 
 </td>
@@ -837,80 +820,75 @@ object-fit:contain;
 
 </table>
 
-<!-- Information -->
+<!-- INFORMATION -->
 
-<table
+<div
 style="
-width:100%;
-font-size:13px;
-border-collapse:collapse;
+font-size:14px;
+line-height:28px;
 margin-bottom:18px;
 ">
 
-<tr>
+<div>
 
-<td
+<b>Prepared Date</b>
+
+<span
 style="
-width:160px;
-padding:5px 0;
-font-weight:bold;
+display:inline-block;
+width:18px;
+text-align:center;
 ">
 
-Prepared Date
+:
 
-</td>
+</span>
 
-<td>
+${preparedText}
 
-: ${preparedText}
+</div>
 
-</td>
+<div>
 
-</tr>
+<b>CIF</b>
 
-<tr>
-
-<td
+<span
 style="
-padding:5px 0;
-font-weight:bold;
+display:inline-block;
+width:108px;
+text-align:right;
 ">
 
-CIF
+:
 
-</td>
+</span>
 
-<td>
+${cif}
 
-: ${cif}
+</div>
 
-</td>
+<div>
 
-</tr>
+<b>Customer Name</b>
 
-<tr>
-
-<td
+<span
 style="
-padding:5px 0;
-font-weight:bold;
+display:inline-block;
+width:30px;
+text-align:right;
 ">
 
-Customer Name
+:
 
-</td>
+</span>
 
-<td>
+${customer}
 
-: ${customer}
+</div>
 
-</td>
+</div>
 
-</tr>
-
-</table>
-
-<!-- Table -->
+<!-- TABLE -->
 
 <table
 style="
@@ -927,30 +905,15 @@ background:#032d73;
 color:white;
 ">
 
-<th
-style="padding:7px;border:1px solid #999;">
-Month
-</th>
+<th style="border:1px solid #999;padding:7px;">Month</th>
 
-<th
-style="padding:7px;border:1px solid #999;">
-AMT_IN
-</th>
+<th style="border:1px solid #999;padding:7px;">AMT_IN</th>
 
-<th
-style="padding:7px;border:1px solid #999;">
-CURRENT_OD
-</th>
+<th style="border:1px solid #999;padding:7px;">CURRENT_OD</th>
 
-<th
-style="padding:7px;border:1px solid #999;">
-TURNOVER
-</th>
+<th style="border:1px solid #999;padding:7px;">TURNOVER</th>
 
-<th
-style="padding:7px;border:1px solid #999;">
-EFFECTIVE DATE
-</th>
+<th style="border:1px solid #999;padding:7px;">EFFECTIVE DATE</th>
 
 </tr>
 
@@ -958,7 +921,7 @@ EFFECTIVE DATE
 
 <tbody>
 
-${tableRows}
+${rows}
 
 </tbody>
 
@@ -970,29 +933,15 @@ background:#efefef;
 font-weight:bold;
 ">
 
-<td
-style="padding:7px;border:1px solid #999;">
-Average
-</td>
+<td style="border:1px solid #999;padding:7px;">Average</td>
 
-<td
-style="padding:7px;border:1px solid #999;">
-${avgDebit}
-</td>
+<td style="border:1px solid #999;padding:7px;">${avgDebit}</td>
 
-<td
-style="padding:7px;border:1px solid #999;">
-${avgOD}
-</td>
+<td style="border:1px solid #999;padding:7px;">${avgOD}</td>
 
-<td
-style="padding:7px;border:1px solid #999;">
-${avgTurnover}
-</td>
+<td style="border:1px solid #999;padding:7px;">${avgTurnover}</td>
 
-<td
-style="border:1px solid #999;">
-</td>
+<td style="border:1px solid #999;"></td>
 
 </tr>
 
@@ -1000,31 +949,30 @@ style="border:1px solid #999;">
 
 </table>
 
-<!-- Footer -->
+<!-- PREPARED BY -->
+
+<div
+style="
+margin-top:12px;
+font-size:13px;
+">
+
+<b>Prepared By :</b>
+
+${preparedBy}
+
+</div>
+
+<!-- FOOTER -->
 
 <div
 style="
 margin-top:auto;
-padding-top:18px;
-border-top:2px solid #888;
-">
-
-<div
-style="
-font-size:13px;
-">
-
-Prepared By :
-<b>${preparedBy}</b>
-
-</div>
-
-<div
-style="
-margin-top:28px;
+text-align:left;
 font-size:11px;
 color:#666;
-text-align:left;
+border-top:2px solid #999;
+padding-top:8px;
 ">
 
 CM_Pro Credit Monitoring System
@@ -1033,46 +981,36 @@ CM_Pro Credit Monitoring System
 
 </div>
 
-</div>
-
 `;
 
-const container=
-document.createElement("div");
+const div=document.createElement("div");
 
-container.innerHTML=html;
+div.innerHTML=html;
 
 html2pdf()
-.from(container)
+.from(div)
 .set({
 
 margin:0.3,
 
-filename:
-`Average_Debit_Turnover_${cif}.pdf`,
+filename:`Average_Debit_Turnover_${cif}.pdf`,
 
 html2canvas:{
-
 scale:2,
-
 useCORS:true
-
 },
 
 jsPDF:{
-
 unit:"in",
-
 format:"a4",
-
 orientation:"portrait"
-
 }
 
 })
 .save();
 
 }
+
 // ========================================
 // EXPORT EXCEL
 // ========================================
