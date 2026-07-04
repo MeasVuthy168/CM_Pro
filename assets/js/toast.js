@@ -25,13 +25,13 @@ const CMToast = {
   // SHOW
   // =====================================
 
-  show(options = {}) {
+  async show(options = {}) {
 
     this.queue.push(options);
 
     if (!this.busy) {
 
-      this.next();
+      await this.next();
 
     }
 
@@ -41,7 +41,7 @@ const CMToast = {
   // NEXT
   // =====================================
 
-  next() {
+  async next() {
 
     if (this.queue.length === 0) {
 
@@ -53,7 +53,7 @@ const CMToast = {
 
     this.busy = true;
 
-    this.render(this.queue.shift());
+    await this.render(this.queue.shift());
 
   },
 
@@ -130,60 +130,59 @@ const CMToast = {
   // USER PHOTO
   // =====================================
 
-      async getUserPhoto(){
-    
-    try{
-    
-    const user=JSON.parse(
-    
-    localStorage.getItem("loggedInUser")||
-    
-    "{}"
-    
-    );
-    
-    if(!user.username){
-    
-    return "/CM_Pro/assets/images/profile.jpg";
-    
+  async getUserPhoto() {
+
+    try {
+
+      const user = JSON.parse(
+
+        localStorage.getItem("loggedInUser") ||
+
+        "{}"
+
+      );
+
+      if (!user.username) {
+
+        return "/CM_Pro/assets/images/profile.jpg";
+
+      }
+
+      const token = API.getToken();
+
+      const response = await fetch(
+
+        `${API.BASE_URL}/assets/user-photo/${encodeURIComponent(user.username)}`,
+
+        {
+
+          headers: {
+
+            Authorization: `Bearer ${token}`
+
+          }
+
+        }
+
+      );
+
+      if (!response.ok) {
+
+        return "/CM_Pro/assets/images/profile.jpg";
+
+      }
+
+      const blob = await response.blob();
+
+      return URL.createObjectURL(blob);
+
+    } catch {
+
+      return "/CM_Pro/assets/images/profile.jpg";
+
     }
-    
-    const token=API.getToken();
-    
-    const response=await fetch(
-    
-    `${API.BASE_URL}/assets/user-photo/${encodeURIComponent(user.username)}`,
-    
-    {
-    
-    headers:{
-    
-    Authorization:`Bearer ${token}`
-    
-    }
-    
-    }
-    
-    );
-    
-    if(!response.ok){
-    
-    return "/CM_Pro/assets/images/profile.jpg";
-    
-    }
-    
-    const blob=await response.blob();
-    
-    return URL.createObjectURL(blob);
-    
-    }
-    catch{
-    
-    return "/CM_Pro/assets/images/profile.jpg";
-    
-    }
-    
-    }
+
+  },
 
   // =====================================
   // TIME AGO
@@ -230,7 +229,7 @@ const CMToast = {
   // RENDER
   // =====================================
 
-  async render(opt){  
+  async render(opt) {
 
     const container = this.getContainer();
 
@@ -490,80 +489,70 @@ const CMToast = {
 
 if ("serviceWorker" in navigator) {
 
-  navigator.serviceWorker.ready.then(() => {
+  navigator.serviceWorker.addEventListener(
 
-    navigator.serviceWorker.addEventListener(
+    "message",
 
-      "message",
+    (event) => {
 
-      (event) => {
+      console.log("📩 MESSAGE", event.data);
 
-        const msg = event.data;
+      const msg = event.data;
 
-        if (!msg) {
+      if (!msg) return;
 
-          return;
+      // =====================================
+      // Refresh Badge
+      // =====================================
 
-        }
+      if (msg.type === "REFRESH_BADGE") {
 
-        // =====================================
-        // Refresh Badge
-        // =====================================
+        if (typeof loadNotificationBadge === "function") {
 
-        if (msg.type === "REFRESH_BADGE") {
-
-          console.log("🔔 Refresh Badge");
-
-          if (typeof loadNotificationBadge === "function") {
-
-            loadNotificationBadge();
-
-          }
-
-          return;
+          loadNotificationBadge();
 
         }
 
-        // =====================================
-        // Toast
-        // =====================================
-
-        if (msg.type === "NEW_NOTIFICATION") {
-
-          console.log("📢 Toast Notification");
-
-          const n = msg.notification || {};
-
-          CMToast.show({
-
-            type: n.type || "info",
-
-            title: n.title || "Notification",
-
-            message: n.message || "",
-
-            uploadedBy: n.uploadedBy || "System",
-
-            createdAt: n.createdAt || new Date().toISOString(),
-
-            photo: n.photo || n.image || "",
-
-            duration: 5000,
-
-            onDetail() {
-
-              location.href = n.url || "/CM_Pro/pages/notifications/";
-
-            }
-
-          });
-
-        }
+        return;
 
       }
 
-    );
+      // =====================================
+      // Toast
+      // =====================================
 
-  });
+      if (msg.type === "NEW_NOTIFICATION") {
+
+        const n = msg.notification || {};
+
+        CMToast.show({
+
+          type: n.type || "info",
+
+          title: n.title || "Notification",
+
+          message: n.message || "",
+
+          uploadedBy: n.uploadedBy || "System",
+
+          createdAt: n.createdAt,
+
+          photo: n.photo,
+
+          duration: 5000,
+
+          onDetail() {
+
+            location.href = n.url || "/CM_Pro/pages/notifications/";
+
+          }
+
+        });
+
+      }
+
+    }
+
+  );
 
 }
