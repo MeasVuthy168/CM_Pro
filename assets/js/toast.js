@@ -1,6 +1,6 @@
 // ===========================================
 // CM_Pro Toast
-// Version 2.0
+// Version 3.0
 // ===========================================
 
 const CMToast = {
@@ -329,6 +329,8 @@ const CMToast = {
 
       }
 
+      this.close();
+
     });
 
     // ========================
@@ -342,6 +344,74 @@ const CMToast = {
       this.close();
 
     }, duration);
+
+    // ========================
+    // Pause on hover (desktop)
+    // ========================
+
+    toast.addEventListener("mouseenter", () => {
+
+      clearTimeout(this.timer);
+
+      this.remaining -= Date.now() - this.startTime;
+
+      toast._bar.style.animationPlayState = "paused";
+
+    });
+
+    toast.addEventListener("mouseleave", () => {
+
+      this.startTime = Date.now();
+
+      toast._bar.style.animationPlayState = "running";
+
+      this.timer = setTimeout(() => {
+
+        this.close();
+
+      }, this.remaining);
+
+    });
+
+    // ========================
+    // Swipe up to dismiss (mobile)
+    // ========================
+
+    let startY = 0;
+
+    toast.addEventListener(
+
+      "touchstart",
+
+      e => {
+
+        startY = e.touches[0].clientY;
+
+      },
+
+      { passive: true }
+
+    );
+
+    toast.addEventListener(
+
+      "touchend",
+
+      e => {
+
+        const diff = startY - e.changedTouches[0].clientY;
+
+        if (diff > 70) {
+
+          this.close();
+
+        }
+
+      },
+
+      { passive: true }
+
+    );
 
   },
 
