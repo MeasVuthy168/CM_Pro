@@ -510,26 +510,6 @@ if ("serviceWorker" in navigator) {
                 
                 }
 
-                    type: n.type || "info",
-
-                    title: n.title || "Notification",
-
-                    message: n.message || "",
-
-                    duration: 5000,
-
-                    onDetail() {
-
-                        location.href =
-                            n.url ||
-                            "/CM_Pro/pages/notifications/";
-
-                    }
-
-                });
-
-            }
-
         };
 
         navigator.serviceWorker.addEventListener(
