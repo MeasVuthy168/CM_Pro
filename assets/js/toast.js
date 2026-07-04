@@ -1,6 +1,7 @@
+
 // ===========================================
 // CM_Pro Toast
-// Version 1.0
+// Version 2.0
 // ===========================================
 
 const CMToast={
@@ -8,6 +9,14 @@ const CMToast={
 queue:[],
 
 busy:false,
+
+active:null,
+
+timer:null,
+
+remaining:0,
+
+startTime:0,
 
 show(options={}){
 
@@ -33,189 +42,415 @@ return;
 
 this.busy=true;
 
-const opt=this.queue.shift();
-
-this.render(opt);
+this.render(this.queue.shift());
 
 },
 
+// =====================================
+// ICON
+// =====================================
+
+getIcon(type){
+
+switch(type){
+
+case "upload":
+return "📤";
+
+case "backup":
+return "💾";
+
+case "warning":
+return "⚠️";
+
+case "update":
+return "⬆️";
+
+case "delete":
+return "🗑️";
+
+case "system":
+return "🖥️";
+
+case "success":
+return "✅";
+
+case "error":
+return "❌";
+
+default:
+return "🔔";
+
+}
+
+},
+
+// =====================================
+// TIME
+// =====================================
+
+timeAgo(date){
+
+if(!date) return "Just now";
+
+const d=new Date(date);
+
+const diff=Math.floor((Date.now()-d.getTime())/1000);
+
+if(diff<60) return "Just now";
+
+if(diff<3600)
+
+return Math.floor(diff/60)+" min ago";
+
+if(diff<86400)
+
+return Math.floor(diff/3600)+" hr ago";
+
+return d.toLocaleString();
+
+},
+
+// =====================================
+// RENDER
+// =====================================
+
 render(opt){
 
-const type=opt.type||"info";
+const type=
+opt.type||"info";
 
-const title=opt.title||"Notification";
+const icon=
+this.getIcon(type);
 
-const message=opt.message||"";
+const title=
+opt.title||"Notification";
 
-const autoClose=
+const message=
+opt.message||"";
 
-opt.autoClose===false
+const uploadedBy=
+opt.uploadedBy||
+"System";
 
-?0
+const time=
+this.timeAgo(
+opt.createdAt
+);
 
-:(opt.duration||5000);
+const duration=
+opt.duration||5000;
 
 const showDetail=
-
 typeof opt.onDetail==="function";
 
-const checkbox=
+const toast=
+document.createElement("div");
 
-opt.showCheckbox===true;
+toast.className=
+`cm-toast toast-${type}`;
 
-let icon="ℹ";
+toast.innerHTML=`
 
-if(type==="success") icon="✔";
-if(type==="warning") icon="⚠";
-if(type==="error") icon="✖";
+<div class="cm-toast-left">
 
-const overlay=document.createElement("div");
-
-overlay.className="toast-overlay";
-
-overlay.innerHTML=`
-
-<div class="toast toast-${type}">
-
-<div class="toast-header">
-
-<div class="toast-title">
-
-${title}
-
-</div>
-
-<div class="toast-close">
-
-&times;
-
-</div>
-
-</div>
-
-<div class="toast-body">
-
-<div class="toast-icon">
+<div class="cm-toast-icon">
 
 ${icon}
 
 </div>
 
-<div class="toast-message">
+</div>
+
+<div class="cm-toast-center">
+
+<div class="cm-toast-title">
+
+${title}
+
+</div>
+
+<div class="cm-toast-message">
 
 ${message}
 
 </div>
 
-${
-checkbox
-?
+<div class="cm-toast-meta">
 
-`<label class="toast-checkbox">
+<span>
 
-<input type="checkbox">
+👤 ${uploadedBy}
 
-Don't show again
+</span>
 
-</label>`
+<span>
 
-:""
+${time}
 
-}
+</span>
 
 </div>
 
-<div class="toast-footer">
+<div class="cm-toast-progress">
 
-<button
+<div class="cm-toast-bar"></div>
 
-class="toast-btn toast-btn-secondary toast-later">
+</div>
 
-Later
+</div>
+
+<div class="cm-toast-right">
+
+<button class="cm-toast-close">
+
+✕
 
 </button>
-
-${
-showDetail
-?
-
-`<button
-
-class="toast-btn toast-btn-primary toast-detail">
-
-View Detail
-
-</button>`
-
-:""
-
-}
-
-</div>
 
 </div>
 
 `;
 
-document.body.appendChild(overlay);
+document.body.appendChild(toast);
 
 requestAnimationFrame(()=>{
 
-overlay.classList.add("show");
+toast.classList.add("show");
 
 });
 
+this.active=toast;
+
+this.remaining=duration;
+
+this.startTime=Date.now();
+
+
+// =====================================
+// PROGRESS BAR
+// =====================================
+
+const bar=
+toast.querySelector(
+".cm-toast-bar"
+);
+
+bar.style.animationDuration=
+duration+"ms";
+
+bar.classList.add(
+"run"
+);
+
+// =====================================
+// CLOSE
+// =====================================
+
 const close=()=>{
 
-overlay.classList.remove("show");
+if(!this.active) return;
+
+clearTimeout(this.timer);
+
+toast.classList.remove(
+"show"
+);
 
 setTimeout(()=>{
 
-overlay.remove();
+toast.remove();
+
+this.active=null;
+
+this.busy=false;
 
 this.next();
 
-},250);
+},300);
 
 };
 
-overlay
+// =====================================
+// AUTO CLOSE
+// =====================================
 
-.querySelector(".toast-close")
+this.timer=setTimeout(
 
-.onclick=close;
+close,
 
-overlay
+duration
 
-.querySelector(".toast-later")
+);
 
-.onclick=close;
+// =====================================
+// PAUSE TIMER
+// Desktop
+// =====================================
+
+toast.addEventListener(
+
+"mouseenter",
+
+()=>{
+
+clearTimeout(
+this.timer
+);
+
+this.remaining-=
+
+Date.now()-
+
+this.startTime;
+
+bar.style.animationPlayState=
+"paused";
+
+}
+
+);
+
+toast.addEventListener(
+
+"mouseleave",
+
+()=>{
+
+this.startTime=
+Date.now();
+
+bar.style.animationPlayState=
+"running";
+
+this.timer=
+
+setTimeout(
+
+close,
+
+this.remaining
+
+);
+
+}
+
+);
+
+// =====================================
+// CLICK ANYWHERE
+// =====================================
+
+toast.addEventListener(
+
+"click",
+
+(e)=>{
+
+if(
+
+e.target.classList.contains(
+"cm-toast-close"
+)
+
+){
+
+return;
+
+}
 
 if(showDetail){
 
-overlay
-
-.querySelector(".toast-detail")
-
-.onclick=()=>{
-
 opt.onDetail();
+
+}
+
+close();
+
+}
+
+);
+
+// =====================================
+// CLOSE BUTTON
+// =====================================
+
+toast
+
+.querySelector(
+
+".cm-toast-close"
+
+)
+
+.onclick=(e)=>{
+
+e.stopPropagation();
 
 close();
 
 };
 
+// =====================================
+// MOBILE SWIPE UP
+// =====================================
+
+let startY=0;
+
+toast.addEventListener(
+
+"touchstart",
+
+(e)=>{
+
+startY=
+
+e.touches[0].clientY;
+
+},
+
+{
+
+passive:true
+
 }
 
-if(autoClose>0){
+);
 
-setTimeout(close,autoClose);
+toast.addEventListener(
+
+"touchend",
+
+(e)=>{
+
+const diff=
+
+startY-
+
+e.changedTouches[0].clientY;
+
+if(diff>70){
+
+close();
 
 }
+
+},
+
+{
+
+passive:true
+
+}
+
+);
 
 }
 
 };
+
+
+
 
 // ===========================================
 // Listen Service Worker Message
@@ -233,13 +468,11 @@ const msg=event.data;
 
 if(!msg)return;
 
+// =====================================
 // Refresh Badge
+// =====================================
 
-if(
-
-msg.type==="REFRESH_BADGE"
-
-){
+if(msg.type==="REFRESH_BADGE"){
 
 if(typeof loadNotificationBadge==="function"){
 
@@ -251,13 +484,11 @@ return;
 
 }
 
+// =====================================
 // Show Toast
+// =====================================
 
-if(
-
-msg.type==="NEW_NOTIFICATION"
-
-){
+if(msg.type==="NEW_NOTIFICATION"){
 
 const n=msg.notification || {};
 
@@ -268,6 +499,22 @@ type:n.type || "info",
 title:n.title || "Notification",
 
 message:n.message || "",
+
+uploadedBy:
+
+n.uploadedBy ||
+
+n.createdBy ||
+
+n.username ||
+
+"System",
+
+createdAt:
+
+n.createdAt ||
+
+new Date().toISOString(),
 
 duration:5000,
 
