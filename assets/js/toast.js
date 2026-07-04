@@ -216,3 +216,77 @@ setTimeout(close,autoClose);
 }
 
 };
+
+// ===========================================
+// Listen Service Worker Message
+// ===========================================
+
+if("serviceWorker" in navigator){
+
+navigator.serviceWorker.addEventListener(
+
+"message",
+
+(event)=>{
+
+const msg=event.data;
+
+if(!msg)return;
+
+// Refresh Badge
+
+if(
+
+msg.type==="REFRESH_BADGE"
+
+){
+
+if(typeof loadNotificationBadge==="function"){
+
+loadNotificationBadge();
+
+}
+
+return;
+
+}
+
+// Show Toast
+
+if(
+
+msg.type==="NEW_NOTIFICATION"
+
+){
+
+const n=msg.notification || {};
+
+CMToast.show({
+
+type:n.type || "info",
+
+title:n.title || "Notification",
+
+message:n.message || "",
+
+duration:5000,
+
+onDetail(){
+
+location.href=
+
+n.url ||
+
+"/CM_Pro/pages/notifications/";
+
+}
+
+});
+
+}
+
+}
+
+);
+
+}
