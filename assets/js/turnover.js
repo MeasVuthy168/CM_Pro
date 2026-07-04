@@ -843,21 +843,18 @@ YEARLY AVERAGE OF DEBIT TURNOVER
 
 <div
 style="
-width:110px;
+width:180px;
 text-align:right;
 ">
-
-${logo?`
 
 <img
 src="${logo}"
 style="
-width:90px;
+width:150px;
 height:auto;
-object-fit:contain;
+display:block;
+margin-left:auto;
 ">
-
-`:""}
 
 </div>
 
