@@ -1,12 +1,17 @@
 /* ==========================================
-   CM_Toast v2 
+   CM_Pro Toast v2
+   Part 1 - Container & Animation
 ========================================== */
 
-.toast-container{
+/* ==========================================
+   TOAST CONTAINER
+========================================== */
+
+.cm-toast-container{
 
 position:fixed;
 
-top:78px;
+top:70px;
 
 left:50%;
 
@@ -14,111 +19,250 @@ transform:translateX(-50%);
 
 width:95%;
 
-max-width:420px;
+max-width:430px;
 
 z-index:999999;
 
 pointer-events:none;
 
+display:flex;
+
+flex-direction:column;
+
+gap:12px;
+
 }
 
-.toast{
+/* ==========================================
+   MAIN TOAST
+========================================== */
+
+.cm-toast{
 
 pointer-events:auto;
 
-background:#fff;
+display:flex;
+
+align-items:stretch;
+
+background:#ffffff;
 
 border-radius:18px;
 
-box-shadow:0 12px 35px rgba(0,0,0,.18);
-
 overflow:hidden;
 
-margin-bottom:12px;
+box-shadow:
+0 12px 35px rgba(0,0,0,.18);
 
 border-left:5px solid #032d73;
 
-transform:translateY(-140px);
+cursor:pointer;
 
 opacity:0;
 
+transform:translateY(-120px);
+
 transition:
-
-transform .35s ease,
-
+transform .35s cubic-bezier(.22,.61,.36,1),
 opacity .35s ease;
-
-cursor:pointer;
 
 }
 
-.toast.show{
+/* ==========================================
+   SHOW
+========================================== */
 
-transform:translateY(0);
+.cm-toast.show{
 
 opacity:1;
 
+transform:translateY(0);
+
 }
 
-.toast.hide{
+/* ==========================================
+   HIDE
+========================================== */
 
-transform:translateY(-140px);
+.cm-toast.hide{
 
 opacity:0;
 
+transform:translateY(-120px);
+
 }
 
-.toast-header{
+/* ==========================================
+   LEFT
+========================================== */
+
+.cm-toast-left{
+
+width:72px;
 
 display:flex;
 
-justify-content:space-between;
+justify-content:center;
 
 align-items:center;
 
-padding:14px 16px 8px;
+flex-shrink:0;
 
 }
 
-.toast-title{
+/* ==========================================
+   CENTER
+========================================== */
 
-font-size:17px;
+.cm-toast-center{
 
-font-weight:700;
+flex:1;
 
-color:#032d73;
+padding:
+
+14px
+
+16px
+
+12px
+
+0;
+
+display:flex;
+
+flex-direction:column;
 
 }
 
-.toast-close{
+/* ==========================================
+   RIGHT
+========================================== */
+
+.cm-toast-right{
+
+width:52px;
+
+display:flex;
+
+justify-content:center;
+
+align-items:flex-start;
+
+padding-top:10px;
+
+flex-shrink:0;
+
+}
+
+/* ==========================================
+   CLOSE BUTTON
+========================================== */
+
+.cm-toast-close{
+
+background:none;
+
+border:none;
 
 font-size:22px;
 
 cursor:pointer;
 
-color:#777;
+color:#666;
+
+padding:0;
+
+line-height:1;
+
+transition:.2s;
 
 }
 
-.toast-body{
+.cm-toast-close:hover{
 
-padding:0 16px 14px;
+color:#111;
+
+transform:scale(1.08);
 
 }
 
-.toast-message{
+
+/* ==========================================
+   CM_Pro Toast v2
+   Part 2 - Content
+========================================== */
+
+/* ==========================================
+   ICON
+========================================== */
+
+.cm-toast-icon{
+
+width:48px;
+
+height:48px;
+
+border-radius:50%;
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+font-size:26px;
+
+font-weight:bold;
+
+background:#eef4ff;
+
+color:#032d73;
+
+flex-shrink:0;
+
+}
+
+/* ==========================================
+   TITLE
+========================================== */
+
+.cm-toast-title{
+
+font-size:16px;
+
+font-weight:700;
+
+color:#032d73;
+
+line-height:1.35;
+
+margin-bottom:4px;
+
+}
+
+/* ==========================================
+   MESSAGE
+========================================== */
+
+.cm-toast-message{
 
 font-size:14px;
 
-line-height:1.5;
+line-height:1.55;
 
-color:#444;
+color:#4b5563;
 
-margin-top:5px;
+margin-bottom:10px;
+
+word-break:break-word;
 
 }
 
-.toast-footer{
+/* ==========================================
+   META
+========================================== */
+
+.cm-toast-meta{
 
 display:flex;
 
@@ -126,15 +270,19 @@ justify-content:space-between;
 
 align-items:center;
 
-margin-top:12px;
+gap:10px;
 
-font-size:13px;
+font-size:12px;
 
-color:#777;
+color:#7b8794;
 
 }
 
-.toast-user{
+/* ==========================================
+   USER
+========================================== */
+
+.cm-toast-user{
 
 display:flex;
 
@@ -142,9 +290,19 @@ align-items:center;
 
 gap:8px;
 
+overflow:hidden;
+
+white-space:nowrap;
+
+text-overflow:ellipsis;
+
 }
 
-.toast-user img{
+/* ==========================================
+   USER PHOTO
+========================================== */
+
+.cm-toast-avatar{
 
 width:28px;
 
@@ -154,12 +312,390 @@ border-radius:50%;
 
 object-fit:cover;
 
+background:#e5e7eb;
+
+flex-shrink:0;
+
 }
 
-.toast-time{
+/* ==========================================
+   USERNAME
+========================================== */
+
+.cm-toast-username{
+
+font-weight:600;
+
+color:#374151;
+
+overflow:hidden;
+
+text-overflow:ellipsis;
+
+white-space:nowrap;
+
+}
+
+/* ==========================================
+   TIME
+========================================== */
+
+.cm-toast-time{
 
 font-size:12px;
 
-color:#999;
+color:#9ca3af;
+
+white-space:nowrap;
+
+}
+
+/* ==========================================
+   HOVER
+========================================== */
+
+.cm-toast:hover{
+
+box-shadow:
+
+0 18px 45px rgba(0,0,0,.22);
+
+}
+
+
+/* ==========================================
+   CM_Pro Toast v2
+   Part 3 - Progress, Colors, Responsive
+========================================== */
+
+/* ==========================================
+   PROGRESS
+========================================== */
+
+.cm-toast-progress{
+
+position:relative;
+
+width:100%;
+
+height:4px;
+
+margin-top:12px;
+
+border-radius:999px;
+
+background:#edf2f7;
+
+overflow:hidden;
+
+}
+
+.cm-toast-bar{
+
+position:absolute;
+
+left:0;
+
+top:0;
+
+height:100%;
+
+width:100%;
+
+transform-origin:left center;
+
+background:#032d73;
+
+}
+
+.cm-toast-bar.run{
+
+animation:
+
+cmToastProgress linear forwards;
+
+}
+
+@keyframes cmToastProgress{
+
+from{
+
+transform:scaleX(1);
+
+}
+
+to{
+
+transform:scaleX(0);
+
+}
+
+}
+
+/* ==========================================
+   TYPE COLORS
+========================================== */
+
+.toast-success{
+
+border-left-color:#16a34a;
+
+}
+
+.toast-success .cm-toast-icon{
+
+background:#ecfdf3;
+
+color:#16a34a;
+
+}
+
+.toast-success .cm-toast-bar{
+
+background:#16a34a;
+
+}
+
+/* ---------- */
+
+.toast-info{
+
+border-left-color:#0284c7;
+
+}
+
+.toast-info .cm-toast-icon{
+
+background:#eff8ff;
+
+color:#0284c7;
+
+}
+
+.toast-info .cm-toast-bar{
+
+background:#0284c7;
+
+}
+
+/* ---------- */
+
+.toast-warning{
+
+border-left-color:#f59e0b;
+
+}
+
+.toast-warning .cm-toast-icon{
+
+background:#fffbeb;
+
+color:#f59e0b;
+
+}
+
+.toast-warning .cm-toast-bar{
+
+background:#f59e0b;
+
+}
+
+/* ---------- */
+
+.toast-error{
+
+border-left-color:#dc2626;
+
+}
+
+.toast-error .cm-toast-icon{
+
+background:#fef2f2;
+
+color:#dc2626;
+
+}
+
+.toast-error .cm-toast-bar{
+
+background:#dc2626;
+
+}
+
+/* ---------- */
+
+.toast-upload{
+
+border-left-color:#2563eb;
+
+}
+
+.toast-upload .cm-toast-icon{
+
+background:#eff6ff;
+
+color:#2563eb;
+
+}
+
+.toast-upload .cm-toast-bar{
+
+background:#2563eb;
+
+}
+
+/* ---------- */
+
+.toast-backup{
+
+border-left-color:#7c3aed;
+
+}
+
+.toast-backup .cm-toast-icon{
+
+background:#f5f3ff;
+
+color:#7c3aed;
+
+}
+
+.toast-backup .cm-toast-bar{
+
+background:#7c3aed;
+
+}
+
+/* ---------- */
+
+.toast-update{
+
+border-left-color:#0f766e;
+
+}
+
+.toast-update .cm-toast-icon{
+
+background:#ecfeff;
+
+color:#0f766e;
+
+}
+
+.toast-update .cm-toast-bar{
+
+background:#0f766e;
+
+}
+
+/* ---------- */
+
+.toast-delete{
+
+border-left-color:#b91c1c;
+
+}
+
+.toast-delete .cm-toast-icon{
+
+background:#fef2f2;
+
+color:#b91c1c;
+
+}
+
+.toast-delete .cm-toast-bar{
+
+background:#b91c1c;
+
+}
+
+/* ---------- */
+
+.toast-system{
+
+border-left-color:#475569;
+
+}
+
+.toast-system .cm-toast-icon{
+
+background:#f8fafc;
+
+color:#475569;
+
+}
+
+.toast-system .cm-toast-bar{
+
+background:#475569;
+
+}
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media(max-width:480px){
+
+.cm-toast-container{
+
+top:62px;
+
+width:96%;
+
+}
+
+.cm-toast{
+
+border-radius:16px;
+
+}
+
+.cm-toast-left{
+
+width:60px;
+
+}
+
+.cm-toast-icon{
+
+width:42px;
+
+height:42px;
+
+font-size:22px;
+
+}
+
+.cm-toast-title{
+
+font-size:15px;
+
+}
+
+.cm-toast-message{
+
+font-size:13px;
+
+}
+
+.cm-toast-meta{
+
+font-size:11px;
+
+}
+
+.cm-toast-right{
+
+width:44px;
+
+}
+
+.cm-toast-close{
+
+font-size:20px;
+
+}
 
 }
