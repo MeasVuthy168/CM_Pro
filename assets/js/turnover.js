@@ -691,7 +691,15 @@ clearTable();
 // ========================================
 
 function exportPDF(){
-
+    
+const logoPath="/CM_Pro/assets/images/acleda-logo.png";
+await new Promise(resolve=>{
+const img=new Image();
+img.onload=resolve;
+img.onerror=resolve;
+img.src=logoPath;
+});
+    
 const user=
 JSON.parse(localStorage.getItem("loggedInUser")||"{}");
 
@@ -808,10 +816,12 @@ text-align:right;
 ">
 
 <img
-src="${window.ACLEDA_LOGO}"
+src="${logoPath}"
 style="
 width:65px;
 height:65px;
+object-fit:contain;
+display:block;
 ">
 
 </td>
