@@ -130,28 +130,60 @@ const CMToast = {
   // USER PHOTO
   // =====================================
 
-  getUserPhoto() {
-
-    try {
-
-      const user =
-        JSON.parse(
-          localStorage.getItem("loggedInUser") || "{}"
-        );
-
-      return (
-        user.image ||
-        user.photo ||
-        "/CM_Pro/assets/images/default-user.png"
-      );
-
-    } catch {
-
-      return "/CM_Pro/assets/images/default-user.png";
-
+      async getUserPhoto(){
+    
+    try{
+    
+    const user=JSON.parse(
+    
+    localStorage.getItem("loggedInUser")||
+    
+    "{}"
+    
+    );
+    
+    if(!user.username){
+    
+    return "/CM_Pro/assets/images/profile.jpg";
+    
     }
-
-  },
+    
+    const token=API.getToken();
+    
+    const response=await fetch(
+    
+    `${API.BASE_URL}/assets/user-photo/${encodeURIComponent(user.username)}`,
+    
+    {
+    
+    headers:{
+    
+    Authorization:`Bearer ${token}`
+    
+    }
+    
+    }
+    
+    );
+    
+    if(!response.ok){
+    
+    return "/CM_Pro/assets/images/profile.jpg";
+    
+    }
+    
+    const blob=await response.blob();
+    
+    return URL.createObjectURL(blob);
+    
+    }
+    catch{
+    
+    return "/CM_Pro/assets/images/profile.jpg";
+    
+    }
+    
+    }
 
   // =====================================
   // TIME AGO
@@ -198,7 +230,7 @@ const CMToast = {
   // RENDER
   // =====================================
 
-  render(opt) {
+  async render(opt){  
 
     const container = this.getContainer();
 
@@ -212,7 +244,7 @@ const CMToast = {
 
     const createdAt = opt.createdAt || new Date().toISOString();
 
-    const photo = opt.photo || this.getUserPhoto();
+    const photo = opt.photo || await this.getUserPhoto();
 
     const icon = this.getIcon(type);
 
