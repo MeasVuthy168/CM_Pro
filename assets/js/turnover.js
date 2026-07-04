@@ -1,6 +1,6 @@
 // ========================================
 // Average Debit Turnover
-// Step 3.1
+// Step 3.1 
 // ========================================
 
 const REPORT_SOURCE = "DebitTurnOver";
