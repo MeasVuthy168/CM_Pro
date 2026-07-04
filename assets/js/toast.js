@@ -456,84 +456,71 @@ passive:true
 // Listen Service Worker Message
 // ===========================================
 
-if("serviceWorker" in navigator){
+if ("serviceWorker" in navigator) {
 
-navigator.serviceWorker.addEventListener(
+    navigator.serviceWorker.ready.then(reg => {
 
-"message",
+        const receive = event => {
 
-(event)=>{
+            console.log("📩 Toast received:", event.data);
 
-const msg=event.data;
+            const msg = event.data;
 
-if(!msg)return;
+            if (!msg) return;
 
-// =====================================
-// Refresh Badge
-// =====================================
+            // Refresh Badge
+            if (msg.type === "REFRESH_BADGE") {
 
-if(msg.type==="REFRESH_BADGE"){
+                if (typeof loadNotificationBadge === "function") {
+                    loadNotificationBadge();
+                }
 
-if(typeof loadNotificationBadge==="function"){
+                return;
+            }
 
-loadNotificationBadge();
+            // Show Toast
+            if (msg.type === "NEW_NOTIFICATION") {
 
-}
+                const n = msg.notification || {};
 
-return;
+                CMToast.show({
 
-}
+                    type: n.type || "info",
 
-// =====================================
-// Show Toast
-// =====================================
+                    title: n.title || "Notification",
 
-if(msg.type==="NEW_NOTIFICATION"){
+                    message: n.message || "",
 
-const n=msg.notification || {};
+                    duration: 5000,
 
-CMToast.show({
+                    onDetail() {
 
-type:n.type || "info",
+                        location.href =
+                            n.url ||
+                            "/CM_Pro/pages/notifications/";
 
-title:n.title || "Notification",
+                    }
 
-message:n.message || "",
+                });
 
-uploadedBy:
+            }
 
-n.uploadedBy ||
+        };
 
-n.createdBy ||
+        navigator.serviceWorker.addEventListener(
+            "message",
+            receive
+        );
 
-n.username ||
+        if (navigator.serviceWorker.controller) {
 
-"System",
+            navigator.serviceWorker.controller.addEventListener(
+                "message",
+                receive
+            );
 
-createdAt:
+        }
 
-n.createdAt ||
-
-new Date().toISOString(),
-
-duration:5000,
-
-onDetail(){
-
-location.href=
-
-n.url ||
-
-"/CM_Pro/pages/notifications/";
-
-}
-
-});
-
-}
-
-}
-
-);
+    });
 
 }
