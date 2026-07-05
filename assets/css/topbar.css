@@ -195,10 +195,12 @@
 }
 
 /* =========================
-   PROFILE
+   PROFILE RING (wrapper — spins independently of the photo)
 ========================= */
 
-.topbar-profile{
+.topbar-profile-ring{
+
+    position:relative;
 
     width:52px;
 
@@ -206,33 +208,69 @@
 
     border-radius:50%;
 
-    object-fit:cover;
+    display:flex;
 
-    box-sizing:border-box;
+    align-items:center;
 
-    padding:3px;
+    justify-content:center;
 
-    border:none;
+    flex-shrink:0;
+
+}
+
+.topbar-profile-ring::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    border-radius:50%;
 
     background:
 
         conic-gradient(
 
-            from var(--spin-angle),
+            from 0deg,
 
-            #D4AF37,
+            transparent 0%,
 
-            #FFD700 25%,
+            transparent 55%,
 
-            #D4AF37 50%,
+            #D4AF37 70%,
 
-            #FFD700 75%,
+            #FFD700 85%,
 
-            #D4AF37 100%
+            transparent 100%
 
         );
 
-    animation:topbarProfileSpin 3s linear infinite;
+    animation:topbarProfileSpin 2.2s linear infinite;
+
+}
+
+/* =========================
+   PROFILE PHOTO
+========================= */
+
+.topbar-profile{
+
+    position:relative;
+
+    z-index:1;
+
+    width:44px;
+
+    height:44px;
+
+    border-radius:50%;
+
+    object-fit:cover;
+
+    background:#fff;
+
+    border:2px solid #002D6B;
 
 }
 
@@ -300,13 +338,19 @@
 
     }
 
-    .topbar-profile{
+    .topbar-profile-ring{
 
         width:46px;
 
         height:46px;
 
-        padding:2px;
+    }
+
+    .topbar-profile{
+
+        width:38px;
+
+        height:38px;
 
     }
 
