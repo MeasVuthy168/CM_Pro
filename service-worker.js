@@ -1,11 +1,10 @@
-
 console.log("🔥 SERVICE WORKER LOADED");
 
 /* =========================================================
    CM_Pro – Production Service Worker
 ========================================================= */
 
-const SW_VERSION = "v10";
+const SW_VERSION = "v11";
 
 const CACHE_NAME = `cm-pro-cache-${SW_VERSION}`;
 
@@ -323,6 +322,16 @@ function buildOptions(data){
 // =========================================================
 // PUSH
 // =========================================================
+// IMPORTANT: event.data (PushMessageData) must be read EXACTLY
+// ONCE. Chrome/Android tolerates calling .text()/.json() on it
+// multiple times, but WebKit's push implementation (Safari 16.4+)
+// can throw or return empty on a second/third read of the same
+// payload — similar to how a fetch Response body can only be
+// consumed once. Reading it twice on iOS can throw *before*
+// event.waitUntil() is ever reached, silently skipping both the
+// system notification and the postMessage to the page (which is
+// what drives the in-app toast). Fix: read the raw text once,
+// then parse that string in plain JS from then on.
 
 self.addEventListener(
 
@@ -332,30 +341,31 @@ self.addEventListener(
 
         console.log("📩 PUSH RECEIVED");
 
-        if(event.data){
-
-            console.log(
-                "📦 PUSH DATA:",
-                event.data.text()
-            );
-
-        }
-
-        let data = {};
+        let rawText = "";
 
         try{
 
-            data = event.data
-                ? event.data.json()
-                : {};
+            rawText = event.data
+                ? event.data.text()
+                : "";
 
-        }catch{
+        }catch(err){
 
-            data = toJSONSafe(
-                event.data?.text() || "{}"
+            console.error(
+                "⚠️ Failed to read push payload:",
+                err
             );
 
+            rawText = "";
+
         }
+
+        console.log(
+            "📦 PUSH DATA (raw):",
+            rawText
+        );
+
+        const data = toJSONSafe(rawText);
 
         const title =
 
@@ -368,81 +378,92 @@ self.addEventListener(
 
         event.waitUntil(
 
-    Promise.all([
+            Promise.all([
 
-        self.registration
-            .showNotification(
-                title,
-                options
-            ),
+                self.registration
+                    .showNotification(
+                        title,
+                        options
+                    ),
 
-        self.clients.matchAll({
+                self.clients.matchAll({
 
-            type:"window",
+                    type:"window",
 
-            includeUncontrolled:true
+                    includeUncontrolled:true
 
-        })
+                })
 
-        .then(clients=>{
+                .then(clients=>{
 
-            clients.forEach(client=>{
-            
-                // Refresh badge
-                client.postMessage({
-            
-                    type:"REFRESH_BADGE"
-            
-                });
-            
-                // Show Toast immediately
-                client.postMessage({
-            
-                    type:"NEW_NOTIFICATION",
-            
-                    notification:{
-            
-                        title:data.title || "Notification",
-            
-                        message:data.body || data.message || "",
-            
-                        type:data.type || "info",
-            
-                        uploadedBy:
-            
-                            data.createdBy ||
-            
-                            data.uploadedBy ||
-            
-                            data.username ||
-            
-                            data.fullname ||
-            
-                            "System",
-            
-                        createdAt:
-            
-                            data.createdAt ||
-            
-                            new Date().toISOString(),
-            
-                        url:
-            
-                            data.url ||
-            
-                            "/CM_Pro/pages/notifications/"
-            
-                    }
-            
-                });
-            
-            });
+                    clients.forEach(client=>{
 
-        })
+                        // Refresh badge
+                        client.postMessage({
 
-    ])
+                            type:"REFRESH_BADGE"
 
-);
+                        });
+
+                        // Show Toast immediately
+                        client.postMessage({
+
+                            type:"NEW_NOTIFICATION",
+
+                            notification:{
+
+                                title:data.title || "Notification",
+
+                                message:data.body || data.message || "",
+
+                                type:data.type || "info",
+
+                                uploadedBy:
+
+                                    data.createdBy ||
+
+                                    data.uploadedBy ||
+
+                                    data.username ||
+
+                                    data.fullname ||
+
+                                    "System",
+
+                                createdAt:
+
+                                    data.createdAt ||
+
+                                    new Date().toISOString(),
+
+                                url:
+
+                                    data.url ||
+
+                                    "/CM_Pro/pages/notifications/"
+
+                            }
+
+                        });
+
+                    });
+
+                })
+
+            ]).catch(err=>{
+
+                // Never let a single failure (e.g. showNotification
+                // permission, or a client that vanished) silently
+                // eat the entire push event with no trace.
+
+                console.error(
+                    "⚠️ Push handling failed:",
+                    err
+                );
+
+            })
+
+        );
 
     }
 
