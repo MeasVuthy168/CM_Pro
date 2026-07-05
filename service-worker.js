@@ -513,11 +513,15 @@ self.addEventListener(
         const options =
             buildOptions(data);
 
-        // Unique id shared across the live-delivery payload and
-        // the IndexedDB catch-up entry, so the page can tell them
-        // apart and avoid ever showing the same notification twice.
+        // Prefer the real MongoDB _id sent by the server, so the
+        // page can trust this id for mark-read/delete. Fall back to
+        // a synthetic id only for the IndexedDB catch-up bookkeeping
+        // in the rare case an older payload doesn't carry one.
 
         const notificationId =
+
+            data._id ||
+
             `n_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 
         const notificationPayload = {
@@ -529,6 +533,10 @@ self.addEventListener(
             message:data.body || data.message || "",
 
             type:data.type || "info",
+
+            targetType:data.targetType || "all",
+
+            targetValue:data.targetValue || "",
 
             uploadedBy:
 
