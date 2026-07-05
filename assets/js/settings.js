@@ -184,17 +184,25 @@ async function loadUserProfile(){
             const img =
                 document.getElementById("settingPhoto");
 
+            const fallback =
+                "/CM_Pro/assets/images/default-user.png";
+
             // set onerror BEFORE src so a fast/cached failure
-            // can never slip through the gap
+            // can never slip through the gap.
+            // guarded so it can't loop forever if the fallback
+            // image itself is missing/broken.
             img.onerror = function(){
 
-                this.src =
-                "/CM_Pro/assets/images/default-user.png";
+                if(this.src.indexOf(fallback) !== -1) return;
+
+                this.onerror = null;
+
+                this.src = fallback;
 
             };
 
             img.src =
-                `${API.BASE_URL}/assets/user-photo/${user.username}?t=${Date.now()}`;
+                `${API.BASE_URL}/assets/user-photo/${user.username}`;
 
         }
 
