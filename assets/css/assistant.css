@@ -1,0 +1,124 @@
+/* =========================
+   Assistant Box
+========================= */
+
+.assistant-box{
+
+    margin-top:28px;
+
+    background:#003B8B;
+
+    border:1px solid #D4AF37;
+
+    border-radius:24px;
+
+    padding:18px;
+
+    color:#FFD700;
+
+    display:flex;
+
+    gap:14px;
+
+    align-items:center;
+
+    box-shadow:
+        0 4px 12px rgba(0,0,0,0.2);
+
+}
+
+.assistant-icon-wrap{
+
+    position:relative;
+
+    width:78px;
+
+    height:88px;
+
+    flex-shrink:0;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+}
+
+
+/* =========================
+   ROBOT ICON
+   The dance itself (arms/head/body) is now animated inside
+   robot.svg's own <style> block, since it's loaded via a plain
+   <img> tag and outer page CSS can't reach into it. This outer
+   rule just sizes the image and adds a whole-image glow pulse,
+   which filter:drop-shadow can still do on a plain <img>.
+========================= */
+
+.assistant-icon{
+
+    position:relative;
+
+    z-index:1;
+
+    width:78px;
+
+    height:88px;
+
+    object-fit:contain;
+
+    animation:robotGlow 1.1s ease-in-out infinite;
+
+}
+
+/* =========================
+   WELCOME TEXT
+   Fades/rises in once on load, then a soft gold shimmer sweeps
+   across it on a loop — like light catching foil. background-clip:
+   text needs a solid-color fallback first for browsers that don't
+   support it, so the message is never invisible.
+========================= */
+
+.assistant-text{
+
+    flex:1;
+
+    line-height:1.6;
+
+    font-size:17px;
+
+    color:#FFD700;
+
+    background:
+
+        linear-gradient(
+
+            90deg,
+
+            #FFD700 0%,
+
+            #FFD700 35%,
+
+            #fff8dc 50%,
+
+            #FFD700 65%,
+
+            #FFD700 100%
+
+        );
+
+    background-size:220% auto;
+
+    -webkit-background-clip:text;
+
+    background-clip:text;
+
+    -webkit-text-fill-color:transparent;
+
+    animation:
+
+        assistantTextEntrance .6s ease-out both,
+
+        assistantTextShimmer 3.5s linear .6s infinite;
+
+}
