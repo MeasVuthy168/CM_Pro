@@ -130,19 +130,33 @@ const CMToast = {
   // USER PHOTO
   // =====================================
 
-  async getUserPhoto() {
+  async getUserPhoto(username) {
 
     try {
 
-      const user = JSON.parse(
+      let targetUsername = username;
 
-        localStorage.getItem("loggedInUser") ||
+      // No specific uploader given — fall back to the
+      // currently logged-in viewer (e.g. manual test toasts).
 
-        "{}"
+      if (!targetUsername) {
 
-      );
+        const user = JSON.parse(
 
-      if (!user.username) {
+          localStorage.getItem("loggedInUser") ||
+
+          "{}"
+
+        );
+
+        targetUsername = user.username;
+
+      }
+
+      // "System" isn't a real account with a photo — skip
+      // the network call entirely and use the default image.
+
+      if (!targetUsername || targetUsername === "System") {
 
         return "/CM_Pro/assets/images/profile.jpg";
 
@@ -152,7 +166,7 @@ const CMToast = {
 
       const response = await fetch(
 
-        `${API.BASE_URL}/assets/user-photo/${encodeURIComponent(user.username)}`,
+        `${API.BASE_URL}/assets/user-photo/${encodeURIComponent(targetUsername)}`,
 
         {
 
@@ -193,13 +207,13 @@ const CMToast = {
   // the toast never appears at all, with no console error. This
   // wrapper guarantees a result within timeoutMs no matter what.
 
-  async getUserPhotoSafe(timeoutMs = 1500) {
+  async getUserPhotoSafe(username, timeoutMs = 1500) {
 
     try {
 
       return await Promise.race([
 
-        this.getUserPhoto(),
+        this.getUserPhoto(username),
 
         new Promise((resolve) => {
 
@@ -282,7 +296,7 @@ const CMToast = {
 
     const createdAt = opt.createdAt || new Date().toISOString();
 
-    const photo = opt.photo || await this.getUserPhotoSafe();
+    const photo = opt.photo || await this.getUserPhotoSafe(opt.uploadedBy);
 
     const icon = this.getIcon(type);
 
@@ -650,6 +664,18 @@ async function cmFlushPendingNotifications() {
 
   for (const n of pending) {
 
+    if (n.id && cmShownNotificationIds.has(n.id)) {
+
+      // Already shown live in this page session — just clean up.
+
+      await cmIdbDeletePending(n.id);
+
+      continue;
+
+    }
+
+    if (n.id) cmShownNotificationIds.add(n.id);
+
     await CMToast.show({
 
       type: n.type || "info",
@@ -692,6 +718,13 @@ if (document.readyState === "loading") {
 // Service Worker Listener
 // Version 3.0
 // ===========================================
+// A Set of notification ids already shown, so that if a
+// notification is ever delivered more than once (e.g. both
+// BroadcastChannel and the fallback message listener fire, or
+// a live delivery races the IndexedDB flush), it can only ever
+// render as a toast once per page session.
+
+const cmShownNotificationIds = new Set();
 
 function handleSWMessage(msg) {
 
@@ -735,6 +768,23 @@ function handleSWMessage(msg) {
 
     const n = msg.notification || {};
 
+    if (n.id) {
+
+      if (cmShownNotificationIds.has(n.id)) {
+
+        // Already shown once this session — skip the duplicate,
+        // but still clean up its IndexedDB catch-up copy.
+
+        cmIdbDeletePending(n.id);
+
+        return;
+
+      }
+
+      cmShownNotificationIds.add(n.id);
+
+    }
+
     CMToast.show({
 
       type: n.type || "info",
@@ -763,6 +813,7 @@ function handleSWMessage(msg) {
     // doesn't show again as a "missed" notification on next load.
 
     cmIdbDeletePending(n.id);
+
 
   }
 
