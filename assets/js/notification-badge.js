@@ -151,7 +151,9 @@ document.addEventListener(
 );
 
 // =========================================================
-// SERVICE WORKER REALTIME
+// SERVICE WORKER REALTIME (legacy path — kept for safety,
+// but the SW no longer sends REFRESH_BADGE this way; see
+// BROADCAST CHANNEL section below for the real live path)
 // =========================================================
 
 if(
@@ -178,7 +180,7 @@ if(
 
                 console.log(
 
-                    "Realtime Badge Refresh"
+                    "Realtime Badge Refresh (SW message)"
 
                 );
 
@@ -189,5 +191,78 @@ if(
         }
 
     );
+
+}
+
+// =========================================================
+// BROADCAST CHANNEL (primary realtime path)
+//
+// The service worker posts REFRESH_BADGE / NEW_NOTIFICATION
+// on this channel for every push it receives — this is what
+// actually needs to be listened to for the badge to update
+// live. It also lets any other page (e.g. an upload page)
+// ping this tab the instant an upload finishes, without
+// waiting for the web-push round trip at all.
+// =========================================================
+
+if("BroadcastChannel" in window){
+
+    const cmProChannel =
+        new BroadcastChannel("cm-pro-notifications");
+
+    cmProChannel.addEventListener(
+
+        "message",
+
+        event=>{
+
+            if(
+
+                event.data?.type === "REFRESH_BADGE" ||
+
+                event.data?.type === "NEW_NOTIFICATION"
+
+            ){
+
+                console.log(
+
+                    "Realtime Badge Refresh (BroadcastChannel)"
+
+                );
+
+                loadNotificationBadge();
+
+            }
+
+        }
+
+    );
+
+    // Call window.CMProNotify.ping() right after any successful
+    // upload (or other action that creates a notification) to
+    // refresh the badge instantly in this tab and every other
+    // open tab — no need to wait for the push round trip.
+    window.CMProNotify = {
+
+        ping(){
+
+            try{
+
+                cmProChannel.postMessage({
+                    type:"REFRESH_BADGE"
+                });
+
+            }catch(err){
+
+                console.error(
+                    "CMProNotify ping failed:",
+                    err
+                );
+
+            }
+
+        }
+
+    };
 
 }
