@@ -42,6 +42,64 @@ window.location.replace(
 }
 
 // =========================================================
+// CURRENT USER (from token, for optimistic-render filtering
+// only — the server remains the source of truth on every
+// real fetch/mark-read/delete call)
+// =========================================================
+
+function decodeJwtPayload(token){
+
+    try{
+
+        const base64 =
+            token.split(".")[1];
+
+        return JSON.parse(
+            atob(
+                base64
+                .replace(/-/g,"+")
+                .replace(/_/g,"/")
+            )
+        );
+
+    }catch(err){
+
+        return {};
+
+    }
+
+}
+
+const currentUser =
+    decodeJwtPayload(notificationToken);
+
+// Mirrors the server's canUserSeeNotification() — used only to
+// decide whether to optimistically render a live push locally;
+// the reconcile fetch afterwards always reflects the real,
+// server-enforced visibility.
+function canSeeNotificationLocally(notify){
+
+    const targetType =
+        String(notify?.targetType || "all").toLowerCase();
+
+    const targetValue =
+        String(notify?.targetValue || "").trim().toLowerCase();
+
+    const username =
+        String(currentUser?.username || "").trim().toLowerCase();
+
+    const role =
+        String(currentUser?.role || "user").trim().toLowerCase();
+
+    if(targetType === "all") return true;
+    if(targetType === "username") return username && username === targetValue;
+    if(targetType === "role") return role && role === targetValue;
+
+    return false;
+
+}
+
+// =========================================================
 // LOAD
 // =========================================================
 
@@ -714,10 +772,15 @@ loadNotifications();
 // =========================================================
 // BROADCAST CHANNEL (primary realtime path)
 //
-// The service worker posts REFRESH_BADGE / NEW_NOTIFICATION
-// on this channel the moment a push arrives — listening here
-// is what makes this list update live instead of waiting up
-// to 30s for the next poll.
+// NEW_NOTIFICATION now carries the real Mongo _id (see server
+// + service-worker changes), so we can render it instantly —
+// toast speed — instead of waiting for a fetch. A short
+// reconcile fetch follows a couple seconds later to silently
+// correct anything the optimistic render couldn't know about
+// (e.g. already read on another device, deleted since, etc).
+// REFRESH_BADGE alone (no notification payload, e.g. triggered
+// by mark-all-read on another device) has nothing to render
+// optimistically, so it just triggers the reconcile directly.
 // =========================================================
 
 if("BroadcastChannel" in window){
@@ -725,19 +788,97 @@ if("BroadcastChannel" in window){
     const cmProChannel =
         new BroadcastChannel("cm-pro-notifications");
 
+    let reconcileTimer = null;
+
+    function scheduleReconcile(){
+
+        clearTimeout(reconcileTimer);
+
+        reconcileTimer = setTimeout(()=>{
+
+            loadNotifications();
+
+        },2000);
+
+    }
+
+    function renderOptimisticCard(notification){
+
+        if(!notification || !notification.id) return;
+
+        // Never trust a push targeted at someone else, even
+        // just for the optimistic render.
+        if(!canSeeNotificationLocally(notification)) return;
+
+        // Already on screen (e.g. reconcile beat the broadcast) —
+        // don't duplicate it.
+        if(
+
+            notifyList.querySelector(
+                `[data-id="${notification.id}"]`
+            )
+
+        ) return;
+
+        emptyBox.style.display = "none";
+
+        const item = {
+
+            _id:notification.id,
+
+            title:notification.title,
+
+            message:notification.message,
+
+            type:notification.type,
+
+            createdBy:notification.uploadedBy,
+
+            createdAt:notification.createdAt,
+
+            url:notification.url,
+
+            isRead:false
+
+        };
+
+        notifyList.insertAdjacentHTML(
+
+            "afterbegin",
+
+            createNotificationCard(item)
+
+        );
+
+        attachCardEvents();
+
+        enableSwipeCards();
+
+        updateSummary();
+
+    }
+
     cmProChannel.addEventListener(
 
         "message",
 
         event=>{
 
-            if(
+            if(event.data?.type === "NEW_NOTIFICATION"){
 
-                event.data?.type === "REFRESH_BADGE" ||
+                console.log(
 
-                event.data?.type === "NEW_NOTIFICATION"
+                    "Realtime notification (instant render, BroadcastChannel)"
 
-            ){
+                );
+
+                renderOptimisticCard(
+                    event.data.notification
+                );
+
+                scheduleReconcile();
+
+            }else if(event.data?.type === "REFRESH_BADGE"){
 
                 console.log(
 
@@ -745,7 +886,7 @@ if("BroadcastChannel" in window){
 
                 );
 
-                loadNotifications();
+                scheduleReconcile();
 
             }
 
