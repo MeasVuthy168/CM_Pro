@@ -13,10 +13,10 @@
 
   box.style.cssText = `
     position:fixed;
-    bottom:0;
+    bottom:44px;
     left:0;
     right:0;
-    max-height:45vh;
+    max-height:35vh;
     overflow-y:auto;
     background:rgba(0,0,0,0.9);
     color:#0f0;
@@ -27,13 +27,18 @@
     padding:8px;
     white-space:pre-wrap;
     word-break:break-word;
+    display:none;
   `;
+
+  let expanded = false;
 
   document.addEventListener("DOMContentLoaded", () => {
 
     document.body.appendChild(box);
 
     addButton();
+
+    addToggle();
 
   });
 
@@ -150,7 +155,7 @@
 
     btn.style.cssText = `
       position:fixed;
-      bottom:calc(45vh + 8px);
+      top:8px;
       right:8px;
       z-index:999999;
       padding:8px 12px;
@@ -192,6 +197,49 @@
     });
 
     document.body.appendChild(btn);
+
+  }
+
+  // ========================
+  // Collapse/expand toggle
+  // ========================
+  // Log panel starts hidden so it never covers the bottom
+  // nav bar (e.g. blocking access to Settings). Tap the
+  // small pill to show/hide it on demand.
+
+  function addToggle() {
+
+    const toggle = document.createElement("button");
+
+    toggle.id = "ios-debug-toggle";
+
+    toggle.textContent = "🐞 Log";
+
+    toggle.style.cssText = `
+      position:fixed;
+      top:8px;
+      left:8px;
+      z-index:999999;
+      padding:6px 10px;
+      background:#333;
+      color:#0f0;
+      border:1px solid #666;
+      border-radius:14px;
+      font-size:11px;
+      font-family:monospace;
+    `;
+
+    toggle.addEventListener("click", () => {
+
+      expanded = !expanded;
+
+      box.style.display = expanded ? "block" : "none";
+
+      toggle.textContent = expanded ? "🐞 Hide" : "🐞 Log";
+
+    });
+
+    document.body.appendChild(toggle);
 
   }
 
