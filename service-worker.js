@@ -1,3 +1,5 @@
+const CM_PRO_CHANNEL = new BroadcastChannel("cm-pro-notifications");
+
 console.log("🔥 SERVICE WORKER LOADED");
 
 /* =========================================================
@@ -342,12 +344,34 @@ self.addEventListener(
         console.log("📩 PUSH RECEIVED");
 
         // ==================================================
-        // DIAGNOSTIC PING #1 — fires as early as humanly
-        // possible, before ANY parsing/logic runs. If this
-        // never shows up in the on-page debug log on iOS,
-        // the push event itself isn't reaching the SW at all
-        // (subscription/VAPID/OS-level issue) — not a bug in
-        // this file.
+        // DIAGNOSTIC PING #1 (BroadcastChannel) — this does
+        // NOT depend on clients.matchAll() finding the page,
+        // so it should reach the page even if that lookup is
+        // failing on iOS. If THIS shows up but the old
+        // matchAll-based ping never did, that confirms
+        // matchAll() is the broken link on this device.
+        // ==================================================
+
+        try{
+
+            CM_PRO_CHANNEL.postMessage({
+
+                type:"PUSH_DEBUG",
+
+                stage:"push-event-fired (broadcast)",
+
+                time:new Date().toISOString()
+
+            });
+
+        }catch(err){
+
+            console.error("BroadcastChannel post failed:", err);
+
+        }
+
+        // ==================================================
+        // DIAGNOSTIC PING #1b (old method, kept for comparison)
         // ==================================================
 
         event.waitUntil(
@@ -413,6 +437,69 @@ self.addEventListener(
         const options =
             buildOptions(data);
 
+        const notificationPayload = {
+
+            title:data.title || "Notification",
+
+            message:data.body || data.message || "",
+
+            type:data.type || "info",
+
+            uploadedBy:
+
+                data.createdBy ||
+
+                data.uploadedBy ||
+
+                data.username ||
+
+                data.fullname ||
+
+                "System",
+
+            createdAt:
+
+                data.createdAt ||
+
+                new Date().toISOString(),
+
+            url:
+
+                data.url ||
+
+                "/CM_Pro/pages/notifications/"
+
+        };
+
+        // ==================================================
+        // Send the real messages via BroadcastChannel FIRST.
+        // This is the primary delivery path now — it doesn't
+        // depend on clients.matchAll() finding the page, which
+        // appears to be unreliable on iOS.
+        // ==================================================
+
+        try{
+
+            CM_PRO_CHANNEL.postMessage({
+
+                type:"REFRESH_BADGE"
+
+            });
+
+            CM_PRO_CHANNEL.postMessage({
+
+                type:"NEW_NOTIFICATION",
+
+                notification:notificationPayload
+
+            });
+
+        }catch(err){
+
+            console.error("BroadcastChannel notify failed:", err);
+
+        }
+
         event.waitUntil(
 
             Promise.all([
@@ -458,53 +545,22 @@ self.addEventListener(
 
                     });
 
+                    // Kept as a fallback delivery path in case
+                    // matchAll() does find clients on some devices.
+
                     clients.forEach(client=>{
 
-                        // Refresh badge
                         client.postMessage({
 
                             type:"REFRESH_BADGE"
 
                         });
 
-                        // Show Toast immediately
                         client.postMessage({
 
                             type:"NEW_NOTIFICATION",
 
-                            notification:{
-
-                                title:data.title || "Notification",
-
-                                message:data.body || data.message || "",
-
-                                type:data.type || "info",
-
-                                uploadedBy:
-
-                                    data.createdBy ||
-
-                                    data.uploadedBy ||
-
-                                    data.username ||
-
-                                    data.fullname ||
-
-                                    "System",
-
-                                createdAt:
-
-                                    data.createdAt ||
-
-                                    new Date().toISOString(),
-
-                                url:
-
-                                    data.url ||
-
-                                    "/CM_Pro/pages/notifications/"
-
-                            }
+                            notification:notificationPayload
 
                         });
 
