@@ -31,9 +31,9 @@
 
     position:relative;
 
-    width:64px;
+    width:48px;
 
-    height:64px;
+    height:48px;
 
     flex-shrink:0;
 
@@ -90,9 +90,9 @@
 
     z-index:1;
 
-    width:64px;
+    width:48px;
 
-    height:64px;
+    height:48px;
 
     object-fit:contain;
 
