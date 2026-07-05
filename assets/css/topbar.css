@@ -206,11 +206,33 @@
 
     border-radius:50%;
 
-    border:2px solid #D4AF37;
-
     object-fit:cover;
 
-    background:#fff;
+    box-sizing:border-box;
+
+    padding:3px;
+
+    border:none;
+
+    background:
+
+        conic-gradient(
+
+            from var(--spin-angle),
+
+            #D4AF37,
+
+            #FFD700 25%,
+
+            #D4AF37 50%,
+
+            #FFD700 75%,
+
+            #D4AF37 100%
+
+        );
+
+    animation:topbarProfileSpin 3s linear infinite;
 
 }
 
@@ -283,6 +305,8 @@
         width:46px;
 
         height:46px;
+
+        padding:2px;
 
     }
 
