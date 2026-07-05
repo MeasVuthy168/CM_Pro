@@ -11,7 +11,7 @@
 
 position:fixed;
 
-top:70px;
+top:max(70px, calc(env(safe-area-inset-top) + 20px));
 
 left:50%;
 
@@ -640,7 +640,7 @@ background:#475569;
 
 .cm-toast-container{
 
-top:62px;
+top:max(62px, calc(env(safe-area-inset-top) + 16px));
 
 width:96%;
 
