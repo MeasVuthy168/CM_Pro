@@ -5,28 +5,16 @@
 
 /* =========================
    TOPBAR PROFILE — SPINNING RING
-   Registers --spin-angle as a real <angle> so the browser can
-   smoothly interpolate it frame-by-frame (plain custom properties
-   don't animate smoothly on their own — they jump). Unsupported
-   browsers (older Safari) just fall back to a static gold ring,
-   no visible glitch, since 0deg and 360deg render identically.
+   Plain transform:rotate() on a wrapper element behind the photo
+   (see .topbar-profile-ring in topbar.css). No @property dependency,
+   so this works on every browser/WebView, no exceptions.
 ========================= */
-
-@property --spin-angle{
-
-    syntax:'<angle>';
-
-    inherits:false;
-
-    initial-value:0deg;
-
-}
 
 @keyframes topbarProfileSpin{
 
     to{
 
-        --spin-angle:360deg;
+        transform:rotate(360deg);
 
     }
 
@@ -60,7 +48,7 @@
 
 @media(prefers-reduced-motion:reduce){
 
-    .topbar-profile,
+    .topbar-profile-ring::before,
     .assistant-icon{
 
         animation:none !important;
