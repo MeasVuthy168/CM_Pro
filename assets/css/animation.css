@@ -1,1 +1,70 @@
+/* =========================================================
+   SHARED ANIMATIONS
+   Used by: topbar.css (.topbar-profile), assistant.css (.assistant-icon)
+========================================================= */
 
+/* =========================
+   TOPBAR PROFILE — SPINNING RING
+   Registers --spin-angle as a real <angle> so the browser can
+   smoothly interpolate it frame-by-frame (plain custom properties
+   don't animate smoothly on their own — they jump). Unsupported
+   browsers (older Safari) just fall back to a static gold ring,
+   no visible glitch, since 0deg and 360deg render identically.
+========================= */
+
+@property --spin-angle{
+
+    syntax:'<angle>';
+
+    inherits:false;
+
+    initial-value:0deg;
+
+}
+
+@keyframes topbarProfileSpin{
+
+    to{
+
+        --spin-angle:360deg;
+
+    }
+
+}
+
+/* =========================
+   ASSISTANT ROBOT — IDLE FLOAT
+========================= */
+
+@keyframes robotFloat{
+
+    0%,
+    100%{
+
+        transform:translateY(0) rotate(0deg);
+
+    }
+
+    50%{
+
+        transform:translateY(-6px) rotate(-4deg);
+
+    }
+
+}
+
+/* =========================
+   ACCESSIBILITY
+   Respect users who've asked the OS for reduced motion.
+========================= */
+
+@media(prefers-reduced-motion:reduce){
+
+    .topbar-profile,
+    .assistant-icon{
+
+        animation:none !important;
+
+    }
+
+}
