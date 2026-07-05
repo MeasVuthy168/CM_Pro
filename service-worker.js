@@ -3,7 +3,7 @@ const CM_PRO_CHANNEL = new BroadcastChannel("cm-pro-notifications");
 console.log("🔥 SERVICE WORKER LOADED");
 
 /* =========================================================
-   CM_Pro – Production Service Worker
+   CM_Pro – Production Service Worker 
 ========================================================= */
 
 const SW_VERSION = "v20";
