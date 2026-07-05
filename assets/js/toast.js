@@ -185,6 +185,43 @@ const CMToast = {
   },
 
   // =====================================
+  // USER PHOTO (timeout-guarded)
+  // =====================================
+  // iOS can silently hang the fetch above (throttled/backgrounded
+  // network stack) instead of rejecting it. Since render() awaits
+  // this before the toast even exists in the DOM, a hang here means
+  // the toast never appears at all, with no console error. This
+  // wrapper guarantees a result within timeoutMs no matter what.
+
+  async getUserPhotoSafe(timeoutMs = 1500) {
+
+    try {
+
+      return await Promise.race([
+
+        this.getUserPhoto(),
+
+        new Promise((resolve) => {
+
+          setTimeout(() => {
+
+            resolve("/CM_Pro/assets/images/profile.jpg");
+
+          }, timeoutMs);
+
+        })
+
+      ]);
+
+    } catch {
+
+      return "/CM_Pro/assets/images/profile.jpg";
+
+    }
+
+  },
+
+  // =====================================
   // TIME AGO
   // =====================================
 
@@ -231,6 +268,8 @@ const CMToast = {
 
   async render(opt) {
 
+   try {
+
     const container = this.getContainer();
 
     const type = opt.type || "info";
@@ -243,7 +282,7 @@ const CMToast = {
 
     const createdAt = opt.createdAt || new Date().toISOString();
 
-    const photo = opt.photo || await this.getUserPhoto();
+    const photo = opt.photo || await this.getUserPhotoSafe();
 
     const icon = this.getIcon(type);
 
@@ -443,6 +482,20 @@ const CMToast = {
       { passive: true }
 
     );
+
+   } catch (err) {
+
+    // Any unexpected failure (DOM, animation, gesture APIs, etc.)
+    // must never leave the queue stuck — log it and move on so
+    // one bad toast can't silently block every toast after it.
+
+    console.error("CMToast render failed:", err);
+
+    this.busy = false;
+
+    this.next();
+
+   }
 
   },
 
