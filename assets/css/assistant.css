@@ -27,16 +27,76 @@
 
 }
 
-.assistant-icon{
+.assistant-icon-wrap{
 
-    width:55px;
-    height:55px;
+    position:relative;
 
-    object-fit:contain;
+    width:64px;
+
+    height:64px;
 
     flex-shrink:0;
 
-    animation:robotFloat 3s ease-in-out infinite;
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+}
+
+/* Soft pulsing glow behind the robot — reads as "powered on",
+   not just decorative motion. */
+.assistant-icon-wrap::after{
+
+    content:"";
+
+    position:absolute;
+
+    inset:-8px;
+
+    border-radius:50%;
+
+    background:
+
+        radial-gradient(
+
+            circle,
+
+            rgba(255,215,0,.4),
+
+            transparent 70%
+
+        );
+
+    animation:robotAura 3.2s ease-in-out infinite;
+
+    z-index:0;
+
+}
+
+/* =========================
+   ROBOT ICON
+   The dance itself (arms/head/body) is now animated inside
+   robot.svg's own <style> block, since it's loaded via a plain
+   <img> tag and outer page CSS can't reach into it. This outer
+   rule just sizes the image and adds a whole-image glow pulse,
+   which filter:drop-shadow can still do on a plain <img>.
+========================= */
+
+.assistant-icon{
+
+    position:relative;
+
+    z-index:1;
+
+    width:64px;
+
+    height:64px;
+
+    object-fit:contain;
+
+    animation:robotGlow 1.1s ease-in-out infinite;
 
 }
 
