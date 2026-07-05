@@ -341,6 +341,43 @@ self.addEventListener(
 
         console.log("📩 PUSH RECEIVED");
 
+        // ==================================================
+        // DIAGNOSTIC PING #1 — fires as early as humanly
+        // possible, before ANY parsing/logic runs. If this
+        // never shows up in the on-page debug log on iOS,
+        // the push event itself isn't reaching the SW at all
+        // (subscription/VAPID/OS-level issue) — not a bug in
+        // this file.
+        // ==================================================
+
+        event.waitUntil(
+
+            self.clients.matchAll({
+
+                type:"window",
+
+                includeUncontrolled:true
+
+            }).then(clients=>{
+
+                clients.forEach(client=>{
+
+                    client.postMessage({
+
+                        type:"PUSH_DEBUG",
+
+                        stage:"push-event-fired",
+
+                        time:new Date().toISOString()
+
+                    });
+
+                });
+
+            }).catch(()=>{})
+
+        );
+
         let rawText = "";
 
         try{
@@ -395,6 +432,31 @@ self.addEventListener(
                 })
 
                 .then(clients=>{
+
+                    // ==================================================
+                    // DIAGNOSTIC PING #2 — confirms how many window
+                    // clients the SW can actually see on this device.
+                    // If this reports 0 clients on iOS while the app
+                    // is clearly open, that's the real bug: iOS is not
+                    // handing this SW any controlled/uncontrolled
+                    // window clients to message.
+                    // ==================================================
+
+                    clients.forEach(client=>{
+
+                        client.postMessage({
+
+                            type:"PUSH_DEBUG",
+
+                            stage:"clients-found",
+
+                            count:clients.length,
+
+                            time:new Date().toISOString()
+
+                        });
+
+                    });
 
                     clients.forEach(client=>{
 
