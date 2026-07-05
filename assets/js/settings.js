@@ -1,4 +1,3 @@
-
 // =========================
 // COMPONENT LOADER
 // =========================
@@ -185,15 +184,17 @@ async function loadUserProfile(){
             const img =
                 document.getElementById("settingPhoto");
 
-            img.src =
-                `${API.BASE_URL}/assets/user-photo/${user.username}`;
-
+            // set onerror BEFORE src so a fast/cached failure
+            // can never slip through the gap
             img.onerror = function(){
 
                 this.src =
                 "/CM_Pro/assets/images/default-user.png";
 
             };
+
+            img.src =
+                `${API.BASE_URL}/assets/user-photo/${user.username}?t=${Date.now()}`;
 
         }
 
@@ -212,6 +213,32 @@ window.addEventListener(
     loadUserProfile
 
 );
+
+// =========================
+// FIX: RELOAD PHOTO ON BACK / BFCACHE RESTORE
+// =========================
+// When navigating back from another page, the browser may restore
+// this page from bfcache without firing "load" again. If the photo
+// request was aborted or never completed before navigating away,
+// it stays broken. This re-checks and re-fetches it when needed.
+
+window.addEventListener("pageshow", function(event){
+
+    const img = document.getElementById("settingPhoto");
+
+    if(!img) return;
+
+    const broken =
+        !img.complete ||
+        img.naturalWidth === 0;
+
+    if(event.persisted || broken){
+
+        loadUserProfile();
+
+    }
+
+});
 
 // =========================
 // ACTIVE NAV
