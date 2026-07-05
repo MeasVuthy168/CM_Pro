@@ -1,4 +1,3 @@
-
 // =========================================================
 // ELEMENTS
 // =========================================================
@@ -711,6 +710,50 @@ setInterval(()=>{
 loadNotifications();
 
 },30000);
+
+// =========================================================
+// BROADCAST CHANNEL (primary realtime path)
+//
+// The service worker posts REFRESH_BADGE / NEW_NOTIFICATION
+// on this channel the moment a push arrives — listening here
+// is what makes this list update live instead of waiting up
+// to 30s for the next poll.
+// =========================================================
+
+if("BroadcastChannel" in window){
+
+    const cmProChannel =
+        new BroadcastChannel("cm-pro-notifications");
+
+    cmProChannel.addEventListener(
+
+        "message",
+
+        event=>{
+
+            if(
+
+                event.data?.type === "REFRESH_BADGE" ||
+
+                event.data?.type === "NEW_NOTIFICATION"
+
+            ){
+
+                console.log(
+
+                    "Realtime notification list refresh (BroadcastChannel)"
+
+                );
+
+                loadNotifications();
+
+            }
+
+        }
+
+    );
+
+}
 
 // =========================================================
 // INIT
