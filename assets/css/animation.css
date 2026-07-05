@@ -1,0 +1,108 @@
+/* =========================================================
+   SHARED ANIMATIONS
+   Used by: topbar.css (.topbar-profile), assistant.css (.assistant-icon, .assistant-text)
+========================================================= */
+
+/* =========================
+   TOPBAR PROFILE — SPINNING RING
+   Plain transform:rotate() on a wrapper element behind the photo
+   (see .topbar-profile-ring in topbar.css). No @property dependency,
+   so this works on every browser/WebView, no exceptions.
+========================= */
+
+@keyframes topbarProfileSpin{
+
+    to{
+
+        transform:rotate(360deg);
+
+    }
+
+}
+
+/* =========================
+   ASSISTANT ROBOT — OUTER GLOW
+   The dance itself (arms/head/body swinging) is defined inside
+   robot.svg's own <style> block — see that file — since it's
+   loaded via a plain <img> tag and this outer stylesheet can't
+   reach into it. This keyframe just pulses a drop-shadow on the
+   whole image from the outside, which still works on a plain <img>.
+========================= */
+
+@keyframes robotGlow{
+
+    0%,
+    100%{
+
+        filter:drop-shadow(0 2px 4px rgba(0,0,0,.15));
+
+    }
+
+    50%{
+
+        filter:drop-shadow(0 6px 10px rgba(212,175,55,.45));
+
+    }
+
+}
+
+/* =========================
+   WELCOME TEXT — ENTRANCE + SHIMMER
+   Runs once on load (fade + rise), then a soft gold highlight
+   sweeps across the text on a loop by animating the position of
+   a gradient that's clipped to the text shape.
+========================= */
+
+@keyframes assistantTextEntrance{
+
+    0%{
+
+        opacity:0;
+
+        transform:translateY(8px);
+
+    }
+
+    100%{
+
+        opacity:1;
+
+        transform:translateY(0);
+
+    }
+
+}
+
+@keyframes assistantTextShimmer{
+
+    0%{
+
+        background-position:120% 0;
+
+    }
+
+    100%{
+
+        background-position:-20% 0;
+
+    }
+
+}
+
+/* =========================
+   ACCESSIBILITY
+   Respect users who've asked the OS for reduced motion.
+========================= */
+
+@media(prefers-reduced-motion:reduce){
+
+    .topbar-profile-ring::before,
+    .assistant-icon,
+    .assistant-icon-wrap::after,
+    .assistant-text{
+
+        animation:none !important;
+
+    }
+
+}
