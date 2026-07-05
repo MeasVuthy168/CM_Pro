@@ -11,7 +11,7 @@ const SW_VERSION = "v18";
 const CACHE_NAME = `cm-pro-cache-${SW_VERSION}`;
 
 // =========================================================
-// STATIC CACHE FILES
+// STATIC CACHE FILES 
 // =========================================================
 
 const STATIC_ASSETS = [
