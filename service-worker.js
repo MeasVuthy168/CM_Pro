@@ -645,26 +645,12 @@ self.addEventListener(
 
                     });
 
-                    // Kept as a fallback delivery path in case
-                    // matchAll() does find clients on some devices.
-
-                    clients.forEach(client=>{
-
-                        client.postMessage({
-
-                            type:"REFRESH_BADGE"
-
-                        });
-
-                        client.postMessage({
-
-                            type:"NEW_NOTIFICATION",
-
-                            notification:notificationPayload
-
-                        });
-
-                    });
+                    // NOTE: the actual REFRESH_BADGE / NEW_NOTIFICATION
+                    // messages are sent once above via BroadcastChannel.
+                    // Sending them again here (as a "fallback") caused
+                    // the toast to appear twice on devices where
+                    // matchAll() DOES find clients — so it's intentionally
+                    // not repeated here anymore.
 
                 })
 
