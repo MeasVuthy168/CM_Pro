@@ -45,35 +45,6 @@
 
 }
 
-/* Soft pulsing glow behind the robot — reads as "powered on",
-   not just decorative motion. */
-.assistant-icon-wrap::after{
-
-    content:"";
-
-    position:absolute;
-
-    inset:-8px;
-
-    border-radius:50%;
-
-    background:
-
-        radial-gradient(
-
-            circle,
-
-            rgba(255,215,0,.4),
-
-            transparent 70%
-
-        );
-
-    animation:robotAura 3.2s ease-in-out infinite;
-
-    z-index:0;
-
-}
 
 /* =========================
    ROBOT ICON
@@ -106,6 +77,6 @@
 
     line-height:1.6;
 
-    font-size:15px;
+    font-size:17px;
 
 }
