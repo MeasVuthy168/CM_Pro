@@ -226,6 +226,16 @@ setTimeout(()=>{
 
 const profile=document.getElementById("topbarProfile");
 
+if(profile&&!profile.closest(".topbar-profile-ring")){
+
+const ring=document.createElement("div");
+ring.className="topbar-profile-ring";
+
+profile.parentNode.insertBefore(ring,profile);
+ring.appendChild(profile);
+
+}
+
 if(profile){
 
 profile.style.cursor="pointer";
@@ -369,5 +379,4 @@ hideGlobalSplash();
 
 </script>
 </body>
-</html>    
-    
+</html>
