@@ -801,6 +801,18 @@ if ("serviceWorker" in navigator) {
       if (!msg) return;
 
       // =====================================
+      // Debug pings from the Service Worker
+      // =====================================
+
+      if (msg.type === "PUSH_DEBUG") {
+
+        console.log("🛰️ SW DEBUG:", msg.stage, msg);
+
+        return;
+
+      }
+
+      // =====================================
       // Refresh Badge
       // =====================================
 
