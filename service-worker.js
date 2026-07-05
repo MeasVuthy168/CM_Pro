@@ -6,7 +6,7 @@ console.log("🔥 SERVICE WORKER LOADED");
    CM_Pro – Production Service Worker
 ========================================================= */
 
-const SW_VERSION = "v11";
+const SW_VERSION = "v12";
 
 const CACHE_NAME = `cm-pro-cache-${SW_VERSION}`;
 
@@ -143,6 +143,11 @@ self.addEventListener(
         // only GET requests
         if(
             event.request.method !== "GET"
+        ) return;
+
+        // skip unsupported schemes (e.g. browser extension requests)
+        if(
+            !event.request.url.startsWith("http")
         ) return;
 
         event.respondWith(
@@ -322,6 +327,77 @@ function buildOptions(data){
 }
 
 // =========================================================
+// INDEXEDDB CATCH-UP QUEUE
+// =========================================================
+// iOS freezes ALL JavaScript for a backgrounded/closed PWA —
+// no postMessage, no BroadcastChannel, nothing runs. So a
+// notification that arrives while the app is backgrounded can
+// never trigger a live in-page toast; the system banner is the
+// only thing that can appear in that moment. IndexedDB is the
+// one thing both the Service Worker and the page can read/write
+// even when the page isn't currently open, so every notification
+// gets stashed here. When the page next loads, it flushes this
+// queue and shows a toast for anything that never got delivered
+// live — the closest honest approximation to "the toast appears"
+// for the backgrounded/closed case.
+
+const IDB_NAME = "cmProNotifications";
+
+const IDB_STORE = "pending";
+
+function idbOpen(){
+
+    return new Promise((resolve, reject)=>{
+
+        const req = indexedDB.open(IDB_NAME, 1);
+
+        req.onupgradeneeded = () => {
+
+            const db = req.result;
+
+            if(!db.objectStoreNames.contains(IDB_STORE)){
+
+                db.createObjectStore(IDB_STORE, { keyPath:"id" });
+
+            }
+
+        };
+
+        req.onsuccess = () => resolve(req.result);
+
+        req.onerror = () => reject(req.error);
+
+    });
+
+}
+
+async function idbAddPending(entry){
+
+    try{
+
+        const db = await idbOpen();
+
+        await new Promise((resolve, reject)=>{
+
+            const tx = db.transaction(IDB_STORE, "readwrite");
+
+            tx.objectStore(IDB_STORE).put(entry);
+
+            tx.oncomplete = () => resolve();
+
+            tx.onerror = () => reject(tx.error);
+
+        });
+
+    }catch(err){
+
+        console.error("⚠️ idbAddPending failed:", err);
+
+    }
+
+}
+
+// =========================================================
 // PUSH
 // =========================================================
 // IMPORTANT: event.data (PushMessageData) must be read EXACTLY
@@ -437,7 +513,16 @@ self.addEventListener(
         const options =
             buildOptions(data);
 
+        // Unique id shared across the live-delivery payload and
+        // the IndexedDB catch-up entry, so the page can tell them
+        // apart and avoid ever showing the same notification twice.
+
+        const notificationId =
+            `n_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
         const notificationPayload = {
+
+            id:notificationId,
 
             title:data.title || "Notification",
 
@@ -470,6 +555,21 @@ self.addEventListener(
                 "/CM_Pro/pages/notifications/"
 
         };
+
+        // ==================================================
+        // Always stash a catch-up copy in IndexedDB FIRST.
+        // If the page is open and receives this live (via
+        // BroadcastChannel or the message listener), it will
+        // delete this entry itself once shown. If the app was
+        // backgrounded/closed, this entry survives until the
+        // app is next opened, at which point it gets flushed.
+        // ==================================================
+
+        event.waitUntil(
+
+            idbAddPending(notificationPayload)
+
+        );
 
         // ==================================================
         // Send the real messages via BroadcastChannel FIRST.
