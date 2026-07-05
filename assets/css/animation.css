@@ -21,21 +21,48 @@
 }
 
 /* =========================
-   ASSISTANT ROBOT — IDLE FLOAT
+   ASSISTANT ROBOT — OUTER GLOW
+   The dance itself (arms/head/body swinging) is now defined
+   inside robot.svg's own <style> block — see that file — since
+   it's loaded via a plain <img> tag and this outer stylesheet
+   can't reach into it. This keyframe just pulses a drop-shadow
+   on the whole image from the outside, which still works fine
+   on a plain <img>.
 ========================= */
 
-@keyframes robotFloat{
+@keyframes robotGlow{
 
     0%,
     100%{
 
-        transform:translateY(0) rotate(0deg);
+        filter:drop-shadow(0 2px 4px rgba(0,0,0,.15));
 
     }
 
     50%{
 
-        transform:translateY(-6px) rotate(-4deg);
+        filter:drop-shadow(0 6px 10px rgba(212,175,55,.45));
+
+    }
+
+}
+
+@keyframes robotAura{
+
+    0%,
+    100%{
+
+        opacity:.25;
+
+        transform:scale(.9);
+
+    }
+
+    50%{
+
+        opacity:.55;
+
+        transform:scale(1.08);
 
     }
 
@@ -49,7 +76,8 @@
 @media(prefers-reduced-motion:reduce){
 
     .topbar-profile-ring::before,
-    .assistant-icon{
+    .assistant-icon,
+    .assistant-icon-wrap::after{
 
         animation:none !important;
 
