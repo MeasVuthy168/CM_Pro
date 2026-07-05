@@ -244,6 +244,7 @@
   }
 
 })();
+
 // ===========================================
 // CM_Pro Toast
 // Version 3.0
@@ -781,10 +782,81 @@ const CMToast = {
 
 };
 
+
 // ===========================================
 // Service Worker Listener
 // Version 3.0
 // ===========================================
+
+function handleSWMessage(msg) {
+
+  console.log("📩 MESSAGE", msg);
+
+  if (!msg) return;
+
+  // =====================================
+  // Debug pings from the Service Worker
+  // =====================================
+
+  if (msg.type === "PUSH_DEBUG") {
+
+    console.log("🛰️ SW DEBUG:", msg.stage, msg);
+
+    return;
+
+  }
+
+  // =====================================
+  // Refresh Badge
+  // =====================================
+
+  if (msg.type === "REFRESH_BADGE") {
+
+    if (typeof loadNotificationBadge === "function") {
+
+      loadNotificationBadge();
+
+    }
+
+    return;
+
+  }
+
+  // =====================================
+  // Toast
+  // =====================================
+
+  if (msg.type === "NEW_NOTIFICATION") {
+
+    const n = msg.notification || {};
+
+    CMToast.show({
+
+      type: n.type || "info",
+
+      title: n.title || "Notification",
+
+      message: n.message || "",
+
+      uploadedBy: n.uploadedBy || "System",
+
+      createdAt: n.createdAt,
+
+      photo: n.photo,
+
+      duration: 5000,
+
+      onDetail() {
+
+        location.href = n.url || "/CM_Pro/pages/notifications/";
+
+      }
+
+    });
+
+  }
+
+}
 
 if ("serviceWorker" in navigator) {
 
@@ -792,78 +864,27 @@ if ("serviceWorker" in navigator) {
 
     "message",
 
-    (event) => {
-
-      console.log("📩 MESSAGE", event.data);
-
-      const msg = event.data;
-
-      if (!msg) return;
-
-      // =====================================
-      // Debug pings from the Service Worker
-      // =====================================
-
-      if (msg.type === "PUSH_DEBUG") {
-
-        console.log("🛰️ SW DEBUG:", msg.stage, msg);
-
-        return;
-
-      }
-
-      // =====================================
-      // Refresh Badge
-      // =====================================
-
-      if (msg.type === "REFRESH_BADGE") {
-
-        if (typeof loadNotificationBadge === "function") {
-
-          loadNotificationBadge();
-
-        }
-
-        return;
-
-      }
-
-      // =====================================
-      // Toast
-      // =====================================
-
-      if (msg.type === "NEW_NOTIFICATION") {
-
-        const n = msg.notification || {};
-
-        CMToast.show({
-
-          type: n.type || "info",
-
-          title: n.title || "Notification",
-
-          message: n.message || "",
-
-          uploadedBy: n.uploadedBy || "System",
-
-          createdAt: n.createdAt,
-
-          photo: n.photo,
-
-          duration: 5000,
-
-          onDetail() {
-
-            location.href = n.url || "/CM_Pro/pages/notifications/";
-
-          }
-
-        });
-
-      }
-
-    }
+    (event) => handleSWMessage(event.data)
 
   );
+
+}
+
+// ===========================================
+// BroadcastChannel Listener (iOS-safe path)
+// ===========================================
+// clients.matchAll() inside the Service Worker's push
+// handler appears to unreliably find zero open window
+// clients on iOS, which silently breaks the message-based
+// path above. BroadcastChannel doesn't depend on client
+// discovery at all, so it's used as the primary delivery
+// path for iOS while the message listener above remains
+// as a fallback for browsers where matchAll() does work.
+
+if ("BroadcastChannel" in window) {
+
+  const cmProChannel = new BroadcastChannel("cm-pro-notifications");
+
+  cmProChannel.onmessage = (event) => handleSWMessage(event.data);
 
 }
