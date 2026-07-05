@@ -1,251 +1,4 @@
 // ===========================================
-// TEMPORARY iOS On-Screen Debug Console
-// Paste this at the very TOP of your page's
-// script (before cm-toast.js loads), test on
-// the iPhone, then delete it when done.
-// ===========================================
-
-(function () {
-
-  const box = document.createElement("div");
-
-  box.id = "ios-debug-box";
-
-  box.style.cssText = `
-    position:fixed;
-    bottom:44px;
-    left:0;
-    right:0;
-    max-height:35vh;
-    overflow-y:auto;
-    background:rgba(0,0,0,0.9);
-    color:#0f0;
-    font-family:monospace;
-    font-size:11px;
-    line-height:1.4;
-    z-index:999999;
-    padding:8px;
-    white-space:pre-wrap;
-    word-break:break-word;
-    display:none;
-  `;
-
-  let expanded = false;
-
-  document.addEventListener("DOMContentLoaded", () => {
-
-    document.body.appendChild(box);
-
-    addButton();
-
-    addToggle();
-
-  });
-
-  function log(type, args) {
-
-    const time = new Date().toLocaleTimeString();
-
-    const color =
-      type === "ERROR" ? "#ff5555" :
-      type === "WARN" ? "#ffcc00" :
-      type === "NET" ? "#66ccff" :
-      "#0f0";
-
-    const line = document.createElement("div");
-
-    line.style.color = color;
-
-    line.textContent = `[${time}] [${type}] ` +
-      args.map(a => {
-        try {
-          return typeof a === "object" ? JSON.stringify(a) : String(a);
-        } catch {
-          return String(a);
-        }
-      }).join(" ");
-
-    box.appendChild(line);
-
-    box.scrollTop = box.scrollHeight;
-
-  }
-
-  // ========================
-  // Capture console.*
-  // ========================
-
-  const origLog = console.log;
-  const origWarn = console.warn;
-  const origError = console.error;
-
-  console.log = (...args) => { origLog(...args); log("LOG", args); };
-
-  console.warn = (...args) => { origWarn(...args); log("WARN", args); };
-
-  console.error = (...args) => { origError(...args); log("ERROR", args); };
-
-  // ========================
-  // Capture uncaught errors
-  // ========================
-
-  window.onerror = (msg, src, line, col) => {
-
-    log("ERROR", [`${msg} @ ${src}:${line}:${col}`]);
-
-  };
-
-  // ========================
-  // Capture hung/rejected promises
-  // ========================
-  // This is the important one for the "toast silently
-  // never appears" bug — an unhandled rejection means
-  // an await somewhere failed instead of hanging forever.
-
-  window.addEventListener("unhandledrejection", (e) => {
-
-    log("ERROR", [`Unhandled promise rejection: ${e.reason}`]);
-
-  });
-
-  // ========================
-  // Wrap fetch to log timing
-  // ========================
-  // Shows exactly how long each network call takes on
-  // this device — if the user-photo fetch is hanging,
-  // you'll see it start but never see it finish.
-
-  const origFetch = window.fetch;
-
-  window.fetch = function (...args) {
-
-    const url = args[0];
-
-    const start = Date.now();
-
-    log("NET", [`→ fetch start: ${url}`]);
-
-    return origFetch.apply(this, args)
-      .then(res => {
-
-        log("NET", [`← fetch done (${Date.now() - start}ms, status ${res.status}): ${url}`]);
-
-        return res;
-
-      })
-      .catch(err => {
-
-        log("NET", [`✕ fetch FAILED (${Date.now() - start}ms): ${url} — ${err}`]);
-
-        throw err;
-
-      });
-
-  };
-
-  // ========================
-  // Manual test button
-  // ========================
-
-  function addButton() {
-
-    const btn = document.createElement("button");
-
-    btn.textContent = "Test Toast";
-
-    btn.style.cssText = `
-      position:fixed;
-      top:8px;
-      right:8px;
-      z-index:999999;
-      padding:8px 12px;
-      background:#333;
-      color:#fff;
-      border:1px solid #666;
-      border-radius:6px;
-      font-size:12px;
-    `;
-
-    btn.addEventListener("click", () => {
-
-      log("LOG", ["Manually triggering CMToast.show()..."]);
-
-      if (typeof CMToast === "undefined") {
-
-        log("ERROR", ["CMToast is not defined — script didn't load"]);
-
-        return;
-
-      }
-
-      CMToast.show({
-
-        type: "info",
-
-        title: "Debug Test",
-
-        message: "If you can see this, rendering works.",
-
-        onDetail() {
-
-          log("LOG", ["onDetail fired"]);
-
-        }
-
-      });
-
-    });
-
-    document.body.appendChild(btn);
-
-  }
-
-  // ========================
-  // Collapse/expand toggle
-  // ========================
-  // Log panel starts hidden so it never covers the bottom
-  // nav bar (e.g. blocking access to Settings). Tap the
-  // small pill to show/hide it on demand.
-
-  function addToggle() {
-
-    const toggle = document.createElement("button");
-
-    toggle.id = "ios-debug-toggle";
-
-    toggle.textContent = "🐞 Log";
-
-    toggle.style.cssText = `
-      position:fixed;
-      top:8px;
-      left:8px;
-      z-index:999999;
-      padding:6px 10px;
-      background:#333;
-      color:#0f0;
-      border:1px solid #666;
-      border-radius:14px;
-      font-size:11px;
-      font-family:monospace;
-    `;
-
-    toggle.addEventListener("click", () => {
-
-      expanded = !expanded;
-
-      box.style.display = expanded ? "block" : "none";
-
-      toggle.textContent = expanded ? "🐞 Hide" : "🐞 Log";
-
-    });
-
-    document.body.appendChild(toggle);
-
-  }
-
-})();
-
-// ===========================================
 // CM_Pro Toast
 // Version 3.0
 // ===========================================
@@ -782,6 +535,158 @@ const CMToast = {
 
 };
 
+// ===========================================
+// IndexedDB catch-up queue (iOS-safe path)
+// ===========================================
+// iOS freezes ALL JavaScript for a backgrounded/closed PWA, so a
+// notification that arrives in that state can never trigger a
+// live toast — no message-passing mechanism can wake the page up.
+// The Service Worker stashes every notification into IndexedDB as
+// a catch-up copy. If the page receives it live (via BroadcastChannel
+// or the message listener below), it deletes its own catch-up entry.
+// Anything left over when the page next loads means it was missed
+// live, and gets shown then — the closest honest approximation to
+// "the toast appears" for the backgrounded/closed case.
+
+const CM_IDB_NAME = "cmProNotifications";
+
+const CM_IDB_STORE = "pending";
+
+function cmIdbOpen() {
+
+  return new Promise((resolve, reject) => {
+
+    const req = indexedDB.open(CM_IDB_NAME, 1);
+
+    req.onupgradeneeded = () => {
+
+      const db = req.result;
+
+      if (!db.objectStoreNames.contains(CM_IDB_STORE)) {
+
+        db.createObjectStore(CM_IDB_STORE, { keyPath: "id" });
+
+      }
+
+    };
+
+    req.onsuccess = () => resolve(req.result);
+
+    req.onerror = () => reject(req.error);
+
+  });
+
+}
+
+async function cmIdbDeletePending(id) {
+
+  if (!id) return;
+
+  try {
+
+    const db = await cmIdbOpen();
+
+    await new Promise((resolve, reject) => {
+
+      const tx = db.transaction(CM_IDB_STORE, "readwrite");
+
+      tx.objectStore(CM_IDB_STORE).delete(id);
+
+      tx.oncomplete = () => resolve();
+
+      tx.onerror = () => reject(tx.error);
+
+    });
+
+  } catch (err) {
+
+    console.error("⚠️ cmIdbDeletePending failed:", err);
+
+  }
+
+}
+
+async function cmIdbGetAllPending() {
+
+  try {
+
+    const db = await cmIdbOpen();
+
+    return await new Promise((resolve, reject) => {
+
+      const tx = db.transaction(CM_IDB_STORE, "readonly");
+
+      const req = tx.objectStore(CM_IDB_STORE).getAll();
+
+      req.onsuccess = () => resolve(req.result || []);
+
+      req.onerror = () => reject(req.error);
+
+    });
+
+  } catch (err) {
+
+    console.error("⚠️ cmIdbGetAllPending failed:", err);
+
+    return [];
+
+  }
+
+}
+
+async function cmFlushPendingNotifications() {
+
+  if (!("indexedDB" in window)) return;
+
+  const pending = await cmIdbGetAllPending();
+
+  if (pending.length === 0) return;
+
+  console.log(`📬 Flushing ${pending.length} missed notification(s) from IndexedDB`);
+
+  // Oldest first, so they appear in the order they were sent.
+
+  pending.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+  for (const n of pending) {
+
+    await CMToast.show({
+
+      type: n.type || "info",
+
+      title: n.title || "Notification",
+
+      message: n.message || "",
+
+      uploadedBy: n.uploadedBy || "System",
+
+      createdAt: n.createdAt,
+
+      duration: 5000,
+
+      onDetail() {
+
+        location.href = n.url || "/CM_Pro/pages/notifications/";
+
+      }
+
+    });
+
+    await cmIdbDeletePending(n.id);
+
+  }
+
+}
+
+if (document.readyState === "loading") {
+
+  document.addEventListener("DOMContentLoaded", cmFlushPendingNotifications);
+
+} else {
+
+  cmFlushPendingNotifications();
+
+}
 
 // ===========================================
 // Service Worker Listener
@@ -853,6 +758,11 @@ function handleSWMessage(msg) {
       }
 
     });
+
+    // Delivered live — remove the IndexedDB catch-up copy so it
+    // doesn't show again as a "missed" notification on next load.
+
+    cmIdbDeletePending(n.id);
 
   }
 
