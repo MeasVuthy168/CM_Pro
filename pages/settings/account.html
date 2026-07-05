@@ -306,32 +306,22 @@ onclick="history.back()">
 </div>
 
 <script src="../../config/api.js"></script>
-
 <script src="../../config/auth.js"></script>
-
 <script src="../../config/session.js"></script>
 
 <script>
 
-// =========================
-// LOAD USER
-// =========================
+// =========================================================
+// RENDER HELPER
+// =========================================================
+// Fills the card from a user object, whatever its source
+// (cached localStorage first, then the live server profile).
+// employeeId/branch aren't in the User schema yet, so those
+// stay "-" until that data actually exists somewhere.
 
-try{
+function renderAccount(user){
 
-    const user = JSON.parse(
-
-        localStorage.getItem("loggedInUser") || "{}"
-
-    );
-
-    // =====================
-    // FULL NAME
-    // =====================
-
-    document.getElementById(
-        "fullname"
-    ).innerText =
+    document.getElementById("fullname").innerText =
 
         user.fullname ||
         user.fullName ||
@@ -339,13 +329,7 @@ try{
         user.username ||
         "Unknown";
 
-    // =====================
-    // EMPLOYEE ID
-    // =====================
-
-    document.getElementById(
-        "employeeId"
-    ).innerText =
+    document.getElementById("employeeId").innerText =
 
         user.employeeId ||
         user.employeeID ||
@@ -354,78 +338,128 @@ try{
         user.username ||
         "-";
 
-    // =====================
-    // ROLE
-    // =====================
-
-    document.getElementById(
-        "role"
-    ).innerText =
+    document.getElementById("role").innerText =
 
         user.role ||
         "User";
 
-    // =====================
-    // BRANCH
-    // =====================
-
-    document.getElementById(
-        "branch"
-    ).innerText =
+    document.getElementById("branch").innerText =
 
         user.branch ||
         user.branchName ||
         "-";
 
-    // =====================
-    // PHONE
-    // =====================
-
-    document.getElementById(
-        "phone"
-    ).innerText =
+    document.getElementById("phone").innerText =
 
         user.phone ||
         user.phoneNumber ||
         user.mobile ||
         "-";
 
-    // =====================
-    // PHOTO
-    // =====================
-
     if(user.username){
 
-        const img =
-
-            document.getElementById(
-                "photo"
-            );
+        const img = document.getElementById("photo");
 
         img.src =
-
             `${API.BASE_URL}/assets/user-photo/${user.username}`;
 
         img.onerror = function(){
-
-            this.src =
-            "/CM_Pro/assets/images/default-user.png";
-
+            this.src = "/CM_Pro/assets/images/default-user.png";
         };
 
     }
 
-}catch(err){
+}
 
-    console.error(
-        "Account Load Error:",
-        err
+// =========================================================
+// LOAD USER
+// =========================================================
+
+// 1) Render instantly from whatever's cached, so the page
+//    doesn't sit on "Loading..." while the network call runs.
+let cachedUser = {};
+
+try{
+
+    cachedUser = JSON.parse(
+        localStorage.getItem("loggedInUser") || "{}"
     );
 
+    if(Object.keys(cachedUser).length){
+        renderAccount(cachedUser);
+    }
+
+}catch(err){
+
+    console.error("Account cache read error:", err);
+
 }
+
+// 2) Then fetch the live profile from the server — this is
+//    the fix for the phone number: the cached copy from login
+//    never included phone (or anything that can change later,
+//    like an admin-updated branch/phone), only /api/auth/me
+//    reading fresh from the database has it.
+
+(async ()=>{
+
+    try{
+
+        const token =
+
+            localStorage.getItem("token") ||
+            sessionStorage.getItem("token");
+
+        if(!token) return;
+
+        const response = await fetch(
+
+            `${API.BASE_URL}/api/auth/me`,
+
+            {
+                headers:{
+                    Authorization:`Bearer ${token}`
+                }
+            }
+
+        );
+
+        if(!response.ok){
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if(data.ok && data.user){
+
+            renderAccount(data.user);
+
+            // Keep the cache fresh too, so the next page load
+            // (and other pages reading loggedInUser) also see
+            // the current phone/branch/role immediately.
+            localStorage.setItem(
+                "loggedInUser",
+                JSON.stringify(data.user)
+            );
+
+        }
+
+    }catch(err){
+
+        console.error("Account Load Error:", err);
+
+        // If this was the very first load with nothing cached,
+        // at least stop it sitting on "Loading..." forever.
+        if(!Object.keys(cachedUser).length){
+            document.getElementById("fullname").innerText = "Unknown";
+        }
+
+    }
+
+})();
 
 </script>
 
 </body>
 
-</html>    
+</html>
