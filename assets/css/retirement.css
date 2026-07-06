@@ -1,0 +1,488 @@
+/* =========================
+   Form Card
+========================= */
+
+.form-card{
+
+    background:linear-gradient(180deg,#003B8B,#002D6B);
+
+    border:1px solid #D4AF37;
+
+    border-radius:16px;
+
+    padding:24px 16px 20px;
+
+    overflow:hidden;
+
+    box-sizing:border-box;
+
+}
+
+.form-group{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:stretch;
+
+    margin-bottom:14px;
+
+    gap:6px;
+
+}
+
+.form-group label{
+
+    text-align:left;
+
+    color:#cdd9ef;
+
+    font-size:14px;
+
+    line-height:1.3;
+
+}
+
+.form-group input[type="text"]{
+
+    width:100%;
+
+    height:48px;
+
+    padding:0 12px;
+
+    border-radius:10px;
+
+    border:1px solid #D4AF37;
+
+    background:#00265c;
+
+    color:#fff;
+
+    font-size:16px;
+
+    font-family:"Krasar",Arial,sans-serif;
+
+    box-sizing:border-box;
+
+}
+
+.form-group input:focus{
+
+    outline:none;
+
+    border-color:#FFD700;
+
+}
+
+/* =========================
+   Date Box
+========================= */
+
+.box{
+
+    width:100%;
+
+    height:48px;
+
+    background:#00265c;
+
+    border:1px solid #D4AF37;
+
+    border-radius:10px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:17px;
+
+    color:#fff;
+
+    padding:0 12px;
+
+    box-sizing:border-box;
+
+}
+
+.box input[type="date"]{
+
+    width:100%;
+
+    height:100%;
+
+    border:none;
+
+    background:transparent;
+
+    color:#fff;
+
+    font-family:"Krasar",sans-serif;
+
+    font-size:16px;
+
+    outline:none;
+
+}
+
+/* =========================
+   Age slider + numeric input
+========================= */
+
+.age-wrap{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    min-width:0;
+
+}
+
+.age-slider{
+
+    flex:1;
+
+    appearance:none;
+
+    height:6px;
+
+    border-radius:999px;
+
+    background:#00265c;
+
+    outline:none;
+
+}
+
+.age-slider::-webkit-slider-thumb{
+
+    appearance:none;
+
+    width:22px;
+
+    height:22px;
+
+    border-radius:50%;
+
+    background:#FFD700;
+
+    border:2px solid #D4AF37;
+
+    box-shadow:0 2px 6px rgba(0,0,0,.3);
+
+}
+
+.age-slider::-moz-range-thumb{
+
+    width:22px;
+
+    height:22px;
+
+    border-radius:50%;
+
+    background:#FFD700;
+
+    border:2px solid #D4AF37;
+
+    box-shadow:0 2px 6px rgba(0,0,0,.3);
+
+}
+
+.age-num{
+
+    flex:0 0 110px;
+
+    height:48px;
+
+    background:#00265c;
+
+    border:1px solid #D4AF37;
+
+    border-radius:10px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:4px;
+
+    padding:0 10px;
+
+    color:#fff;
+
+}
+
+.age-num input{
+
+    width:46px;
+
+    border:none;
+
+    background:transparent;
+
+    color:#fff;
+
+    font-size:17px;
+
+    text-align:center;
+
+    outline:none;
+
+}
+
+.units{
+
+    color:#cdd9ef;
+
+    font-size:13px;
+
+    white-space:nowrap;
+
+    margin-top:4px;
+
+}
+
+/* =========================
+   Export Buttons
+========================= */
+
+.export-buttons{
+
+    margin-top:18px;
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:20px;
+
+}
+
+.export-buttons button{
+
+    background:#00265c;
+
+    border:1px solid #D4AF37;
+
+    border-radius:12px;
+
+    padding:8px 14px;
+
+    cursor:pointer;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+}
+
+.export-buttons button:active{
+
+    transform:scale(.95);
+
+}
+
+/* =========================
+   Export / Result Section
+========================= */
+
+#exportSection{
+
+    margin-top:16px;
+
+    margin-bottom:90px;
+
+}
+
+.pdf-wrapper{
+
+    background:linear-gradient(180deg,#003B8B,#002D6B);
+
+    border:1px solid #D4AF37;
+
+    border-radius:16px;
+
+    padding:16px 12px;
+
+}
+
+.pdf-title{
+
+    text-align:center;
+
+    font-size:19px;
+
+    font-weight:700;
+
+    color:#FFD700;
+
+    margin-bottom:8px;
+
+}
+
+.pdf-customer{
+
+    text-align:left;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    color:#fff;
+
+    margin-bottom:14px;
+
+}
+
+.pdf-customer span{
+
+    color:#FFD700;
+
+    font-weight:700;
+
+}
+
+.pdf-wrapper table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    margin-top:14px;
+
+    font-size:13px;
+
+    background:#00265c;
+
+    color:#fff;
+
+}
+
+.pdf-wrapper th,
+.pdf-wrapper td{
+
+    border:1px solid #2f4670;
+
+    padding:8px;
+
+    text-align:center;
+
+}
+
+.pdf-wrapper th{
+
+    background:#003B8B;
+
+    color:#FFD700;
+
+}
+
+.pdf-wrapper .info-table th{
+
+    text-align:left;
+
+}
+
+.pdf-wrapper .info-table td{
+
+    text-align:left;
+
+}
+
+/* =========================
+   Result highlight
+========================= */
+
+.result-box{
+
+    margin-top:14px;
+
+    padding:14px;
+
+    border:1px dashed #D4AF37;
+
+    border-radius:12px;
+
+    background:#00265c;
+
+}
+
+.result-title{
+
+    color:#cdd9ef;
+
+    font-size:14px;
+
+    margin-bottom:6px;
+
+}
+
+.months-big{
+
+    font-size:22px;
+
+    font-weight:bold;
+
+    color:#FFD700;
+
+}
+
+.desc{
+
+    margin-top:6px;
+
+    font-size:16px;
+
+    color:#fff;
+
+}
+
+.desc .num{
+
+    color:#FFD700;
+
+    font-weight:bold;
+
+}
+
+.desc.retired{
+
+    color:#ff8080;
+
+}
+
+/* =========================
+   Foot note
+========================= */
+
+.foot-note{
+
+    margin:14px 6px 0;
+
+    color:#a8b5c7;
+
+    font-size:13px;
+
+    line-height:1.6;
+
+}
+
+@media (max-width:420px){
+
+.age-num{
+
+    flex-basis:100px;
+
+}
+
+}
