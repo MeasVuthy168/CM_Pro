@@ -1,0 +1,309 @@
+/* =========================
+   Form Card
+========================= */
+
+.form-card{
+
+    background:linear-gradient(180deg,#003B8B,#002D6B);
+
+    border:1px solid #D4AF37;
+
+    border-radius:16px;
+
+    padding:18px 14px;
+
+}
+
+.form-row{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    margin:10px 6px;
+
+}
+
+.form-row label{
+
+    flex:0 0 140px;
+
+    color:#cdd9ef;
+
+    font-size:15px;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+}
+
+.field{
+
+    flex:1;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:8px;
+
+    min-width:0;
+
+}
+
+.box{
+
+    width:100%;
+
+    height:48px;
+
+    background:#00265c;
+
+    border:1px solid #D4AF37;
+
+    border-radius:10px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:17px;
+
+    color:#fff;
+
+    padding:0 12px;
+
+}
+
+.box input[type="date"]{
+
+    width:100%;
+
+    height:100%;
+
+    border:none;
+
+    background:transparent;
+
+    color:#fff;
+
+    font-family:"Krasar",sans-serif;
+
+    font-size:16px;
+
+    outline:none;
+
+}
+
+/* ===== Age slider + numeric input ===== */
+
+.age-wrap{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    min-width:0;
+
+}
+
+.age-slider{
+
+    flex:1;
+
+    appearance:none;
+
+    height:6px;
+
+    border-radius:999px;
+
+    background:#00265c;
+
+    outline:none;
+
+}
+
+.age-slider::-webkit-slider-thumb{
+
+    appearance:none;
+
+    width:22px;
+
+    height:22px;
+
+    border-radius:50%;
+
+    background:#FFD700;
+
+    border:2px solid #D4AF37;
+
+    box-shadow:0 2px 6px rgba(0,0,0,.3);
+
+}
+
+.age-slider::-moz-range-thumb{
+
+    width:22px;
+
+    height:22px;
+
+    border-radius:50%;
+
+    background:#FFD700;
+
+    border:2px solid #D4AF37;
+
+    box-shadow:0 2px 6px rgba(0,0,0,.3);
+
+}
+
+.age-num{
+
+    flex:0 0 110px;
+
+    height:48px;
+
+    background:#00265c;
+
+    border:1px solid #D4AF37;
+
+    border-radius:10px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:4px;
+
+    padding:0 10px;
+
+    color:#fff;
+
+}
+
+.age-num input{
+
+    width:46px;
+
+    border:none;
+
+    background:transparent;
+
+    color:#fff;
+
+    font-size:17px;
+
+    text-align:center;
+
+    outline:none;
+
+}
+
+.units{
+
+    color:#cdd9ef;
+
+    font-size:13px;
+
+    white-space:nowrap;
+
+}
+
+/* ===== Result ===== */
+
+.result-box{
+
+    margin:10px 6px;
+
+    padding:14px;
+
+    border:1px dashed #D4AF37;
+
+    border-radius:12px;
+
+    background:#00265c;
+
+}
+
+.result-title{
+
+    color:#cdd9ef;
+
+    font-size:14px;
+
+    margin-bottom:6px;
+
+}
+
+.months-big{
+
+    font-size:22px;
+
+    font-weight:bold;
+
+    color:#FFD700;
+
+}
+
+.desc{
+
+    margin-top:6px;
+
+    font-size:16px;
+
+    color:#fff;
+
+}
+
+.desc .num{
+
+    color:#FFD700;
+
+    font-weight:bold;
+
+}
+
+.desc.retired{
+
+    color:#ff8080;
+
+}
+
+.foot-note{
+
+    margin:14px 6px 0;
+
+    color:#a8b5c7;
+
+    font-size:13px;
+
+    line-height:1.6;
+
+}
+
+@media (max-width:420px){
+
+.form-row label{
+
+    flex:0 0 120px;
+
+}
+
+.age-num{
+
+    flex-basis:100px;
+
+}
+
+}
