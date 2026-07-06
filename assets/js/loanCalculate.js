@@ -1,4 +1,4 @@
- // =========================
+// =========================
 // Helpers
 // =========================
 
@@ -13,6 +13,8 @@ function format(num){
 // =========================
 
 function calculateLoan(){
+
+    const customerName=document.getElementById("customerName").value.trim();
 
     const loan=parseFloat(document.getElementById("loanAmount").value);
 
@@ -72,7 +74,7 @@ function calculateLoan(){
 
     let totalPrincipal=0, totalInterest=0, totalPayment=0;
 
-    let html=`<div class="pdf-wrapper"><div class="pdf-title">តារាងកាលវិភាគសងប្រាក់</div>`;
+    let html=`<div class="pdf-wrapper"><div class="pdf-customer">ឈ្មោះអតិថិជន : <span>${customerName||"-"}</span></div><div class="pdf-title">តារាងកាលវិភាគសងប្រាក់</div>`;
 
     html+=`<table>
         <tr><th>ទំហំឥណទាន</th><td>${format(loanVal)}</td></tr>
@@ -154,6 +156,8 @@ async function exportToPDF(){
 
     }
 
+    const customerName=document.getElementById("customerName").value.trim()||"-";
+
     const translatedSection=exportSection.cloneNode(true);
 
     translatedSection.querySelectorAll("th, td").forEach(cell=>{
@@ -188,13 +192,27 @@ async function exportToPDF(){
 
     });
 
-    const titleBox=translatedSection.querySelector(".pdf-title");
+    // Print customer name + title as real PDF text at the very top —
+    // the old version built these as <div>s but autoTable only ever
+    // reads <table> elements, so they never actually appeared in the PDF.
 
-    if(titleBox) titleBox.textContent="Repayment Schedule";
+    doc.setFontSize(11);
+
+    doc.setTextColor(40,40,40);
+
+    doc.text(`Customer Name : ${customerName}`,40,40);
+
+    doc.setFontSize(15);
+
+    doc.setFont(undefined,'bold');
+
+    doc.text("Repayment Schedule",40,62);
+
+    doc.setFont(undefined,'normal');
 
     const tables=translatedSection.querySelectorAll("table");
 
-    let finalY=40;
+    let finalY=80;
 
     tables.forEach(table=>{
 
@@ -242,11 +260,13 @@ function exportToExcel(){
 
     }
 
+    const customerName=document.getElementById("customerName").value.trim()||"-";
+
     const tables=exportSection.querySelectorAll("table");
 
     const wb=XLSX.utils.book_new();
 
-    let allData=[];
+    let allData=[["Customer Name",customerName],[""]];
 
     tables.forEach((table,index)=>{
 
