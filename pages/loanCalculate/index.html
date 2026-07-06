@@ -9,7 +9,7 @@
 name="viewport"
 content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 
-<title>ការគណនាចំនួនខែចូលនិវត្តន៍</title>
+<title>កម្មវិធី​គណនាឥណទាន</title>
 
 <meta
 name="theme-color"
@@ -77,80 +77,77 @@ href="/CM_Pro/assets/css/global-splash.css">
 
 <div class="form-card">
 
-<div class="form-row">
+<div class="form-group">
 
-<label for="dob">ថ្ងៃខែឆ្នាំកំណើត</label>
+<label for="loanAmount">ទំហំឥណទាន</label>
 
-<div class="field">
+<input type="number" id="loanAmount">
 
-<div class="box">
+</div>
 
-<input type="date" id="dob">
+<div class="form-group">
+
+<label for="periodicRepayment">ប្រាក់សំណងខួប</label>
+
+<input type="number" id="periodicRepayment">
+
+</div>
+
+<div class="form-group">
+
+<label for="term">រយៈពេលខ្ចី (ខែ)</label>
+
+<input type="number" id="term">
+
+</div>
+
+<div class="form-group">
+
+<label for="interestRate">អត្រា​ការ​ប្រាក់​ប្រចាំឆ្នាំ (%)</label>
+
+<input type="number" id="interestRate">
+
+</div>
+
+<div class="form-group">
+
+<label for="paymentMethod">របៀបសងប្រាក់</label>
+
+<select id="paymentMethod">
+
+<option value="Linear">បង់ថយ</option>
+
+<option value="Annuity">បង់ថេរ</option>
+
+</select>
+
+</div>
+
+<button class="calculate-btn" id="btnCalculate">
+
+គណនា
+
+</button>
+
+<div class="export-buttons">
+
+<button id="btnPDF">
+
+<img src="https://img.icons8.com/color/48/pdf.png" alt="PDF" width="32">
+
+</button>
+
+<button id="btnExcel">
+
+<img src="https://img.icons8.com/color/48/ms-excel.png" alt="Excel" width="32">
+
+</button>
 
 </div>
 
 </div>
 
-</div>
-
-<div class="form-row">
-
-<label for="retirementAge">អាយុចូលនិវត្តន៍</label>
-
-<div class="field">
-
-<div class="age-wrap">
-
-<input id="retirementAge" class="age-slider" type="range" min="0" max="60" value="55" step="1">
-
-<div class="age-num">
-
-<input type="number" id="ageInput" min="0" max="60" value="55"> ឆ្នាំ
-
-</div>
-
-</div>
-
-<div class="units">(0–60)</div>
-
-</div>
-
-</div>
-
-<div class="form-row">
-
-<label for="currentDate">ថ្ងៃខែឆ្នាំបច្ចុប្បន្ន</label>
-
-<div class="field">
-
-<div class="box">
-
-<input type="date" id="currentDate">
-
-</div>
-
-</div>
-
-</div>
-
-<div class="result-box">
-
-<div class="result-title">ចំនួនខែដែលនៅសល់</div>
-
-<div id="monthsLeft" class="months-big">—</div>
-
-<div id="description" class="desc"></div>
-
-</div>
-
-<div class="foot-note">
-
-💡 គោលបំណង៖ កំណត់រយៈពេលផ្តល់ឥណទានឲ្យបានត្រឹមត្រូវតាមគោលការណ៍
-សម្រាប់ឥណទានប្រើប្រាស់ផ្ទាល់ខ្លួន ដែលធានាដោយប្រាក់បៀវត្សា៕
-
-</div>
-
-</div>
+<div id="exportSection"></div>
 
 </div>
 
@@ -243,7 +240,7 @@ if(id==="topbar-container"){
 
 initTopbar({
 
-title:"ចំនួនខែចូលនិវត្តន៍",
+title:"កម្មវិធី​គណនាឥណទាន",
 
 showBack:true,
 
@@ -351,6 +348,12 @@ loadNotificationBadge();
 
 </script>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
 <!-- NOTIFICATION BADGE -->
 
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
@@ -359,4 +362,3 @@ loadNotificationBadge();
 </body>
 
 </html>
-
