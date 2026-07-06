@@ -74,9 +74,9 @@ function calculateLoan(){
 
     let totalPrincipal=0, totalInterest=0, totalPayment=0;
 
-    let html=`<div class="pdf-wrapper"><div class="pdf-customer">ឈ្មោះអតិថិជន : <span>${customerName||"-"}</span></div><div class="pdf-title">តារាងកាលវិភាគសងប្រាក់</div>`;
+    let html=`<div class="pdf-wrapper"><div class="pdf-title">តារាងកាលវិភាគសងប្រាក់</div><div class="pdf-customer">ឈ្មោះអតិថិជន : <span>${customerName||"-"}</span></div>`;
 
-    html+=`<table>
+    html+=`<table class="info-table">
         <tr><th>ទំហំឥណទាន</th><td>${format(loanVal)}</td></tr>
         <tr><th>ប្រាក់សំណងខួប</th><td>${format(payVal)}</td></tr>
         <tr><th>រយៈពេលខ្ចី (ខែ)</th><td>${months}</td></tr>
@@ -196,19 +196,19 @@ async function exportToPDF(){
     // the old version built these as <div>s but autoTable only ever
     // reads <table> elements, so they never actually appeared in the PDF.
 
-    doc.setFontSize(11);
-
-    doc.setTextColor(40,40,40);
-
-    doc.text(`Customer Name : ${customerName}`,40,40);
-
     doc.setFontSize(15);
 
     doc.setFont(undefined,'bold');
 
-    doc.text("Repayment Schedule",40,62);
+    doc.text("Repayment Schedule",40,40);
 
     doc.setFont(undefined,'normal');
+
+    doc.setFontSize(11);
+
+    doc.setTextColor(40,40,40);
+
+    doc.text(`Customer Name : ${customerName}`,40,62);
 
     const tables=translatedSection.querySelectorAll("table");
 
@@ -262,25 +262,151 @@ function exportToExcel(){
 
     const customerName=document.getElementById("customerName").value.trim()||"-";
 
-    const tables=exportSection.querySelectorAll("table");
+    const interestRate=document.getElementById("interestRate").value;
 
-    const wb=XLSX.utils.book_new();
+    const methodLabel=document.getElementById("paymentMethod").value==="Annuity" ? "Annuity" : "Linear";
 
-    let allData=[["Customer Name",customerName],[""]];
+    // ===== Header block: title, customer name, loan info =====
 
-    tables.forEach((table,index)=>{
+    const rows=[];
 
-        const sheet=XLSX.utils.table_to_sheet(table);
+    rows.push(["Repayment Schedule"]);
 
-        const data=XLSX.utils.sheet_to_json(sheet,{header:1});
+    rows.push([`Customer Name : ${customerName}`]);
 
-        if(index>0) allData.push([""]);
+    rows.push([]);
 
-        allData=allData.concat(data);
+    rows.push(["Loan Amount",Number(document.getElementById("loanAmount").value)||0]);
+
+    rows.push(["Periodic Repayment",Number(document.getElementById("periodicRepayment").value)||0]);
+
+    rows.push(["Loan Term (months)",Number(document.getElementById("term").value)||""]);
+
+    rows.push(["Annual Interest Rate",`${interestRate}%`]);
+
+    rows.push(["Repayment Method",methodLabel]);
+
+    rows.push([]);
+
+    // ===== Schedule table header =====
+
+    rows.push(["No","Principal","Interest","Total Payment","Balance"]);
+
+    const dataTable=exportSection.querySelector("table:last-of-type");
+
+    const bodyRows=dataTable.querySelectorAll("tbody tr");
+
+    bodyRows.forEach(tr=>{
+
+        const cells=Array.from(tr.querySelectorAll("td")).map(td=>td.textContent.trim());
+
+        const isTotal=tr.classList.contains("total-row");
+
+        if(isTotal){
+
+            rows.push(["Total",
+
+                parseFloat(cells[1].replace(/,/g,""))||0,
+
+                parseFloat(cells[2].replace(/,/g,""))||0,
+
+                parseFloat(cells[3].replace(/,/g,""))||0,
+
+                ""]);
+
+        }else{
+
+            rows.push([
+
+                parseInt(cells[0],10),
+
+                parseFloat(cells[1].replace(/,/g,""))||0,
+
+                parseFloat(cells[2].replace(/,/g,""))||0,
+
+                parseFloat(cells[3].replace(/,/g,""))||0,
+
+                parseFloat(cells[4].replace(/,/g,""))||0
+
+            ]);
+
+        }
 
     });
 
-    const ws=XLSX.utils.aoa_to_sheet(allData);
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+
+    // Merge the title and customer-name rows across all 5 columns
+
+    ws["!merges"]=[
+
+        {s:{r:0,c:0},e:{r:0,c:4}},
+
+        {s:{r:1,c:0},e:{r:1,c:4}}
+
+    ];
+
+    // Reasonable column widths so it reads like the PDF table
+
+    ws["!cols"]=[
+
+        {wch:10},
+
+        {wch:16},
+
+        {wch:16},
+
+        {wch:16},
+
+        {wch:16}
+
+    ];
+
+    // Apply number formatting (thousand separator, 2 decimals) to numeric
+
+    // amount cells, same style as the PDF/on-screen figures.
+
+    const numberFormat="#,##0.00";
+
+    const dataStartRow=9;
+
+    for(let r=dataStartRow;r<rows.length;r++){
+
+        for(let c=1;c<=3;c++){
+
+            const cellRef=XLSX.utils.encode_cell({r,c});
+
+            if(ws[cellRef] && typeof ws[cellRef].v==="number"){
+
+                ws[cellRef].z=numberFormat;
+
+            }
+
+        }
+
+        const balCellRef=XLSX.utils.encode_cell({r,c:4});
+
+        if(ws[balCellRef] && typeof ws[balCellRef].v==="number"){
+
+            ws[balCellRef].z=numberFormat;
+
+        }
+
+    }
+
+    [3,4].forEach(r=>{
+
+        const cellRef=XLSX.utils.encode_cell({r,c:1});
+
+        if(ws[cellRef] && typeof ws[cellRef].v==="number"){
+
+            ws[cellRef].z=numberFormat;
+
+        }
+
+    });
+
+    const wb=XLSX.utils.book_new();
 
     XLSX.utils.book_append_sheet(wb,ws,"Repayment Schedule");
 
