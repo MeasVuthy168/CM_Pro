@@ -216,15 +216,19 @@ async function exportToPDF(){
 
     tables.forEach(table=>{
 
+        const isInfoTable=table.classList.contains("info-table");
+
         doc.autoTable({
 
             html:table,
 
             startY:finalY,
 
-            styles:{fontSize:10,halign:'center'},
+            styles:{fontSize:10,halign:isInfoTable ? 'left' : 'center'},
 
-            headStyles:{fillColor:[13,45,92],textColor:255}
+            headStyles:{fillColor:[13,45,92],textColor:255},
+
+            columnStyles:isInfoTable ? {0:{halign:'left'},1:{halign:'left'}} : {}
 
         });
 
