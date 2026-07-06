@@ -84,7 +84,7 @@ function calculateLoan(){
         <tr><th>របៀបសងប្រាក់</th><td>${method==="Annuity"?"បង់ថេរ":"បង់ថយ"}</td></tr>
     </table>`;
 
-    html+=`<div class="table-scroll"><table><thead><tr>
+    html+=`<div class="table-scroll"><table class="schedule-table"><thead><tr>
         <th>ល.រ</th><th>ប្រាក់ដើម</th><th>ការប្រាក់</th><th>សរុបបង់</th><th>សមតុល្យ</th>
         </tr></thead><tbody>`;
 
@@ -292,7 +292,23 @@ function exportToExcel(){
 
     rows.push(["No","Principal","Interest","Total Payment","Balance"]);
 
-    const dataTable=exportSection.querySelector("table:last-of-type");
+    const dataTable=exportSection.querySelector(".schedule-table");
+
+    if(!dataTable){
+
+        if(typeof showToast==="function"){
+
+            showToast("មិនអាចរកតារាងទិន្នន័យបានទេ។","error");
+
+        }else{
+
+            alert("មិនអាចរកតារាងទិន្នន័យបានទេ។");
+
+        }
+
+        return;
+
+    }
 
     const bodyRows=dataTable.querySelectorAll("tbody tr");
 
