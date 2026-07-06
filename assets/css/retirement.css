@@ -16,6 +16,8 @@
 
     box-sizing:border-box;
 
+    box-shadow:0 4px 14px rgba(0,0,0,.25);
+
 }
 
 .form-group{
@@ -26,9 +28,15 @@
 
     align-items:stretch;
 
-    margin-bottom:14px;
+    margin-bottom:18px;
 
     gap:6px;
+
+}
+
+.form-group:last-child{
+
+    margin-bottom:0;
 
 }
 
@@ -40,39 +48,11 @@
 
     font-size:14px;
 
+    font-weight:600;
+
     line-height:1.3;
 
-}
-
-.form-group input[type="text"]{
-
-    width:100%;
-
-    height:48px;
-
-    padding:0 12px;
-
-    border-radius:10px;
-
-    border:1px solid #D4AF37;
-
-    background:#00265c;
-
-    color:#fff;
-
-    font-size:16px;
-
-    font-family:"Krasar",Arial,sans-serif;
-
-    box-sizing:border-box;
-
-}
-
-.form-group input:focus{
-
-    outline:none;
-
-    border-color:#FFD700;
+    letter-spacing:.2px;
 
 }
 
@@ -106,6 +86,16 @@
 
     box-sizing:border-box;
 
+    transition:border-color .2s, box-shadow .2s;
+
+}
+
+.box:focus-within{
+
+    border-color:#FFD700;
+
+    box-shadow:0 0 0 3px rgba(255,215,0,.18);
+
 }
 
 .box input[type="date"]{
@@ -138,7 +128,7 @@
 
     align-items:center;
 
-    gap:10px;
+    gap:12px;
 
     min-width:0;
 
@@ -154,9 +144,11 @@
 
     border-radius:999px;
 
-    background:#00265c;
+    background:linear-gradient(90deg,#FFD700 0%,#FFD700 var(--fill,90%),#00265c var(--fill,90%),#00265c 100%);
 
     outline:none;
+
+    cursor:pointer;
 
 }
 
@@ -172,9 +164,17 @@
 
     background:#FFD700;
 
-    border:2px solid #D4AF37;
+    border:2px solid #fff;
 
-    box-shadow:0 2px 6px rgba(0,0,0,.3);
+    box-shadow:0 2px 6px rgba(0,0,0,.35);
+
+    transition:transform .15s;
+
+}
+
+.age-slider::-webkit-slider-thumb:active{
+
+    transform:scale(1.15);
 
 }
 
@@ -188,15 +188,15 @@
 
     background:#FFD700;
 
-    border:2px solid #D4AF37;
+    border:2px solid #fff;
 
-    box-shadow:0 2px 6px rgba(0,0,0,.3);
+    box-shadow:0 2px 6px rgba(0,0,0,.35);
 
 }
 
 .age-num{
 
-    flex:0 0 110px;
+    flex:0 0 108px;
 
     height:48px;
 
@@ -218,6 +218,16 @@
 
     color:#fff;
 
+    transition:border-color .2s, box-shadow .2s;
+
+}
+
+.age-num:focus-within{
+
+    border-color:#FFD700;
+
+    box-shadow:0 0 0 3px rgba(255,215,0,.18);
+
 }
 
 .age-num input{
@@ -232,6 +242,8 @@
 
     font-size:17px;
 
+    font-weight:600;
+
     text-align:center;
 
     outline:none;
@@ -240,43 +252,61 @@
 
 .units{
 
-    color:#cdd9ef;
+    color:#8fa0bd;
 
-    font-size:13px;
-
-    white-space:nowrap;
+    font-size:12px;
 
     margin-top:4px;
 
 }
 
 /* =========================
-   Export Buttons
+   Result Card
 ========================= */
 
-.export-buttons{
+.result-card{
 
     margin-top:18px;
 
     display:flex;
 
-    justify-content:center;
+    align-items:flex-start;
 
-    gap:20px;
+    gap:14px;
 
-}
+    padding:18px 16px;
 
-.export-buttons button{
-
-    background:#00265c;
+    border-radius:16px;
 
     border:1px solid #D4AF37;
 
+    background:linear-gradient(135deg,#00265c,#001a44);
+
+    box-shadow:0 4px 14px rgba(0,0,0,.25);
+
+    animation:resultFadeIn .35s ease-out;
+
+}
+
+@keyframes resultFadeIn{
+
+    from{ opacity:0; transform:translateY(6px); }
+
+    to{ opacity:1; transform:translateY(0); }
+
+}
+
+.result-icon{
+
+    flex:0 0 auto;
+
+    width:44px;
+
+    height:44px;
+
     border-radius:12px;
 
-    padding:8px 14px;
-
-    cursor:pointer;
+    background:rgba(255,215,0,.12);
 
     display:flex;
 
@@ -284,144 +314,29 @@
 
     justify-content:center;
 
-}
-
-.export-buttons button:active{
-
-    transform:scale(.95);
+    font-size:22px;
 
 }
 
-/* =========================
-   Export / Result Section
-========================= */
+.result-body{
 
-#exportSection{
+    flex:1;
 
-    margin-top:16px;
-
-    margin-bottom:90px;
-
-}
-
-.pdf-wrapper{
-
-    background:linear-gradient(180deg,#003B8B,#002D6B);
-
-    border:1px solid #D4AF37;
-
-    border-radius:16px;
-
-    padding:16px 12px;
-
-}
-
-.pdf-title{
-
-    text-align:center;
-
-    font-size:19px;
-
-    font-weight:700;
-
-    color:#FFD700;
-
-    margin-bottom:8px;
-
-}
-
-.pdf-customer{
-
-    text-align:left;
-
-    font-size:15px;
-
-    font-weight:600;
-
-    color:#fff;
-
-    margin-bottom:14px;
-
-}
-
-.pdf-customer span{
-
-    color:#FFD700;
-
-    font-weight:700;
-
-}
-
-.pdf-wrapper table{
-
-    width:100%;
-
-    border-collapse:collapse;
-
-    margin-top:14px;
-
-    font-size:13px;
-
-    background:#00265c;
-
-    color:#fff;
-
-}
-
-.pdf-wrapper th,
-.pdf-wrapper td{
-
-    border:1px solid #2f4670;
-
-    padding:8px;
-
-    text-align:center;
-
-}
-
-.pdf-wrapper th{
-
-    background:#003B8B;
-
-    color:#FFD700;
-
-}
-
-.pdf-wrapper .info-table th{
-
-    text-align:left;
-
-}
-
-.pdf-wrapper .info-table td{
-
-    text-align:left;
-
-}
-
-/* =========================
-   Result highlight
-========================= */
-
-.result-box{
-
-    margin-top:14px;
-
-    padding:14px;
-
-    border:1px dashed #D4AF37;
-
-    border-radius:12px;
-
-    background:#00265c;
+    min-width:0;
 
 }
 
 .result-title{
 
-    color:#cdd9ef;
+    color:#9fb2d1;
 
-    font-size:14px;
+    font-size:13px;
+
+    font-weight:600;
+
+    text-transform:uppercase;
+
+    letter-spacing:.4px;
 
     margin-bottom:6px;
 
@@ -429,21 +344,25 @@
 
 .months-big{
 
-    font-size:22px;
+    font-size:24px;
 
-    font-weight:bold;
+    font-weight:800;
 
     color:#FFD700;
+
+    line-height:1.2;
 
 }
 
 .desc{
 
-    margin-top:6px;
+    margin-top:8px;
 
-    font-size:16px;
+    font-size:15px;
 
-    color:#fff;
+    color:#e6eefb;
+
+    line-height:1.6;
 
 }
 
@@ -451,13 +370,13 @@
 
     color:#FFD700;
 
-    font-weight:bold;
+    font-weight:700;
 
 }
 
 .desc.retired{
 
-    color:#ff8080;
+    color:#ff9d9d;
 
 }
 
@@ -467,13 +386,13 @@
 
 .foot-note{
 
-    margin:14px 6px 0;
+    margin:18px 4px 0;
 
-    color:#a8b5c7;
+    color:#8fa0bd;
 
     font-size:13px;
 
-    line-height:1.6;
+    line-height:1.7;
 
 }
 
@@ -481,7 +400,13 @@
 
 .age-num{
 
-    flex-basis:100px;
+    flex-basis:96px;
+
+}
+
+.months-big{
+
+    font-size:21px;
 
 }
 
