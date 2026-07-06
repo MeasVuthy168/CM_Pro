@@ -79,14 +79,6 @@ href="/CM_Pro/assets/css/global-splash.css">
 
 <div class="form-group">
 
-<label for="customerName">ឈ្មោះអតិថិជន</label>
-
-<input type="text" id="customerName" placeholder="ឧ. ACB">
-
-</div>
-
-<div class="form-group">
-
 <label for="dob">ថ្ងៃខែឆ្នាំកំណើត</label>
 
 <div class="box">
@@ -129,25 +121,23 @@ href="/CM_Pro/assets/css/global-splash.css">
 
 </div>
 
-<div class="export-buttons">
+</div>
 
-<button id="btnPDF">
+<div class="result-card">
 
-<img src="https://img.icons8.com/color/48/pdf.png" alt="PDF" width="32">
+<div class="result-icon">🗓️</div>
 
-</button>
+<div class="result-body">
 
-<button id="btnExcel">
+<div class="result-title">ចំនួនខែដែលនៅសល់</div>
 
-<img src="https://img.icons8.com/color/48/ms-excel.png" alt="Excel" width="32">
+<div id="monthsLeft" class="months-big">—</div>
 
-</button>
+<div id="description" class="desc"></div>
 
 </div>
 
 </div>
-
-<div id="exportSection"></div>
 
 <div class="foot-note">
 
@@ -355,12 +345,6 @@ loadNotificationBadge();
 
 </script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-
 <!-- NOTIFICATION BADGE -->
 
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
@@ -369,4 +353,3 @@ loadNotificationBadge();
 </body>
 
 </html>
-
