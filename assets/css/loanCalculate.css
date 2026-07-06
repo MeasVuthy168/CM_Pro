@@ -180,6 +180,8 @@
 
     margin-top:16px;
 
+    margin-bottom:90px;
+
 }
 
 .pdf-wrapper{
@@ -194,28 +196,6 @@
 
 }
 
-.pdf-customer{
-
-    text-align:left;
-
-    font-size:15px;
-
-    font-weight:600;
-
-    color:#fff;
-
-    margin-bottom:10px;
-
-}
-
-.pdf-customer span{
-
-    color:#FFD700;
-
-    font-weight:700;
-
-}
-
 .pdf-title{
 
     text-align:center;
@@ -226,7 +206,29 @@
 
     color:#FFD700;
 
+    margin-bottom:8px;
+
+}
+
+.pdf-customer{
+
+    text-align:left;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    color:#fff;
+
     margin-bottom:14px;
+
+}
+
+.pdf-customer span{
+
+    color:#FFD700;
+
+    font-weight:700;
 
 }
 
@@ -268,6 +270,12 @@
     background:#003B8B;
 
     color:#FFD700;
+
+}
+
+.pdf-wrapper .info-table th{
+
+    text-align:left;
 
 }
 
