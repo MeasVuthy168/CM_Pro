@@ -1,3 +1,4 @@
+@import url('./base.css');
 @import url('./variables.css');
 @import url('./layout.css');
 @import url('./mobile.css');
@@ -11,54 +12,15 @@
 @import url('./page.css');
 @import url('./toast.css');
 
-
 /* =========================
-   FONT
+   Dashboard background
+   (base.css handles font-face + the shared reset; this page
+   just layers its own background color on top.)
 ========================= */
-
-@font-face{
-
-    font-family:"Krasar";
-
-    src:url("../fonts/Krasar-Regular.ttf") format("truetype");
-
-    font-weight:normal;
-
-    font-style:normal;
-
-    font-display:swap;
-
-}
-
-/* =========================
-   Global Reset
-========================= */
-
-*{
-
-    margin:0;
-
-    padding:0;
-
-    box-sizing:border-box;
-
-}
 
 html,
 body{
 
-    width:100%;
-
-    height:100%;
-
-    margin:0;
-
-    padding:0;
-
-    overflow-x:hidden;
-
     background:#002D6B;
-
-    font-family:"Krasar",Arial,sans-serif;
 
 }
