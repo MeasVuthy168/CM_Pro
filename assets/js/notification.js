@@ -132,10 +132,6 @@ async function loadNotifications(){
 
         const data =
             await response.json();
-console.log(
-    "Notifications API:",
-    data
-);
 
         const notifications =
 
@@ -146,11 +142,6 @@ console.log(
             data.data ||
 
             [];
-
-        console.log(
-            "Notifications:",
-            notifications
-        );
 
         renderNotifications(
             notifications
@@ -205,8 +196,6 @@ createNotificationCard(item);
 
 });
 
-attachCardEvents();
-
 enableSwipeCards();
 
 }
@@ -238,6 +227,10 @@ function updateSummary(){
 }
 // =========================================================
 // CARD
+// Open button removed — a tap/click on the card does nothing
+// for now. Redirecting to a specific page on click is a
+// planned feature, not wired up yet. Swipe gestures (mark
+// read / delete) are the only interactions on a card today.
 // =========================================================
 
 function createNotificationCard(item){
@@ -309,12 +302,6 @@ ${escapeHtml(item.type || "system")}
 
 </div>
 
-<button class="notify-open">
-
-Open
-
-</button>
-
 </div>
 
 </div>
@@ -326,47 +313,11 @@ Open
 }
 
 // =========================================================
-// EVENTS
+// SWIPE
+// The only way to mark-read or delete a card. Swipe right to
+// mark read, swipe left to delete — a plain tap/click never
+// triggers either action.
 // =========================================================
-
-function attachCardEvents(){
-
-document
-.querySelectorAll(".notify-open")
-
-.forEach(btn=>{
-
-btn.addEventListener("click",async(e)=>{
-
-const card=
-
-e.target.closest(".notify-card");
-
-const id=
-card.dataset.id;
-
-const url=
-card.dataset.url;
-
-await markRead(id);
-
-card.classList.remove(
-    "unread"
-);
-
-updateSummary();
-
-if(url){
-
-    window.location.href=url;
-
-}
-
-});
-
-});
-
-}
 
 function enableSwipeCards(){
 
@@ -850,8 +801,6 @@ if("BroadcastChannel" in window){
 
         );
 
-        attachCardEvents();
-
         enableSwipeCards();
 
         updateSummary();
@@ -866,12 +815,6 @@ if("BroadcastChannel" in window){
 
             if(event.data?.type === "NEW_NOTIFICATION"){
 
-                console.log(
-
-                    "Realtime notification (instant render, BroadcastChannel)"
-
-                );
-
                 renderOptimisticCard(
                     event.data.notification
                 );
@@ -879,12 +822,6 @@ if("BroadcastChannel" in window){
                 scheduleReconcile();
 
             }else if(event.data?.type === "REFRESH_BADGE"){
-
-                console.log(
-
-                    "Realtime notification list refresh (BroadcastChannel)"
-
-                );
 
                 scheduleReconcile();
 
