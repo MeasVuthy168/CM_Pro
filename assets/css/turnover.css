@@ -172,7 +172,14 @@ overflow:auto;
 
 }
 
-table{
+/* All selectors below are scoped to .table-card so they can
+   never leak onto any other <table> in the document — notably
+   the dynamically-created table exportPDF() builds for the PDF
+   preview, which used to inherit these as unscoped tag rules
+   (table{color:#fff}, tfoot{color:#FFD700}), making the exported
+   row text render white-on-white / gold and appear "missing". */
+
+.table-card table{
 
 width:100%;
 
@@ -182,11 +189,17 @@ font-size:13px;
 
 white-space:nowrap;
 
-color:#fff;
+color:#222;
+
+background:#fff;
+
+border-radius:10px;
+
+overflow:hidden;
 
 }
 
-thead{
+.table-card thead{
 
 background:#003B8B;
 
@@ -194,7 +207,7 @@ color:#FFD700;
 
 }
 
-th{
+.table-card th{
 
 padding:10px 8px;
 
@@ -204,35 +217,39 @@ font-weight:bold;
 
 }
 
-td{
+.table-card td{
 
 padding:8px;
 
-border:1px solid #2f4670;
+border:1px solid #e0e0e0;
 
 text-align:center;
 
-}
-
-tbody tr:nth-child(even){
-
-background:rgba(255,255,255,.03);
+color:#222;
 
 }
 
-tfoot{
+.table-card tbody tr:nth-child(even){
 
-background:#00265c;
+background:#f5f7fb;
+
+}
+
+.table-card tfoot{
+
+background:#eef1f8;
 
 font-weight:bold;
 
-color:#FFD700;
+color:#032d73;
 
 }
 
-tfoot td{
+.table-card tfoot td{
 
 padding:10px;
+
+color:#032d73;
 
 }
 
@@ -242,7 +259,7 @@ padding:10px;
 
 .row-newest{
 
-background:rgba(40,167,69,.18) !important;
+background:rgba(40,167,69,.14) !important;
 
 font-weight:bold;
 
@@ -250,15 +267,15 @@ font-weight:bold;
 
 .row-oldest{
 
-background:rgba(255,255,255,.05) !important;
+background:rgba(0,0,0,.04) !important;
 
 }
 
 .row-nodata{
 
-background:rgba(255,215,0,.10) !important;
+background:rgba(255,193,7,.14) !important;
 
-color:#cdd9ef;
+color:#7a5c00;
 
 }
 
@@ -358,19 +375,19 @@ height:42px;
 
 }
 
-table{
+.table-card table{
 
 font-size:12px;
 
 }
 
-th{
+.table-card th{
 
 padding:8px 6px;
 
 }
 
-td{
+.table-card td{
 
 padding:7px 5px;
 
