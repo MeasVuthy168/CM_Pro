@@ -711,16 +711,21 @@ async function exportPDF(){
     .toUpperCase();
 
     const avgDebit =
-    document.getElementById("avgDebit").innerText;
+    document.getElementById("avgDebit").textContent.trim();
 
     const avgOD =
-    document.getElementById("avgOD").innerText;
+    document.getElementById("avgOD").textContent.trim();
 
     const avgTurnover =
-    document.getElementById("avgTurnover").innerText;
+    document.getElementById("avgTurnover").textContent.trim();
 
     // ==========================
     // Table
+    // Read with textContent, not innerText — innerText can come
+    // back empty for rows currently scrolled out of view inside
+    // the scrollable .table-card container (a known mobile
+    // Chrome/WebView quirk), which is why most rows exported
+    // blank while the average (read separately above) was fine.
     // ==========================
 
     let rows="";
@@ -741,7 +746,7 @@ async function exportPDF(){
             text-align:center;
             ">
 
-            ${td.innerText}
+            ${td.textContent.trim()}
 
             </td>
 
@@ -1018,6 +1023,18 @@ CM_Pro Credit Monitoring System
 
     div.innerHTML=html;
 
+    // html2canvas needs the element attached to the document to
+    // reliably compute layout and load the logo image — position
+    // it off-screen instead of just leaving it detached.
+
+    div.style.position="fixed";
+
+    div.style.left="-9999px";
+
+    div.style.top="0";
+
+    document.body.appendChild(div);
+
     html2pdf()
     .from(div)
     .set({
@@ -1044,7 +1061,13 @@ CM_Pro Credit Monitoring System
         }
 
     })
-    .save();
+    .save()
+
+    .then(()=>{
+
+        div.remove();
+
+    });
 
 }
 // ========================================
@@ -1117,6 +1140,9 @@ data.push([
 ]);
 
 // Table
+// Read with textContent, not innerText — see the note in
+// exportPDF() above; the same scrolled-out-of-view quirk can
+// affect this export too.
 
 const rows=
 
@@ -1131,7 +1157,7 @@ const row=[];
 r.querySelectorAll("td")
 .forEach(td=>{
 
-row.push(td.innerText);
+row.push(td.textContent.trim());
 
 });
 
@@ -1147,11 +1173,11 @@ data.push([
 
 "Average",
 
-document.getElementById("avgDebit").innerText,
+document.getElementById("avgDebit").textContent.trim(),
 
-document.getElementById("avgOD").innerText,
+document.getElementById("avgOD").textContent.trim(),
 
-document.getElementById("avgTurnover").innerText,
+document.getElementById("avgTurnover").textContent.trim(),
 
 ""
 
