@@ -265,28 +265,6 @@ only holds styles specific to the notifications page.
 
 }
 
-.notify-open{
-
-    border:none;
-
-    background:#D4AF37;
-
-    color:#002D6B;
-
-    height:36px;
-
-    padding:0 16px;
-
-    border-radius:10px;
-
-    font-size:13px;
-
-    font-weight:700;
-
-    cursor:pointer;
-
-}
-
 /* =========================
    Swipe actions
 ========================= */
