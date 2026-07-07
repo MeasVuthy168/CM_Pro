@@ -16,13 +16,15 @@ padding-bottom:90px;
 
 .form-card{
 
-background:#fff;
+background:linear-gradient(180deg,#003B8B,#002D6B);
 
-border-radius:18px;
+border:1px solid #D4AF37;
 
-padding:18px;
+border-radius:16px;
 
-box-shadow:0 3px 10px rgba(0,0,0,.12);
+padding:20px;
+
+box-shadow:0 4px 14px rgba(0,0,0,.25);
 
 margin-bottom:18px;
 
@@ -44,7 +46,7 @@ font-size:14px;
 
 font-weight:700;
 
-color:#032d73;
+color:#cdd9ef;
 
 margin-bottom:6px;
 
@@ -52,13 +54,13 @@ margin-bottom:6px;
 
 .form-group input{
 
-height:42px;
+height:44px;
 
 padding:0 12px;
 
-border:1px solid #d5d5d5;
+border:1px solid #D4AF37;
 
-border-radius:8px;
+border-radius:10px;
 
 font-size:15px;
 
@@ -66,25 +68,27 @@ outline:none;
 
 transition:.2s;
 
-background:#fff;
+background:#00265c;
+
+color:#fff;
 
 }
 
 .form-group input:focus{
 
-border-color:#032d73;
+border-color:#FFD700;
 
-box-shadow:0 0 0 3px rgba(3,45,115,.12);
+box-shadow:0 0 0 3px rgba(255,215,0,.18);
 
 }
 
 .form-group input[readonly]{
 
-background:#f7f7f7;
+background:#001c48;
 
 font-weight:bold;
 
-color:#444;
+color:#FFD700;
 
 }
 
@@ -106,13 +110,15 @@ margin-top:10px;
 
 flex:1;
 
-height:42px;
+height:44px;
 
 border:none;
 
-border-radius:8px;
+border-radius:10px;
 
-background:#032d73;
+background:#00265c;
+
+border:1px solid #D4AF37;
 
 color:#fff;
 
@@ -126,15 +132,23 @@ transition:.2s;
 
 }
 
-.button-row button:hover{
-
-opacity:.92;
-
-}
-
 .button-row button:active{
 
 transform:scale(.97);
+
+}
+
+/* Search is the primary action — gold, like the other pages'
+   calculate/submit buttons. Excel/PDF stay as secondary
+   navy-with-gold-outline buttons. */
+
+#btnSearch{
+
+background:linear-gradient(180deg,#FFD700,#D4AF37);
+
+border-color:#D4AF37;
+
+color:#002D6B;
 
 }
 
@@ -144,13 +158,15 @@ transform:scale(.97);
 
 .table-card{
 
-background:#fff;
+background:linear-gradient(180deg,#003B8B,#002D6B);
 
-border-radius:18px;
+border:1px solid #D4AF37;
+
+border-radius:16px;
 
 padding:10px;
 
-box-shadow:0 3px 10px rgba(0,0,0,.12);
+box-shadow:0 4px 14px rgba(0,0,0,.25);
 
 overflow:auto;
 
@@ -166,13 +182,15 @@ font-size:13px;
 
 white-space:nowrap;
 
+color:#fff;
+
 }
 
 thead{
 
-background:#032d73;
+background:#003B8B;
 
-color:#fff;
+color:#FFD700;
 
 }
 
@@ -180,7 +198,7 @@ th{
 
 padding:10px 8px;
 
-border:1px solid #dcdcdc;
+border:1px solid #2f4670;
 
 font-weight:bold;
 
@@ -190,7 +208,7 @@ td{
 
 padding:8px;
 
-border:1px solid #e5e5e5;
+border:1px solid #2f4670;
 
 text-align:center;
 
@@ -198,15 +216,17 @@ text-align:center;
 
 tbody tr:nth-child(even){
 
-background:#fafafa;
+background:rgba(255,255,255,.03);
 
 }
 
 tfoot{
 
-background:#f3f3f3;
+background:#00265c;
 
 font-weight:bold;
+
+color:#FFD700;
 
 }
 
@@ -222,7 +242,7 @@ padding:10px;
 
 .row-newest{
 
-background:#dff7df !important;
+background:rgba(40,167,69,.18) !important;
 
 font-weight:bold;
 
@@ -230,15 +250,15 @@ font-weight:bold;
 
 .row-oldest{
 
-background:#efefef !important;
+background:rgba(255,255,255,.05) !important;
 
 }
 
 .row-nodata{
 
-background:#fff4d8 !important;
+background:rgba(255,215,0,.10) !important;
 
-color:#999;
+color:#cdd9ef;
 
 }
 
@@ -264,7 +284,7 @@ justify-content:center;
 
 align-items:center;
 
-background:rgba(255,255,255,.55);
+background:rgba(0,45,107,.85);
 
 z-index:9999;
 
@@ -276,57 +296,23 @@ width:42px;
 
 height:42px;
 
-border:4px solid #d6d6d6;
+border:4px solid rgba(212,175,55,.25);
 
-border-top:4px solid #032d73;
+border-top:4px solid #D4AF37;
 
 border-radius:50%;
 
-animation:spin .8s linear infinite;
+animation:turnoverSpin .8s linear infinite;
 
 }
 
-@keyframes spin{
+@keyframes turnoverSpin{
 
 100%{
 
 transform:rotate(360deg);
 
 }
-
-}
-
-/* ==========================================
-   OFFLINE
-========================================== */
-
-#offlineBanner{
-
-position:fixed;
-
-top:10px;
-
-left:50%;
-
-transform:translateX(-50%);
-
-background:#d90429;
-
-color:#fff;
-
-padding:10px 18px;
-
-border-radius:14px;
-
-font-size:14px;
-
-font-weight:600;
-
-display:none;
-
-z-index:99999;
-
-box-shadow:0 4px 12px rgba(0,0,0,.2);
 
 }
 
@@ -360,7 +346,7 @@ font-size:13px;
 
 font-size:14px;
 
-height:40px;
+height:42px;
 
 }
 
@@ -368,7 +354,7 @@ height:40px;
 
 font-size:14px;
 
-height:40px;
+height:42px;
 
 }
 
