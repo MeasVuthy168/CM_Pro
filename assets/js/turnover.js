@@ -1023,18 +1023,6 @@ CM_Pro Credit Monitoring System
 
     div.innerHTML=html;
 
-    // html2canvas needs the element attached to the document to
-    // reliably compute layout and load the logo image — position
-    // it off-screen instead of just leaving it detached.
-
-    div.style.position="fixed";
-
-    div.style.left="-9999px";
-
-    div.style.top="0";
-
-    document.body.appendChild(div);
-
     html2pdf()
     .from(div)
     .set({
@@ -1061,13 +1049,7 @@ CM_Pro Credit Monitoring System
         }
 
     })
-    .save()
-
-    .then(()=>{
-
-        div.remove();
-
-    });
+    .save();
 
 }
 // ========================================
