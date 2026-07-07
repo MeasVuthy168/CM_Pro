@@ -2,54 +2,35 @@
 // COMPONENT LOADER
 // =========================
 
-let loaded = 0;
+let loaded=0;
 
-async function loadComponent(id, file){
+async function loadComponent(id,file){
 
     try{
 
-        const useCache =
-            id !== "topbar-container";
+        const useCache=id!=="topbar-container";
 
-        const cached =
-            useCache
-            ? sessionStorage.getItem(
-                "comp_" + id
-              )
-            : null;
+        const cached=useCache ? sessionStorage.getItem("comp_"+id) : null;
 
         if(cached){
 
-            document
-                .getElementById(id)
-                .innerHTML = cached;
+            document.getElementById(id).innerHTML=cached;
 
         }else{
 
-            const response =
-                await fetch(file);
+            const response=await fetch(file);
 
-            const html =
-                await response.text();
+            const html=await response.text();
 
-            document
-                .getElementById(id)
-                .innerHTML = html;
+            document.getElementById(id).innerHTML=html;
 
             if(useCache){
 
-                sessionStorage.setItem(
-                    "comp_" + id,
-                    html
-                );
+                sessionStorage.setItem("comp_"+id,html);
 
             }
 
         }
-
-        // =====================
-        // TOPBAR
-        // =====================
 
         if(id==="topbar-container"){
 
@@ -64,6 +45,20 @@ async function loadComponent(id, file){
                 showProfile:false
 
             });
+
+        }
+
+        // Set the active nav item right when bottomnav actually
+        // finishes loading — avoids racing a blind setTimeout
+        // against a possibly-slow network fetch.
+
+        if(id==="bottomnav-container"){
+
+            const items=document.querySelectorAll(".bottom-nav-item");
+
+            items.forEach(item=>item.classList.remove("active"));
+
+            items[1]?.classList.add("active");
 
         }
 
@@ -94,18 +89,34 @@ async function loadComponent(id, file){
 }
 
 // =========================
+// OFFLINE DETECT
+// =========================
+
+function updateOnlineStatus(){
+
+    const banner=document.getElementById("offlineBanner");
+
+    if(banner){
+
+        banner.style.display=navigator.onLine ? "none" : "block";
+
+    }
+
+}
+
+window.addEventListener("online",updateOnlineStatus);
+
+window.addEventListener("offline",updateOnlineStatus);
+
+updateOnlineStatus();
+
+// =========================
 // LOAD COMPONENTS
 // =========================
 
-loadComponent(
-    "topbar-container",
-    "/CM_Pro/components/topbar.html"
-);
+loadComponent("topbar-container","/CM_Pro/components/topbar.html");
 
-loadComponent(
-    "bottomnav-container",
-    "/CM_Pro/components/bottomnav.html"
-);
+loadComponent("bottomnav-container","/CM_Pro/components/bottomnav.html");
 
 // =========================
 // PUSH
@@ -121,25 +132,20 @@ if(window.PushNotification){
 // FAILSAFE SPLASH
 // =========================
 
-window.addEventListener(
+window.addEventListener("load",()=>{
 
-    "load",
+    setTimeout(()=>{
 
-    ()=>{
+        if(typeof hideGlobalSplash==="function"){
 
-        setTimeout(()=>{
+            hideGlobalSplash();
 
-            if(typeof hideGlobalSplash==="function"){
+        }
 
-                hideGlobalSplash();
+    },2500);
 
-            }
+});
 
-        },2500);
-
-    }
-
-);
 // =========================
 // LOAD USER INFO
 // =========================
@@ -148,61 +154,36 @@ async function loadUserProfile(){
 
     try{
 
-        const user = JSON.parse(
-            localStorage.getItem("loggedInUser") || "{}"
-        );
+        const user=JSON.parse(localStorage.getItem("loggedInUser") || "{}");
 
-        document.getElementById("settingFullname").innerText =
-            user.fullname ||
-            user.username ||
-            "Unknown";
+        document.getElementById("settingFullname").innerText=
 
-        document.getElementById("settingUsername").innerText =
-            user.username || "";
-
-        // role
-        if(!document.getElementById("settingRole")){
-
-            const role = document.createElement("div");
-
-            role.id = "settingRole";
-
-            role.className = "profile-role";
-
-            document
-                .querySelector(".profile-info")
-                .appendChild(role);
-
-        }
-
-        document.getElementById("settingRole").innerText =
-            user.role || "";
+            user.fullname || user.username || "Unknown";
 
         // photo
+
         if(user.username){
 
-            const img =
-                document.getElementById("settingPhoto");
+            const img=document.getElementById("settingPhoto");
 
-            const fallback =
-                "/CM_Pro/assets/images/default-user.png";
+            const fallback="/CM_Pro/assets/images/default-user.png";
 
             // set onerror BEFORE src so a fast/cached failure
             // can never slip through the gap.
             // guarded so it can't loop forever if the fallback
             // image itself is missing/broken.
-            img.onerror = function(){
 
-                if(this.src.indexOf(fallback) !== -1) return;
+            img.onerror=function(){
 
-                this.onerror = null;
+                if(this.src.indexOf(fallback)!==-1) return;
 
-                this.src = fallback;
+                this.onerror=null;
+
+                this.src=fallback;
 
             };
 
-            img.src =
-                `${API.BASE_URL}/assets/user-photo/${user.username}`;
+            img.src=`${API.BASE_URL}/assets/user-photo/${user.username}`;
 
         }
 
@@ -214,14 +195,6 @@ async function loadUserProfile(){
 
 }
 
-window.addEventListener(
-
-    "load",
-
-    loadUserProfile
-
-);
-
 // =========================
 // FIX: RELOAD PHOTO ON BACK / BFCACHE RESTORE
 // =========================
@@ -230,15 +203,13 @@ window.addEventListener(
 // request was aborted or never completed before navigating away,
 // it stays broken. This re-checks and re-fetches it when needed.
 
-window.addEventListener("pageshow", function(event){
+window.addEventListener("pageshow",function(event){
 
-    const img = document.getElementById("settingPhoto");
+    const img=document.getElementById("settingPhoto");
 
     if(!img) return;
 
-    const broken =
-        !img.complete ||
-        img.naturalWidth === 0;
+    const broken=!img.complete || img.naturalWidth===0;
 
     if(event.persisted || broken){
 
@@ -249,91 +220,93 @@ window.addEventListener("pageshow", function(event){
 });
 
 // =========================
-// ACTIVE NAV
-// =========================
-
-setTimeout(()=>{
-
-    document.querySelectorAll(".bottom-nav-item")
-        .forEach(item=>item.classList.remove("active"));
-
-    document.querySelectorAll(".bottom-nav-item")[1]
-        ?.classList.add("active");
-
-},300);
-
-
-// =========================
 // NOTIFICATION SWITCH
 // =========================
 
-window.addEventListener("load",initNotificationSwitch);
-
 async function initNotificationSwitch(){
 
-const toggle=document.getElementById("notifyToggle");
+    const toggle=document.getElementById("notifyToggle");
 
-if(!toggle)return;
+    if(!toggle) return;
 
-toggle.checked=
-await PushNotification.isEnabled();
+    toggle.checked=await PushNotification.isEnabled();
 
-toggle.onchange=async function(){
+    toggle.onchange=async function(){
 
-if(this.checked){
+        if(this.checked){
 
-localStorage.setItem(
-"notificationEnabled",
-"true"
-);
+            localStorage.setItem("notificationEnabled","true");
 
-await PushNotification.enable();
+            await PushNotification.enable();
 
-}else{
+        }else{
 
-await PushNotification.disable();
+            await PushNotification.disable();
 
-}
+        }
 
-};
+    };
 
 }
+
 // =========================
 // LOGOUT DIALOG
 // =========================
 
-window.addEventListener("load",()=>{
+function initLogoutDialog(){
 
-const logoutBtn=document.getElementById("logoutBtn");
-const logoutDialog=document.getElementById("logoutDialog");
-const btnLogoutYes=document.getElementById("btnLogoutYes");
-const btnLogoutNo=document.getElementById("btnLogoutNo");
+    const logoutBtn=document.getElementById("logoutBtn");
 
-if(!logoutBtn||!logoutDialog||!btnLogoutYes||!btnLogoutNo){
-console.error("Logout dialog elements not found.");
-return;
+    const logoutDialog=document.getElementById("logoutDialog");
+
+    const btnLogoutYes=document.getElementById("btnLogoutYes");
+
+    const btnLogoutNo=document.getElementById("btnLogoutNo");
+
+    if(!logoutBtn || !logoutDialog || !btnLogoutYes || !btnLogoutNo){
+
+        console.error("Logout dialog elements not found.");
+
+        return;
+
+    }
+
+    logoutBtn.addEventListener("click",()=>{
+
+        logoutDialog.classList.add("show");
+
+    });
+
+    btnLogoutNo.addEventListener("click",()=>{
+
+        logoutDialog.classList.remove("show");
+
+    });
+
+    btnLogoutYes.addEventListener("click",()=>{
+
+        localStorage.removeItem("token");
+
+        localStorage.removeItem("loggedInUser");
+
+        sessionStorage.clear();
+
+        window.location.replace("/CM_Pro/login.html");
+
+    });
+
 }
 
-logoutBtn.addEventListener("click",()=>{
+// =========================
+// PAGE INIT
+// =========================
 
-logoutDialog.classList.add("show");
+window.addEventListener("load",()=>{
 
-});
+    loadUserProfile();
 
-btnLogoutNo.addEventListener("click",()=>{
+    initNotificationSwitch();
 
-logoutDialog.classList.remove("show");
-
-});
-
-btnLogoutYes.addEventListener("click",()=>{
-
-localStorage.removeItem("token");
-localStorage.removeItem("loggedInUser");
-sessionStorage.clear();
-
-window.location.replace("/CM_Pro/login.html");
-
-});
+    initLogoutDialog();
 
 });
