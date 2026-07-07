@@ -1,0 +1,386 @@
+/* =========================
+   Page Background / Layout
+========================= */
+
+body{
+
+    background:#032d73;
+
+    min-height:100vh;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:20px 20px 100px;
+
+    overflow:hidden;
+
+    overscroll-behavior:none;
+
+    -webkit-user-select:none;
+
+    -webkit-touch-callout:none;
+
+}
+
+/* =========================
+   Login Card
+========================= */
+
+.login-card{
+
+    width:100%;
+
+    max-width:420px;
+
+    background:#fff;
+
+    border-radius:28px;
+
+    padding:35px 25px;
+
+    box-shadow:0 10px 30px rgba(0,0,0,.18);
+
+}
+
+.logo{
+
+    width:120px;
+
+    display:block;
+
+    margin:auto auto 20px;
+
+}
+
+.title{
+
+    text-align:center;
+
+    font-size:20px;
+
+    color:#17356f;
+
+    margin-bottom:10px;
+
+    font-weight:500;
+
+}
+
+.subtitle{
+
+    text-align:center;
+
+    color:#888;
+
+    margin-bottom:35px;
+
+    font-size:14px;
+
+}
+
+/* =========================
+   Inputs
+========================= */
+
+.input-box{
+
+    width:100%;
+
+    height:60px;
+
+    border:none;
+
+    background:#f2f4f8;
+
+    border-radius:16px;
+
+    padding:0 18px;
+
+    font-size:18px;
+
+    outline:none;
+
+    margin-bottom:20px;
+
+}
+
+.password-wrapper{
+
+    position:relative;
+
+}
+
+.show-password{
+
+    position:absolute;
+
+    right:18px;
+
+    top:20px;
+
+    font-size:14px;
+
+    color:#032d73;
+
+    cursor:pointer;
+
+    font-weight:600;
+
+}
+
+.remember-row{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    margin-bottom:25px;
+
+    color:#444;
+
+    font-size:15px;
+
+}
+
+.remember-row input{
+
+    width:20px;
+
+    height:20px;
+
+}
+
+/* =========================
+   Login Button
+========================= */
+
+.login-btn{
+
+    width:100%;
+
+    height:68px;
+
+    border:none;
+
+    border-radius:18px;
+
+    background:#032d73;
+
+    color:#fff;
+
+    font-size:22px;
+
+    cursor:pointer;
+
+    transition:.2s;
+
+}
+
+.login-btn:hover{
+
+    opacity:.95;
+
+}
+
+.login-btn:disabled{
+
+    opacity:.7;
+
+}
+
+/* =========================
+   Status + Loading
+========================= */
+
+.status-box{
+
+    margin-top:22px;
+
+    text-align:center;
+
+    min-height:24px;
+
+    font-size:15px;
+
+    font-weight:600;
+
+}
+
+.success{
+
+    color:#10a844;
+
+}
+
+.error{
+
+    color:#d90429;
+
+}
+
+.loading{
+
+    display:none;
+
+    width:35px;
+
+    height:35px;
+
+    margin:20px auto 0;
+
+    border:4px solid #ddd;
+
+    border-top:4px solid #032d73;
+
+    border-radius:50%;
+
+    animation:loginSpin .8s linear infinite;
+
+}
+
+@keyframes loginSpin{
+
+    100%{
+
+        transform:rotate(360deg);
+
+    }
+
+}
+
+/* =========================
+   iOS Install Banner
+========================= */
+
+#iosInstallBanner{
+
+    position:fixed;
+
+    left:15px;
+
+    right:15px;
+
+    bottom:20px;
+
+    background:#fff;
+
+    border-radius:20px;
+
+    padding:20px;
+
+    z-index:99999;
+
+    box-shadow:0 8px 30px rgba(0,0,0,.25);
+
+    display:none;
+
+    animation:iosSlideUp .3s ease;
+
+}
+
+.ios-title{
+
+    font-size:20px;
+
+    font-weight:700;
+
+    color:#032d73;
+
+    margin-bottom:10px;
+
+}
+
+.ios-text{
+
+    color:#444;
+
+    line-height:1.5;
+
+    font-size:15px;
+
+}
+
+#closeIOSBanner{
+
+    margin-top:18px;
+
+    width:100%;
+
+    height:50px;
+
+    border:none;
+
+    border-radius:14px;
+
+    background:#032d73;
+
+    color:#fff;
+
+    font-size:17px;
+
+}
+
+@keyframes iosSlideUp{
+
+    from{
+
+        transform:translateY(100px);
+
+        opacity:0;
+
+    }
+
+    to{
+
+        transform:translateY(0);
+
+        opacity:1;
+
+    }
+
+}
+
+/* =========================
+   Native "Install App" button
+   (injected by login.js via beforeinstallprompt — styled here
+   instead of inline JS so it lives in one place with the rest
+   of this page's CSS)
+========================= */
+
+#installBtn{
+
+    position:fixed;
+
+    bottom:20px;
+
+    left:50%;
+
+    transform:translateX(-50%);
+
+    z-index:9999;
+
+    width:220px;
+
+    height:55px;
+
+    border:none;
+
+    border-radius:16px;
+
+    background:#ffd700;
+
+    color:#032d73;
+
+    font-size:18px;
+
+    font-weight:600;
+
+    box-shadow:0 4px 15px rgba(0,0,0,.25);
+
+}
