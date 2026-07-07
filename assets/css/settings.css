@@ -1,11 +1,20 @@
 .setting-page{
+
     padding-bottom:100px;
 
 }
 
+/* =========================
+   Profile Card
+========================= */
+
 .profile-card{
 
-    background:white;
+    background:linear-gradient(180deg,#003B8B,#002D6B);
+
+    border:1px solid #D4AF37;
+
+    border-radius:16px;
 
     display:flex;
 
@@ -15,7 +24,9 @@
 
     padding:22px;
 
-    margin-bottom:14px;
+    margin:14px 14px;
+
+    box-shadow:0 4px 14px rgba(0,0,0,.25);
 
 }
 
@@ -27,9 +38,23 @@
 
     border-radius:50%;
 
-    border:4px solid #002D6B;
+    border:4px solid #D4AF37;
 
     object-fit:cover;
+
+    flex-shrink:0;
+
+}
+
+.profile-info{
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    min-width:0;
 
 }
 
@@ -37,7 +62,7 @@
 
     font-size:20px;
 
-    color:#c28a00;
+    color:#FFD700;
 
     font-weight:bold;
 
@@ -45,15 +70,39 @@
 
 .profile-role{
 
-    font-size:16px;
+    font-size:15px;
 
-    color:#555;
+    color:#cdd9ef;
 
 }
 
+#settingRole{
+
+    font-size:15px;
+
+    color:#cdd9ef;
+
+    margin-top:4px;
+
+}
+
+/* =========================
+   Setting List
+========================= */
+
 .setting-list{
 
-    background:white;
+    background:linear-gradient(180deg,#003B8B,#002D6B);
+
+    border:1px solid #D4AF37;
+
+    border-radius:16px;
+
+    margin:0 14px 14px;
+
+    overflow:hidden;
+
+    box-shadow:0 4px 14px rgba(0,0,0,.25);
 
 }
 
@@ -65,44 +114,34 @@
 
     align-items:center;
 
-    padding:14px 22px;
+    padding:14px 20px;
 
     min-height:66px;
 
-    border-bottom:1px solid #eee;
+    border-bottom:1px solid rgba(212,175,55,.25);
 
     font-size:16px;
+
+    color:#fff;
 
     cursor:pointer;
 
-}
-.profile-info{
-
-    display:flex;
-
-    flex-direction:column;
-
-    justify-content:center;
+    transition:background .15s;
 
 }
 
-#settingRole{
+.setting-item:last-child{
 
-    font-size:16px;
-
-    color:#888;
-
-    margin-top:4px;
+    border-bottom:none;
 
 }
 
-.logout{
+.setting-item:active{
 
-    color:red;
-
-    font-weight:bold;
+    background:rgba(255,255,255,.06);
 
 }
+
 .setting-left{
 
     display:flex;
@@ -110,6 +149,8 @@
     align-items:center;
 
     gap:14px;
+
+    min-width:0;
 
 }
 
@@ -127,9 +168,9 @@
 
 .setting-arrow{
 
-    font-size:34px;
+    font-size:30px;
 
-    color:#333;
+    color:#D4AF37;
 
     line-height:1;
 
@@ -144,48 +185,99 @@
     justify-content:flex-end;
 
 }
+
+.logout{
+
+    color:#ff6b6b;
+
+    font-weight:bold;
+
+}
+
+/* =========================
+   Switch
+========================= */
+
 .switch{
-position:relative;
-display:inline-block;
-width:56px;
-height:30px;
+
+    position:relative;
+
+    display:inline-block;
+
+    width:56px;
+
+    height:30px;
+
 }
 
 .switch input{
-display:none;
+
+    display:none;
+
 }
 
 .slider{
-position:absolute;
-cursor:pointer;
-top:0;
-left:0;
-right:0;
-bottom:0;
-background:#d7d7d7;
-transition:.25s;
-border-radius:40px;
+
+    position:absolute;
+
+    cursor:pointer;
+
+    top:0;
+
+    left:0;
+
+    right:0;
+
+    bottom:0;
+
+    background:#00265c;
+
+    border:1px solid #3c5068;
+
+    transition:.25s;
+
+    border-radius:40px;
+
 }
 
 .slider:before{
-position:absolute;
-content:"";
-height:24px;
-width:24px;
-left:3px;
-bottom:3px;
-background:white;
-transition:.25s;
-border-radius:50%;
-box-shadow:0 2px 6px rgba(0,0,0,.25);
+
+    position:absolute;
+
+    content:"";
+
+    height:22px;
+
+    width:22px;
+
+    left:3px;
+
+    bottom:2px;
+
+    background:#fff;
+
+    transition:.25s;
+
+    border-radius:50%;
+
+    box-shadow:0 2px 6px rgba(0,0,0,.35);
+
 }
 
 input:checked + .slider{
-background:#28a745;
+
+    background:#D4AF37;
+
+    border-color:#D4AF37;
+
 }
 
 input:checked + .slider:before{
-transform:translateX(26px);
+
+    transform:translateX(26px);
+
+    background:#002D6B;
+
 }
 
 /* ===========================
@@ -193,59 +285,115 @@ transform:translateX(26px);
 =========================== */
 
 .dialog{
-position:fixed;
-left:0;
-top:0;
-width:100%;
-height:100%;
-display:none;
-justify-content:center;
-align-items:center;
-background:rgba(0,0,0,.45);
-z-index:99999;
+
+    position:fixed;
+
+    left:0;
+
+    top:0;
+
+    width:100%;
+
+    height:100%;
+
+    display:none;
+
+    justify-content:center;
+
+    align-items:center;
+
+    background:rgba(0,0,0,.55);
+
+    z-index:99999;
+
 }
 
 .dialog.show{
-display:flex;
+
+    display:flex;
+
 }
 
 .dialog-box{
-width:90%;
-max-width:420px;
-background:#fff;
-border-radius:18px;
-padding:22px;
-box-shadow:0 10px 25px rgba(0,0,0,.25);
+
+    width:90%;
+
+    max-width:420px;
+
+    background:linear-gradient(180deg,#003B8B,#002D6B);
+
+    border:1px solid #D4AF37;
+
+    border-radius:18px;
+
+    padding:24px;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.4);
+
 }
 
 .dialog-title{
-font-size:18px;
-text-align:center;
-margin-bottom:22px;
-font-family:Krasar;
+
+    font-size:18px;
+
+    color:#fff;
+
+    text-align:center;
+
+    margin-bottom:22px;
+
+    font-family:Krasar;
+
 }
 
 .dialog-buttons{
-display:flex;
-gap:12px;
+
+    display:flex;
+
+    gap:12px;
+
 }
 
 .dialog-buttons button{
-flex:1;
-height:52px;
-border:none;
-border-radius:10px;
-cursor:pointer;
-font-size:18px;
-font-family:Krasar;
+
+    flex:1;
+
+    height:52px;
+
+    border:none;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-size:18px;
+
+    font-family:Krasar;
+
+    transition:transform .15s;
+
+}
+
+.dialog-buttons button:active{
+
+    transform:scale(.97);
+
 }
 
 #btnLogoutYes{
-background:#d9534f;
-color:#fff;
+
+    background:#d9534f;
+
+    color:#fff;
+
 }
 
 #btnLogoutNo{
-background:#efefef;
-color:#222;
+
+    background:#00265c;
+
+    border:1px solid #D4AF37;
+
+    color:#fff;
+
 }
