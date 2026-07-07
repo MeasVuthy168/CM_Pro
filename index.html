@@ -16,29 +16,13 @@
 
 <link rel="apple-touch-icon" href="/CM_Pro/assets/images/icon-192.png">
 
+<!-- ========================= -->
+<!-- STYLES -->
+<!-- ========================= -->
+
 <link rel="stylesheet" href="./assets/css/main.css">
 <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
 <link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
-
-<style>
-
-#offlineBanner{
-position:fixed;
-top:10px;
-left:50%;
-transform:translateX(-50%);
-background:#d90429;
-color:#fff;
-padding:10px 18px;
-border-radius:14px;
-font-size:14px;
-font-weight:600;
-z-index:999999;
-display:none;
-box-shadow:0 4px 15px rgba(0,0,0,.2);
-}
-
-</style>
 
 </head>
 
@@ -48,35 +32,33 @@ box-shadow:0 4px 15px rgba(0,0,0,.2);
 ⚠️ No Internet Connection
 </div>
 
+<!-- ========================= -->
+<!-- CONFIG -->
+<!-- ========================= -->
+
 <script src="./config/api.js"></script>
 <script src="./config/auth.js"></script>
 <script src="./config/session.js"></script>
 <script src="./config/push.js"></script>
 
+<!-- ========================= -->
+<!-- COMPONENT -->
+<!-- ========================= -->
+
 <script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/logout.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 <script src="/CM_Pro/assets/js/toast.js"></script>
-    
 
-<script>
-
-function logout(){
-
-if(confirm("Logout CM_Pro ?")){
-
-localStorage.removeItem("token");
-localStorage.removeItem("loggedInUser");
-sessionStorage.clear();
-
-window.location.replace("/CM_Pro/login.html");
-
-}
-
-}
-
-</script>
+<!-- ========================= -->
+<!-- TOPBAR -->
+<!-- ========================= -->
 
 <div id="topbar-container"></div>
+
+<!-- ========================= -->
+<!-- PAGE -->
+<!-- ========================= -->
 
 <div class="dashboard-container">
 
@@ -167,218 +149,23 @@ Officer Task
 
 </div>
 
+<!-- ========================= -->
+<!-- BOTTOM -->
+<!-- ========================= -->
+
 <div id="bottomnav-container"></div>
+
+<!-- ========================= -->
+<!-- NOTIFICATION BADGE -->
+<!-- ========================= -->
 
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
 
-<script>
+<!-- ========================= -->
+<!-- DASHBOARD LOGIC -->
+<!-- ========================= -->
 
-// =========================
-// COMPONENT LOADER
-// =========================
-let loaded=0;
+<script src="./assets/js/dashboard.js"></script>
 
-async function loadComponent(id,file){
-
-try{
-
-const useCache=id!=="topbar-container";
-
-const cached=useCache?sessionStorage.getItem("comp_"+id):null;
-
-if(cached){
-
-document.getElementById(id).innerHTML=cached;
-
-}else{
-
-const response=await fetch(file);
-const html=await response.text();
-
-document.getElementById(id).innerHTML=html;
-
-if(useCache){
-
-sessionStorage.setItem("comp_"+id,html);
-
-}
-
-}
-
-if(id==="topbar-container"){
-
-const user=JSON.parse(localStorage.getItem("loggedInUser")||"{}");
-
-initTopbar({
-
-dashboardMode:true,
-userName:user.fullname||user.username||"User",
-showLogo:true,
-showProfile:true,
-showBack:false
-
-});
-
-loadTopbarUser();
-loadTopbarPhoto();
-// =========================
-// PROFILE PHOTO CLICK
-// =========================
-setTimeout(()=>{
-
-const profile=document.getElementById("topbarProfile");
-
-if(profile&&!profile.closest(".topbar-profile-ring")){
-
-const ring=document.createElement("div");
-ring.className="topbar-profile-ring";
-
-profile.parentNode.insertBefore(ring,profile);
-ring.appendChild(profile);
-
-}
-
-if(profile){
-
-profile.style.cursor="pointer";
-
-profile.onclick=function(){
-
-window.location.href=
-"/CM_Pro/pages/settings/account.html";
-
-};
-
-}
-
-},100);
-    
-}
-}catch(error){
-
-console.error("Component load error:",error);
-
-}finally{
-
-loaded++;
-
-if(loaded>=2){
-
-setTimeout(()=>{
-
-if(typeof hideGlobalSplash==="function"){
-
-hideGlobalSplash();
-
-}
-
-},300);
-
-}
-
-}
-
-}
-
-// =========================
-// LOAD USER
-// =========================
-function loadTopbarUser(){
-
-try{
-
-const user=JSON.parse(localStorage.getItem("loggedInUser")||"{}");
-
-const fullname=user.fullname||user.username||"User";
-
-const userName=document.getElementById("topbarUserName");
-
-if(userName){
-
-userName.innerText=fullname;
-
-}
-
-}catch(error){
-
-console.error(error);
-
-}
-
-}
-
-// =========================
-// OFFLINE DETECT
-// =========================
-
-function updateOnlineStatus(){
-
-const banner=document.getElementById("offlineBanner");
-
-banner.style.display=navigator.onLine?"none":"block";
-
-}
-
-window.addEventListener("online",updateOnlineStatus);
-window.addEventListener("offline",updateOnlineStatus);
-
-updateOnlineStatus();
-
-// =========================
-// CARD VIBRATION
-// =========================
-
-document.addEventListener("click",(e)=>{
-
-if(e.target.closest(".dashboard-card")&&navigator.vibrate){
-
-navigator.vibrate(20);
-
-}
-
-});
-
-// =========================
-// LOAD COMPONENTS
-// =========================
-
-loadComponent("topbar-container","./components/topbar.html");
-loadComponent("bottomnav-container","./components/bottomnav.html");
-
-// =========================
-// PUSH INIT
-// =========================
-
-const enabled=localStorage.getItem("notificationEnabled");
-
-if(enabled==="true"){
-
-PushNotification.enable();
-
-}
-
-// =========================
-// FAILSAFE SPLASH
-// =========================
-
-window.addEventListener("load",()=>{
-
-setTimeout(()=>{
-
-if(typeof hideGlobalSplash==="function"){
-
-hideGlobalSplash();
-
-}
-
-},2500);
-
-});
-
-// =========================
-// END SCRIPT
-// =========================
-
-</script>
 </body>
 </html>
