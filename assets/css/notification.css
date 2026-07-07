@@ -1,320 +1,227 @@
 /* =========================================================
 FILE: /assets/css/notification.css
+Note: global reset, font-family, and the base html/body rules
+already live in base.css (imported by main.css) — this file
+only holds styles specific to the notifications page.
 ========================================================= */
 
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Segoe UI,Arial,sans-serif;
-}
-
-html,body{
-width:100%;
-height:100%;
-overflow:hidden;
-background:#f4f6fb;
-}
-
-body{
-display:flex;
-flex-direction:column;
-}
-
-/* HEADER */
-
-.notify-header{
-height:75px;
-background:#032d73;
-display:flex;
-align-items:center;
-justify-content:space-between;
-padding:0 15px;
-color:#fff;
-flex-shrink:0;
-}
-
-.back-btn,
-.readall-btn{
-border:none;
-background:rgba(255,255,255,.12);
-color:#fff;
-height:42px;
-padding:0 16px;
-border-radius:14px;
-font-size:15px;
-font-weight:600;
-cursor:pointer;
-}
-
-.notify-title{
-font-size:20px;
-font-weight:700;
-}
-
-/* SUMMARY */
+/* =========================
+   Summary
+========================= */
 
 .notify-summary{
-display:flex;
-gap:15px;
-padding:15px;
-}
 
-.summary-card{
-flex:1;
-background:#fff;
-border-radius:20px;
-padding:18px;
-box-shadow:0 4px 15px rgba(0,0,0,.06);
-}
+    display:flex;
 
-.summary-label{
-font-size:14px;
-color:#666;
-margin-bottom:10px;
-}
-
-.summary-value{
-font-size:28px;
-font-weight:700;
-color:#032d73;
-}
-
-/* REFRESH */
-
-.refresh-row{
-padding:0 15px 15px;
-}
-
-.refresh-btn{
-width:100%;
-height:50px;
-border:none;
-border-radius:16px;
-background:#032d73;
-color:#fff;
-font-size:16px;
-font-weight:600;
-}
-
-/* LIST */
-
-.notify-list{
-flex:1;
-overflow-y:auto;
-padding:0 15px 100px;
-}
-
-/* CARD */
-
-.notify-card{
-background:#fff;
-border-radius:22px;
-padding:18px;
-margin-bottom:15px;
-display:flex;
-gap:14px;
-box-shadow:0 4px 15px rgba(0,0,0,.06);
-position:relative;
-animation:fadeIn .25s ease;
-}
-
-.notify-card.unread{
-border-left:5px solid #0d6efd;
-}
-
-.notify-icon{
-width:55px;
-height:55px;
-border-radius:18px;
-background:#edf3ff;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:26px;
-flex-shrink:0;
-}
-
-.notify-content{
-flex:1;
-}
-
-.notify-top{
-display:flex;
-justify-content:space-between;
-gap:10px;
-margin-bottom:8px;
-}
-
-.notify-card-title{
-font-size:16px;
-font-weight:700;
-color:#17356f;
-line-height:1.4;
-}
-
-.notify-time{
-font-size:12px;
-color:#888;
-white-space:nowrap;
-}
-
-.notify-message{
-font-size:14px;
-line-height:1.6;
-color:#444;
-margin-bottom:12px;
-}
-
-.notify-footer{
-display:flex;
-justify-content:space-between;
-align-items:center;
-}
-
-.notify-type{
-font-size:12px;
-background:#edf3ff;
-color:#0d6efd;
-padding:5px 10px;
-border-radius:10px;
-font-weight:600;
-}
-
-.notify-open{
-border:none;
-background:#032d73;
-color:#fff;
-height:38px;
-padding:0 16px;
-border-radius:12px;
-font-size:13px;
-font-weight:600;
-cursor:pointer;
-}
-
-/* EMPTY */
-
-.empty-box{
-flex:1;
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-padding:30px;
-text-align:center;
-}
-
-.empty-img{
-width:140px;
-margin-bottom:20px;
-opacity:.8;
-}
-
-.empty-title{
-font-size:24px;
-font-weight:700;
-color:#17356f;
-margin-bottom:10px;
-}
-
-.empty-subtitle{
-font-size:15px;
-color:#666;
-line-height:1.6;
-}
-
-/* LOADING */
-
-.loading-box{
-position:fixed;
-inset:0;
-background:rgba(255,255,255,.8);
-display:flex;
-justify-content:center;
-align-items:center;
-z-index:9999;
-}
-
-.spinner{
-width:45px;
-height:45px;
-border:4px solid #ddd;
-border-top:4px solid #032d73;
-border-radius:50%;
-animation:spin .7s linear infinite;
-}
-
-/* ANIMATION */
-
-@keyframes spin{
-100%{
-transform:rotate(360deg);
-}
-}
-
-@keyframes fadeIn{
-from{
-opacity:0;
-transform:translateY(10px);
-}
-to{
-opacity:1;
-transform:translateY(0);
-}
-}
-
-.notification-menu{
-
-    position:fixed;
-
-    top:80px;
-
-    right:15px;
-
-    background:#fff;
-
-    border-radius:14px;
-
-    overflow:hidden;
-
-    box-shadow:
-        0 6px 20px rgba(0,0,0,.15);
-
-    z-index:99999;
-
-    display:none;
-
-    min-width:170px;
-
-}
-
-.notification-menu-item{
-
-    width:100%;
-
-    border:none;
-
-    background:#fff;
+    gap:14px;
 
     padding:14px;
 
-    text-align:left;
+}
 
-    font-size:14px;
+.summary-card{
+
+    flex:1;
+
+    background:linear-gradient(180deg,#003B8B,#002D6B);
+
+    border:1px solid #D4AF37;
+
+    border-radius:16px;
+
+    padding:18px;
+
+    box-shadow:0 4px 14px rgba(0,0,0,.25);
+
+}
+
+.summary-label{
+
+    font-size:13px;
+
+    color:#cdd9ef;
+
+    margin-bottom:8px;
+
+}
+
+.summary-value{
+
+    font-size:26px;
+
+    font-weight:700;
+
+    color:#FFD700;
+
+}
+
+/* =========================
+   Refresh
+========================= */
+
+.refresh-row{
+
+    padding:0 14px 14px;
+
+}
+
+.refresh-btn{
+
+    width:100%;
+
+    height:50px;
+
+    border:none;
+
+    border-radius:14px;
+
+    background:linear-gradient(180deg,#FFD700,#D4AF37);
+
+    color:#002D6B;
+
+    font-size:16px;
+
+    font-weight:700;
 
     cursor:pointer;
 
-}
-
-.notification-menu-item:hover{
-
-    background:#f3f5fa;
+    transition:transform .15s;
 
 }
+
+.refresh-btn:active{
+
+    transform:scale(.97);
+
+}
+
+/* =========================
+   List
+========================= */
+
+.notify-list{
+
+    padding:0 14px 90px;
+
+}
+
+/* =========================
+   Card
+========================= */
+
+.notify-card{
+
+    background:linear-gradient(180deg,#003B8B,#002D6B);
+
+    border:1px solid #D4AF37;
+
+    border-radius:18px;
+
+    padding:16px;
+
+    margin-bottom:14px;
+
+    display:flex;
+
+    gap:14px;
+
+    box-shadow:0 4px 14px rgba(0,0,0,.25);
+
+    position:relative;
+
+    overflow:hidden;
+
+    animation:notifyFadeIn .25s ease;
+
+}
+
+.notify-card.unread{
+
+    border-left:4px solid #FFD700;
+
+}
+
+.notify-icon{
+
+    width:52px;
+
+    height:52px;
+
+    border-radius:16px;
+
+    background:rgba(255,215,0,.12);
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:24px;
+
+    flex-shrink:0;
+
+}
+
+.notify-content{
+
+    flex:1;
+
+    min-width:0;
+
+}
+
+.notify-top{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    gap:10px;
+
+    margin-bottom:6px;
+
+}
+
+.notify-card-title{
+
+    font-size:15px;
+
+    font-weight:700;
+
+    color:#fff;
+
+    line-height:1.4;
+
+}
+
+.notify-time{
+
+    font-size:12px;
+
+    color:#8fa0bd;
+
+    white-space:nowrap;
+
+}
+
+.notify-message{
+
+    font-size:14px;
+
+    line-height:1.6;
+
+    color:#cdd9ef;
+
+    margin-bottom:10px;
+
+}
+
 .notify-user{
 
-    margin-top:8px;
+    margin-top:2px;
+
+    margin-bottom:10px;
 
     display:inline-block;
 
@@ -322,9 +229,9 @@ transform:translateY(0);
 
     border-radius:12px;
 
-    background:#f0f4ff;
+    background:rgba(255,215,0,.12);
 
-    color:#0a3d91;
+    color:#FFD700;
 
     font-size:12px;
 
@@ -332,13 +239,57 @@ transform:translateY(0);
 
 }
 
-.notify-card{
+.notify-footer{
 
-    position:relative;
+    display:flex;
 
-    overflow:hidden;
+    justify-content:space-between;
+
+    align-items:center;
 
 }
+
+.notify-type{
+
+    font-size:12px;
+
+    background:rgba(255,215,0,.12);
+
+    color:#FFD700;
+
+    padding:5px 10px;
+
+    border-radius:10px;
+
+    font-weight:600;
+
+}
+
+.notify-open{
+
+    border:none;
+
+    background:#D4AF37;
+
+    color:#002D6B;
+
+    height:36px;
+
+    padding:0 16px;
+
+    border-radius:10px;
+
+    font-size:13px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+}
+
+/* =========================
+   Swipe actions
+========================= */
 
 .notify-card::before{
 
@@ -380,7 +331,7 @@ transform:translateY(0);
 
     transform:translateY(-50%);
 
-    font-size:32px;
+    font-size:30px;
 
     font-weight:bold;
 
@@ -398,7 +349,7 @@ transform:translateY(0);
 
     content:"✓";
 
-    left:25px;
+    left:22px;
 
     opacity:1;
 
@@ -408,7 +359,7 @@ transform:translateY(0);
 
     content:"🗑";
 
-    right:25px;
+    right:22px;
 
     opacity:1;
 
@@ -425,5 +376,184 @@ transform:translateY(0);
 .notify-card.swiping{
 
     transition:none;
+
+}
+
+/* =========================
+   Empty
+========================= */
+
+.empty-box{
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:60px 30px;
+
+    text-align:center;
+
+}
+
+.empty-img{
+
+    width:130px;
+
+    margin-bottom:18px;
+
+    opacity:.85;
+
+}
+
+.empty-title{
+
+    font-size:22px;
+
+    font-weight:700;
+
+    color:#FFD700;
+
+    margin-bottom:8px;
+
+}
+
+.empty-subtitle{
+
+    font-size:14px;
+
+    color:#cdd9ef;
+
+    line-height:1.6;
+
+}
+
+/* =========================
+   Loading
+========================= */
+
+.loading-box{
+
+    position:fixed;
+
+    inset:0;
+
+    background:rgba(0,45,107,.85);
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    z-index:9999;
+
+}
+
+.spinner{
+
+    width:44px;
+
+    height:44px;
+
+    border:4px solid rgba(212,175,55,.25);
+
+    border-top:4px solid #D4AF37;
+
+    border-radius:50%;
+
+    animation:notifySpin .7s linear infinite;
+
+}
+
+@keyframes notifySpin{
+
+    100%{
+
+        transform:rotate(360deg);
+
+    }
+
+}
+
+@keyframes notifyFadeIn{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(10px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+
+    }
+
+}
+
+/* =========================
+   Action Menu (⋮ in topbar)
+========================= */
+
+.notification-menu{
+
+    position:fixed;
+
+    top:80px;
+
+    right:15px;
+
+    background:linear-gradient(180deg,#003B8B,#002D6B);
+
+    border:1px solid #D4AF37;
+
+    border-radius:14px;
+
+    overflow:hidden;
+
+    box-shadow:0 6px 20px rgba(0,0,0,.35);
+
+    z-index:99999;
+
+    display:none;
+
+    min-width:170px;
+
+}
+
+.notification-menu-item{
+
+    width:100%;
+
+    border:none;
+
+    background:transparent;
+
+    color:#fff;
+
+    padding:14px;
+
+    text-align:left;
+
+    font-size:14px;
+
+    cursor:pointer;
+
+    transition:background .15s;
+
+}
+
+.notification-menu-item:hover,
+.notification-menu-item:active{
+
+    background:rgba(255,255,255,.08);
 
 }
