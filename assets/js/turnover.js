@@ -1,9 +1,29 @@
 // ========================================
 // Average Debit Turnover
-// Step 3.1 
+// Step 3.1
 // ========================================
 
 const REPORT_SOURCE = "DebitTurnOver";
+
+// ========================================
+// MESSAGE HELPER
+// Prefer the app's toast system (already loaded via toast.js
+// on this page); fall back to alert() only if it's missing.
+// ========================================
+
+function notify(message,type="info"){
+
+    if(typeof showToast==="function"){
+
+        showToast(message,type);
+
+    }else{
+
+        alert(message);
+
+    }
+
+}
 
 // ========================================
 // PAGE LOAD
@@ -39,7 +59,7 @@ async function searchTurnover(){
 
     if(!cif){
 
-        alert("Please input CIF.");
+        notify("Please input CIF.","warning");
 
         return;
 
@@ -52,7 +72,7 @@ async function searchTurnover(){
 
     if(!preparedDate){
 
-        alert("Please select Prepared Date.");
+        notify("Please select Prepared Date.","warning");
 
         return;
 
@@ -102,7 +122,7 @@ async function searchTurnover(){
 
         console.error(err);
 
-        alert(err.message);
+        notify(err.message,"error");
 
     }
 
@@ -254,41 +274,18 @@ function formatExcelDate(serial){
 
 // ========================================
 // LOADING
+// The #loadingBox element always exists in this page's HTML —
+// no need for the fallback branch that used to create a second
+// one from scratch if it was "missing".
 // ========================================
 
 function showLoading(show){
 
-    let box =
+    const box = document.getElementById("loadingBox");
 
-        document.getElementById(
+    if(!box) return;
 
-            "loadingBox"
-
-        );
-
-    if(!box){
-
-        box = document.createElement("div");
-
-        box.id = "loadingBox";
-
-        box.className = "loading-box";
-
-        box.innerHTML =
-
-            '<div class="spinner"></div>';
-
-        document.body.appendChild(box);
-
-    }
-
-    box.style.display =
-
-        show
-
-        ? "flex"
-
-        : "none";
+    box.style.display = show ? "flex" : "none";
 
 }
 
@@ -528,50 +525,6 @@ document
 document
 .getElementById("btnPDF")
 .onclick=exportPDF;
-
-// ========================================
-// OFFLINE DETECT
-// ========================================
-
-function updateOnlineStatus(){
-
-const banner=document.getElementById(
-"offlineBanner"
-);
-
-if(!banner)return;
-
-banner.style.display=
-
-navigator.onLine
-
-?
-
-"none"
-
-:
-
-"block";
-
-}
-
-window.addEventListener(
-
-"online",
-
-updateOnlineStatus
-
-);
-
-window.addEventListener(
-
-"offline",
-
-updateOnlineStatus
-
-);
-
-updateOnlineStatus();
 
 // ========================================
 // ENTER KEY = SEARCH
