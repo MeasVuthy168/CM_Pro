@@ -1,21 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-
 <title>Setting - CM_Pro</title>
-
 <meta name="theme-color" content="#032d73">
-
 <link rel="stylesheet" href="../../assets/css/main.css">
 <link rel="stylesheet" href="../../assets/css/settings.css">
 <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
-
 </head>
-
 <body>
+
+<div id="offlineBanner">
+⚠️ No Internet Connection
+</div>
 
 <div id="topbar-container"></div>
 
@@ -27,7 +25,6 @@
 
 <div class="profile-info">
 <div id="settingFullname" class="profile-name">Loading...</div>
-<div id="settingUsername" class="profile-role">...</div>
 </div>
 
 </div>
@@ -51,22 +48,16 @@
 </div>
 
 <div class="setting-item">
-
 <div class="setting-left">
 <img src="/CM_Pro/assets/icons/setting/bell.png" class="setting-icon">
 <span>ការជូនដំណឹង</span>
 </div>
-
 <div class="notify-right">
-
 <label class="switch">
 <input id="notifyToggle" type="checkbox">
 <span class="slider round"></span>
 </label>
-
-
 </div>
-
 </div>
 
 <div class="setting-item logout" id="logoutBtn">
@@ -81,6 +72,7 @@
 </div>
 
 <div id="bottomnav-container"></div>
+
 <!-- Logout Dialog -->
 <div id="logoutDialog" class="dialog">
 <div class="dialog-box">
@@ -96,7 +88,7 @@
 </button>
 </div>
 </div>
-</div>  
+</div>
 
 <script src="../../config/api.js"></script>
 <script src="../../config/auth.js"></script>
@@ -106,6 +98,7 @@
 <script src="/CM_Pro/shared/topbar.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
 <script src="../../assets/js/settings.js"></script>
 
 </body>
