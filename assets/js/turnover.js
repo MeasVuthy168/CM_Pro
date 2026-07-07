@@ -1,52 +1,9 @@
 // ========================================
 // Average Debit Turnover
-// Step 3.1
+// Step 3.1 
 // ========================================
 
 const REPORT_SOURCE = "DebitTurnOver";
-
-// ========================================
-// LAST RENDERED DATA
-// Exports read from here instead of re-scraping the DOM table.
-// DOM-scraping (innerText/textContent on live table cells) turned
-// out to be fragile across mobile browsers/WebViews — keeping the
-// exact same data that was used to render the screen, in memory,
-// sidesteps that class of bug entirely.
-// ========================================
-
-let lastTurnoverData={
-
-    rows:[],
-
-    avgDebit:"-",
-
-    avgOD:"-",
-
-    avgTurnover:"-",
-
-    customerName:""
-
-};
-
-// ========================================
-// MESSAGE HELPER
-// Prefer the app's toast system (already loaded via toast.js
-// on this page); fall back to alert() only if it's missing.
-// ========================================
-
-function notify(message,type="info"){
-
-    if(typeof showToast==="function"){
-
-        showToast(message,type);
-
-    }else{
-
-        alert(message);
-
-    }
-
-}
 
 // ========================================
 // PAGE LOAD
@@ -82,7 +39,7 @@ async function searchTurnover(){
 
     if(!cif){
 
-        notify("Please input CIF.","warning");
+        alert("Please input CIF.");
 
         return;
 
@@ -95,7 +52,7 @@ async function searchTurnover(){
 
     if(!preparedDate){
 
-        notify("Please select Prepared Date.","warning");
+        alert("Please select Prepared Date.");
 
         return;
 
@@ -145,7 +102,7 @@ async function searchTurnover(){
 
         console.error(err);
 
-        notify(err.message,"error");
+        alert(err.message);
 
     }
 
@@ -297,18 +254,41 @@ function formatExcelDate(serial){
 
 // ========================================
 // LOADING
-// The #loadingBox element always exists in this page's HTML —
-// no need for the fallback branch that used to create a second
-// one from scratch if it was "missing".
 // ========================================
 
 function showLoading(show){
 
-    const box = document.getElementById("loadingBox");
+    let box =
 
-    if(!box) return;
+        document.getElementById(
 
-    box.style.display = show ? "flex" : "none";
+            "loadingBox"
+
+        );
+
+    if(!box){
+
+        box = document.createElement("div");
+
+        box.id = "loadingBox";
+
+        box.className = "loading-box";
+
+        box.innerHTML =
+
+            '<div class="spinner"></div>';
+
+        document.body.appendChild(box);
+
+    }
+
+    box.style.display =
+
+        show
+
+        ? "flex"
+
+        : "none";
 
 }
 
@@ -331,8 +311,6 @@ function renderTable(items){
     let totalOD = 0;
     let totalTurnover = 0;
     let totalCount = 0;
-
-    const capturedRows = [];
 
     items.forEach((item,index)=>{
 
@@ -360,22 +338,6 @@ function renderTable(items){
             `;
 
             tbody.appendChild(tr);
-
-            capturedRows.push({
-
-                month:item.requestText || "",
-
-                debit:"",
-
-                currentOD:"",
-
-                turnover:"",
-
-                effectiveDate:"",
-
-                noData:true
-
-            });
 
             return;
 
@@ -479,22 +441,6 @@ function renderTable(items){
 
         tbody.appendChild(tr);
 
-        capturedRows.push({
-
-            month,
-
-            debit:formatNumber(debit),
-
-            currentOD:formatNumber(currentOD),
-
-            turnover:(turnover*100).toFixed(2)+"%",
-
-            effectiveDate,
-
-            noData:false
-
-        });
-
     });
 
     // --------------------------
@@ -512,7 +458,11 @@ function renderTable(items){
     // Average
     // --------------------------
 
-    const avgDebitText =
+    document
+    .getElementById(
+        "avgDebit"
+    )
+    .innerHTML =
 
         totalCount
 
@@ -526,7 +476,11 @@ function renderTable(items){
 
         "-";
 
-    const avgODText =
+    document
+    .getElementById(
+        "avgOD"
+    )
+    .innerHTML =
 
         totalCount
 
@@ -540,7 +494,11 @@ function renderTable(items){
 
         "-";
 
-    const avgTurnoverText =
+    document
+    .getElementById(
+        "avgTurnover"
+    )
+    .innerHTML =
 
         totalCount
 
@@ -552,31 +510,6 @@ function renderTable(items){
         :
 
         "-";
-
-    document.getElementById("avgDebit").innerHTML = avgDebitText;
-
-    document.getElementById("avgOD").innerHTML = avgODText;
-
-    document.getElementById("avgTurnover").innerHTML = avgTurnoverText;
-
-    // --------------------------
-    // Save for export (PDF/Excel read from here instead of
-    // re-scraping the DOM table)
-    // --------------------------
-
-    lastTurnoverData = {
-
-        rows:capturedRows,
-
-        avgDebit:avgDebitText,
-
-        avgOD:avgODText,
-
-        avgTurnover:avgTurnoverText,
-
-        customerName
-
-    };
 
 }
 
@@ -595,6 +528,50 @@ document
 document
 .getElementById("btnPDF")
 .onclick=exportPDF;
+
+// ========================================
+// OFFLINE DETECT
+// ========================================
+
+function updateOnlineStatus(){
+
+const banner=document.getElementById(
+"offlineBanner"
+);
+
+if(!banner)return;
+
+banner.style.display=
+
+navigator.onLine
+
+?
+
+"none"
+
+:
+
+"block";
+
+}
+
+window.addEventListener(
+
+"online",
+
+updateOnlineStatus
+
+);
+
+window.addEventListener(
+
+"offline",
+
+updateOnlineStatus
+
+);
+
+updateOnlineStatus();
 
 // ========================================
 // ENTER KEY = SEARCH
@@ -682,20 +659,6 @@ document
 document
 .getElementById("avgTurnover")
 .innerHTML="-";
-
-lastTurnoverData = {
-
-    rows:[],
-
-    avgDebit:"-",
-
-    avgOD:"-",
-
-    avgTurnover:"-",
-
-    customerName:""
-
-};
 
 }
 
@@ -794,80 +757,48 @@ async function exportPDF(){
     .value
     .toUpperCase();
 
-    const avgDebit = lastTurnoverData.avgDebit;
+    const avgDebit =
+    document.getElementById("avgDebit").innerText;
 
-    const avgOD = lastTurnoverData.avgOD;
+    const avgOD =
+    document.getElementById("avgOD").innerText;
 
-    const avgTurnover = lastTurnoverData.avgTurnover;
+    const avgTurnover =
+    document.getElementById("avgTurnover").innerText;
 
     // ==========================
     // Table
-    // Built from lastTurnoverData (captured when the table was
-    // rendered) rather than re-reading the live DOM — scraping
-    // proved unreliable across browsers/WebViews.
     // ==========================
 
     let rows="";
 
-    if(!lastTurnoverData.rows.length){
+    document
+    .querySelectorAll("#tbodyTurnover tr")
+    .forEach(r=>{
 
-        rows=`
+        rows+="<tr>";
 
-        <tr>
-
-        <td colspan="5" style="border:1px solid #999;padding:6px;text-align:center;">
-
-        No Data
-
-        </td>
-
-        </tr>
-
-        `;
-
-    }else{
-
-        lastTurnoverData.rows.forEach(r=>{
-
-            if(r.noData){
-
-                rows+=`
-
-                <tr>
-
-                <td style="border:1px solid #999;padding:6px;text-align:center;">${r.month}</td>
-
-                <td colspan="4" style="border:1px solid #999;padding:6px;text-align:center;">No Data</td>
-
-                </tr>
-
-                `;
-
-                return;
-
-            }
+        r.querySelectorAll("td").forEach(td=>{
 
             rows+=`
 
-            <tr>
+            <td style="
+            border:1px solid #999;
+            padding:6px;
+            text-align:center;
+            ">
 
-            <td style="border:1px solid #999;padding:6px;text-align:center;">${r.month}</td>
+            ${td.innerText}
 
-            <td style="border:1px solid #999;padding:6px;text-align:center;">${r.debit}</td>
-
-            <td style="border:1px solid #999;padding:6px;text-align:center;">${r.currentOD}</td>
-
-            <td style="border:1px solid #999;padding:6px;text-align:center;">${r.turnover}</td>
-
-            <td style="border:1px solid #999;padding:6px;text-align:center;">${r.effectiveDate}</td>
-
-            </tr>
+            </td>
 
             `;
 
         });
 
-    }
+        rows+="</tr>";
+
+    });
 
     // ==========================
     // HTML
@@ -1233,42 +1164,27 @@ data.push([
 ]);
 
 // Table
-// Built from lastTurnoverData (captured when the table was
-// rendered) rather than re-reading the live DOM.
 
-if(!lastTurnoverData.rows.length){
+const rows=
 
-data.push(["No Data"]);
+document.querySelectorAll(
+"#tbodyTurnover tr"
+);
 
-}else{
+rows.forEach(r=>{
 
-lastTurnoverData.rows.forEach(r=>{
+const row=[];
 
-if(r.noData){
+r.querySelectorAll("td")
+.forEach(td=>{
 
-data.push([r.month,"No Data","","",""]);
-
-}else{
-
-data.push([
-
-r.month,
-
-r.debit,
-
-r.currentOD,
-
-r.turnover,
-
-r.effectiveDate
-
-]);
-
-}
+row.push(td.innerText);
 
 });
 
-}
+data.push(row);
+
+});
 
 // Average
 
@@ -1278,11 +1194,11 @@ data.push([
 
 "Average",
 
-lastTurnoverData.avgDebit,
+document.getElementById("avgDebit").innerText,
 
-lastTurnoverData.avgOD,
+document.getElementById("avgOD").innerText,
 
-lastTurnoverData.avgTurnover,
+document.getElementById("avgTurnover").innerText,
 
 ""
 
