@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -40,56 +39,9 @@ rel="stylesheet"
 href="/CM_Pro/assets/css/global-splash.css"
 >
 
-<style>
-
-#offlineBanner{
-
-    position:fixed;
-
-    top:10px;
-
-    left:50%;
-
-    transform:translateX(-50%);
-
-    background:#d90429;
-
-    color:#fff;
-
-    padding:10px 18px;
-
-    border-radius:14px;
-
-    font-size:14px;
-
-    font-weight:600;
-
-    z-index:999999;
-
-    display:none;
-
-    box-shadow:0 4px 15px rgba(0,0,0,.2);
-
-}
-
-.page-container{
-
-    flex:1;
-
-    display:flex;
-
-    flex-direction:column;
-
-    overflow:hidden;
-
-}
-
-</style>
-
 </head>
 
 <body>
-
 
 <!-- OFFLINE -->
 
@@ -148,7 +100,7 @@ href="/CM_Pro/assets/css/global-splash.css"
         🗑 Delete All
     </button>
 
-</div>    
+</div>
 
 <!-- CONTENT -->
 
@@ -273,299 +225,17 @@ href="/CM_Pro/assets/css/global-splash.css"
 
 <div id="bottomnav-container"></div>
 
-<script>
-
-// =========================
-// COMPONENT LOADER
-// =========================
-
-let loaded = 0;
-
-async function loadComponent(id,file){
-
-    try{
-
-        const useCache =
-    id !== "topbar-container";
-
-const cached =
-    useCache
-    ? sessionStorage.getItem(
-        "comp_" + id
-      )
-    : null;
-
-        if(cached){
-
-            document
-                .getElementById(id)
-                .innerHTML = cached;
-
-        }else{
-
-            const response =
-                await fetch(file);
-
-            const html =
-                await response.text();
-
-            document
-                .getElementById(id)
-                .innerHTML = html;
-
-
-            if(useCache){
-
-    sessionStorage.setItem(
-        "comp_" + id,
-        html
-    );
-
-}
-
-        }
-
-        // =====================
-        // TOPBAR
-        // =====================
-
-        if(id === "topbar-container"){
-
-            initTopbar({
-
-    title:"Notifications",
-
-    showBack:true,
-
-    showProfile:false,
-
-    showLogo:false,
-
-    actionText:"⋮",
-
-    actionHandler:toggleNotificationMenu
-
-});
-
-        }
-
-    }catch(error){
-
-        console.error(
-            "Component load error:",
-            error
-        );
-
-    }finally{
-
-        loaded++;
-
-        if(loaded >= 2){
-
-            setTimeout(()=>{
-
-                if(
-                    typeof hideGlobalSplash
-                    ===
-                    "function"
-                ){
-
-                    hideGlobalSplash();
-
-                }
-
-            },300);
-
-        }
-
-    }
-
-}
-// =========================
-// MENU EVENTS
-// =========================
-
-setTimeout(()=>{
-
-    // READ ALL
-
-    const readBtn =
-
-        document.getElementById(
-            "menuReadAll"
-        );
-
-    if(readBtn){
-
-        readBtn.onclick = ()=>{
-
-            document
-                .getElementById(
-                    "readAllBtn"
-                )
-                .click();
-
-        };
-
-    }
-
-    // DELETE ALL
-
-    const deleteBtn =
-
-        document.getElementById(
-            "menuDeleteAll"
-        );
-
-    if(deleteBtn){
-
-        deleteBtn.onclick = async ()=>{
-
-            if(
-                !confirm(
-                    "Delete all notifications?"
-                )
-            ) return;
-
-            try{
-
-                await fetch(
-
-                    `${API.BASE_URL}/api/notifications/delete-all`,
-
-                    {
-
-                        method:"POST",
-
-                        headers:{
-                            Authorization:
-                            `Bearer ${notificationToken}`
-                        }
-
-                    }
-
-                );
-
-                loadNotifications();
-
-                if(
-                    typeof loadNotificationBadge
-                    === "function"
-                ){
-
-                    loadNotificationBadge();
-
-                }
-
-            }catch(error){
-
-                console.error(error);
-
-            }
-
-        };
-
-    }
-
-},1000);
-    
-// =========================
-// OFFLINE
-// =========================
-
-function updateOnlineStatus(){
-
-    const banner =
-
-        document.getElementById(
-            "offlineBanner"
-        );
-
-    banner.style.display =
-
-        navigator.onLine
-
-        ? "none"
-
-        : "block";
-
-}
-
-window.addEventListener(
-    "online",
-    updateOnlineStatus
-);
-
-window.addEventListener(
-    "offline",
-    updateOnlineStatus
-);
-
-updateOnlineStatus();
-
-// =========================
-// LOAD COMPONENTS
-// =========================
-
-loadComponent(
-    "topbar-container",
-    "/CM_Pro/components/topbar.html"
-);
-
-loadComponent(
-    "bottomnav-container",
-    "/CM_Pro/components/bottomnav.html"
-);
-
-
-
-// =========================
-// PUSH
-// =========================
-
-if(window.PushNotification){
-
-    PushNotification.init();
-
-}
-
-// =========================
-// FAILSAFE SPLASH
-// =========================
-
-window.addEventListener(
-
-    "load",
-
-    ()=>{
-
-        setTimeout(()=>{
-
-            if(
-                typeof hideGlobalSplash
-                ===
-                "function"
-            ){
-
-                hideGlobalSplash();
-
-            }
-
-        },2500);
-
-    }
-
-);
-
-</script>
-
 <!-- NOTIFICATION BADGE -->
 
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
 
-<!-- NOTIFICATION LOGIC -->
+<!-- NOTIFICATION DATA/RENDER LOGIC -->
 
 <script src="../../assets/js/notification.js"></script>
+
+<!-- PAGE LOADER (component loader, menu, offline, push, splash) -->
+
+<script src="../../assets/js/notification-loader.js"></script>
 
 </body>
 
