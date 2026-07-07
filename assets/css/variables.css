@@ -1,50 +1,386 @@
-@font-face {
+/* ==========================================
+   PAGE
+========================================== */
 
-    font-family: 'KRASAR';
+.page-container{
 
-    src:
-        url('../fonts/KRASAR.ttf')
-        format('truetype');
+padding:16px;
+
+padding-bottom:90px;
 
 }
 
-:root {
+/* ==========================================
+   FORM
+========================================== */
 
-    /* Colors */
-    --primary-color: #0F172A;
-    --secondary-color: #1D4ED8;
-    --accent-color: #38BDF8;
+.form-card{
 
-    /* Background */
-    --background-color: #F1F5F9;
-    --card-background: #FFFFFF;
+background:linear-gradient(180deg,#003B8B,#002D6B);
 
-    /* Text */
-    --text-primary: #1E293B;
-    --text-secondary: #64748B;
+border:1px solid #D4AF37;
 
-    /* Status */
-    --success-color: #10B981;
-    --warning-color: #F59E0B;
-    --danger-color: #EF4444;
+border-radius:16px;
 
-    /* Border */
-    --border-color: #CBD5E1;
+padding:20px;
 
-    /* Radius */
-    --radius-sm: 8px;
-    --radius-md: 12px;
+box-shadow:0 4px 14px rgba(0,0,0,.25);
 
-    /* Shadow */
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-    --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+margin-bottom:18px;
 
-    /* Sidebar */
-    --sidebar-width: 250px;
+}
 
-    /* Header */
-    --header-height: 60px;
+.form-group{
 
-    /* Font */
-    --font-main: Arial, sans-serif;
+display:flex;
+
+flex-direction:column;
+
+margin-bottom:15px;
+
+}
+
+.form-group label{
+
+font-size:14px;
+
+font-weight:700;
+
+color:#cdd9ef;
+
+margin-bottom:6px;
+
+}
+
+.form-group input{
+
+height:44px;
+
+padding:0 12px;
+
+border:1px solid #D4AF37;
+
+border-radius:10px;
+
+font-size:15px;
+
+outline:none;
+
+transition:.2s;
+
+background:#00265c;
+
+color:#fff;
+
+}
+
+.form-group input:focus{
+
+border-color:#FFD700;
+
+box-shadow:0 0 0 3px rgba(255,215,0,.18);
+
+}
+
+.form-group input[readonly]{
+
+background:#001c48;
+
+font-weight:bold;
+
+color:#FFD700;
+
+}
+
+/* ==========================================
+   BUTTON
+========================================== */
+
+.button-row{
+
+display:flex;
+
+gap:10px;
+
+margin-top:10px;
+
+}
+
+.button-row button{
+
+flex:1;
+
+height:44px;
+
+border:none;
+
+border-radius:10px;
+
+background:#00265c;
+
+border:1px solid #D4AF37;
+
+color:#fff;
+
+font-size:15px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+transition:.2s;
+
+}
+
+.button-row button:active{
+
+transform:scale(.97);
+
+}
+
+/* Search is the primary action — gold, like the other pages'
+   calculate/submit buttons. Excel/PDF stay as secondary
+   navy-with-gold-outline buttons. */
+
+#btnSearch{
+
+background:linear-gradient(180deg,#FFD700,#D4AF37);
+
+border-color:#D4AF37;
+
+color:#002D6B;
+
+}
+
+/* ==========================================
+   TABLE
+========================================== */
+
+.table-card{
+
+background:linear-gradient(180deg,#003B8B,#002D6B);
+
+border:1px solid #D4AF37;
+
+border-radius:16px;
+
+padding:10px;
+
+box-shadow:0 4px 14px rgba(0,0,0,.25);
+
+overflow:auto;
+
+}
+
+/* All selectors below are scoped to .table-card so they can
+   never leak onto any other <table> in the document — notably
+   the dynamically-created table exportPDF() builds for the PDF
+   preview, which used to inherit these as unscoped tag rules
+   (table{color:#fff}, tfoot{color:#FFD700}), making the exported
+   row text render white-on-white / gold and appear "missing". */
+
+.table-card table{
+
+width:100%;
+
+border-collapse:collapse;
+
+font-size:13px;
+
+white-space:nowrap;
+
+color:#fff;
+
+}
+
+.table-card thead{
+
+background:#003B8B;
+
+color:#FFD700;
+
+}
+
+.table-card th{
+
+padding:10px 8px;
+
+border:1px solid #2f4670;
+
+font-weight:bold;
+
+}
+
+.table-card td{
+
+padding:8px;
+
+border:1px solid #2f4670;
+
+text-align:center;
+
+}
+
+.table-card tbody tr:nth-child(even){
+
+background:rgba(255,255,255,.03);
+
+}
+
+.table-card tfoot{
+
+background:#00265c;
+
+font-weight:bold;
+
+color:#FFD700;
+
+}
+
+.table-card tfoot td{
+
+padding:10px;
+
+}
+
+/* ==========================================
+   ROW COLORS
+========================================== */
+
+.row-newest{
+
+background:rgba(40,167,69,.18) !important;
+
+font-weight:bold;
+
+}
+
+.row-oldest{
+
+background:rgba(255,255,255,.05) !important;
+
+}
+
+.row-nodata{
+
+background:rgba(255,215,0,.10) !important;
+
+color:#cdd9ef;
+
+}
+
+/* ==========================================
+   LOADING
+========================================== */
+
+.loading-box{
+
+position:fixed;
+
+left:0;
+
+top:0;
+
+width:100%;
+
+height:100%;
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+background:rgba(0,45,107,.85);
+
+z-index:9999;
+
+}
+
+.spinner{
+
+width:42px;
+
+height:42px;
+
+border:4px solid rgba(212,175,55,.25);
+
+border-top:4px solid #D4AF37;
+
+border-radius:50%;
+
+animation:turnoverSpin .8s linear infinite;
+
+}
+
+@keyframes turnoverSpin{
+
+100%{
+
+transform:rotate(360deg);
+
+}
+
+}
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media(max-width:480px){
+
+.page-container{
+
+padding:12px;
+
+padding-bottom:90px;
+
+}
+
+.form-card{
+
+padding:15px;
+
+}
+
+.form-group label{
+
+font-size:13px;
+
+}
+
+.form-group input{
+
+font-size:14px;
+
+height:42px;
+
+}
+
+.button-row button{
+
+font-size:14px;
+
+height:42px;
+
+}
+
+.table-card table{
+
+font-size:12px;
+
+}
+
+.table-card th{
+
+padding:8px 6px;
+
+}
+
+.table-card td{
+
+padding:7px 5px;
+
+}
+
 }
