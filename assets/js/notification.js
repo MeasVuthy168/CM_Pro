@@ -338,6 +338,14 @@ function enableSwipeCards(){
                 startX =
                     e.touches[0].clientX;
 
+                // Initialize currentX to the same point, not 0 —
+                // otherwise a plain tap (no touchmove ever fires)
+                // computes diff as `0 - startX` on touchend, which
+                // is almost always a large negative number and
+                // falsely triggers the swipe-left delete action.
+
+                currentX = startX;
+
                 card.classList.add(
                     "swiping"
                 );
