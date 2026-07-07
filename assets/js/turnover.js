@@ -6,6 +6,29 @@
 const REPORT_SOURCE = "DebitTurnOver";
 
 // ========================================
+// LAST RENDERED DATA
+// Exports read from here instead of re-scraping the DOM table.
+// DOM-scraping (innerText/textContent on live table cells) turned
+// out to be fragile across mobile browsers/WebViews — keeping the
+// exact same data that was used to render the screen, in memory,
+// sidesteps that class of bug entirely.
+// ========================================
+
+let lastTurnoverData={
+
+    rows:[],
+
+    avgDebit:"-",
+
+    avgOD:"-",
+
+    avgTurnover:"-",
+
+    customerName:""
+
+};
+
+// ========================================
 // MESSAGE HELPER
 // Prefer the app's toast system (already loaded via toast.js
 // on this page); fall back to alert() only if it's missing.
@@ -309,6 +332,8 @@ function renderTable(items){
     let totalTurnover = 0;
     let totalCount = 0;
 
+    const capturedRows = [];
+
     items.forEach((item,index)=>{
 
         const values = item.values || [];
@@ -335,6 +360,22 @@ function renderTable(items){
             `;
 
             tbody.appendChild(tr);
+
+            capturedRows.push({
+
+                month:item.requestText || "",
+
+                debit:"",
+
+                currentOD:"",
+
+                turnover:"",
+
+                effectiveDate:"",
+
+                noData:true
+
+            });
 
             return;
 
@@ -438,6 +479,22 @@ function renderTable(items){
 
         tbody.appendChild(tr);
 
+        capturedRows.push({
+
+            month,
+
+            debit:formatNumber(debit),
+
+            currentOD:formatNumber(currentOD),
+
+            turnover:(turnover*100).toFixed(2)+"%",
+
+            effectiveDate,
+
+            noData:false
+
+        });
+
     });
 
     // --------------------------
@@ -455,11 +512,7 @@ function renderTable(items){
     // Average
     // --------------------------
 
-    document
-    .getElementById(
-        "avgDebit"
-    )
-    .innerHTML =
+    const avgDebitText =
 
         totalCount
 
@@ -473,11 +526,7 @@ function renderTable(items){
 
         "-";
 
-    document
-    .getElementById(
-        "avgOD"
-    )
-    .innerHTML =
+    const avgODText =
 
         totalCount
 
@@ -491,11 +540,7 @@ function renderTable(items){
 
         "-";
 
-    document
-    .getElementById(
-        "avgTurnover"
-    )
-    .innerHTML =
+    const avgTurnoverText =
 
         totalCount
 
@@ -507,6 +552,31 @@ function renderTable(items){
         :
 
         "-";
+
+    document.getElementById("avgDebit").innerHTML = avgDebitText;
+
+    document.getElementById("avgOD").innerHTML = avgODText;
+
+    document.getElementById("avgTurnover").innerHTML = avgTurnoverText;
+
+    // --------------------------
+    // Save for export (PDF/Excel read from here instead of
+    // re-scraping the DOM table)
+    // --------------------------
+
+    lastTurnoverData = {
+
+        rows:capturedRows,
+
+        avgDebit:avgDebitText,
+
+        avgOD:avgODText,
+
+        avgTurnover:avgTurnoverText,
+
+        customerName
+
+    };
 
 }
 
@@ -613,6 +683,20 @@ document
 .getElementById("avgTurnover")
 .innerHTML="-";
 
+lastTurnoverData = {
+
+    rows:[],
+
+    avgDebit:"-",
+
+    avgOD:"-",
+
+    avgTurnover:"-",
+
+    customerName:""
+
+};
+
 }
 
 // ========================================
@@ -710,53 +794,80 @@ async function exportPDF(){
     .value
     .toUpperCase();
 
-    const avgDebit =
-    document.getElementById("avgDebit").textContent.trim();
+    const avgDebit = lastTurnoverData.avgDebit;
 
-    const avgOD =
-    document.getElementById("avgOD").textContent.trim();
+    const avgOD = lastTurnoverData.avgOD;
 
-    const avgTurnover =
-    document.getElementById("avgTurnover").textContent.trim();
+    const avgTurnover = lastTurnoverData.avgTurnover;
 
     // ==========================
     // Table
-    // Read with textContent, not innerText — innerText can come
-    // back empty for rows currently scrolled out of view inside
-    // the scrollable .table-card container (a known mobile
-    // Chrome/WebView quirk), which is why most rows exported
-    // blank while the average (read separately above) was fine.
+    // Built from lastTurnoverData (captured when the table was
+    // rendered) rather than re-reading the live DOM — scraping
+    // proved unreliable across browsers/WebViews.
     // ==========================
 
     let rows="";
 
-    document
-    .querySelectorAll("#tbodyTurnover tr")
-    .forEach(r=>{
+    if(!lastTurnoverData.rows.length){
 
-        rows+="<tr>";
+        rows=`
 
-        r.querySelectorAll("td").forEach(td=>{
+        <tr>
+
+        <td colspan="5" style="border:1px solid #999;padding:6px;text-align:center;">
+
+        No Data
+
+        </td>
+
+        </tr>
+
+        `;
+
+    }else{
+
+        lastTurnoverData.rows.forEach(r=>{
+
+            if(r.noData){
+
+                rows+=`
+
+                <tr>
+
+                <td style="border:1px solid #999;padding:6px;text-align:center;">${r.month}</td>
+
+                <td colspan="4" style="border:1px solid #999;padding:6px;text-align:center;">No Data</td>
+
+                </tr>
+
+                `;
+
+                return;
+
+            }
 
             rows+=`
 
-            <td style="
-            border:1px solid #999;
-            padding:6px;
-            text-align:center;
-            ">
+            <tr>
 
-            ${td.textContent.trim()}
+            <td style="border:1px solid #999;padding:6px;text-align:center;">${r.month}</td>
 
-            </td>
+            <td style="border:1px solid #999;padding:6px;text-align:center;">${r.debit}</td>
+
+            <td style="border:1px solid #999;padding:6px;text-align:center;">${r.currentOD}</td>
+
+            <td style="border:1px solid #999;padding:6px;text-align:center;">${r.turnover}</td>
+
+            <td style="border:1px solid #999;padding:6px;text-align:center;">${r.effectiveDate}</td>
+
+            </tr>
 
             `;
 
         });
 
-        rows+="</tr>";
-
-    });
+    }
 
     // ==========================
     // HTML
@@ -1122,30 +1233,42 @@ data.push([
 ]);
 
 // Table
-// Read with textContent, not innerText — see the note in
-// exportPDF() above; the same scrolled-out-of-view quirk can
-// affect this export too.
+// Built from lastTurnoverData (captured when the table was
+// rendered) rather than re-reading the live DOM.
 
-const rows=
+if(!lastTurnoverData.rows.length){
 
-document.querySelectorAll(
-"#tbodyTurnover tr"
-);
+data.push(["No Data"]);
 
-rows.forEach(r=>{
+}else{
 
-const row=[];
+lastTurnoverData.rows.forEach(r=>{
 
-r.querySelectorAll("td")
-.forEach(td=>{
+if(r.noData){
 
-row.push(td.textContent.trim());
+data.push([r.month,"No Data","","",""]);
+
+}else{
+
+data.push([
+
+r.month,
+
+r.debit,
+
+r.currentOD,
+
+r.turnover,
+
+r.effectiveDate
+
+]);
+
+}
 
 });
 
-data.push(row);
-
-});
+}
 
 // Average
 
@@ -1155,11 +1278,11 @@ data.push([
 
 "Average",
 
-document.getElementById("avgDebit").textContent.trim(),
+lastTurnoverData.avgDebit,
 
-document.getElementById("avgOD").textContent.trim(),
+lastTurnoverData.avgOD,
 
-document.getElementById("avgTurnover").textContent.trim(),
+lastTurnoverData.avgTurnover,
 
 ""
 
