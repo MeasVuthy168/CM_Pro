@@ -149,6 +149,97 @@ window.addEventListener("load",()=>{
 // =========================
 // LOAD USER INFO
 // =========================
+// Stability strategy for the profile photo, front to back:
+//   1. Skeleton pulse while loading — never a blank/broken flash.
+//   2. On failure, one automatic retry after a short delay, with
+//      a cache-busting query param — this is the actual fix for
+//      "sometimes disappears": a single dropped request used to
+//      go straight to the fallback with no second chance, and a
+//      same-URL retry can hit the exact same stale/failed cache
+//      entry (browser HTTP cache or the service worker's
+//      cache-first strategy) instead of actually reaching network.
+//   3. Only after the retry also fails does it fall back to the
+//      default avatar.
+// =========================
+
+let photoLoadToken=0;
+
+function loadUserPhoto(){
+
+    const user=JSON.parse(localStorage.getItem("loggedInUser") || "{}");
+
+    if(!user.username) return;
+
+    const img=document.getElementById("settingPhoto");
+
+    if(!img) return;
+
+    const fallback="/CM_Pro/assets/images/default-user.png";
+
+    const baseUrl=`${API.BASE_URL}/assets/user-photo/${user.username}`;
+
+    // Each call gets its own token so an in-flight retry from a
+    // previous call can't clobber a newer one (e.g. rapid back/
+    // forward navigation triggering this multiple times).
+
+    const myToken=++photoLoadToken;
+
+    let retried=false;
+
+    img.classList.add("photo-loading");
+
+    img.onload=function(){
+
+        if(myToken!==photoLoadToken) return;
+
+        this.classList.remove("photo-loading");
+
+    };
+
+    img.onerror=function(){
+
+        if(myToken!==photoLoadToken) return;
+
+        if(this.src.indexOf(fallback)!==-1){
+
+            this.classList.remove("photo-loading");
+
+            return;
+
+        }
+
+        if(!retried){
+
+            retried=true;
+
+            setTimeout(()=>{
+
+                if(myToken!==photoLoadToken) return;
+
+                this.src=`${baseUrl}?retry=${Date.now()}`;
+
+            },800);
+
+            return;
+
+        }
+
+        this.onerror=null;
+
+        this.classList.remove("photo-loading");
+
+        this.src=fallback;
+
+    };
+
+    // Cache-bust every explicit (re)load, not just the retry —
+    // this is what actually stops a stale cached failure (browser
+    // HTTP cache or service worker) from being replayed on every
+    // back-navigation instead of a fresh network attempt.
+
+    img.src=`${baseUrl}?v=${Date.now()}`;
+
+}
 
 async function loadUserProfile(){
 
@@ -160,32 +251,7 @@ async function loadUserProfile(){
 
             user.fullname || user.username || "Unknown";
 
-        // photo
-
-        if(user.username){
-
-            const img=document.getElementById("settingPhoto");
-
-            const fallback="/CM_Pro/assets/images/default-user.png";
-
-            // set onerror BEFORE src so a fast/cached failure
-            // can never slip through the gap.
-            // guarded so it can't loop forever if the fallback
-            // image itself is missing/broken.
-
-            img.onerror=function(){
-
-                if(this.src.indexOf(fallback)!==-1) return;
-
-                this.onerror=null;
-
-                this.src=fallback;
-
-            };
-
-            img.src=`${API.BASE_URL}/assets/user-photo/${user.username}`;
-
-        }
+        loadUserPhoto();
 
     }catch(err){
 
@@ -198,10 +264,18 @@ async function loadUserProfile(){
 // =========================
 // FIX: RELOAD PHOTO ON BACK / BFCACHE RESTORE
 // =========================
-// When navigating back from another page, the browser may restore
-// this page from bfcache without firing "load" again. If the photo
-// request was aborted or never completed before navigating away,
-// it stays broken. This re-checks and re-fetches it when needed.
+// pageshow with event.persisted covers most bfcache restores.
+// visibilitychange is a second safety net for navigation paths
+// some Android WebViews don't fire pageshow reliably for (e.g.
+// certain in-app back gestures) — it only re-triggers when the
+// photo is actually in a broken state, so it's a no-op the rest
+// of the time.
+
+function isPhotoBroken(img){
+
+    return !img || !img.complete || img.naturalWidth===0;
+
+}
 
 window.addEventListener("pageshow",function(event){
 
@@ -209,11 +283,23 @@ window.addEventListener("pageshow",function(event){
 
     if(!img) return;
 
-    const broken=!img.complete || img.naturalWidth===0;
+    if(event.persisted || isPhotoBroken(img)){
 
-    if(event.persisted || broken){
+        loadUserPhoto();
 
-        loadUserProfile();
+    }
+
+});
+
+document.addEventListener("visibilitychange",function(){
+
+    if(document.visibilityState!=="visible") return;
+
+    const img=document.getElementById("settingPhoto");
+
+    if(isPhotoBroken(img)){
+
+        loadUserPhoto();
 
     }
 
