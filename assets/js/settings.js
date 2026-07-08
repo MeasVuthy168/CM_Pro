@@ -162,6 +162,32 @@ window.addEventListener("load",()=>{
 //      default avatar.
 // =========================
 
+// Inline SVG data URI — a plain, generic avatar silhouette that
+// requires zero network requests to display. This is the true
+// last resort: if a network-hosted fallback (like
+// default-user.png) also happens to fail to load, the user would
+// see a broken-image glyph with nothing left to fall back to.
+// A data URI physically cannot fail a network request because
+// there isn't one.
+
+const INLINE_FALLBACK_PHOTO=
+
+    "data:image/svg+xml;utf8,"+
+
+    encodeURIComponent(
+
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'+
+
+        '<rect width="100" height="100" fill="%2300265c"/>'+
+
+        '<circle cx="50" cy="38" r="18" fill="%23D4AF37"/>'+
+
+        '<path d="M18 88c0-20 14-32 32-32s32 12 32 32" fill="%23D4AF37"/>'+
+
+        '</svg>'
+
+    );
+
 let photoLoadToken=0;
 
 function loadUserPhoto(){
@@ -186,6 +212,8 @@ function loadUserPhoto(){
 
     let retried=false;
 
+    let fallbackTried=false;
+
     img.classList.add("photo-loading");
 
     img.onload=function(){
@@ -200,9 +228,16 @@ function loadUserPhoto(){
 
         if(myToken!==photoLoadToken) return;
 
-        if(this.src.indexOf(fallback)!==-1){
+        // Last resort already failed too — drop to the inline
+        // SVG, which cannot itself fail, and stop here.
+
+        if(fallbackTried){
+
+            this.onerror=null;
 
             this.classList.remove("photo-loading");
+
+            this.src=INLINE_FALLBACK_PHOTO;
 
             return;
 
@@ -224,9 +259,7 @@ function loadUserPhoto(){
 
         }
 
-        this.onerror=null;
-
-        this.classList.remove("photo-loading");
+        fallbackTried=true;
 
         this.src=fallback;
 
