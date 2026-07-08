@@ -1,0 +1,442 @@
+/* ==========================================
+   PAGE
+========================================== */
+
+.page-container{
+
+padding:16px;
+
+padding-bottom:90px;
+
+}
+
+/* ==========================================
+   SEARCH FORM
+========================================== */
+
+.form-card{
+
+background:linear-gradient(180deg,#003B8B,#002D6B);
+
+border:1px solid #D4AF37;
+
+border-radius:16px;
+
+padding:20px;
+
+box-shadow:0 4px 14px rgba(0,0,0,.25);
+
+margin-bottom:14px;
+
+}
+
+.form-group{
+
+display:flex;
+
+flex-direction:column;
+
+margin-bottom:12px;
+
+}
+
+.form-group label{
+
+font-size:14px;
+
+font-weight:700;
+
+color:#cdd9ef;
+
+margin-bottom:6px;
+
+}
+
+.form-group input{
+
+height:46px;
+
+padding:0 12px;
+
+border:1px solid #D4AF37;
+
+border-radius:10px;
+
+font-size:16px;
+
+outline:none;
+
+transition:.2s;
+
+background:#00265c;
+
+color:#fff;
+
+}
+
+.form-group input:focus{
+
+border-color:#FFD700;
+
+box-shadow:0 0 0 3px rgba(255,215,0,.18);
+
+}
+
+.button-row{
+
+display:flex;
+
+gap:10px;
+
+margin-top:4px;
+
+}
+
+.button-row button{
+
+flex:1;
+
+height:46px;
+
+border:none;
+
+border-radius:10px;
+
+font-size:15px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+transition:.2s;
+
+}
+
+.button-row button:active{
+
+transform:scale(.97);
+
+}
+
+#btnSearch{
+
+background:linear-gradient(180deg,#FFD700,#D4AF37);
+
+color:#002D6B;
+
+}
+
+/* ==========================================
+   SUMMARY
+========================================== */
+
+.search-summary{
+
+display:flex;
+
+gap:14px;
+
+margin-bottom:14px;
+
+}
+
+.summary-card{
+
+flex:1;
+
+background:linear-gradient(180deg,#003B8B,#002D6B);
+
+border:1px solid #D4AF37;
+
+border-radius:14px;
+
+padding:14px;
+
+box-shadow:0 4px 14px rgba(0,0,0,.25);
+
+}
+
+.summary-label{
+
+font-size:12px;
+
+color:#cdd9ef;
+
+margin-bottom:6px;
+
+}
+
+.summary-value{
+
+font-size:18px;
+
+font-weight:700;
+
+color:#FFD700;
+
+}
+
+/* ==========================================
+   CUSTOMER INFORMATION CARD
+========================================== */
+
+.info-card{
+
+background:linear-gradient(180deg,#003B8B,#002D6B);
+
+border:1px solid #D4AF37;
+
+border-radius:16px;
+
+padding:18px 20px;
+
+box-shadow:0 4px 14px rgba(0,0,0,.25);
+
+margin-bottom:14px;
+
+display:none;
+
+}
+
+.info-card.show{
+
+display:block;
+
+}
+
+.info-title{
+
+font-size:14px;
+
+font-weight:700;
+
+color:#FFD700;
+
+text-transform:uppercase;
+
+letter-spacing:.4px;
+
+margin-bottom:14px;
+
+}
+
+.info-row{
+
+display:flex;
+
+align-items:flex-start;
+
+gap:10px;
+
+margin-bottom:12px;
+
+}
+
+.info-row:last-child{
+
+margin-bottom:0;
+
+}
+
+.info-label{
+
+flex:0 0 110px;
+
+font-size:13px;
+
+color:#cdd9ef;
+
+padding-top:2px;
+
+}
+
+.info-value{
+
+flex:1;
+
+font-size:15px;
+
+font-weight:600;
+
+color:#fff;
+
+word-break:break-word;
+
+}
+
+/* ==========================================
+   RESULTS TABLE
+   Same white/black theme as turnover.css — see that file's
+   comment for why every rule is scoped under .table-card
+   (prevents leaking onto any other table in the document,
+   e.g. a PDF export table on some other page).
+========================================== */
+
+.table-card{
+
+background:linear-gradient(180deg,#003B8B,#002D6B);
+
+border:1px solid #D4AF37;
+
+border-radius:16px;
+
+padding:10px;
+
+box-shadow:0 4px 14px rgba(0,0,0,.25);
+
+overflow:auto;
+
+}
+
+.table-card table{
+
+width:100%;
+
+border-collapse:collapse;
+
+font-size:13px;
+
+white-space:nowrap;
+
+color:#222;
+
+background:#fff;
+
+border-radius:10px;
+
+overflow:hidden;
+
+}
+
+.table-card thead{
+
+background:#003B8B;
+
+color:#FFD700;
+
+}
+
+.table-card th{
+
+padding:10px 8px;
+
+border:1px solid #2f4670;
+
+font-weight:bold;
+
+text-align:left;
+
+}
+
+.table-card td{
+
+padding:8px;
+
+border:1px solid #e0e0e0;
+
+text-align:left;
+
+color:#222;
+
+}
+
+.table-card tbody tr:nth-child(even){
+
+background:#f5f7fb;
+
+}
+
+.table-card tbody tr{
+
+cursor:pointer;
+
+transition:background .12s;
+
+}
+
+.table-card tbody tr:active,
+.table-card tbody tr.row-selected{
+
+background:rgba(212,175,55,.25) !important;
+
+}
+
+.table-card .row-empty td{
+
+text-align:center;
+
+padding:24px 8px;
+
+color:#666;
+
+font-weight:600;
+
+cursor:default;
+
+}
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media(max-width:480px){
+
+.page-container{
+
+padding:12px;
+
+padding-bottom:90px;
+
+}
+
+.form-card{
+
+padding:15px;
+
+}
+
+.search-summary{
+
+gap:10px;
+
+}
+
+.summary-value{
+
+font-size:16px;
+
+}
+
+.info-label{
+
+flex-basis:96px;
+
+font-size:12px;
+
+}
+
+.info-value{
+
+font-size:14px;
+
+}
+
+.table-card table{
+
+font-size:12px;
+
+}
+
+.table-card th{
+
+padding:8px 6px;
+
+}
+
+.table-card td{
+
+padding:7px 5px;
+
+}
+
+}
