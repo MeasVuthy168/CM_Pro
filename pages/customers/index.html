@@ -1,80 +1,299 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 
-    <title>Customers - CM_Pro</title>
+<meta charset="UTF-8">
 
-    <meta charset="UTF-8">
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<title>Customer Search</title>
 
-    <link
-        rel="stylesheet"
-        href="../../assets/css/main.css"
-    >
+<meta
+name="theme-color"
+content="#032d73">
+
+<link
+rel="stylesheet"
+href="../../assets/css/main.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/customers.css">
+
+<link
+rel="stylesheet"
+href="/CM_Pro/assets/css/global-splash.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
 
 </head>
 
 <body>
 
-    <!-- Topbar -->
-    <div id="topbar-container"></div>
+<!-- ========================= -->
+<!-- OFFLINE -->
+<!-- ========================= -->
 
-    <!-- Page -->
-    <div class="dashboard-container">
+<div id="offlineBanner">
 
-        <h1
-            style="
-                color:white;
-                margin-bottom:20px;
-            "
-        >
-            Customer Search
-        </h1>
+⚠️ No Internet Connection
 
-        <div
-            style="
-                background:white;
-                border-radius:20px;
-                padding:20px;
-            "
-        >
+</div>
 
-            Customer module ready.
+<!-- ========================= -->
+<!-- CONFIG -->
+<!-- ========================= -->
 
-        </div>
+<script src="../../config/api.js"></script>
 
-    </div>
+<script src="../../config/auth.js"></script>
 
-    <!-- Bottom Nav -->
-    <div id="bottomnav-container"></div>
+<script src="../../config/session.js"></script>
 
-    <script>
+<!-- ========================= -->
+<!-- COMPONENT -->
+<!-- ========================= -->
 
-        async function loadComponent(id, file){
+<script src="/CM_Pro/shared/topbar.js"></script>
 
-            const response = await fetch(file);
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
 
-            const html = await response.text();
+<script src="/CM_Pro/assets/js/toast.js"></script>
 
-            document.getElementById(id).innerHTML = html;
-        }
+<!-- ========================= -->
+<!-- TOPBAR -->
+<!-- ========================= -->
 
-        loadComponent(
-            "topbar-container",
-            "../../components/topbar.html"
-        );
+<div id="topbar-container"></div>
 
-        loadComponent(
-            "bottomnav-container",
-            "../../components/bottomnav.html"
-        );
+<!-- ========================= -->
+<!-- PAGE -->
+<!-- ========================= -->
 
-    </script>
+<div class="page-container">
+
+<div class="form-card">
+
+<div class="form-group">
+
+<label for="inputKeyword">
+
+Input Keyword
+
+</label>
+
+<input
+
+type="text"
+
+id="inputKeyword"
+
+placeholder="CIF, Name, Phone..."
+
+autocomplete="off"
+
+>
+
+</div>
+
+<div class="button-row">
+
+<button id="btnSearch">
+
+Search
+
+</button>
+
+</div>
+
+</div>
+
+<div class="search-summary">
+
+<div class="summary-card">
+
+<div class="summary-label">
+
+Result
+
+</div>
+
+<div id="resultCount" class="summary-value">
+
+0
+
+</div>
+
+</div>
+
+<div class="summary-card">
+
+<div class="summary-label">
+
+Data Source
+
+</div>
+
+<div id="resultSource" class="summary-value">
+
+-
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ========================= -->
+<!-- CUSTOMER INFORMATION -->
+<!-- ========================= -->
+
+<div id="infoCard" class="info-card">
+
+<div class="info-title">
+
+Customer Information
+
+</div>
+
+<div class="info-row">
+
+<div class="info-label">CIF</div>
+
+<div id="infoCIF" class="info-value">-</div>
+
+</div>
+
+<div class="info-row">
+
+<div class="info-label">Khmer Name</div>
+
+<div id="infoKhName" class="info-value">-</div>
+
+</div>
+
+<div class="info-row">
+
+<div class="info-label">DOB</div>
+
+<div id="infoDOB" class="info-value">-</div>
+
+</div>
+
+<div class="info-row">
+
+<div class="info-label">Legal ID</div>
+
+<div id="infoLegalID" class="info-value">-</div>
+
+</div>
+
+<div class="info-row">
+
+<div class="info-label">Telephone</div>
+
+<div id="infoTelephone" class="info-value">-</div>
+
+</div>
+
+<div class="info-row">
+
+<div class="info-label">Address</div>
+
+<div id="infoAddress" class="info-value">-</div>
+
+</div>
+
+<div class="info-row">
+
+<div class="info-label">Co-Borrower</div>
+
+<div id="infoCoBorrower" class="info-value">-</div>
+
+</div>
+
+</div>
+
+<!-- ========================= -->
+<!-- TABLE -->
+<!-- ========================= -->
+
+<div class="table-card">
+
+<table id="customerTable">
+
+<thead>
+
+<tr>
+
+<th>Source</th>
+<th>CIF</th>
+<th>English Name</th>
+<th>Khmer Name</th>
+<th>DOB</th>
+<th>Legal ID</th>
+<th>Balance</th>
+<th>Telephone</th>
+<th>Address</th>
+<th>Co-Borrower</th>
+
+</tr>
+
+</thead>
+
+<tbody id="tbodyCustomers">
+
+<tr class="row-empty">
+
+<td colspan="10">
+
+Please search
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<!-- ========================= -->
+<!-- LOADING -->
+<!-- ========================= -->
+
+<div
+id="loadingBox"
+class="loading-box"
+style="display:none;">
+
+<div class="spinner"></div>
+
+</div>
+
+<!-- ========================= -->
+<!-- BOTTOM -->
+<!-- ========================= -->
+
+<div id="bottomnav-container"></div>
+
+<!-- NOTIFICATION BADGE -->
+
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<!-- CUSTOMER SEARCH LOGIC -->
+
+<script src="../../assets/js/customers.js"></script>
+
+<!-- PAGE LOADER (component loader, offline, notification badge) -->
+
+<script src="../../assets/js/customers-loader.js"></script>
 
 </body>
 
