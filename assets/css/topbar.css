@@ -196,18 +196,17 @@
 
 /* =========================
    PROFILE RING (wrapper — spins independently of the photo)
-   Sized to sit close around the photo (88px photo + 8px gap =
-   96px ring), matching the original's tight proportion instead
-   of the larger loose gap from the first 2x pass.
+   Sized to sit close around the photo (66px photo + 8px gap =
+   74px ring), same tight proportion as before, just scaled down.
 ========================= */
 
 .topbar-profile-ring{
 
     position:relative;
 
-    width:96px;
+    width:74px;
 
-    height:96px;
+    height:74px;
 
     border-radius:50%;
 
@@ -255,8 +254,8 @@
 
 /* =========================
    PROFILE PHOTO
-   88px (76px on mobile). Border kept at 2px, matching the
-   original proportion rather than scaling it up with the photo.
+   66px (57px on mobile) — 75% of the previous 88px/76px size.
+   Border kept at 2px.
 ========================= */
 
 .topbar-profile{
@@ -265,9 +264,9 @@
 
     z-index:1;
 
-    width:88px;
+    width:66px;
 
-    height:88px;
+    height:66px;
 
     border-radius:50%;
 
@@ -349,17 +348,17 @@
 
     .topbar-profile-ring{
 
-        width:84px;
+        width:65px;
 
-        height:84px;
+        height:65px;
 
     }
 
     .topbar-profile{
 
-        width:76px;
+        width:57px;
 
-        height:76px;
+        height:57px;
 
     }
 
