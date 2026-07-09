@@ -198,6 +198,8 @@ createNotificationCard(item);
 
 enableSwipeCards();
 
+hydrateAvatars(notifyList);
+
 }
 
 // =========================================================
@@ -246,16 +248,6 @@ const uploadedBy=
     item.createdBy ||
     item.username ||
     "Unknown";
-
-const fallbackAvatar="/CM_Pro/assets/images/default-user.png";
-
-const avatarUrl=
-
-    uploadedBy && uploadedBy !== "Unknown"
-
-    ? `${API.BASE_URL}/assets/user-photo/${encodeURIComponent(uploadedBy)}`
-
-    : fallbackAvatar;
 
 return `
 
@@ -306,9 +298,9 @@ ${escapeHtml(item.message || "")}
 
 class="notify-user-avatar"
 
-src="${avatarUrl}"
+data-avatar-user="${escapeHtml(uploadedBy)}"
 
-onerror="this.onerror=null;this.src='${fallbackAvatar}';"
+src="/CM_Pro/assets/images/default-user.png"
 
 >
 
@@ -329,6 +321,65 @@ ${escapeHtml(item.type || "system")}
 </div>
 
 `;
+
+}
+
+// =========================================================
+// AVATAR HYDRATION
+// Real photos require an authenticated request (the endpoint
+// needs a Bearer token, which a plain <img src> can never send)
+// — this is exactly what CMToast.getUserPhotoSafe() already does
+// for toast avatars, so cards are rendered instantly with a
+// placeholder, then swapped to the real photo once it resolves.
+// Reusing CMToast's method also means it inherits the same
+// timeout guard, "System" handling, and fallback image.
+// Results are cached per uploader so the same person's photo
+// isn't re-fetched for every card in the list.
+// =========================================================
+
+const avatarCache=new Map();
+
+function getCachedUserPhoto(username){
+
+    const key=username || "System";
+
+    if(!avatarCache.has(key)){
+
+        const promise=
+
+            (typeof CMToast!=="undefined" && CMToast.getUserPhotoSafe)
+
+            ? CMToast.getUserPhotoSafe(username)
+
+            : Promise.resolve("/CM_Pro/assets/images/default-user.png");
+
+        avatarCache.set(key,promise);
+
+    }
+
+    return avatarCache.get(key);
+
+}
+
+function hydrateAvatars(container){
+
+    if(!container) return;
+
+    container
+
+        .querySelectorAll("img.notify-user-avatar[data-avatar-user]")
+
+        .forEach(img=>{
+
+            const username=img.dataset.avatarUser;
+
+            getCachedUserPhoto(username).then(url=>{
+
+                img.src=url;
+
+            });
+
+        });
 
 }
 
@@ -841,6 +892,8 @@ if("BroadcastChannel" in window){
         );
 
         enableSwipeCards();
+
+        hydrateAvatars(notifyList);
 
         updateSummary();
 
