@@ -158,25 +158,11 @@ const CMToast = {
 
       if (!targetUsername || targetUsername === "System") {
 
-        console.log("[TOAST DEBUG] getUserPhoto: no targetUsername, using default. original arg was:", username);
-
         return "/CM_Pro/assets/images/profile.jpg";
 
       }
 
       const token = API.getToken();
-
-      console.log(
-
-        "[TOAST DEBUG] getUserPhoto for:", targetUsername,
-
-        "| token present:", !!token,
-
-        "| token type:", typeof token,
-
-        "| token preview:", token ? String(token).slice(0, 12) + "..." : token
-
-      );
 
       const response = await fetch(
 
@@ -194,25 +180,7 @@ const CMToast = {
 
       );
 
-      console.log(
-
-        "[TOAST DEBUG] response for", targetUsername,
-
-        "| status:", response.status,
-
-        "| ok:", response.ok,
-
-        "| content-type:", response.headers.get("content-type")
-
-      );
-
       if (!response.ok) {
-
-        let bodyText = "";
-
-        try { bodyText = await response.clone().text(); } catch {}
-
-        console.warn("[TOAST DEBUG] non-ok response body for", targetUsername, ":", bodyText.slice(0, 200));
 
         return "/CM_Pro/assets/images/profile.jpg";
 
@@ -220,13 +188,11 @@ const CMToast = {
 
       const blob = await response.blob();
 
-      console.log("[TOAST DEBUG] blob for", targetUsername, "| size:", blob.size, "| type:", blob.type);
-
       return URL.createObjectURL(blob);
 
     } catch (err) {
 
-      console.error("[TOAST DEBUG] getUserPhoto THREW for", username, ":", err);
+      console.error("getUserPhoto failed for", username, ":", err);
 
       return "/CM_Pro/assets/images/profile.jpg";
 
@@ -764,21 +730,7 @@ const cmShownNotificationIds = new Set();
 
 function handleSWMessage(msg) {
 
-  console.log("📩 MESSAGE", msg);
-
   if (!msg) return;
-
-  // =====================================
-  // Debug pings from the Service Worker
-  // =====================================
-
-  if (msg.type === "PUSH_DEBUG") {
-
-    console.log("🛰️ SW DEBUG:", msg.stage, msg);
-
-    return;
-
-  }
 
   // =====================================
   // Refresh Badge
