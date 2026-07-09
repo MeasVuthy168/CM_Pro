@@ -27,8 +27,6 @@ href="../../assets/css/loanCalculate.css">
 rel="stylesheet"
 href="/CM_Pro/assets/css/global-splash.css">
 
-<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
-
 </head>
 
 <body>
@@ -178,184 +176,6 @@ style="display:none;">
 
 <div id="bottomnav-container"></div>
 
-<!-- ========================= -->
-<!-- COMPONENT LOADER -->
-<!-- ========================= -->
-
-<script>
-
-let loaded=0;
-
-async function loadComponent(id,file){
-
-try{
-
-const useCache=
-
-id!=="topbar-container";
-
-const cached=
-
-useCache
-
-?
-
-sessionStorage.getItem(
-
-"comp_"+id
-
-)
-
-:
-
-null;
-
-if(cached){
-
-document.getElementById(id).innerHTML=
-
-cached;
-
-}else{
-
-const response=
-
-await fetch(file);
-
-const html=
-
-await response.text();
-
-document.getElementById(id).innerHTML=
-
-html;
-
-if(useCache){
-
-sessionStorage.setItem(
-
-"comp_"+id,
-
-html
-
-);
-
-}
-
-}
-
-if(id==="topbar-container"){
-
-initTopbar({
-
-title:"កម្មវិធី​គណនាឥណទាន",
-
-showBack:true,
-
-showLogo:false,
-
-showProfile:false
-
-});
-
-}
-
-}catch(error){
-
-console.error(error);
-
-}finally{
-
-loaded++;
-
-if(loaded>=2){
-
-setTimeout(()=>{
-
-if(typeof hideGlobalSplash==="function"){
-
-hideGlobalSplash();
-
-}
-
-},300);
-
-}
-
-}
-
-}
-
-function updateOnlineStatus(){
-
-document.getElementById(
-
-"offlineBanner"
-
-).style.display=
-
-navigator.onLine
-
-?
-
-"none"
-
-:
-
-"block";
-
-}
-
-window.addEventListener(
-
-"online",
-
-updateOnlineStatus
-
-);
-
-window.addEventListener(
-
-"offline",
-
-updateOnlineStatus
-
-);
-
-updateOnlineStatus();
-
-loadComponent(
-
-"topbar-container",
-
-"/CM_Pro/components/topbar.html"
-
-);
-
-loadComponent(
-
-"bottomnav-container",
-
-"/CM_Pro/components/bottomnav.html"
-
-);
-
-// =========================
-// Notification Badge
-// =========================
-
-setTimeout(()=>{
-
-if(typeof loadNotificationBadge==="function"){
-
-loadNotificationBadge();
-
-}
-
-},500);
-
-</script>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -365,7 +185,14 @@ loadNotificationBadge();
 <!-- NOTIFICATION BADGE -->
 
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<!-- LOAN CALCULATE LOGIC -->
+
 <script src="../../assets/js/loanCalculate.js"></script>
+
+<!-- PAGE LOADER (component loader, offline, notification badge) -->
+
+<script src="../../assets/js/loanCalculate-loader.js"></script>
 
 </body>
 
