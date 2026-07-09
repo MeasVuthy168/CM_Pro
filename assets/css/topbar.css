@@ -196,18 +196,18 @@
 
 /* =========================
    PROFILE RING (wrapper — spins independently of the photo)
-   Sized 2x — 52px -> 104px (46px -> 92px on mobile) — so the
-   ring's conic-gradient border scales proportionally with the
-   photo instead of looking like a thin line around a big circle.
+   Sized to sit close around the photo (88px photo + 8px gap =
+   96px ring), matching the original's tight proportion instead
+   of the larger loose gap from the first 2x pass.
 ========================= */
 
 .topbar-profile-ring{
 
     position:relative;
 
-    width:104px;
+    width:96px;
 
-    height:104px;
+    height:96px;
 
     border-radius:50%;
 
@@ -255,8 +255,8 @@
 
 /* =========================
    PROFILE PHOTO
-   Sized 2x — 44px -> 88px (38px -> 76px on mobile). Border
-   bumped from 2px to 3px to stay proportional at the larger size.
+   88px (76px on mobile). Border kept at 2px, matching the
+   original proportion rather than scaling it up with the photo.
 ========================= */
 
 .topbar-profile{
@@ -275,12 +275,14 @@
 
     background:#fff;
 
-    border:3px solid #002D6B;
+    border:2px solid #002D6B;
 
 }
 
 /* =========================
    USER NAME
+   No longer truncated with an ellipsis — long names wrap onto
+   a second line instead of getting cut to "Soum Chans...".
 ========================= */
 
 .topbar-user-name{
@@ -289,19 +291,21 @@
 
     color:#FFD700;
 
-    font-size:13px;
+    font-size:12px;
 
     font-family:'KRASAR',sans-serif;
 
     text-align:center;
 
-    max-width:100px;
+    max-width:110px;
 
-    overflow:hidden;
+    white-space:normal;
 
-    white-space:nowrap;
+    overflow:visible;
 
-    text-overflow:ellipsis;
+    line-height:1.25;
+
+    word-break:break-word;
 
 }
 
@@ -345,9 +349,9 @@
 
     .topbar-profile-ring{
 
-        width:92px;
+        width:84px;
 
-        height:92px;
+        height:84px;
 
     }
 
@@ -361,9 +365,9 @@
 
     .topbar-user-name{
 
-        font-size:12px;
+        font-size:11px;
 
-        max-width:84px;
+        max-width:96px;
 
     }
 
