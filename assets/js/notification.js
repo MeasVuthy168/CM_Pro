@@ -241,6 +241,22 @@ getTypeIcon(item.type);
 const time=
 formatTime(item.createdAt);
 
+const uploadedBy=
+
+    item.createdBy ||
+    item.username ||
+    "Unknown";
+
+const fallbackAvatar="/CM_Pro/assets/images/default-user.png";
+
+const avatarUrl=
+
+    uploadedBy && uploadedBy !== "Unknown"
+
+    ? `${API.BASE_URL}/assets/user-photo/${encodeURIComponent(uploadedBy)}`
+
+    : fallbackAvatar;
+
 return `
 
 <div
@@ -282,19 +298,23 @@ ${escapeHtml(item.message || "")}
 
 </div>
 
+<div class="notify-meta-row">
+
 <div class="notify-user">
 
-👤 ${
-    escapeHtml(
-        item.createdBy ||
-        item.username ||
-        "Unknown"
-    )
-}
+<img
+
+class="notify-user-avatar"
+
+src="${avatarUrl}"
+
+onerror="this.onerror=null;this.src='${fallbackAvatar}';"
+
+>
+
+${escapeHtml(uploadedBy)}
 
 </div>
-
-<div class="notify-footer">
 
 <div class="notify-type">
 
@@ -326,8 +346,22 @@ function enableSwipeCards(){
 
     .forEach(card=>{
 
-        let startX = 0;
-        let currentX = 0;
+        // Guard against binding the same card twice. Previously this
+        // ran on ALL cards every time a live push arrived (via
+        // renderOptimisticCard -> enableSwipeCards), which silently
+        // stacked a second, third, fourth... set of listeners onto
+        // cards that were already bound. Multiple listeners firing
+        // together off a single tap could misfire delete/mark-read.
+
+        if(card.dataset.swipeBound==="true") return;
+
+        card.dataset.swipeBound="true";
+
+        let startX=0;
+
+        let currentX=0;
+
+        let moved=false;
 
         card.addEventListener(
 
@@ -335,8 +369,9 @@ function enableSwipeCards(){
 
             (e)=>{
 
-                startX =
-                    e.touches[0].clientX;
+                if(!e.touches || !e.touches[0]) return;
+
+                startX=e.touches[0].clientX;
 
                 // Initialize currentX to the same point, not 0 —
                 // otherwise a plain tap (no touchmove ever fires)
@@ -344,11 +379,11 @@ function enableSwipeCards(){
                 // is almost always a large negative number and
                 // falsely triggers the swipe-left delete action.
 
-                currentX = startX;
+                currentX=startX;
 
-                card.classList.add(
-                    "swiping"
-                );
+                moved=false;
+
+                card.classList.add("swiping");
 
             },
 
@@ -362,40 +397,41 @@ function enableSwipeCards(){
 
             (e)=>{
 
-                currentX =
-                    e.touches[0].clientX;
+                if(!e.touches || !e.touches[0]) return;
 
-                const diff =
-                    currentX - startX;
+                currentX=e.touches[0].clientX;
 
-                card.style.transform =
-                    `translateX(${diff}px)`;
+                const diff=currentX-startX;
 
-                if(diff < -40){
+                // Only treat this as an actual drag once the finger
+                // has moved a meaningful distance — filters out tiny
+                // jitter from a stationary tap being read as a swipe.
 
-                    card.classList.add(
-                        "delete-action"
-                    );
+                if(Math.abs(diff)>10){
 
-                }else{
-
-                    card.classList.remove(
-                        "delete-action"
-                    );
+                    moved=true;
 
                 }
 
-                if(diff > 40){
+                card.style.transform=`translateX(${diff}px)`;
 
-                    card.classList.add(
-                        "read-action"
-                    );
+                if(diff<-40){
+
+                    card.classList.add("delete-action");
 
                 }else{
 
-                    card.classList.remove(
-                        "read-action"
-                    );
+                    card.classList.remove("delete-action");
+
+                }
+
+                if(diff>40){
+
+                    card.classList.add("read-action");
+
+                }else{
+
+                    card.classList.remove("read-action");
 
                 }
 
@@ -409,75 +445,70 @@ function enableSwipeCards(){
 
             "touchend",
 
-            async ()=>{
+            async()=>{
 
-                const diff =
-                    currentX - startX;
+                const diff=currentX-startX;
 
-                const id =
-                    card.dataset.id;
+                const id=card.dataset.id;
 
-                card.classList.remove(
-                    "swiping"
-                );
+                card.classList.remove("swiping");
 
-                card.classList.remove(
-                    "delete-action"
-                );
+                card.classList.remove("delete-action");
 
-                card.classList.remove(
-                    "read-action"
-                );
+                card.classList.remove("read-action");
 
-                // Swipe Left
-                if(diff < -120){
-                 vibrate([50,50,50]);
-                    await deleteNotification(
-                        id
-                    );
+                // Require real movement (moved===true) on top of the
+                // distance threshold — a tap with no drag never
+                // reaches either branch below, no matter what diff
+                // happens to compute to.
 
-                    card.style.transform =
-    "translateX(-120%)";
+                if(moved && diff<-120){
 
-card.style.opacity = 0;
+                    vibrate([50,50,50]);
 
-setTimeout(()=>{
+                    await deleteNotification(id);
 
-    card.remove();
+                    card.style.transform="translateX(-120%)";
 
-    updateSummary();
+                    card.style.opacity=0;
 
-},250);
+                    setTimeout(()=>{
 
-                }
+                        card.remove();
 
-                // Swipe Right
-                else if(diff > 120){
-                    vibrate(40)
+                        updateSummary();
+
+                    },250);
+
+                }else if(moved && diff>120){
+
+                    vibrate(40);
+
                     await markRead(id);
 
-                    card.style.transform =
-    "translateX(100%)";
+                    card.style.transform="translateX(100%)";
 
-setTimeout(()=>{
+                    setTimeout(()=>{
 
-    card.style.transform =
-        "translateX(0)";
+                        card.style.transform="translateX(0)";
 
-    card.classList.remove(
-        "unread"
-    );
+                        card.classList.remove("unread");
 
-    updateSummary();
+                        updateSummary();
 
-},150);
+                    },150);
+
+                }else{
+
+                    card.style.transform="translateX(0)";
+
                 }
 
-                card.style.transform =
-                    "translateX(0)";
+                startX=0;
 
-                startX = 0;
-                currentX = 0;
+                currentX=0;
+
+                moved=false;
 
             }
 
