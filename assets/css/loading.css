@@ -1,0 +1,89 @@
+/* =========================================================
+   SHARED LOADING DIALOG
+   Used by shared/loading.js — same "Please wait..." popup
+   style as the VBA app, for use across any page.
+========================================================= */
+
+.app-loading-overlay{
+
+    position:fixed;
+
+    inset:0;
+
+    background:rgba(0,0,0,.45);
+
+    display:none;
+
+    align-items:center;
+
+    justify-content:center;
+
+    z-index:999999;
+
+}
+
+.app-loading-overlay.show{
+
+    display:flex;
+
+}
+
+.app-loading-box{
+
+    background:#eef0f3;
+
+    border-radius:20px;
+
+    padding:20px 26px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:16px;
+
+    min-width:240px;
+
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+
+}
+
+.app-loading-spinner{
+
+    width:44px;
+
+    height:44px;
+
+    flex-shrink:0;
+
+    border-radius:50%;
+
+    border:5px solid #cfe0f5;
+
+    border-top-color:#4a90d9;
+
+    border-right-color:#4a90d9;
+
+    animation:appLoadingSpin .8s linear infinite;
+
+}
+
+.app-loading-text{
+
+    font-size:17px;
+
+    color:#222;
+
+    font-weight:500;
+
+}
+
+@keyframes appLoadingSpin{
+
+    to{
+
+        transform:rotate(360deg);
+
+    }
+
+}
