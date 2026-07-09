@@ -217,15 +217,31 @@ only holds styles specific to the notifications page.
 
 }
 
-.notify-user{
+.notify-meta-row{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:10px;
 
     margin-top:2px;
 
     margin-bottom:10px;
 
-    display:inline-block;
+}
 
-    padding:4px 10px;
+.notify-user{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:6px;
+
+    padding:4px 10px 4px 4px;
 
     border-radius:12px;
 
@@ -237,15 +253,23 @@ only holds styles specific to the notifications page.
 
     font-weight:600;
 
+    min-width:0;
+
 }
 
-.notify-footer{
+.notify-user-avatar{
 
-    display:flex;
+    width:22px;
 
-    justify-content:space-between;
+    height:22px;
 
-    align-items:center;
+    border-radius:50%;
+
+    object-fit:cover;
+
+    background:#00265c;
+
+    flex-shrink:0;
 
 }
 
@@ -262,6 +286,8 @@ only holds styles specific to the notifications page.
     border-radius:10px;
 
     font-weight:600;
+
+    flex-shrink:0;
 
 }
 
@@ -519,6 +545,12 @@ only holds styles specific to the notifications page.
 
     padding:14px;
 
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
     text-align:left;
 
     font-size:14px;
@@ -526,6 +558,18 @@ only holds styles specific to the notifications page.
     cursor:pointer;
 
     transition:background .15s;
+
+}
+
+.notification-menu-item .menu-icon{
+
+    width:20px;
+
+    height:20px;
+
+    object-fit:contain;
+
+    flex-shrink:0;
 
 }
 
