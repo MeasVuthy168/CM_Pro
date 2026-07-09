@@ -29,12 +29,14 @@ href="/CM_Pro/assets/css/global-splash.css">
 
 <link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
 
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
+
 </head>
 
 <body>
 
 <!-- ========================= -->
-<!-- OFFLINE --> 
+<!-- OFFLINE -->
 <!-- ========================= -->
 
 <div id="offlineBanner">
@@ -58,6 +60,8 @@ href="/CM_Pro/assets/css/global-splash.css">
 <!-- ========================= -->
 
 <script src="/CM_Pro/shared/topbar.js"></script>
+
+<script src="/CM_Pro/shared/loading.js"></script>
 
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 
@@ -109,39 +113,11 @@ Search
 
 </div>
 
-</div>
+<div class="result-row">
 
-<div class="search-summary">
+<span class="result-label">Result</span>
 
-<div class="summary-card">
-
-<div class="summary-label">
-
-Result
-
-</div>
-
-<div id="resultCount" class="summary-value">
-
-0
-
-</div>
-
-</div>
-
-<div class="summary-card">
-
-<div class="summary-label">
-
-Data Source
-
-</div>
-
-<div id="resultSource" class="summary-value">
-
--
-
-</div>
+<span id="resultCount" class="result-value">0</span>
 
 </div>
 
@@ -261,19 +237,6 @@ Please search
 </table>
 
 </div>
-
-</div>
-
-<!-- ========================= -->
-<!-- LOADING -->
-<!-- ========================= -->
-
-<div
-id="loadingBox"
-class="loading-box"
-style="display:none;">
-
-<div class="spinner"></div>
 
 </div>
 
