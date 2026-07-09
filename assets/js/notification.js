@@ -1,4 +1,39 @@
 // =========================================================
+// DEBUG: BUILD TAG
+// Injects a visible banner + console log confirming this exact
+// file is what's actually running. If you DON'T see this banner
+// on screen, the browser/SW is still serving an old cached copy
+// of notification.js — no amount of logic fixes below will show
+// up until that's resolved.
+// =========================================================
+
+(function(){
+
+    const BUILD_TAG="notification.js DEBUG_BUILD_2026-07-09C";
+
+    console.log("[NOTIFY DEBUG]",BUILD_TAG,"loaded at",new Date().toISOString());
+
+    window.addEventListener("DOMContentLoaded",()=>{
+
+        const banner=document.createElement("div");
+
+        banner.textContent="🐛 "+BUILD_TAG;
+
+        banner.style.cssText=
+
+            "position:fixed;top:0;left:0;right:0;z-index:999999;"+
+
+            "background:#ff2d55;color:#fff;font-size:11px;"+
+
+            "text-align:center;padding:4px;font-family:monospace;";
+
+        document.body.appendChild(banner);
+
+    });
+
+})();
+
+// =========================================================
 // ELEMENTS
 // =========================================================
 
@@ -316,6 +351,12 @@ ${escapeHtml(item.type || "system")}
 
 </div>
 
+<div class="avatar-debug" data-debug-for="${escapeHtml(uploadedBy)}">
+
+🔍 debug: waiting...
+
+</div>
+
 </div>
 
 </div>
@@ -345,11 +386,41 @@ function getCachedUserPhoto(username){
 
     if(!avatarCache.has(key)){
 
+        const cmToastExists=(typeof CMToast!=="undefined");
+
+        const methodExists=cmToastExists && typeof CMToast.getUserPhotoSafe==="function";
+
+        console.log(
+
+            "[NOTIFY DEBUG] getCachedUserPhoto for:",key,
+
+            "| CMToast defined:",cmToastExists,
+
+            "| getUserPhotoSafe is function:",methodExists
+
+        );
+
         const promise=
 
-            (typeof CMToast!=="undefined" && CMToast.getUserPhotoSafe)
+            methodExists
 
             ? CMToast.getUserPhotoSafe(username)
+
+                .then(url=>{
+
+                    console.log("[NOTIFY DEBUG] getUserPhotoSafe resolved for",key,"->",url);
+
+                    return url;
+
+                })
+
+                .catch(err=>{
+
+                    console.error("[NOTIFY DEBUG] getUserPhotoSafe THREW for",key,err);
+
+                    return "/CM_Pro/assets/images/default-user.png";
+
+                })
 
             : Promise.resolve("/CM_Pro/assets/images/default-user.png");
 
@@ -363,23 +434,73 @@ function getCachedUserPhoto(username){
 
 function hydrateAvatars(container){
 
-    if(!container) return;
+    if(!container){
 
-    container
+        console.warn("[NOTIFY DEBUG] hydrateAvatars called with no container");
 
-        .querySelectorAll("img.notify-user-avatar[data-avatar-user]")
+        return;
 
-        .forEach(img=>{
+    }
 
-            const username=img.dataset.avatarUser;
+    const imgs=container.querySelectorAll("img.notify-user-avatar[data-avatar-user]");
 
-            getCachedUserPhoto(username).then(url=>{
+    console.log("[NOTIFY DEBUG] hydrateAvatars found",imgs.length,"avatar(s) to hydrate");
 
-                img.src=url;
+    imgs.forEach(img=>{
 
-            });
+        const username=img.dataset.avatarUser;
+
+        const debugLabel=
+
+            container.querySelector(
+
+                `.avatar-debug[data-debug-for="${CSS.escape(username)}"]`
+
+            );
+
+        if(debugLabel){
+
+            debugLabel.textContent="🔍 debug: fetching photo for "+username+"...";
+
+        }
+
+        getCachedUserPhoto(username).then(url=>{
+
+            console.log("[NOTIFY DEBUG] setting img.src for",username,"->",url);
+
+            img.src=url;
+
+            if(debugLabel){
+
+                const isFallback=
+
+                    url.indexOf("default-user.png")!==-1 ||
+
+                    url.indexOf("profile.jpg")!==-1;
+
+                debugLabel.textContent=
+
+                    isFallback
+
+                    ? "🔍 debug: FELL BACK for "+username+" (url: "+url+")"
+
+                    : "🔍 debug: OK blob url for "+username;
+
+            }
+
+        }).catch(err=>{
+
+            console.error("[NOTIFY DEBUG] hydrateAvatars .then chain rejected for",username,err);
+
+            if(debugLabel){
+
+                debugLabel.textContent="🔍 debug: ERROR for "+username+" — "+(err?.message||err);
+
+            }
 
         });
+
+    });
 
 }
 
