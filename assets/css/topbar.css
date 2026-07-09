@@ -196,15 +196,18 @@
 
 /* =========================
    PROFILE RING (wrapper — spins independently of the photo)
+   Sized 2x — 52px -> 104px (46px -> 92px on mobile) — so the
+   ring's conic-gradient border scales proportionally with the
+   photo instead of looking like a thin line around a big circle.
 ========================= */
 
 .topbar-profile-ring{
 
     position:relative;
 
-    width:52px;
+    width:104px;
 
-    height:52px;
+    height:104px;
 
     border-radius:50%;
 
@@ -252,6 +255,8 @@
 
 /* =========================
    PROFILE PHOTO
+   Sized 2x — 44px -> 88px (38px -> 76px on mobile). Border
+   bumped from 2px to 3px to stay proportional at the larger size.
 ========================= */
 
 .topbar-profile{
@@ -260,9 +265,9 @@
 
     z-index:1;
 
-    width:44px;
+    width:88px;
 
-    height:44px;
+    height:88px;
 
     border-radius:50%;
 
@@ -270,7 +275,7 @@
 
     background:#fff;
 
-    border:2px solid #002D6B;
+    border:3px solid #002D6B;
 
 }
 
@@ -284,13 +289,13 @@
 
     color:#FFD700;
 
-    font-size:11px;
+    font-size:13px;
 
     font-family:'KRASAR',sans-serif;
 
     text-align:center;
 
-    max-width:70px;
+    max-width:100px;
 
     overflow:hidden;
 
@@ -340,25 +345,25 @@
 
     .topbar-profile-ring{
 
-        width:46px;
+        width:92px;
 
-        height:46px;
+        height:92px;
 
     }
 
     .topbar-profile{
 
-        width:38px;
+        width:76px;
 
-        height:38px;
+        height:76px;
 
     }
 
     .topbar-user-name{
 
-        font-size:10px;
+        font-size:12px;
 
-        max-width:60px;
+        max-width:84px;
 
     }
 
