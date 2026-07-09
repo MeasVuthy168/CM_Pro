@@ -46,23 +46,7 @@ const tbodyCustomers=document.getElementById("tbodyCustomers");
 
 const resultCount=document.getElementById("resultCount");
 
-const resultSource=document.getElementById("resultSource");
-
 const infoCard=document.getElementById("infoCard");
-
-// ========================================
-// LOADING
-// ========================================
-
-function showLoading(show){
-
-    const box=document.getElementById("loadingBox");
-
-    if(!box) return;
-
-    box.style.display=show ? "flex" : "none";
-
-}
 
 // ========================================
 // SAFE HTML
@@ -104,7 +88,11 @@ async function runCustomerSearch(){
 
     }
 
-    showLoading(true);
+    if(typeof showAppLoading==="function"){
+
+        showAppLoading("Searching customer data...");
+
+    }
 
     try{
 
@@ -154,7 +142,11 @@ async function runCustomerSearch(){
 
     }finally{
 
-        showLoading(false);
+        if(typeof hideAppLoading==="function"){
+
+            hideAppLoading();
+
+        }
 
     }
 
@@ -169,8 +161,6 @@ function renderResults(items){
     tbodyCustomers.innerHTML="";
 
     resultCount.textContent=items.length;
-
-    resultSource.textContent=items.length ? "OS + Payroll + WO" : "-";
 
     infoCard.classList.remove("show");
 
@@ -299,8 +289,6 @@ inputKeyword.addEventListener("input",function(){
         renderResults([]);
 
         resultCount.textContent="0";
-
-        resultSource.textContent="-";
 
     }
 
