@@ -23,6 +23,7 @@
 <link rel="stylesheet" href="./assets/css/main.css">
 <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
 <link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+<link rel="stylesheet" href="./assets/css/assistant.css">
 
 </head>
 
@@ -49,6 +50,7 @@
 <script src="/CM_Pro/shared/logout.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 <script src="/CM_Pro/assets/js/toast.js"></script>
+<script src="./assets/js/assistant-box.js"></script>
 
 <!-- ========================= -->
 <!-- TOPBAR -->
@@ -141,7 +143,7 @@ Officer Task
 <img src="./assets/images/robot.svg" class="assistant-icon">
 </div>
 
-<div class="assistant-text">
+<div class="assistant-text" id="assistantText">
 សូមស្វាគមន៍ មកកាន់ប្រព័ន្ធតាមដានឥណទាន CM_Pro 🎉
 </div>
 
@@ -166,6 +168,17 @@ Officer Task
 <!-- ========================= -->
 
 <script src="./assets/js/dashboard.js"></script>
+
+<script>
+  // TODO: confirm these match your actual session.js / api.js globals.
+  // If session.js exposes something like getCurrentUser() or a
+  // sessionStorage key, swap the two lines below to use that instead.
+  initAssistantBox({
+    currentVersion: window.APP_VERSION || '1.0.0',
+    userName: (window.CM_Session && window.CM_Session.userName) || 'អ្នកប្រើប្រាស់',
+    highlights: []
+  });
+</script>
 
 </body>
 </html>
