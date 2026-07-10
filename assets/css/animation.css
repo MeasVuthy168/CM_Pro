@@ -96,9 +96,6 @@
 
 @media(prefers-reduced-motion:reduce){
 
-    .topbar-profile-ring::before,
-    .assistant-icon,
-    .assistant-icon-wrap::after,
     .assistant-text{
 
         animation:none !important;
