@@ -62,7 +62,27 @@
       }
       @keyframes wave-hand {
         0%, 100% { transform: rotate(0deg); }
-        50% { transform: rotate(-22deg); }
+        50% { transform: rotate(-30deg); }
+      }
+      @keyframes hand-flutter {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(16deg); }
+        50% { transform: rotate(-10deg); }
+        75% { transform: rotate(12deg); }
+      }
+      @keyframes left-arm-sway {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(-7deg); }
+      }
+      @keyframes left-hand-flex {
+        0%, 100% { transform: rotate(0deg) scale(1); }
+        50% { transform: rotate(11deg) scale(1.06); }
+      }
+      @keyframes foot-tap {
+        0%, 60%, 100% { transform: rotate(0deg); }
+        15% { transform: rotate(10deg); }
+        30% { transform: rotate(0deg); }
+        45% { transform: rotate(10deg); }
       }
       @keyframes pulse-eyes {
         0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(255,204,0,0.6)); }
@@ -82,8 +102,28 @@
         transform-origin: 250px 185px;
       }
       .anim-wave {
-        animation: wave-hand 1.8s ease-in-out infinite;
+        animation: wave-hand 0.9s ease-in-out infinite;
         transform-origin: 185px 210px;
+      }
+      .anim-hand-flutter {
+        animation: hand-flutter 0.55s ease-in-out infinite;
+        transform-origin: 105px 110px;
+      }
+      .anim-left-arm {
+        animation: left-arm-sway 3.4s ease-in-out infinite;
+        transform-origin: 315px 210px;
+      }
+      .anim-left-hand {
+        animation: left-hand-flex 2.1s ease-in-out infinite;
+        transform-origin: 305px 312px;
+      }
+      .anim-foot-left {
+        animation: foot-tap 2.6s ease-in-out infinite;
+        transform-origin: 185px 485px;
+      }
+      .anim-foot-right {
+        animation: foot-tap 2.6s ease-in-out infinite 1.3s;
+        transform-origin: 315px 485px;
       }
       .anim-eye {
         animation: pulse-eyes 2s ease-in-out infinite;
@@ -101,18 +141,24 @@
   <g id="robot-full-body">
     
     <g id="legs-group">
-      <g filter="url(#shadow)">
+      <g id="left-leg" filter="url(#shadow)">
         <rect x="180" y="320" width="30" height="130" rx="15" fill="url(#blackLimbs)"/>
         <rect x="175" y="390" width="40" height="70" rx="20" fill="url(#bodyGrad)"/>
-        <rect x="150" y="485" width="70" height="45" rx="20" fill="url(#blackLimbs)"/>
-        <ellipse cx="185" cy="495" rx="25" ry="8" fill="#ffffff" opacity="0.2"/>
+        <g id="left-foot" class="anim-foot-left">
+          <rect x="150" y="485" width="70" height="45" rx="20" fill="url(#blackLimbs)"/>
+          <ellipse cx="185" cy="495" rx="25" ry="8" fill="#ffffff" opacity="0.2"/>
+          <path d="M 205 505 L 216 505 M 205 515 L 213 515" stroke="#000000" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+        </g>
       </g>
 
-      <g filter="url(#shadow)">
+      <g id="right-leg" filter="url(#shadow)">
         <rect x="290" y="320" width="30" height="130" rx="15" fill="url(#blackLimbs)"/>
         <rect x="285" y="390" width="40" height="70" rx="20" fill="url(#bodyGrad)"/>
-        <rect x="280" y="485" width="70" height="45" rx="20" fill="url(#blackLimbs)"/>
-        <ellipse cx="315" cy="495" rx="25" ry="8" fill="#ffffff" opacity="0.2"/>
+        <g id="right-foot" class="anim-foot-right">
+          <rect x="280" y="485" width="70" height="45" rx="20" fill="url(#blackLimbs)"/>
+          <ellipse cx="315" cy="495" rx="25" ry="8" fill="#ffffff" opacity="0.2"/>
+          <path d="M 284 505 L 295 505 M 287 515 L 295 515" stroke="#000000" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+        </g>
       </g>
     </g>
 
@@ -123,12 +169,18 @@
         <rect x="230" y="310" width="40" height="25" rx="6" fill="url(#blackLimbs)"/>
       </g>
 
-      <g id="left-arm-hip" filter="url(#shadow)">
+      <g id="left-arm-hip" class="anim-left-arm" filter="url(#shadow)">
         <circle cx="315" cy="210" r="16" fill="url(#jointGrad)"/>
         <path d="M 320 215 Q 360 240 330 290" fill="none" stroke="url(#blackLimbs)" stroke-width="20" stroke-linecap="round"/>
         <path d="M 330 290 L 310 310" fill="none" stroke="url(#bodyGrad)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
         <circle cx="330" cy="290" r="11" fill="url(#jointGrad)"/>
-        <circle cx="305" cy="312" r="15" fill="url(#blackLimbs)"/>
+        <g id="left-hand" class="anim-left-hand">
+          <circle cx="305" cy="312" r="15" fill="url(#blackLimbs)"/>
+          <circle cx="301" cy="307" r="4" fill="#ffffff" opacity="0.25"/>
+          <path d="M 293 320 Q 289 328 296 331" stroke="#000000" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.5"/>
+          <path d="M 305 324 Q 303 332 310 334" stroke="#000000" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.5"/>
+          <path d="M 317 320 Q 318 328 312 331" stroke="#000000" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.5"/>
+        </g>
       </g>
 
       <g filter="url(#shadow)">
@@ -176,13 +228,18 @@
         </g>
       </g>
 
-      <g class="anim-wave">
+      <g id="right-arm-wave" class="anim-wave">
         <circle cx="185" cy="210" r="16" fill="url(#jointGrad)" filter="url(#shadow)"/>
         <path d="M 185 210 L 140 170" fill="none" stroke="url(#blackLimbs)" stroke-width="22" stroke-linecap="round" filter="url(#shadow)"/>
         <circle cx="140" cy="170" r="13" fill="url(#jointGrad)"/>
         <path d="M 140 170 L 105 110" fill="none" stroke="url(#bodyGrad)" stroke-width="26" stroke-linecap="round" filter="url(#shadow)"/>
-        <circle cx="105" cy="110" r="16" fill="url(#blackLimbs)" filter="url(#shadow)"/>
-        <circle cx="101" cy="105" r="5" fill="#ffffff" opacity="0.3"/>
+        <g id="right-hand" class="anim-hand-flutter">
+          <circle cx="105" cy="110" r="16" fill="url(#blackLimbs)" filter="url(#shadow)"/>
+          <circle cx="101" cy="105" r="5" fill="#ffffff" opacity="0.3"/>
+          <path d="M 92 98 Q 85 90 91 84" stroke="#000000" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.55"/>
+          <path d="M 104 92 Q 100 82 108 78" stroke="#000000" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.55"/>
+          <path d="M 117 96 Q 118 86 127 84" stroke="#000000" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.55"/>
+        </g>
       </g>
 
     </g> </g> </svg>
