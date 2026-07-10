@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -20 860 860" width="100%" height="100%">
     <defs>
         <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="#f2f5f9"/>
@@ -23,27 +23,37 @@
             <stop offset="80%" stop-color="#06b6d4" stop-opacity="0.8"/>
             <stop offset="100%" stop-color="#ffe066" stop-opacity="1"/>
         </linearGradient>
+        <radialGradient id="shadowGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#0a0e14" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#0a0e14" stop-opacity="0"/>
+        </radialGradient>
 
-        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="6" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
-        <filter id="intenseGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="12" result="blur1" />
-            <feGaussianBlur stdDeviation="4" result="blur2" />
+        <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="6" result="blur"/>
             <feMerge>
-                <feMergeNode in="blur1" />
-                <feMergeNode in="blur2" />
-                <feMergeNode in="SourceGraphic" />
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        <filter id="intenseGlow" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation="12" result="blur1"/>
+            <feGaussianBlur stdDeviation="4" result="blur2"/>
+            <feMerge>
+                <feMergeNode in="blur1"/>
+                <feMergeNode in="blur2"/>
+                <feMergeNode in="SourceGraphic"/>
             </feMerge>
         </filter>
     </defs>
+
+    <!-- ground shadow for grounding -->
+    <ellipse cx="410" cy="815" rx="230" ry="28" fill="url(#shadowGrad)"/>
 
     <g opacity="0.85">
         <path d="M 50 400 L 250 410 M 80 430 L 220 435 M 40 370 L 190 380" stroke="url(#speedLineGrad)" stroke-width="4" stroke-linecap="round"/>
         <path d="M 100 200 Q 200 180 300 220" fill="none" stroke="url(#cyanGlow)" stroke-width="3" stroke-dasharray="10 15" stroke-linecap="round"/>
         <path d="M 150 600 Q 250 630 400 580" fill="none" stroke="url(#cyanGlow)" stroke-width="2" stroke-dasharray="5 10"/>
-        
+
         <circle cx="280" cy="180" r="4" fill="#a5f3fc" filter="url(#glow)"/>
         <circle cx="220" cy="250" r="6" fill="#ffe066" filter="url(#glow)"/>
         <circle cx="190" cy="520" r="5" fill="#06b6d4" filter="url(#glow)"/>
@@ -54,7 +64,7 @@
     </g>
 
     <g transform="translate(40, 20)">
-        
+
         <g id="left-leg">
             <circle cx="310" cy="520" r="22" fill="url(#darkMetal)"/>
             <circle cx="310" cy="520" r="12" fill="url(#cyanGlow)" filter="url(#glow)"/>
@@ -71,11 +81,14 @@
         <g id="right-leg">
             <circle cx="430" cy="520" r="22" fill="url(#darkMetal)"/>
             <circle cx="430" cy="520" r="12" fill="url(#cyanGlow)" filter="url(#glow)"/>
-            <path d="M 415 535 L 440 635 L 485 625 L 445 530 Z" fill="url(#bodyGrad)" stroke="#78909c" stroke-width="2"/>
-            <circle cx="460" cy="640" r="18" fill="url(#darkMetal)"/>
-            <path d="M 445 650 L 485 745 L 545 730 L 478 640 Z" fill="url(#bodyGrad)" stroke="#78909c" stroke-width="2"/>
-            <path d="M 485 745 L 500 785 L 580 760 L 545 730 Z" fill="url(#darkMetal)"/>
-            <path d="M 510 755 L 560 740 L 568 755 L 520 770 Z" fill="url(#accentGold)"/>
+            <path d="M 408 538 L 430 645 L 468 640 L 452 538 Z" fill="url(#bodyGrad)" stroke="#78909c" stroke-width="2"/>
+            <path d="M 415 548 L 432 636 L 448 634 L 435 546 Z" fill="#fff" opacity="0.4"/>
+            <circle cx="449" cy="643" r="18" fill="url(#darkMetal)"/>
+            <circle cx="449" cy="643" r="8" fill="#ffe066"/>
+            <path d="M 430 650 L 455 760 L 500 755 L 468 650 Z" fill="url(#bodyGrad)" stroke="#78909c" stroke-width="2"/>
+            <path d="M 449 762 L 470 748 L 500 752 L 486 768 Z" fill="url(#darkMetal)"/>
+            <path d="M 455 765 L 500 795 L 560 785 L 500 752 Z" fill="url(#darkMetal)"/>
+            <path d="M 505 775 L 545 765 L 552 778 L 512 788 Z" fill="url(#accentGold)"/>
         </g>
 
         <g id="left-arm">
@@ -89,15 +102,15 @@
         </g>
 
         <g id="torso">
-            <path d="M 300 480 L 440 480 L 460 530 L 280 530 Z" fill="url(#darkMetal)" stroke="#2c3e50" stroke-width="2"/>
-            <path d="M 320 495 L 420 495 L 430 515 L 310 515 Z" fill="#1e293b"/>
-            <rect x="350" y="445" width="40" height="40" rx="5" fill="url(#cyanGlow)" filter="url(#glow)"/>
+            <path d="M 300 460 L 440 460 L 460 510 L 280 510 Z" fill="url(#darkMetal)" stroke="#2c3e50" stroke-width="2"/>
+            <path d="M 320 470 L 420 470 L 430 495 L 310 495 Z" fill="#1e293b"/>
+            <rect x="350" y="445" width="40" height="45" rx="6" fill="url(#cyanGlow)" filter="url(#glow)"/>
             <path d="M 270 320 L 470 320 L 450 460 L 290 460 Z" fill="url(#bodyGrad)" stroke="#78909c" stroke-width="3"/>
             <path d="M 275 330 L 310 330 L 310 450 L 295 450 Z" fill="#9aaec4" opacity="0.5"/>
             <path d="M 465 330 L 430 330 L 430 450 L 445 450 Z" fill="#9aaec4" opacity="0.5"/>
 
             <rect x="312" y="335" width="116" height="96" rx="48" fill="url(#darkMetal)" stroke="url(#accentGold)" stroke-width="3" filter="url(#glow)"/>
-            
+
             <g id="logo-text">
                 <rect x="318" y="341" width="104" height="84" rx="42" fill="none" stroke="#06b6d4" stroke-width="1" stroke-dasharray="6 4"/>
                 <text x="370" y="380" font-family="'Segoe UI', Roboto, Helvetica, sans-serif" font-weight="900" font-size="20" fill="#ffffff" text-anchor="middle" letter-spacing="3">CM PRO</text>
@@ -138,7 +151,7 @@
             <circle cx="590" cy="260" r="10" fill="url(#accentGold)" filter="url(#glow)"/>
             <path d="M 605 250 L 690 170 L 720 198 L 625 275 Z" fill="url(#bodyGrad)" stroke="#78909c" stroke-width="2"/>
             <rect x="695" y="165" width="22" height="28" rx="4" transform="rotate(-25 695 165)" fill="url(#darkMetal)"/>
-            
+
             <g transform="translate(710, 160) rotate(-15)">
                 <path d="M 0 0 C 15 -15 35 -5 30 15 C 25 25 10 25 0 10 Z" fill="url(#darkMetal)"/>
                 <circle cx="15" cy="5" r="10" fill="url(#cyanGlow)" filter="url(#intenseGlow)"/>
