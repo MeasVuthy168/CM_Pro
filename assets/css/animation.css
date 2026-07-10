@@ -91,15 +91,9 @@
 
 /* =========================
    ACCESSIBILITY
-   Respect users who've asked the OS for reduced motion.
+   Previously this respected prefers-reduced-motion for the text
+   shimmer, but MIUI's "Remove animations" setting on Redmi devices
+   reports reduced-motion even when the user just has battery saver
+   on, not an actual motion-sensitivity need — so this is disabled
+   to keep the shimmer consistent with the ring/glow fix above.
 ========================= */
-
-@media(prefers-reduced-motion:reduce){
-
-    .assistant-text{
-
-        animation:none !important;
-
-    }
-
-}
