@@ -7,8 +7,8 @@
 function getKhmerGreeting(name) {
     const h = new Date().getHours();
     const greet = h < 11 ? "អរុណសួស្តី"
-                : h < 14 ? "ថ្ងៃត្រង់សួស្តី"
-                : h < 18 ? "រសៀលសួស្តី"
+                : h < 14 ? "វិវាសួស្តី"
+                : h < 18 ? "ទិវាសួស្តី"
                 : "សាយណ្ហសួស្តី";
     return `${greet}, ${name}! សូមស្វាគមន៍មកកាន់ CM Pro`;
 }
