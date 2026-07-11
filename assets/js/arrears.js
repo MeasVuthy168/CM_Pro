@@ -8,7 +8,7 @@
 // ========================================
 
 // ========================================
-// COLUMN MAP 
+// COLUMN MAP
 // values[] index -> field, per the confirmed header row (B is
 // the sheet's own row-number column and is NOT part of values[]
 // — values[] starts at C = "Loan Number").
@@ -93,6 +93,7 @@ const filterEls = {
     promiseStatus: document.getElementById("fPromiseStatus")
 };
 
+const reasonBackdrop = document.getElementById("reasonBackdrop");
 const reasonCard = document.getElementById("reasonCard");
 const reasonSubtitle = document.getElementById("reasonSubtitle");
 const reasonAJ = document.getElementById("reasonAJ");
@@ -636,6 +637,30 @@ function renderTable(rows) {
     });
 
     tbodyArrears.appendChild(frag);
+
+    // Force a synchronous reflow. Without this, the columns furthest to
+    // the right (past the horizontal-scroll edge) sometimes don't paint
+    // on the very first render — only after some interaction (like
+    // touching a filter) forces the browser to repaint. This is a known
+    // quirk with position:sticky + horizontal overflow scrolling on
+    // mobile Chrome/WebView; reading offsetHeight forces layout to run
+    // immediately instead of lazily.
+    void tbodyArrears.offsetHeight;
+
+    // Extra safety net: nudge the scroll container by 1px and back.
+    // This forces the browser to actually recompute/repaint the
+    // horizontally-scrolled region rather than leaving it in whatever
+    // stale compositing state it was in before the render.
+    const scrollEl = document.querySelector(".table-scroll");
+    if (scrollEl) {
+        requestAnimationFrame(() => {
+            const original = scrollEl.scrollLeft;
+            scrollEl.scrollLeft = original + 1;
+            requestAnimationFrame(() => {
+                scrollEl.scrollLeft = original;
+            });
+        });
+    }
 }
 
 // ========================================
@@ -656,6 +681,26 @@ tbodyArrears.addEventListener("click", (e) => {
     openReasonPanel(row);
 });
 
+function openReasonModal() {
+    reasonBackdrop.classList.add("show");
+}
+
+function closeReasonModal() {
+    reasonBackdrop.classList.remove("show");
+    selectedRow = null;
+}
+
+// click on the dark backdrop itself (not the card) closes the modal
+reasonBackdrop.addEventListener("click", (e) => {
+    if (e.target === reasonBackdrop) closeReasonModal();
+});
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && reasonBackdrop.classList.contains("show")) {
+        closeReasonModal();
+    }
+});
+
 async function openReasonPanel(row) {
     selectedRow = row;
 
@@ -664,8 +709,7 @@ async function openReasonPanel(row) {
     reasonAK.value = "";
     reasonAL.value = "";
     reasonMeta.textContent = "";
-    reasonCard.classList.add("show");
-    reasonCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    openReasonModal();
 
     if (!row.concate) {
         notify("This row has no Concate key — cannot load/save its reason.", "warning");
@@ -700,10 +744,7 @@ async function openReasonPanel(row) {
     }
 }
 
-document.getElementById("btnReasonCancel").addEventListener("click", () => {
-    reasonCard.classList.remove("show");
-    selectedRow = null;
-});
+document.getElementById("btnReasonCancel").addEventListener("click", closeReasonModal);
 
 document.getElementById("btnReasonSave").addEventListener("click", async () => {
     if (!selectedRow || !selectedRow.concate) {
@@ -732,7 +773,7 @@ document.getElementById("btnReasonSave").addEventListener("click", async () => {
         if (!data.ok) throw new Error(data.message || "Save failed.");
 
         notify("Reason arrear saved.", "success");
-        reasonCard.classList.remove("show");
+        closeReasonModal();
     } catch (err) {
         console.error(err);
         notify(err.message || "Could not save reason arrear.", "error");
