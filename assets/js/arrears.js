@@ -429,6 +429,73 @@ function formatDateTime12h(isoString) {
     return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss} ${ampm}`;
 }
 
+// ========================================
+// ROW DATE/PHONE FORMATTING
+// The sheet's raw values can arrive as Excel serial numbers (e.g.
+// "45531") rather than proper date strings — that's what was showing
+// up unformatted in DisDate/ថ្ងៃសន្យាសង/DateBackUpReasonArrear. These
+// use UTC getters deliberately: Excel serials convert to UTC-midnight
+// JS dates, and using local getters here would risk shifting the
+// displayed day depending on the browser's timezone.
+// ========================================
+
+function excelSerialToDate(serial) {
+    const utcDays = Math.floor(serial - 25569); // days between 1899-12-30 and 1970-01-01
+    return new Date(utcDays * 86400 * 1000);
+}
+
+function parseFlexibleDate(value) {
+    if (value === null || value === undefined) return null;
+    const str = String(value).trim();
+    if (!str) return null;
+
+    if (/^\d+(\.\d+)?$/.test(str)) {
+        const serial = parseFloat(str);
+        if (serial > 20000 && serial < 60000) { // sane range, roughly 1954-2064
+            return excelSerialToDate(serial);
+        }
+    }
+
+    const parsed = new Date(str);
+    return isNaN(parsed.getTime()) ? null : parsed;
+}
+
+// dd/mm/yyyy — for DisDate and ថ្ងៃសន្យាសង
+function formatRowDateDMY(value) {
+    const d = parseFlexibleDate(value);
+    if (!d) return value || "";
+    const pad = n => String(n).padStart(2, "0");
+    return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`;
+}
+
+// yyyy-mm-dd hh:mm:ss AM/PM — for DateBackUpReasonArrear
+function formatRowDateTime12h(value) {
+    const d = parseFlexibleDate(value);
+    if (!d) return value || "";
+    const pad = n => String(n).padStart(2, "0");
+
+    let h = d.getUTCHours();
+    const ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12;
+    if (h === 0) h = 12;
+
+    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(h)}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())} ${ampm}`;
+}
+
+// Cambodian phone numbers start with 0 — Excel/JS often strips a
+// leading zero when a phone number gets treated as a number rather
+// than text, e.g. "16848527" instead of "016848527". Only touches
+// values that are purely digits, so already-fine cells (multiple
+// numbers separated by "/", etc.) are left untouched.
+function formatPhone(value) {
+    if (!value) return "";
+    const v = String(value).trim();
+    if (/^\d+$/.test(v) && !v.startsWith("0")) {
+        return "0" + v;
+    }
+    return v;
+}
+
 // Uses /api/arreast24byco/info (buildInfo on the server) which already
 // returns lastUploadAt/lastUploadedBy — cheaper than scanning all rows
 // for this ourselves.
@@ -474,6 +541,27 @@ function renderSummary(rows) {
 // RENDER TABLE
 // ========================================
 
+// Matches the Excel row-Class rules ($AE6="Loss" etc.)
+function classRowCssClass(classValue) {
+    switch (classValue) {
+        case "Loss": return "row-class-loss";
+        case "Doubtful": return "row-class-doubtful";
+        case "Sub Standard": return "row-class-substandard";
+        case "Special Mention": return "row-class-specialmention";
+        default: return "";
+    }
+}
+
+// Matches the Excel SEARCH(...)>0 rules on Promise Status —
+// substring match, same as promiseStatusMatch's filter logic.
+function promiseCellCssClass(promiseStatus) {
+    const v = (promiseStatus || "").toLowerCase();
+    if (v.includes("today_payment")) return "cell-promise-today";
+    if (v.includes("upcoming_left")) return "cell-promise-upcoming";
+    if (v.includes("expired")) return "cell-promise-expired";
+    return "";
+}
+
 function renderTable(rows) {
     tbodyArrears.innerHTML = "";
 
@@ -486,21 +574,41 @@ function renderTable(rows) {
         return;
     }
 
+    // Duplicate-customer detection (column D) — scoped to the rows
+    // actually being shown, same as Excel's "Duplicate Values" rule
+    // would effectively read against the visible/filtered range.
+    const customerCounts = new Map();
+    rows.forEach(row => {
+        if (!row.customer) return;
+        customerCounts.set(row.customer, (customerCounts.get(row.customer) || 0) + 1);
+    });
+
     const frag = document.createDocumentFragment();
 
     rows.forEach((row, index) => {
         const tr = document.createElement("tr");
         tr.dataset.index = index;
 
+        const rowClassCss = classRowCssClass(row.class);
+        if (rowClassCss) tr.classList.add(rowClassCss);
+
         const arreaClass = (parseFloat(row.arreas) || 0) > 0 ? "cell-negative" : "";
         const balClass = (parseFloat(row.balance) || 0) < 0 ? "cell-negative" : "";
+        const balPdClass = row.pd === "Balanced_PD" ? "cell-balance-pd" : "";
+        const dupClass = (customerCounts.get(row.customer) || 0) > 1 ? "cell-duplicate-customer" : "";
+
+        // Promise Status coloring applies to Promise Status + all three
+        // follow-up cells; if none of the three keywords matched, those
+        // follow-up cells fall back to the default light-blue fill.
+        const promiseCss = promiseCellCssClass(row.promiseStatus);
+        const followupCss = promiseCss || "cell-followup-default";
 
         tr.innerHTML = `
             <td>${index + 1}</td>
             <td>${escapeHtml(row.loanNumber)}</td>
-            <td>${escapeHtml(row.customer)}</td>
+            <td class="${dupClass}">${escapeHtml(row.customer)}</td>
             <td>${escapeHtml(row.location)}</td>
-            <td>${escapeHtml(row.disDate)}</td>
+            <td>${escapeHtml(formatRowDateDMY(row.disDate))}</td>
             <td>${escapeHtml(row.prnOS)}</td>
             <td>${escapeHtml(row.intOS)}</td>
             <td>${escapeHtml(row.prnDue)}</td>
@@ -508,20 +616,20 @@ function renderTable(rows) {
             <td>${escapeHtml(row.penalty)}</td>
             <td class="${arreaClass}">${escapeHtml(row.arreas)}</td>
             <td>${escapeHtml(row.day)}</td>
-            <td class="${balClass}">${escapeHtml(row.balance)}</td>
+            <td class="${balClass} ${balPdClass}">${escapeHtml(row.balance)}</td>
             <td>${escapeHtml(row.accountLoan)}</td>
-            <td>${escapeHtml(row.tell)}</td>
+            <td>${escapeHtml(formatPhone(row.tell))}</td>
             <td>${escapeHtml(row.cif)}</td>
             <td>${escapeHtml(row.occu)}</td>
             <td>${escapeHtml(row.ministry)}</td>
-            <td>${escapeHtml(row.promiseStatus)}</td>
+            <td class="${promiseCss}">${escapeHtml(row.promiseStatus)}</td>
             <td>${escapeHtml(row.coId)}</td>
             <td>${escapeHtml(row.cifCoborrower)}</td>
-            <td>${escapeHtml(row.ajReason)}</td>
-            <td>${escapeHtml(row.akSolution)}</td>
-            <td>${escapeHtml(row.alFollowup)}</td>
+            <td class="${followupCss}">${escapeHtml(row.ajReason)}</td>
+            <td class="${followupCss}">${escapeHtml(row.akSolution)}</td>
+            <td class="${followupCss}">${escapeHtml(formatRowDateDMY(row.alFollowup))}</td>
             <td>${escapeHtml(row.user)}</td>
-            <td>${escapeHtml(row.dateBackup)}</td>
+            <td>${escapeHtml(formatRowDateTime12h(row.dateBackup))}</td>
         `;
         frag.appendChild(tr);
     });
