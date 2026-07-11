@@ -280,15 +280,22 @@ word-break:break-word;
    (prevents leaking onto any other table in the document,
    e.g. a PDF export table on some other page).
 
-   NOTE: unlike form-card/info-card above, this one keeps
-   overflow:auto rather than overflow:hidden on purpose — a wide
-   table needs to scroll horizontally inside its own card rather
-   than get clipped or push the whole page wider than the screen.
+   STRUCTURE: .table-card only clips to the rounded golden border
+   (overflow:hidden) — it does NOT scroll itself. The actual
+   horizontal scrolling happens on .table-scroll, the wrapper div
+   INSIDE it (see index.html: <div class="table-card"><div
+   class="table-scroll"><table>...). Splitting these two jobs
+   across two elements is what keeps the scrollbar from visually
+   breaking through the rounded corner — a native mobile-browser
+   quirk where scrollbars ignore border-radius on the element
+   they actually scroll.
 ========================================== */
 
 .table-card{
 
 box-sizing:border-box;
+
+overflow:hidden;
 
 background:linear-gradient(180deg,#003B8B,#002D6B);
 
@@ -300,7 +307,34 @@ padding:10px;
 
 box-shadow:0 4px 14px rgba(0,0,0,.25);
 
-overflow:auto;
+}
+
+.table-scroll{
+
+overflow-x:auto;
+
+-webkit-overflow-scrolling:touch;
+
+}
+
+/* Thin, gold-tinted scrollbar instead of the default grey system one */
+.table-scroll::-webkit-scrollbar{
+
+height:6px;
+
+}
+
+.table-scroll::-webkit-scrollbar-track{
+
+background:transparent;
+
+}
+
+.table-scroll::-webkit-scrollbar-thumb{
+
+background:rgba(212,175,55,.5);
+
+border-radius:999px;
 
 }
 
