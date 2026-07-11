@@ -75,6 +75,8 @@ const arrearsToken =
 const tbodyArrears = document.getElementById("tbodyArrears");
 const summaryLD = document.getElementById("sumLD");
 const summaryOS = document.getElementById("sumOS");
+const lastUploadAtEl = document.getElementById("lastUploadAt");
+const lastUploadByEl = document.getElementById("lastUploadBy");
 
 const filterEls = {
     branch: document.getElementById("fBranch"),
@@ -277,6 +279,7 @@ function parseRow(values) {
         arreas: get(COL.ARREAS),
         day: get(COL.DAY),
         balance: get(COL.BALANCE),
+        accountLoan: get(COL.ACCOUNT_LOAN),
         tell: get(COL.TELL),
         cif: get(COL.CIF),
         occu: get(COL.OCCU),
@@ -289,10 +292,16 @@ function parseRow(values) {
         osUsd: get(COL.OS_USD),
         osClassify: get(COL.OS_CLASSIFY),
         teamLeader: get(COL.TEAM_LEADER),
+        cifCoborrower: get(COL.CIF_COBORROWER),
         class: get(COL.CLASS),
         pd: get(COL.PD),
         concate: get(COL.CONCATE),
-        product: get(COL.PRODUCT)
+        product: get(COL.PRODUCT),
+        ajReason: get(COL.AJ_REASON),
+        akSolution: get(COL.AK_SOLUTION),
+        alFollowup: get(COL.AL_FOLLOWUP),
+        user: get(COL.USER),
+        dateBackup: get(COL.DATE_BACKUP)
     };
 }
 
@@ -332,6 +341,17 @@ function productMatch(value, filterValue) {
     return value === filterValue;
 }
 
+// "មិនទាន់សន្យា" (not yet promised) isn't a value that appears in the
+// Promise Status column itself — it means the AK (មូលហេតុ/ដំណោះស្រាយ)
+// solution field is still blank, i.e. no follow-up has been logged yet.
+function promiseStatusMatch(row, filterValue) {
+    if (!filterValue) return true;
+    if (filterValue === "មិនទាន់សន្យា") {
+        return !row.akSolution;
+    }
+    return containsMatch(row.promiseStatus, filterValue);
+}
+
 function applyFilters() {
     const f = {
         branch: filterEls.branch.value.trim(),
@@ -360,7 +380,7 @@ function applyFilters() {
             && exactMatch(row.occu, f.occupation)
             && productMatch(row.product, f.productType)
             && containsMatch(row.customer, f.keyword)
-            && containsMatch(row.promiseStatus, f.promiseStatus);
+            && promiseStatusMatch(row, f.promiseStatus);
     });
 
     renderTable(currentRows);
@@ -386,20 +406,65 @@ function formatShortAmount(v) {
     return v.toLocaleString();
 }
 
+// "yyyy-mm-dd hh:mm:ss AM/PM"
+function formatDateTime12h(isoString) {
+    if (!isoString) return "-";
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return "-";
+
+    const pad = n => String(n).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    const mm = pad(d.getMonth() + 1);
+    const dd = pad(d.getDate());
+
+    let h = d.getHours();
+    const ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12;
+    if (h === 0) h = 12;
+
+    const hh = pad(h);
+    const min = pad(d.getMinutes());
+    const ss = pad(d.getSeconds());
+
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss} ${ampm}`;
+}
+
+// Uses /api/arreast24byco/info (buildInfo on the server) which already
+// returns lastUploadAt/lastUploadedBy — cheaper than scanning all rows
+// for this ourselves.
+async function fetchArrearsInfo() {
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/arreast24byco/info`, {
+            headers: { Authorization: `Bearer ${arrearsToken}` }
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.message || "Failed to load upload info.");
+
+        lastUploadAtEl.textContent = formatDateTime12h(data.lastUploadAt);
+        lastUploadByEl.textContent = data.lastUploadedBy || "-";
+    } catch (err) {
+        console.error(err);
+        lastUploadAtEl.textContent = "-";
+        lastUploadByEl.textContent = "-";
+    }
+}
+
 function renderSummary(rows) {
     let govCnt = 0, workerCnt = 0, otherCnt = 0;
     let govOS = 0, workerOS = 0, otherOS = 0, totalOS = 0;
+    const uniqueCifs = new Set();
 
     rows.forEach(row => {
         const amt = parseFloat(row.osUsd) || 0;
         totalOS += amt;
+        if (row.cif) uniqueCifs.add(row.cif);
         if (row.occu === "Gov") { govCnt++; govOS += amt; }
         else if (row.occu === "Worker") { workerCnt++; workerOS += amt; }
         else { otherCnt++; otherOS += amt; }
     });
 
     summaryLD.textContent =
-        `${rows.length.toLocaleString()} (Gov:${govCnt.toLocaleString()}, Worker:${workerCnt.toLocaleString()}, Other:${otherCnt.toLocaleString()})`;
+        `${rows.length.toLocaleString()} CIF:${uniqueCifs.size.toLocaleString()} (Gov:${govCnt.toLocaleString()}, Worker:${workerCnt.toLocaleString()}, Other:${otherCnt.toLocaleString()})`;
 
     summaryOS.textContent =
         `${formatShortAmount(totalOS)} (Gov:${formatShortAmount(govOS)}, Worker:${formatShortAmount(workerOS)}, Other:${formatShortAmount(otherOS)})`;
@@ -415,7 +480,7 @@ function renderTable(rows) {
     if (!rows.length) {
         tbodyArrears.innerHTML = `
             <tr class="row-empty">
-                <td colspan="23">No data found</td>
+                <td colspan="26">No data found</td>
             </tr>
         `;
         return;
@@ -444,16 +509,19 @@ function renderTable(rows) {
             <td class="${arreaClass}">${escapeHtml(row.arreas)}</td>
             <td>${escapeHtml(row.day)}</td>
             <td class="${balClass}">${escapeHtml(row.balance)}</td>
+            <td>${escapeHtml(row.accountLoan)}</td>
             <td>${escapeHtml(row.tell)}</td>
             <td>${escapeHtml(row.cif)}</td>
             <td>${escapeHtml(row.occu)}</td>
             <td>${escapeHtml(row.ministry)}</td>
             <td>${escapeHtml(row.promiseStatus)}</td>
-            <td>${escapeHtml(row.branch)}</td>
             <td>${escapeHtml(row.coId)}</td>
-            <td>${escapeHtml(row.coResponse)}</td>
-            <td>${escapeHtml(row.ccy)}</td>
-            <td>${escapeHtml(row.osUsd)}</td>
+            <td>${escapeHtml(row.cifCoborrower)}</td>
+            <td>${escapeHtml(row.ajReason)}</td>
+            <td>${escapeHtml(row.akSolution)}</td>
+            <td>${escapeHtml(row.alFollowup)}</td>
+            <td>${escapeHtml(row.user)}</td>
+            <td>${escapeHtml(row.dateBackup)}</td>
         `;
         frag.appendChild(tr);
     });
@@ -571,13 +639,17 @@ async function refreshArrears() {
         showAppLoading("Loading arrears data...");
     }
     try {
-        allRows = await fetchAllArrearsRows();
+        const [rows] = await Promise.all([
+            fetchAllArrearsRows(),
+            fetchArrearsInfo()
+        ]);
+        allRows = rows;
         populateFilterOptions();
         applyFilters();
     } catch (err) {
         console.error(err);
         notify(err.message || "Failed to load arrears data.", "error");
-        tbodyArrears.innerHTML = `<tr class="row-empty"><td colspan="23">Failed to load data</td></tr>`;
+        tbodyArrears.innerHTML = `<tr class="row-empty"><td colspan="26">Failed to load data</td></tr>`;
     } finally {
         if (typeof hideAppLoading === "function") {
             hideAppLoading();
@@ -604,16 +676,19 @@ function exportArrears() {
         Arreas: row.arreas,
         Day: row.day,
         Balnce: row.balance,
+        "Account Loan": row.accountLoan,
         Tell: row.tell,
         CIF: row.cif,
         Occu: row.occu,
         Ministry: row.ministry,
         "Promise Status": row.promiseStatus,
-        Branch: row.branch,
-        "CO ID": row.coId,
-        "CO Response": row.coResponse,
-        CCY: row.ccy,
-        OS_USD: row.osUsd
+        CO_ID: row.coId,
+        "CIF_អ្នករួមខ្ចី": row.cifCoborrower,
+        "មុខរបរ": row.ajReason,
+        "មូលហេតុ/ដំណោះស្រាយ": row.akSolution,
+        "ថ្ងៃសន្យាសង": row.alFollowup,
+        User: row.user,
+        DateBackUpReasonArrear: row.dateBackup
     }));
 
     const ws = XLSX.utils.json_to_sheet(sheetData);
