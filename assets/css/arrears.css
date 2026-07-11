@@ -48,7 +48,7 @@ margin-bottom:14px;
 
 display:grid;
 
-grid-template-columns:repeat(2,1fr);
+grid-template-columns:repeat(3,1fr);
 
 gap:12px 14px;
 
@@ -217,6 +217,20 @@ font-weight:700;
 
 }
 
+.summary-row.upload-meta{
+
+margin-top:6px;
+
+padding-top:0;
+
+border-top:none;
+
+font-size:12px;
+
+color:#8fa0bd;
+
+}
+
 /* ==========================================
    RESULTS TABLE
    Same clip/scroll split as customers.css — see that file's
@@ -328,6 +342,42 @@ border:1px solid #e0e0e0;
 text-align:left;
 
 color:#222;
+
+}
+
+/* Freeze the "No" column while scrolling horizontally — the header's
+   first cell needs a higher z-index since it's pinned on BOTH axes
+   (top from thead th above, and left here) and must stay above the
+   body's frozen column when they overlap at the top-left corner. */
+.table-card th:first-child,
+.table-card td:first-child{
+
+position:sticky;
+
+left:0;
+
+background:#fff;
+
+z-index:2;
+
+}
+
+.table-card thead th:first-child{
+
+z-index:3;
+
+}
+
+.table-card tbody tr:nth-child(even) td:first-child{
+
+background:#f5f7fb;
+
+}
+
+.table-card tbody tr:active td:first-child,
+.table-card tbody tr.row-selected td:first-child{
+
+background:rgba(212,175,55,.4);
 
 }
 
@@ -568,6 +618,29 @@ padding-bottom:90px;
 .filter-card{
 
 padding:15px;
+
+}
+
+.filter-grid{
+
+gap:8px 8px;
+
+}
+
+.filter-group label{
+
+font-size:10.5px;
+
+}
+
+.filter-group input,
+.filter-group select{
+
+height:38px;
+
+padding:0 6px;
+
+font-size:12.5px;
 
 }
 
