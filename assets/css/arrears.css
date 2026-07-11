@@ -1,1 +1,592 @@
+/* ==========================================
+   PAGE
+========================================== */
 
+.page-container{
+
+width:100%;
+
+box-sizing:border-box;
+
+padding:16px;
+
+padding-bottom:90px;
+
+}
+
+/* ==========================================
+   FILTER CARD
+   12 filter boxes mirroring the VBA sheet's D2:D4 / F2:F4 /
+   I2:I4 / M2:M4 grid. Grouped visually into the same 4 "columns"
+   the sheet uses (each column = 3 stacked boxes), but laid out
+   as a responsive CSS grid instead of fixed spreadsheet cells.
+========================================== */
+
+.filter-card{
+
+width:100%;
+
+box-sizing:border-box;
+
+overflow:hidden;
+
+background:linear-gradient(180deg,#003B8B,#002D6B);
+
+border:1px solid #D4AF37;
+
+border-radius:16px;
+
+padding:20px;
+
+box-shadow:0 4px 14px rgba(0,0,0,.25);
+
+margin-bottom:14px;
+
+}
+
+.filter-grid{
+
+display:grid;
+
+grid-template-columns:repeat(2,1fr);
+
+gap:12px 14px;
+
+}
+
+@media(min-width:640px){
+
+.filter-grid{
+
+grid-template-columns:repeat(4,1fr);
+
+}
+
+}
+
+.filter-group{
+
+display:flex;
+
+flex-direction:column;
+
+gap:6px;
+
+min-width:0;
+
+}
+
+.filter-group label{
+
+font-size:12px;
+
+font-weight:700;
+
+color:#cdd9ef;
+
+white-space:nowrap;
+
+overflow:hidden;
+
+text-overflow:ellipsis;
+
+}
+
+.filter-group input,
+.filter-group select{
+
+width:100%;
+
+box-sizing:border-box;
+
+height:42px;
+
+padding:0 10px;
+
+border:1px solid #D4AF37;
+
+border-radius:10px;
+
+font-size:14px;
+
+outline:none;
+
+transition:.2s;
+
+background:#00265c;
+
+color:#fff;
+
+}
+
+.filter-group input:focus,
+.filter-group select:focus{
+
+border-color:#FFD700;
+
+box-shadow:0 0 0 3px rgba(255,215,0,.18);
+
+}
+
+.filter-actions{
+
+display:flex;
+
+gap:10px;
+
+margin-top:16px;
+
+}
+
+.filter-actions button{
+
+flex:1;
+
+height:44px;
+
+border:none;
+
+border-radius:10px;
+
+font-size:14px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+transition:.2s;
+
+}
+
+.filter-actions button:active{
+
+transform:scale(.97);
+
+}
+
+#btnClear{
+
+background:#00265c;
+
+border:1px solid #D4AF37;
+
+color:#fff;
+
+}
+
+#btnRefresh,
+#btnExport,
+#btnPrint{
+
+background:linear-gradient(180deg,#FFD700,#D4AF37);
+
+color:#002D6B;
+
+}
+
+/* ==========================================
+   SUMMARY ROW
+   Mirrors RefreshSummary's P3 (LD count) / P4 (OS total)
+========================================== */
+
+.summary-row{
+
+display:flex;
+
+flex-wrap:wrap;
+
+gap:10px 20px;
+
+margin-top:16px;
+
+padding-top:14px;
+
+border-top:1px solid rgba(212,175,55,.25);
+
+font-size:13px;
+
+color:#cdd9ef;
+
+}
+
+.summary-row .num{
+
+color:#FFD700;
+
+font-weight:700;
+
+}
+
+/* ==========================================
+   RESULTS TABLE
+   Same clip/scroll split as customers.css — see that file's
+   comment for why .table-card and .table-scroll are separate.
+========================================== */
+
+.table-card{
+
+width:100%;
+
+box-sizing:border-box;
+
+overflow:hidden;
+
+background:linear-gradient(180deg,#003B8B,#002D6B);
+
+border:1px solid #D4AF37;
+
+border-radius:16px;
+
+padding:10px;
+
+box-shadow:0 4px 14px rgba(0,0,0,.25);
+
+}
+
+.table-scroll{
+
+overflow-x:auto;
+
+-webkit-overflow-scrolling:touch;
+
+max-height:60vh;
+
+overflow-y:auto;
+
+}
+
+.table-scroll::-webkit-scrollbar{
+
+height:6px;
+
+width:6px;
+
+}
+
+.table-scroll::-webkit-scrollbar-track{
+
+background:transparent;
+
+}
+
+.table-scroll::-webkit-scrollbar-thumb{
+
+background:rgba(212,175,55,.5);
+
+border-radius:999px;
+
+}
+
+.table-card table{
+
+width:100%;
+
+border-collapse:collapse;
+
+font-size:12px;
+
+white-space:nowrap;
+
+color:#222;
+
+background:#fff;
+
+border-radius:10px;
+
+overflow:hidden;
+
+}
+
+.table-card thead th{
+
+position:sticky;
+
+top:0;
+
+background:#003B8B;
+
+color:#FFD700;
+
+padding:10px 8px;
+
+border:1px solid #2f4670;
+
+font-weight:bold;
+
+text-align:left;
+
+z-index:1;
+
+}
+
+.table-card td{
+
+padding:7px 8px;
+
+border:1px solid #e0e0e0;
+
+text-align:left;
+
+color:#222;
+
+}
+
+.table-card tbody tr:nth-child(even){
+
+background:#f5f7fb;
+
+}
+
+.table-card tbody tr{
+
+cursor:pointer;
+
+transition:background .12s;
+
+}
+
+.table-card tbody tr:active,
+.table-card tbody tr.row-selected{
+
+background:rgba(212,175,55,.25) !important;
+
+}
+
+.table-card .row-empty td,
+.table-card .row-loading td{
+
+text-align:center;
+
+padding:24px 8px;
+
+color:#666;
+
+font-weight:600;
+
+cursor:default;
+
+}
+
+/* Arrears cells past due read in red, matching the VBA sheet's
+   conditional formatting on the Arrea/Balance columns */
+.cell-negative{
+
+color:#c0392b;
+
+font-weight:700;
+
+}
+
+/* ==========================================
+   REASON ARREAR PANEL
+   Opens on row click — mirrors the AJ/AK/AL follow-up columns,
+   backed by the existing /api/reasonarrear endpoints (keyed by
+   the row's Concate value — see arrears.js for why).
+========================================== */
+
+.reason-card{
+
+width:100%;
+
+box-sizing:border-box;
+
+overflow:hidden;
+
+background:linear-gradient(180deg,#003B8B,#002D6B);
+
+border:1px solid #D4AF37;
+
+border-radius:16px;
+
+padding:18px 20px;
+
+box-shadow:0 4px 14px rgba(0,0,0,.25);
+
+margin-top:14px;
+
+display:none;
+
+}
+
+.reason-card.show{
+
+display:block;
+
+}
+
+.reason-title{
+
+font-size:14px;
+
+font-weight:700;
+
+color:#FFD700;
+
+text-transform:uppercase;
+
+letter-spacing:.4px;
+
+margin-bottom:4px;
+
+}
+
+.reason-subtitle{
+
+font-size:13px;
+
+color:#cdd9ef;
+
+margin-bottom:14px;
+
+word-break:break-word;
+
+}
+
+.reason-group{
+
+display:flex;
+
+flex-direction:column;
+
+gap:6px;
+
+margin-bottom:12px;
+
+}
+
+.reason-group label{
+
+font-size:13px;
+
+font-weight:600;
+
+color:#cdd9ef;
+
+}
+
+.reason-group input,
+.reason-group textarea{
+
+width:100%;
+
+box-sizing:border-box;
+
+padding:10px 12px;
+
+border:1px solid #D4AF37;
+
+border-radius:10px;
+
+font-size:14px;
+
+outline:none;
+
+background:#00265c;
+
+color:#fff;
+
+font-family:inherit;
+
+}
+
+.reason-group textarea{
+
+min-height:70px;
+
+resize:vertical;
+
+}
+
+.reason-meta{
+
+font-size:12px;
+
+color:#8fa0bd;
+
+margin:4px 0 14px;
+
+}
+
+.reason-actions{
+
+display:flex;
+
+gap:10px;
+
+}
+
+.reason-actions button{
+
+flex:1;
+
+height:44px;
+
+border:none;
+
+border-radius:10px;
+
+font-size:14px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+}
+
+#btnReasonSave{
+
+background:linear-gradient(180deg,#FFD700,#D4AF37);
+
+color:#002D6B;
+
+}
+
+#btnReasonCancel{
+
+background:#00265c;
+
+border:1px solid #D4AF37;
+
+color:#fff;
+
+}
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media(max-width:480px){
+
+.page-container{
+
+padding:12px;
+
+padding-bottom:90px;
+
+}
+
+.filter-card{
+
+padding:15px;
+
+}
+
+.table-card table{
+
+font-size:11px;
+
+}
+
+.table-card thead th{
+
+padding:8px 6px;
+
+}
+
+.table-card td{
+
+padding:6px 6px;
+
+}
+
+}
