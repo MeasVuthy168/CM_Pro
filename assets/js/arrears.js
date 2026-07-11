@@ -325,7 +325,7 @@ function classMatch(value, filterValue) {
         return value === "Normal" || value === "Special Mention";
     }
     if (filterValue === "SubStandard_to_Loss") {
-        return ["Sub Standard", "Doubtful", "Loss"].includes(value);
+        return ["Sub Standard", "Sub-Standard", "Doubtful", "Loss"].includes(value);
     }
     return value === filterValue;
 }
@@ -546,7 +546,8 @@ function classRowCssClass(classValue) {
     switch (classValue) {
         case "Loss": return "row-class-loss";
         case "Doubtful": return "row-class-doubtful";
-        case "Sub Standard": return "row-class-substandard";
+        case "Sub Standard":
+        case "Sub-Standard": return "row-class-substandard"; // both spellings seen in real data
         case "Special Mention": return "row-class-specialmention";
         default: return "";
     }
@@ -969,8 +970,5 @@ window.debugArrears = debugArrears;
 // PAGE READY
 // ========================================
 
-refreshArrears().then(() => {
-    // give the DOM a moment to paint, then auto-run diagnostics
-    setTimeout(debugArrears, 800);
-});
-console.log("Daily Arrears Ready.");
+refreshArrears();
+console.log("Daily Arrears Ready. Type debugArrears() in the console anytime to re-run diagnostics.");
