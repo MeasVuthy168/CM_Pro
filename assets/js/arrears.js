@@ -102,6 +102,117 @@ let allRows = [];        // every row, parsed to objects, unfiltered
 let currentRows = [];    // whatever's currently displayed (post-filter)
 let selectedRow = null;  // row object behind the open Reason Arrear panel
 
+const customerDatalist = document.getElementById("customerSuggestions");
+
+// ========================================
+// DISTINCT VALUE HELPERS
+// ========================================
+
+function distinctSorted(rows, field) {
+    const set = new Set();
+    rows.forEach(r => {
+        const v = (r[field] || "").trim();
+        if (v) set.add(v);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+}
+
+function setSelectOptions(selectEl, values, { keepFirstN = 1 } = {}) {
+    // keeps the first N existing <option> elements (e.g. "All", or
+    // "All"+"Digital Products"+"Non-Digital Products") and replaces
+    // everything after that with fresh options built from `values`
+    const kept = Array.from(selectEl.options).slice(0, keepFirstN);
+    const currentValue = selectEl.value;
+
+    selectEl.innerHTML = "";
+    kept.forEach(opt => selectEl.appendChild(opt));
+
+    values.forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v;
+        selectEl.appendChild(opt);
+    });
+
+    // restore selection if it's still a valid option, else fall back to "All"
+    const stillValid = Array.from(selectEl.options).some(o => o.value === currentValue);
+    selectEl.value = stillValid ? currentValue : "";
+}
+
+// ========================================
+// POPULATE ALL FILTER DROPDOWNS FROM REAL DATA
+// Called once after every fetch, since the underlying data can
+// change between refreshes.
+// ========================================
+
+function populateFilterOptions() {
+    setSelectOptions(filterEls.branch, distinctSorted(allRows, "branch"), { keepFirstN: 1 });
+    setSelectOptions(filterEls.teamLeader, distinctSorted(allRows, "teamLeader"), { keepFirstN: 1 });
+    setSelectOptions(filterEls.osClassify, distinctSorted(allRows, "osClassify"), { keepFirstN: 1 });
+    setSelectOptions(filterEls.occupation, distinctSorted(allRows, "occu"), { keepFirstN: 1 });
+
+    // Product Type keeps "All" + "Digital Products" + "Non-Digital Products",
+    // then appends every individual product name found in the data.
+    setSelectOptions(filterEls.productType, distinctSorted(allRows, "product"), { keepFirstN: 3 });
+
+    populateOfficerOptions();
+}
+
+// Officer Response / Officer Owner — scoped to whichever Branch is
+// currently selected (or all rows if Branch = "All"), per the
+// cascading behavior requested: pick a Branch, the two Officer
+// dropdowns narrow to only officers who actually appear under it.
+function populateOfficerOptions() {
+    const branch = filterEls.branch.value.trim();
+    const scoped = branch
+        ? allRows.filter(r => r.branch === branch)
+        : allRows;
+
+    setSelectOptions(filterEls.officerResponse, distinctSorted(scoped, "coResponse"), { keepFirstN: 1 });
+    setSelectOptions(filterEls.officerOwner, distinctSorted(scoped, "coId"), { keepFirstN: 1 });
+}
+
+filterEls.branch.addEventListener("change", () => {
+    populateOfficerOptions();
+    applyFilters();
+});
+
+// ========================================
+// CUSTOMER AUTOCOMPLETE (Google-style predictive suggestions)
+// Rebuilds the <datalist> options as the user types, capped to a
+// small number of matches so it stays fast even with thousands
+// of rows loaded.
+// ========================================
+
+function updateCustomerSuggestions() {
+    const query = filterEls.keyword.value.trim().toLowerCase();
+    customerDatalist.innerHTML = "";
+
+    if (!query) return;
+
+    const seen = new Set();
+    const matches = [];
+
+    for (const row of allRows) {
+        const name = row.customer;
+        if (!name) continue;
+        if (!name.toLowerCase().includes(query)) continue;
+        if (seen.has(name)) continue;
+
+        seen.add(name);
+        matches.push(name);
+        if (matches.length >= 15) break;
+    }
+
+    matches.forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        customerDatalist.appendChild(opt);
+    });
+}
+
+filterEls.keyword.addEventListener("input", updateCustomerSuggestions);
+
 // ========================================
 // MESSAGE HELPER
 // ========================================
@@ -258,6 +369,8 @@ function applyFilters() {
 
 function clearFilters() {
     Object.values(filterEls).forEach(el => { el.value = ""; });
+    populateOfficerOptions();
+    customerDatalist.innerHTML = "";
     applyFilters();
 }
 
@@ -459,6 +572,7 @@ async function refreshArrears() {
     }
     try {
         allRows = await fetchAllArrearsRows();
+        populateFilterOptions();
         applyFilters();
     } catch (err) {
         console.error(err);
@@ -514,7 +628,8 @@ document.getElementById("btnRefresh").addEventListener("click", refreshArrears);
 document.getElementById("btnExport").addEventListener("click", exportArrears);
 document.getElementById("btnPrint").addEventListener("click", () => window.print());
 
-Object.values(filterEls).forEach(el => {
+Object.entries(filterEls).forEach(([key, el]) => {
+    if (key === "branch") return; // has its own dedicated listener above
     el.addEventListener(el.tagName === "SELECT" ? "change" : "input", applyFilters);
 });
 
