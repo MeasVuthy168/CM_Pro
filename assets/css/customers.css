@@ -4,6 +4,8 @@
 
 .page-container{
 
+box-sizing:border-box;
+
 padding:16px;
 
 padding-bottom:90px;
@@ -15,6 +17,10 @@ padding-bottom:90px;
 ========================================== */
 
 .form-card{
+
+box-sizing:border-box;
+
+overflow:hidden;
 
 background:linear-gradient(180deg,#003B8B,#002D6B);
 
@@ -53,6 +59,14 @@ margin-bottom:6px;
 }
 
 .form-group input{
+
+/* THE FIX: retirement.css's .box / .age-num both set width:100% +
+   box-sizing:border-box, so they stretch to fill the card. This
+   input never had width:100%, so it was sitting at its browser
+   default intrinsic width instead of filling the form card — that's
+   the actual "doesn't fit screen" bug. */
+width:100%;
+box-sizing:border-box;
 
 height:46px;
 
@@ -171,6 +185,10 @@ color:#FFD700;
 
 .info-card{
 
+box-sizing:border-box;
+
+overflow:hidden;
+
 background:linear-gradient(180deg,#003B8B,#002D6B);
 
 border:1px solid #D4AF37;
@@ -243,6 +261,8 @@ padding-top:2px;
 
 flex:1;
 
+min-width:0;
+
 font-size:15px;
 
 font-weight:600;
@@ -259,9 +279,16 @@ word-break:break-word;
    comment for why every rule is scoped under .table-card
    (prevents leaking onto any other table in the document,
    e.g. a PDF export table on some other page).
+
+   NOTE: unlike form-card/info-card above, this one keeps
+   overflow:auto rather than overflow:hidden on purpose — a wide
+   table needs to scroll horizontally inside its own card rather
+   than get clipped or push the whole page wider than the screen.
 ========================================== */
 
 .table-card{
+
+box-sizing:border-box;
 
 background:linear-gradient(180deg,#003B8B,#002D6B);
 
