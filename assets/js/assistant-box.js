@@ -1,9 +1,13 @@
 /* =========================
    Assistant Box — Greeting / Update Logic
    Greeting mode: "Good {Morning/Afternoon/Evening} {fullname}"
-   Update mode: pulls the real latest version from
-   GET /api/app/version?app=SVG_CreditMonitoring (your existing,
-   JWT-protected endpoint in server.js) and links to about.html.
+   Update mode: driven by the real notifications API, not localStorage.
+   Every app-version upload creates one Notification (eventKey:
+   "app_version") on the server. We look for the latest one and check
+   its per-user isRead flag from GET /api/notifications/my. Clicking
+   the X calls POST /api/notifications/mark-read, which persists
+   server-side — so the banner stays gone until the NEXT version
+   upload creates a brand new (unread) notification.
 ========================= */
 
 const ASSISTANT_APP_NAME = 'SVG_CreditMonitoring';
@@ -37,8 +41,26 @@ function getStoredFullname() {
     return null;
 }
 
-function renderUpdateBox(box, textEl, version, notes) {
+/**
+ * Finds the latest unread "app_version" notification for this app,
+ * or null if there isn't one / user has already read it.
+ */
+async function getPendingVersionNotification() {
+    const data = await API.get('/api/notifications/my?limit=50');
+    if (!data || !data.ok || !Array.isArray(data.items)) return null;
+
+    // server already sorts by createdAt desc, so the first match is latest
+    const match = data.items.find(
+        n => n.eventKey === 'app_version' && n.extra?.app === ASSISTANT_APP_NAME
+    );
+
+    if (!match || match.isRead) return null;
+    return match;
+}
+
+function renderUpdateBox(box, textEl, notification) {
     box.dataset.mode = 'update';
+    const version = notification.extra?.version || '';
 
     if (!box.querySelector('.assistant-new-badge')) {
         const badge = document.createElement('span');
@@ -52,14 +74,14 @@ function renderUpdateBox(box, textEl, version, notes) {
         dismiss.className = 'assistant-dismiss';
         dismiss.setAttribute('aria-label', 'Dismiss update notice');
         dismiss.textContent = '×';
-        dismiss.onclick = () => dismissUpdate(version, box, textEl);
+        dismiss.onclick = () => dismissUpdate(notification._id, box, textEl);
         box.appendChild(dismiss);
     }
 
     textEl.innerHTML = `
         <span class="update-version">កំណែថ្មី Version ${version} មកដល់ហើយ!</span>
         <span class="update-highlights">សូមចូលទៅ Download កំណែថ្មីក្នុងកម្មវិធី Excel ឈ្មោះ SVG Credit Monitoring</span>
-        <button class="assistant-cta" onclick="location.href='${ASSISTANT_ABOUT_URL}'">មើលអ្វីថ្មី</button>
+        <button class="assistant-cta" onclick="location.href='${ASSISTANT_ABOUT_URL}'">ចុចមើលព៌តមានកំណែថ្មី</button>
     `;
 }
 
@@ -70,9 +92,15 @@ function renderGreetingBox(box, textEl, fullname) {
     textEl.textContent = getGreeting(fullname);
 }
 
-function dismissUpdate(version, box, textEl) {
-    localStorage.setItem('cmpro_seen_version', version);
+async function dismissUpdate(notificationId, box, textEl) {
     renderGreetingBox(box, textEl, window.currentUserFullname || '');
+    try {
+        await API.post('/api/notifications/mark-read', { notificationId });
+    } catch (err) {
+        // If this fails, the banner will just reappear on next load —
+        // annoying but not harmful, so fail quietly here.
+        console.warn('[assistant-box] mark-read failed:', err);
+    }
 }
 
 /**
@@ -91,21 +119,15 @@ async function initAssistantBox({ userName } = {}) {
     renderGreetingBox(box, textEl, fullname);
 
     try {
-        const data = await API.get(`/api/app/version?app=${ASSISTANT_APP_NAME}`);
-
-        if (!data || !data.ok || !data.hasVersion) return; // stays on greeting
-
-        const currentVersion = data.latestVersion;
-        const seenVersion = localStorage.getItem('cmpro_seen_version');
-
-        if (seenVersion !== currentVersion) {
-            renderUpdateBox(box, textEl, currentVersion, data.notes || '');
+        const pending = await getPendingVersionNotification();
+        if (pending) {
+            renderUpdateBox(box, textEl, pending);
         }
-        // if already seen, greeting (already rendered) stays.
+        // otherwise: no unread version notification, greeting stays.
     } catch (err) {
         // Network hiccup, expired token, etc. — fail quietly to the
         // greeting that's already showing rather than breaking the dashboard.
-        console.warn('[assistant-box] could not check app version:', err);
+        console.warn('[assistant-box] could not check notifications:', err);
     }
 }
 
