@@ -10,13 +10,13 @@
                       (metal/skin/black-limb materials). Each gradient
                       is labeled with what it's used for.
        SHIRT       -> search "SHIRT" (white top, navy collar accent)
-       SHORTS      -> search "SHORTS" (white shorts, gold hem trim)
+       SHORTS      -> search "SHORTS (jean shorts)" (denim, pockets, gold stitching)
        SHOES       -> search "left-foot" / "right-foot" (sport boots)
        GLOVES      -> search "left-hand" / "right-hand"
        BAG         -> search "BAG" (hangs from the resting/left hand)
        SMILE       -> search "SMILE" (curved line under the eyes)
        ANIMATIONS  -> every @keyframes is named after what it moves,
-                      e.g. wave-hand, tilt-head, foot-tap, etc.
+                      e.g. right-arm-wave-cycle, tilt-head, foot-tap, etc.
        ===================================================================== -->
 
   <defs>
@@ -80,6 +80,13 @@
       <stop offset="100%" stop-color="#1e3a8a"/>
     </radialGradient>
 
+    <!-- Denim material for the jean shorts -->
+    <linearGradient id="denimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5b7fb5"/>
+      <stop offset="45%" stop-color="#3f5f92"/>
+      <stop offset="100%" stop-color="#2c4570"/>
+    </linearGradient>
+
     <!-- ============ FILTERS ============ -->
     <!-- Drop shadow used almost everywhere for depth/separation from the background -->
     <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
@@ -120,27 +127,56 @@
         0%, 100% { transform: rotate(-12deg); }
         50% { transform: rotate(16deg); }
       }
-      @keyframes wave-hand {
-        /* Small sway only — the shoulder/upper-arm stays basically
-           raised and still, like a real person holding their arm up
-           while waving. The actual wave motion is forearm-wag below. */
-        0%, 100% { transform: rotate(0deg); }
-        50% { transform: rotate(-4deg); }
+      @keyframes right-arm-wave-cycle {
+        /* Waves first, then lowers the whole arm to rest at the waist,
+           holds, then raises back up to wave again. -135deg brings the
+           hand from its raised position down beside the body — NOT
+           -150deg, which was tried first but swings the elbow inward
+           far enough to clip into the shirt/torso silhouette. -135deg
+           keeps the elbow just outside the shirt's left edge while the
+           hand still lands naturally near the hip. */
+        0%, 30%   { transform: rotate(0deg); }     /* waving, arm raised */
+        40%       { transform: rotate(-135deg); }  /* lowered to the waist */
+        70%       { transform: rotate(-135deg); }  /* resting, hold */
+        80%, 100% { transform: rotate(0deg); }      /* raised again, loop */
       }
       @keyframes forearm-wag {
-        /* The real "wave" — forearm+hand rocking back and forth from
-           the elbow, the way an actual hand-wave works. */
-        0%, 100% { transform: rotate(0deg); }
-        25% { transform: rotate(-18deg); }
-        75% { transform: rotate(18deg); }
+        /* The wagging "wave" motion is only active during the two
+           waving segments (0-30% and 80-100%). During lowering/rest/
+           raising (30-80%) it instead holds a -45deg elbow bend —
+           without this the forearm just rigidly follows the shoulder's
+           rotation and stays almost perfectly straight, which looked
+           stiff. The bend tucks the hand in naturally near the front
+           of the hip instead of hanging straight out from the body. */
+        0%        { transform: rotate(0deg); }
+        5%        { transform: rotate(-18deg); }
+        12%       { transform: rotate(18deg); }
+        19%       { transform: rotate(-18deg); }
+        25%       { transform: rotate(18deg); }
+        30%       { transform: rotate(0deg); }
+        40%, 70%  { transform: rotate(-45deg); }
+        80%       { transform: rotate(0deg); }
+        85%       { transform: rotate(-18deg); }
+        92%       { transform: rotate(18deg); }
+        98%       { transform: rotate(-18deg); }
+        100%      { transform: rotate(0deg); }
       }
       @keyframes hand-flutter {
-        0%, 100% { transform: rotate(0deg); }
-        25% { transform: rotate(16deg); }
-        50% { transform: rotate(-10deg); }
-        75% { transform: rotate(12deg); }
+        /* Same phase-sync idea as forearm-wag — only flutters while
+           actually waving, still while resting. */
+        0%        { transform: rotate(0deg); }
+        6%        { transform: rotate(16deg); }
+        12%       { transform: rotate(-10deg); }
+        18%       { transform: rotate(12deg); }
+        25%, 80%  { transform: rotate(0deg); }
+        86%       { transform: rotate(16deg); }
+        92%       { transform: rotate(-10deg); }
+        98%       { transform: rotate(12deg); }
+        100%      { transform: rotate(0deg); }
       }
       @keyframes left-arm-sway {
+        /* Simple idle sway — this arm holds the bag and stays resting
+           at the hip, it never raises to wave. */
         0%, 100% { transform: rotate(0deg); }
         50% { transform: rotate(-9deg); }
       }
@@ -178,15 +214,15 @@
         transform-origin: 250px 185px; /* neck attachment point */
       }
       .anim-wave {
-        animation: wave-hand 0.9s ease-in-out infinite;
+        animation: right-arm-wave-cycle 6s ease-in-out infinite;
         transform-origin: 185px 210px; /* right shoulder */
       }
       .anim-forearm-wave {
-        animation: forearm-wag 0.7s ease-in-out infinite;
+        animation: forearm-wag 6s ease-in-out infinite;
         transform-origin: 140px 170px; /* right elbow */
       }
       .anim-hand-flutter {
-        animation: hand-flutter 0.55s ease-in-out infinite;
+        animation: hand-flutter 6s ease-in-out infinite;
         transform-origin: 105px 110px; /* right wrist */
       }
       .anim-left-arm {
@@ -228,36 +264,36 @@
       <!-- ============ LEGS & SHOES ============ -->
       <g id="legs-group">
         <g id="left-leg" filter="url(#shadow)">
-          <rect x="198" y="320" width="30" height="130" rx="15" fill="url(#blackLimbs)"/>
-          <rect x="193" y="390" width="40" height="120" rx="20" fill="url(#bodyGrad)"/>
+          <rect x="201" y="320" width="24" height="130" rx="12" fill="url(#blackLimbs)"/>
+          <rect x="197" y="390" width="32" height="120" rx="16" fill="url(#bodyGrad)"/>
           <!-- 3D touch: soft highlight running down the calf -->
-          <rect x="198" y="395" width="10" height="90" rx="5" fill="#ffffff" opacity="0.35"/>
+          <rect x="197" y="395" width="8" height="90" rx="4" fill="#ffffff" opacity="0.35"/>
           <g id="left-foot" class="anim-foot-left">
             <!-- boot upper — taller than the old shoe, rises to meet the calf -->
-            <rect x="181" y="468" width="64" height="52" rx="16" fill="url(#blackLimbs)"/>
-            <!-- white sole, slightly wider than the upper for a sneaker overhang -->
-            <rect x="176" y="513" width="74" height="17" rx="8" fill="#f2f2f2"/>
-            <rect x="176" y="513" width="74" height="6" rx="3" fill="#ffffff" opacity="0.6"/>
+            <rect x="186" y="468" width="54" height="52" rx="14" fill="url(#blackLimbs)"/>
+            <!-- red sole, slightly wider than the upper for a sneaker overhang -->
+            <rect x="181" y="513" width="64" height="17" rx="8" fill="#d92b2b"/>
+            <rect x="181" y="513" width="64" height="6" rx="3" fill="#ffffff" opacity="0.35"/>
             <!-- laces -->
             <path d="M 198 480 L 228 480 M 198 490 L 228 490 M 198 500 L 228 500" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
             <!-- gold brand stripe along the side -->
             <path d="M 185 502 Q 213 511 241 502" fill="none" stroke="var(--brand-gold)" stroke-width="4" stroke-linecap="round"/>
             <!-- 3D touch: highlight along the top edge of the upper -->
-            <ellipse cx="213" cy="474" rx="22" ry="6" fill="#ffffff" opacity="0.15"/>
+            <ellipse cx="213" cy="474" rx="20" ry="6" fill="#ffffff" opacity="0.15"/>
           </g>
         </g>
 
         <g id="right-leg" filter="url(#shadow)">
-          <rect x="272" y="320" width="30" height="130" rx="15" fill="url(#blackLimbs)"/>
-          <rect x="267" y="390" width="40" height="120" rx="20" fill="url(#bodyGrad)"/>
-          <rect x="272" y="395" width="10" height="90" rx="5" fill="#ffffff" opacity="0.35"/>
+          <rect x="275" y="320" width="24" height="130" rx="12" fill="url(#blackLimbs)"/>
+          <rect x="271" y="390" width="32" height="120" rx="16" fill="url(#bodyGrad)"/>
+          <rect x="271" y="395" width="8" height="90" rx="4" fill="#ffffff" opacity="0.35"/>
           <g id="right-foot" class="anim-foot-right">
-            <rect x="255" y="468" width="64" height="52" rx="16" fill="url(#blackLimbs)"/>
-            <rect x="250" y="513" width="74" height="17" rx="8" fill="#f2f2f2"/>
-            <rect x="250" y="513" width="74" height="6" rx="3" fill="#ffffff" opacity="0.6"/>
+            <rect x="260" y="468" width="54" height="52" rx="14" fill="url(#blackLimbs)"/>
+            <rect x="255" y="513" width="64" height="17" rx="8" fill="#d92b2b"/>
+            <rect x="255" y="513" width="64" height="6" rx="3" fill="#ffffff" opacity="0.35"/>
             <path d="M 272 480 L 302 480 M 272 490 L 302 490 M 272 500 L 302 500" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
             <path d="M 259 502 Q 287 511 315 502" fill="none" stroke="var(--brand-gold)" stroke-width="4" stroke-linecap="round"/>
-            <ellipse cx="287" cy="474" rx="22" ry="6" fill="#ffffff" opacity="0.15"/>
+            <ellipse cx="287" cy="474" rx="20" ry="6" fill="#ffffff" opacity="0.15"/>
           </g>
         </g>
       </g>
@@ -270,31 +306,49 @@
         <rect x="230" y="298" width="40" height="20" rx="6" fill="url(#blackLimbs)"/>
       </g>
 
-      <!-- ============ SHORTS ============
+      <!-- ============ SHORTS (jean shorts) ============
            Two pieces (one per leg) so there's a visible leg-split gap
-           at the center. White fill via the shirt-color variable
-           (reused here so the shorts match the shirt if that ever
-           changes). Gold hem trim uses the brand-gold variable.
-           Shorter than the old trousers version — stops mid-thigh
-           at y=394, well above the shoe line, leaving the calves bare.
-           Width/position kept in sync with the leg stance below —
-           if you change the leg x-coordinates, adjust these to match. -->
+           at the center. Denim material via the denimGrad gradient
+           (edit its <stop> colors in <defs> to change the wash/shade).
+           Stitching, pocket outlines, and the hem line all use the
+           brand-gold variable so they read as a coherent accent color.
+           Bounding box kept the same as the old plain shorts (x/y/height)
+           so it still safely overlaps the calves below — only the
+           internal detail changed, not the footprint. -->
       <g id="shorts" filter="url(#shadow)">
-        <rect x="182" y="300" width="63" height="106" rx="16" fill="var(--shirt-color)"/>
-        <rect x="255" y="300" width="63" height="106" rx="16" fill="var(--shirt-color)"/>
+        <!-- waistband -->
+        <rect x="182" y="300" width="63" height="15" rx="8" fill="#2c4570"/>
+        <rect x="255" y="300" width="63" height="15" rx="8" fill="#2c4570"/>
+        <!-- belt loops -->
+        <rect x="195" y="298" width="6" height="11" rx="2" fill="#2c4570"/>
+        <rect x="226" y="298" width="6" height="11" rx="2" fill="#2c4570"/>
+        <rect x="268" y="298" width="6" height="11" rx="2" fill="#2c4570"/>
+        <rect x="299" y="298" width="6" height="11" rx="2" fill="#2c4570"/>
+        <!-- main denim body -->
+        <rect x="182" y="308" width="63" height="98" rx="14" fill="url(#denimGrad)"/>
+        <rect x="255" y="308" width="63" height="98" rx="14" fill="url(#denimGrad)"/>
         <!-- 3D touch: sheen down the front of each leg -->
-        <rect x="190" y="310" width="12" height="84" rx="6" fill="#ffffff" opacity="0.5"/>
-        <rect x="263" y="310" width="12" height="84" rx="6" fill="#ffffff" opacity="0.5"/>
-        <rect x="182" y="392" width="63" height="8" rx="4" fill="var(--brand-gold)"/>
-        <rect x="255" y="392" width="63" height="8" rx="4" fill="var(--brand-gold)"/>
+        <rect x="190" y="316" width="12" height="82" rx="6" fill="#ffffff" opacity="0.15"/>
+        <rect x="263" y="316" width="12" height="82" rx="6" fill="#ffffff" opacity="0.15"/>
+        <!-- front pockets -->
+        <path d="M 190 320 L 210 320 L 206 340 L 194 340 Z" fill="none" stroke="var(--brand-gold)" stroke-width="1.5" opacity="0.75"/>
+        <path d="M 263 320 L 283 320 L 279 340 L 267 340 Z" fill="none" stroke="var(--brand-gold)" stroke-width="1.5" opacity="0.75"/>
+        <!-- center seam stitching -->
+        <path d="M 213 316 L 213 398" stroke="var(--brand-gold)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.6"/>
+        <path d="M 287 316 L 287 398" stroke="var(--brand-gold)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.6"/>
+        <!-- hem stitching -->
+        <rect x="182" y="392" width="63" height="4" rx="2" fill="var(--brand-gold)" opacity="0.7"/>
+        <rect x="255" y="392" width="63" height="4" rx="2" fill="var(--brand-gold)" opacity="0.7"/>
       </g>
 
       <!-- ============ LEFT ARM (resting at hip, holds the bag) ============ -->
       <g id="left-arm-hip" class="anim-left-arm" filter="url(#shadow)">
         <circle cx="315" cy="210" r="16" fill="url(#jointGrad)"/>
         <path d="M 315 210 Q 358 238 330 290" fill="none" stroke="url(#bodyGrad)" stroke-width="20" stroke-linecap="round"/>
-        <!-- short sleeve cap -->
-        <ellipse cx="319" cy="228" rx="22" ry="24" fill="var(--shirt-color)" stroke="#c2c2c2" stroke-width="1.5"/>
+        <!-- short sleeve — elongated along the arm's own direction (not
+             a round blob) and rotated to actually wrap the upper arm,
+             like real sleeve fabric instead of a ball sitting on top -->
+        <ellipse cx="318.75" cy="230" rx="26" ry="17" fill="var(--shirt-color)" stroke="#c2c2c2" stroke-width="1.5" transform="rotate(79 318.75 230)"/>
         <path d="M 330 290 L 310 310" fill="none" stroke="url(#bodyGrad)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
         <circle cx="330" cy="290" r="11" fill="url(#jointGrad)"/>
         <g id="left-hand" class="anim-left-hand">
@@ -400,8 +454,9 @@
       <g id="right-arm-wave" class="anim-wave">
         <circle cx="185" cy="210" r="16" fill="url(#jointGrad)" filter="url(#shadow)"/>
         <path d="M 185 210 L 140 170" fill="none" stroke="url(#bodyGrad)" stroke-width="22" stroke-linecap="round" filter="url(#shadow)"/>
-        <!-- short sleeve cap -->
-        <ellipse cx="174" cy="200" rx="23" ry="21" fill="var(--shirt-color)" stroke="#c2c2c2" stroke-width="1.5"/>
+        <!-- short sleeve — elongated along the arm's own direction and
+             rotated to wrap the upper arm, not a round blob sitting on top -->
+        <ellipse cx="172" cy="198" rx="26" ry="17" fill="var(--shirt-color)" stroke="#c2c2c2" stroke-width="1.5" transform="rotate(-138 172 198)"/>
         <circle cx="140" cy="170" r="13" fill="url(#jointGrad)"/>
         <!-- forearm + hand wag together, pivoting at the elbow (140,170) -->
         <g id="right-forearm-wave" class="anim-forearm-wave">
