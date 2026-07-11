@@ -118,6 +118,7 @@
 }
 
 .assistant-text .update-highlights{
+    display:block;
     font-size:14px;
     font-weight:400;
     opacity:0.9;
@@ -155,6 +156,7 @@
     opacity:0.65;
     padding:2px 6px;
     transition:opacity 0.15s ease;
+    -webkit-text-fill-color:#00E5FF;
 }
 .assistant-dismiss:hover{ opacity:1; }
 .assistant-dismiss:focus-visible{
@@ -163,11 +165,20 @@
     border-radius:4px;
 }
 
+/* =========================
+   BUG FIX: the CTA button sat inside .assistant-text, which sets
+   -webkit-text-fill-color:transparent for the shimmer effect. That
+   property inherits into children in WebKit/Blink regardless of the
+   button's own `color`, so the label was rendering invisible even
+   though its cyan background looked fine. Explicit fill-color here
+   overrides that inheritance.
+========================= */
 .assistant-cta{
     display:inline-block;
     margin-top:10px;
     background:#00E5FF;
     color:#003B8B;
+    -webkit-text-fill-color:#003B8B;
     border:none;
     border-radius:14px;
     padding:6px 18px;
