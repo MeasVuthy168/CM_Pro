@@ -94,6 +94,12 @@ function renderGreetingBox(box, textEl, fullname) {
 
 async function dismissUpdate(notificationId, box, textEl) {
     renderGreetingBox(box, textEl, window.currentUserFullname || '');
+
+    if (String(notificationId).startsWith('TEST-')) {
+        console.log('[assistant-box] test dismiss — no real API call made.');
+        return;
+    }
+
     try {
         await API.post('/api/notifications/mark-read', { notificationId });
     } catch (err) {
@@ -134,3 +140,32 @@ async function initAssistantBox({ userName } = {}) {
 // Example call, once the page has loaded and the user is authenticated:
 // initAssistantBox();                       // pulls fullname from session
 // initAssistantBox({ userName: 'Meas Vuthy' }); // or pass it explicitly
+
+/* =========================
+   TEST HOOK — no real release needed
+   Run this from the browser console (or a temporary <script> tag) to
+   preview the update banner. It does NOT call /api/app/upload, does
+   NOT touch GitHub Releases or MongoDB, and clicking × just resets
+   to the greeting locally — no /api/notifications/mark-read call.
+
+   Usage:
+     testAssistantUpdate('8.1.0');
+========================= */
+function testAssistantUpdate(version = '9.9.9') {
+    const box = document.querySelector('.assistant-box');
+    const textEl = document.getElementById('assistantText');
+    if (!box || !textEl) {
+        console.warn('[assistant-box] .assistant-box or #assistantText not found on this page.');
+        return;
+    }
+
+    const fakeNotification = {
+        _id: `TEST-${Date.now()}`,
+        eventKey: 'app_version',
+        isRead: false,
+        extra: { app: ASSISTANT_APP_NAME, version }
+    };
+
+    renderUpdateBox(box, textEl, fakeNotification);
+    console.log(`[assistant-box] Test update banner shown for version ${version}. Nothing was sent to the server.`);
+}
