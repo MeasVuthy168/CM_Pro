@@ -4,6 +4,8 @@
 
 .page-container{
 
+width:100%;
+
 box-sizing:border-box;
 
 padding:16px;
@@ -17,6 +19,8 @@ padding-bottom:90px;
 ========================================== */
 
 .form-card{
+
+width:100%;
 
 box-sizing:border-box;
 
@@ -185,6 +189,8 @@ color:#FFD700;
 
 .info-card{
 
+width:100%;
+
 box-sizing:border-box;
 
 overflow:hidden;
@@ -292,6 +298,8 @@ word-break:break-word;
 ========================================== */
 
 .table-card{
+
+width:100%;
 
 box-sizing:border-box;
 
