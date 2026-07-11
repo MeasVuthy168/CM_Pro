@@ -1,1 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>Daily Arrears</title>
+
+<meta
+name="theme-color"
+content="#032d73">
+
+<link
+rel="stylesheet"
+href="../../assets/css/main.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/arrears.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
+
+</head>
+
+<body>
+
+<!-- ========================= -->
+<!-- OFFLINE -->
+<!-- ========================= -->
+
+<div id="offlineBanner">
+⚠️ No Internet Connection
+</div>
+
+<!-- ========================= -->
+<!-- CONFIG -->
+<!-- ========================= -->
+
+<script src="../../config/api.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<!-- ========================= -->
+<!-- COMPONENT -->
+<!-- ========================= -->
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+
+<!-- ========================= -->
+<!-- TOPBAR -->
+<!-- ========================= -->
+
+<div id="topbar-container"></div>
+
+<!-- ========================= -->
+<!-- PAGE -->
+<!-- ========================= -->
+
+<div class="page-container">
+
+<!-- ========================= -->
+<!-- FILTERS -->
+<!-- ========================= -->
+
+<div class="filter-card">
+
+<div class="filter-grid">
+
+<!-- Column 1 (D2:D4 in the sheet) -->
+<div class="filter-group">
+<label for="fBranch">Branch</label>
+<input type="text" id="fBranch" placeholder="Contains...">
+</div>
+
+<div class="filter-group">
+<label for="fOfficerResponse">Officer Response</label>
+<input type="text" id="fOfficerResponse" placeholder="Contains...">
+</div>
+
+<div class="filter-group">
+<label for="fOfficerOwner">Officer Owner (CO ID)</label>
+<input type="text" id="fOfficerOwner" placeholder="Exact...">
+</div>
+
+<!-- Column 2 (F2:F4) -->
+<div class="filter-group">
+<label for="fTeamLeader">Team Leader</label>
+<input type="text" id="fTeamLeader" placeholder="Exact...">
+</div>
+
+<div class="filter-group">
+<label for="fCurrency">Currency</label>
+<select id="fCurrency">
+<option value="">All</option>
+<option value="USD">USD</option>
+<option value="KHR">KHR</option>
+</select>
+</div>
+
+<div class="filter-group">
+<label for="fOsClassify">OS Classify</label>
+<input type="text" id="fOsClassify" placeholder="e.g. Up to 5k">
+</div>
+
+<!-- Column 3 (I2:I4) -->
+<div class="filter-group">
+<label for="fClass">Class</label>
+<select id="fClass">
+<option value="">All</option>
+<option value="Normal_to_SpecialMention">Normal → Special Mention</option>
+<option value="SubStandard_to_Loss">Sub Standard → Loss</option>
+<option value="Normal">Normal</option>
+<option value="Special Mention">Special Mention</option>
+<option value="Sub Standard">Sub Standard</option>
+<option value="Doubtful">Doubtful</option>
+<option value="Loss">Loss</option>
+</select>
+</div>
+
+<div class="filter-group">
+<label for="fPD">PD</label>
+<select id="fPD">
+<option value="">All</option>
+<option value="Balanced_PD">Balanced_PD</option>
+<option value="No Balanced_PD">No Balanced_PD</option>
+</select>
+</div>
+
+<div class="filter-group">
+<label for="fOccupation">Occupation (មុខរបរ)</label>
+<input type="text" id="fOccupation" placeholder="Exact...">
+</div>
+
+<!-- Column 4 (M2:M4) -->
+<div class="filter-group">
+<label for="fProductType">Product Type</label>
+<select id="fProductType">
+<option value="">All</option>
+<option value="Digital Products">Digital Products</option>
+<option value="Non-Digital Products">Non-Digital Products</option>
+</select>
+</div>
+
+<div class="filter-group">
+<label for="fKeyword">Customer / Keyword</label>
+<input type="text" id="fKeyword" placeholder="Contains...">
+</div>
+
+<div class="filter-group">
+<label for="fPromiseStatus">Promise Status</label>
+<input type="text" id="fPromiseStatus" placeholder="Contains...">
+</div>
+
+</div>
+
+<div class="filter-actions">
+<button id="btnClear">Clear</button>
+<button id="btnRefresh">Refresh</button>
+<button id="btnExport">Export</button>
+<button id="btnPrint">Print</button>
+</div>
+
+<div class="summary-row" id="summaryRow">
+<span>LD: <span class="num" id="sumLD">0</span></span>
+<span>OS: <span class="num" id="sumOS">0</span></span>
+</div>
+
+</div>
+
+<!-- ========================= -->
+<!-- REASON ARREAR -->
+<!-- ========================= -->
+
+<div id="reasonCard" class="reason-card">
+
+<div class="reason-title">Reason Arrear</div>
+<div class="reason-subtitle" id="reasonSubtitle">-</div>
+
+<div class="reason-group">
+<label for="reasonAJ">មុខរបរ</label>
+<input type="text" id="reasonAJ" placeholder="...">
+</div>
+
+<div class="reason-group">
+<label for="reasonAK">មូលហេតុ/ដំណោះស្រាយ</label>
+<textarea id="reasonAK" placeholder="..."></textarea>
+</div>
+
+<div class="reason-group">
+<label for="reasonAL">ថ្ងៃសន្យាសង</label>
+<input type="date" id="reasonAL">
+</div>
+
+<div class="reason-meta" id="reasonMeta"></div>
+
+<div class="reason-actions">
+<button id="btnReasonCancel">Cancel</button>
+<button id="btnReasonSave">Save</button>
+</div>
+
+</div>
+
+<!-- ========================= -->
+<!-- TABLE -->
+<!-- ========================= -->
+
+<div class="table-card">
+
+<div class="table-scroll">
+
+<table id="arrearsTable">
+
+<thead>
+
+<tr>
+<th>No</th>
+<th>Loan Number</th>
+<th>Customer</th>
+<th>Location</th>
+<th>DisDate</th>
+<th>Prn.OS</th>
+<th>Int.OS</th>
+<th>Prn.Due</th>
+<th>Int.Due</th>
+<th>Penalty</th>
+<th>Arreas</th>
+<th>Day</th>
+<th>Balnce</th>
+<th>Tell</th>
+<th>CIF</th>
+<th>Occu</th>
+<th>Ministry</th>
+<th>Promise Status</th>
+<th>Branch</th>
+<th>CO ID</th>
+<th>CO Response</th>
+<th>CCY</th>
+<th>OS_USD</th>
+</tr>
+
+</thead>
+
+<tbody id="tbodyArrears">
+
+<tr class="row-loading">
+<td colspan="23">Loading...</td>
+</tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ========================= -->
+<!-- BOTTOM -->
+<!-- ========================= -->
+
+<div id="bottomnav-container"></div>
+
+<!-- NOTIFICATION BADGE -->
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<!-- EXPORT (SheetJS) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- ARREARS LOGIC -->
+<script src="../../assets/js/arrears.js"></script>
+
+<!-- PAGE LOADER (component loader, offline, notification badge) -->
+<script src="../../assets/js/arrears-loader.js"></script>
+
+</body>
+
+</html>
