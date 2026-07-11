@@ -10,11 +10,15 @@
                       (metal/skin/black-limb materials). Each gradient
                       is labeled with what it's used for.
        SHIRT       -> search "SHIRT" (white top, navy collar accent)
-       TROUSERS    -> search "TROUSERS" (black pants, gold ankle trim)
-       SHOES       -> search "left-foot" / "right-foot"
+       SHORTS      -> search "SHORTS" (white shorts, gold hem trim)
+       SHOES       -> search "left-foot" / "right-foot" (sport boots)
        GLOVES      -> search "left-hand" / "right-hand"
        BAG         -> search "BAG" (hangs from the resting/left hand)
-       GREETING    -> search "GREETING TEXT" (top caption + animation)
+       SMILE       -> search "SMILE" (curved line under the eyes)
+       JUMP        -> the float-body keyframes on .anim-body — legs live
+                      INSIDE .anim-body now so the whole character (legs
+                      included) jumps together; don't move legs-group
+                      back out or the leg/hip/shoe connections will gap.
        ANIMATIONS  -> every @keyframes is named after what it moves,
                       e.g. wave-hand, tilt-head, foot-tap, etc.
        ===================================================================== -->
@@ -85,7 +89,7 @@
     <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
       <feDropShadow dx="2" dy="6" stdDeviation="5" flood-opacity="0.32"/>
     </filter>
-    <!-- Soft glow used on the eyes and the greeting text -->
+    <!-- Soft glow used on the eyes -->
     <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
       <feGaussianBlur stdDeviation="3" result="blur"/>
       <feComposite in="SourceGraphic" in2="blur" operator="over"/>
@@ -109,16 +113,34 @@
          Named after the body part / effect they drive. */
 
       @keyframes float-body {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-6px); }
+        /* Squash-and-stretch jump cycle: crouch -> launch/stretch -> hang
+           -> land/squash -> settle. transform-origin is set to ground
+           level (see .anim-body below) so the squash/stretch always
+           anchors at the feet instead of floating in mid-air. */
+        0%   { transform: translateY(0px) scaleY(1); }
+        10%  { transform: translateY(6px) scaleY(0.9); }
+        35%  { transform: translateY(-30px) scaleY(1.08); }
+        55%  { transform: translateY(-30px) scaleY(1.05); }
+        80%  { transform: translateY(6px) scaleY(0.9); }
+        100% { transform: translateY(0px) scaleY(1); }
       }
       @keyframes tilt-head {
-        0%, 100% { transform: rotate(-10deg); }
-        50% { transform: rotate(14deg); }
+        0%, 100% { transform: rotate(-12deg); }
+        50% { transform: rotate(16deg); }
       }
       @keyframes wave-hand {
+        /* Small sway only — the shoulder/upper-arm stays basically
+           raised and still, like a real person holding their arm up
+           while waving. The actual wave motion is forearm-wag below. */
         0%, 100% { transform: rotate(0deg); }
-        50% { transform: rotate(-30deg); }
+        50% { transform: rotate(-4deg); }
+      }
+      @keyframes forearm-wag {
+        /* The real "wave" — forearm+hand rocking back and forth from
+           the elbow, the way an actual hand-wave works. */
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(-18deg); }
+        75% { transform: rotate(18deg); }
       }
       @keyframes hand-flutter {
         0%, 100% { transform: rotate(0deg); }
@@ -128,7 +150,7 @@
       }
       @keyframes left-arm-sway {
         0%, 100% { transform: rotate(0deg); }
-        50% { transform: rotate(-7deg); }
+        50% { transform: rotate(-9deg); }
       }
       @keyframes left-hand-flex {
         0%, 100% { transform: rotate(0deg) scale(1); }
@@ -145,13 +167,15 @@
         50% { transform: scale(1.04); filter: drop-shadow(0 0 6px rgba(255,204,0,0.9)); }
       }
       @keyframes floor-shadow {
-        0%, 100% { transform: scale(1); opacity: 0.3; }
-        50% { transform: scale(0.95); opacity: 0.23; }
-      }
-      /* Gentle breathing pulse for the greeting caption above the head */
-      @keyframes greeting-pulse {
-        0%, 100% { opacity: 0.8; transform: translateY(0px); }
-        50% { opacity: 1; transform: translateY(-2px); }
+        /* Kept in exact phase-sync with float-body's jump: shadow grows
+           and darkens slightly on the crouch, then shrinks and fades at
+           the jump's peak height, then reverses on landing. */
+        0%   { transform: scale(1); opacity: 0.32; }
+        10%  { transform: scale(1.06); opacity: 0.36; }
+        35%  { transform: scale(0.7); opacity: 0.14; }
+        55%  { transform: scale(0.7); opacity: 0.14; }
+        80%  { transform: scale(1.06); opacity: 0.36; }
+        100% { transform: scale(1); opacity: 0.32; }
       }
 
       /* ============ ANIMATION ASSIGNMENTS ============
@@ -161,23 +185,31 @@
          animation will pivot around the wrong spot. */
 
       .anim-body {
-        animation: float-body 4s ease-in-out infinite;
-        transform-origin: 250px 420px;
+        /* NOTE: legs-group now lives INSIDE .anim-body (see markup
+           below) specifically so the whole character — legs included —
+           jumps as one rigid unit. Splitting them again would reopen
+           the leg/hip/shoe connection gaps that were fixed earlier. */
+        animation: float-body 1.8s ease-in-out infinite;
+        transform-origin: 250px 530px; /* ground level, matches the shadow — keeps squash/stretch anchored at the feet */
       }
       .anim-head {
-        animation: tilt-head 3s ease-in-out infinite;
+        animation: tilt-head 2.2s ease-in-out infinite;
         transform-origin: 250px 185px; /* neck attachment point */
       }
       .anim-wave {
         animation: wave-hand 0.9s ease-in-out infinite;
         transform-origin: 185px 210px; /* right shoulder */
       }
+      .anim-forearm-wave {
+        animation: forearm-wag 0.7s ease-in-out infinite;
+        transform-origin: 140px 170px; /* right elbow */
+      }
       .anim-hand-flutter {
         animation: hand-flutter 0.55s ease-in-out infinite;
         transform-origin: 105px 110px; /* right wrist */
       }
       .anim-left-arm {
-        animation: left-arm-sway 3.4s ease-in-out infinite;
+        animation: left-arm-sway 2.6s ease-in-out infinite;
         transform-origin: 315px 210px; /* left shoulder */
       }
       .anim-left-hand {
@@ -186,79 +218,68 @@
       }
       .anim-foot-left {
         animation: foot-tap 2.6s ease-in-out infinite;
-        transform-origin: 195px 485px; /* left ankle */
+        transform-origin: 213px 485px; /* left ankle */
       }
       .anim-foot-right {
         animation: foot-tap 2.6s ease-in-out infinite 1.3s; /* offset so feet don't tap in sync */
-        transform-origin: 305px 485px; /* right ankle */
+        transform-origin: 287px 485px; /* right ankle */
       }
       .anim-eye {
         animation: pulse-eyes 2s ease-in-out infinite;
         transform-origin: center;
       }
       .anim-shadow {
-        animation: floor-shadow 4s ease-in-out infinite;
+        animation: floor-shadow 1.8s ease-in-out infinite;
         transform-origin: 250px 530px;
-      }
-      .anim-greeting {
-        animation: greeting-pulse 2.4s ease-in-out infinite;
-        transform-origin: center;
       }
     </style>
   </defs>
-
-  <!-- ============ GREETING TEXT ============
-       Sits above the head. NOTE: this SVG is used at ~100x115px as the
-       assistant-box icon in the app — at that size this text will be
-       tiny/hard to read. It renders fully legible if this SVG is ever
-       shown larger (e.g. a splash screen). Swap the string below for
-       any other greeting; font-size 60 was picked to stay readable
-       relative to the character at typical "large" display sizes. -->
-  <text id="greeting-text" class="anim-greeting"
-        x="250" y="55"
-        text-anchor="middle"
-        font-family="'Kantumruy Pro', 'Khmer OS Battambang', 'Khmer OS', sans-serif"
-        font-size="55"
-        font-weight="700"
-        fill="var(--brand-gold)"
-        filter="url(#glow)">ជម្រាបសួរបាទ...</text>
 
   <!-- Ground contact shadow -->
   <ellipse class="anim-shadow" cx="250" cy="530" rx="90" ry="14" fill="#000000" opacity="0.3"/>
 
   <g id="robot-full-body">
 
-    <!-- ============ LEGS & SHOES ============
-         Static (not inside .anim-body), so they never float — this is
-         intentional: keeps the character anchored to the ground shadow. -->
-    <g id="legs-group">
-      <g id="left-leg" filter="url(#shadow)">
-        <rect x="180" y="320" width="30" height="130" rx="15" fill="url(#blackLimbs)"/>
-        <rect x="175" y="390" width="40" height="120" rx="20" fill="url(#bodyGrad)"/>
-        <!-- 3D touch: soft highlight running down the calf -->
-        <rect x="180" y="395" width="10" height="90" rx="5" fill="#ffffff" opacity="0.35"/>
-        <g id="left-foot" class="anim-foot-left">
-          <rect x="163" y="485" width="64" height="45" rx="18" fill="url(#blackLimbs)"/>
-          <ellipse cx="195" cy="495" rx="22" ry="8" fill="#ffffff" opacity="0.2"/>
-          <path d="M 210 505 L 221 505 M 210 515 L 218 515" stroke="#000000" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
-        </g>
-      </g>
-
-      <g id="right-leg" filter="url(#shadow)">
-        <rect x="290" y="320" width="30" height="130" rx="15" fill="url(#blackLimbs)"/>
-        <rect x="285" y="390" width="40" height="120" rx="20" fill="url(#bodyGrad)"/>
-        <rect x="290" y="395" width="10" height="90" rx="5" fill="#ffffff" opacity="0.35"/>
-        <g id="right-foot" class="anim-foot-right">
-          <rect x="273" y="485" width="64" height="45" rx="18" fill="url(#blackLimbs)"/>
-          <ellipse cx="305" cy="495" rx="22" ry="8" fill="#ffffff" opacity="0.2"/>
-          <path d="M 279 505 L 290 505 M 282 515 L 290 515" stroke="#000000" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
-        </g>
-      </g>
-    </g>
-
-    <!-- Everything below is inside .anim-body, so it floats together as one unit -->
+    <!-- Everything below is inside .anim-body, including the legs — the
+         whole character jumps as one rigid unit. -->
     <g class="anim-body">
 
+      <!-- ============ LEGS & SHOES ============ -->
+      <g id="legs-group">
+        <g id="left-leg" filter="url(#shadow)">
+          <rect x="198" y="320" width="30" height="130" rx="15" fill="url(#blackLimbs)"/>
+          <rect x="193" y="390" width="40" height="120" rx="20" fill="url(#bodyGrad)"/>
+          <!-- 3D touch: soft highlight running down the calf -->
+          <rect x="198" y="395" width="10" height="90" rx="5" fill="#ffffff" opacity="0.35"/>
+          <g id="left-foot" class="anim-foot-left">
+            <!-- boot upper — taller than the old shoe, rises to meet the calf -->
+            <rect x="181" y="468" width="64" height="52" rx="16" fill="url(#blackLimbs)"/>
+            <!-- white sole, slightly wider than the upper for a sneaker overhang -->
+            <rect x="176" y="513" width="74" height="17" rx="8" fill="#f2f2f2"/>
+            <rect x="176" y="513" width="74" height="6" rx="3" fill="#ffffff" opacity="0.6"/>
+            <!-- laces -->
+            <path d="M 198 480 L 228 480 M 198 490 L 228 490 M 198 500 L 228 500" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+            <!-- gold brand stripe along the side -->
+            <path d="M 185 502 Q 213 511 241 502" fill="none" stroke="var(--brand-gold)" stroke-width="4" stroke-linecap="round"/>
+            <!-- 3D touch: highlight along the top edge of the upper -->
+            <ellipse cx="213" cy="474" rx="22" ry="6" fill="#ffffff" opacity="0.15"/>
+          </g>
+        </g>
+
+        <g id="right-leg" filter="url(#shadow)">
+          <rect x="272" y="320" width="30" height="130" rx="15" fill="url(#blackLimbs)"/>
+          <rect x="267" y="390" width="40" height="120" rx="20" fill="url(#bodyGrad)"/>
+          <rect x="272" y="395" width="10" height="90" rx="5" fill="#ffffff" opacity="0.35"/>
+          <g id="right-foot" class="anim-foot-right">
+            <rect x="255" y="468" width="64" height="52" rx="16" fill="url(#blackLimbs)"/>
+            <rect x="250" y="513" width="74" height="17" rx="8" fill="#f2f2f2"/>
+            <rect x="250" y="513" width="74" height="6" rx="3" fill="#ffffff" opacity="0.6"/>
+            <path d="M 272 480 L 302 480 M 272 490 L 302 490 M 272 500 L 302 500" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+            <path d="M 259 502 Q 287 511 315 502" fill="none" stroke="var(--brand-gold)" stroke-width="4" stroke-linecap="round"/>
+            <ellipse cx="287" cy="474" rx="22" ry="6" fill="#ffffff" opacity="0.15"/>
+          </g>
+        </g>
+      </g>
       <!-- ============ HIP ============
            Bridges the torso down to both thigh tops — keep this wide
            enough to reach x=182..318 (the thighs' outer edges) or a
@@ -268,21 +289,23 @@
         <rect x="230" y="298" width="40" height="20" rx="6" fill="url(#blackLimbs)"/>
       </g>
 
-      <!-- ============ TROUSERS ============
+      <!-- ============ SHORTS ============
            Two pieces (one per leg) so there's a visible leg-split gap
-           at the center. Color comes from the blackLimbs gradient
-           (shared with shoes/gloves/bag) — duplicate that gradient
-           under a new id if trousers need their own distinct shade.
-           Gold hem trim uses the brand-gold variable. Extends down to y=500 to
-           safely overlap the shoes even at the body's max float offset. -->
-      <g id="trousers" filter="url(#shadow)">
-        <rect x="172" y="300" width="76" height="200" rx="20" fill="url(#blackLimbs)"/>
-        <rect x="252" y="300" width="76" height="200" rx="20" fill="url(#blackLimbs)"/>
+           at the center. White fill via the shirt-color variable
+           (reused here so the shorts match the shirt if that ever
+           changes). Gold hem trim uses the brand-gold variable.
+           Shorter than the old trousers version — stops mid-thigh
+           at y=394, well above the shoe line, leaving the calves bare.
+           Width/position kept in sync with the leg stance below —
+           if you change the leg x-coordinates, adjust these to match. -->
+      <g id="shorts" filter="url(#shadow)">
+        <rect x="182" y="300" width="63" height="106" rx="16" fill="var(--shirt-color)"/>
+        <rect x="255" y="300" width="63" height="106" rx="16" fill="var(--shirt-color)"/>
         <!-- 3D touch: sheen down the front of each leg -->
-        <rect x="180" y="310" width="14" height="160" rx="7" fill="#ffffff" opacity="0.08"/>
-        <rect x="260" y="310" width="14" height="160" rx="7" fill="#ffffff" opacity="0.08"/>
-        <rect x="172" y="480" width="76" height="8" rx="4" fill="var(--brand-gold)"/>
-        <rect x="252" y="480" width="76" height="8" rx="4" fill="var(--brand-gold)"/>
+        <rect x="190" y="310" width="12" height="84" rx="6" fill="#ffffff" opacity="0.5"/>
+        <rect x="263" y="310" width="12" height="84" rx="6" fill="#ffffff" opacity="0.5"/>
+        <rect x="182" y="392" width="63" height="8" rx="4" fill="var(--brand-gold)"/>
+        <rect x="255" y="392" width="63" height="8" rx="4" fill="var(--brand-gold)"/>
       </g>
 
       <!-- ============ LEFT ARM (resting at hip, holds the bag) ============ -->
@@ -382,20 +405,31 @@
           <circle cx="273" cy="125" r="14" fill="url(#eyeGlow)"/>
           <circle cx="269" cy="120" r="4" fill="#ffffff" opacity="0.8"/>
         </g>
+
+        <!-- ============ SMILE ============
+             Happy expression — bright curved line under the eyes. -->
+        <path d="M 222 148 Q 250 165 278 148" fill="none" stroke="#4dd8ff" stroke-width="5" stroke-linecap="round" filter="url(#glow)"/>
       </g>
 
-      <!-- ============ RIGHT ARM (waving) ============ -->
+      <!-- ============ RIGHT ARM (waving) ============
+           Human-like wave: the shoulder/upper-arm barely moves (small
+           sway only) while the FOREARM wags back and forth from the
+           elbow — that's how a real hand-wave actually works, unlike
+           a full-arm pendulum swing which reads as mechanical. -->
       <g id="right-arm-wave" class="anim-wave">
         <circle cx="185" cy="210" r="16" fill="url(#jointGrad)" filter="url(#shadow)"/>
         <path d="M 185 210 L 140 170" fill="none" stroke="url(#bodyGrad)" stroke-width="22" stroke-linecap="round" filter="url(#shadow)"/>
         <!-- short sleeve cap -->
         <ellipse cx="174" cy="200" rx="23" ry="21" fill="var(--shirt-color)" stroke="#c2c2c2" stroke-width="1.5"/>
         <circle cx="140" cy="170" r="13" fill="url(#jointGrad)"/>
-        <path d="M 140 170 L 105 110" fill="none" stroke="url(#bodyGrad)" stroke-width="26" stroke-linecap="round" filter="url(#shadow)"/>
-        <g id="right-hand" class="anim-hand-flutter">
-          <circle cx="105" cy="110" r="18" fill="url(#blackLimbs)"/>
-          <circle cx="105" cy="110" r="15" fill="url(#blackLimbs)"/>
-          <circle cx="101" cy="105" r="5" fill="#ffffff" opacity="0.3"/>
+        <!-- forearm + hand wag together, pivoting at the elbow (140,170) -->
+        <g id="right-forearm-wave" class="anim-forearm-wave">
+          <path d="M 140 170 L 105 110" fill="none" stroke="url(#bodyGrad)" stroke-width="26" stroke-linecap="round" filter="url(#shadow)"/>
+          <g id="right-hand" class="anim-hand-flutter">
+            <circle cx="105" cy="110" r="18" fill="url(#blackLimbs)"/>
+            <circle cx="105" cy="110" r="15" fill="url(#blackLimbs)"/>
+            <circle cx="101" cy="105" r="5" fill="#ffffff" opacity="0.3"/>
+          </g>
         </g>
       </g>
 
