@@ -480,13 +480,45 @@ font-weight:700;
    the row's Concate value — see arrears.js for why).
 ========================================== */
 
+.reason-backdrop{
+
+display:none;
+
+position:fixed;
+
+inset:0;
+
+background:rgba(0,0,0,.6);
+
+z-index:1000;
+
+align-items:center;
+
+justify-content:center;
+
+padding:20px;
+
+box-sizing:border-box;
+
+}
+
+.reason-backdrop.show{
+
+display:flex;
+
+}
+
 .reason-card{
 
 width:100%;
 
-box-sizing:border-box;
+max-width:480px;
 
-overflow:hidden;
+max-height:85vh;
+
+overflow-y:auto;
+
+box-sizing:border-box;
 
 background:linear-gradient(180deg,#003B8B,#002D6B);
 
@@ -496,17 +528,7 @@ border-radius:16px;
 
 padding:18px 20px;
 
-box-shadow:0 4px 14px rgba(0,0,0,.25);
-
-margin-top:14px;
-
-display:none;
-
-}
-
-.reason-card.show{
-
-display:block;
+box-shadow:0 8px 28px rgba(0,0,0,.45);
 
 }
 
