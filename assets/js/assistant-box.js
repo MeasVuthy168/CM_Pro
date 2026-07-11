@@ -1,25 +1,45 @@
 /* =========================
    Assistant Box — Greeting / Update Logic
-   Decides which mode to render on load, based on whether the
-   user has already seen the current app version.
+   Greeting mode: "Good {Morning/Afternoon/Evening} {fullname}"
+   Update mode: pulls the real latest version from
+   GET /api/app/version?app=SVG_CreditMonitoring (your existing,
+   JWT-protected endpoint in server.js) and links to about.html.
 ========================= */
 
-function getKhmerGreeting(name) {
+const ASSISTANT_APP_NAME = 'SVG_CreditMonitoring';
+const ASSISTANT_ABOUT_URL = './pages/settings/about.html';
+
+function getGreeting(fullname) {
     const h = new Date().getHours();
-    const greet = h < 11 ? "អរុណសួស្តី"
-                : h < 14 ? "វិវាសួស្តី"
-                : h < 18 ? "ទិវាសួស្តី"
-                : "សាយណ្ហសួស្តី";
-    return `${greet}, ${name}! សូមស្វាគមន៍មកកាន់ CM Pro`;
+    const period = h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening';
+    return `Good ${period} ${fullname}`;
 }
 
 /**
- * highlights: array of short strings, e.g. ['ស៊ីនក្រូ MongoDB លឿនជាងមុន', 'កែសម្រួល UI']
+ * Reads the logged-in user's fullname from the loggedInUser object
+ * (confirmed via session.js's autoLogout, which clears this same key).
+ * Mirrors API.getToken()'s localStorage-or-sessionStorage check, since
+ * "remember me" determines which storage login.js actually used.
  */
-function renderUpdateBox(box, textEl, version, highlights) {
+function getStoredFullname() {
+    try {
+        const raw =
+            localStorage.getItem('loggedInUser') ||
+            sessionStorage.getItem('loggedInUser');
+
+        if (raw) {
+            const u = JSON.parse(raw);
+            if (u?.fullname) return u.fullname;
+        }
+    } catch (e) {
+        console.warn('[assistant-box] could not read loggedInUser:', e);
+    }
+    return null;
+}
+
+function renderUpdateBox(box, textEl, version, notes) {
     box.dataset.mode = 'update';
 
-    // badge
     if (!box.querySelector('.assistant-new-badge')) {
         const badge = document.createElement('span');
         badge.className = 'assistant-new-badge';
@@ -27,7 +47,6 @@ function renderUpdateBox(box, textEl, version, highlights) {
         box.prepend(badge);
     }
 
-    // dismiss button
     if (!box.querySelector('.assistant-dismiss')) {
         const dismiss = document.createElement('button');
         dismiss.className = 'assistant-dismiss';
@@ -38,46 +57,58 @@ function renderUpdateBox(box, textEl, version, highlights) {
     }
 
     textEl.innerHTML = `
-        <span class="update-version">កំណែថ្មី v${version} មកដល់ហើយ!</span>
-        <span class="update-highlights">${highlights.join(' • ')}</span>
-        <button class="assistant-cta" onclick="location.href='/whats-new'">មើលលម្អិត</button>
+        <span class="update-version">កំណែថ្មី Version ${version} មកដល់ហើយ!</span>
+        <span class="update-highlights">សូមចូលទៅ Download កំណែថ្មីក្នុងកម្មវិធី Excel ឈ្មោះ SVG Credit Monitoring</span>
+        <button class="assistant-cta" onclick="location.href='${ASSISTANT_ABOUT_URL}'">មើលអ្វីថ្មី</button>
     `;
 }
 
-function renderGreetingBox(box, textEl, userName) {
+function renderGreetingBox(box, textEl, fullname) {
     box.dataset.mode = 'greeting';
     box.querySelector('.assistant-new-badge')?.remove();
     box.querySelector('.assistant-dismiss')?.remove();
-    textEl.textContent = getKhmerGreeting(userName);
+    textEl.textContent = getGreeting(fullname);
 }
 
 function dismissUpdate(version, box, textEl) {
     localStorage.setItem('cmpro_seen_version', version);
-    renderGreetingBox(box, textEl, window.currentUserName || '');
+    renderGreetingBox(box, textEl, window.currentUserFullname || '');
 }
 
 /**
- * Call this once on dashboard/login load.
- * highlights is only needed when a new version is actually being announced.
+ * Call this once on dashboard load, after login.
+ * userName is optional — if omitted, we try to read it from session storage.
  */
-function initAssistantBox({ currentVersion, userName, highlights = [] }) {
+async function initAssistantBox({ userName } = {}) {
     const box = document.querySelector('.assistant-box');
     const textEl = document.getElementById('assistantText');
     if (!box || !textEl) return;
 
-    window.currentUserName = userName;
-    const seenVersion = localStorage.getItem('cmpro_seen_version');
+    const fullname = userName || getStoredFullname() || 'អ្នកប្រើប្រាស់';
+    window.currentUserFullname = fullname;
 
-    if (seenVersion !== currentVersion) {
-        renderUpdateBox(box, textEl, currentVersion, highlights);
-    } else {
-        renderGreetingBox(box, textEl, userName);
+    // Show the greeting immediately so the box isn't empty while we fetch.
+    renderGreetingBox(box, textEl, fullname);
+
+    try {
+        const data = await API.get(`/api/app/version?app=${ASSISTANT_APP_NAME}`);
+
+        if (!data || !data.ok || !data.hasVersion) return; // stays on greeting
+
+        const currentVersion = data.latestVersion;
+        const seenVersion = localStorage.getItem('cmpro_seen_version');
+
+        if (seenVersion !== currentVersion) {
+            renderUpdateBox(box, textEl, currentVersion, data.notes || '');
+        }
+        // if already seen, greeting (already rendered) stays.
+    } catch (err) {
+        // Network hiccup, expired token, etc. — fail quietly to the
+        // greeting that's already showing rather than breaking the dashboard.
+        console.warn('[assistant-box] could not check app version:', err);
     }
 }
 
-// Example call, once app knows the logged-in user and build version:
-// initAssistantBox({
-//     currentVersion: '1.4.0',
-//     userName: 'Vuthy',
-//     highlights: ['ស៊ីនក្រូ MongoDB លឿនជាងមុន', 'កែសម្រួល UI']
-// });
+// Example call, once the page has loaded and the user is authenticated:
+// initAssistantBox();                       // pulls fullname from session
+// initAssistantBox({ userName: 'Meas Vuthy' }); // or pass it explicitly
