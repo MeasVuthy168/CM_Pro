@@ -218,7 +218,7 @@
         x="250" y="55"
         text-anchor="middle"
         font-family="'Kantumruy Pro', 'Khmer OS Battambang', 'Khmer OS', sans-serif"
-        font-size="80"
+        font-size="60"
         font-weight="700"
         fill="var(--brand-gold)"
         filter="url(#glow)">ជម្រាបសួរបាទ...</text>
