@@ -80,21 +80,21 @@ href="../../assets/css/arrears.css">
 
 <!-- Column 1 (D2:D4 in the sheet) -->
 <div class="filter-group">
-<label for="fBranch">Branch</label>
+<label for="fBranch">សាខា</label>
 <select id="fBranch">
 <option value="">All</option>
 </select>
 </div>
 
 <div class="filter-group">
-<label for="fOfficerResponse">Officer Response</label>
+<label for="fOfficerResponse">ភ្នាក់ងារទទួលខុសត្រូវ</label>
 <select id="fOfficerResponse">
 <option value="">All</option>
 </select>
 </div>
 
 <div class="filter-group">
-<label for="fOfficerOwner">Officer Owner (CO ID)</label>
+<label for="fOfficerOwner">ភ្នាក់ងារផ្ទាល់ខ្លួន(ID)</label>
 <select id="fOfficerOwner">
 <option value="">All</option>
 </select>
@@ -102,14 +102,14 @@ href="../../assets/css/arrears.css">
 
 <!-- Column 2 (F2:F4) -->
 <div class="filter-group">
-<label for="fTeamLeader">Team Leader</label>
+<label for="fTeamLeader">អនុប្រធាន/ផ្នែកFSRO</label>
 <select id="fTeamLeader">
 <option value="">All</option>
 </select>
 </div>
 
 <div class="filter-group">
-<label for="fCurrency">Currency</label>
+<label for="fCurrency">រូបិយប័ណ្ណ</label>
 <select id="fCurrency">
 <option value="">All</option>
 <option value="USD">USD</option>
@@ -118,7 +118,7 @@ href="../../assets/css/arrears.css">
 </div>
 
 <div class="filter-group">
-<label for="fOsClassify">OS Classify</label>
+<label for="fOsClassify">សមតុល្យឥណទាន</label>
 <select id="fOsClassify">
 <option value="">All</option>
 </select>
@@ -126,7 +126,7 @@ href="../../assets/css/arrears.css">
 
 <!-- Column 3 (I2:I4) -->
 <div class="filter-group">
-<label for="fClass">Class</label>
+<label for="fClass">ចំណាត់ថ្នាក់ឥណទាន</label>
 <select id="fClass">
 <option value="">All</option>
 <option value="Normal_to_SpecialMention">Normal → Special Mention</option>
@@ -140,7 +140,7 @@ href="../../assets/css/arrears.css">
 </div>
 
 <div class="filter-group">
-<label for="fPD">PD</label>
+<label for="fPD">មាន/គ្មានសមតុល្យPD</label>
 <select id="fPD">
 <option value="">All</option>
 <option value="Balanced_PD">Balanced_PD</option>
@@ -149,7 +149,7 @@ href="../../assets/css/arrears.css">
 </div>
 
 <div class="filter-group">
-<label for="fOccupation">Occupation (មុខរបរ)</label>
+<label for="fOccupation">មុខរបរ/មុខងារ</label>
 <select id="fOccupation">
 <option value="">All</option>
 </select>
@@ -157,7 +157,7 @@ href="../../assets/css/arrears.css">
 
 <!-- Column 4 (M2:M4) -->
 <div class="filter-group">
-<label for="fProductType">Product Type</label>
+<label for="fProductType">ប្រភេទផលិតផល</label>
 <select id="fProductType">
 <option value="">All</option>
 <option value="Digital Products">Digital Products</option>
@@ -166,15 +166,16 @@ href="../../assets/css/arrears.css">
 </div>
 
 <div class="filter-group">
-<label for="fKeyword">Customer / Keyword</label>
+<label for="fKeyword">ស្វែងរកឈ្មោះ</label>
 <input type="text" id="fKeyword" placeholder="Type to search..." list="customerSuggestions" autocomplete="off">
 <datalist id="customerSuggestions"></datalist>
 </div>
 
 <div class="filter-group">
-<label for="fPromiseStatus">Promise Status</label>
+<label for="fPromiseStatus">ស្ថានភាពសន្យា</label>
 <select id="fPromiseStatus">
 <option value="">All</option>
+<option value="មិនទាន់សន្យា">មិនទាន់សន្យា</option>
 <option value="Today_Payment">Today_Payment</option>
 <option value="Upcoming_left">Upcoming_left</option>
 <option value="Expired">Expired</option>
@@ -193,6 +194,11 @@ href="../../assets/css/arrears.css">
 <div class="summary-row" id="summaryRow">
 <span>LD: <span class="num" id="sumLD">0</span></span>
 <span>OS: <span class="num" id="sumOS">0</span></span>
+</div>
+
+<div class="summary-row upload-meta" id="uploadMetaRow">
+<span>ផ្ទុកទិន្នន័យចុងក្រោយនៅថ្ងៃទីៈ <span class="num" id="lastUploadAt">-</span></span>
+<span>ផ្ទុកទិន្នន័យចុងក្រោយដោយៈ <span class="num" id="lastUploadBy">-</span></span>
 </div>
 
 </div>
@@ -256,16 +262,19 @@ href="../../assets/css/arrears.css">
 <th>Arreas</th>
 <th>Day</th>
 <th>Balnce</th>
+<th>Account Loan</th>
 <th>Tell</th>
 <th>CIF</th>
 <th>Occu</th>
 <th>Ministry</th>
 <th>Promise Status</th>
-<th>Branch</th>
-<th>CO ID</th>
-<th>CO Response</th>
-<th>CCY</th>
-<th>OS_USD</th>
+<th>CO_ID</th>
+<th>CIF_អ្នករួមខ្ចី</th>
+<th>មុខរបរ</th>
+<th>មូលហេតុ/ដំណោះស្រាយ</th>
+<th>ថ្ងៃសន្យាសង</th>
+<th>User</th>
+<th>DateBackUpReasonArrear</th>
 </tr>
 
 </thead>
@@ -273,7 +282,7 @@ href="../../assets/css/arrears.css">
 <tbody id="tbodyArrears">
 
 <tr class="row-loading">
-<td colspan="23">Loading...</td>
+<td colspan="26">Loading...</td>
 </tr>
 
 </tbody>
