@@ -15,10 +15,6 @@
        GLOVES      -> search "left-hand" / "right-hand"
        BAG         -> search "BAG" (hangs from the resting/left hand)
        SMILE       -> search "SMILE" (curved line under the eyes)
-       JUMP        -> the float-body keyframes on .anim-body — legs live
-                      INSIDE .anim-body now so the whole character (legs
-                      included) jumps together; don't move legs-group
-                      back out or the leg/hip/shoe connections will gap.
        ANIMATIONS  -> every @keyframes is named after what it moves,
                       e.g. wave-hand, tilt-head, foot-tap, etc.
        ===================================================================== -->
@@ -113,16 +109,12 @@
          Named after the body part / effect they drive. */
 
       @keyframes float-body {
-        /* Squash-and-stretch jump cycle: crouch -> launch/stretch -> hang
-           -> land/squash -> settle. transform-origin is set to ground
-           level (see .anim-body below) so the squash/stretch always
-           anchors at the feet instead of floating in mid-air. */
-        0%   { transform: translateY(0px) scaleY(1); }
-        10%  { transform: translateY(6px) scaleY(0.9); }
-        35%  { transform: translateY(-30px) scaleY(1.08); }
-        55%  { transform: translateY(-30px) scaleY(1.05); }
-        80%  { transform: translateY(6px) scaleY(0.9); }
-        100% { transform: translateY(0px) scaleY(1); }
+        /* Gentle idle float — no jump. (Legs stay inside .anim-body
+           regardless; that structural change is harmless at any
+           amplitude and keeps the leg/hip/shoe connections safe if
+           you ever want to bring the jump back.) */
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-6px); }
       }
       @keyframes tilt-head {
         0%, 100% { transform: rotate(-12deg); }
@@ -167,15 +159,8 @@
         50% { transform: scale(1.04); filter: drop-shadow(0 0 6px rgba(255,204,0,0.9)); }
       }
       @keyframes floor-shadow {
-        /* Kept in exact phase-sync with float-body's jump: shadow grows
-           and darkens slightly on the crouch, then shrinks and fades at
-           the jump's peak height, then reverses on landing. */
-        0%   { transform: scale(1); opacity: 0.32; }
-        10%  { transform: scale(1.06); opacity: 0.36; }
-        35%  { transform: scale(0.7); opacity: 0.14; }
-        55%  { transform: scale(0.7); opacity: 0.14; }
-        80%  { transform: scale(1.06); opacity: 0.36; }
-        100% { transform: scale(1); opacity: 0.32; }
+        0%, 100% { transform: scale(1); opacity: 0.3; }
+        50% { transform: scale(0.95); opacity: 0.23; }
       }
 
       /* ============ ANIMATION ASSIGNMENTS ============
@@ -185,12 +170,8 @@
          animation will pivot around the wrong spot. */
 
       .anim-body {
-        /* NOTE: legs-group now lives INSIDE .anim-body (see markup
-           below) specifically so the whole character — legs included —
-           jumps as one rigid unit. Splitting them again would reopen
-           the leg/hip/shoe connection gaps that were fixed earlier. */
-        animation: float-body 1.8s ease-in-out infinite;
-        transform-origin: 250px 530px; /* ground level, matches the shadow — keeps squash/stretch anchored at the feet */
+        animation: float-body 4s ease-in-out infinite;
+        transform-origin: 250px 530px;
       }
       .anim-head {
         animation: tilt-head 2.2s ease-in-out infinite;
@@ -229,7 +210,7 @@
         transform-origin: center;
       }
       .anim-shadow {
-        animation: floor-shadow 1.8s ease-in-out infinite;
+        animation: floor-shadow 4s ease-in-out infinite;
         transform-origin: 250px 530px;
       }
     </style>
