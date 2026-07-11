@@ -295,7 +295,13 @@ border-radius:999px;
 
 width:100%;
 
-border-collapse:collapse;
+/* border-collapse:collapse breaks position:sticky on table cells in
+   most mobile WebViews (a well-known cross-browser quirk) — that was
+   the actual reason the frozen header/column weren't sticking at all.
+   border-spacing:0 keeps the grid looking the same as collapse did. */
+border-collapse:separate;
+
+border-spacing:0;
 
 font-size:12px;
 
@@ -426,6 +432,44 @@ color:#c0392b;
 font-weight:700;
 
 }
+
+/* ==========================================
+   CONDITIONAL FORMATTING
+   Mirrors the Excel Conditional Formatting Rules Manager rules,
+   in the same priority order (row-level Class colors are the base
+   layer; Promise Status cell colors and the other cell-specific
+   rules paint on top since a <td> with its own background always
+   shows over its <tr>'s background — no extra specificity tricks
+   needed for that part). Class-Doubtful and Class-Loss share the
+   same red family as Excel did (Loss = darker).
+========================================== */
+
+/* Row-level: Class column (AE) */
+.row-class-loss{ background:#8B0000 !important; }
+.row-class-loss td{ color:#fff; }
+
+.row-class-doubtful{ background:#FF0000 !important; }
+.row-class-doubtful td{ color:#fff; }
+
+.row-class-substandard{ background:#FFA500 !important; }
+
+.row-class-specialmention{ background:#FFFF00 !important; }
+
+/* Cell-level: Promise Status (AI) + the AJ/AK/AL follow-up cells */
+.cell-promise-today{ background:#FFFF00 !important; }
+.cell-promise-upcoming{ background:#92D050 !important; }
+.cell-promise-expired{ background:#FF0000 !important; color:#fff; }
+
+/* Default light-blue fill for the follow-up cells when no Promise
+   Status keyword matched (lowest-priority rule, same as the Excel
+   "$B6<>''" fallback rule) */
+.cell-followup-default{ background:#DCE6F1 !important; }
+
+/* Cell-level: duplicate Customer names (column D) */
+.cell-duplicate-customer{ background:#FAC090 !important; }
+
+/* Cell-level: Balance column when PD = Balanced_PD */
+.cell-balance-pd{ background:#C6EFCE !important; color:#FF0000 !important; font-weight:700; }
 
 /* ==========================================
    REASON ARREAR PANEL
