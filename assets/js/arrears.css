@@ -1,0 +1,526 @@
+// ========================================
+// Daily Arrears — ArreasT24ByCO web port
+// Reads from GET /api/arreast24byco/rows (paginated, 41 cols/row,
+// same collection the VBA Download/Upload buttons already sync).
+// Reason Arrear panel reads/writes via /api/reasonarrear/* keyed
+// on the row's Concate value (AG) — see COL.CONCATE below and the
+// note in the HTML/plan message for why, not raw CIF.
+// ========================================
+
+// ========================================
+// COLUMN MAP
+// values[] index -> field, per the confirmed header row (B is
+// the sheet's own row-number column and is NOT part of values[]
+// — values[] starts at C = "Loan Number").
+// ========================================
+const COL = {
+    LOAN_NUMBER: 0,
+    CUSTOMER: 1,
+    LOCATION: 2,
+    DIS_DATE: 3,
+    PRN_OS: 4,
+    INT_OS: 5,
+    PRN_DUE: 6,
+    INT_DUE: 7,
+    PENALTY: 8,
+    ARREAS: 9,
+    DAY: 10,
+    BALANCE: 11,
+    ACCOUNT_LOAN: 12,
+    TELL: 13,
+    CIF: 14,
+    OCCU: 15,
+    MINISTRY: 16,
+    PROMISE_STATUS_1: 17,   // T — legacy/secondary, shown read-only if ever needed
+    BRANCH: 18,
+    CO_ID: 19,
+    CO_RESPONSE: 20,
+    CCY: 21,
+    OS_USD: 22,
+    OS_CLASSIFY: 23,
+    TEAM_LEADER: 24,
+    ACC_PAYROLL: 25,
+    CIF_COBORROWER: 26,
+    BLOCKING: 27,
+    CLASS: 28,
+    PD: 29,
+    CONCATE: 30,            // AG — used as the Reason Arrear key (see note above)
+    PRODUCT: 31,
+    PROMISE_STATUS: 32,     // AI — the LIVE promise status (matches the M4 filter field)
+    AJ_REASON: 33,          // មុខរបរ
+    AK_SOLUTION: 34,        // មូលហេតុ/ដំណោះស្រាយ
+    AL_FOLLOWUP: 35,        // ថ្ងៃសន្យាសង
+    USER: 36,
+    DATE_BACKUP: 37,
+    REPORT_DATE: 38,
+    COLLATERAL_TYPE: 39,
+    TOTAL_BALANCE: 40
+};
+
+const DIGITAL_PRODUCTS = [
+    "Advance Salary Loan",
+    "By Now Pay Later",
+    "Payroll Loan",
+    "Loan against Term Deposit"
+];
+
+// ========================================
+// TOKEN + ELEMENTS
+// ========================================
+
+const arrearsToken =
+    localStorage.getItem("token") ||
+    sessionStorage.getItem("token");
+
+const tbodyArrears = document.getElementById("tbodyArrears");
+const summaryLD = document.getElementById("sumLD");
+const summaryOS = document.getElementById("sumOS");
+
+const filterEls = {
+    branch: document.getElementById("fBranch"),
+    officerResponse: document.getElementById("fOfficerResponse"),
+    officerOwner: document.getElementById("fOfficerOwner"),
+    teamLeader: document.getElementById("fTeamLeader"),
+    currency: document.getElementById("fCurrency"),
+    osClassify: document.getElementById("fOsClassify"),
+    class: document.getElementById("fClass"),
+    pd: document.getElementById("fPD"),
+    occupation: document.getElementById("fOccupation"),
+    productType: document.getElementById("fProductType"),
+    keyword: document.getElementById("fKeyword"),
+    promiseStatus: document.getElementById("fPromiseStatus")
+};
+
+const reasonCard = document.getElementById("reasonCard");
+const reasonSubtitle = document.getElementById("reasonSubtitle");
+const reasonAJ = document.getElementById("reasonAJ");
+const reasonAK = document.getElementById("reasonAK");
+const reasonAL = document.getElementById("reasonAL");
+const reasonMeta = document.getElementById("reasonMeta");
+
+let allRows = [];        // every row, parsed to objects, unfiltered
+let currentRows = [];    // whatever's currently displayed (post-filter)
+let selectedRow = null;  // row object behind the open Reason Arrear panel
+
+// ========================================
+// MESSAGE HELPER
+// ========================================
+
+function notify(message, type = "info") {
+    if (typeof showToast === "function") {
+        showToast(message, type);
+    } else {
+        alert(message);
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text == null ? "" : String(text);
+    return div.innerHTML;
+}
+
+// ========================================
+// FETCH ALL ROWS (paginated — server caps at 1000/request,
+// sheet can hold up to 15000 rows, so we loop until a page
+// comes back short of the limit)
+// ========================================
+
+async function fetchAllArrearsRows() {
+    const limit = 1000;
+    let startRow = 6; // matches the sheet's own data start row
+    let all = [];
+
+    while (true) {
+        const url = `${API.BASE_URL}/api/arreast24byco/rows?startRow=${startRow}&limit=${limit}&cols=41`;
+        const res = await fetch(url, {
+            headers: { Authorization: `Bearer ${arrearsToken}` }
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.message || "Failed to load arrears data.");
+
+        const rows = data.rows || [];
+        all = all.concat(rows);
+
+        if (rows.length < limit) break; // last page
+        startRow += limit;
+    }
+
+    return all.map(r => parseRow(r.values || []));
+}
+
+function parseRow(values) {
+    const get = i => (values[i] ?? "").toString().trim();
+    return {
+        loanNumber: get(COL.LOAN_NUMBER),
+        customer: get(COL.CUSTOMER),
+        location: get(COL.LOCATION),
+        disDate: get(COL.DIS_DATE),
+        prnOS: get(COL.PRN_OS),
+        intOS: get(COL.INT_OS),
+        prnDue: get(COL.PRN_DUE),
+        intDue: get(COL.INT_DUE),
+        penalty: get(COL.PENALTY),
+        arreas: get(COL.ARREAS),
+        day: get(COL.DAY),
+        balance: get(COL.BALANCE),
+        tell: get(COL.TELL),
+        cif: get(COL.CIF),
+        occu: get(COL.OCCU),
+        ministry: get(COL.MINISTRY),
+        promiseStatus: get(COL.PROMISE_STATUS),
+        branch: get(COL.BRANCH),
+        coId: get(COL.CO_ID),
+        coResponse: get(COL.CO_RESPONSE),
+        ccy: get(COL.CCY),
+        osUsd: get(COL.OS_USD),
+        osClassify: get(COL.OS_CLASSIFY),
+        teamLeader: get(COL.TEAM_LEADER),
+        class: get(COL.CLASS),
+        pd: get(COL.PD),
+        concate: get(COL.CONCATE),
+        product: get(COL.PRODUCT)
+    };
+}
+
+// ========================================
+// FILTERING — mirrors Worksheet_Change's AutoFilter logic
+// ========================================
+
+function containsMatch(value, query) {
+    if (!query) return true;
+    return value.toLowerCase().includes(query.toLowerCase());
+}
+
+function exactMatch(value, query) {
+    if (!query) return true;
+    return value.trim().toLowerCase() === query.trim().toLowerCase();
+}
+
+function classMatch(value, filterValue) {
+    if (!filterValue) return true;
+    if (filterValue === "Normal_to_SpecialMention") {
+        return value === "Normal" || value === "Special Mention";
+    }
+    if (filterValue === "SubStandard_to_Loss") {
+        return ["Sub Standard", "Doubtful", "Loss"].includes(value);
+    }
+    return value === filterValue;
+}
+
+function productMatch(value, filterValue) {
+    if (!filterValue) return true;
+    if (filterValue === "Digital Products") {
+        return DIGITAL_PRODUCTS.includes(value);
+    }
+    if (filterValue === "Non-Digital Products") {
+        return !DIGITAL_PRODUCTS.includes(value);
+    }
+    return value === filterValue;
+}
+
+function applyFilters() {
+    const f = {
+        branch: filterEls.branch.value.trim(),
+        officerResponse: filterEls.officerResponse.value.trim(),
+        officerOwner: filterEls.officerOwner.value.trim(),
+        teamLeader: filterEls.teamLeader.value.trim(),
+        currency: filterEls.currency.value.trim(),
+        osClassify: filterEls.osClassify.value.trim(),
+        classVal: filterEls.class.value.trim(),
+        pd: filterEls.pd.value.trim(),
+        occupation: filterEls.occupation.value.trim(),
+        productType: filterEls.productType.value.trim(),
+        keyword: filterEls.keyword.value.trim(),
+        promiseStatus: filterEls.promiseStatus.value.trim()
+    };
+
+    currentRows = allRows.filter(row => {
+        return containsMatch(row.branch, f.branch)
+            && containsMatch(row.coResponse, f.officerResponse)
+            && exactMatch(row.coId, f.officerOwner)
+            && exactMatch(row.teamLeader, f.teamLeader)
+            && exactMatch(row.ccy, f.currency)
+            && exactMatch(row.osClassify, f.osClassify)
+            && classMatch(row.class, f.classVal)
+            && exactMatch(row.pd, f.pd)
+            && exactMatch(row.occu, f.occupation)
+            && productMatch(row.product, f.productType)
+            && containsMatch(row.customer, f.keyword)
+            && containsMatch(row.promiseStatus, f.promiseStatus);
+    });
+
+    renderTable(currentRows);
+    renderSummary(currentRows);
+}
+
+function clearFilters() {
+    Object.values(filterEls).forEach(el => { el.value = ""; });
+    applyFilters();
+}
+
+// ========================================
+// SUMMARY — mirrors RefreshSummary (Gov/Worker/Other by Occu,
+// summed on OS_USD)
+// ========================================
+
+function formatShortAmount(v) {
+    const abs = Math.abs(v);
+    if (abs >= 1000000) return (v / 1000000).toFixed(1) + "M";
+    if (abs >= 1000) return (v / 1000).toFixed(1) + "K";
+    return v.toLocaleString();
+}
+
+function renderSummary(rows) {
+    let govCnt = 0, workerCnt = 0, otherCnt = 0;
+    let govOS = 0, workerOS = 0, otherOS = 0, totalOS = 0;
+
+    rows.forEach(row => {
+        const amt = parseFloat(row.osUsd) || 0;
+        totalOS += amt;
+        if (row.occu === "Gov") { govCnt++; govOS += amt; }
+        else if (row.occu === "Worker") { workerCnt++; workerOS += amt; }
+        else { otherCnt++; otherOS += amt; }
+    });
+
+    summaryLD.textContent =
+        `${rows.length.toLocaleString()} (Gov:${govCnt.toLocaleString()}, Worker:${workerCnt.toLocaleString()}, Other:${otherCnt.toLocaleString()})`;
+
+    summaryOS.textContent =
+        `${formatShortAmount(totalOS)} (Gov:${formatShortAmount(govOS)}, Worker:${formatShortAmount(workerOS)}, Other:${formatShortAmount(otherOS)})`;
+}
+
+// ========================================
+// RENDER TABLE
+// ========================================
+
+function renderTable(rows) {
+    tbodyArrears.innerHTML = "";
+
+    if (!rows.length) {
+        tbodyArrears.innerHTML = `
+            <tr class="row-empty">
+                <td colspan="23">No data found</td>
+            </tr>
+        `;
+        return;
+    }
+
+    const frag = document.createDocumentFragment();
+
+    rows.forEach((row, index) => {
+        const tr = document.createElement("tr");
+        tr.dataset.index = index;
+
+        const arreaClass = (parseFloat(row.arreas) || 0) > 0 ? "cell-negative" : "";
+        const balClass = (parseFloat(row.balance) || 0) < 0 ? "cell-negative" : "";
+
+        tr.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${escapeHtml(row.loanNumber)}</td>
+            <td>${escapeHtml(row.customer)}</td>
+            <td>${escapeHtml(row.location)}</td>
+            <td>${escapeHtml(row.disDate)}</td>
+            <td>${escapeHtml(row.prnOS)}</td>
+            <td>${escapeHtml(row.intOS)}</td>
+            <td>${escapeHtml(row.prnDue)}</td>
+            <td>${escapeHtml(row.intDue)}</td>
+            <td>${escapeHtml(row.penalty)}</td>
+            <td class="${arreaClass}">${escapeHtml(row.arreas)}</td>
+            <td>${escapeHtml(row.day)}</td>
+            <td class="${balClass}">${escapeHtml(row.balance)}</td>
+            <td>${escapeHtml(row.tell)}</td>
+            <td>${escapeHtml(row.cif)}</td>
+            <td>${escapeHtml(row.occu)}</td>
+            <td>${escapeHtml(row.ministry)}</td>
+            <td>${escapeHtml(row.promiseStatus)}</td>
+            <td>${escapeHtml(row.branch)}</td>
+            <td>${escapeHtml(row.coId)}</td>
+            <td>${escapeHtml(row.coResponse)}</td>
+            <td>${escapeHtml(row.ccy)}</td>
+            <td>${escapeHtml(row.osUsd)}</td>
+        `;
+        frag.appendChild(tr);
+    });
+
+    tbodyArrears.appendChild(frag);
+}
+
+// ========================================
+// ROW CLICK -> REASON ARREAR PANEL
+// ========================================
+
+tbodyArrears.addEventListener("click", (e) => {
+    const tr = e.target.closest("tr[data-index]");
+    if (!tr) return;
+
+    const idx = Number(tr.dataset.index);
+    const row = currentRows[idx];
+    if (!row) return;
+
+    document.querySelectorAll("#tbodyArrears tr").forEach(r => r.classList.remove("row-selected"));
+    tr.classList.add("row-selected");
+
+    openReasonPanel(row);
+});
+
+async function openReasonPanel(row) {
+    selectedRow = row;
+
+    reasonSubtitle.textContent = `${row.loanNumber} — ${row.customer}`;
+    reasonAJ.value = "";
+    reasonAK.value = "";
+    reasonAL.value = "";
+    reasonMeta.textContent = "";
+    reasonCard.classList.add("show");
+    reasonCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+    if (!row.concate) {
+        notify("This row has no Concate key — cannot load/save its reason.", "warning");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/reasonarrear/get`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${arrearsToken}`
+            },
+            body: JSON.stringify({ cifs: [row.concate] })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.message || "Failed to load reason.");
+
+        const found = (data.data || [])[0];
+        if (found) {
+            reasonAJ.value = found.aj || "";
+            reasonAK.value = found.ak || "";
+            reasonAL.value = found.al ? found.al.slice(0, 10) : "";
+            if (found.uploadedBy) {
+                const when = found.uploadedAt ? new Date(found.uploadedAt).toLocaleString() : "";
+                reasonMeta.textContent = `Last updated by ${found.uploadedBy}${when ? " on " + when : ""}`;
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        notify(err.message || "Could not load reason arrear.", "error");
+    }
+}
+
+document.getElementById("btnReasonCancel").addEventListener("click", () => {
+    reasonCard.classList.remove("show");
+    selectedRow = null;
+});
+
+document.getElementById("btnReasonSave").addEventListener("click", async () => {
+    if (!selectedRow || !selectedRow.concate) {
+        notify("No row selected.", "warning");
+        return;
+    }
+
+    const alValue = reasonAL.value ? `${reasonAL.value}T00:00:00.000Z` : "";
+    const uploadedBy =
+        JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}").fullname
+        || "unknown";
+
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/reasonarrear/upsert`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${arrearsToken}`
+            },
+            body: JSON.stringify({
+                uploadedBy,
+                rows: [[selectedRow.concate, reasonAJ.value, reasonAK.value, alValue]]
+            })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.message || "Save failed.");
+
+        notify("Reason arrear saved.", "success");
+        reasonCard.classList.remove("show");
+    } catch (err) {
+        console.error(err);
+        notify(err.message || "Could not save reason arrear.", "error");
+    }
+});
+
+// ========================================
+// TOOLBAR ACTIONS
+// ========================================
+
+async function refreshArrears() {
+    if (typeof showAppLoading === "function") {
+        showAppLoading("Loading arrears data...");
+    }
+    try {
+        allRows = await fetchAllArrearsRows();
+        applyFilters();
+    } catch (err) {
+        console.error(err);
+        notify(err.message || "Failed to load arrears data.", "error");
+        tbodyArrears.innerHTML = `<tr class="row-empty"><td colspan="23">Failed to load data</td></tr>`;
+    } finally {
+        if (typeof hideAppLoading === "function") {
+            hideAppLoading();
+        }
+    }
+}
+
+function exportArrears() {
+    if (!currentRows.length) {
+        notify("Nothing to export.", "warning");
+        return;
+    }
+    const sheetData = currentRows.map((row, i) => ({
+        No: i + 1,
+        "Loan Number": row.loanNumber,
+        Customer: row.customer,
+        Location: row.location,
+        DisDate: row.disDate,
+        "Prn.OS": row.prnOS,
+        "Int.OS": row.intOS,
+        "Prn.Due": row.prnDue,
+        "Int.Due": row.intDue,
+        Penalty: row.penalty,
+        Arreas: row.arreas,
+        Day: row.day,
+        Balnce: row.balance,
+        Tell: row.tell,
+        CIF: row.cif,
+        Occu: row.occu,
+        Ministry: row.ministry,
+        "Promise Status": row.promiseStatus,
+        Branch: row.branch,
+        "CO ID": row.coId,
+        "CO Response": row.coResponse,
+        CCY: row.ccy,
+        OS_USD: row.osUsd
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(sheetData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Arrears");
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "");
+    XLSX.writeFile(wb, `Arrears_${stamp}.xlsx`);
+}
+
+document.getElementById("btnClear").addEventListener("click", clearFilters);
+document.getElementById("btnRefresh").addEventListener("click", refreshArrears);
+document.getElementById("btnExport").addEventListener("click", exportArrears);
+document.getElementById("btnPrint").addEventListener("click", () => window.print());
+
+Object.values(filterEls).forEach(el => {
+    el.addEventListener(el.tagName === "SELECT" ? "change" : "input", applyFilters);
+});
+
+// ========================================
+// PAGE READY
+// ========================================
+
+refreshArrears();
+console.log("Daily Arrears Ready.");
