@@ -272,7 +272,7 @@
             <!-- boot upper — taller than the old shoe, rises to meet the calf -->
             <rect x="186" y="468" width="54" height="52" rx="14" fill="url(#blackLimbs)"/>
             <!-- red sole, slightly wider than the upper for a sneaker overhang -->
-            <rect x="181" y="513" width="64" height="17" rx="8" fill="#d92b2b"/>
+            <rect x="181" y="513" width="64" height="17" rx="8" fill="#161616"/>
             <rect x="181" y="513" width="64" height="6" rx="3" fill="#ffffff" opacity="0.35"/>
             <!-- laces -->
             <path d="M 198 480 L 228 480 M 198 490 L 228 490 M 198 500 L 228 500" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
@@ -289,7 +289,7 @@
           <rect x="271" y="395" width="8" height="90" rx="4" fill="#ffffff" opacity="0.35"/>
           <g id="right-foot" class="anim-foot-right">
             <rect x="260" y="468" width="54" height="52" rx="14" fill="url(#blackLimbs)"/>
-            <rect x="255" y="513" width="64" height="17" rx="8" fill="#d92b2b"/>
+            <rect x="255" y="513" width="64" height="17" rx="8" fill="#161616"/>
             <rect x="255" y="513" width="64" height="6" rx="3" fill="#ffffff" opacity="0.35"/>
             <path d="M 272 480 L 302 480 M 272 490 L 302 490 M 272 500 L 302 500" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
             <path d="M 259 502 Q 287 511 315 502" fill="none" stroke="var(--brand-gold)" stroke-width="4" stroke-linecap="round"/>
