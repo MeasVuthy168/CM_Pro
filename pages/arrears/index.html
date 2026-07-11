@@ -81,23 +81,31 @@ href="../../assets/css/arrears.css">
 <!-- Column 1 (D2:D4 in the sheet) -->
 <div class="filter-group">
 <label for="fBranch">Branch</label>
-<input type="text" id="fBranch" placeholder="Contains...">
+<select id="fBranch">
+<option value="">All</option>
+</select>
 </div>
 
 <div class="filter-group">
 <label for="fOfficerResponse">Officer Response</label>
-<input type="text" id="fOfficerResponse" placeholder="Contains...">
+<select id="fOfficerResponse">
+<option value="">All</option>
+</select>
 </div>
 
 <div class="filter-group">
 <label for="fOfficerOwner">Officer Owner (CO ID)</label>
-<input type="text" id="fOfficerOwner" placeholder="Exact...">
+<select id="fOfficerOwner">
+<option value="">All</option>
+</select>
 </div>
 
 <!-- Column 2 (F2:F4) -->
 <div class="filter-group">
 <label for="fTeamLeader">Team Leader</label>
-<input type="text" id="fTeamLeader" placeholder="Exact...">
+<select id="fTeamLeader">
+<option value="">All</option>
+</select>
 </div>
 
 <div class="filter-group">
@@ -111,7 +119,9 @@ href="../../assets/css/arrears.css">
 
 <div class="filter-group">
 <label for="fOsClassify">OS Classify</label>
-<input type="text" id="fOsClassify" placeholder="e.g. Up to 5k">
+<select id="fOsClassify">
+<option value="">All</option>
+</select>
 </div>
 
 <!-- Column 3 (I2:I4) -->
@@ -140,7 +150,9 @@ href="../../assets/css/arrears.css">
 
 <div class="filter-group">
 <label for="fOccupation">Occupation (មុខរបរ)</label>
-<input type="text" id="fOccupation" placeholder="Exact...">
+<select id="fOccupation">
+<option value="">All</option>
+</select>
 </div>
 
 <!-- Column 4 (M2:M4) -->
@@ -155,12 +167,18 @@ href="../../assets/css/arrears.css">
 
 <div class="filter-group">
 <label for="fKeyword">Customer / Keyword</label>
-<input type="text" id="fKeyword" placeholder="Contains...">
+<input type="text" id="fKeyword" placeholder="Type to search..." list="customerSuggestions" autocomplete="off">
+<datalist id="customerSuggestions"></datalist>
 </div>
 
 <div class="filter-group">
 <label for="fPromiseStatus">Promise Status</label>
-<input type="text" id="fPromiseStatus" placeholder="Contains...">
+<select id="fPromiseStatus">
+<option value="">All</option>
+<option value="Today_Payment">Today_Payment</option>
+<option value="Upcoming_left">Upcoming_left</option>
+<option value="Expired">Expired</option>
+</select>
 </div>
 
 </div>
