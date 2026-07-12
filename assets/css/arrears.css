@@ -439,6 +439,14 @@ background:#003B8B;
 
 background:#fff;
 
+/* row-class-loss/doubtful set color:#fff on every td in the row for
+   contrast against their dark red backgrounds — but these two columns
+   keep their own white/grey background regardless of row color (by
+   design), so that white text was rendering invisible: white text on
+   a white background. Forcing dark text here specifically overrides
+   that, independent of whatever row classification color is active. */
+color:#222 !important;
+
 }
 
 .table-card tbody tr:nth-child(even) td:first-child,
