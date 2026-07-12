@@ -105,8 +105,6 @@ let allRows = [];        // every row, parsed to objects, unfiltered
 let currentRows = [];    // whatever's currently displayed (post-filter)
 let selectedRow = null;  // row object behind the open Reason Arrear panel
 
-const customerDatalist = document.getElementById("customerSuggestions");
-
 attachSuggestions(reasonAJ, () => distinctSorted(allRows, "ajReason"));
 attachSuggestions(reasonAK, () => distinctSorted(allRows, "akSolution"));
 
@@ -229,45 +227,11 @@ function populateOfficerOptions() {
 }
 
 filterEls.branch.addEventListener("change", () => {
-    populateOfficerOptions();
-    applyFilters();
-});
-
-// ========================================
-// CUSTOMER AUTOCOMPLETE (Google-style predictive suggestions)
-// Rebuilds the <datalist> options as the user types, capped to a
-// small number of matches so it stays fast even with thousands
-// of rows loaded.
-// ========================================
-
-function updateCustomerSuggestions() {
-    const query = filterEls.keyword.value.trim().toLowerCase();
-    customerDatalist.innerHTML = "";
-
-    if (!query) return;
-
-    const seen = new Set();
-    const matches = [];
-
-    for (const row of allRows) {
-        const name = row.customer;
-        if (!name) continue;
-        if (!name.toLowerCase().includes(query)) continue;
-        if (seen.has(name)) continue;
-
-        seen.add(name);
-        matches.push(name);
-        if (matches.length >= 15) break;
-    }
-
-    matches.forEach(name => {
-        const opt = document.createElement("option");
-        opt.value = name;
-        customerDatalist.appendChild(opt);
+    runWithLoading(() => {
+        populateOfficerOptions();
+        applyFilters();
     });
-}
-
-filterEls.keyword.addEventListener("input", updateCustomerSuggestions);
+});
 
 // ========================================
 // MESSAGE HELPER
@@ -444,9 +408,46 @@ function applyFilters() {
 function clearFilters() {
     Object.values(filterEls).forEach(el => { el.value = ""; });
     populateOfficerOptions();
-    customerDatalist.innerHTML = "";
     applyFilters();
 }
+
+// ========================================
+// LOADING WRAPPER
+// Filtering + re-rendering ~2871 rows is synchronous JS, which can
+// block the main thread just long enough to feel like a freeze on
+// slower phones. showAppLoading() alone wouldn't actually appear
+// on screen before that work runs (same synchronous call stack —
+// the browser never gets a chance to paint), so this shows the
+// loading state, then defers the real work one tick via setTimeout
+// so the browser paints first, then hides loading once done.
+// ========================================
+
+function runWithLoading(fn, message = "សូមរង់ចាំ...") {
+    if (typeof showAppLoading === "function") {
+        showAppLoading(message);
+    }
+    setTimeout(() => {
+        try {
+            fn();
+        } finally {
+            if (typeof hideAppLoading === "function") {
+                hideAppLoading();
+            }
+        }
+    }, 20);
+}
+
+// Debounced so rapid typing in the keyword box doesn't trigger a
+// full filter/render/loading-flash on every keystroke.
+function debounce(fn, delay) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+    };
+}
+
+const applyFiltersDebounced = debounce(() => runWithLoading(applyFilters), 350);
 
 // ========================================
 // SUMMARY — mirrors RefreshSummary (Gov/Worker/Other by Occu,
@@ -930,14 +931,19 @@ function exportArrears() {
     XLSX.writeFile(wb, `Arrears_${stamp}.xlsx`);
 }
 
-document.getElementById("btnClear").addEventListener("click", clearFilters);
+document.getElementById("btnClear").addEventListener("click", () => runWithLoading(clearFilters, "កំពុងសម្អាត..."));
 document.getElementById("btnRefresh").addEventListener("click", refreshArrears);
 document.getElementById("btnExport").addEventListener("click", exportArrears);
 document.getElementById("btnPrint").addEventListener("click", () => window.print());
 
 Object.entries(filterEls).forEach(([key, el]) => {
     if (key === "branch") return; // has its own dedicated listener above
-    el.addEventListener(el.tagName === "SELECT" ? "change" : "input", applyFilters);
+
+    if (el.tagName === "SELECT") {
+        el.addEventListener("change", () => runWithLoading(applyFilters));
+    } else {
+        el.addEventListener("input", applyFiltersDebounced);
+    }
 });
 
 
