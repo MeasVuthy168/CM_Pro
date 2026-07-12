@@ -183,11 +183,16 @@ href="../../assets/css/arrears.css">
 
 </div>
 
-<div class="filter-actions">
-<button id="btnClear">Clear</button>
+<!-- Refresh/Export/Print get relocated into the topbar's "..." menu
+     by arrears-loader.js once the topbar component has loaded — see
+     the comment there for why this is a relocate, not a rebuild. -->
+<div id="arrearsMenuWrap" class="arrears-menu-wrap">
+<button id="btnArrearsMenu" class="arrears-menu-toggle" aria-label="More actions">⋮</button>
+<div id="arrearsMenuDropdown" class="arrears-menu-dropdown">
 <button id="btnRefresh">Refresh</button>
 <button id="btnExport">Export</button>
 <button id="btnPrint">Print</button>
+</div>
 </div>
 
 <div class="summary-row" id="summaryRow">
@@ -198,6 +203,7 @@ href="../../assets/css/arrears.css">
 <div class="summary-row upload-meta" id="uploadMetaRow">
 <span>ផ្ទុកទិន្នន័យចុងក្រោយនៅថ្ងៃទីៈ <span class="num" id="lastUploadAt">-</span></span>
 <span>ផ្ទុកទិន្នន័យចុងក្រោយដោយៈ <span class="num" id="lastUploadBy">-</span></span>
+<button id="btnClear">Clear</button>
 </div>
 
 </div>
