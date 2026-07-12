@@ -959,14 +959,41 @@ color:#fff;
 
 /* ==========================================
    FORCED LANDSCAPE VIEW
-   Standard CSS-transform workaround for phones that don't support
-   (or the user doesn't want to) physically rotate — rotates the
-   whole page 90deg and swaps width/height so it reads as landscape
-   while held upright. Never persisted anywhere; arrears.js resets
-   this class on every fresh load and on pageshow (bfcache restore).
+   The first version of this rotated the ENTIRE page (body), which
+   broke badly — the fixed bottomnav, sticky table headers, and
+   nested table-scroll container all fought the transform at once,
+   producing the garbled overlapping layout seen in testing.
+
+   This version is deliberately narrow in scope: everything except
+   the table gets hidden (topbar, filter card, bottomnav, reason
+   modal), and ONLY .table-card gets pulled out of the page flow into
+   a fullscreen fixed overlay, then rotated. Since .table-card's
+   internal scrolling (.table-scroll) is already self-contained, this
+   avoids fighting any other page element entirely.
+
+   The topbar (and the "..." menu's Landscape toggle living inside
+   it) is hidden in this mode, so a separate always-visible exit
+   button is needed — see .landscape-exit-btn below, placed as a
+   child of .table-card so it rotates correctly along with it.
 ========================================== */
 
-body.arrears-force-landscape{
+body.arrears-force-landscape #topbar-container,
+body.arrears-force-landscape .filter-card,
+body.arrears-force-landscape #bottomnav-container,
+body.arrears-force-landscape .reason-backdrop,
+body.arrears-force-landscape #offlineBanner{
+
+display:none !important;
+
+}
+
+body.arrears-force-landscape .page-container{
+
+padding:0;
+
+}
+
+body.arrears-force-landscape .table-card{
 
 position:fixed;
 
@@ -982,9 +1009,71 @@ transform-origin:top left;
 
 transform:rotate(90deg) translateY(-100%);
 
-overflow-y:auto;
+margin:0;
 
-overflow-x:hidden;
+padding:6px;
+
+border-radius:0;
+
+border:none;
+
+z-index:9999;
+
+display:flex;
+
+flex-direction:column;
+
+box-sizing:border-box;
+
+}
+
+body.arrears-force-landscape .table-scroll{
+
+flex:1;
+
+max-height:none;
+
+}
+
+.landscape-exit-btn{
+
+display:none;
+
+position:absolute;
+
+top:10px;
+
+right:10px;
+
+width:36px;
+
+height:36px;
+
+border-radius:50%;
+
+background:rgba(0,0,0,.65);
+
+color:#fff;
+
+border:none;
+
+font-size:16px;
+
+font-weight:bold;
+
+z-index:20;
+
+cursor:pointer;
+
+}
+
+body.arrears-force-landscape .landscape-exit-btn{
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
 
 }
 
