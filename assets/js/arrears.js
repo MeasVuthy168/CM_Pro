@@ -1145,66 +1145,6 @@ document.getElementById("btnReasonSubmit").addEventListener("click", async () =>
 // modal — same action as the in-modal Submit Reason button.
 document.getElementById("btnSubmitAllPending")?.addEventListener("click", submitAllPendingReasons);
 
-document.getElementById("btnReasonSave").addEventListener("click", async () => {
-    if (!selectedRow || !selectedRow.concate) {
-        notify("No row selected.", "warning");
-        return;
-    }
-
-    const alValue = reasonAL.value ? `${reasonAL.value}T00:00:00.000Z` : "";
-    const uploadedBy =
-        JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}").fullname
-        || "unknown";
-
-    if (typeof showAppLoading === "function") {
-        showAppLoading("Saving reason arrear...");
-    }
-
-    try {
-        const res = await fetch(`${API.BASE_URL}/api/reasonarrear/upsert`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${arrearsToken}`
-            },
-            body: JSON.stringify({
-                uploadedBy,
-                rows: [[selectedRow.concate, reasonAJ.value, reasonAK.value, alValue]]
-            })
-        });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.message || "Save failed.");
-
-        // Mirror VBA: after BackupReasonArreas_Mongo (this upsert), it
-        // calls ViewReasonArreas_Mongo to pull the confirmed data back
-        // from Mongo rather than trusting the upsert response alone —
-        // same thing here, one more request but it verifies the save
-        // actually persisted and gets the server's own timestamp.
-        if (typeof showAppLoading === "function") {
-            showAppLoading("កំពុងទាញយកទិន្នន័យសារឡើងវិញ...");
-        }
-        const reasonMap = await fetchReasonArrearData([selectedRow.concate]);
-        applyReasonArrearOverlay([selectedRow], reasonMap);
-
-        // Surgical update — only rebuilds the ~2871-row table if the
-        // targeted row somehow isn't in the current DOM (e.g. filters
-        // changed while the modal was open).
-        if (!updateRowInTable(selectedRow)) {
-            renderTable(currentRows);
-        }
-
-        notify("Reason arrear saved.", "success");
-        closeReasonModal();
-    } catch (err) {
-        console.error(err);
-        notify(err.message || "Could not save reason arrear.", "error");
-    } finally {
-        if (typeof hideAppLoading === "function") {
-            hideAppLoading();
-        }
-    }
-});
-
 // ========================================
 // TOOLBAR ACTIONS
 // ========================================
