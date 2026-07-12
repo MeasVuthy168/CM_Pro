@@ -958,6 +958,37 @@ color:#fff;
 }
 
 /* ==========================================
+   FORCED LANDSCAPE VIEW
+   Standard CSS-transform workaround for phones that don't support
+   (or the user doesn't want to) physically rotate — rotates the
+   whole page 90deg and swaps width/height so it reads as landscape
+   while held upright. Never persisted anywhere; arrears.js resets
+   this class on every fresh load and on pageshow (bfcache restore).
+========================================== */
+
+body.arrears-force-landscape{
+
+position:fixed;
+
+top:0;
+
+left:0;
+
+width:100vh;
+
+height:100vw;
+
+transform-origin:top left;
+
+transform:rotate(90deg) translateY(-100%);
+
+overflow-y:auto;
+
+overflow-x:hidden;
+
+}
+
+/* ==========================================
    MOBILE
 ========================================== */
 
@@ -1019,6 +1050,76 @@ font-size:11px;
 padding:6px 6px;
 
 font-size:11px;
+
+}
+
+}
+
+/* ==========================================
+   PRINT
+   Triggered by the existing window.print() call on the Print button
+   — no JS changes needed, browsers apply @media print automatically.
+   Only the table prints (No through Promise Status, columns 1-19),
+   forced to landscape paper orientation. Sticky positioning is
+   switched off for print since it's meaningless on paper and can
+   otherwise cause odd repeated-header artifacts across page breaks.
+========================================== */
+
+@media print{
+
+@page{
+
+size:landscape;
+
+}
+
+#offlineBanner,
+#topbar-container,
+#bottomnav-container,
+.filter-card,
+.reason-backdrop{
+
+display:none !important;
+
+}
+
+.page-container{
+
+padding:0;
+
+}
+
+.table-card{
+
+overflow:visible;
+
+box-shadow:none;
+
+border:none;
+
+}
+
+.table-scroll{
+
+overflow:visible !important;
+
+max-height:none !important;
+
+}
+
+.table-card th,
+.table-card td{
+
+position:static !important;
+
+}
+
+/* Hide columns 20 (CO_ID) through 26 (DateBackUpReasonArrear) —
+   keep only No through Promise Status (columns 1-19). */
+.table-card th:nth-child(n+20),
+.table-card td:nth-child(n+20){
+
+display:none !important;
 
 }
 
