@@ -757,6 +757,63 @@ document.addEventListener("keydown", (e) => {
     }
 });
 
+// ========================================
+// REASON ARREAR — VIEW (fetch fresh data from MongoDB)
+// Mirrors the VBA sheet's ViewReasonArreas_Mongo: pulls the canonical
+// aj/ak/al/uploadedBy/uploadedAt for a batch of Concate keys and
+// overlays it onto the in-memory rows. Used both after saving a
+// single row, and to refresh the whole table's Reason Arrear columns
+// on load (since arreast24byco only reflects reasonarrear as of the
+// last Excel Upload_ArreasT24ByCO sync — this keeps the web app's
+// display current even when it's ahead of that sync).
+// ========================================
+
+async function fetchReasonArrearData(concateValues) {
+    const CHUNK = 800; // matches the VBA module's own GET_CHUNK
+    const map = new Map();
+
+    for (let i = 0; i < concateValues.length; i += CHUNK) {
+        const chunk = concateValues.slice(i, i + CHUNK);
+        if (!chunk.length) continue;
+
+        try {
+            const res = await fetch(`${API.BASE_URL}/api/reasonarrear/get`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${arrearsToken}`
+                },
+                body: JSON.stringify({ cifs: chunk })
+            });
+            const data = await res.json();
+            if (!data.ok) continue; // skip this chunk, don't abort the rest
+
+            (data.data || []).forEach(item => {
+                if (item.cif) map.set(item.cif, item);
+            });
+        } catch (err) {
+            console.error("[reasonarrear] chunk fetch failed:", err);
+            // continue with remaining chunks rather than aborting entirely
+        }
+    }
+
+    return map;
+}
+
+function applyReasonArrearOverlay(rows, map) {
+    rows.forEach(row => {
+        if (!row.concate) return;
+        const found = map.get(row.concate);
+        if (!found) return;
+
+        row.ajReason = found.aj || "";
+        row.akSolution = found.ak || "";
+        row.alFollowup = found.al ? formatRowDateDMY(found.al) : "";
+        row.user = found.uploadedBy || row.user;
+        row.dateBackup = found.uploadedAt ? formatRowDateDMY(found.uploadedAt) : row.dateBackup;
+    });
+}
+
 async function openReasonPanel(row) {
     selectedRow = row;
 
@@ -832,24 +889,16 @@ document.getElementById("btnReasonSave").addEventListener("click", async () => {
         const data = await res.json();
         if (!data.ok) throw new Error(data.message || "Save failed.");
 
-        // Update the row in place rather than re-fetching from the server:
-        // the bulk table data lives in a separate collection (arreast24byco)
-        // that only picks up Reason Arrear changes on the next Excel
-        // Upload_ArreasT24ByCO sync, so a full refetch here would show no
-        // visible change yet. selectedRow is the same object referenced by
-        // both allRows and currentRows, so mutating it and re-rendering
-        // updates the table immediately and correctly.
-        selectedRow.ajReason = reasonAJ.value;
-        selectedRow.akSolution = reasonAK.value;
-        selectedRow.alFollowup = reasonAL.value ? formatRowDateDMY(alValue) : "";
-
-        const updatedInfo = (data.updated || [])[0];
-        if (updatedInfo) {
-            selectedRow.user = updatedInfo.uploadedBy || selectedRow.user;
-            selectedRow.dateBackup = updatedInfo.uploadedAt
-                ? formatRowDateDMY(updatedInfo.uploadedAt)
-                : selectedRow.dateBackup;
+        // Mirror VBA: after BackupReasonArreas_Mongo (this upsert), it
+        // calls ViewReasonArreas_Mongo to pull the confirmed data back
+        // from Mongo rather than trusting the upsert response alone —
+        // same thing here, one more request but it verifies the save
+        // actually persisted and gets the server's own timestamp.
+        if (typeof showAppLoading === "function") {
+            showAppLoading("កំពុងទាញយកទិន្នន័យសារឡើងវិញ...");
         }
+        const reasonMap = await fetchReasonArrearData([selectedRow.concate]);
+        applyReasonArrearOverlay([selectedRow], reasonMap);
 
         renderTable(currentRows);
 
@@ -879,6 +928,20 @@ async function refreshArrears() {
             fetchArrearsInfo()
         ]);
         allRows = rows;
+
+        // Mirrors VBA's ViewReasonArreas_Mongo: the bulk row data above
+        // only reflects Reason Arrear as of the last Excel
+        // Upload_ArreasT24ByCO sync — overlay the canonical, current
+        // data from the reasonarrear collection on top so saves made
+        // through this web app show up immediately, not just after
+        // the next Excel sync.
+        if (typeof showAppLoading === "function") {
+            showAppLoading("កំពុងទាញយកមូលហេតុថ្មីៗ...");
+        }
+        const concates = allRows.map(r => r.concate).filter(Boolean);
+        const reasonMap = await fetchReasonArrearData(concates);
+        applyReasonArrearOverlay(allRows, reasonMap);
+
         populateFilterOptions();
         applyFilters();
     } catch (err) {
