@@ -1034,6 +1034,35 @@ if (arrearsMenuToggle && arrearsMenuDropdown) {
     });
 }
 
+// ========================================
+// LANDSCAPE VIEW TOGGLE
+// iOS Safari does not support the Screen Orientation API's lock() at
+// all in a regular browser tab (only inside fullscreen/installed-PWA
+// contexts on some Android browsers) — there is no way to force real
+// device rotation here. This uses the standard CSS-transform
+// workaround instead: rotate the whole page 90deg and swap its
+// width/height, which visually reads as landscape while the phone is
+// still held upright. Works identically on iOS and Android since it
+// never touches any orientation API.
+// ========================================
+
+const btnLandscape = document.getElementById("btnLandscape");
+
+if (btnLandscape) {
+    btnLandscape.addEventListener("click", () => {
+        document.body.classList.toggle("arrears-force-landscape");
+    });
+}
+
+// Defensive reset: never persisted to storage, so a genuine fresh
+// page load always starts in portrait. This additionally covers the
+// bfcache case (Safari can restore a page's exact DOM/class state on
+// back-navigation without a full reload) — matches the same
+// bfcache-awareness already used elsewhere in this project.
+window.addEventListener("pageshow", () => {
+    document.body.classList.remove("arrears-force-landscape");
+});
+
 Object.entries(filterEls).forEach(([key, el]) => {
     if (key === "branch") return; // has its own dedicated listener above
 
