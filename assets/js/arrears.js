@@ -515,7 +515,7 @@ function parseFlexibleDate(value) {
     return isNaN(parsed.getTime()) ? null : parsed;
 }
 
-// dd/mm/yyyy — for DisDate and ថ្ងៃសន្យាសង
+// dd/mm/yyyy — for DisDate, ថ្ងៃសន្យាសង, and DateBackUpReasonArrear
 function formatRowDateDMY(value) {
     const d = parseFlexibleDate(value);
     if (!d) return value || "";
@@ -523,7 +523,9 @@ function formatRowDateDMY(value) {
     return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`;
 }
 
-// yyyy-mm-dd hh:mm:ss AM/PM — for DateBackUpReasonArrear
+// yyyy-mm-dd hh:mm:ss AM/PM — kept in case a full timestamp format is
+// needed again somewhere; not currently used, DateBackUpReasonArrear
+// switched to formatRowDateDMY above (dd/mm/yyyy, no time).
 function formatRowDateTime12h(value) {
     const d = parseFlexibleDate(value);
     if (!d) return value || "";
@@ -685,7 +687,7 @@ function renderTable(rows) {
             <td class="${followupCss}">${escapeHtml(row.akSolution)}</td>
             <td class="${followupCss}">${escapeHtml(formatRowDateDMY(row.alFollowup))}</td>
             <td>${escapeHtml(row.user)}</td>
-            <td>${escapeHtml(formatRowDateTime12h(row.dateBackup))}</td>
+            <td>${escapeHtml(formatRowDateDMY(row.dateBackup))}</td>
         `;
         frag.appendChild(tr);
     });
@@ -845,7 +847,7 @@ document.getElementById("btnReasonSave").addEventListener("click", async () => {
         if (updatedInfo) {
             selectedRow.user = updatedInfo.uploadedBy || selectedRow.user;
             selectedRow.dateBackup = updatedInfo.uploadedAt
-                ? formatRowDateTime12h(updatedInfo.uploadedAt)
+                ? formatRowDateDMY(updatedInfo.uploadedAt)
                 : selectedRow.dateBackup;
         }
 
