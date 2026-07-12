@@ -814,6 +814,84 @@ function applyReasonArrearOverlay(rows, map) {
     });
 }
 
+// ========================================
+// DEBUG: run debugReasonOverlay() or debugReasonOverlay("2334200015")
+// in the console to see exactly where the table-load overlay is
+// actually breaking. Not auto-run, safe to call anytime.
+// ========================================
+
+async function debugReasonOverlay(searchText) {
+    console.log("%c===== REASON OVERLAY DEBUG START =====", "color:#FFD700;font-weight:bold;font-size:14px;");
+
+    const withConcate = allRows.filter(r => r.concate);
+    const withoutConcate = allRows.filter(r => !r.concate);
+    console.log(`Rows WITH concate: ${withConcate.length} / ${allRows.length}`);
+    console.log(`Rows WITHOUT concate (silently skipped by the overlay): ${withoutConcate.length}`);
+    if (withoutConcate.length) {
+        console.log("Sample rows missing concate:", withoutConcate.slice(0, 3).map(r => ({ loanNumber: r.loanNumber, customer: r.customer })));
+    }
+
+    let target = null;
+    if (searchText) {
+        target = allRows.find(r =>
+            (r.loanNumber || "").includes(searchText) || (r.customer || "").includes(searchText)
+        );
+        if (!target) console.log(`No row found matching "${searchText}" — falling back to row 0.`);
+    }
+    if (!target) target = withConcate[0];
+
+    if (!target) {
+        console.log("!! No row with a concate value exists at all — cannot test further.");
+        console.log("%c===== REASON OVERLAY DEBUG END =====", "color:#FFD700;font-weight:bold;");
+        return;
+    }
+
+    console.log("Target row:", { loanNumber: target.loanNumber, customer: target.customer, concate: target.concate });
+    console.log("Current in-memory values BEFORE re-fetch:", {
+        ajReason: target.ajReason,
+        akSolution: target.akSolution,
+        alFollowup: target.alFollowup,
+        user: target.user,
+        dateBackup: target.dateBackup
+    });
+
+    console.log(`Calling POST /api/reasonarrear/get with cifs: ["${target.concate}"] ...`);
+    const res = await fetch(`${API.BASE_URL}/api/reasonarrear/get`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${arrearsToken}` },
+        body: JSON.stringify({ cifs: [target.concate] })
+    });
+    const data = await res.json();
+    console.log("RAW server response:", data);
+
+    if (!data.ok || !(data.data || []).length) {
+        console.log("!! Server found NO matching reasonarrear record for this concate value.");
+        console.log("   Either this row never had a reason saved, or the concate value");
+        console.log("   doesn't match what's stored server-side under 'cif'.");
+    } else {
+        const found = data.data[0];
+        console.log("Server DID find a match:", found);
+
+        const before = JSON.stringify(target);
+        applyReasonArrearOverlay([target], new Map([[target.concate, found]]));
+        console.log("Row's in-memory values AFTER applying overlay:", {
+            ajReason: target.ajReason,
+            akSolution: target.akSolution,
+            alFollowup: target.alFollowup,
+            user: target.user,
+            dateBackup: target.dateBackup
+        });
+        console.log("Changed?", before !== JSON.stringify(target));
+
+        renderTable(currentRows);
+        console.log("Called renderTable(currentRows) — check the actual table on screen now for this row.");
+    }
+
+    console.log("%c===== REASON OVERLAY DEBUG END =====", "color:#FFD700;font-weight:bold;");
+}
+
+window.debugReasonOverlay = debugReasonOverlay;
+
 async function openReasonPanel(row) {
     selectedRow = row;
 
