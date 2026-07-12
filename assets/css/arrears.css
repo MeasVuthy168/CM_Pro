@@ -913,9 +913,90 @@ margin:4px 0 14px;
 
 }
 
+.reason-pending-note{
+
+font-size:12px;
+
+color:#FFD700;
+
+margin:-8px 0 14px;
+
+display:none;
+
+}
+
+.reason-pending-note.show{
+
+display:block;
+
+}
+
+#btnReasonSubmit{
+
+background:linear-gradient(180deg,#FFD700,#D4AF37);
+
+color:#002D6B;
+
+}
+
+.pending-row{
+
+color:#FFD700;
+
+}
+
+.pending-row .num{
+
+color:#fff;
+
+font-weight:700;
+
+}
+
+#btnSubmitAllPending{
+
+height:34px;
+
+padding:0 16px;
+
+border:none;
+
+border-radius:10px;
+
+background:linear-gradient(180deg,#FFD700,#D4AF37);
+
+color:#002D6B;
+
+font-size:13px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+}
+
+#btnSubmitAllPending:active{
+
+transform:scale(.97);
+
+}
+
+/* Marks cells with a locally-saved-but-not-yet-submitted change —
+   layers on top of (doesn't replace) the normal Promise Status
+   coloring on those same cells, via a dashed gold outline. */
+.cell-pending-local{
+
+outline:2px dashed #FFD700;
+
+outline-offset:-2px;
+
+}
+
 .reason-actions{
 
 display:flex;
+
+flex-wrap:wrap;
 
 gap:10px;
 
@@ -936,6 +1017,12 @@ font-size:14px;
 font-weight:bold;
 
 cursor:pointer;
+
+}
+
+#btnReasonSubmit{
+
+flex-basis:100%;
 
 }
 
