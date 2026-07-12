@@ -1048,10 +1048,32 @@ if (arrearsMenuToggle && arrearsMenuDropdown) {
 
 const btnLandscape = document.getElementById("btnLandscape");
 const btnExitLandscape = document.getElementById("btnExitLandscape");
+const landscapeTopBar = document.getElementById("landscapeTopBar");
+const landscapeBottomBar = document.getElementById("landscapeBottomBar");
+const landscapeRowCount = document.getElementById("landscapeRowCount");
+
+let landscapeHideTimer = null;
+
+function showLandscapeBars() {
+    if (landscapeTopBar) landscapeTopBar.classList.remove("hidden");
+    if (landscapeBottomBar) landscapeBottomBar.classList.remove("hidden");
+
+    clearTimeout(landscapeHideTimer);
+    landscapeHideTimer = setTimeout(hideLandscapeBars, 3000);
+}
+
+function hideLandscapeBars() {
+    if (landscapeTopBar) landscapeTopBar.classList.add("hidden");
+    if (landscapeBottomBar) landscapeBottomBar.classList.add("hidden");
+}
 
 if (btnLandscape) {
     btnLandscape.addEventListener("click", () => {
         document.body.classList.add("arrears-force-landscape");
+        if (landscapeRowCount) {
+            landscapeRowCount.textContent = `${currentRows.length.toLocaleString()} rows`;
+        }
+        showLandscapeBars(); // visible on entry, auto-hides after 3s
     });
 }
 
@@ -1060,9 +1082,18 @@ if (btnLandscape) {
 // button is the only way back to portrait.
 if (btnExitLandscape) {
     btnExitLandscape.addEventListener("click", () => {
+        clearTimeout(landscapeHideTimer);
         document.body.classList.remove("arrears-force-landscape");
     });
 }
+
+// Tapping the rotated table (anywhere that isn't already a bar
+// button) reveals the bars again and restarts the 3s hide timer.
+document.querySelector(".table-card")?.addEventListener("click", (e) => {
+    if (!document.body.classList.contains("arrears-force-landscape")) return;
+    if (e.target.closest(".landscape-bar")) return; // don't re-trigger from tapping the bar itself
+    showLandscapeBars();
+});
 
 // Defensive reset: never persisted to storage, so a genuine fresh
 // page load always starts in portrait. This additionally covers the
@@ -1070,6 +1101,7 @@ if (btnExitLandscape) {
 // back-navigation without a full reload) — matches the same
 // bfcache-awareness already used elsewhere in this project.
 window.addEventListener("pageshow", () => {
+    clearTimeout(landscapeHideTimer);
     document.body.classList.remove("arrears-force-landscape");
 });
 
