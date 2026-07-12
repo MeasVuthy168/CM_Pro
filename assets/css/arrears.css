@@ -572,18 +572,38 @@ font-weight:700;
    that made those two columns nearly-invisible pale grey against
    white. Overriding just for these two classes: red/dark-red
    background + white text, matching the rest of the row, instead of
-   staying white. Scoped to only Loss/Doubtful, not Sub Standard/
-   Special Mention — those weren't reported as hard to read. */
+   staying white. Now extended to Sub Standard/Special Mention too,
+   and to the Day column (12th) alongside No/Customer. */
 .table-card tbody tr.row-class-loss td:first-child,
-.table-card tbody tr.row-class-loss td:nth-child(2){
+.table-card tbody tr.row-class-loss td:nth-child(2),
+.table-card tbody tr.row-class-loss td:nth-child(12){
     background:#8B0000 !important;
     color:#fff !important;
 }
 
 .table-card tbody tr.row-class-doubtful td:first-child,
-.table-card tbody tr.row-class-doubtful td:nth-child(2){
+.table-card tbody tr.row-class-doubtful td:nth-child(2),
+.table-card tbody tr.row-class-doubtful td:nth-child(12){
     background:#FF0000 !important;
     color:#fff !important;
+}
+
+/* Sub Standard / Special Mention don't force white text on the row
+   (their fills are light enough for the default dark #222 text), so
+   No/Day just need to pick up the same fill color here instead of
+   staying white like unclassified rows. */
+.table-card tbody tr.row-class-substandard td:first-child,
+.table-card tbody tr.row-class-substandard td:nth-child(2),
+.table-card tbody tr.row-class-substandard td:nth-child(12){
+    background:#FFA500 !important;
+    color:#222 !important;
+}
+
+.table-card tbody tr.row-class-specialmention td:first-child,
+.table-card tbody tr.row-class-specialmention td:nth-child(2),
+.table-card tbody tr.row-class-specialmention td:nth-child(12){
+    background:#FFFF00 !important;
+    color:#222 !important;
 }
 
 /* Cell-level: Promise Status (AI) + the AJ/AK/AL follow-up cells */
