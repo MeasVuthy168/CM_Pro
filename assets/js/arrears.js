@@ -107,6 +107,9 @@ let selectedRow = null;  // row object behind the open Reason Arrear panel
 
 const customerDatalist = document.getElementById("customerSuggestions");
 
+attachSuggestions(reasonAJ, () => distinctSorted(allRows, "ajReason"));
+attachSuggestions(reasonAK, () => distinctSorted(allRows, "akSolution"));
+
 // ========================================
 // DISTINCT VALUE HELPERS
 // ========================================
@@ -118,6 +121,56 @@ function distinctSorted(rows, field) {
         if (v) set.add(v);
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
+}
+
+// ========================================
+// PREDICTIVE SUGGESTIONS (Reason Arrear's AJ/AK fields)
+// Custom dropdown rather than a native <datalist>, since AK is a
+// <textarea> and datalist only works with <input>. Suggestions come
+// from other rows' existing values in that same column, so users can
+// pick a previously-used answer instead of retyping it.
+// ========================================
+
+function attachSuggestions(fieldEl, getSourceValues) {
+    const list = document.createElement("ul");
+    list.className = "suggestion-list";
+    fieldEl.parentElement.appendChild(list);
+
+    function hide() {
+        list.classList.remove("show");
+        list.innerHTML = "";
+    }
+
+    function showSuggestionsFor(query) {
+        const q = query.trim().toLowerCase();
+        if (!q) { hide(); return; }
+
+        const matches = getSourceValues()
+            .filter(v => v.toLowerCase().includes(q) && v.toLowerCase() !== q)
+            .slice(0, 8);
+
+        if (!matches.length) { hide(); return; }
+
+        list.innerHTML = "";
+        matches.forEach(value => {
+            const li = document.createElement("li");
+            li.textContent = value;
+            li.addEventListener("mousedown", (e) => {
+                // mousedown (not click) so this fires before the field's
+                // own blur event closes the dropdown first
+                e.preventDefault();
+                fieldEl.value = value;
+                hide();
+                fieldEl.focus();
+            });
+            list.appendChild(li);
+        });
+        list.classList.add("show");
+    }
+
+    fieldEl.addEventListener("input", () => showSuggestionsFor(fieldEl.value));
+    fieldEl.addEventListener("focus", () => showSuggestionsFor(fieldEl.value));
+    fieldEl.addEventListener("blur", hide);
 }
 
 function setSelectOptions(selectEl, values, { keepFirstN = 1 } = {}) {
@@ -757,6 +810,10 @@ document.getElementById("btnReasonSave").addEventListener("click", async () => {
         JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}").fullname
         || "unknown";
 
+    if (typeof showAppLoading === "function") {
+        showAppLoading("Saving reason arrear...");
+    }
+
     try {
         const res = await fetch(`${API.BASE_URL}/api/reasonarrear/upsert`, {
             method: "POST",
@@ -772,11 +829,36 @@ document.getElementById("btnReasonSave").addEventListener("click", async () => {
         const data = await res.json();
         if (!data.ok) throw new Error(data.message || "Save failed.");
 
+        // Update the row in place rather than re-fetching from the server:
+        // the bulk table data lives in a separate collection (arreast24byco)
+        // that only picks up Reason Arrear changes on the next Excel
+        // Upload_ArreasT24ByCO sync, so a full refetch here would show no
+        // visible change yet. selectedRow is the same object referenced by
+        // both allRows and currentRows, so mutating it and re-rendering
+        // updates the table immediately and correctly.
+        selectedRow.ajReason = reasonAJ.value;
+        selectedRow.akSolution = reasonAK.value;
+        selectedRow.alFollowup = reasonAL.value ? formatRowDateDMY(alValue) : "";
+
+        const updatedInfo = (data.updated || [])[0];
+        if (updatedInfo) {
+            selectedRow.user = updatedInfo.uploadedBy || selectedRow.user;
+            selectedRow.dateBackup = updatedInfo.uploadedAt
+                ? formatRowDateTime12h(updatedInfo.uploadedAt)
+                : selectedRow.dateBackup;
+        }
+
+        renderTable(currentRows);
+
         notify("Reason arrear saved.", "success");
         closeReasonModal();
     } catch (err) {
         console.error(err);
         notify(err.message || "Could not save reason arrear.", "error");
+    } finally {
+        if (typeof hideAppLoading === "function") {
+            hideAppLoading();
+        }
     }
 });
 
@@ -858,158 +940,10 @@ Object.entries(filterEls).forEach(([key, el]) => {
     el.addEventListener(el.tagName === "SELECT" ? "change" : "input", applyFilters);
 });
 
-// ========================================
-// DEBUG DIAGNOSTICS
-// Open DevTools console on the live page and either just watch it
-// run automatically after load/refresh, or type debugArrears() to
-// re-run it manually at any time. Copy the full console output back.
-// ========================================
-
-function debugArrears() {
-    console.log("%c===== ARREARS DEBUG START =====", "color:#FFD700;font-weight:bold;font-size:14px;");
-
-    // ---- 1. Sticky structure check ----
-    const tableScroll = document.querySelector(".table-scroll");
-    const headerFirstCell = document.querySelector(".table-card thead th:first-child");
-    const bodyFirstCell = document.querySelector(".table-card tbody td:first-child");
-
-    console.log("--- 1. STICKY STRUCTURE ---");
-    console.log("table-scroll element found:", !!tableScroll);
-    if (tableScroll) {
-        const s = getComputedStyle(tableScroll);
-        console.log("table-scroll computed: overflow-y=" + s.overflowY + " overflow-x=" + s.overflowX + " max-height=" + s.maxHeight + " position=" + s.position);
-    }
-
-    if (headerFirstCell) {
-        const s = getComputedStyle(headerFirstCell);
-        console.log("header th:first-child computed: position=" + s.position + " top=" + s.top + " left=" + s.left + " z-index=" + s.zIndex + " background-color=" + s.backgroundColor);
-    } else {
-        console.log("!! header th:first-child NOT FOUND — table may not have rendered yet, or selector is wrong");
-    }
-
-    if (bodyFirstCell) {
-        const s = getComputedStyle(bodyFirstCell);
-        console.log("body td:first-child computed: position=" + s.position + " left=" + s.left + " background-color=" + s.backgroundColor);
-    } else {
-        console.log("!! body td:first-child NOT FOUND — table body may be empty");
-    }
-
-    // ---- 2. Ancestor chain check for transform/filter/contain/will-change ----
-    // Any of these on an ancestor silently breaks position:sticky by creating
-    // a new containing block, even though the sticky element's own computed
-    // "position" will still correctly say "sticky".
-    console.log("--- 2. ANCESTOR CHAIN (looking for transform/filter/contain/will-change) ---");
-    if (headerFirstCell) {
-        let el = headerFirstCell.parentElement;
-        let depth = 0;
-        let foundCulprit = false;
-        while (el && depth < 15) {
-            const s = getComputedStyle(el);
-            const suspicious =
-                (s.transform && s.transform !== "none") ||
-                (s.filter && s.filter !== "none") ||
-                (s.contain && s.contain !== "none") ||
-                (s.willChange && s.willChange !== "auto");
-
-            if (suspicious) {
-                foundCulprit = true;
-                console.log(
-                    `%c!! POSSIBLE STICKY-BREAKER at <${el.tagName.toLowerCase()} class="${el.className}">`,
-                    "color:#ff5555;font-weight:bold;",
-                    { transform: s.transform, filter: s.filter, contain: s.contain, willChange: s.willChange }
-                );
-            }
-            el = el.parentElement;
-            depth++;
-        }
-        if (!foundCulprit) {
-            console.log("No transform/filter/contain/will-change found on any ancestor up to 15 levels — sticky-breaking ancestor NOT the issue (or is further up than checked).");
-        }
-    }
-
-    // ---- 3. Data value distributions (catches whitespace/casing mismatches) ----
-    console.log("--- 3. DATA VALUE CHECK (row.class / row.pd / row.promiseStatus) ---");
-    console.log("Total rows loaded:", allRows.length, "| currently displayed:", currentRows.length);
-
-    function distinctWithCounts(rows, field) {
-        const counts = new Map();
-        rows.forEach(r => {
-            const raw = r[field] ?? "";
-            const key = JSON.stringify(raw); // JSON.stringify reveals hidden whitespace
-            counts.set(key, (counts.get(key) || 0) + 1);
-        });
-        return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
-    }
-
-    console.log("Distinct row.class values (JSON-quoted to reveal hidden whitespace):");
-    console.table(distinctWithCounts(currentRows, "class").map(([v, c]) => ({ value: v, count: c })));
-
-    console.log("Distinct row.pd values:");
-    console.table(distinctWithCounts(currentRows, "pd").map(([v, c]) => ({ value: v, count: c })));
-
-    console.log("Distinct row.promiseStatus values (first 20):");
-    console.table(distinctWithCounts(currentRows, "promiseStatus").slice(0, 20).map(([v, c]) => ({ value: v, count: c })));
-
-    // ---- 4. How many rows SHOULD get each CSS class, per the actual JS logic ----
-    console.log("--- 4. EXPECTED CLASS-MATCH COUNTS (computed by the same functions renderTable uses) ---");
-    const classCounts = { loss: 0, doubtful: 0, substandard: 0, specialmention: 0, none: 0 };
-    const promiseCounts = { today: 0, upcoming: 0, expired: 0, none: 0 };
-    let balancedPdCount = 0;
-    const custCounts = new Map();
-
-    currentRows.forEach(row => {
-        const cls = classRowCssClass(row.class);
-        if (cls === "row-class-loss") classCounts.loss++;
-        else if (cls === "row-class-doubtful") classCounts.doubtful++;
-        else if (cls === "row-class-substandard") classCounts.substandard++;
-        else if (cls === "row-class-specialmention") classCounts.specialmention++;
-        else classCounts.none++;
-
-        const pc = promiseCellCssClass(row.promiseStatus);
-        if (pc === "cell-promise-today") promiseCounts.today++;
-        else if (pc === "cell-promise-upcoming") promiseCounts.upcoming++;
-        else if (pc === "cell-promise-expired") promiseCounts.expired++;
-        else promiseCounts.none++;
-
-        if (row.pd === "Balanced_PD") balancedPdCount++;
-        if (row.customer) custCounts.set(row.customer, (custCounts.get(row.customer) || 0) + 1);
-    });
-
-    console.log("Row-Class matches:", classCounts);
-    console.log("Promise-Status matches:", promiseCounts);
-    console.log("Balanced_PD matches:", balancedPdCount);
-    console.log("Customers appearing more than once:", Array.from(custCounts.values()).filter(c => c > 1).length);
-
-    // ---- 5. Actual rendered DOM check — do any <tr>/<td> actually have the classes? ----
-    console.log("--- 5. ACTUAL DOM CLASS CHECK ---");
-    const tbody = document.getElementById("tbodyArrears");
-    if (tbody) {
-        const rowClassEls = tbody.querySelectorAll("tr[class*='row-class-']");
-        const cellClassEls = tbody.querySelectorAll("td[class*='cell-']");
-        console.log("Rows in DOM with a row-class-* class:", rowClassEls.length);
-        console.log("Cells in DOM with a cell-* class:", cellClassEls.length);
-        if (rowClassEls.length > 0) {
-            const sample = rowClassEls[0];
-            console.log("Sample matching row's computed background-color:", getComputedStyle(sample).backgroundColor);
-            console.log("Sample matching row's actual class attribute:", sample.className);
-        }
-        if (cellClassEls.length > 0) {
-            const sample = cellClassEls[0];
-            console.log("Sample matching cell's computed background-color:", getComputedStyle(sample).backgroundColor);
-            console.log("Sample matching cell's actual class attribute:", sample.className);
-        }
-    } else {
-        console.log("!! #tbodyArrears not found in DOM");
-    }
-
-    console.log("%c===== ARREARS DEBUG END — copy everything above and send it back =====", "color:#FFD700;font-weight:bold;font-size:14px;");
-}
-
-window.debugArrears = debugArrears;
 
 // ========================================
 // PAGE READY
 // ========================================
 
 refreshArrears();
-console.log("Daily Arrears Ready. Type debugArrears() in the console anytime to re-run diagnostics.");
+console.log("Daily Arrears Ready.");
