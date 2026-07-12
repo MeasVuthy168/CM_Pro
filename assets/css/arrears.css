@@ -1035,45 +1035,127 @@ max-height:none;
 
 }
 
-.landscape-exit-btn{
+/* ==========================================
+   LANDSCAPE TOP/BOTTOM BARS
+   Both are children of .table-card, so they inherit its rotation
+   automatically instead of needing their own separate transform kept
+   in sync — this is exactly what the real topbar/bottomnav couldn't
+   do safely (they're built for the normal, unrotated page).
+   Auto-hide via a "hidden" class toggled by arrears.js on a timer;
+   tapping the table area brings them back temporarily.
+========================================== */
+
+.landscape-bar{
 
 display:none;
 
 position:absolute;
 
-top:10px;
+left:0;
 
-right:10px;
+right:0;
 
-width:36px;
-
-height:36px;
-
-border-radius:50%;
+align-items:center;
 
 background:rgba(0,0,0,.65);
 
 color:#fff;
 
+z-index:20;
+
+padding:8px 12px;
+
+box-sizing:border-box;
+
+transition:opacity .25s ease, transform .25s ease;
+
+opacity:1;
+
+}
+
+body.arrears-force-landscape .landscape-bar{
+
+display:flex;
+
+}
+
+.landscape-bar.hidden{
+
+opacity:0;
+
+pointer-events:none;
+
+}
+
+.landscape-top-bar{
+
+top:0;
+
+justify-content:space-between;
+
+}
+
+.landscape-top-bar.hidden{
+
+transform:translateY(-100%);
+
+}
+
+.landscape-bottom-bar{
+
+bottom:0;
+
+justify-content:center;
+
+}
+
+.landscape-bottom-bar.hidden{
+
+transform:translateY(100%);
+
+}
+
+#btnExitLandscape{
+
+height:32px;
+
+padding:0 14px;
+
 border:none;
 
-font-size:16px;
+border-radius:8px;
 
-font-weight:bold;
+background:rgba(255,255,255,.2);
 
-z-index:20;
+color:#fff;
+
+font-size:13px;
+
+font-weight:600;
 
 cursor:pointer;
 
 }
 
-body.arrears-force-landscape .landscape-exit-btn{
+#btnExitLandscape:active{
 
-display:flex;
+transform:scale(.96);
 
-align-items:center;
+}
 
-justify-content:center;
+.landscape-row-count{
+
+font-size:12px;
+
+color:#FFD700;
+
+}
+
+.landscape-hint{
+
+font-size:11px;
+
+color:rgba(255,255,255,.75);
 
 }
 
