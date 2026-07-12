@@ -661,7 +661,8 @@ function renderTable(rows) {
         // follow-up cells; if none of the three keywords matched, those
         // follow-up cells fall back to the default light-blue fill.
         const promiseCss = promiseCellCssClass(row.promiseStatus);
-        const followupCss = promiseCss || "cell-followup-default";
+        const followupCssBase = promiseCss || "cell-followup-default";
+        const followupCss = row.__pendingSubmit ? `${followupCssBase} cell-pending-local` : followupCssBase;
 
         tr.innerHTML = `
             <td>${index + 1}</td>
@@ -747,18 +748,19 @@ function updateRowInTable(row) {
 
     const promiseCss = promiseCellCssClass(row.promiseStatus);
     const followupCss = promiseCss || "cell-followup-default";
+    const pendingCss = row.__pendingSubmit ? " cell-pending-local" : "";
 
     cells[18].textContent = row.promiseStatus; // Promise Status
     cells[18].className = promiseCss;
 
     cells[21].textContent = row.ajReason;      // មុខរបរ
-    cells[21].className = followupCss;
+    cells[21].className = followupCss + pendingCss;
 
     cells[22].textContent = row.akSolution;    // មូលហេតុ/ដំណោះស្រាយ
-    cells[22].className = followupCss;
+    cells[22].className = followupCss + pendingCss;
 
     cells[23].textContent = formatRowDateDMY(row.alFollowup); // ថ្ងៃសន្យាសង
-    cells[23].className = followupCss;
+    cells[23].className = followupCss + pendingCss;
 
     cells[24].textContent = row.user;          // User
 
@@ -905,6 +907,140 @@ function applyReasonArrearOverlay(rows, map) {
     });
 }
 
+// ========================================
+// LOCAL PENDING REASON CHANGES
+// Save (in the modal) no longer hits the server at all — it writes
+// to localStorage instantly. Submit Reason (or the global Submit All
+// button) is what actually pushes everything to the server, in one
+// batch, whenever the user is ready. This is the whole point: saving
+// used to mean a ~10s network round-trip per row; now it's instant,
+// and the network cost only happens once, however many rows were
+// edited in between.
+// ========================================
+
+const PENDING_STORAGE_KEY = "cmpro_pending_reasons";
+
+function getPendingReasonsMap() {
+    try {
+        return JSON.parse(localStorage.getItem(PENDING_STORAGE_KEY) || "{}");
+    } catch (err) {
+        console.error("[pending reasons] corrupt localStorage data, resetting:", err);
+        return {};
+    }
+}
+
+function setPendingReason(concate, aj, ak, alISO) {
+    const map = getPendingReasonsMap();
+    map[concate] = { aj, ak, al: alISO, savedAt: new Date().toISOString() };
+    localStorage.setItem(PENDING_STORAGE_KEY, JSON.stringify(map));
+    updatePendingBadge();
+}
+
+function removePendingReasons(concates) {
+    const map = getPendingReasonsMap();
+    concates.forEach(c => delete map[c]);
+    localStorage.setItem(PENDING_STORAGE_KEY, JSON.stringify(map));
+    updatePendingBadge();
+}
+
+function getPendingCount() {
+    return Object.keys(getPendingReasonsMap()).length;
+}
+
+function updatePendingBadge() {
+    const count = getPendingCount();
+    const pendingRow = document.getElementById("pendingRow");
+    const pendingCountEl = document.getElementById("pendingCount");
+    if (pendingCountEl) pendingCountEl.textContent = count.toLocaleString();
+    if (pendingRow) pendingRow.style.display = count > 0 ? "flex" : "none";
+}
+
+// Applies any locally-saved-but-not-yet-submitted changes on top of
+// the given rows — local edits represent the user's most recent
+// intent and take priority over whatever the server currently has.
+// Called once after every load, so pending work survives a refresh
+// or even closing the browser before submitting.
+function applyPendingReasonsToRows(rows) {
+    const map = getPendingReasonsMap();
+    if (!Object.keys(map).length) return;
+
+    rows.forEach(row => {
+        if (!row.concate || !map[row.concate]) return;
+        const pending = map[row.concate];
+        row.ajReason = pending.aj || "";
+        row.akSolution = pending.ak || "";
+        row.alFollowup = pending.al ? formatRowDateDMY(pending.al) : "";
+        row.promiseStatus = computeStatusFromDate(row.alFollowup);
+        row.__pendingSubmit = true;
+    });
+}
+
+// Batch-submits ALL pending local changes in one request (chunked at
+// 1000, matching the VBA module's own UP_CHUNK), then re-fetches the
+// confirmed data and clears the local pending store for whatever
+// succeeded.
+async function submitAllPendingReasons() {
+    const map = getPendingReasonsMap();
+    const concates = Object.keys(map);
+
+    if (!concates.length) {
+        notify("មិនមានទិន្នន័យត្រូវដាក់ស្នើទេ", "warning");
+        return;
+    }
+
+    const uploadedBy =
+        JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}").fullname
+        || "unknown";
+
+    if (typeof showAppLoading === "function") {
+        showAppLoading(`កំពុងដាក់ស្នើ ${concates.length} កំណត់ត្រា...`);
+    }
+
+    try {
+        const UP_CHUNK = 1000;
+        for (let i = 0; i < concates.length; i += UP_CHUNK) {
+            const chunkConcates = concates.slice(i, i + UP_CHUNK);
+            const chunkRows = chunkConcates.map(c => [c, map[c].aj, map[c].ak, map[c].al]);
+
+            const res = await fetch(`${API.BASE_URL}/api/reasonarrear/upsert`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${arrearsToken}`
+                },
+                body: JSON.stringify({ uploadedBy, rows: chunkRows })
+            });
+            const data = await res.json();
+            if (!data.ok) throw new Error(data.message || "Submit failed.");
+        }
+
+        // Mirror VBA: after the upsert, pull the confirmed data back
+        // (View step) rather than trusting the upsert response alone.
+        const reasonMap = await fetchReasonArrearData(concates);
+        concates.forEach(concate => {
+            const row = allRows.find(r => r.concate === concate);
+            if (row) {
+                applyReasonArrearOverlay([row], reasonMap);
+                row.__pendingSubmit = false;
+            }
+        });
+
+        removePendingReasons(concates);
+        renderTable(currentRows); // multiple rows changed — full re-render is correct here
+
+        notify(`បានដាក់ស្នើដោយជោគជ័យ (${concates.length})`, "success");
+    } catch (err) {
+        console.error(err);
+        notify(err.message || "ការដាក់ស្នើបរាជ័យ — ទិន្នន័យនៅតែរក្សាទុកក្នុងម៉ាស៊ីន", "error");
+        // deliberately NOT clearing pending storage on failure — the
+        // user's edits stay safe locally and they can retry submit
+    } finally {
+        if (typeof hideAppLoading === "function") {
+            hideAppLoading();
+        }
+    }
+}
+
 async function openReasonPanel(row) {
     selectedRow = row;
 
@@ -919,6 +1055,26 @@ async function openReasonPanel(row) {
         notify("This row has no Concate key — cannot load/save its reason.", "warning");
         return;
     }
+
+    // If there's already a local pending (unsubmitted) edit for this
+    // row, show THAT instead of fetching from the server — it's the
+    // user's own more-recent draft, not yet sent anywhere.
+    const pendingMap = getPendingReasonsMap();
+    const localPending = pendingMap[row.concate];
+    const pendingNote = document.getElementById("reasonPendingNote");
+
+    if (localPending) {
+        reasonAJ.value = localPending.aj || "";
+        reasonAK.value = localPending.ak || "";
+        reasonAL.value = localPending.al ? localPending.al.slice(0, 10) : "";
+        if (pendingNote) {
+            pendingNote.textContent = `រក្សាទុកក្នុងម៉ាស៊ីននៅ ${new Date(localPending.savedAt).toLocaleString()} (មិនទាន់ដាក់ស្នើ)`;
+            pendingNote.classList.add("show");
+        }
+        return; // skip the server fetch — this IS the current draft
+    }
+
+    if (pendingNote) pendingNote.classList.remove("show");
 
     try {
         const res = await fetch(`${API.BASE_URL}/api/reasonarrear/get`, {
@@ -949,6 +1105,45 @@ async function openReasonPanel(row) {
 }
 
 document.getElementById("btnReasonCancel").addEventListener("click", closeReasonModal);
+
+// SAVE — now local-only. Instant, no network call at all.
+document.getElementById("btnReasonSave").addEventListener("click", () => {
+    if (!selectedRow || !selectedRow.concate) {
+        notify("No row selected.", "warning");
+        return;
+    }
+
+    const alValue = reasonAL.value ? `${reasonAL.value}T00:00:00.000Z` : "";
+
+    // Update in-memory row immediately so the table reflects the edit
+    // right away, same as before — just without the server round-trip.
+    selectedRow.ajReason = reasonAJ.value;
+    selectedRow.akSolution = reasonAK.value;
+    selectedRow.alFollowup = alValue ? formatRowDateDMY(alValue) : "";
+    selectedRow.promiseStatus = computeStatusFromDate(selectedRow.alFollowup);
+    selectedRow.__pendingSubmit = true;
+
+    setPendingReason(selectedRow.concate, reasonAJ.value, reasonAK.value, alValue);
+
+    if (!updateRowInTable(selectedRow)) {
+        renderTable(currentRows);
+    }
+
+    notify("បានរក្សាទុកក្នុងម៉ាស៊ីន — ចុច \"ដាក់ស្នើមូលហេតុ\" នៅពេលរួចរាល់", "success");
+    closeReasonModal();
+});
+
+// SUBMIT REASON — pushes ALL pending local changes (not just this
+// row) in one batch. This is deliberate: the whole point is letting
+// users save many rows locally first, then submit once.
+document.getElementById("btnReasonSubmit").addEventListener("click", async () => {
+    await submitAllPendingReasons();
+    closeReasonModal();
+});
+
+// Global "Submit All" button, reachable without opening any row's
+// modal — same action as the in-modal Submit Reason button.
+document.getElementById("btnSubmitAllPending")?.addEventListener("click", submitAllPendingReasons);
 
 document.getElementById("btnReasonSave").addEventListener("click", async () => {
     if (!selectedRow || !selectedRow.concate) {
@@ -1033,6 +1228,14 @@ async function refreshArrears() {
         return;
     }
 
+    // Local pending (unsubmitted) edits take priority over whatever
+    // the server has — they represent the user's most recent intent,
+    // not yet sent anywhere. Applied here too (before the overlay
+    // fetch below completes) so pending work is visible immediately,
+    // not just after the background overlay finishes.
+    applyPendingReasonsToRows(allRows);
+    updatePendingBadge();
+
     // Show the table right away with bulk data — don't make the user
     // wait for the (separate, slower) Reason Arrear overlay too. This
     // is the biggest perceived-speed win: the table is usable in one
@@ -1053,6 +1256,7 @@ async function refreshArrears() {
         const concates = allRows.map(r => r.concate).filter(Boolean);
         const reasonMap = await fetchReasonArrearData(concates);
         applyReasonArrearOverlay(allRows, reasonMap);
+        applyPendingReasonsToRows(allRows); // re-apply — local pending still wins over the fresh server overlay
         applyFilters(); // quiet re-render with the fresher data
     } catch (err) {
         console.error("[reasonarrear overlay] failed, table still shows bulk data:", err);
