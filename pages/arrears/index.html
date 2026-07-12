@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -208,6 +207,11 @@ href="../../assets/css/arrears.css">
 <button id="btnClear">Clear</button>
 </div>
 
+<div class="summary-row pending-row" id="pendingRow" style="display:none;">
+<span>រង់ចាំដាក់ស្នើ: <span class="num" id="pendingCount">0</span></span>
+<button id="btnSubmitAllPending">ដាក់ស្នើទាំងអស់</button>
+</div>
+
 </div>
 
 <!-- ========================= -->
@@ -238,9 +242,12 @@ href="../../assets/css/arrears.css">
 
 <div class="reason-meta" id="reasonMeta"></div>
 
+<div class="reason-pending-note" id="reasonPendingNote"></div>
+
 <div class="reason-actions">
 <button id="btnReasonCancel">Cancel</button>
-<button id="btnReasonSave">Save</button>
+<button id="btnReasonSave">រក្សាទុក (Local)</button>
+<button id="btnReasonSubmit">ដាក់ស្នើមូលហេតុ</button>
 </div>
 
 
@@ -337,3 +344,4 @@ href="../../assets/css/arrears.css">
 </body>
 
 </html>
+
