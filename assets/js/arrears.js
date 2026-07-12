@@ -1001,6 +1001,39 @@ document.getElementById("btnRefresh").addEventListener("click", refreshArrears);
 document.getElementById("btnExport").addEventListener("click", exportArrears);
 document.getElementById("btnPrint").addEventListener("click", () => window.print());
 
+// ========================================
+// TOPBAR MENU (Refresh / Export / Print)
+// The buttons themselves get physically relocated into the topbar
+// by arrears-loader.js — this just wires the "..." toggle. Closes
+// automatically after picking an action, clicking outside, or Escape.
+// ========================================
+
+const arrearsMenuToggle = document.getElementById("btnArrearsMenu");
+const arrearsMenuDropdown = document.getElementById("arrearsMenuDropdown");
+
+if (arrearsMenuToggle && arrearsMenuDropdown) {
+    arrearsMenuToggle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        arrearsMenuDropdown.classList.toggle("show");
+    });
+
+    arrearsMenuDropdown.addEventListener("click", (e) => {
+        if (e.target.tagName === "BUTTON") {
+            arrearsMenuDropdown.classList.remove("show");
+        }
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!arrearsMenuDropdown.contains(e.target) && e.target !== arrearsMenuToggle) {
+            arrearsMenuDropdown.classList.remove("show");
+        }
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") arrearsMenuDropdown.classList.remove("show");
+    });
+}
+
 Object.entries(filterEls).forEach(([key, el]) => {
     if (key === "branch") return; // has its own dedicated listener above
 
