@@ -663,8 +663,8 @@ function renderTable(rows) {
 
         tr.innerHTML = `
             <td>${index + 1}</td>
-            <td>${escapeHtml(row.loanNumber)}</td>
             <td class="${dupClass}">${escapeHtml(row.customer)}</td>
+            <td>${escapeHtml(row.loanNumber)}</td>
             <td>${escapeHtml(row.location)}</td>
             <td>${escapeHtml(formatRowDateDMY(row.disDate))}</td>
             <td>${escapeHtml(row.prnOS)}</td>
@@ -899,8 +899,8 @@ function exportArrears() {
     }
     const sheetData = currentRows.map((row, i) => ({
         No: i + 1,
-        "Loan Number": row.loanNumber,
         Customer: row.customer,
+        "Loan Number": row.loanNumber,
         Location: row.location,
         DisDate: row.disDate,
         "Prn.OS": row.prnOS,
