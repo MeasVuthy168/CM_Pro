@@ -128,27 +128,142 @@ box-shadow:0 0 0 3px rgba(255,215,0,.18);
 
 }
 
-.filter-actions{
+/* ==========================================
+   TOPBAR MENU (Refresh / Export / Print)
+   Lives here in the page's own CSS on purpose, NOT in topbar.css —
+   this is Arrears-specific and gets relocated into .topbar-right by
+   arrears-loader.js at runtime. Styled to match topbar-action-btn's
+   look (semi-transparent white on the navy topbar) since that's
+   where it visually ends up living.
+========================================== */
 
-display:flex;
+.arrears-menu-wrap{
 
-gap:10px;
-
-margin-top:16px;
+position:relative;
 
 }
 
-.filter-actions button{
+.arrears-menu-toggle{
 
-flex:1;
+width:40px;
 
-height:44px;
+height:40px;
 
 border:none;
 
-border-radius:10px;
+border-radius:12px;
+
+background:rgba(255,255,255,.15);
+
+color:#fff;
+
+font-size:20px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+line-height:1;
+
+}
+
+.arrears-menu-toggle:active{
+
+transform:scale(.95);
+
+}
+
+.arrears-menu-dropdown{
+
+display:none;
+
+position:absolute;
+
+top:48px;
+
+right:0;
+
+background:linear-gradient(180deg,#003B8B,#002D6B);
+
+border:1px solid #D4AF37;
+
+border-radius:12px;
+
+padding:6px;
+
+min-width:130px;
+
+box-shadow:0 8px 20px rgba(0,0,0,.4);
+
+z-index:200;
+
+flex-direction:column;
+
+gap:4px;
+
+}
+
+.arrears-menu-dropdown.show{
+
+display:flex;
+
+}
+
+.arrears-menu-dropdown button{
+
+height:38px;
+
+border:none;
+
+border-radius:8px;
+
+background:transparent;
+
+color:#fff;
 
 font-size:14px;
+
+font-weight:600;
+
+text-align:left;
+
+padding:0 10px;
+
+cursor:pointer;
+
+}
+
+.arrears-menu-dropdown button:active,
+.arrears-menu-dropdown button:hover{
+
+background:rgba(212,175,55,.25);
+
+}
+
+/* Clear button, now inline on the "last uploaded by" summary line */
+.summary-row.upload-meta{
+
+align-items:center;
+
+}
+
+#btnClear{
+
+margin-left:auto;
+
+height:34px;
+
+padding:0 16px;
+
+border:1px solid #D4AF37;
+
+border-radius:10px;
+
+background:#00265c;
+
+color:#fff;
+
+font-size:13px;
 
 font-weight:bold;
 
@@ -158,29 +273,9 @@ transition:.2s;
 
 }
 
-.filter-actions button:active{
+#btnClear:active{
 
 transform:scale(.97);
-
-}
-
-#btnClear{
-
-background:#00265c;
-
-border:1px solid #D4AF37;
-
-color:#fff;
-
-}
-
-#btnRefresh,
-#btnExport,
-#btnPrint{
-
-background:linear-gradient(180deg,#FFD700,#D4AF37);
-
-color:#002D6B;
 
 }
 
