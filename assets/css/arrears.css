@@ -566,6 +566,26 @@ font-weight:700;
 
 .row-class-specialmention{ background:#FFFF00 !important; }
 
+/* No/Customer normally stay white-background/dark-text regardless of
+   row color (see the general td:first-child/nth-child(2) rule above),
+   so the row text stayed readable — but for Loss/Doubtful specifically
+   that made those two columns nearly-invisible pale grey against
+   white. Overriding just for these two classes: red/dark-red
+   background + white text, matching the rest of the row, instead of
+   staying white. Scoped to only Loss/Doubtful, not Sub Standard/
+   Special Mention — those weren't reported as hard to read. */
+.table-card tbody tr.row-class-loss td:first-child,
+.table-card tbody tr.row-class-loss td:nth-child(2){
+    background:#8B0000 !important;
+    color:#fff !important;
+}
+
+.table-card tbody tr.row-class-doubtful td:first-child,
+.table-card tbody tr.row-class-doubtful td:nth-child(2){
+    background:#FF0000 !important;
+    color:#fff !important;
+}
+
 /* Cell-level: Promise Status (AI) + the AJ/AK/AL follow-up cells */
 .cell-promise-today{ background:#FFFF00 !important; }
 .cell-promise-upcoming{ background:#92D050 !important; }
