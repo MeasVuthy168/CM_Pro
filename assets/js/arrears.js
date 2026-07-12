@@ -812,17 +812,53 @@ async function fetchReasonArrearData(concateValues) {
     return map;
 }
 
+// Mirrors VBA's StatusFromDate exactly: compares the follow-up date
+// (AL) against today, in whole days.
+//   diff == 0  -> "Today_Payment"
+//   diff  > 0  -> "Upcoming_left: N Days"
+//   diff  < 0  -> "Expired: N Days"
+//   no date    -> "" (matches VBA's blank case, not "Not Yet Followup"
+//                  — that VBA line is commented out in the source)
+function computeStatusFromDate(alFollowupDMY) {
+    if (!alFollowupDMY) return "";
+
+    const parts = alFollowupDMY.split("/");
+    if (parts.length !== 3) return "";
+    const [dd, mm, yyyy] = parts.map(Number);
+    if (!dd || !mm || !yyyy) return "";
+
+    const followup = Date.UTC(yyyy, mm - 1, dd);
+    const now = new Date();
+    const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const diffDays = Math.round((followup - todayUTC) / 86400000);
+
+    if (diffDays === 0) return "Today_Payment";
+    if (diffDays > 0) return `Upcoming_left: ${diffDays} Days`;
+    return `Expired: ${Math.abs(diffDays)} Days`;
+}
+
 function applyReasonArrearOverlay(rows, map) {
     rows.forEach(row => {
-        if (!row.concate) return;
-        const found = map.get(row.concate);
-        if (!found) return;
+        if (row.concate) {
+            const found = map.get(row.concate);
+            if (found) {
+                row.ajReason = found.aj || "";
+                row.akSolution = found.ak || "";
+                row.alFollowup = found.al ? formatRowDateDMY(found.al) : "";
+                row.user = found.uploadedBy || row.user;
+                row.dateBackup = found.uploadedAt ? formatRowDateDMY(found.uploadedAt) : row.dateBackup;
+            }
+        }
 
-        row.ajReason = found.aj || "";
-        row.akSolution = found.ak || "";
-        row.alFollowup = found.al ? formatRowDateDMY(found.al) : "";
-        row.user = found.uploadedBy || row.user;
-        row.dateBackup = found.uploadedAt ? formatRowDateDMY(found.uploadedAt) : row.dateBackup;
+        // Mirrors VBA's RefreshReasonArrearStatus — recomputed for
+        // EVERY row (not just ones with a fresh overlay match), using
+        // whatever alFollowup currently holds, exactly matching how
+        // the VBA sub does a blanket refresh over the whole sheet.
+        // This is what was missing: after a save, the reason/date
+        // fields updated but Promise Status stayed stale until the
+        // next full page reload.
+        row.promiseStatus = computeStatusFromDate(row.alFollowup);
     });
 }
 
