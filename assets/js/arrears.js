@@ -620,7 +620,19 @@ function promiseCellCssClass(promiseStatus) {
     return "";
 }
 
+let __renderCallCount = 0;
+const __watchLoanNumber = "LD2334200015"; // change this to trace a different row
+
 function renderTable(rows) {
+    __renderCallCount++;
+    const watched = rows.find(r => r.loanNumber === __watchLoanNumber);
+    console.log(
+        `%c[renderTable #${__renderCallCount}] ${new Date().toISOString().slice(11, 23)} — watched row (${__watchLoanNumber}) alFollowup:`,
+        "color:#6cf;",
+        watched ? watched.alFollowup : "(not present in this filtered set)",
+        "\n  called from:", new Error().stack.split("\n").slice(2, 5).join(" | ")
+    );
+
     tbodyArrears.innerHTML = "";
 
     if (!rows.length) {
@@ -997,6 +1009,7 @@ document.getElementById("btnReasonSave").addEventListener("click", async () => {
 // ========================================
 
 async function refreshArrears() {
+    console.log(`%c[refreshArrears] START ${new Date().toISOString().slice(11, 23)}`, "color:#ffa500;font-weight:bold;");
     if (typeof showAppLoading === "function") {
         showAppLoading("Loading arrears data...");
     }
@@ -1006,6 +1019,9 @@ async function refreshArrears() {
             fetchArrearsInfo()
         ]);
         allRows = rows;
+        console.log(`%c[refreshArrears] bulk fetch DONE ${new Date().toISOString().slice(11, 23)} — ${allRows.length} rows`, "color:#ffa500;");
+        const bulkWatched = allRows.find(r => r.loanNumber === __watchLoanNumber);
+        console.log(`  watched row (${__watchLoanNumber}) alFollowup from BULK data:`, bulkWatched ? bulkWatched.alFollowup : "(not found)");
 
         // Mirrors VBA's ViewReasonArreas_Mongo: the bulk row data above
         // only reflects Reason Arrear as of the last Excel
@@ -1018,10 +1034,17 @@ async function refreshArrears() {
         }
         const concates = allRows.map(r => r.concate).filter(Boolean);
         const reasonMap = await fetchReasonArrearData(concates);
+        console.log(`%c[refreshArrears] overlay fetch DONE ${new Date().toISOString().slice(11, 23)} — ${reasonMap.size} matches for ${concates.length} concates sent`, "color:#ffa500;");
+        if (bulkWatched) {
+            console.log(`  overlay map has entry for watched row's concate (${bulkWatched.concate})?`, reasonMap.has(bulkWatched.concate), reasonMap.get(bulkWatched.concate));
+        }
         applyReasonArrearOverlay(allRows, reasonMap);
+        const afterOverlayWatched = allRows.find(r => r.loanNumber === __watchLoanNumber);
+        console.log(`  watched row alFollowup AFTER overlay applied:`, afterOverlayWatched ? afterOverlayWatched.alFollowup : "(not found)");
 
         populateFilterOptions();
         applyFilters();
+        console.log(`%c[refreshArrears] END ${new Date().toISOString().slice(11, 23)}`, "color:#ffa500;font-weight:bold;");
     } catch (err) {
         console.error(err);
         notify(err.message || "Failed to load arrears data.", "error");
