@@ -1039,18 +1039,28 @@ if (arrearsMenuToggle && arrearsMenuDropdown) {
 // iOS Safari does not support the Screen Orientation API's lock() at
 // all in a regular browser tab (only inside fullscreen/installed-PWA
 // contexts on some Android browsers) — there is no way to force real
-// device rotation here. This uses the standard CSS-transform
-// workaround instead: rotate the whole page 90deg and swap its
-// width/height, which visually reads as landscape while the phone is
-// still held upright. Works identically on iOS and Android since it
-// never touches any orientation API.
+// device rotation here. Uses a CSS-transform workaround instead, but
+// scoped to ONLY the table (not the whole page) — rotating the whole
+// body fought the fixed bottomnav/sticky headers/nested scroll and
+// produced a broken overlapping layout in testing. See arrears.css
+// for the full explanation of what changed.
 // ========================================
 
 const btnLandscape = document.getElementById("btnLandscape");
+const btnExitLandscape = document.getElementById("btnExitLandscape");
 
 if (btnLandscape) {
     btnLandscape.addEventListener("click", () => {
-        document.body.classList.toggle("arrears-force-landscape");
+        document.body.classList.add("arrears-force-landscape");
+    });
+}
+
+// The topbar (and the "..." menu the toggle button lives in) is
+// hidden while in landscape mode, so this separate always-visible
+// button is the only way back to portrait.
+if (btnExitLandscape) {
+    btnExitLandscape.addEventListener("click", () => {
+        document.body.classList.remove("arrears-force-landscape");
     });
 }
 
