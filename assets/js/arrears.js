@@ -620,19 +620,9 @@ function promiseCellCssClass(promiseStatus) {
     return "";
 }
 
-let __renderCallCount = 0;
-const __watchLoanNumber = "LD2334200015"; // change this to trace a different row
+let __hasRenderedOnce = false; // used below to skip the paint-forcing fix after the first render
 
 function renderTable(rows) {
-    __renderCallCount++;
-    const watched = rows.find(r => r.loanNumber === __watchLoanNumber);
-    console.log(
-        `%c[renderTable #${__renderCallCount}] ${new Date().toISOString().slice(11, 23)} — watched row (${__watchLoanNumber}) alFollowup:`,
-        "color:#6cf;",
-        watched ? watched.alFollowup : "(not present in this filtered set)",
-        "\n  called from:", new Error().stack.split("\n").slice(2, 5).join(" | ")
-    );
-
     tbodyArrears.innerHTML = "";
 
     if (!rows.length) {
@@ -706,29 +696,75 @@ function renderTable(rows) {
 
     tbodyArrears.appendChild(frag);
 
-    // Force a synchronous reflow. Without this, the columns furthest to
-    // the right (past the horizontal-scroll edge) sometimes don't paint
-    // on the very first render — only after some interaction (like
-    // touching a filter) forces the browser to repaint. This is a known
-    // quirk with position:sticky + horizontal overflow scrolling on
-    // mobile Chrome/WebView; reading offsetHeight forces layout to run
-    // immediately instead of lazily.
-    void tbodyArrears.offsetHeight;
+    // This paint-forcing fix is only needed ONCE, on the very first
+    // render after data loads — that's when the "far-right columns
+    // don't paint until touched" bug actually happens (a known quirk
+    // with position:sticky + horizontal overflow scrolling on mobile
+    // WebViews). Once that first paint has correctly established the
+    // compositing layer, subsequent renders (every filter keystroke,
+    // every search) don't need this anymore — running a synchronous
+    // reflow + double requestAnimationFrame scroll-nudge on every
+    // single re-render was pure unnecessary cost.
+    if (!__hasRenderedOnce) {
+        void tbodyArrears.offsetHeight;
 
-    // Extra safety net: nudge the scroll container by 1px and back.
-    // This forces the browser to actually recompute/repaint the
-    // horizontally-scrolled region rather than leaving it in whatever
-    // stale compositing state it was in before the render.
-    const scrollEl = document.querySelector(".table-scroll");
-    if (scrollEl) {
-        requestAnimationFrame(() => {
-            const original = scrollEl.scrollLeft;
-            scrollEl.scrollLeft = original + 1;
+        const scrollEl = document.querySelector(".table-scroll");
+        if (scrollEl) {
             requestAnimationFrame(() => {
-                scrollEl.scrollLeft = original;
+                const original = scrollEl.scrollLeft;
+                scrollEl.scrollLeft = original + 1;
+                requestAnimationFrame(() => {
+                    scrollEl.scrollLeft = original;
+                });
             });
-        });
+        }
+        __hasRenderedOnce = true;
     }
+}
+
+// ========================================
+// SURGICAL SINGLE-ROW UPDATE
+// After saving a Reason Arrear, only 6 cells on ONE row can have
+// actually changed (Promise Status, មុខរបរ, មូលហេតុ/ដំណោះស្រាយ,
+// ថ្ងៃសន្យាសង, User, DateBackUpReasonArrear). Calling the full
+// renderTable(currentRows) for that was rebuilding the entire visible
+// table (up to ~2871 rows) just to reflect one row's change — this
+// updates only the matching cells on the matching <tr> directly.
+// Column indexes below (0-based) must match the <td> order in
+// renderTable()'s template exactly — if that template's column order
+// ever changes, these indexes need updating too.
+// ========================================
+
+function updateRowInTable(row) {
+    const idx = currentRows.indexOf(row);
+    if (idx === -1) return false; // row isn't in the currently-filtered view — nothing on screen to update
+
+    const tr = tbodyArrears.querySelector(`tr[data-index="${idx}"]`);
+    if (!tr) return false;
+
+    const cells = tr.children;
+    if (cells.length < 26) return false; // sanity check — fall back to full render if structure looks unexpected
+
+    const promiseCss = promiseCellCssClass(row.promiseStatus);
+    const followupCss = promiseCss || "cell-followup-default";
+
+    cells[18].textContent = row.promiseStatus; // Promise Status
+    cells[18].className = promiseCss;
+
+    cells[21].textContent = row.ajReason;      // មុខរបរ
+    cells[21].className = followupCss;
+
+    cells[22].textContent = row.akSolution;    // មូលហេតុ/ដំណោះស្រាយ
+    cells[22].className = followupCss;
+
+    cells[23].textContent = formatRowDateDMY(row.alFollowup); // ថ្ងៃសន្យាសង
+    cells[23].className = followupCss;
+
+    cells[24].textContent = row.user;          // User
+
+    cells[25].textContent = formatRowDateDMY(row.dateBackup); // DateBackUpReasonArrear
+
+    return true;
 }
 
 // ========================================
@@ -782,12 +818,18 @@ document.addEventListener("keydown", (e) => {
 
 async function fetchReasonArrearData(concateValues) {
     const CHUNK = 800; // matches the VBA module's own GET_CHUNK
-    const map = new Map();
 
+    const chunks = [];
     for (let i = 0; i < concateValues.length; i += CHUNK) {
         const chunk = concateValues.slice(i, i + CHUNK);
-        if (!chunk.length) continue;
+        if (chunk.length) chunks.push(chunk);
+    }
 
+    // Fire all chunks concurrently rather than awaiting them one at a
+    // time — for ~2871 rows that's ~4 requests running in parallel
+    // instead of sequentially, roughly a 4x cut in wait time. Each
+    // chunk is independent, so there's no ordering requirement here.
+    const results = await Promise.all(chunks.map(async (chunk) => {
         try {
             const res = await fetch(`${API.BASE_URL}/api/reasonarrear/get`, {
                 method: "POST",
@@ -798,16 +840,17 @@ async function fetchReasonArrearData(concateValues) {
                 body: JSON.stringify({ cifs: chunk })
             });
             const data = await res.json();
-            if (!data.ok) continue; // skip this chunk, don't abort the rest
-
-            (data.data || []).forEach(item => {
-                if (item.cif) map.set(item.cif, item);
-            });
+            return data.ok ? (data.data || []) : [];
         } catch (err) {
             console.error("[reasonarrear] chunk fetch failed:", err);
-            // continue with remaining chunks rather than aborting entirely
+            return []; // this chunk's rows just won't get overlaid, rest continue
         }
-    }
+    }));
+
+    const map = new Map();
+    results.flat().forEach(item => {
+        if (item.cif) map.set(item.cif, item);
+    });
 
     return map;
 }
@@ -861,84 +904,6 @@ function applyReasonArrearOverlay(rows, map) {
         row.promiseStatus = computeStatusFromDate(row.alFollowup);
     });
 }
-
-// ========================================
-// DEBUG: run debugReasonOverlay() or debugReasonOverlay("2334200015")
-// in the console to see exactly where the table-load overlay is
-// actually breaking. Not auto-run, safe to call anytime.
-// ========================================
-
-async function debugReasonOverlay(searchText) {
-    console.log("%c===== REASON OVERLAY DEBUG START =====", "color:#FFD700;font-weight:bold;font-size:14px;");
-
-    const withConcate = allRows.filter(r => r.concate);
-    const withoutConcate = allRows.filter(r => !r.concate);
-    console.log(`Rows WITH concate: ${withConcate.length} / ${allRows.length}`);
-    console.log(`Rows WITHOUT concate (silently skipped by the overlay): ${withoutConcate.length}`);
-    if (withoutConcate.length) {
-        console.log("Sample rows missing concate:", withoutConcate.slice(0, 3).map(r => ({ loanNumber: r.loanNumber, customer: r.customer })));
-    }
-
-    let target = null;
-    if (searchText) {
-        target = allRows.find(r =>
-            (r.loanNumber || "").includes(searchText) || (r.customer || "").includes(searchText)
-        );
-        if (!target) console.log(`No row found matching "${searchText}" — falling back to row 0.`);
-    }
-    if (!target) target = withConcate[0];
-
-    if (!target) {
-        console.log("!! No row with a concate value exists at all — cannot test further.");
-        console.log("%c===== REASON OVERLAY DEBUG END =====", "color:#FFD700;font-weight:bold;");
-        return;
-    }
-
-    console.log("Target row:", { loanNumber: target.loanNumber, customer: target.customer, concate: target.concate });
-    console.log("Current in-memory values BEFORE re-fetch:", {
-        ajReason: target.ajReason,
-        akSolution: target.akSolution,
-        alFollowup: target.alFollowup,
-        user: target.user,
-        dateBackup: target.dateBackup
-    });
-
-    console.log(`Calling POST /api/reasonarrear/get with cifs: ["${target.concate}"] ...`);
-    const res = await fetch(`${API.BASE_URL}/api/reasonarrear/get`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${arrearsToken}` },
-        body: JSON.stringify({ cifs: [target.concate] })
-    });
-    const data = await res.json();
-    console.log("RAW server response:", data);
-
-    if (!data.ok || !(data.data || []).length) {
-        console.log("!! Server found NO matching reasonarrear record for this concate value.");
-        console.log("   Either this row never had a reason saved, or the concate value");
-        console.log("   doesn't match what's stored server-side under 'cif'.");
-    } else {
-        const found = data.data[0];
-        console.log("Server DID find a match:", found);
-
-        const before = JSON.stringify(target);
-        applyReasonArrearOverlay([target], new Map([[target.concate, found]]));
-        console.log("Row's in-memory values AFTER applying overlay:", {
-            ajReason: target.ajReason,
-            akSolution: target.akSolution,
-            alFollowup: target.alFollowup,
-            user: target.user,
-            dateBackup: target.dateBackup
-        });
-        console.log("Changed?", before !== JSON.stringify(target));
-
-        renderTable(currentRows);
-        console.log("Called renderTable(currentRows) — check the actual table on screen now for this row.");
-    }
-
-    console.log("%c===== REASON OVERLAY DEBUG END =====", "color:#FFD700;font-weight:bold;");
-}
-
-window.debugReasonOverlay = debugReasonOverlay;
 
 async function openReasonPanel(row) {
     selectedRow = row;
@@ -1026,7 +991,12 @@ document.getElementById("btnReasonSave").addEventListener("click", async () => {
         const reasonMap = await fetchReasonArrearData([selectedRow.concate]);
         applyReasonArrearOverlay([selectedRow], reasonMap);
 
-        renderTable(currentRows);
+        // Surgical update — only rebuilds the ~2871-row table if the
+        // targeted row somehow isn't in the current DOM (e.g. filters
+        // changed while the modal was open).
+        if (!updateRowInTable(selectedRow)) {
+            renderTable(currentRows);
+        }
 
         notify("Reason arrear saved.", "success");
         closeReasonModal();
@@ -1045,50 +1015,47 @@ document.getElementById("btnReasonSave").addEventListener("click", async () => {
 // ========================================
 
 async function refreshArrears() {
-    console.log(`%c[refreshArrears] START ${new Date().toISOString().slice(11, 23)}`, "color:#ffa500;font-weight:bold;");
     if (typeof showAppLoading === "function") {
         showAppLoading("Loading arrears data...");
     }
+
     try {
         const [rows] = await Promise.all([
             fetchAllArrearsRows(),
             fetchArrearsInfo()
         ]);
         allRows = rows;
-        console.log(`%c[refreshArrears] bulk fetch DONE ${new Date().toISOString().slice(11, 23)} — ${allRows.length} rows`, "color:#ffa500;");
-        const bulkWatched = allRows.find(r => r.loanNumber === __watchLoanNumber);
-        console.log(`  watched row (${__watchLoanNumber}) alFollowup from BULK data:`, bulkWatched ? bulkWatched.alFollowup : "(not found)");
-
-        // Mirrors VBA's ViewReasonArreas_Mongo: the bulk row data above
-        // only reflects Reason Arrear as of the last Excel
-        // Upload_ArreasT24ByCO sync — overlay the canonical, current
-        // data from the reasonarrear collection on top so saves made
-        // through this web app show up immediately, not just after
-        // the next Excel sync.
-        if (typeof showAppLoading === "function") {
-            showAppLoading("កំពុងទាញយកមូលហេតុថ្មីៗ...");
-        }
-        const concates = allRows.map(r => r.concate).filter(Boolean);
-        const reasonMap = await fetchReasonArrearData(concates);
-        console.log(`%c[refreshArrears] overlay fetch DONE ${new Date().toISOString().slice(11, 23)} — ${reasonMap.size} matches for ${concates.length} concates sent`, "color:#ffa500;");
-        if (bulkWatched) {
-            console.log(`  overlay map has entry for watched row's concate (${bulkWatched.concate})?`, reasonMap.has(bulkWatched.concate), reasonMap.get(bulkWatched.concate));
-        }
-        applyReasonArrearOverlay(allRows, reasonMap);
-        const afterOverlayWatched = allRows.find(r => r.loanNumber === __watchLoanNumber);
-        console.log(`  watched row alFollowup AFTER overlay applied:`, afterOverlayWatched ? afterOverlayWatched.alFollowup : "(not found)");
-
-        populateFilterOptions();
-        applyFilters();
-        console.log(`%c[refreshArrears] END ${new Date().toISOString().slice(11, 23)}`, "color:#ffa500;font-weight:bold;");
     } catch (err) {
         console.error(err);
         notify(err.message || "Failed to load arrears data.", "error");
         tbodyArrears.innerHTML = `<tr class="row-empty"><td colspan="26">Failed to load data</td></tr>`;
-    } finally {
-        if (typeof hideAppLoading === "function") {
-            hideAppLoading();
-        }
+        if (typeof hideAppLoading === "function") hideAppLoading();
+        return;
+    }
+
+    // Show the table right away with bulk data — don't make the user
+    // wait for the (separate, slower) Reason Arrear overlay too. This
+    // is the biggest perceived-speed win: the table is usable in one
+    // fetch's time instead of two sequential fetches' time.
+    populateFilterOptions();
+    applyFilters();
+    if (typeof hideAppLoading === "function") hideAppLoading();
+
+    // Mirrors VBA's ViewReasonArreas_Mongo: the bulk row data above
+    // only reflects Reason Arrear as of the last Excel
+    // Upload_ArreasT24ByCO sync — overlay the canonical, current data
+    // from the reasonarrear collection on top so saves made through
+    // this web app show up immediately, not just after the next
+    // Excel sync. Runs in the background now — failures here are
+    // non-fatal (the table already works fine with bulk data alone),
+    // so this just logs rather than showing an error to the user.
+    try {
+        const concates = allRows.map(r => r.concate).filter(Boolean);
+        const reasonMap = await fetchReasonArrearData(concates);
+        applyReasonArrearOverlay(allRows, reasonMap);
+        applyFilters(); // quiet re-render with the fresher data
+    } catch (err) {
+        console.error("[reasonarrear overlay] failed, table still shows bulk data:", err);
     }
 }
 
