@@ -546,64 +546,42 @@ font-weight:700;
 
 /* ==========================================
    CONDITIONAL FORMATTING
-   Mirrors the Excel Conditional Formatting Rules Manager rules,
-   in the same priority order (row-level Class colors are the base
-   layer; Promise Status cell colors and the other cell-specific
-   rules paint on top since a <td> with its own background always
-   shows over its <tr>'s background — no extra specificity tricks
-   needed for that part). Class-Doubtful and Class-Loss share the
-   same red family as Excel did (Loss = darker).
+   Mirrors the Excel Conditional Formatting Rules Manager rules.
+
+   Class (Normal/Special Mention/Sub Standard/Doubtful/Loss) used to
+   color the ENTIRE row. Now scoped to ONLY the No and Day columns
+   (nth-child(1) and nth-child(12)) — every other cell in a
+   classified row stays its normal default color regardless of Class.
+   Normal itself has no color treatment (classRowCssClass() returns
+   no class for it in JS), same as before.
+
+   No is also one of the two frozen/sticky columns, so its background
+   here layers on top of the general sticky-column white-background
+   rule further up this file — same !important + matching selector
+   prefix approach used there, so this reliably wins regardless of
+   source order.
 ========================================== */
 
-/* Row-level: Class column (AE) */
-.row-class-loss{ background:#8B0000 !important; }
-.row-class-loss td{ color:#fff; }
-
-.row-class-doubtful{ background:#FF0000 !important; }
-.row-class-doubtful td{ color:#fff; }
-
-.row-class-substandard{ background:#FFA500 !important; }
-
-.row-class-specialmention{ background:#FFFF00 !important; }
-
-/* No/Customer normally stay white-background/dark-text regardless of
-   row color (see the general td:first-child/nth-child(2) rule above),
-   so the row text stayed readable — but for Loss/Doubtful specifically
-   that made those two columns nearly-invisible pale grey against
-   white. Overriding just for these two classes: red/dark-red
-   background + white text, matching the rest of the row, instead of
-   staying white. Now extended to Sub Standard/Special Mention too,
-   and to the Day column (12th) alongside No/Customer. */
 .table-card tbody tr.row-class-loss td:first-child,
-.table-card tbody tr.row-class-loss td:nth-child(2),
 .table-card tbody tr.row-class-loss td:nth-child(12){
     background:#8B0000 !important;
     color:#fff !important;
 }
 
 .table-card tbody tr.row-class-doubtful td:first-child,
-.table-card tbody tr.row-class-doubtful td:nth-child(2),
 .table-card tbody tr.row-class-doubtful td:nth-child(12){
     background:#FF0000 !important;
     color:#fff !important;
 }
 
-/* Sub Standard / Special Mention don't force white text on the row
-   (their fills are light enough for the default dark #222 text), so
-   No/Day just need to pick up the same fill color here instead of
-   staying white like unclassified rows. */
 .table-card tbody tr.row-class-substandard td:first-child,
-.table-card tbody tr.row-class-substandard td:nth-child(2),
 .table-card tbody tr.row-class-substandard td:nth-child(12){
     background:#FFA500 !important;
-    color:#222 !important;
 }
 
 .table-card tbody tr.row-class-specialmention td:first-child,
-.table-card tbody tr.row-class-specialmention td:nth-child(2),
 .table-card tbody tr.row-class-specialmention td:nth-child(12){
     background:#FFFF00 !important;
-    color:#222 !important;
 }
 
 /* Cell-level: Promise Status (AI) + the AJ/AK/AL follow-up cells */
