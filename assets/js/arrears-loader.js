@@ -23,6 +23,19 @@ async function loadComponent(id,file){
                 showLogo:false,
                 showProfile:false
             });
+
+            // Relocate the page's own "..." menu (Refresh/Export/Print,
+            // built in index.html) into the topbar's right side. This
+            // moves the EXISTING elements rather than rebuilding them,
+            // so the click handlers already wired in arrears.js keep
+            // working — topbar.html/topbar.css themselves are never
+            // touched, so this only affects this page, not the shared
+            // component used elsewhere in the app.
+            const menuWrap = document.getElementById("arrearsMenuWrap");
+            const topbarRight = document.querySelector("#topbar-container .topbar-right");
+            if (menuWrap && topbarRight) {
+                topbarRight.insertBefore(menuWrap, topbarRight.firstChild);
+            }
         }
     }catch(error){
         console.error(error);
