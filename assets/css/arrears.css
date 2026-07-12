@@ -313,9 +313,16 @@ color:#222;
 
 background:#fff;
 
-border-radius:10px;
-
-overflow:hidden;
+/* NOTE: this table used to also have border-radius:10px + overflow:hidden
+   to round its own corners. That overflow:hidden sits directly between
+   the sticky <th>/<td> cells and .table-scroll (the real scroll
+   container) — any non-"visible" overflow on an ancestor in that chain
+   is a known, separate way to break position:sticky, independent of
+   the transform/filter/contain checks. Confirmed via screen recording
+   that the header was genuinely scrolling away, not just a rendering
+   glitch — removing this was the actual fix. The card's outer rounded
+   corners (on .table-card) still give the whole thing a rounded look;
+   only the table's own inner corners are square now. */
 
 }
 
