@@ -1455,7 +1455,33 @@ display:none;
 
 size:297mm 210mm;
 
-margin:10mm;
+margin:10mm 10mm 16mm 10mm;
+
+@bottom-right{
+
+content:"Page " counter(page) " of " counter(pages);
+
+font-size:9px;
+
+color:#666;
+
+}
+
+}
+
+/* Forces conditional-formatting colors (Loss/Doubtful, Promise
+   Status, duplicate-customer, etc.) to always print, regardless of
+   whether the browser's own "print backgrounds" toggle is on —
+   without this, browsers strip background colors by default to save
+   ink, which is why the colors were inconsistent depending on
+   whatever the device's print settings happened to be. */
+*{
+
+-webkit-print-color-adjust:exact !important;
+
+print-color-adjust:exact !important;
+
+color-adjust:exact !important;
 
 }
 
