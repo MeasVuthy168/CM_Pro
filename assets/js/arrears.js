@@ -471,10 +471,16 @@ function formatDateTime24h(isoString) {
     const yyyy = d.getFullYear();
     const mm = pad(d.getMonth() + 1);
     const dd = pad(d.getDate());
-    const hh = pad(d.getHours());
+
+    let h = d.getHours();
+    const ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12;
+    if (h === 0) h = 12;
+
+    const hh = pad(h);
     const min = pad(d.getMinutes());
 
-    return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+    return `${yyyy}-${mm}-${dd} ${hh}:${min} ${ampm}`;
 }
 
 // ========================================
