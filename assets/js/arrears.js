@@ -1446,12 +1446,25 @@ async function exportToPdf() {
 
     const tempStyleEl = document.createElement("style");
     tempStyleEl.id = "pdf-export-temp-style";
-    tempStyleEl.textContent = extractPrintCss();
+    // Real print engines auto-reflow wide content to fit the physical
+    // page — html2canvas does NOT do this, it just captures whatever
+    // width the container is laid out at on screen right now (the
+    // narrow mobile viewport). Without forcing every level of
+    // container to its full natural content width here, only the
+    // columns visible without horizontal scrolling get captured —
+    // exactly the "lost columns 5-19" bug reported.
+    tempStyleEl.textContent = extractPrintCss() + `
+        html, body { overflow-x: visible !important; width: max-content !important; }
+        .page-container { width: max-content !important; min-width: 100%; overflow: visible !important; }
+        .table-card { width: max-content !important; overflow: visible !important; }
+        .table-scroll { width: max-content !important; max-width: none !important; overflow: visible !important; }
+        .table-card table { width: max-content !important; }
+    `;
     document.head.appendChild(tempStyleEl);
 
     // Let the browser actually apply the injected styles and reflow
-    // (sticky→static, columns 20+ hidden, colors changed) before
-    // html2canvas reads the resulting layout.
+    // (sticky→static, columns 20+ hidden, colors changed, full-width
+    // table) before html2canvas reads the resulting layout.
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
     try {
