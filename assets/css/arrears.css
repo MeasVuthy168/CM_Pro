@@ -1443,6 +1443,12 @@ font-size:11px;
    otherwise cause odd repeated-header artifacts across page breaks.
 ========================================== */
 
+.print-only-title{
+
+display:none;
+
+}
+
 @media print{
 
 @page{
@@ -1450,6 +1456,41 @@ font-size:11px;
 size:A4 landscape;
 
 margin:10mm;
+
+}
+
+.print-only-title{
+
+display:block;
+
+text-align:center;
+
+font-size:22px;
+
+font-weight:700;
+
+color:#000;
+
+margin-bottom:12px;
+
+}
+
+/* This app is normally a fixed-viewport mobile PWA — html/body (and
+   likely other ancestors from main.css/base.css that aren't visible
+   in this file) constrain height and hide overflow so the page
+   behaves like a native app screen, not a scrolling document. Print
+   inherits that same layout unless explicitly reset, which clipped
+   the printed output to roughly one phone-screen's worth of content
+   (the reported "only 6 columns, 12 rows out of 19/200" bug) instead
+   of flowing naturally across full A4 pages. */
+html,
+body{
+
+height:auto !important;
+
+overflow:visible !important;
+
+width:auto !important;
 
 }
 
@@ -1486,6 +1527,10 @@ background:#fff !important;
 .page-container{
 
 padding:0;
+
+height:auto !important;
+
+overflow:visible !important;
 
 }
 
@@ -1562,6 +1607,8 @@ border:1px solid #999;
 overflow:visible !important;
 
 max-height:none !important;
+
+height:auto !important;
 
 }
 
