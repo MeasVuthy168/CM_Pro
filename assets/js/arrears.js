@@ -522,9 +522,7 @@ function formatRowDateDMY(value) {
     return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`;
 }
 
-// yyyy-mm-dd hh:mm:ss AM/PM — kept in case a full timestamp format is
-// needed again somewhere; not currently used, DateBackUpReasonArrear
-// switched to formatRowDateDMY above (dd/mm/yyyy, no time).
+// yyyy-mm-dd hh:mm AM/PM — for DateBackUpReasonArrear
 function formatRowDateTime12h(value) {
     const d = parseFlexibleDate(value);
     if (!d) return value || "";
@@ -535,7 +533,7 @@ function formatRowDateTime12h(value) {
     h = h % 12;
     if (h === 0) h = 12;
 
-    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(h)}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())} ${ampm}`;
+    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(h)}:${pad(d.getUTCMinutes())} ${ampm}`;
 }
 
 // Cambodian phone numbers start with 0 — Excel/JS often strips a
@@ -678,7 +676,7 @@ function buildRowElement(row, index) {
         <td class="${followupCss}">${escapeHtml(row.akSolution)}</td>
         <td class="${followupCss}">${escapeHtml(formatRowDateDMY(row.alFollowup))}</td>
         <td>${escapeHtml(row.user)}</td>
-        <td>${escapeHtml(formatRowDateDMY(row.dateBackup))}</td>
+        <td>${escapeHtml(formatRowDateTime12h(row.dateBackup))}</td>
     `;
     return tr;
 }
@@ -808,7 +806,7 @@ function updateRowInTable(row) {
 
     cells[24].textContent = row.user;          // User
 
-    cells[25].textContent = formatRowDateDMY(row.dateBackup); // DateBackUpReasonArrear
+    cells[25].textContent = formatRowDateTime12h(row.dateBackup); // DateBackUpReasonArrear
 
     return true;
 }
@@ -936,7 +934,7 @@ function applyReasonArrearOverlay(rows, map) {
                 row.akSolution = found.ak || "";
                 row.alFollowup = found.al ? formatRowDateDMY(found.al) : "";
                 row.user = found.uploadedBy || row.user;
-                row.dateBackup = found.uploadedAt ? formatRowDateDMY(found.uploadedAt) : row.dateBackup;
+                row.dateBackup = found.uploadedAt || row.dateBackup;
             }
         }
 
@@ -1108,7 +1106,7 @@ async function cancelPendingReasons(concates) {
                 row.akSolution = found.ak || "";
                 row.alFollowup = found.al ? formatRowDateDMY(found.al) : "";
                 row.user = found.uploadedBy || "";
-                row.dateBackup = found.uploadedAt ? formatRowDateDMY(found.uploadedAt) : "";
+                row.dateBackup = found.uploadedAt || "";
             } else {
                 row.ajReason = "";
                 row.akSolution = "";
@@ -1347,7 +1345,7 @@ function exportArrears() {
         "មូលហេតុ/ដំណោះស្រាយ": row.akSolution,
         "ថ្ងៃសន្យាសង": row.alFollowup,
         User: row.user,
-        DateBackUpReasonArrear: row.dateBackup
+        DateBackUpReasonArrear: formatRowDateTime12h(row.dateBackup)
     }));
 
     const ws = XLSX.utils.json_to_sheet(sheetData);
