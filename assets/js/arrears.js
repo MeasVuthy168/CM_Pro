@@ -1376,12 +1376,23 @@ document.getElementById("btnRefresh").addEventListener("click", refreshArrears);
 document.getElementById("btnExport").addEventListener("click", exportArrears);
 // ========================================
 // EXPORT PDF
-// Reuses the exact same print stylesheet/dialog as the Print button
-// (window.print() — the person picks "Save as PDF" from the OS print
-// sheet themselves, same UI either way). The only thing this adds is
-// a filename: most browsers default a saved-PDF's filename to the
-// current page title, so this temporarily renames the document right
-// before printing, then restores it afterward.
+// A real .pdf file, downloaded directly — not the print dialog.
+// Browsers have no native "generate PDF" API, so this uses the
+// standard approach: html2canvas rasterizes the styled page content,
+// jsPDF assembles the resulting images into pages and triggers the
+// download. Two things this specifically has to work around:
+//   1. html2canvas captures whatever's on SCREEN — it does not know
+//      about @media print rules at all. So the print-specific styling
+//      (white backgrounds instead of navy, columns 1-19 only, etc.)
+//      gets extracted from the stylesheet and re-injected as plain
+//      (non-media-query) rules temporarily, right before capture.
+//   2. A naive canvas slice cut at a fixed pixel height per page can
+//      slice a table row in half across a page break. This measures
+//      each <tr>'s actual position and only cuts BETWEEN rows.
+// Known trade-off (mentioned before this was built): the output is a
+// rasterized image embedded in the PDF, not real selectable/
+// searchable text — that's inherent to this approach in a browser
+// with no server-side rendering.
 // ========================================
 
 function buildExportPdfFilename() {
@@ -1400,19 +1411,142 @@ function buildExportPdfFilename() {
     return `DailyArrear_${datePart}${officerName ? "_" + officerName : ""}`;
 }
 
+// Pulls every rule out of any @media print block in the loaded
+// stylesheets and returns it as plain CSS text (no media-query
+// wrapper), so it can be applied as regular styles temporarily.
+function extractPrintCss() {
+    let css = "";
+    for (const sheet of document.styleSheets) {
+        let rules;
+        try {
+            rules = sheet.cssRules;
+        } catch (err) {
+            continue; // cross-origin stylesheet (e.g. a CDN font) — can't read its rules, skip
+        }
+        for (const rule of rules) {
+            if (rule.type === CSSRule.MEDIA_RULE && rule.media.mediaText.includes("print")) {
+                for (const inner of rule.cssRules) {
+                    css += inner.cssText + "\n";
+                }
+            }
+        }
+    }
+    return css;
+}
+
+async function exportToPdf() {
+    if (typeof html2canvas === "undefined" || typeof window.jspdf === "undefined") {
+        notify("PDF export library failed to load — check your connection and try again.", "error");
+        return;
+    }
+
+    if (typeof showAppLoading === "function") {
+        showAppLoading("កំពុងបង្កើតឯកសារ PDF...");
+    }
+
+    const tempStyleEl = document.createElement("style");
+    tempStyleEl.id = "pdf-export-temp-style";
+    tempStyleEl.textContent = extractPrintCss();
+    document.head.appendChild(tempStyleEl);
+
+    // Let the browser actually apply the injected styles and reflow
+    // (sticky→static, columns 20+ hidden, colors changed) before
+    // html2canvas reads the resulting layout.
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    try {
+        const container = document.querySelector(".page-container");
+        const thead = document.querySelector(".table-card thead");
+        const rows = Array.from(document.querySelectorAll(".table-card tbody tr"));
+
+        const SCALE = 2; // retina-quality capture
+        const fullCanvas = await html2canvas(container, { scale: SCALE, backgroundColor: "#ffffff" });
+
+        const theadCanvas = thead
+            ? await html2canvas(thead, { scale: SCALE, backgroundColor: "#ffffff" })
+            : null;
+
+        // A4 landscape at 96 DPI-equivalent proportions, scaled to match SCALE
+        const pageWidthMm = 297, pageHeightMm = 210, marginMm = 10;
+
+        // Page height in CAPTURE-canvas pixels, derived from the
+        // aspect ratio of A4 landscape (minus margins) relative to
+        // the full canvas's actual captured width.
+        const usablePageWidthMm = pageWidthMm - marginMm * 2;
+        const usablePageHeightMm = pageHeightMm - marginMm * 2;
+        const capturePageHeightPx = fullCanvas.width * (usablePageHeightMm / usablePageWidthMm);
+
+        // Row boundaries in CAPTURE-canvas pixel space (relative to container top)
+        const containerRect = container.getBoundingClientRect();
+        const rowBoundaries = rows.map(tr => {
+            const r = tr.getBoundingClientRect();
+            return (r.bottom - containerRect.top) * SCALE;
+        });
+
+        const theadHeightPx = theadCanvas ? theadCanvas.height : 0;
+
+        const slices = [];
+        let sliceStart = 0;
+        let firstSlice = true;
+        while (sliceStart < fullCanvas.height - 2) {
+            const availableHeight = firstSlice ? capturePageHeightPx : (capturePageHeightPx - theadHeightPx);
+            let sliceEnd = sliceStart + availableHeight;
+
+            let bestCut = sliceEnd;
+            for (const b of rowBoundaries) {
+                if (b > sliceStart && b <= sliceEnd) bestCut = b;
+            }
+            if (bestCut <= sliceStart) bestCut = Math.min(sliceEnd, fullCanvas.height);
+
+            slices.push({ start: sliceStart, end: Math.min(bestCut, fullCanvas.height), repeatHeader: !firstSlice });
+            sliceStart = bestCut;
+            firstSlice = false;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+        slices.forEach((slice, i) => {
+            if (i > 0) pdf.addPage();
+
+            const sliceHeightPx = slice.end - slice.start;
+            const pageCanvas = document.createElement("canvas");
+            pageCanvas.width = fullCanvas.width;
+            pageCanvas.height = sliceHeightPx + (slice.repeatHeader ? theadHeightPx : 0);
+            const ctx = pageCanvas.getContext("2d");
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+
+            let yOffset = 0;
+            if (slice.repeatHeader && theadCanvas) {
+                ctx.drawImage(theadCanvas, 0, 0);
+                yOffset = theadHeightPx;
+            }
+            ctx.drawImage(
+                fullCanvas,
+                0, slice.start, fullCanvas.width, sliceHeightPx,
+                0, yOffset, fullCanvas.width, sliceHeightPx
+            );
+
+            const imgData = pageCanvas.toDataURL("image/jpeg", 0.92);
+            const imgHeightMm = usablePageWidthMm * (pageCanvas.height / pageCanvas.width);
+            pdf.addImage(imgData, "JPEG", marginMm, marginMm, usablePageWidthMm, imgHeightMm);
+        });
+
+        pdf.save(`${buildExportPdfFilename()}.pdf`);
+    } catch (err) {
+        console.error("[export pdf] failed:", err);
+        notify("មិនអាចបង្កើតឯកសារ PDF បានទេ", "error");
+    } finally {
+        tempStyleEl.remove();
+        if (typeof hideAppLoading === "function") {
+            hideAppLoading();
+        }
+    }
+}
+
 document.getElementById("btnExportPdf")?.addEventListener("click", () => {
-    const originalTitle = document.title;
-    document.title = buildExportPdfFilename();
-
-    window.print();
-
-    // Safety net — window.print() blocks until the dialog closes on
-    // most browsers, but this restores the title regardless in case
-    // some mobile browser/WebView returns immediately instead.
-    setTimeout(() => {
-        document.title = originalTitle;
-    }, 1000);
-
+    exportToPdf();
     document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
 });
 
