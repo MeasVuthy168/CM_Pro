@@ -24,7 +24,7 @@ async function loadComponent(id,file){
                 showProfile:false
             });
 
-            // Relocate the page's own "..." menu (Refresh/Export/Print,
+            // Relocate the page's own "..." menu (Export/Print/Landscape,
             // built in index.html) into the topbar's right side. This
             // moves the EXISTING elements rather than rebuilding them,
             // so the click handlers already wired in arrears.js keep
