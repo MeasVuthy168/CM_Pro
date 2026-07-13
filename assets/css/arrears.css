@@ -247,9 +247,15 @@ align-items:center;
 
 }
 
-#btnClear{
+.button-row{
 
-margin-left:auto;
+justify-content:flex-end;
+
+margin-top:6px;
+
+}
+
+#btnClear{
 
 height:34px;
 
