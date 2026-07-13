@@ -622,8 +622,102 @@ function promiseCellCssClass(promiseStatus) {
 
 let __hasRenderedOnce = false; // used below to skip the paint-forcing fix after the first render
 
+// ========================================
+// BATCHED RENDERING
+// With ~4000 rows × 26 columns, building the full table on every
+// filter/search interaction means creating ~100,000 DOM nodes
+// synchronously — long enough to block the main thread and feel like
+// a genuine freeze, not just "slow". Instead: render an initial batch
+// immediately, then append more as the user scrolls near the bottom
+// of .table-scroll. Filtering/searching still only has to build the
+// first batch's worth of rows, not the entire result set.
+// ========================================
+
+const RENDER_BATCH_SIZE = 300;
+let renderedCount = 0;          // how many of the CURRENT currentRows are in the DOM
+let customerCountsForRender = new Map(); // duplicate-detection map, computed once per renderTable() call
+
+function buildRowElement(row, index) {
+    const tr = document.createElement("tr");
+    tr.dataset.index = index;
+
+    const rowClassCss = classRowCssClass(row.class);
+    if (rowClassCss) tr.classList.add(rowClassCss);
+
+    const arreaClass = (parseFloat(row.arreas) || 0) > 0 ? "cell-negative" : "";
+    const balClass = (parseFloat(row.balance) || 0) < 0 ? "cell-negative" : "";
+    const balPdClass = row.pd === "Balanced_PD" ? "cell-balance-pd" : "";
+    const dupClass = (customerCountsForRender.get(row.customer) || 0) > 1 ? "cell-duplicate-customer" : "";
+
+    const promiseCss = promiseCellCssClass(row.promiseStatus);
+    const followupCssBase = promiseCss || "cell-followup-default";
+    const followupCss = row.__pendingSubmit ? `${followupCssBase} cell-pending-local` : followupCssBase;
+
+    tr.innerHTML = `
+        <td>${index + 1}</td>
+        <td class="${dupClass}">${escapeHtml(row.customer)}</td>
+        <td>${escapeHtml(row.loanNumber)}</td>
+        <td>${escapeHtml(row.location)}</td>
+        <td>${escapeHtml(formatRowDateDMY(row.disDate))}</td>
+        <td>${escapeHtml(row.prnOS)}</td>
+        <td>${escapeHtml(row.intOS)}</td>
+        <td>${escapeHtml(row.prnDue)}</td>
+        <td>${escapeHtml(row.intDue)}</td>
+        <td>${escapeHtml(row.penalty)}</td>
+        <td class="${arreaClass}">${escapeHtml(row.arreas)}</td>
+        <td>${escapeHtml(row.day)}</td>
+        <td class="${balClass} ${balPdClass}">${escapeHtml(row.balance)}</td>
+        <td>${escapeHtml(row.accountLoan)}</td>
+        <td>${escapeHtml(formatPhone(row.tell))}</td>
+        <td>${escapeHtml(row.cif)}</td>
+        <td>${escapeHtml(row.occu)}</td>
+        <td>${escapeHtml(row.ministry)}</td>
+        <td class="${promiseCss}">${escapeHtml(row.promiseStatus)}</td>
+        <td>${escapeHtml(row.coId)}</td>
+        <td>${escapeHtml(row.cifCoborrower)}</td>
+        <td class="${followupCss}">${escapeHtml(row.ajReason)}</td>
+        <td class="${followupCss}">${escapeHtml(row.akSolution)}</td>
+        <td class="${followupCss}">${escapeHtml(formatRowDateDMY(row.alFollowup))}</td>
+        <td>${escapeHtml(row.user)}</td>
+        <td>${escapeHtml(formatRowDateDMY(row.dateBackup))}</td>
+    `;
+    return tr;
+}
+
+function appendMoreRows() {
+    if (renderedCount >= currentRows.length) return;
+
+    const start = renderedCount;
+    const end = Math.min(start + RENDER_BATCH_SIZE, currentRows.length);
+
+    const frag = document.createDocumentFragment();
+    for (let i = start; i < end; i++) {
+        frag.appendChild(buildRowElement(currentRows[i], i));
+    }
+    tbodyArrears.appendChild(frag);
+    renderedCount = end;
+
+    const note = document.getElementById("renderedCountNote");
+    if (note) {
+        note.textContent = renderedCount < currentRows.length
+            ? `កំពុងបង្ហាញ ${renderedCount.toLocaleString()} នៃ ${currentRows.length.toLocaleString()} — រំកិលចុះក្រោមដើម្បីមើលបន្ថែម`
+            : `បង្ហាញទាំងអស់ ${currentRows.length.toLocaleString()}`;
+    }
+}
+
+// Infinite-scroll trigger — appends the next batch when the user
+// scrolls near the bottom of the table.
+document.querySelector(".table-scroll")?.addEventListener("scroll", () => {
+    const el = document.querySelector(".table-scroll");
+    if (!el || renderedCount >= currentRows.length) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 300) {
+        appendMoreRows();
+    }
+});
+
 function renderTable(rows) {
     tbodyArrears.innerHTML = "";
+    renderedCount = 0;
 
     if (!rows.length) {
         tbodyArrears.innerHTML = `
@@ -637,65 +731,16 @@ function renderTable(rows) {
     // Duplicate-customer detection (column D) — scoped to the rows
     // actually being shown, same as Excel's "Duplicate Values" rule
     // would effectively read against the visible/filtered range.
-    const customerCounts = new Map();
+    // Computed once here for the WHOLE result set (not per-batch),
+    // since duplicate detection needs to see all matching rows
+    // regardless of which batch each one ends up rendered in.
+    customerCountsForRender = new Map();
     rows.forEach(row => {
         if (!row.customer) return;
-        customerCounts.set(row.customer, (customerCounts.get(row.customer) || 0) + 1);
+        customerCountsForRender.set(row.customer, (customerCountsForRender.get(row.customer) || 0) + 1);
     });
 
-    const frag = document.createDocumentFragment();
-
-    rows.forEach((row, index) => {
-        const tr = document.createElement("tr");
-        tr.dataset.index = index;
-
-        const rowClassCss = classRowCssClass(row.class);
-        if (rowClassCss) tr.classList.add(rowClassCss);
-
-        const arreaClass = (parseFloat(row.arreas) || 0) > 0 ? "cell-negative" : "";
-        const balClass = (parseFloat(row.balance) || 0) < 0 ? "cell-negative" : "";
-        const balPdClass = row.pd === "Balanced_PD" ? "cell-balance-pd" : "";
-        const dupClass = (customerCounts.get(row.customer) || 0) > 1 ? "cell-duplicate-customer" : "";
-
-        // Promise Status coloring applies to Promise Status + all three
-        // follow-up cells; if none of the three keywords matched, those
-        // follow-up cells fall back to the default light-blue fill.
-        const promiseCss = promiseCellCssClass(row.promiseStatus);
-        const followupCssBase = promiseCss || "cell-followup-default";
-        const followupCss = row.__pendingSubmit ? `${followupCssBase} cell-pending-local` : followupCssBase;
-
-        tr.innerHTML = `
-            <td>${index + 1}</td>
-            <td class="${dupClass}">${escapeHtml(row.customer)}</td>
-            <td>${escapeHtml(row.loanNumber)}</td>
-            <td>${escapeHtml(row.location)}</td>
-            <td>${escapeHtml(formatRowDateDMY(row.disDate))}</td>
-            <td>${escapeHtml(row.prnOS)}</td>
-            <td>${escapeHtml(row.intOS)}</td>
-            <td>${escapeHtml(row.prnDue)}</td>
-            <td>${escapeHtml(row.intDue)}</td>
-            <td>${escapeHtml(row.penalty)}</td>
-            <td class="${arreaClass}">${escapeHtml(row.arreas)}</td>
-            <td>${escapeHtml(row.day)}</td>
-            <td class="${balClass} ${balPdClass}">${escapeHtml(row.balance)}</td>
-            <td>${escapeHtml(row.accountLoan)}</td>
-            <td>${escapeHtml(formatPhone(row.tell))}</td>
-            <td>${escapeHtml(row.cif)}</td>
-            <td>${escapeHtml(row.occu)}</td>
-            <td>${escapeHtml(row.ministry)}</td>
-            <td class="${promiseCss}">${escapeHtml(row.promiseStatus)}</td>
-            <td>${escapeHtml(row.coId)}</td>
-            <td>${escapeHtml(row.cifCoborrower)}</td>
-            <td class="${followupCss}">${escapeHtml(row.ajReason)}</td>
-            <td class="${followupCss}">${escapeHtml(row.akSolution)}</td>
-            <td class="${followupCss}">${escapeHtml(formatRowDateDMY(row.alFollowup))}</td>
-            <td>${escapeHtml(row.user)}</td>
-            <td>${escapeHtml(formatRowDateDMY(row.dateBackup))}</td>
-        `;
-        frag.appendChild(tr);
-    });
-
-    tbodyArrears.appendChild(frag);
+    appendMoreRows(); // renders the first batch only
 
     // This paint-forcing fix is only needed ONCE, on the very first
     // render after data loads — that's when the "far-right columns
@@ -1041,6 +1086,61 @@ async function submitAllPendingReasons() {
     }
 }
 
+// Discards local pending edits for the given concate values, restoring
+// each affected row to whatever the server currently has (or blank,
+// if the server has no record at all for that row). Used by both the
+// global "បោះបង់" button and the per-row cancel link inside the modal.
+async function cancelPendingReasons(concates) {
+    if (!concates.length) return;
+
+    if (typeof showAppLoading === "function") {
+        showAppLoading("កំពុងបោះបង់...");
+    }
+
+    try {
+        const reasonMap = await fetchReasonArrearData(concates);
+        concates.forEach(concate => {
+            const row = allRows.find(r => r.concate === concate);
+            if (!row) return;
+
+            const found = reasonMap.get(concate);
+            if (found) {
+                row.ajReason = found.aj || "";
+                row.akSolution = found.ak || "";
+                row.alFollowup = found.al ? formatRowDateDMY(found.al) : "";
+                row.user = found.uploadedBy || "";
+                row.dateBackup = found.uploadedAt ? formatRowDateDMY(found.uploadedAt) : "";
+            } else {
+                row.ajReason = "";
+                row.akSolution = "";
+                row.alFollowup = "";
+            }
+            row.promiseStatus = computeStatusFromDate(row.alFollowup);
+            row.__pendingSubmit = false;
+        });
+    } catch (err) {
+        console.error("[cancel pending] failed to restore server state:", err);
+        notify("មិនអាចទាញយកទិន្នន័យដើម — ការកែប្រែក្នុងម៉ាស៊ីនត្រូវបានលុបទោះជាយ៉ាងណា", "warning");
+    } finally {
+        if (typeof hideAppLoading === "function") {
+            hideAppLoading();
+        }
+    }
+
+    removePendingReasons(concates);
+    renderTable(currentRows);
+}
+
+document.getElementById("btnCancelAllPending")?.addEventListener("click", async () => {
+    const concates = Object.keys(getPendingReasonsMap());
+    if (!concates.length) return;
+
+    if (!confirm(`តើអ្នកពិតជាចង់បោះបង់ការកែប្រែក្នុងម៉ាស៊ីនចំនួន ${concates.length} ដែរឬទេ?`)) return;
+
+    await cancelPendingReasons(concates);
+    notify("បានបោះបង់ការកែប្រែក្នុងម៉ាស៊ីនទាំងអស់", "success");
+});
+
 async function openReasonPanel(row) {
     selectedRow = row;
 
@@ -1068,7 +1168,21 @@ async function openReasonPanel(row) {
         reasonAK.value = localPending.ak || "";
         reasonAL.value = localPending.al ? localPending.al.slice(0, 10) : "";
         if (pendingNote) {
-            pendingNote.textContent = `រក្សាទុកក្នុងម៉ាស៊ីននៅ ${new Date(localPending.savedAt).toLocaleString()} (មិនទាន់ដាក់ស្នើ)`;
+            pendingNote.innerHTML = "";
+            pendingNote.append(
+                `រក្សាទុកក្នុងម៉ាស៊ីននៅ ${new Date(localPending.savedAt).toLocaleString()} (មិនទាន់ដាក់ស្នើ) `
+            );
+            const cancelLink = document.createElement("button");
+            cancelLink.type = "button";
+            cancelLink.className = "reason-pending-cancel-link";
+            cancelLink.textContent = "បោះបង់";
+            cancelLink.addEventListener("click", async (e) => {
+                e.stopPropagation();
+                await cancelPendingReasons([row.concate]);
+                notify("បានបោះបង់ការកែប្រែក្នុងម៉ាស៊ីន", "success");
+                closeReasonModal();
+            });
+            pendingNote.appendChild(cancelLink);
             pendingNote.classList.add("show");
         }
         return; // skip the server fetch — this IS the current draft
