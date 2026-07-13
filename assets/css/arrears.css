@@ -1447,17 +1447,39 @@ font-size:11px;
 
 @page{
 
-size:landscape;
+size:A4 landscape;
+
+margin:10mm;
 
 }
 
+/* Page chrome that's meaningless on paper */
 #offlineBanner,
 #topbar-container,
 #bottomnav-container,
-.filter-card,
-.reason-backdrop{
+.reason-backdrop,
+.arrears-menu-wrap,
+.rendered-count-note{
 
 display:none !important;
+
+}
+
+/* Buttons/actions inside the filter card aren't useful on paper —
+   but the filter SELECTIONS and summary totals are, per request, so
+   .filter-card itself stays visible (it used to be hidden entirely). */
+.filter-actions,
+.button-row,
+.pending-row{
+
+display:none !important;
+
+}
+
+html,
+body{
+
+background:#fff !important;
 
 }
 
@@ -1467,13 +1489,71 @@ padding:0;
 
 }
 
+/* ==========================================
+   INK-SAVING COLOR OVERRIDES
+   The navy/gold theme looks good on screen but is expensive to print
+   (large solid-color fills). Everything below forces white
+   backgrounds with black/dark text for print specifically — this
+   does NOT touch the conditional-formatting colors (Loss/Doubtful/
+   Promise Status/etc.), which stay as-is since those convey real
+   information on a printed report, same as Excel's own conditional
+   formatting would.
+========================================== */
+
+.filter-card{
+
+background:#fff !important;
+
+border:1px solid #999 !important;
+
+box-shadow:none !important;
+
+color:#000 !important;
+
+}
+
+.filter-group label{
+
+color:#000 !important;
+
+}
+
+.filter-group input,
+.filter-group select{
+
+background:#fff !important;
+
+border:1px solid #999 !important;
+
+color:#000 !important;
+
+}
+
+.summary-row{
+
+color:#000 !important;
+
+border-top:1px solid #ccc !important;
+
+}
+
+.summary-row .num{
+
+color:#000 !important;
+
+font-weight:700;
+
+}
+
 .table-card{
+
+background:#fff !important;
 
 overflow:visible;
 
 box-shadow:none;
 
-border:none;
+border:1px solid #999;
 
 }
 
@@ -1489,6 +1569,16 @@ max-height:none !important;
 .table-card td{
 
 position:static !important;
+
+}
+
+.table-card thead th{
+
+background:#fff !important;
+
+color:#000 !important;
+
+border:1px solid #999 !important;
 
 }
 
