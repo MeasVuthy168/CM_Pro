@@ -1552,6 +1552,7 @@ async function exportToPdf() {
         notify("មិនអាចបង្កើតឯកសារ PDF បានទេ", "error");
     } finally {
         tempStyleEl.remove();
+        void document.body.offsetHeight; // force a reflow so the removed styles take effect immediately, not lazily
         if (typeof hideAppLoading === "function") {
             hideAppLoading();
         }
