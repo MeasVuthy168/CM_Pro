@@ -652,24 +652,22 @@ cursor:default;
 
 /* Arrears cells past due read in red, matching the VBA sheet's
    conditional formatting on the Arrea/Balance columns */
-/* Fixed-width columns: មុខរបរ, មូលហេតុ/ដំណោះស្រាយ, ថ្ងៃសន្យាសង, and
-   DateBackUpReasonArrear all share the same column width (matched to
-   what a short dd/mm/yyyy date needs) instead of auto-sizing to their
-   content. Truncated to a single line with an ellipsis rather than
-   wrapping — wrapping kept row heights inconsistent whenever
-   មូលហេតុ/ដំណោះស្រាយ held long text, so this trades "see the full
-   text inline" for "every row is the same height" (the full text is
-   still available by tapping the row to open the Reason Arrear
-   panel). If you add/remove/reorder table columns, these nth-child
-   indexes (22, 23, 24, 26) need to be updated to match. */
+/* Fixed-width columns: មុខរបរ, មូលហេតុ/ដំណោះស្រាយ, ថ្ងៃសន្យាសង all
+   share the same column width (matched to what a short dd/mm/yyyy
+   date needs) instead of auto-sizing to their content. Truncated to
+   a single line with an ellipsis rather than wrapping — wrapping
+   kept row heights inconsistent whenever មូលហេតុ/ដំណោះស្រាយ held
+   long text, so this trades "see the full text inline" for "every
+   row is the same height" (the full text is still available by
+   tapping the row to open the Reason Arrear panel). If you add/
+   remove/reorder table columns, these nth-child indexes (22, 23, 24)
+   need to be updated to match. */
 .table-card th:nth-child(22),
 .table-card td:nth-child(22),
 .table-card th:nth-child(23),
 .table-card td:nth-child(23),
 .table-card th:nth-child(24),
-.table-card td:nth-child(24),
-.table-card th:nth-child(26),
-.table-card td:nth-child(26){
+.table-card td:nth-child(24){
 
 width:110px;
 
@@ -682,6 +680,22 @@ white-space:nowrap;
 overflow:hidden;
 
 text-overflow:ellipsis;
+
+}
+
+/* DateBackUpReasonArrear (column 26) — sized to fit its full
+   "yyyy-mm-dd hh:mm AM/PM" value without truncating, rather than
+   sharing the narrower 110px width above. */
+.table-card th:nth-child(26),
+.table-card td:nth-child(26){
+
+width:160px;
+
+min-width:160px;
+
+max-width:160px;
+
+white-space:nowrap;
 
 }
 
