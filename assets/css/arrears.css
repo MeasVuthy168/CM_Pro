@@ -273,6 +273,36 @@ transition:.2s;
 
 }
 
+#btnRefresh{
+
+height:34px;
+
+padding:0 16px;
+
+border:none;
+
+border-radius:10px;
+
+background:linear-gradient(180deg,#FFD700,#D4AF37);
+
+color:#002D6B;
+
+font-size:13px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+transition:.2s;
+
+}
+
+#btnRefresh:active{
+
+transform:scale(.97);
+
+}
+
 #btnClear:active{
 
 transform:scale(.97);
@@ -331,6 +361,18 @@ color:#8fa0bd;
    Same clip/scroll split as customers.css — see that file's
    comment for why .table-card and .table-scroll are separate.
 ========================================== */
+
+.rendered-count-note{
+
+font-size:12px;
+
+color:#cdd9ef;
+
+margin-bottom:6px;
+
+text-align:center;
+
+}
 
 .table-card{
 
@@ -931,6 +973,24 @@ display:block;
 
 }
 
+.reason-pending-cancel-link{
+
+background:none;
+
+border:none;
+
+color:#ff6b6b;
+
+text-decoration:underline;
+
+font-size:12px;
+
+cursor:pointer;
+
+padding:0;
+
+}
+
 #btnReasonSubmit{
 
 background:linear-gradient(180deg,#FFD700,#D4AF37);
@@ -950,6 +1010,34 @@ color:#FFD700;
 color:#fff;
 
 font-weight:700;
+
+}
+
+#btnCancelAllPending{
+
+height:34px;
+
+padding:0 16px;
+
+border:1px solid #D4AF37;
+
+border-radius:10px;
+
+background:transparent;
+
+color:#fff;
+
+font-size:13px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+}
+
+#btnCancelAllPending:active{
+
+transform:scale(.97);
 
 }
 
@@ -1012,7 +1100,7 @@ border:none;
 
 border-radius:10px;
 
-font-family:inherit;
+font-family:'KRASAR',sans-serif;
 
 font-size:14px;
 
