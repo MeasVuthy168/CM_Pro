@@ -1,4 +1,3 @@
-
 // ========================================
 // Daily Arrears — ArreasT24ByCO web port
 // Reads from GET /api/arreast24byco/rows (paginated, 41 cols/row,
@@ -566,6 +565,8 @@ function formatPhone(value) {
 // Uses /api/arreast24byco/info (buildInfo on the server) which already
 // returns lastUploadAt/lastUploadedBy — cheaper than scanning all rows
 // for this ourselves.
+let lastUploadAtRaw = null; // kept for the Export PDF filename — display text is already 12h-formatted, this preserves the exact source value
+
 async function fetchArrearsInfo() {
     try {
         const res = await fetch(`${API.BASE_URL}/api/arreast24byco/info`, {
@@ -574,10 +575,12 @@ async function fetchArrearsInfo() {
         const data = await res.json();
         if (!data.ok) throw new Error(data.message || "Failed to load upload info.");
 
+        lastUploadAtRaw = data.lastUploadAt || null;
         lastUploadAtEl.textContent = formatDateTime24h(data.lastUploadAt);
         lastUploadByEl.textContent = data.lastUploadedBy || "-";
     } catch (err) {
         console.error(err);
+        lastUploadAtRaw = null;
         lastUploadAtEl.textContent = "-";
         lastUploadByEl.textContent = "-";
     }
@@ -1371,6 +1374,48 @@ function exportArrears() {
 document.getElementById("btnClear").addEventListener("click", () => runWithLoading(clearFilters, "កំពុងសម្អាត..."));
 document.getElementById("btnRefresh").addEventListener("click", refreshArrears);
 document.getElementById("btnExport").addEventListener("click", exportArrears);
+// ========================================
+// EXPORT PDF
+// Reuses the exact same print stylesheet/dialog as the Print button
+// (window.print() — the person picks "Save as PDF" from the OS print
+// sheet themselves, same UI either way). The only thing this adds is
+// a filename: most browsers default a saved-PDF's filename to the
+// current page title, so this temporarily renames the document right
+// before printing, then restores it afterward.
+// ========================================
+
+function buildExportPdfFilename() {
+    const pad = n => String(n).padStart(2, "0");
+    let datePart = "unknown-date";
+
+    if (lastUploadAtRaw) {
+        const raw = new Date(lastUploadAtRaw);
+        if (!isNaN(raw.getTime())) {
+            const d = toCambodiaTime(raw);
+            datePart = `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}_${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}`;
+        }
+    }
+
+    const officerName = (filterEls.officerResponse.value || "").trim();
+    return `DailyArrear_${datePart}${officerName ? "_" + officerName : ""}`;
+}
+
+document.getElementById("btnExportPdf")?.addEventListener("click", () => {
+    const originalTitle = document.title;
+    document.title = buildExportPdfFilename();
+
+    window.print();
+
+    // Safety net — window.print() blocks until the dialog closes on
+    // most browsers, but this restores the title regardless in case
+    // some mobile browser/WebView returns immediately instead.
+    setTimeout(() => {
+        document.title = originalTitle;
+    }, 1000);
+
+    document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
+});
+
 document.getElementById("btnPrint").addEventListener("click", () => window.print());
 
 // ========================================
