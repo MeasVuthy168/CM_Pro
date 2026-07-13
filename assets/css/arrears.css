@@ -1453,7 +1453,7 @@ display:none;
 
 @page{
 
-size:A4 landscape;
+size:297mm 210mm;
 
 margin:10mm;
 
@@ -1616,6 +1616,23 @@ height:auto !important;
 .table-card td{
 
 position:static !important;
+
+}
+
+/* Repeats the header row on every printed page (not just page 1).
+   Browsers only reliably do this with an EXPLICIT display value here
+   — thead/tbody's default table-header-group/table-row-group display
+   can get lost once other rules (like the position:static override
+   above, or the table's own layout mode) are in play. */
+.table-card thead{
+
+display:table-header-group;
+
+}
+
+.table-card tbody{
+
+display:table-row-group;
 
 }
 
