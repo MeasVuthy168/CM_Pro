@@ -462,7 +462,7 @@ function formatShortAmount(v) {
 }
 
 // "yyyy-mm-dd hh:mm:ss AM/PM"
-function formatDateTime12h(isoString) {
+function formatDateTime24h(isoString) {
     if (!isoString) return "-";
     const d = new Date(isoString);
     if (isNaN(d.getTime())) return "-";
@@ -471,17 +471,10 @@ function formatDateTime12h(isoString) {
     const yyyy = d.getFullYear();
     const mm = pad(d.getMonth() + 1);
     const dd = pad(d.getDate());
-
-    let h = d.getHours();
-    const ampm = h >= 12 ? "PM" : "AM";
-    h = h % 12;
-    if (h === 0) h = 12;
-
-    const hh = pad(h);
+    const hh = pad(d.getHours());
     const min = pad(d.getMinutes());
-    const ss = pad(d.getSeconds());
 
-    return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss} ${ampm}`;
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
 }
 
 // ========================================
@@ -564,7 +557,7 @@ async function fetchArrearsInfo() {
         const data = await res.json();
         if (!data.ok) throw new Error(data.message || "Failed to load upload info.");
 
-        lastUploadAtEl.textContent = formatDateTime12h(data.lastUploadAt);
+        lastUploadAtEl.textContent = formatDateTime24h(data.lastUploadAt);
         lastUploadByEl.textContent = data.lastUploadedBy || "-";
     } catch (err) {
         console.error(err);
