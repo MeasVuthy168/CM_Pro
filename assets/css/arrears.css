@@ -90,6 +90,10 @@ overflow:hidden;
 
 text-overflow:ellipsis;
 
+-webkit-text-size-adjust:none;
+
+text-size-adjust:none;
+
 }
 
 .filter-group input,
@@ -116,6 +120,10 @@ transition:.2s;
 background:#00265c;
 
 color:#fff;
+
+-webkit-text-size-adjust:none;
+
+text-size-adjust:none;
 
 }
 
