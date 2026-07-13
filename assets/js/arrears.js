@@ -1,3 +1,4 @@
+
 // ========================================
 // Daily Arrears — ArreasT24ByCO web port
 // Reads from GET /api/arreast24byco/rows (paginated, 41 cols/row,
@@ -523,9 +524,21 @@ function formatRowDateDMY(value) {
 }
 
 // yyyy-mm-dd hh:mm AM/PM — for DateBackUpReasonArrear
+// Cambodia is UTC+7 with no DST. Shifting the timestamp by 7 hours
+// and then reading it with UTC getters gives a consistent Cambodia
+// wall-clock time regardless of what timezone the viewing device
+// itself happens to be set to — more robust than relying on the
+// browser's local timezone (toLocaleString()), which is what caused
+// the table (previously plain UTC) and the modal (device-local time)
+// to show different hours for the exact same timestamp.
+function toCambodiaTime(d) {
+    return new Date(d.getTime() + 7 * 60 * 60 * 1000);
+}
+
 function formatRowDateTime12h(value) {
-    const d = parseFlexibleDate(value);
-    if (!d) return value || "";
+    const raw = parseFlexibleDate(value);
+    if (!raw) return value || "";
+    const d = toCambodiaTime(raw);
     const pad = n => String(n).padStart(2, "0");
 
     let h = d.getUTCHours();
@@ -1205,7 +1218,7 @@ async function openReasonPanel(row) {
             reasonAK.value = found.ak || "";
             reasonAL.value = found.al ? found.al.slice(0, 10) : "";
             if (found.uploadedBy) {
-                const when = found.uploadedAt ? new Date(found.uploadedAt).toLocaleString() : "";
+                const when = found.uploadedAt ? formatRowDateTime12h(found.uploadedAt) : "";
                 reasonMeta.textContent = `Last updated by ${found.uploadedBy}${when ? " on " + when : ""}`;
             }
         }
