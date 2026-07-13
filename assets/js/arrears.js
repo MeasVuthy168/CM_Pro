@@ -1408,7 +1408,7 @@ function buildExportPdfFilename() {
     }
 
     const officerName = (filterEls.officerResponse.value || "").trim();
-    return `DailyArrear_${datePart}${officerName ? "_" + officerName : ""}`;
+    return `Arrear_${datePart}${officerName ? "_" + officerName : ""}`;
 }
 
 // Pulls every rule out of any @media print block in the loaded
