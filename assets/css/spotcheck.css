@@ -1,0 +1,585 @@
+/* =========================================================
+   Spot Check — pages/spotcheck/spotcheck-loader.js
+   Add / Edit / Delete for Facilities Spot Check records.
+
+   Mirrors the VBA (ReportSP_Mongo + frmSpotCheck) logic:
+   - CIF is the unique key
+   - Required fields match ValidateSpotCheckForm
+   - Delete removes from server first, then updates local state
+   - Upsert is a plain "save this one record" call (not the
+     incremental multi-row diff the Excel backup used, since
+     here each save is a single user action, not a bulk sync)
+
+   ASSUMPTIONS TO VERIFY / ADJUST:
+   - API base + endpoints: reuses /api/reportsp/* per your choice
+   - Dropdown option lists (Cycle, Repayment History, Loan
+     Completion, Business Situation, Collateral Type/Change/
+     Price, Purpose, Repayment Source, Conclusion) are NOT
+     defined in the VBA I reviewed — they come from the
+     "Setting Up" sheet / combobox RowSource in Excel, which
+     I don't have. Fill OPTION_LISTS below with the real values.
+   - Occupation autosuggest source: Setting Up!AO18:AO350 in
+     Excel — mapped here to GET /api/settings/occupation-list
+     returning a plain string array. Adjust the endpoint to
+     match your backend.
+   - Owner restriction (5 hardcoded user IDs) is NOT enforced
+     client-side here — enforce server-side if you want to
+     keep it, since client-side checks are trivially bypassed.
+   ========================================================= */
+
+(function () {
+  "use strict";
+
+  const API_BASE = window.CM_BASE_URL || "";
+  const EP = {
+    list: API_BASE + "/api/reportsp/get",
+    upsert: API_BASE + "/api/reportsp/upsert",
+    delete: API_BASE + "/api/reportsp/delete",
+    occupationList: API_BASE + "/api/settings/occupation-list",
+  };
+
+  // Column order B..AI (34 values) — must match the VBA v[] array order exactly
+  const FIELD_ORDER = [
+    "branch", "cif", "loanId", "customerName", "disbursementDate", "maturityDate",
+    "loanSize", "currency", "outstanding", "creditOfficer", "interestRate", "loanType", "term",
+    "cycle", "repaymentHistory", "lateDays", "loanCompletion", "loanCompletionNote",
+    "occupationInFile", "currentOccupation", "businessSituation", "occupationDifferenceNote",
+    "collateralType", "collateralChange", "collateralPrice", "collateralNote",
+    "purpose", "purposeNote", "repaymentSource", "repaymentSourceNote", "conclusion",
+    "spotCheckDate", "owner", "timestamp",
+  ];
+
+  // TODO: replace with the real option lists from "Setting Up" sheet
+  const OPTION_LISTS = {
+    cboCycle: ["1st Cycle", "2nd Cycle", "3rd Cycle", "4th Cycle+"],
+    cboRepaymentHistory: ["On Time", "Late", "Restructured"],
+    cboLoanCompletion: ["Complete", "Incomplete", "Incomplete_Violate"],
+    cboBusinessSituation: ["Increasing", "Stable", "Decreasing", "Closed"],
+    cboCollateralType: ["Land Title", "Hard Title", "Soft Title", "Payroll", "Clean"],
+    cboCollateralChange: ["No Change", "Changed"],
+    cboCollateralPrice: ["Sufficient", "Insufficient"],
+    cboPurpose: ["As Declared", "Different From Declared"],
+    cboRepaymentSource: ["Business Income", "Salary", "Family Support", "Other"],
+    cboConclusion: ["Normal", "Watch", "Special Mention", "Sub-Standard", "Doubtful", "Loss"],
+  };
+
+  const REQUIRED_IDS = [
+    "txtCIF", "cboCycle", "txtSpotCheckDate", "cboRepaymentHistory", "cboLoanCompletion",
+    "txtOccupationInFile", "txtCurrentOccupation", "cboBusinessSituation",
+    "cboCollateralType", "cboCollateralChange", "cboCollateralPrice",
+    "cboPurpose", "cboRepaymentSource", "cboConclusion",
+  ];
+
+  let allRecords = [];      // raw {k, v, uploadedAt} from server
+  let editingCIF = null;    // null = adding new
+  let deleteTargetCIF = null;
+  let occupationSuggestions = [];
+
+  // ---------------------------------------------------------
+  // Bootstrapping
+  // ---------------------------------------------------------
+  document.addEventListener("DOMContentLoaded", init);
+
+  async function init() {
+    await Promise.all([loadComponent("topbar"), loadComponent("bottomnav")]);
+    populateSelectOptions();
+    bindEvents();
+    await loadOccupationSuggestions();
+    await refreshList();
+  }
+
+  async function loadComponent(name) {
+    try {
+      const res = await fetch(`../../components/${name}.html`);
+      const html = await res.text();
+      document.getElementById(name).innerHTML = html;
+    } catch (e) {
+      console.error(`Failed to load ${name}`, e);
+    }
+  }
+
+  function populateSelectOptions() {
+    Object.entries(OPTION_LISTS).forEach(([id, options]) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      options.forEach((opt) => {
+        const o = document.createElement("option");
+        o.value = opt;
+        o.textContent = opt;
+        el.appendChild(o);
+      });
+    });
+
+    // filter dropdown mirrors the conclusion list
+    const filterEl = document.getElementById("filterConclusion");
+    OPTION_LISTS.cboConclusion.forEach((opt) => {
+      const o = document.createElement("option");
+      o.value = opt;
+      o.textContent = opt;
+      filterEl.appendChild(o);
+    });
+  }
+
+  // ---------------------------------------------------------
+  // Data loading
+  // ---------------------------------------------------------
+  async function refreshList() {
+    CMLoading?.show?.();
+    try {
+      const res = await fetch(EP.list, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "Load failed");
+      allRecords = data.data || [];
+      renderSummary();
+      renderList();
+    } catch (err) {
+      console.error(err);
+      CMToast?.show?.("មិនអាចទាញយកទិន្នន័យបានទេ", "error");
+    } finally {
+      CMLoading?.hide?.();
+    }
+  }
+
+  async function loadOccupationSuggestions() {
+    try {
+      const res = await fetch(EP.occupationList);
+      const data = await res.json();
+      occupationSuggestions = Array.isArray(data) ? data : (data.data || []);
+    } catch (err) {
+      console.warn("Occupation suggestion list unavailable", err);
+      occupationSuggestions = [];
+    }
+  }
+
+  // ---------------------------------------------------------
+  // Rendering
+  // ---------------------------------------------------------
+  function renderSummary() {
+    document.getElementById("statTotal").textContent = allRecords.length;
+
+    const now = new Date();
+    const thisMonth = allRecords.filter((r) => {
+      const rec = recordToObj(r);
+      const d = parseDateFlexible(rec.spotCheckDate);
+      return d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).length;
+    document.getElementById("statMonth").textContent = thisMonth;
+  }
+
+  function renderList() {
+    const search = document.getElementById("searchInput").value.trim().toLowerCase();
+    const conclusionFilter = document.getElementById("filterConclusion").value;
+
+    const filtered = allRecords.filter((r) => {
+      const rec = recordToObj(r);
+      const matchesSearch =
+        !search ||
+        rec.cif.toLowerCase().includes(search) ||
+        (rec.customerName || "").toLowerCase().includes(search);
+      const matchesConclusion = !conclusionFilter || rec.conclusion === conclusionFilter;
+      return matchesSearch && matchesConclusion;
+    });
+
+    const container = document.getElementById("listContainer");
+    const emptyState = document.getElementById("emptyState");
+    const noResultsState = document.getElementById("noResultsState");
+
+    container.innerHTML = "";
+
+    if (allRecords.length === 0) {
+      emptyState.hidden = false;
+      noResultsState.hidden = true;
+      return;
+    }
+    emptyState.hidden = true;
+
+    if (filtered.length === 0) {
+      noResultsState.hidden = false;
+      return;
+    }
+    noResultsState.hidden = true;
+
+    filtered
+      .sort((a, b) => (b.uploadedAt || "").localeCompare(a.uploadedAt || ""))
+      .forEach((r) => container.appendChild(buildCard(recordToObj(r))));
+  }
+
+  function buildCard(rec) {
+    const card = document.createElement("div");
+    card.className = "sc-card";
+    card.innerHTML = `
+      <div class="sc-card-top">
+        <div>
+          <div class="sc-card-cif">${escapeHtml(rec.cif)}</div>
+          <div class="sc-card-name">${escapeHtml(rec.customerName || "—")}</div>
+        </div>
+        <div class="sc-card-actions">
+          <button class="sc-edit-btn" aria-label="កែសម្រួល">✎</button>
+          <button class="sc-delete-btn" aria-label="លុប">🗑</button>
+        </div>
+      </div>
+      <div class="sc-card-meta">
+        <span>${escapeHtml(rec.branch || "—")}</span>
+        <span>${escapeHtml(rec.spotCheckDate || "—")}</span>
+        ${rec.conclusion ? `<span class="sc-badge">${escapeHtml(rec.conclusion)}</span>` : ""}
+      </div>
+    `;
+    card.querySelector(".sc-edit-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openForm(rec);
+    });
+    card.querySelector(".sc-delete-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openDeleteConfirm(rec.cif);
+    });
+    card.addEventListener("click", () => openForm(rec));
+    return card;
+  }
+
+  // ---------------------------------------------------------
+  // Record <-> array mapping (mirrors v[] order from VBA)
+  // ---------------------------------------------------------
+  function recordToObj(r) {
+    const obj = { cif: r.k, uploadedAt: r.uploadedAt };
+    (r.v || []).forEach((val, i) => {
+      obj[FIELD_ORDER[i]] = val;
+    });
+    return obj;
+  }
+
+  function formToArray() {
+    const get = (id) => document.getElementById(id).value.trim();
+    const map = {
+      branch: get("txtBranch"),
+      cif: get("txtCIF"),
+      loanId: get("txtLoanID"),
+      customerName: get("txtCustomerName"),
+      disbursementDate: get("txtDisbursementDate"),
+      maturityDate: get("txtMaturityDate"),
+      loanSize: get("txtLoanSize"),
+      currency: get("txtCurrency"),
+      outstanding: get("txtOutstanding"),
+      creditOfficer: get("txtCreditOfficer"),
+      interestRate: get("txtInterestRate"),
+      loanType: get("txtLoanType"),
+      term: get("txtTerm"),
+      cycle: get("cboCycle"),
+      repaymentHistory: get("cboRepaymentHistory"),
+      lateDays: get("txtLateDays"),
+      loanCompletion: get("cboLoanCompletion"),
+      loanCompletionNote: get("txtLoanCompletionNote"),
+      occupationInFile: get("txtOccupationInFile"),
+      currentOccupation: get("txtCurrentOccupation"),
+      businessSituation: get("cboBusinessSituation"),
+      occupationDifferenceNote: get("txtOccupationDifferenceNote"),
+      collateralType: get("cboCollateralType"),
+      collateralChange: get("cboCollateralChange"),
+      collateralPrice: get("cboCollateralPrice"),
+      collateralNote: get("txtCollateralNote"),
+      purpose: get("cboPurpose"),
+      purposeNote: get("txtPurposeNote"),
+      repaymentSource: get("cboRepaymentSource"),
+      repaymentSourceNote: get("txtRepaymentSourceNote"),
+      conclusion: get("cboConclusion"),
+      spotCheckDate: get("txtSpotCheckDate"),
+      owner: getCurrentUser(),
+      timestamp: new Date().toISOString(),
+    };
+    return FIELD_ORDER.map((key) => map[key] || "");
+  }
+
+  // ---------------------------------------------------------
+  // Form open / close
+  // ---------------------------------------------------------
+  function openForm(rec) {
+    const overlay = document.getElementById("formOverlay");
+    const title = document.getElementById("formPanelTitle");
+    const form = document.getElementById("spotCheckForm");
+    form.reset();
+    clearFieldErrors();
+
+    if (rec) {
+      editingCIF = rec.cif;
+      title.textContent = `កែសម្រួល — ${rec.cif}`;
+      document.getElementById("txtCIF").value = rec.cif || "";
+      document.getElementById("txtCIF").readOnly = true;
+      document.getElementById("txtBranch").value = rec.branch || "";
+      document.getElementById("txtLoanID").value = rec.loanId || "";
+      document.getElementById("txtCustomerName").value = rec.customerName || "";
+      document.getElementById("txtDisbursementDate").value = rec.disbursementDate || "";
+      document.getElementById("txtMaturityDate").value = rec.maturityDate || "";
+      document.getElementById("txtLoanSize").value = rec.loanSize || "";
+      document.getElementById("txtCurrency").value = rec.currency || "";
+      document.getElementById("txtOutstanding").value = rec.outstanding || "";
+      document.getElementById("txtCreditOfficer").value = rec.creditOfficer || "";
+      document.getElementById("txtInterestRate").value = rec.interestRate || "";
+      document.getElementById("txtLoanType").value = rec.loanType || "";
+      document.getElementById("txtTerm").value = rec.term || "";
+      document.getElementById("cboCycle").value = rec.cycle || "";
+      document.getElementById("cboRepaymentHistory").value = rec.repaymentHistory || "";
+      document.getElementById("txtLateDays").value = rec.lateDays || "";
+      document.getElementById("cboLoanCompletion").value = rec.loanCompletion || "";
+      document.getElementById("txtLoanCompletionNote").value = rec.loanCompletionNote || "";
+      document.getElementById("txtOccupationInFile").value = rec.occupationInFile || "";
+      document.getElementById("txtCurrentOccupation").value = rec.currentOccupation || "";
+      document.getElementById("cboBusinessSituation").value = rec.businessSituation || "";
+      document.getElementById("txtOccupationDifferenceNote").value = rec.occupationDifferenceNote || "";
+      document.getElementById("cboCollateralType").value = rec.collateralType || "";
+      document.getElementById("cboCollateralChange").value = rec.collateralChange || "";
+      document.getElementById("cboCollateralPrice").value = rec.collateralPrice || "";
+      document.getElementById("txtCollateralNote").value = rec.collateralNote || "";
+      document.getElementById("cboPurpose").value = rec.purpose || "";
+      document.getElementById("txtPurposeNote").value = rec.purposeNote || "";
+      document.getElementById("cboRepaymentSource").value = rec.repaymentSource || "";
+      document.getElementById("txtRepaymentSourceNote").value = rec.repaymentSourceNote || "";
+      document.getElementById("cboConclusion").value = rec.conclusion || "";
+      document.getElementById("txtSpotCheckDate").value = rec.spotCheckDate || "";
+      document.getElementById("metaUser").textContent = rec.owner ? `អ្នកបញ្ចូល: ${rec.owner}` : "";
+      document.getElementById("metaTimestamp").textContent = rec.uploadedAt
+        ? `ធ្វើបច្ចុប្បន្នភាព: ${formatTimestamp(rec.uploadedAt)}`
+        : "";
+      document.getElementById("btnSaveForm").textContent = "កែប្រែ";
+    } else {
+      editingCIF = null;
+      title.textContent = "បញ្ចូលថ្មី";
+      document.getElementById("txtCIF").readOnly = false;
+      document.getElementById("metaUser").textContent = "";
+      document.getElementById("metaTimestamp").textContent = "";
+      document.getElementById("btnSaveForm").textContent = "រក្សាទុក";
+    }
+
+    overlay.hidden = false;
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeForm() {
+    document.getElementById("formOverlay").hidden = true;
+    document.body.style.overflow = "";
+    editingCIF = null;
+  }
+
+  // ---------------------------------------------------------
+  // Validation — mirrors ValidateSpotCheckForm in the VBA
+  // ---------------------------------------------------------
+  function clearFieldErrors() {
+    REQUIRED_IDS.forEach((id) => document.getElementById(id).classList.remove("sc-field-error"));
+  }
+
+  function validateForm() {
+    clearFieldErrors();
+    let ok = true;
+    REQUIRED_IDS.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el.value.trim()) {
+        el.classList.add("sc-field-error");
+        ok = false;
+      }
+    });
+    if (!ok) {
+      CMToast?.show?.("សូមបំពេញគ្រប់ចន្លោះដែលចាំបាច់", "error");
+      const firstError = document.querySelector(".sc-field-error");
+      firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    return ok;
+  }
+
+  // ---------------------------------------------------------
+  // Save (Add or Edit — both are just an upsert by CIF)
+  // ---------------------------------------------------------
+  async function saveRecord(e) {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    const cif = document.getElementById("txtCIF").value.trim();
+    const isNew = !editingCIF;
+
+    if (isNew && allRecords.some((r) => r.k === cif)) {
+      CMToast?.show?.("CIF នេះមានរួចហើយ", "error");
+      return;
+    }
+
+    const v = formToArray();
+    const btn = document.getElementById("btnSaveForm");
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(EP.upsert, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ rows: [{ k: cif, v }] }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.ok === false) throw new Error(data.error || "Save failed");
+
+      CMToast?.show?.(isNew ? "បញ្ចូលដោយជោគជ័យ" : "កែប្រែដោយជោគជ័យ", "success");
+      closeForm();
+      await refreshList();
+    } catch (err) {
+      console.error(err);
+      CMToast?.show?.("មិនអាចរក្សាទុកបានទេ", "error");
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ---------------------------------------------------------
+  // Delete
+  // ---------------------------------------------------------
+  function openDeleteConfirm(cif) {
+    deleteTargetCIF = cif;
+    document.getElementById("deleteCifLabel").textContent = cif;
+    document.getElementById("deleteOverlay").hidden = false;
+  }
+
+  function closeDeleteConfirm() {
+    document.getElementById("deleteOverlay").hidden = true;
+    deleteTargetCIF = null;
+  }
+
+  async function confirmDelete() {
+    if (!deleteTargetCIF) return;
+    const btn = document.getElementById("btnConfirmDelete");
+    btn.disabled = true;
+
+    try {
+      // Delete on server FIRST — only update local state if that succeeds,
+      // same order as DeleteReportSP_RowMongo / DeleteSpotCheck in the VBA.
+      const res = await fetch(EP.delete, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ k: deleteTargetCIF }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.ok === false) throw new Error(data.error || "Delete failed");
+
+      allRecords = allRecords.filter((r) => r.k !== deleteTargetCIF);
+      renderSummary();
+      renderList();
+      CMToast?.show?.("លុបដោយជោគជ័យ", "success");
+      closeDeleteConfirm();
+      if (editingCIF === deleteTargetCIF) closeForm();
+    } catch (err) {
+      console.error(err);
+      CMToast?.show?.("មិនអាចលុបបានទេ", "error");
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ---------------------------------------------------------
+  // Autosuggest (Occupation In File / Current Occupation)
+  // ---------------------------------------------------------
+  function bindAutosuggest(inputId, listId) {
+    const input = document.getElementById(inputId);
+    const list = document.getElementById(listId);
+
+    input.addEventListener("input", () => {
+      const kw = input.value.trim().toLowerCase();
+      if (!kw) {
+        list.hidden = true;
+        return;
+      }
+      const matches = occupationSuggestions.filter((s) => s.toLowerCase().includes(kw)).slice(0, 20);
+      list.innerHTML = "";
+      matches.forEach((m) => {
+        const li = document.createElement("li");
+        li.textContent = m;
+        li.addEventListener("click", () => {
+          input.value = m;
+          list.hidden = true;
+        });
+        list.appendChild(li);
+      });
+      list.hidden = matches.length === 0;
+    });
+
+    input.addEventListener("blur", () => {
+      setTimeout(() => (list.hidden = true), 150);
+    });
+  }
+
+  // ---------------------------------------------------------
+  // Event binding
+  // ---------------------------------------------------------
+  function bindEvents() {
+    document.getElementById("btnAddNew").addEventListener("click", () => openForm(null));
+    document.getElementById("btnEmptyAdd").addEventListener("click", () => openForm(null));
+    document.getElementById("btnCloseForm").addEventListener("click", closeForm);
+    document.getElementById("btnCancelForm").addEventListener("click", closeForm);
+    document.getElementById("spotCheckForm").addEventListener("submit", saveRecord);
+
+    document.getElementById("btnCancelDelete").addEventListener("click", closeDeleteConfirm);
+    document.getElementById("btnConfirmDelete").addEventListener("click", confirmDelete);
+
+    document.getElementById("searchInput").addEventListener("input", debounce(renderList, 200));
+    document.getElementById("filterConclusion").addEventListener("change", renderList);
+
+    bindAutosuggest("txtOccupationInFile", "lstOccupationInFileSuggest");
+    bindAutosuggest("txtCurrentOccupation", "lstCurrentOccupationSuggest");
+
+    ["txtSpotCheckDate", "txtDisbursementDate", "txtMaturityDate"].forEach((id) => {
+      document.getElementById(id).addEventListener("blur", (e) => {
+        e.target.value = formatDateInput(e.target.value);
+      });
+    });
+  }
+
+  // ---------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------
+  function authHeaders() {
+    const token = localStorage.getItem("cm_jwt");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  function getCurrentUser() {
+    try {
+      const cached = JSON.parse(localStorage.getItem("cm_user") || "{}");
+      return cached.username || cached.name || "";
+    } catch {
+      return "";
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function debounce(fn, ms) {
+    let t;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), ms);
+    };
+  }
+
+  function parseDateFlexible(str) {
+    if (!str) return null;
+    const d = new Date(str);
+    return isNaN(d) ? null : d;
+  }
+
+  function formatDateInput(val) {
+    const d = parseDateFlexible(val);
+    if (!d) return val;
+    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mmm = months[d.getMonth()];
+    const yy = String(d.getFullYear()).slice(-2);
+    return `${dd}-${mmm}-${yy}`;
+  }
+
+  function formatTimestamp(iso) {
+    const d = new Date(iso);
+    if (isNaN(d)) return iso;
+    return d.toLocaleString("en-GB", { day: "2-digit", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit" });
+  }
+})();
