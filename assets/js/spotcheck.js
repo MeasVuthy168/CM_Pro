@@ -645,26 +645,42 @@ function scIsoToStored(iso) {
   return `${dd}-${SC_MONTHS[m - 1]}-${yy}`;
 }
 
-// Stored "dd-mmm-yy" (or already-ISO) -> "yyyy-mm-dd" for the date input.
-// Parsed manually rather than via `new Date()`, since Safari doesn't
-// reliably parse "24-Jul-26" as a date string.
+// Stored "dd-mmm-yy", a bare Excel serial date number (e.g. "46177" —
+// real data synced from the Excel sheet where date cells came through
+// as raw numbers), or already-ISO -> "yyyy-mm-dd" for the date input.
 function scStoredToIso(stored) {
   if (!stored) return "";
-  const m = /^(\d{1,2})-([A-Za-z]{3})-(\d{2,4})$/.exec(stored.trim());
-  if (m) {
-    const dd = String(parseInt(m[1], 10)).padStart(2, "0");
-    const monthIdx = SC_MONTHS.findIndex((mo) => mo.toLowerCase() === m[2].toLowerCase());
+  const trimmed = stored.trim();
+
+  const dmy = /^(\d{1,2})-([A-Za-z]{3})-(\d{2,4})$/.exec(trimmed);
+  if (dmy) {
+    const dd = String(parseInt(dmy[1], 10)).padStart(2, "0");
+    const monthIdx = SC_MONTHS.findIndex((mo) => mo.toLowerCase() === dmy[2].toLowerCase());
     if (monthIdx === -1) return "";
     const mm = String(monthIdx + 1).padStart(2, "0");
-    let yy = m[3];
+    let yy = dmy[3];
     if (yy.length === 2) yy = (Number(yy) < 70 ? "20" : "19") + yy;
     return `${yy}-${mm}-${dd}`;
   }
+
+  // Bare Excel serial number (no letters/dashes) — e.g. "46177".
+  // Excel epoch is Dec 30 1899; serials in a sane date range (roughly
+  // 1970-2100) are 5-6 digits, well outside a plausible 4-digit year,
+  // so this check won't collide with real ISO years.
+  if (/^\d{5,6}$/.test(trimmed)) {
+    const serial = Number(trimmed);
+    const d = new Date((serial - 25569) * 86400 * 1000);
+    if (!isNaN(d)) {
+      return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+    }
+  }
+
   // Already ISO (yyyy-mm-dd) or something Date() can parse
-  const d = scParseDateFlexible(stored);
+  const d = scParseDateFlexible(trimmed);
   if (!d) return "";
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
+
 
 // "36" -> "36ខែ" — only appends the suffix if the value is a bare number
 function scFormatTerm(val) {
