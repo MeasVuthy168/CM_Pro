@@ -6,14 +6,32 @@
 <title>ការត្រួតពិនិត្យហ្វាស៊ីលីធី | CM_Pro</title>
 
 <!-- Shared design system — same includes as other pages -->
-<link rel="stylesheet" href="/CM_Pro/css/base.css">
-<link rel="stylesheet" href="/CM_Pro/css/offline-banner.css">
-<link rel="stylesheet" href="/CM_Pro/css/loading.css">
-<link rel="stylesheet" href="/CM_Pro/css/spotcheck.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/main.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/spotcheck.css">
 </head>
 <body>
 
-<div id="offlineBanner"></div>
+<div id="offlineBanner">
+⚠️ No Internet Connection
+</div>
+
+<!-- ========================= -->
+<!-- CONFIG -->
+<!-- ========================= -->
+<script src="/CM_Pro/config/api.js"></script>
+<script src="/CM_Pro/config/auth.js"></script>
+<script src="/CM_Pro/config/session.js"></script>
+
+<!-- ========================= -->
+<!-- COMPONENT (defines initTopbar(), logout, splash, toast) -->
+<!-- ========================= -->
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/logout.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+
 <div id="topbar-container"></div>
 
 <main class="sc-main">
@@ -327,10 +345,15 @@
 
 <div id="toast-container"></div>
 
-<script src="/CM_Pro/js/global-splash.js"></script>
-<script src="/CM_Pro/js/toast.js"></script>
-<script src="/CM_Pro/js/notification-badge.js"></script>
-<script src="/CM_Pro/js/spotcheck-loader.js"></script>
-<script src="/CM_Pro/js/spotcheck.js"></script>
+<!-- ========================= -->
+<!-- NOTIFICATION BADGE -->
+<!-- ========================= -->
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<!-- ========================= -->
+<!-- PAGE LOGIC -->
+<!-- ========================= -->
+<script src="/CM_Pro/assets/js/spotcheck-loader.js"></script>
+<script src="/CM_Pro/assets/js/spotcheck.js"></script>
 </body>
 </html>
