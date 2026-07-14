@@ -310,6 +310,25 @@ function scFormToArray() {
 // ---------------------------------------------------------
 // Form open / close
 // ---------------------------------------------------------
+
+// Sets a <select>'s value. If the stored value doesn't match any
+// existing <option> (legacy wording, data from before this option
+// list existed, etc.), a new option is added on the fly so the real
+// saved value is preserved and visible instead of silently going
+// blank — this was making Section II dropdowns look "not loaded".
+function scSetSelectValue(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const v = value || "";
+  if (v && ![...el.options].some((o) => o.value === v)) {
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = v;
+    el.appendChild(o);
+  }
+  el.value = v;
+}
+
 function scOpenForm(rec) {
   const overlay = document.getElementById("formOverlay");
   const title = document.getElementById("formPanelTitle");
@@ -336,21 +355,21 @@ function scOpenForm(rec) {
     document.getElementById("txtLoanType").value = rec.loanType || "";
     document.getElementById("txtTerm").value = rec.term || "";
     document.getElementById("cboCycle").value = rec.cycle || "";
-    document.getElementById("cboRepaymentHistory").value = rec.repaymentHistory || "";
+    scSetSelectValue("cboRepaymentHistory", rec.repaymentHistory);
     document.getElementById("txtLateDays").value = rec.lateDays || "";
-    document.getElementById("cboLoanCompletion").value = rec.loanCompletion || "";
+    scSetSelectValue("cboLoanCompletion", rec.loanCompletion);
     document.getElementById("txtLoanCompletionNote").value = rec.loanCompletionNote || "";
     document.getElementById("txtOccupationInFile").value = rec.occupationInFile || "";
     document.getElementById("txtCurrentOccupation").value = rec.currentOccupation || "";
-    document.getElementById("cboBusinessSituation").value = rec.businessSituation || "";
+    scSetSelectValue("cboBusinessSituation", rec.businessSituation);
     document.getElementById("txtOccupationDifferenceNote").value = rec.occupationDifferenceNote || "";
-    document.getElementById("cboCollateralType").value = rec.collateralType || "";
-    document.getElementById("cboCollateralChange").value = rec.collateralChange || "";
-    document.getElementById("cboCollateralPrice").value = rec.collateralPrice || "";
+    scSetSelectValue("cboCollateralType", rec.collateralType);
+    scSetSelectValue("cboCollateralChange", rec.collateralChange);
+    scSetSelectValue("cboCollateralPrice", rec.collateralPrice);
     document.getElementById("txtCollateralNote").value = rec.collateralNote || "";
-    document.getElementById("cboPurpose").value = rec.purpose || "";
+    scSetSelectValue("cboPurpose", rec.purpose);
     document.getElementById("txtPurposeNote").value = rec.purposeNote || "";
-    document.getElementById("cboRepaymentSource").value = rec.repaymentSource || "";
+    scSetSelectValue("cboRepaymentSource", rec.repaymentSource);
     document.getElementById("txtRepaymentSourceNote").value = rec.repaymentSourceNote || "";
     document.getElementById("txtSpotCheckDate").value = scStoredToIso(rec.spotCheckDate);
 
@@ -634,15 +653,16 @@ function scParseDateFlexible(str) {
 
 const SC_MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-// Native <input type="date"> value ("yyyy-mm-dd") -> stored "dd-mmm-yy",
-// matching the VBA FormatDateBox convention already used in the sheet.
+// Native <input type="date"> value ("yyyy-mm-dd") -> stored "dd-mmm-yyyy".
+// Stores the FULL year (not 2-digit) — a 2-digit year is inherently
+// ambiguous for any date more than ~40-50 years from today, which is
+// exactly what caused 2032 to round-trip back as 1932.
 function scIsoToStored(iso) {
   if (!iso) return "";
   const [y, m, d] = iso.split("-").map(Number);
   if (!y || !m || !d) return "";
   const dd = String(d).padStart(2, "0");
-  const yy = String(y).slice(-2);
-  return `${dd}-${SC_MONTHS[m - 1]}-${yy}`;
+  return `${dd}-${SC_MONTHS[m - 1]}-${y}`;
 }
 
 // Stored "dd-mmm-yy", a bare Excel serial date number (e.g. "46177" —
@@ -670,9 +690,15 @@ function scStoredToIso(stored) {
   if (/^\d{5,6}$/.test(trimmed)) {
     const serial = Number(trimmed);
     const d = new Date((serial - 25569) * 86400 * 1000);
-    if (!isNaN(d)) {
-      return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+    const year = d.getUTCFullYear();
+    // Guard against genuinely bad stored data (e.g. a stray small serial
+    // like "11962" -> 1932) that would otherwise render as a convincing
+    // but wrong date. Leave it blank instead so it's obviously missing.
+    if (!isNaN(d) && year >= 1990 && year <= 2060) {
+      return `${year}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
     }
+    console.warn(`Ignoring implausible stored date serial "${trimmed}" (would resolve to ${year})`);
+    return "";
   }
 
   // Already ISO (yyyy-mm-dd) or something Date() can parse
