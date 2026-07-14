@@ -272,6 +272,12 @@
   justify-content: flex-end;
 }
 
+/* Must win over the display:flex above — otherwise [hidden] is
+   silently ignored and the overlay shows on page load. */
+.sc-overlay[hidden] {
+  display: none !important;
+}
+
 .sc-overlay-center {
   align-items: center;
   justify-content: center;
