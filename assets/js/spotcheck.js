@@ -478,7 +478,6 @@ async function scSaveRecord(e) {
     const data = await res.json();
     if (!res.ok || data.ok === false) throw new Error(data.error || "Save failed");
 
-    if (typeof CMToast !== "undefined") CMToast.show(isNew ? "បញ្ចូលដោយជោគជ័យ" : "កែប្រែដោយជោគជ័យ", "success");
     scCloseForm();
     await scRefreshList();
   } catch (err) {
@@ -522,7 +521,6 @@ async function scConfirmDelete() {
     scAllRecords = scAllRecords.filter((r) => r.k !== scDeleteTargetCIF);
     scRenderSummary();
     scRenderList();
-    if (typeof CMToast !== "undefined") CMToast.show("លុបដោយជោគជ័យ", "success");
     scCloseDeleteConfirm();
     if (scEditingCIF === scDeleteTargetCIF) scCloseForm();
   } catch (err) {
