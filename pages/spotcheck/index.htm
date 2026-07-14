@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="km">
 <head>
@@ -7,15 +6,15 @@
 <title>ការត្រួតពិនិត្យហ្វាស៊ីលីធី | CM_Pro</title>
 
 <!-- Shared design system — same includes as other pages -->
-<link rel="stylesheet" href="../../shared/base.css">
-<link rel="stylesheet" href="../../shared/offline-banner.css">
-<link rel="stylesheet" href="../../shared/loading.css">
-<link rel="stylesheet" href="spotcheck.css">
+<link rel="stylesheet" href="/CM_Pro/css/base.css">
+<link rel="stylesheet" href="/CM_Pro/css/offline-banner.css">
+<link rel="stylesheet" href="/CM_Pro/css/loading.css">
+<link rel="stylesheet" href="/CM_Pro/css/spotcheck.css">
 </head>
 <body>
 
-<div id="offline-banner"></div>
-<div id="topbar"></div>
+<div id="offlineBanner"></div>
+<div id="topbar-container"></div>
 
 <main class="sc-main">
 
@@ -67,7 +66,7 @@
 
 </main>
 
-<div id="bottomnav"></div>
+<div id="bottomnav-container"></div>
 
 <!-- ============ ADD / EDIT PANEL (slide-over) ============ -->
 <div id="formOverlay" class="sc-overlay" hidden>
@@ -328,9 +327,10 @@
 
 <div id="toast-container"></div>
 
-<script src="../../shared/logout.js"></script>
-<script src="../../shared/loading.js"></script>
-<script src="../../shared/toast.js"></script>
-<script src="spotcheck-loader.js"></script>
+<script src="/CM_Pro/js/global-splash.js"></script>
+<script src="/CM_Pro/js/toast.js"></script>
+<script src="/CM_Pro/js/notification-badge.js"></script>
+<script src="/CM_Pro/js/spotcheck-loader.js"></script>
+<script src="/CM_Pro/js/spotcheck.js"></script>
 </body>
 </html>
