@@ -51,19 +51,23 @@ const SC_FIELD_ORDER = [
   "spotCheckDate", "owner", "timestamp",
 ];
 
-// TODO: replace with the real option lists from "Setting Up" sheet
+// Real values confirmed from the VBA UserForm (frmSpotCheck) dropdowns
 const SC_OPTION_LISTS = {
-  cboCycle: ["1st Cycle", "2nd Cycle", "3rd Cycle", "4th Cycle+"],
-  cboRepaymentHistory: ["On Time", "Late", "Restructured"],
-  cboLoanCompletion: ["Complete", "Incomplete", "Incomplete_Violate"],
-  cboBusinessSituation: ["Increasing", "Stable", "Decreasing", "Closed"],
-  cboCollateralType: ["Land Title", "Hard Title", "Soft Title", "Payroll", "Clean"],
-  cboCollateralChange: ["No Change", "Changed"],
-  cboCollateralPrice: ["Sufficient", "Insufficient"],
-  cboPurpose: ["As Declared", "Different From Declared"],
-  cboRepaymentSource: ["Business Income", "Salary", "Family Support", "Other"],
-  cboConclusion: ["Normal", "Watch", "Special Mention", "Sub-Standard", "Doubtful", "Loss"],
+  cboRepaymentHistory: ["ទៀងទាត់", "យឺតយ៉ាវក្នុងខែ", "យឺតយ៉ាវ"],
+  cboLoanCompletion: ["ត្រឹមត្រូវ", "មិនត្រឹមត្រូវតាមនីតិវិធីនិងសេចក្តីណែនាំ_Violate"],
+  cboBusinessSituation: ["ដដែល", "កើនឡើង", "ឱនភាព", "ក្ស័យធន"],
+  cboCollateralType: ["Payroll", "Clean", "ដីភូមិ និងផ្ទះ", "ដីភូមិ ផ្ទះ និងដីស្រែ", "ដីភូមិ", "ដីស្រែ"],
+  cboCollateralChange: ["រក្សាភាពដើម", "ប្រែប្រួល"],
+  cboCollateralPrice: ["អាចធានាឥណទានបាន", "មិនអាចធានាឥណទានបាន"],
+  cboPurpose: ["ត្រឹមត្រូវតាមការស្នើសុំ", "មិនត្រឹមត្រូវតាមការស្នើសុំ"],
+  cboRepaymentSource: ["ផ្ទាល់ខ្លួន", "សាច់ញាតិ", "អ្នកធានា", "ធនាគារ", "ស្ថាប័នហិរញ្ញវត្ថុ", "មេខ្យល់", "ផ្សេងៗ"],
 };
+
+const SC_CONCLUSION_OPTIONS = [
+  "ឥណទានមិនមានសញ្ញាណហានិភ័យណាមួយកើតឡើងទេ ៕",
+  "យោងតាមការត្រួតពិនិត្យឯកសារឥណទាន និងចុះត្រួតពិនិត្យដល់លំនៅដ្ឋាន បង្ហាញថាឥណទានមិនមានសញ្ញាណហានិភ័យណាមួយកើតឡើងទេ ៕",
+];
+const SC_CONCLUSION_OTHER = "ផ្សេងៗ (សរសេរផ្ទាល់)";
 
 const SC_REQUIRED_IDS = [
   "txtCIF", "cboCycle", "txtSpotCheckDate", "cboRepaymentHistory", "cboLoanCompletion",
@@ -102,13 +106,32 @@ function scPopulateSelectOptions() {
     });
   });
 
-  const filterEl = document.getElementById("filterConclusion");
-  SC_OPTION_LISTS.cboConclusion.forEach((opt) => {
+  // Cycle: typeable input backed by a 1-10 datalist (select + type both work)
+  const cycleList = document.getElementById("cycleOptions");
+  for (let i = 1; i <= 10; i++) {
     const o = document.createElement("option");
-    o.value = opt;
-    o.textContent = opt;
-    filterEl.appendChild(o);
+    o.value = String(i);
+    cycleList.appendChild(o);
+  }
+
+  // Conclusion: 2 preset long-form sentences + a custom "other" entry
+  const conclusionEl = document.getElementById("cboConclusion");
+  const filterEl = document.getElementById("filterConclusion");
+  SC_CONCLUSION_OPTIONS.forEach((text) => {
+    const o1 = document.createElement("option");
+    o1.value = text;
+    o1.textContent = text;
+    conclusionEl.appendChild(o1);
+
+    const o2 = document.createElement("option");
+    o2.value = text;
+    o2.textContent = text;
+    filterEl.appendChild(o2);
   });
+  const otherOpt = document.createElement("option");
+  otherOpt.value = SC_CONCLUSION_OTHER;
+  otherOpt.textContent = SC_CONCLUSION_OTHER;
+  conclusionEl.appendChild(otherOpt);
 }
 
 // ---------------------------------------------------------
@@ -241,20 +264,24 @@ function scRecordToObj(r) {
 
 function scFormToArray() {
   const get = (id) => document.getElementById(id).value.trim();
+  const conclusionSel = get("cboConclusion");
+  const conclusionFinal =
+    conclusionSel === SC_CONCLUSION_OTHER ? get("txtConclusionOther") : conclusionSel;
+
   const map = {
     branch: get("txtBranch"),
     cif: get("txtCIF"),
     loanId: get("txtLoanID"),
     customerName: get("txtCustomerName"),
-    disbursementDate: get("txtDisbursementDate"),
-    maturityDate: get("txtMaturityDate"),
+    disbursementDate: scIsoToStored(get("txtDisbursementDate")),
+    maturityDate: scIsoToStored(get("txtMaturityDate")),
     loanSize: get("txtLoanSize"),
     currency: get("txtCurrency"),
     outstanding: get("txtOutstanding"),
     creditOfficer: get("txtCreditOfficer"),
-    interestRate: get("txtInterestRate"),
+    interestRate: scFormatRate(get("txtInterestRate")),
     loanType: get("txtLoanType"),
-    term: get("txtTerm"),
+    term: scFormatTerm(get("txtTerm")),
     cycle: get("cboCycle"),
     repaymentHistory: get("cboRepaymentHistory"),
     lateDays: get("txtLateDays"),
@@ -272,8 +299,8 @@ function scFormToArray() {
     purposeNote: get("txtPurposeNote"),
     repaymentSource: get("cboRepaymentSource"),
     repaymentSourceNote: get("txtRepaymentSourceNote"),
-    conclusion: get("cboConclusion"),
-    spotCheckDate: get("txtSpotCheckDate"),
+    conclusion: conclusionFinal,
+    spotCheckDate: scIsoToStored(get("txtSpotCheckDate")),
     owner: scGetCurrentUser(),
     timestamp: new Date().toISOString(),
   };
@@ -289,6 +316,7 @@ function scOpenForm(rec) {
   const form = document.getElementById("spotCheckForm");
   form.reset();
   scClearFieldErrors();
+  scSwitchTab("tab1");
 
   if (rec) {
     scEditingCIF = rec.cif;
@@ -298,8 +326,8 @@ function scOpenForm(rec) {
     document.getElementById("txtBranch").value = rec.branch || "";
     document.getElementById("txtLoanID").value = rec.loanId || "";
     document.getElementById("txtCustomerName").value = rec.customerName || "";
-    document.getElementById("txtDisbursementDate").value = rec.disbursementDate || "";
-    document.getElementById("txtMaturityDate").value = rec.maturityDate || "";
+    document.getElementById("txtDisbursementDate").value = scStoredToIso(rec.disbursementDate);
+    document.getElementById("txtMaturityDate").value = scStoredToIso(rec.maturityDate);
     document.getElementById("txtLoanSize").value = rec.loanSize || "";
     document.getElementById("txtCurrency").value = rec.currency || "";
     document.getElementById("txtOutstanding").value = rec.outstanding || "";
@@ -324,8 +352,21 @@ function scOpenForm(rec) {
     document.getElementById("txtPurposeNote").value = rec.purposeNote || "";
     document.getElementById("cboRepaymentSource").value = rec.repaymentSource || "";
     document.getElementById("txtRepaymentSourceNote").value = rec.repaymentSourceNote || "";
-    document.getElementById("cboConclusion").value = rec.conclusion || "";
-    document.getElementById("txtSpotCheckDate").value = rec.spotCheckDate || "";
+    document.getElementById("txtSpotCheckDate").value = scStoredToIso(rec.spotCheckDate);
+
+    const conclusionEl = document.getElementById("cboConclusion");
+    const otherWrap = document.getElementById("conclusionOtherWrap");
+    const otherInput = document.getElementById("txtConclusionOther");
+    if (rec.conclusion && !SC_CONCLUSION_OPTIONS.includes(rec.conclusion)) {
+      conclusionEl.value = SC_CONCLUSION_OTHER;
+      otherInput.value = rec.conclusion;
+      otherWrap.hidden = false;
+    } else {
+      conclusionEl.value = rec.conclusion || "";
+      otherInput.value = "";
+      otherWrap.hidden = true;
+    }
+
     document.getElementById("metaUser").textContent = rec.owner ? `អ្នកបញ្ចូល: ${rec.owner}` : "";
     document.getElementById("metaTimestamp").textContent = rec.uploadedAt
       ? `ធ្វើបច្ចុប្បន្នភាព: ${scFormatTimestamp(rec.uploadedAt)}`
@@ -335,6 +376,7 @@ function scOpenForm(rec) {
     scEditingCIF = null;
     title.textContent = "បញ្ចូលថ្មី";
     document.getElementById("txtCIF").readOnly = false;
+    document.getElementById("conclusionOtherWrap").hidden = true;
     document.getElementById("metaUser").textContent = "";
     document.getElementById("metaTimestamp").textContent = "";
     document.getElementById("btnSaveForm").textContent = "រក្សាទុក";
@@ -367,10 +409,24 @@ function scValidateForm() {
       ok = false;
     }
   });
+
+  const conclusionEl = document.getElementById("cboConclusion");
+  const otherInput = document.getElementById("txtConclusionOther");
+  if (conclusionEl.value === SC_CONCLUSION_OTHER && !otherInput.value.trim()) {
+    otherInput.classList.add("sc-field-error");
+    ok = false;
+  } else {
+    otherInput.classList.remove("sc-field-error");
+  }
+
   if (!ok) {
     if (typeof CMToast !== "undefined") CMToast.show("សូមបំពេញគ្រប់ចន្លោះដែលចាំបាច់", "error");
     const firstError = document.querySelector(".sc-field-error");
-    firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (firstError) {
+      const panel = firstError.closest(".sc-tab-panel");
+      if (panel) scSwitchTab(panel.id);
+      firstError.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
   }
   return ok;
 }
@@ -509,10 +565,30 @@ function scBindEvents() {
   scBindAutosuggest("txtOccupationInFile", "lstOccupationInFileSuggest");
   scBindAutosuggest("txtCurrentOccupation", "lstCurrentOccupationSuggest");
 
-  ["txtSpotCheckDate", "txtDisbursementDate", "txtMaturityDate"].forEach((id) => {
-    document.getElementById(id).addEventListener("blur", (e) => {
-      e.target.value = scFormatDateInput(e.target.value);
-    });
+  document.querySelectorAll(".sc-tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => scSwitchTab(btn.dataset.tab));
+  });
+
+  document.getElementById("cboConclusion").addEventListener("change", (e) => {
+    const wrap = document.getElementById("conclusionOtherWrap");
+    wrap.hidden = e.target.value !== SC_CONCLUSION_OTHER;
+    if (!wrap.hidden) document.getElementById("txtConclusionOther").focus();
+  });
+
+  document.getElementById("txtTerm").addEventListener("blur", (e) => {
+    e.target.value = scFormatTerm(e.target.value);
+  });
+  document.getElementById("txtInterestRate").addEventListener("blur", (e) => {
+    e.target.value = scFormatRate(e.target.value);
+  });
+}
+
+function scSwitchTab(tabId) {
+  document.querySelectorAll(".sc-tab-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.tab === tabId);
+  });
+  document.querySelectorAll(".sc-tab-panel").forEach((panel) => {
+    panel.hidden = panel.id !== tabId;
   });
 }
 
@@ -556,14 +632,52 @@ function scParseDateFlexible(str) {
   return isNaN(d) ? null : d;
 }
 
-function scFormatDateInput(val) {
-  const d = scParseDateFlexible(val);
-  if (!d) return val;
-  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mmm = months[d.getMonth()];
-  const yy = String(d.getFullYear()).slice(-2);
-  return `${dd}-${mmm}-${yy}`;
+const SC_MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+// Native <input type="date"> value ("yyyy-mm-dd") -> stored "dd-mmm-yy",
+// matching the VBA FormatDateBox convention already used in the sheet.
+function scIsoToStored(iso) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return "";
+  const dd = String(d).padStart(2, "0");
+  const yy = String(y).slice(-2);
+  return `${dd}-${SC_MONTHS[m - 1]}-${yy}`;
+}
+
+// Stored "dd-mmm-yy" (or already-ISO) -> "yyyy-mm-dd" for the date input.
+// Parsed manually rather than via `new Date()`, since Safari doesn't
+// reliably parse "24-Jul-26" as a date string.
+function scStoredToIso(stored) {
+  if (!stored) return "";
+  const m = /^(\d{1,2})-([A-Za-z]{3})-(\d{2,4})$/.exec(stored.trim());
+  if (m) {
+    const dd = String(parseInt(m[1], 10)).padStart(2, "0");
+    const monthIdx = SC_MONTHS.findIndex((mo) => mo.toLowerCase() === m[2].toLowerCase());
+    if (monthIdx === -1) return "";
+    const mm = String(monthIdx + 1).padStart(2, "0");
+    let yy = m[3];
+    if (yy.length === 2) yy = (Number(yy) < 70 ? "20" : "19") + yy;
+    return `${yy}-${mm}-${dd}`;
+  }
+  // Already ISO (yyyy-mm-dd) or something Date() can parse
+  const d = scParseDateFlexible(stored);
+  if (!d) return "";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// "36" -> "36ខែ" — only appends the suffix if the value is a bare number
+function scFormatTerm(val) {
+  const trimmed = (val || "").trim();
+  if (/^\d+$/.test(trimmed)) return `${trimmed}ខែ`;
+  return trimmed;
+}
+
+// "18" -> "18%ក្នុងមួយឆ្នាំ" — only appends the suffix if the value is a bare number
+function scFormatRate(val) {
+  const trimmed = (val || "").trim();
+  if (/^\d+(\.\d+)?$/.test(trimmed)) return `${trimmed}%ក្នុងមួយឆ្នាំ`;
+  return trimmed;
 }
 
 function scFormatTimestamp(iso) {
