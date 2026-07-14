@@ -2,17 +2,21 @@
 <html lang="km">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>ការត្រួតពិនិត្យហ្វាស៊ីលីធី | CM_Pro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Spot Check</title>
+<meta name="theme-color" content="#032d73">
 
-<!-- Shared design system — same includes as other pages -->
-<link rel="stylesheet" href="/CM_Pro/assets/css/main.css">
+<link rel="stylesheet" href="../../assets/css/main.css">
+<link rel="stylesheet" href="../../assets/css/spotcheck.css">
 <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
 <link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
-<link rel="stylesheet" href="/CM_Pro/assets/css/spotcheck.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
 </head>
 <body>
 
+<!-- ========================= -->
+<!-- OFFLINE -->
+<!-- ========================= -->
 <div id="offlineBanner">
 ⚠️ No Internet Connection
 </div>
@@ -20,24 +24,31 @@
 <!-- ========================= -->
 <!-- CONFIG -->
 <!-- ========================= -->
-<script src="/CM_Pro/config/api.js"></script>
-<script src="/CM_Pro/config/auth.js"></script>
-<script src="/CM_Pro/config/session.js"></script>
+<script src="../../config/api.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
 
 <!-- ========================= -->
-<!-- COMPONENT (defines initTopbar(), logout, splash, toast) -->
+<!-- COMPONENT -->
 <!-- ========================= -->
 <script src="/CM_Pro/shared/topbar.js"></script>
-<script src="/CM_Pro/shared/logout.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 <script src="/CM_Pro/assets/js/toast.js"></script>
 
+<!-- ========================= -->
+<!-- TOPBAR -->
+<!-- ========================= -->
 <div id="topbar-container"></div>
 
+<!-- ========================= -->
+<!-- PAGE -->
+<!-- ========================= -->
 <main class="sc-main">
 
   <!-- ============ PAGE HEADER ============ -->
   <div class="sc-header">
+
     <div class="sc-header-text">
       <h1>ការត្រួតពិនិត្យហ្វាស៊ីលីធីក្រោយពេលបញ្ចេញ</h1>
       <p class="sc-header-sub">Facilities Spot Check</p>
@@ -345,15 +356,14 @@
 
 <div id="toast-container"></div>
 
-<!-- ========================= -->
 <!-- NOTIFICATION BADGE -->
-<!-- ========================= -->
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
 
-<!-- ========================= -->
-<!-- PAGE LOGIC -->
-<!-- ========================= -->
-<script src="/CM_Pro/assets/js/spotcheck-loader.js"></script>
-<script src="/CM_Pro/assets/js/spotcheck.js"></script>
+<!-- SPOTCHECK LOGIC -->
+<script src="../../assets/js/spotcheck.js"></script>
+
+<!-- PAGE LOADER (component loader, offline, notification badge) -->
+<script src="../../assets/js/spotcheck-loader.js"></script>
+
 </body>
 </html>
