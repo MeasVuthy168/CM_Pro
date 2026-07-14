@@ -77,6 +77,12 @@ let scOccupationSuggestions = [];
 document.addEventListener("DOMContentLoaded", scInit);
 
 async function scInit() {
+  const token = sessionStorage.getItem("token");
+  if (!token) {
+    alert("Session expired. Please log in again.");
+    window.location.href = "../../login.html";
+    return;
+  }
   scPopulateSelectOptions();
   scBindEvents();
   await scLoadOccupationSuggestions();
@@ -513,14 +519,14 @@ function scBindEvents() {
 // Helpers
 // ---------------------------------------------------------
 function scAuthHeaders() {
-  const token = localStorage.getItem("cm_jwt");
+  const token = sessionStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 function scGetCurrentUser() {
   try {
-    const cached = JSON.parse(localStorage.getItem("cm_user") || "{}");
-    return cached.username || cached.name || "";
+    const user = JSON.parse(sessionStorage.getItem("loggedInUser") || "{}");
+    return user.username || user.fullname || "";
   } catch {
     return "";
   }
