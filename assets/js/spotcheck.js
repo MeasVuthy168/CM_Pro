@@ -25,13 +25,20 @@
      is NOT enforced client-side here — enforce server-side.
    ========================================================= */
 
-const API_BASE = window.CM_BASE_URL || "";
 const SC_EP = {
-  list: API_BASE + "/api/reportsp/get",
-  upsert: API_BASE + "/api/reportsp/upsert",
-  delete: API_BASE + "/api/reportsp/delete",
-  occupationList: API_BASE + "/api/settings/occupation-list",
+  list: API.BASE_URL + "/api/reportsp/get",
+  upsert: API.BASE_URL + "/api/reportsp/upsert",
+  delete: API.BASE_URL + "/api/reportsp/delete",
+  occupationList: API.BASE_URL + "/api/settings/occupation-list",
 };
+
+// ========================================
+// TOKEN — same pattern as arrears.js
+// ========================================
+const scToken =
+  localStorage.getItem("token") ||
+  sessionStorage.getItem("token");
+
 
 // Column order B..AI (34 values) — must match the VBA v[] array order exactly
 const SC_FIELD_ORDER = [
@@ -77,12 +84,6 @@ let scOccupationSuggestions = [];
 document.addEventListener("DOMContentLoaded", scInit);
 
 async function scInit() {
-  const token = sessionStorage.getItem("token");
-  if (!token) {
-    alert("Session expired. Please log in again.");
-    window.location.href = "../../login.html";
-    return;
-  }
   scPopulateSelectOptions();
   scBindEvents();
   await scLoadOccupationSuggestions();
@@ -519,14 +520,15 @@ function scBindEvents() {
 // Helpers
 // ---------------------------------------------------------
 function scAuthHeaders() {
-  const token = sessionStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  return scToken ? { Authorization: `Bearer ${scToken}` } : {};
 }
 
 function scGetCurrentUser() {
   try {
-    const user = JSON.parse(sessionStorage.getItem("loggedInUser") || "{}");
-    return user.username || user.fullname || "";
+    const user = JSON.parse(
+      localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}"
+    );
+    return user.fullname || user.username || "";
   } catch {
     return "";
   }
