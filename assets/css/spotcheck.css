@@ -313,6 +313,37 @@
 .sc-panel-header h2 { font-size: 16px; margin: 0; }
 .sc-panel-header .sc-icon-btn { color: #fff; }
 
+.sc-tabs {
+  display: flex;
+  background: var(--sc-card-bg);
+  border-bottom: 1px solid var(--sc-border);
+}
+
+.sc-tab-btn {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 12px 8px;
+  font-family: var(--sc-font);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sc-text-muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+}
+
+.sc-tab-btn.active {
+  color: var(--sc-navy-dark);
+  border-bottom-color: var(--sc-gold);
+}
+
+.sc-hint {
+  font-weight: 400;
+  color: var(--sc-text-muted);
+  font-size: 11px;
+}
+
+
 .sc-form {
   flex: 1;
   overflow-y: auto;
