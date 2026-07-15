@@ -124,8 +124,6 @@
             <label for="txtCIF">លេខអតិថិជន (CIF) <span class="req">*</span></label>
             <input type="text" id="txtCIF" required autocomplete="off">
             <span id="cifLookupStatus" class="sc-cif-status" hidden></span>
-            <button type="button" id="btnDebugTest" class="sc-debug-btn">🔧 សាកល្បង ការតភ្ជាប់ (Debug)</button>
-            <pre id="debugOutput" class="sc-debug-output" hidden></pre>
           </div>
 
           <div class="sc-field-row">
@@ -212,7 +210,7 @@
         </fieldset>
 
         <!-- ខ - ប្រវត្តិសងប្រាក់ -->
-        <fieldset class="sc-section">
+        <fieldset class="sc-section" id="cardRepaymentHistory">
           <legend>ខ - ប្រវត្តិសងប្រាក់</legend>
 
           <div class="sc-field">
