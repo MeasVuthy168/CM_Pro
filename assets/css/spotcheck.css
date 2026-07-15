@@ -343,6 +343,38 @@
   font-size: 11px;
 }
 
+.sc-cif-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  margin-top: 6px;
+  color: var(--sc-text-muted);
+}
+
+.sc-cif-status.loading { color: var(--sc-navy); }
+.sc-cif-status.found { color: #1E7A34; }
+.sc-cif-status.notfound,
+.sc-cif-status.error { color: var(--sc-danger); }
+
+.sc-cif-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(0, 59, 139, 0.2);
+  border-top-color: var(--sc-navy);
+  border-radius: 50%;
+  animation: sc-spin 0.7s linear infinite;
+  flex: none;
+}
+
+@keyframes sc-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sc-cif-spinner { animation: none; }
+}
+
 
 .sc-form {
   flex: 1;
