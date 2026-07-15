@@ -259,24 +259,45 @@ function escapeHtml(text) {
 
 async function fetchAllArrearsRows() {
     const limit = 1000;
+    const BATCH_SIZE = 5; // fetch this many pages concurrently before checking if more exist
     let startRow = 6; // matches the sheet's own data start row
     let all = [];
+    let reachedEnd = false;
 
-    while (true) {
-        const url = `${API.BASE_URL}/api/arreast24byco/rows?startRow=${startRow}&limit=${limit}&cols=41`;
-        const res = await fetch(url, {
-            headers: { Authorization: `Bearer ${arrearsToken}` }
-        });
+    // Previously this awaited one page at a time — for ~4000 rows
+    // that's 4-5 full sequential round-trips. Since the server
+    // already handles startRow going past the actual data gracefully
+    // (returns a short/empty page — that's how "reached the end" was
+    // always detected), it's safe to speculatively fire several pages
+    // at once and only pay for extra latency once every BATCH_SIZE
+    // pages, instead of on every single page.
+    while (!reachedEnd) {
+        const batchRequests = [];
+        for (let i = 0; i < BATCH_SIZE; i++) {
+            const thisStartRow = startRow + i * limit;
+            const url = `${API.BASE_URL}/api/arreast24byco/rows?startRow=${thisStartRow}&limit=${limit}&cols=41`;
+            batchRequests.push(
+                fetch(url, { headers: { Authorization: `Bearer ${arrearsToken}` } })
+                    .then(res => {
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        return res.json();
+                    })
+            );
+        }
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.message || "Failed to load arrears data.");
+        const results = await Promise.all(batchRequests);
 
-        const rows = data.rows || [];
-        all = all.concat(rows);
+        for (const data of results) {
+            if (!data.ok) throw new Error(data.message || "Failed to load arrears data.");
+            const rows = data.rows || [];
+            all = all.concat(rows);
+            if (rows.length < limit) {
+                reachedEnd = true;
+                break; // any pages later in this same batch would just be empty — no need to keep counting
+            }
+        }
 
-        if (rows.length < limit) break; // last page
-        startRow += limit;
+        startRow += BATCH_SIZE * limit;
     }
 
     return all.map(r => parseRow(r.values || []));
