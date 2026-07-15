@@ -29,7 +29,6 @@ const SC_EP = {
   list: API.BASE_URL + "/api/reportsp/get",
   upsert: API.BASE_URL + "/api/reportsp/upsert",
   delete: API.BASE_URL + "/api/reportsp/delete",
-  occupationList: API.BASE_URL + "/api/settings/occupation-list",
   nbcosByCif: API.BASE_URL + "/api/nbcos/byCif/",
 };
 
@@ -94,6 +93,10 @@ const SC_REQUIRED_IDS = [
   "cboPurpose", "cboRepaymentSource", "cboConclusion",
 ];
 
+// Required fields that live on Tab I — once all of these are filled while
+// still viewing Tab I, the Save button switches to "បន្ទាប់" (Next).
+const SC_TAB1_REQUIRED_IDS = ["txtCIF", "cboCycle", "txtSpotCheckDate", "cboRepaymentHistory", "cboLoanCompletion"];
+
 let scAllRecords = [];      // raw {k, v, uploadedAt} from server
 let scEditingCIF = null;    // null = adding new
 let scDeleteTargetCIF = null;
@@ -108,7 +111,6 @@ document.addEventListener("DOMContentLoaded", scInit);
 async function scInit() {
   scPopulateSelectOptions();
   scBindEvents();
-  await scLoadOccupationSuggestions();
   await scRefreshList();
 }
 
@@ -165,23 +167,30 @@ async function scRefreshList() {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || "Load failed");
     scAllRecords = data.data || [];
+    scRebuildOccupationSuggestions();
     scRenderSummary();
     scRenderList();
   } catch (err) {
     console.error(err);
-    if (typeof CMToast !== "undefined") CMToast.show("មិនអាចទាញយកទិន្នន័យបានទេ", "error");
+    alert("មិនអាចទាញយកទិន្នន័យបានទេ");
   }
 }
 
-async function scLoadOccupationSuggestions() {
-  try {
-    const res = await fetch(SC_EP.occupationList);
-    const data = await res.json();
-    scOccupationSuggestions = Array.isArray(data) ? data : (data.data || []);
-  } catch (err) {
-    console.warn("Occupation suggestion list unavailable", err);
-    scOccupationSuggestions = [];
-  }
+// Occupation suggestions come from existing Spot Check records
+// themselves — both "មុខរបរពេលខ្ចី" and "មុខរបរបច្ចុប្បន្ន" values already
+// saved by any officer — rather than a separate fetch. Rebuilt every
+// time the list reloads (after refresh, save, or delete), so a newly
+// entered occupation shows up as a suggestion right away next time.
+function scRebuildOccupationSuggestions() {
+  const set = new Set();
+  scAllRecords.forEach((r) => {
+    const rec = scRecordToObj(r);
+    [rec.occupationInFile, rec.currentOccupation].forEach((v) => {
+      const trimmed = (v || "").trim();
+      if (trimmed) set.add(trimmed);
+    });
+  });
+  scOccupationSuggestions = Array.from(set).sort((a, b) => a.localeCompare(b));
 }
 
 // ---------------------------------------------------------
@@ -410,7 +419,6 @@ function scOpenForm(rec) {
     document.getElementById("metaTimestamp").textContent = rec.uploadedAt
       ? `ធ្វើបច្ចុប្បន្នភាព: ${scFormatTimestamp(rec.uploadedAt)}`
       : "";
-    document.getElementById("btnSaveForm").textContent = "កែប្រែ";
   } else {
     scEditingCIF = null;
     title.textContent = "បញ្ចូលថ្មី";
@@ -418,9 +426,9 @@ function scOpenForm(rec) {
     document.getElementById("conclusionOtherWrap").hidden = true;
     document.getElementById("metaUser").textContent = "";
     document.getElementById("metaTimestamp").textContent = "";
-    document.getElementById("btnSaveForm").textContent = "រក្សាទុក";
   }
 
+  scUpdateSaveButtonMode();
   overlay.hidden = false;
   document.body.style.overflow = "hidden";
 }
@@ -459,8 +467,7 @@ function scValidateForm() {
   }
 
   if (!ok) {
-    if (typeof CMToast !== "undefined") CMToast.show("សូមបំពេញគ្រប់ចន្លោះដែលចាំបាច់", "error");
-    const firstError = document.querySelector(".sc-field-error");
+        const firstError = document.querySelector(".sc-field-error");
     if (firstError) {
       const panel = firstError.closest(".sc-tab-panel");
       if (panel) scSwitchTab(panel.id);
@@ -475,13 +482,19 @@ function scValidateForm() {
 // ---------------------------------------------------------
 async function scSaveRecord(e) {
   e.preventDefault();
+
+  if (document.getElementById("btnSaveForm").dataset.mode === "next") {
+    scSwitchTab("tab2");
+    return;
+  }
+
   if (!scValidateForm()) return;
 
   const cif = document.getElementById("txtCIF").value.trim();
   const isNew = !scEditingCIF;
 
   if (isNew && scAllRecords.some((r) => r.k === cif)) {
-    if (typeof CMToast !== "undefined") CMToast.show("CIF នេះមានរួចហើយ", "error");
+    alert("CIF នេះមានរួចហើយ");
     return;
   }
 
@@ -502,7 +515,7 @@ async function scSaveRecord(e) {
     await scRefreshList();
   } catch (err) {
     console.error(err);
-    if (typeof CMToast !== "undefined") CMToast.show("មិនអាចរក្សាទុកបានទេ", "error");
+    alert("មិនអាចរក្សាទុកបានទេ");
   } finally {
     btn.disabled = false;
   }
@@ -545,7 +558,7 @@ async function scConfirmDelete() {
     if (scEditingCIF === scDeleteTargetCIF) scCloseForm();
   } catch (err) {
     console.error(err);
-    if (typeof CMToast !== "undefined") CMToast.show("មិនអាចលុបបានទេ", "error");
+    alert("មិនអាចលុបបានទេ");
   } finally {
     btn.disabled = false;
   }
@@ -594,67 +607,6 @@ function scSetCifStatus(state, text) {
   el.className = "sc-cif-status" + (state ? ` ${state}` : "");
   el.innerHTML = state === "loading" ? `<span class="sc-cif-spinner"></span>${text}` : text;
   el.hidden = !text;
-}
-
-// ---------------------------------------------------------
-// Debug: test the new nbcos route against a known-working
-// route side by side, to tell general connectivity/CORS
-// problems apart from something specific to the new route.
-// ---------------------------------------------------------
-async function scRunDebugTest() {
-  const out = document.getElementById("debugOutput");
-  out.hidden = false;
-  out.textContent = "កំពុងសាកល្បង...\n";
-
-  const cif = document.getElementById("txtCIF").value.trim() || "684652";
-  const lines = [];
-  lines.push(`API.BASE_URL = ${API.BASE_URL}`);
-  lines.push(`token present = ${!!scToken}`);
-  lines.push("");
-
-  async function testRoute(label, url) {
-    lines.push(`--- ${label} ---`);
-    lines.push(`URL: ${url}`);
-    const started = performance.now();
-    try {
-      const res = await fetch(url, { headers: scAuthHeaders() });
-      const ms = Math.round(performance.now() - started);
-      lines.push(`Status: ${res.status} ${res.statusText}  (${ms}ms)`);
-      const text = await res.text();
-      let preview = text.slice(0, 300);
-      try {
-        preview = JSON.stringify(JSON.parse(text), null, 2).slice(0, 300);
-      } catch {
-        // not JSON — show raw text (likely an HTML error page)
-      }
-      lines.push(`Body: ${preview}`);
-    } catch (err) {
-      const ms = Math.round(performance.now() - started);
-      lines.push(`FAILED after ${ms}ms: ${err.message || err}`);
-      lines.push(`(This is what "Failed to fetch" means — the browser blocked or`);
-      lines.push(` couldn't complete the request before getting any HTTP response,`);
-      lines.push(` e.g. CORS rejection, DNS failure, or connection refused.)`);
-    }
-    lines.push("");
-    out.textContent = lines.join("\n");
-  }
-
-  await testRoute(
-    "KNOWN WORKING: /api/customers/search",
-    `${API.BASE_URL}/api/customers/search?keyword=${encodeURIComponent(cif)}`
-  );
-  await testRoute(
-    "NEW ROUTE: /api/nbcos/byCif/:cif",
-    SC_EP.nbcosByCif + encodeURIComponent(cif)
-  );
-
-  lines.push("--- HOW TO READ THIS ---");
-  lines.push("Both fail the same way -> general network/CORS issue, not route-specific.");
-  lines.push("Only the new route fails -> it isn't deployed yet, or is missing CORS");
-  lines.push("headers that your other routes already have (e.g. an app.use(cors())");
-  lines.push("applied before your routes, but this route was added after it, or on");
-  lines.push("a different router instance).");
-  out.textContent = lines.join("\n");
 }
 
 // ---------------------------------------------------------
@@ -739,12 +691,16 @@ async function scAutofillFromNbcos(cif) {
 // Event binding
 // ---------------------------------------------------------
 function scBindEvents() {
-  document.getElementById("btnDebugTest").addEventListener("click", scRunDebugTest);
   document.getElementById("btnAddNew").addEventListener("click", () => scOpenForm(null));
   document.getElementById("btnEmptyAdd").addEventListener("click", () => scOpenForm(null));
   document.getElementById("btnCloseForm").addEventListener("click", scCloseForm);
   document.getElementById("btnCancelForm").addEventListener("click", scCloseForm);
   document.getElementById("spotCheckForm").addEventListener("submit", scSaveRecord);
+
+  SC_TAB1_REQUIRED_IDS.forEach((id) => {
+    document.getElementById(id).addEventListener("input", scUpdateSaveButtonMode);
+    document.getElementById(id).addEventListener("change", scUpdateSaveButtonMode);
+  });
 
   document.getElementById("btnCancelDelete").addEventListener("click", scCloseDeleteConfirm);
   document.getElementById("btnConfirmDelete").addEventListener("click", scConfirmDelete);
@@ -773,7 +729,25 @@ function scBindEvents() {
   });
 
   document.getElementById("txtCIF").addEventListener("blur", (e) => {
-    scAutofillFromNbcos(e.target.value.trim());
+    const cif = e.target.value.trim();
+    if (!cif || scEditingCIF) return;
+
+    const existing = scAllRecords.find((r) => r.k === cif);
+    if (existing) {
+      scOpenForm(scRecordToObj(existing));
+      return;
+    }
+    scAutofillFromNbcos(cif);
+  });
+
+  document.getElementById("txtSpotCheckDate").addEventListener("change", (e) => {
+    if (!e.target.value) return;
+    const card = document.getElementById("cardRepaymentHistory");
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    card.classList.remove("sc-highlight");
+    void card.offsetWidth; // restart the animation if it's already run once
+    card.classList.add("sc-highlight");
+    setTimeout(() => card.classList.remove("sc-highlight"), 2400);
   });
 }
 
@@ -784,6 +758,24 @@ function scSwitchTab(tabId) {
   document.querySelectorAll(".sc-tab-panel").forEach((panel) => {
     panel.hidden = panel.id !== tabId;
   });
+  scUpdateSaveButtonMode();
+}
+
+// Tab I complete + still viewing Tab I -> button becomes "បន្ទាប់" (Next),
+// which just advances to Tab II instead of submitting. Anywhere else,
+// it's the real Save/Edit button.
+function scUpdateSaveButtonMode() {
+  const btn = document.getElementById("btnSaveForm");
+  const onTab1 = !document.getElementById("tab1").hidden;
+  const tab1Complete = SC_TAB1_REQUIRED_IDS.every((id) => document.getElementById(id).value.trim());
+
+  if (onTab1 && tab1Complete) {
+    btn.textContent = "បន្ទាប់";
+    btn.dataset.mode = "next";
+  } else {
+    btn.textContent = scEditingCIF ? "កែប្រែ" : "រក្សាទុក";
+    btn.dataset.mode = "save";
+  }
 }
 
 // ---------------------------------------------------------
