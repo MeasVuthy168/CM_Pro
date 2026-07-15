@@ -25,11 +25,34 @@
      is NOT enforced client-side here — enforce server-side.
    ========================================================= */
 
+// Standalone microservice (cm-pro-nbcos-service) — separate deployment
+// from the main API, connects to the same DB/JWT but its own host.
+// Set this to your deployed Render URL after deploying that service.
+const SC_NBCOS_SERVICE_URL = "https://cm-pro-nbcos-service.onrender.com"; // TODO: confirm/replace with your actual deployed URL
+
 const SC_EP = {
   list: API.BASE_URL + "/api/reportsp/get",
   upsert: API.BASE_URL + "/api/reportsp/upsert",
   delete: API.BASE_URL + "/api/reportsp/delete",
   occupationList: API.BASE_URL + "/api/settings/occupation-list",
+  nbcosByCif: SC_NBCOS_SERVICE_URL + "/api/nbcos/byCif/",
+};
+
+// 0-based indices into the nbcos "values" array (178 cols) — confirmed
+// from the live collection, used to autofill Section I on Add New.
+const SC_NBCOS_MAP = {
+  branch: 166,
+  loanId: 4,
+  customerName: 5,
+  disbursementDate: 18,
+  maturityDate: 19,
+  loanSize: 9,
+  currency: 17,
+  outstanding: 12,
+  interestRate: 16,
+  loanType: 168,
+  term: 22,
+  creditOfficer: 26,
 };
 
 // ========================================
@@ -564,6 +587,46 @@ function scBindAutosuggest(inputId, listId) {
 }
 
 // ---------------------------------------------------------
+// Autofill Section I from nbcos on CIF entry (Add New only —
+// never overwrites an already-loaded record while editing)
+// ---------------------------------------------------------
+async function scAutofillFromNbcos(cif) {
+  if (!cif || scEditingCIF) return;
+
+  try {
+    const res = await fetch(SC_EP.nbcosByCif + encodeURIComponent(cif), {
+      headers: scAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!data.ok || !Array.isArray(data.values)) return;
+
+    const v = data.values;
+    const at = (idx) => (v[idx] != null ? String(v[idx]).trim() : "");
+
+    document.getElementById("txtBranch").value = at(SC_NBCOS_MAP.branch);
+    document.getElementById("txtLoanID").value = at(SC_NBCOS_MAP.loanId);
+    document.getElementById("txtCustomerName").value = at(SC_NBCOS_MAP.customerName);
+    document.getElementById("txtDisbursementDate").value = scStoredToIso(at(SC_NBCOS_MAP.disbursementDate));
+    document.getElementById("txtMaturityDate").value = scStoredToIso(at(SC_NBCOS_MAP.maturityDate));
+    document.getElementById("txtLoanSize").value = at(SC_NBCOS_MAP.loanSize);
+    document.getElementById("txtOutstanding").value = at(SC_NBCOS_MAP.outstanding);
+    document.getElementById("txtLoanType").value = at(SC_NBCOS_MAP.loanType);
+    document.getElementById("txtCreditOfficer").value = at(SC_NBCOS_MAP.creditOfficer);
+
+    const currency = at(SC_NBCOS_MAP.currency);
+    const currencyEl = document.getElementById("txtCurrency");
+    if ([...currencyEl.options].some((o) => o.value === currency)) {
+      currencyEl.value = currency;
+    }
+
+    document.getElementById("txtInterestRate").value = scFormatRate(at(SC_NBCOS_MAP.interestRate));
+    document.getElementById("txtTerm").value = scFormatTerm(at(SC_NBCOS_MAP.term));
+  } catch (err) {
+    console.error("nbcos autofill failed:", err);
+  }
+}
+
+// ---------------------------------------------------------
 // Event binding
 // ---------------------------------------------------------
 function scBindEvents() {
@@ -597,6 +660,10 @@ function scBindEvents() {
   });
   document.getElementById("txtInterestRate").addEventListener("blur", (e) => {
     e.target.value = scFormatRate(e.target.value);
+  });
+
+  document.getElementById("txtCIF").addEventListener("blur", (e) => {
+    scAutofillFromNbcos(e.target.value.trim());
   });
 }
 
