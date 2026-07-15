@@ -614,6 +614,24 @@ async function scAutofillFromNbcos(cif) {
     const res = await fetch(SC_EP.nbcosByCif + encodeURIComponent(cif), {
       headers: scAuthHeaders(),
     });
+
+    if (res.status === 404) {
+      console.error("nbcos autofill: 404 — /api/nbcos/byCif route is not deployed on the server yet.");
+      scSetCifStatus("error", "Route មិនទាន់មាននៅលើ server (404) — server.js ត្រូវ deploy ជាមុន");
+      return;
+    }
+    if (res.status === 401 || res.status === 403) {
+      console.error(`nbcos autofill: ${res.status} — auth token rejected by /api/nbcos/byCif.`);
+      scSetCifStatus("error", "សិទ្ធិចូលប្រើមិនត្រឹមត្រូវ — សូម login ម្តងទៀត");
+      return;
+    }
+    if (!res.ok) {
+      const bodyText = await res.text().catch(() => "");
+      console.error(`nbcos autofill: HTTP ${res.status}`, bodyText.slice(0, 300));
+      scSetCifStatus("error", `មានបញ្ហាពី server (HTTP ${res.status})`);
+      return;
+    }
+
     const data = await res.json();
 
     // A newer lookup started while this one was in flight — drop this result
@@ -652,8 +670,8 @@ async function scAutofillFromNbcos(cif) {
     }, 2500);
   } catch (err) {
     if (myToken !== scNbcosLookupToken) return;
-    console.error("nbcos autofill failed:", err);
-    scSetCifStatus("error", "មានបញ្ហាក្នុងការទាញយកទិន្នន័យ — សូមព្យាយាមម្តងទៀត");
+    console.error("nbcos autofill failed (likely CORS or network):", err.message || err);
+    scSetCifStatus("error", `មានបញ្ហាបណ្តាញ — ${err.message || "សូមព្យាយាមម្តងទៀត"}`);
   }
 }
 
