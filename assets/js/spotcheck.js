@@ -359,6 +359,8 @@ function scOpenForm(rec) {
   form.reset();
   scClearFieldErrors();
   scSwitchTab("tab1");
+  scNbcosLookupToken++; // invalidate any in-flight lookup from a previous open
+  scSetCifStatus(null, "");
 
   if (rec) {
     scEditingCIF = rec.cif;
@@ -590,15 +592,37 @@ function scBindAutosuggest(inputId, listId) {
 // Autofill Section I from nbcos on CIF entry (Add New only —
 // never overwrites an already-loaded record while editing)
 // ---------------------------------------------------------
+let scNbcosLookupToken = 0;
+
+function scSetCifStatus(state, text) {
+  const el = document.getElementById("cifLookupStatus");
+  el.className = "sc-cif-status" + (state ? ` ${state}` : "");
+  el.innerHTML = state === "loading" ? `<span class="sc-cif-spinner"></span>${text}` : text;
+  el.hidden = !text;
+}
+
 async function scAutofillFromNbcos(cif) {
-  if (!cif || scEditingCIF) return;
+  if (!cif || scEditingCIF) {
+    scSetCifStatus(null, "");
+    return;
+  }
+
+  const myToken = ++scNbcosLookupToken;
+  scSetCifStatus("loading", "សូមរង់ចាំ កំពុងទាញយកទិន្នន័យ...");
 
   try {
     const res = await fetch(SC_EP.nbcosByCif + encodeURIComponent(cif), {
       headers: scAuthHeaders(),
     });
     const data = await res.json();
-    if (!data.ok || !Array.isArray(data.values)) return;
+
+    // A newer lookup started while this one was in flight — drop this result
+    if (myToken !== scNbcosLookupToken) return;
+
+    if (!data.ok || !Array.isArray(data.values)) {
+      scSetCifStatus("notfound", "រកមិនឃើញទិន្នន័យសម្រាប់ CIF នេះ — សូមបំពេញដោយផ្ទាល់");
+      return;
+    }
 
     const v = data.values;
     const at = (idx) => (v[idx] != null ? String(v[idx]).trim() : "");
@@ -621,8 +645,15 @@ async function scAutofillFromNbcos(cif) {
 
     document.getElementById("txtInterestRate").value = scFormatRate(at(SC_NBCOS_MAP.interestRate));
     document.getElementById("txtTerm").value = scFormatTerm(at(SC_NBCOS_MAP.term));
+
+    scSetCifStatus("found", "✓ បានទាញយកទិន្នន័យដោយជោគជ័យ");
+    setTimeout(() => {
+      if (myToken === scNbcosLookupToken) scSetCifStatus(null, "");
+    }, 2500);
   } catch (err) {
+    if (myToken !== scNbcosLookupToken) return;
     console.error("nbcos autofill failed:", err);
+    scSetCifStatus("error", "មានបញ្ហាក្នុងការទាញយកទិន្នន័យ — សូមព្យាយាមម្តងទៀត");
   }
 }
 
