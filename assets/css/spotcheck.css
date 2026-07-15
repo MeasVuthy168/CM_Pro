@@ -375,6 +375,34 @@
   .sc-cif-spinner { animation: none; }
 }
 
+.sc-debug-btn {
+  margin-top: 8px;
+  border: 1px dashed var(--sc-text-muted);
+  background: none;
+  color: var(--sc-text-muted);
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--sc-font);
+}
+.sc-debug-btn:active { background: var(--sc-bg); }
+
+.sc-debug-output {
+  margin-top: 8px;
+  background: #0d1117;
+  color: #c9d1d9;
+  font-family: "SF Mono", Consolas, monospace;
+  font-size: 10.5px;
+  line-height: 1.5;
+  padding: 10px;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
 
 .sc-form {
   flex: 1;
