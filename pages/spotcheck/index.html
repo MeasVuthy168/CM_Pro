@@ -123,6 +123,7 @@
           <div class="sc-field">
             <label for="txtCIF">លេខអតិថិជន (CIF) <span class="req">*</span></label>
             <input type="text" id="txtCIF" required autocomplete="off">
+            <span id="cifLookupStatus" class="sc-cif-status" hidden></span>
           </div>
 
           <div class="sc-field-row">
@@ -212,17 +213,15 @@
         <fieldset class="sc-section">
           <legend>ខ - ប្រវត្តិសងប្រាក់</legend>
 
-          <div class="sc-field-row">
-            <div class="sc-field">
-              <label for="cboRepaymentHistory">ស្ថានភាព <span class="req">*</span></label>
-              <select id="cboRepaymentHistory" required>
-                <option value="">-- ជ្រើសរើស --</option>
-              </select>
-            </div>
-            <div class="sc-field sc-field-sm">
-              <label for="txtLateDays">ថ្ងៃយឺត</label>
-              <input type="number" id="txtLateDays">
-            </div>
+          <div class="sc-field">
+            <label for="cboRepaymentHistory">ស្ថានភាព <span class="req">*</span></label>
+            <select id="cboRepaymentHistory" required>
+              <option value="">-- ជ្រើសរើស --</option>
+            </select>
+          </div>
+          <div class="sc-field">
+            <label for="txtLateDays">មូលហេតុយឺតយ៉ាវ</label>
+            <input type="text" id="txtLateDays">
           </div>
         </fieldset>
 
