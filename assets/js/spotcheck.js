@@ -25,17 +25,12 @@
      is NOT enforced client-side here — enforce server-side.
    ========================================================= */
 
-// Standalone microservice (cm-pro-nbcos-service) — separate deployment
-// from the main API, connects to the same DB/JWT but its own host.
-// Set this to your deployed Render URL after deploying that service.
-const SC_NBCOS_SERVICE_URL = "https://cm-pro-nbcos-service.onrender.com"; // TODO: confirm/replace with your actual deployed URL
-
 const SC_EP = {
   list: API.BASE_URL + "/api/reportsp/get",
   upsert: API.BASE_URL + "/api/reportsp/upsert",
   delete: API.BASE_URL + "/api/reportsp/delete",
   occupationList: API.BASE_URL + "/api/settings/occupation-list",
-  nbcosByCif: SC_NBCOS_SERVICE_URL + "/api/nbcos/byCif/",
+  nbcosByCif: API.BASE_URL + "/api/nbcos/byCif/",
 };
 
 // 0-based indices into the nbcos "values" array (178 cols) — confirmed
