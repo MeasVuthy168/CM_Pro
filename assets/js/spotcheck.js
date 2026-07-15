@@ -601,6 +601,71 @@ function scSetCifStatus(state, text) {
   el.hidden = !text;
 }
 
+// ---------------------------------------------------------
+// Debug: test the new nbcos route against a known-working
+// route side by side, to tell general connectivity/CORS
+// problems apart from something specific to the new route.
+// ---------------------------------------------------------
+async function scRunDebugTest() {
+  const out = document.getElementById("debugOutput");
+  out.hidden = false;
+  out.textContent = "កំពុងសាកល្បង...\n";
+
+  const cif = document.getElementById("txtCIF").value.trim() || "684652";
+  const lines = [];
+  lines.push(`API.BASE_URL = ${API.BASE_URL}`);
+  lines.push(`token present = ${!!scToken}`);
+  lines.push("");
+
+  async function testRoute(label, url) {
+    lines.push(`--- ${label} ---`);
+    lines.push(`URL: ${url}`);
+    const started = performance.now();
+    try {
+      const res = await fetch(url, { headers: scAuthHeaders() });
+      const ms = Math.round(performance.now() - started);
+      lines.push(`Status: ${res.status} ${res.statusText}  (${ms}ms)`);
+      const text = await res.text();
+      let preview = text.slice(0, 300);
+      try {
+        preview = JSON.stringify(JSON.parse(text), null, 2).slice(0, 300);
+      } catch {
+        // not JSON — show raw text (likely an HTML error page)
+      }
+      lines.push(`Body: ${preview}`);
+    } catch (err) {
+      const ms = Math.round(performance.now() - started);
+      lines.push(`FAILED after ${ms}ms: ${err.message || err}`);
+      lines.push(`(This is what "Failed to fetch" means — the browser blocked or`);
+      lines.push(` couldn't complete the request before getting any HTTP response,`);
+      lines.push(` e.g. CORS rejection, DNS failure, or connection refused.)`);
+    }
+    lines.push("");
+    out.textContent = lines.join("\n");
+  }
+
+  await testRoute(
+    "KNOWN WORKING: /api/customers/search",
+    `${API.BASE_URL}/api/customers/search?keyword=${encodeURIComponent(cif)}`
+  );
+  await testRoute(
+    "NEW ROUTE: /api/nbcos/byCif/:cif",
+    SC_EP.nbcosByCif + encodeURIComponent(cif)
+  );
+
+  lines.push("--- HOW TO READ THIS ---");
+  lines.push("Both fail the same way -> general network/CORS issue, not route-specific.");
+  lines.push("Only the new route fails -> it isn't deployed yet, or is missing CORS");
+  lines.push("headers that your other routes already have (e.g. an app.use(cors())");
+  lines.push("applied before your routes, but this route was added after it, or on");
+  lines.push("a different router instance).");
+  out.textContent = lines.join("\n");
+}
+
+// ---------------------------------------------------------
+// Autofill Section I from nbcos on CIF entry (Add New only —
+// never overwrites an already-loaded record while editing)
+// ---------------------------------------------------------
 async function scAutofillFromNbcos(cif) {
   if (!cif || scEditingCIF) {
     scSetCifStatus(null, "");
@@ -679,6 +744,7 @@ async function scAutofillFromNbcos(cif) {
 // Event binding
 // ---------------------------------------------------------
 function scBindEvents() {
+  document.getElementById("btnDebugTest").addEventListener("click", scRunDebugTest);
   document.getElementById("btnAddNew").addEventListener("click", () => scOpenForm(null));
   document.getElementById("btnEmptyAdd").addEventListener("click", () => scOpenForm(null));
   document.getElementById("btnCloseForm").addEventListener("click", scCloseForm);
