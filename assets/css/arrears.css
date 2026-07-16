@@ -30,15 +30,15 @@ box-sizing:border-box;
 
 overflow:hidden;
 
-background:linear-gradient(180deg,#003B8B,#002D6B);
+background:#FFFFFF;
 
-border:1px solid #D4AF37;
+border:1px solid #E2E6ED;
 
 border-radius:16px;
 
 padding:20px;
 
-box-shadow:0 4px 14px rgba(0,0,0,.25);
+box-shadow:0 4px 14px rgba(0,0,0,.08);
 
 margin-bottom:14px;
 
@@ -82,7 +82,7 @@ font-size:12px;
 
 font-weight:700;
 
-color:#cdd9ef;
+color:#6B7280;
 
 white-space:nowrap;
 
@@ -107,7 +107,7 @@ height:42px;
 
 padding:0 10px;
 
-border:1px solid #D4AF37;
+border:1px solid #E2E6ED;
 
 border-radius:10px;
 
@@ -117,9 +117,9 @@ outline:none;
 
 transition:.2s;
 
-background:#00265c;
+background:#FFFFFF;
 
-color:#fff;
+color:#1C2333;
 
 -webkit-text-size-adjust:none;
 
@@ -130,9 +130,9 @@ text-size-adjust:none;
 .filter-group input:focus,
 .filter-group select:focus{
 
-border-color:#FFD700;
+border-color:#003B8B;
 
-box-shadow:0 0 0 3px rgba(255,215,0,.18);
+box-shadow:0 0 0 3px rgba(0,59,139,.12);
 
 }
 
@@ -271,13 +271,13 @@ height:34px;
 
 padding:0 16px;
 
-border:1px solid #D4AF37;
+border:1.5px solid #003B8B;
 
 border-radius:10px;
 
-background:#00265c;
+background:transparent;
 
-color:#fff;
+color:#003B8B;
 
 font-size:13px;
 
@@ -346,17 +346,17 @@ margin-top:16px;
 
 padding-top:14px;
 
-border-top:1px solid rgba(212,175,55,.25);
+border-top:1px solid #E2E6ED;
 
 font-size:13px;
 
-color:#cdd9ef;
+color:#6B7280;
 
 }
 
 .summary-row .num{
 
-color:#FFD700;
+color:#002D6B;
 
 font-weight:700;
 
@@ -372,7 +372,7 @@ border-top:none;
 
 font-size:12px;
 
-color:#8fa0bd;
+color:#9AA5B8;
 
 }
 
@@ -386,7 +386,7 @@ color:#8fa0bd;
 
 font-size:12px;
 
-color:#cdd9ef;
+color:#6B7280;
 
 margin-bottom:6px;
 
@@ -402,15 +402,15 @@ box-sizing:border-box;
 
 overflow:hidden;
 
-background:linear-gradient(180deg,#003B8B,#002D6B);
+background:#FFFFFF;
 
-border:1px solid #D4AF37;
+border:1px solid #E2E6ED;
 
 border-radius:16px;
 
 padding:10px;
 
-box-shadow:0 4px 14px rgba(0,0,0,.25);
+box-shadow:0 4px 14px rgba(0,0,0,.08);
 
 }
 
@@ -818,15 +818,15 @@ overflow-y:auto;
 
 box-sizing:border-box;
 
-background:linear-gradient(180deg,#003B8B,#002D6B);
+background:#FFFFFF;
 
-border:1px solid #D4AF37;
+border:1px solid #E2E6ED;
 
 border-radius:16px;
 
 padding:18px 20px;
 
-box-shadow:0 8px 28px rgba(0,0,0,.45);
+box-shadow:0 8px 28px rgba(0,0,0,.25);
 
 }
 
@@ -836,7 +836,7 @@ font-size:14px;
 
 font-weight:700;
 
-color:#FFD700;
+color:#002D6B;
 
 text-transform:uppercase;
 
@@ -850,7 +850,7 @@ margin-bottom:4px;
 
 font-size:13px;
 
-color:#cdd9ef;
+color:#6B7280;
 
 margin-bottom:14px;
 
@@ -878,7 +878,7 @@ font-size:13px;
 
 font-weight:600;
 
-color:#cdd9ef;
+color:#6B7280;
 
 }
 
@@ -891,7 +891,7 @@ box-sizing:border-box;
 
 padding:10px 12px;
 
-border:1px solid #D4AF37;
+border:1px solid #E2E6ED;
 
 border-radius:10px;
 
@@ -899,9 +899,9 @@ font-size:14px;
 
 outline:none;
 
-background:#00265c;
+background:#FFFFFF;
 
-color:#fff;
+color:#1C2333;
 
 font-family:inherit;
 
@@ -932,9 +932,9 @@ top:100%;
 
 margin-top:4px;
 
-background:#00265c;
+background:#FFFFFF;
 
-border:1px solid #D4AF37;
+border:1px solid #E2E6ED;
 
 border-radius:8px;
 
@@ -944,7 +944,7 @@ overflow-y:auto;
 
 z-index:10;
 
-box-shadow:0 4px 12px rgba(0,0,0,.35);
+box-shadow:0 4px 12px rgba(0,0,0,.15);
 
 list-style:none;
 
@@ -962,7 +962,7 @@ display:block;
 
 padding:8px 12px;
 
-color:#fff;
+color:#1C2333;
 
 font-size:13px;
 
@@ -983,7 +983,7 @@ background:rgba(212,175,55,.25);
 
 font-size:12px;
 
-color:#8fa0bd;
+color:#9AA5B8;
 
 margin:4px 0 14px;
 
@@ -993,7 +993,7 @@ margin:4px 0 14px;
 
 font-size:12px;
 
-color:#FFD700;
+color:#8A6D1D;
 
 margin:-8px 0 14px;
 
@@ -1013,7 +1013,7 @@ background:none;
 
 border:none;
 
-color:#ff6b6b;
+color:#C0392B;
 
 text-decoration:underline;
 
@@ -1035,13 +1035,13 @@ color:#002D6B;
 
 .pending-row{
 
-color:#FFD700;
+color:#8A6D1D;
 
 }
 
 .pending-row .num{
 
-color:#fff;
+color:#002D6B;
 
 font-weight:700;
 
@@ -1055,13 +1055,13 @@ height:34px;
 
 padding:0 16px;
 
-border:1px solid #D4AF37;
+border:1.5px solid #003B8B;
 
 border-radius:10px;
 
 background:transparent;
 
-color:#fff;
+color:#003B8B;
 
 font-size:13px;
 
@@ -1164,11 +1164,11 @@ color:#002D6B;
 
 #btnReasonCancel{
 
-background:#00265c;
+background:transparent;
 
-border:1px solid #D4AF37;
+border:1.5px solid #003B8B;
 
-color:#fff;
+color:#003B8B;
 
 }
 
