@@ -30,6 +30,7 @@ const SC_EP = {
   upsert: API.BASE_URL + "/api/reportsp/upsert",
   delete: API.BASE_URL + "/api/reportsp/delete",
   nbcosByCif: API.BASE_URL + "/api/nbcos/byCif/",
+  export: API.BASE_URL + "/api/spotcheck/export/",
 };
 
 // 0-based indices into the nbcos "values" array (178 cols) — confirmed
@@ -256,8 +257,11 @@ function scBuildCard(rec) {
         <div class="sc-card-name">${scEscapeHtml(rec.customerName || "—")}</div>
       </div>
       <div class="sc-card-actions">
-        <button class="sc-edit-btn" aria-label="កែសម្រួល">✎</button>
-        <button class="sc-delete-btn" aria-label="លុប">🗑</button>
+        <div class="sc-card-actions-row">
+          <button class="sc-edit-btn" aria-label="កែសម្រួល">✎</button>
+          <button class="sc-delete-btn" aria-label="លុប">🗑</button>
+        </div>
+        <button class="sc-export-btn" aria-label="ទាញយកទម្រង់">⬇ ទាញយក</button>
       </div>
     </div>
     <div class="sc-card-meta">
@@ -274,8 +278,44 @@ function scBuildCard(rec) {
     e.stopPropagation();
     scOpenDeleteConfirm(rec.cif);
   });
+  card.querySelector(".sc-export-btn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    scExportForm(rec.cif, e.currentTarget);
+  });
   card.addEventListener("click", () => scOpenForm(rec));
   return card;
+}
+
+async function scExportForm(cif, btn) {
+  const original = btn.textContent;
+  btn.textContent = "កំពុងទាញយក...";
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(SC_EP.export + encodeURIComponent(cif), {
+      headers: scAuthHeaders(),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.message || `HTTP ${res.status}`);
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Spotcheck_${cif}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error("Export failed:", err);
+    alert(`មិនអាចទាញយកទម្រង់បានទេ — ${err.message || ""}`);
+  } finally {
+    btn.textContent = original;
+    btn.disabled = false;
+  }
 }
 
 // ---------------------------------------------------------
