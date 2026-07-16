@@ -238,6 +238,13 @@
 
 .sc-card-actions {
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.sc-card-actions-row {
+  display: flex;
   gap: 6px;
 }
 
@@ -253,6 +260,17 @@
 .sc-card-actions button:hover { background: var(--sc-bg); }
 .sc-card-actions .sc-delete-btn:hover { color: var(--sc-danger); }
 .sc-card-actions .sc-edit-btn:hover { color: var(--sc-navy); }
+
+.sc-export-btn {
+  font-size: 11px !important;
+  font-weight: 600;
+  color: var(--sc-navy) !important;
+  white-space: nowrap;
+  padding: 3px 8px !important;
+  border: 1px solid var(--sc-border) !important;
+}
+.sc-export-btn:hover { background: var(--sc-bg); border-color: var(--sc-navy) !important; }
+.sc-export-btn:disabled { opacity: 0.6; cursor: default; }
 
 /* ---------- Empty states ---------- */
 .sc-empty {
