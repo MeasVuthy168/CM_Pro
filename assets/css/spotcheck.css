@@ -270,7 +270,7 @@
   font-weight: 600;
   padding: 5px 9px;
   cursor: pointer;
-  color: var(--sc-text-muted);
+  color: #fff;
   border-radius: 8px;
   white-space: nowrap;
   font-family: var(--sc-font);
@@ -283,7 +283,7 @@
   flex: none;
 }
 
-.sc-action-btn:hover { border-color: var(--sc-gold-light); color: #fff; }
+.sc-action-btn:hover { border-color: var(--sc-gold-light); color: var(--sc-gold-light); }
 .sc-action-btn:disabled { opacity: 0.6; cursor: default; }
 .sc-delete-btn:hover { color: var(--sc-danger); border-color: var(--sc-danger); }
 .sc-edit-btn:hover { color: var(--sc-gold-light); }
