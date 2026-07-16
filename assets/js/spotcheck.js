@@ -252,16 +252,20 @@ function scBuildCard(rec) {
   card.className = "sc-card";
   card.innerHTML = `
     <div class="sc-card-top">
-      <div>
+      <div class="sc-card-id">
         <div class="sc-card-cif">${scEscapeHtml(rec.cif)}</div>
         <div class="sc-card-name">${scEscapeHtml(rec.customerName || "—")}</div>
       </div>
       <div class="sc-card-actions">
-        <div class="sc-card-actions-row">
-          <button class="sc-edit-btn" aria-label="កែសម្រួល">✎</button>
-          <button class="sc-delete-btn" aria-label="លុប">🗑</button>
-        </div>
-        <button class="sc-export-btn" aria-label="ទាញយកទម្រង់">⬇ ទាញយក</button>
+        <button class="sc-action-btn sc-export-btn" aria-label="ទាញយកទម្រង់">
+          <img src="/CM_Pro/assets/icons/spotcheck/download.png" alt=""><span>ទាញយក</span>
+        </button>
+        <button class="sc-action-btn sc-edit-btn" aria-label="កែសម្រួល">
+          <img src="/CM_Pro/assets/icons/spotcheck/edit.png" alt=""><span>កែប្រែ</span>
+        </button>
+        <button class="sc-action-btn sc-delete-btn" aria-label="លុប">
+          <img src="/CM_Pro/assets/icons/spotcheck/delete.png" alt=""><span>លុប</span>
+        </button>
       </div>
     </div>
     <div class="sc-card-meta">
@@ -287,8 +291,9 @@ function scBuildCard(rec) {
 }
 
 async function scExportForm(cif, btn) {
-  const original = btn.textContent;
-  btn.textContent = "កំពុងទាញយក...";
+  const label = btn.querySelector("span");
+  const original = label.textContent;
+  label.textContent = "កំពុងទាញយក...";
   btn.disabled = true;
 
   try {
@@ -313,7 +318,7 @@ async function scExportForm(cif, btn) {
     console.error("Export failed:", err);
     alert(`មិនអាចទាញយកទម្រង់បានទេ — ${err.message || ""}`);
   } finally {
-    btn.textContent = original;
+    label.textContent = original;
     btn.disabled = false;
   }
 }
