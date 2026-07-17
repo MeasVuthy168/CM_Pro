@@ -336,6 +336,32 @@ async function initNotificationSwitch(){
 }
 
 // =========================
+// THEME SWITCH
+// =========================
+// Reuses the same .switch UI as the notification toggle above.
+// window.CMTheme comes from shared/theme.js — checked = dark,
+// unchecked = light. The actual color values live in each page's
+// own CSS via [data-theme="dark"] blocks; this switch just flips
+// the shared data-theme attribute + localStorage flag that every
+// page reads on load.
+
+function initThemeSwitch(){
+
+    const toggle=document.getElementById("themeToggle");
+
+    if(!toggle || !window.CMTheme) return;
+
+    toggle.checked = CMTheme.get()==="dark";
+
+    toggle.onchange=function(){
+
+        CMTheme.set(this.checked ? "dark" : "light");
+
+    };
+
+}
+
+// =========================
 // LOGOUT DIALOG
 // =========================
 
@@ -392,6 +418,8 @@ window.addEventListener("load",()=>{
     loadUserProfile();
 
     initNotificationSwitch();
+
+    initThemeSwitch();
 
     initLogoutDialog();
 
