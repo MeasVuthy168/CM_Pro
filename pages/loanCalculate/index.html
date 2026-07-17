@@ -1,199 +1,125 @@
 <!DOCTYPE html>
 <html lang="km">
-
 <head>
-
 <meta charset="UTF-8">
-
 <meta
 name="viewport"
 content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-
-<title>កម្មវិធី​គណនាឥណទាន</title>
-
+<title>កម្មវិធីគណនាឥណទាន</title>
 <meta
 name="theme-color"
 content="#032d73">
 
+<!-- Applied before any CSS loads, so there's no flash of the wrong
+     theme on page load. Keep this as the very first thing in <head>. -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
 <link
 rel="stylesheet"
 href="../../assets/css/main.css">
-
 <link
 rel="stylesheet"
 href="../../assets/css/loanCalculate.css">
-
 <link
 rel="stylesheet"
 href="/CM_Pro/assets/css/global-splash.css">
-
 </head>
-
 <body>
-
 <!-- ========================= -->
 <!-- OFFLINE -->
 <!-- ========================= -->
-
 <div id="offlineBanner">
-
 ⚠️ No Internet Connection
-
 </div>
-
 <!-- ========================= -->
 <!-- CONFIG -->
 <!-- ========================= -->
-
 <script src="../../config/api.js"></script>
-
 <script src="../../config/auth.js"></script>
-
 <script src="../../config/session.js"></script>
-
 <!-- ========================= -->
 <!-- COMPONENT -->
 <!-- ========================= -->
-
 <script src="/CM_Pro/shared/topbar.js"></script>
-
+<script src="/CM_Pro/shared/theme.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
-
 <script src="/CM_Pro/assets/js/toast.js"></script>
-
 <!-- ========================= -->
 <!-- TOPBAR -->
 <!-- ========================= -->
-
 <div id="topbar-container"></div>
-
 <!-- ========================= -->
 <!-- PAGE -->
 <!-- ========================= -->
-
 <div class="page-container">
-
 <div class="form-card">
-
 <div class="form-group">
-
 <label for="customerName">ឈ្មោះអតិថិជន</label>
-
 <input type="text" id="customerName" placeholder="ឧ. ACB">
-
 </div>
-
 <div class="form-group">
-
 <label for="loanAmount">ទំហំឥណទាន</label>
-
 <input type="number" id="loanAmount">
-
 </div>
-
 <div class="form-group">
-
 <label for="periodicRepayment">ប្រាក់សំណងខួប</label>
-
 <input type="number" id="periodicRepayment">
-
 </div>
-
 <div class="form-group">
-
 <label for="term">រយៈពេលខ្ចី (ខែ)</label>
-
 <input type="number" id="term">
-
 </div>
-
 <div class="form-group">
-
-<label for="interestRate">អត្រា​ការ​ប្រាក់​ប្រចាំឆ្នាំ (%)</label>
-
+<label for="interestRate">អត្រាការប្រាក់ប្រចាំឆ្នាំ (%)</label>
 <input type="number" id="interestRate">
-
 </div>
-
 <div class="form-group">
-
 <label for="paymentMethod">របៀបសងប្រាក់</label>
-
 <select id="paymentMethod">
-
 <option value="Linear">បង់ថយ</option>
-
 <option value="Annuity">បង់ថេរ</option>
-
 </select>
-
 </div>
-
 <button class="calculate-btn" id="btnCalculate">
-
 គណនា
-
 </button>
-
 <div class="export-buttons">
-
 <button id="btnPDF">
-
 <img src="https://img.icons8.com/color/48/pdf.png" alt="PDF" width="32">
-
 </button>
-
 <button id="btnExcel">
-
 <img src="https://img.icons8.com/color/48/ms-excel.png" alt="Excel" width="32">
-
 </button>
-
 </div>
-
 </div>
-
 <div id="exportSection"></div>
-
 </div>
-
 <!-- ========================= -->
 <!-- LOADING -->
 <!-- ========================= -->
-
 <div
 id="loadingBox"
 class="loading-box"
 style="display:none;">
-
 <div class="spinner"></div>
-
 </div>
-
 <!-- ========================= -->
 <!-- BOTTOM -->
 <!-- ========================= -->
-
 <div id="bottomnav-container"></div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-
 <!-- NOTIFICATION BADGE -->
-
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
-
 <!-- LOAN CALCULATE LOGIC -->
-
 <script src="../../assets/js/loanCalculate.js"></script>
-
 <!-- PAGE LOADER (component loader, offline, notification badge) -->
-
 <script src="../../assets/js/loanCalculate-loader.js"></script>
-
 </body>
-
 </html>
