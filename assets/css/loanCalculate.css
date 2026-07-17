@@ -85,7 +85,7 @@ min-height:100vh;
 }
 [data-theme="dark"] .form-group input,
 [data-theme="dark"] .form-group select{
-    background:#00265c;
+    background-color:#00265c;
 }
 .form-group select{
     appearance:none;
@@ -146,7 +146,7 @@ min-height:100vh;
     justify-content:center;
 }
 [data-theme="dark"] .export-buttons button{
-    background:#00265c;
+    background-color:#00265c;
 }
 .export-buttons button:active{
     transform:scale(.95);
