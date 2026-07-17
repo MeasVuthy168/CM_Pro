@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Setting - CM_Pro</title>
 <meta name="theme-color" content="#032d73">
+
+<!-- Applied before any CSS loads, so there's no flash of the wrong
+     theme on page load. Keep this as the very first thing in <head>. -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
 <link rel="stylesheet" href="../../assets/css/main.css">
 <link rel="stylesheet" href="../../assets/css/settings.css">
 <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
@@ -45,6 +55,19 @@
 <span>អំពីកម្មវិធី</span>
 </div>
 <span class="setting-arrow">›</span>
+</div>
+
+<div class="setting-item">
+<div class="setting-left">
+<img src="/CM_Pro/assets/icons/setting/theme.png" class="setting-icon">
+<span>ប្តូរផ្ទៃខាងក្រោយ</span>
+</div>
+<div class="notify-right">
+<label class="switch">
+<input id="themeToggle" type="checkbox">
+<span class="slider round"></span>
+</label>
+</div>
 </div>
 
 <div class="setting-item">
@@ -96,6 +119,7 @@
 <script src="../../config/push.js"></script>
 
 <script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
 
