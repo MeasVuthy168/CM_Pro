@@ -23,15 +23,15 @@ only holds styles specific to the notifications page.
 
     flex:1;
 
-    background:linear-gradient(180deg,#003B8B,#002D6B);
+    background:#FFFFFF;
 
-    border:1px solid #D4AF37;
+    border:1px solid #E2E6ED;
 
     border-radius:16px;
 
     padding:18px;
 
-    box-shadow:0 4px 14px rgba(0,0,0,.25);
+    box-shadow:0 4px 14px rgba(0,0,0,.08);
 
 }
 
@@ -39,7 +39,7 @@ only holds styles specific to the notifications page.
 
     font-size:13px;
 
-    color:#cdd9ef;
+    color:#6B7280;
 
     margin-bottom:8px;
 
@@ -51,7 +51,7 @@ only holds styles specific to the notifications page.
 
     font-weight:700;
 
-    color:#FFD700;
+    color:#002D6B;
 
 }
 
@@ -111,9 +111,9 @@ only holds styles specific to the notifications page.
 
 .notify-card{
 
-    background:linear-gradient(180deg,#003B8B,#002D6B);
+    background:#FFFFFF;
 
-    border:1px solid #D4AF37;
+    border:1px solid #E2E6ED;
 
     border-radius:18px;
 
@@ -125,7 +125,7 @@ only holds styles specific to the notifications page.
 
     gap:14px;
 
-    box-shadow:0 4px 14px rgba(0,0,0,.25);
+    box-shadow:0 4px 14px rgba(0,0,0,.08);
 
     position:relative;
 
@@ -189,7 +189,7 @@ only holds styles specific to the notifications page.
 
     font-weight:700;
 
-    color:#fff;
+    color:#1C2333;
 
     line-height:1.4;
 
@@ -199,7 +199,7 @@ only holds styles specific to the notifications page.
 
     font-size:12px;
 
-    color:#8fa0bd;
+    color:#9AA5B8;
 
     white-space:nowrap;
 
@@ -211,7 +211,7 @@ only holds styles specific to the notifications page.
 
     line-height:1.6;
 
-    color:#cdd9ef;
+    color:#4B5568;
 
     margin-bottom:10px;
 
@@ -245,9 +245,9 @@ only holds styles specific to the notifications page.
 
     border-radius:12px;
 
-    background:rgba(255,215,0,.12);
+    background:rgba(212,175,55,.15);
 
-    color:#FFD700;
+    color:#8A6D1D;
 
     font-size:12px;
 
@@ -267,7 +267,7 @@ only holds styles specific to the notifications page.
 
     object-fit:cover;
 
-    background:#00265c;
+    background:#E2E6ED;
 
     flex-shrink:0;
 
@@ -277,9 +277,9 @@ only holds styles specific to the notifications page.
 
     font-size:12px;
 
-    background:rgba(255,215,0,.12);
+    background:rgba(212,175,55,.15);
 
-    color:#FFD700;
+    color:#8A6D1D;
 
     padding:5px 10px;
 
@@ -419,7 +419,7 @@ only holds styles specific to the notifications page.
 
     font-weight:700;
 
-    color:#FFD700;
+    color:#002D6B;
 
     margin-bottom:8px;
 
@@ -429,7 +429,7 @@ only holds styles specific to the notifications page.
 
     font-size:14px;
 
-    color:#cdd9ef;
+    color:#6B7280;
 
     line-height:1.6;
 
