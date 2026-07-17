@@ -8,6 +8,10 @@ padding:16px;
 
 padding-bottom:90px;
 
+background:#F5F7FA;
+
+min-height:100vh;
+
 }
 
 /* ==========================================
@@ -16,15 +20,15 @@ padding-bottom:90px;
 
 .form-card{
 
-background:linear-gradient(180deg,#003B8B,#002D6B);
+background:#FFFFFF;
 
-border:1px solid #D4AF37;
+border:1px solid #E2E6ED;
 
 border-radius:16px;
 
 padding:20px;
 
-box-shadow:0 4px 14px rgba(0,0,0,.25);
+box-shadow:0 4px 14px rgba(0,0,0,.08);
 
 margin-bottom:18px;
 
@@ -46,7 +50,7 @@ font-size:14px;
 
 font-weight:700;
 
-color:#cdd9ef;
+color:#6B7280;
 
 margin-bottom:6px;
 
@@ -58,7 +62,7 @@ height:44px;
 
 padding:0 12px;
 
-border:1px solid #D4AF37;
+border:1px solid #E2E6ED;
 
 border-radius:10px;
 
@@ -68,27 +72,27 @@ outline:none;
 
 transition:.2s;
 
-background:#00265c;
+background:#FFFFFF;
 
-color:#fff;
+color:#1C2333;
 
 }
 
 .form-group input:focus{
 
-border-color:#FFD700;
+border-color:#003B8B;
 
-box-shadow:0 0 0 3px rgba(255,215,0,.18);
+box-shadow:0 0 0 3px rgba(0,59,139,.12);
 
 }
 
 .form-group input[readonly]{
 
-background:#001c48;
+background:#EAF0FB;
 
 font-weight:bold;
 
-color:#FFD700;
+color:#002D6B;
 
 }
 
@@ -112,15 +116,13 @@ flex:1;
 
 height:44px;
 
-border:none;
-
 border-radius:10px;
 
-background:#00265c;
+background:transparent;
 
-border:1px solid #D4AF37;
+border:1.5px solid #003B8B;
 
-color:#fff;
+color:#003B8B;
 
 font-size:15px;
 
@@ -158,15 +160,15 @@ color:#002D6B;
 
 .table-card{
 
-background:linear-gradient(180deg,#003B8B,#002D6B);
+background:#FFFFFF;
 
-border:1px solid #D4AF37;
+border:1px solid #E2E6ED;
 
 border-radius:16px;
 
 padding:10px;
 
-box-shadow:0 4px 14px rgba(0,0,0,.25);
+box-shadow:0 4px 14px rgba(0,0,0,.08);
 
 overflow:auto;
 
