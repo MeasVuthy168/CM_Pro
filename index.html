@@ -16,6 +16,15 @@
 
 <link rel="apple-touch-icon" href="/CM_Pro/assets/images/icon-192.png">
 
+<!-- Applied before any CSS loads, so there's no flash of the wrong
+     theme on page load. Keep this as the very first thing in <head>. -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
 <!-- ========================= -->
 <!-- STYLES -->
 <!-- ========================= -->
@@ -24,6 +33,7 @@
 <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
 <link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
 <link rel="stylesheet" href="./assets/css/assistant.css">
+<link rel="stylesheet" href="./assets/css/dashboard.css">
 
 </head>
 
@@ -47,6 +57,7 @@
 <!-- ========================= -->
 
 <script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
 <script src="/CM_Pro/shared/logout.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 <script src="/CM_Pro/assets/js/toast.js"></script>
