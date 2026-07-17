@@ -15,6 +15,15 @@ content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no
 name="theme-color"
 content="#032d73">
 
+<!-- Applied before any CSS loads, so there's no flash of the wrong
+     theme on page load. Keep this as the very first thing in <head>. -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
 <link
 rel="stylesheet"
 href="../../assets/css/main.css">
@@ -58,6 +67,8 @@ href="/CM_Pro/assets/css/global-splash.css">
 <!-- ========================= -->
 
 <script src="/CM_Pro/shared/topbar.js"></script>
+
+<script src="/CM_Pro/shared/theme.js"></script>
 
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 
