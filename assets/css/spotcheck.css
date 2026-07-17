@@ -20,6 +20,38 @@
   --sc-font: 'Krasar', 'Khmer OS Content', sans-serif;
 }
 
+[data-theme="dark"] {
+  --sc-bg: #002D6B;
+  --sc-card-bg: linear-gradient(180deg, #003B8B, #002D6B);
+  --sc-border: #D4AF37;
+  --sc-text: #fff;
+  --sc-text-muted: #cdd9ef;
+  --sc-badge-text: #FFD700;
+  --sc-danger: #FF6B6B;
+}
+
+[data-theme="dark"] .sc-header-text h1,
+[data-theme="dark"] .sc-card-cif,
+[data-theme="dark"] .sc-summary-value,
+[data-theme="dark"] .sc-section legend,
+[data-theme="dark"] .sc-confirm h3 {
+  color: var(--sc-gold-light);
+}
+
+[data-theme="dark"] .sc-card-name,
+[data-theme="dark"] .sc-field input,
+[data-theme="dark"] .sc-field select,
+[data-theme="dark"] .sc-field textarea,
+[data-theme="dark"] .sc-search input,
+[data-theme="dark"] .sc-select-filter {
+  background: #00265c;
+  color: #fff;
+}
+
+[data-theme="dark"] .sc-panel {
+  background: var(--sc-navy-dark);
+}
+
 .sc-main {
   font-family: var(--sc-font);
   color: var(--sc-text);
