@@ -15,20 +15,52 @@ content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no
 name="theme-color"
 content="#032d73">
 
+<!-- Applied before any CSS loads, so there's no flash of the wrong
+     theme on page load. Keep this as the very first thing in <head>. -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
 <link
 rel="stylesheet"
 href="../../assets/css/main.css">
 
 <style>
 
-/* main.css (via base.css) already handles the global reset,
-   font-face, and the app's navy background on html/body — this
-   page only needs its own layout/theme rules on top of that. */
+/* main.css (via base.css) hardcodes navy on html/body — that's
+   outside this page's control, so .wrapper explicitly overrides it
+   with the theme-aware page background instead, same as every other
+   page's .page-container does. */
+
+:root{
+    --acct-page-bg:#F5F7FA;
+    --acct-card-bg:#FFFFFF;
+    --acct-border:#E2E6ED;
+    --acct-text:#1C2333;
+    --acct-text-muted:#6B7280;
+    --acct-navy-dark:#002D6B;
+    --acct-photo-bg:#EAF0FB;
+}
+
+[data-theme="dark"]{
+    --acct-page-bg:#002D6B;
+    --acct-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
+    --acct-border:#D4AF37;
+    --acct-text:#fff;
+    --acct-text-muted:#cdd9ef;
+    --acct-photo-bg:#00265c;
+}
 
 .wrapper{
 
     width:100%;
+
     min-height:100vh;
+
+    background:var(--acct-page-bg);
 
     display:flex;
 
@@ -37,6 +69,8 @@ href="../../assets/css/main.css">
     align-items:center;
 
     padding:24px;
+
+    box-sizing:border-box;
 
 }
 
@@ -50,21 +84,27 @@ href="../../assets/css/main.css">
 
     min-height:600px;
 
-    background:linear-gradient(180deg,#003B8B,#002D6B);
+    background:var(--acct-card-bg);
 
-    border:1px solid #D4AF37;
+    border:1px solid var(--acct-border);
 
     border-radius:28px;
 
     padding:25px 28px 28px;
 
-    box-shadow:0 10px 30px rgba(0,0,0,.35);
+    box-shadow:0 10px 30px rgba(0,0,0,.2);
 
     display:flex;
 
     flex-direction:column;
 
     justify-content:center;
+
+}
+
+[data-theme="dark"] .card{
+
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
 
 }
 
@@ -92,9 +132,9 @@ href="../../assets/css/main.css">
 
     object-fit:cover;
 
-    border:1px solid #D4AF37;
+    border:1px solid var(--acct-border);
 
-    background:#00265c;
+    background:var(--acct-photo-bg);
 
     transition:opacity .2s;
 
@@ -136,7 +176,7 @@ href="../../assets/css/main.css">
 
     font-weight:bold;
 
-    color:#fff;
+    color:var(--acct-text);
 
     margin-top:8px;
 
@@ -172,7 +212,7 @@ href="../../assets/css/main.css">
 
     font-size:15px;
 
-    color:#cdd9ef;
+    color:var(--acct-text-muted);
 
 }
 
@@ -183,6 +223,12 @@ href="../../assets/css/main.css">
     font-size:16px;
 
     font-weight:600;
+
+    color:var(--acct-navy-dark);
+
+}
+
+[data-theme="dark"] .value{
 
     color:#FFD700;
 
@@ -334,6 +380,7 @@ onclick="history.back()">
 <script src="../../config/api.js"></script>
 <script src="../../config/auth.js"></script>
 <script src="../../config/session.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
 
 <script>
 
