@@ -3,6 +3,7 @@
     --set-navy:#003B8B;
     --set-gold:#D4AF37;
     --set-gold-light:#FFD700;
+    --set-page-bg:#F5F7FA;
     --set-card-bg:#FFFFFF;
     --set-border:#E2E6ED;
     --set-text:#1C2333;
@@ -14,6 +15,7 @@
 }
 
 [data-theme="dark"]{
+    --set-page-bg:#002D6B;
     --set-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
     --set-border:#D4AF37;
     --set-text:#fff;
@@ -25,6 +27,12 @@
 }
 
 .setting-page{
+
+    background:var(--set-page-bg);
+
+    min-height:100vh;
+
+    box-sizing:border-box;
 
     padding-bottom:100px;
 
