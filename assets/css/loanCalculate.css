@@ -4,9 +4,9 @@
 
 .form-card{
 
-    background:linear-gradient(180deg,#003B8B,#002D6B);
+    background:#FFFFFF;
 
-    border:1px solid #D4AF37;
+    border:1px solid #E2E6ED;
 
     border-radius:16px;
 
@@ -15,6 +15,8 @@
     overflow:hidden;
 
     box-sizing:border-box;
+
+    box-shadow:0 4px 14px rgba(0,0,0,.08);
 
 }
 
@@ -36,7 +38,7 @@
 
     text-align:left;
 
-    color:#cdd9ef;
+    color:#6B7280;
 
     font-size:14px;
 
@@ -55,11 +57,11 @@
 
     border-radius:10px;
 
-    border:1px solid #D4AF37;
+    border:1px solid #E2E6ED;
 
-    background:#00265c;
+    background:#FFFFFF;
 
-    color:#fff;
+    color:#1C2333;
 
     font-size:16px;
 
@@ -73,7 +75,7 @@
 
     appearance:none;
 
-    background-image:url('data:image/svg+xml;utf8,<svg fill="%23FFD700" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-image:url('data:image/svg+xml;utf8,<svg fill="%23003B8B" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
 
     background-repeat:no-repeat;
 
@@ -88,7 +90,7 @@
 
     outline:none;
 
-    border-color:#FFD700;
+    border-color:#003B8B;
 
 }
 
@@ -148,7 +150,7 @@
 
 .export-buttons button{
 
-    background:#00265c;
+    background:#FFFFFF;
 
     border:1px solid #D4AF37;
 
@@ -186,13 +188,15 @@
 
 .pdf-wrapper{
 
-    background:linear-gradient(180deg,#003B8B,#002D6B);
+    background:#FFFFFF;
 
-    border:1px solid #D4AF37;
+    border:1px solid #E2E6ED;
 
     border-radius:16px;
 
     padding:16px 12px;
+
+    box-shadow:0 4px 14px rgba(0,0,0,.08);
 
 }
 
@@ -204,7 +208,7 @@
 
     font-weight:700;
 
-    color:#FFD700;
+    color:#002D6B;
 
     margin-bottom:8px;
 
@@ -218,7 +222,7 @@
 
     font-weight:600;
 
-    color:#fff;
+    color:#1C2333;
 
     margin-bottom:14px;
 
@@ -226,7 +230,7 @@
 
 .pdf-customer span{
 
-    color:#FFD700;
+    color:#002D6B;
 
     font-weight:700;
 
@@ -248,16 +252,16 @@
 
     font-size:13px;
 
-    background:#00265c;
+    background:#FFFFFF;
 
-    color:#fff;
+    color:#1C2333;
 
 }
 
 .pdf-wrapper th,
 .pdf-wrapper td{
 
-    border:1px solid #2f4670;
+    border:1px solid #E2E6ED;
 
     padding:8px;
 
@@ -283,9 +287,9 @@
 
     font-weight:700;
 
-    background:#0b3d91;
+    background:rgba(212,175,55,.15);
 
-    color:#FFD700;
+    color:#002D6B;
 
 }
 
