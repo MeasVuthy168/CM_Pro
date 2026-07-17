@@ -1,305 +1,288 @@
+:root{
+    --lc-page-bg:#F5F7FA;
+    --lc-card-bg:#FFFFFF;
+    --lc-border:#E2E6ED;
+    --lc-text:#1C2333;
+    --lc-text-muted:#6B7280;
+    --lc-shadow:0 4px 14px rgba(0,0,0,.08);
+    --lc-navy:#003B8B;
+    --lc-navy-dark:#002D6B;
+    --lc-select-arrow:%23003B8B;
+}
+
+[data-theme="dark"]{
+    --lc-page-bg:#002D6B;
+    --lc-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
+    --lc-border:#D4AF37;
+    --lc-text:#fff;
+    --lc-text-muted:#cdd9ef;
+    --lc-shadow:0 4px 14px rgba(0,0,0,.25);
+    --lc-select-arrow:%23FFD700;
+}
+
+/* ==========================================
+   PAGE
+   NOTE: this rule was MISSING entirely before — every other page
+   (arrears/customers/turnover) has width:100% + box-sizing:border-box
+   + padding here, which is what actually constrains the page to the
+   viewport. Without it, this page could overflow/not fit the screen
+   the way the others do.
+========================================== */
+
+.page-container{
+
+width:100%;
+
+box-sizing:border-box;
+
+padding:16px;
+
+padding-bottom:90px;
+
+background:var(--lc-page-bg);
+
+min-height:100vh;
+
+}
+
 /* =========================
    Form Card
 ========================= */
-
 .form-card{
-
-    background:#FFFFFF;
-
-    border:1px solid #E2E6ED;
-
+    background:var(--lc-card-bg);
+    border:1px solid var(--lc-border);
     border-radius:16px;
-
     padding:24px 16px 20px;
-
     overflow:hidden;
-
     box-sizing:border-box;
-
-    box-shadow:0 4px 14px rgba(0,0,0,.08);
-
+    box-shadow:var(--lc-shadow);
 }
-
 .form-group{
-
     display:flex;
-
     flex-direction:column;
-
     align-items:stretch;
-
     margin-bottom:14px;
-
     gap:6px;
-
 }
-
 .form-group label{
-
     text-align:left;
-
-    color:#6B7280;
-
+    color:var(--lc-text-muted);
     font-size:14px;
-
     line-height:1.3;
-
 }
-
 .form-group input,
 .form-group select{
-
     width:100%;
-
     height:48px;
-
     padding:0 12px;
-
     border-radius:10px;
-
-    border:1px solid #E2E6ED;
-
-    background:#FFFFFF;
-
-    color:#1C2333;
-
+    border:1px solid var(--lc-border);
+    background:var(--lc-card-bg);
+    color:var(--lc-text);
     font-size:16px;
-
     font-family:"Krasar",Arial,sans-serif;
-
     box-sizing:border-box;
-
 }
-
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group select{
+    background:#00265c;
+}
 .form-group select{
-
     appearance:none;
-
     background-image:url('data:image/svg+xml;utf8,<svg fill="%23003B8B" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
-
     background-repeat:no-repeat;
-
     background-position:right 10px center;
-
     background-size:20px;
-
 }
-
+[data-theme="dark"] .form-group select{
+    background-image:url('data:image/svg+xml;utf8,<svg fill="%23FFD700" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+}
 .form-group input:focus,
 .form-group select:focus{
-
     outline:none;
-
-    border-color:#003B8B;
-
+    border-color:var(--lc-navy);
 }
-
+[data-theme="dark"] .form-group input:focus,
+[data-theme="dark"] .form-group select:focus{
+    border-color:#FFD700;
+}
 /* =========================
    Calculate Button
 ========================= */
-
 .calculate-btn{
-
     width:100%;
-
     padding:14px;
-
     background:linear-gradient(180deg,#FFD700,#D4AF37);
-
     border:none;
-
     color:#002D6B;
-
     font-weight:700;
-
     font-size:16px;
-
     border-radius:10px;
-
     cursor:pointer;
-
     margin-top:6px;
-
     font-family:"Krasar",Arial,sans-serif;
-
     transition:.2s;
-
 }
-
 .calculate-btn:active{
-
     transform:scale(.97);
-
 }
-
 /* =========================
    Export Buttons
 ========================= */
-
 .export-buttons{
-
     margin-top:18px;
-
     display:flex;
-
     justify-content:center;
-
     gap:20px;
-
 }
-
 .export-buttons button{
-
-    background:#FFFFFF;
-
+    background:var(--lc-card-bg);
     border:1px solid #D4AF37;
-
     border-radius:12px;
-
     padding:8px 14px;
-
     cursor:pointer;
-
     display:flex;
-
     align-items:center;
-
     justify-content:center;
-
 }
-
+[data-theme="dark"] .export-buttons button{
+    background:#00265c;
+}
 .export-buttons button:active{
-
     transform:scale(.95);
-
 }
-
 /* =========================
    Export / Schedule Section
 ========================= */
-
 #exportSection{
-
     margin-top:16px;
-
     margin-bottom:90px;
-
 }
-
 .pdf-wrapper{
-
-    background:#FFFFFF;
-
-    border:1px solid #E2E6ED;
-
+    background:var(--lc-card-bg);
+    border:1px solid var(--lc-border);
     border-radius:16px;
-
     padding:16px 12px;
-
-    box-shadow:0 4px 14px rgba(0,0,0,.08);
-
+    box-shadow:var(--lc-shadow);
 }
-
 .pdf-title{
-
     text-align:center;
-
     font-size:19px;
-
     font-weight:700;
-
-    color:#002D6B;
-
+    color:var(--lc-navy-dark);
     margin-bottom:8px;
-
 }
-
+[data-theme="dark"] .pdf-title{
+    color:#FFD700;
+}
 .pdf-customer{
-
     text-align:left;
-
     font-size:15px;
-
     font-weight:600;
-
-    color:#1C2333;
-
+    color:var(--lc-text);
     margin-bottom:14px;
-
 }
-
 .pdf-customer span{
-
-    color:#002D6B;
-
+    color:var(--lc-navy-dark);
     font-weight:700;
-
 }
-
+[data-theme="dark"] .pdf-customer span{
+    color:#FFD700;
+}
 .table-scroll{
-
     overflow-x:auto;
-
 }
-
+/* NOTE: the actual schedule table (.pdf-wrapper table/th/td) stays
+   the same white/navy/gold combo in BOTH themes — same rationale as
+   every other page's data table (already high-contrast, matches the
+   rest of the app, and this is also what gets exported to PDF/Excel
+   so it should look the same regardless of the app's current theme). */
 .pdf-wrapper table{
-
     width:100%;
-
     border-collapse:collapse;
-
     margin-top:14px;
-
     font-size:13px;
-
     background:#FFFFFF;
-
     color:#1C2333;
-
 }
-
 .pdf-wrapper th,
 .pdf-wrapper td{
-
     border:1px solid #E2E6ED;
-
     padding:8px;
-
     text-align:center;
-
 }
-
 .pdf-wrapper th{
-
     background:#003B8B;
-
     color:#FFD700;
-
 }
-
 .pdf-wrapper .info-table th{
-
     text-align:left;
-
 }
-
 .pdf-wrapper .total-row{
-
     font-weight:700;
-
     background:rgba(212,175,55,.15);
-
     color:#002D6B;
+}
+@media (max-width:420px){
+.form-group label{
+    flex:0 0 46%;
+    font-size:13px;
+}
+}
+
+/* ==========================================
+   LOADING
+   NOTE: this was also missing entirely — #loadingBox/.spinner are
+   referenced in index.html but had no styles anywhere in this file,
+   so the loading overlay was invisible/unstyled. Floating overlay
+   stays dark in both themes, same as every other page's loading box.
+========================================== */
+
+.loading-box{
+
+position:fixed;
+
+left:0;
+
+top:0;
+
+width:100%;
+
+height:100%;
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+background:rgba(0,45,107,.85);
+
+z-index:9999;
 
 }
 
-@media (max-width:420px){
+.spinner{
 
-.form-group label{
+width:42px;
 
-    flex:0 0 46%;
+height:42px;
 
-    font-size:13px;
+border:4px solid rgba(212,175,55,.25);
+
+border-top:4px solid #D4AF37;
+
+border-radius:50%;
+
+animation:loanCalcSpin .8s linear infinite;
+
+}
+
+@keyframes loanCalcSpin{
+
+100%{
+
+transform:rotate(360deg);
 
 }
 
