@@ -1,3 +1,17 @@
+:root{
+    --card-bg:#FFFFFF;
+    --card-border:#E2E6ED;
+    --card-text:#1C2333;
+    --card-shadow:0 4px 12px rgba(0,45,107,.1);
+}
+
+[data-theme="dark"]{
+    --card-bg:linear-gradient(180deg,#003B8B,#002D6B);
+    --card-border:#D4AF37;
+    --card-text:#fff;
+    --card-shadow:0 4px 12px rgba(0,0,0,.25);
+}
+
 /* =========================
    Dashboard Grid
 ========================= */
@@ -16,18 +30,15 @@
 
 /* =========================
    Dashboard Cards
+   NOTE: matches the same :root=light / [data-theme="dark"]=override
+   convention used in every other retrofitted CSS file in this app.
 ========================= */
 
 .dashboard-card{
 
-    background:
-        linear-gradient(
-            180deg,
-            #003B8B,
-            #002D6B
-        );
+    background:var(--card-bg);
 
-    border:1px solid #D4AF37;
+    border:1px solid var(--card-border);
 
     border-radius:24px;
 
@@ -47,12 +58,11 @@
 
     text-decoration:none;
 
-    color:#fff;
+    color:var(--card-text);
 
     transition:.2s;
 
-    box-shadow:
-        0 4px 12px rgba(0,0,0,.25);
+    box-shadow:var(--card-shadow);
 
     user-select:none;
 
@@ -102,7 +112,7 @@
 
     line-height:1.25;
 
-    color:#fff;
+    color:var(--card-text);
 
     text-align:center;
 
