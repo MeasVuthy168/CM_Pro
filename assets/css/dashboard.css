@@ -8,10 +8,13 @@
 
 /* =========================
    Dashboard Layout
-   NOTE: .dashboard-card itself lives in main.css (not this file),
-   so it isn't retrofitted here — if it currently has its own fixed
-   navy/gold styling, it'll need the same [data-theme="dark"] override
-   treatment to fully complete the light-mode look on this page.
+   NOTE: .dashboard-grid and .dashboard-card live in cards.css, not
+   here — this file used to ALSO define .dashboard-grid (2 columns,
+   22px gap, no padding), which silently conflicted with cards.css's
+   version (3 columns, 10px gap, padding) depending on which file's
+   <link> tag came second. That's what caused the dashboard to render
+   2 columns instead of 3. Removed here so cards.css is the single
+   source of truth for the grid.
 ========================= */
 
 .dashboard-container{
@@ -23,40 +26,5 @@
     background:var(--dash-page-bg);
 
     min-height:100vh;
-
-}
-
-.dashboard-grid{
-
-    display:grid;
-
-    grid-template-columns:
-        repeat(2, 1fr);
-
-    gap:22px;
-
-}
-
-/* Tablet */
-@media (min-width:768px){
-
-    .dashboard-grid{
-
-        grid-template-columns:
-            repeat(3, 1fr);
-
-    }
-
-}
-
-/* Desktop */
-@media (min-width:1200px){
-
-    .dashboard-grid{
-
-        grid-template-columns:
-            repeat(4, 1fr);
-
-    }
 
 }
