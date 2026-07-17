@@ -1,182 +1,117 @@
 <!DOCTYPE html>
 <html lang="km">
-
 <head>
-
 <meta charset="UTF-8">
-
 <meta
 name="viewport"
 content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-
 <title>ការគណនាចំនួនខែចូលនិវត្តន៍</title>
-
 <meta
 name="theme-color"
 content="#032d73">
 
+<!-- Applied before any CSS loads, so there's no flash of the wrong
+     theme on page load. Keep this as the very first thing in <head>. -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
 <link
 rel="stylesheet"
 href="../../assets/css/main.css">
-
 <link
 rel="stylesheet"
 href="../../assets/css/retirement.css">
-
 <link
 rel="stylesheet"
 href="/CM_Pro/assets/css/global-splash.css">
-
 </head>
-
 <body>
-
 <!-- ========================= -->
 <!-- OFFLINE -->
 <!-- ========================= -->
-
 <div id="offlineBanner">
-
 ⚠️ No Internet Connection
-
 </div>
-
 <!-- ========================= -->
 <!-- CONFIG -->
 <!-- ========================= -->
-
 <script src="../../config/api.js"></script>
-
 <script src="../../config/auth.js"></script>
-
 <script src="../../config/session.js"></script>
-
 <!-- ========================= -->
 <!-- COMPONENT -->
 <!-- ========================= -->
-
 <script src="/CM_Pro/shared/topbar.js"></script>
-
+<script src="/CM_Pro/shared/theme.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
-
 <script src="/CM_Pro/assets/js/toast.js"></script>
-
 <!-- ========================= -->
 <!-- TOPBAR -->
 <!-- ========================= -->
-
 <div id="topbar-container"></div>
-
 <!-- ========================= -->
 <!-- PAGE -->
 <!-- ========================= -->
-
 <div class="page-container">
-
 <div class="form-card">
-
 <div class="form-group">
-
 <label for="dob">ថ្ងៃខែឆ្នាំកំណើត</label>
-
 <div class="box">
-
 <input type="date" id="dob">
-
 </div>
-
 </div>
-
 <div class="form-group">
-
 <label for="retirementAge">អាយុចូលនិវត្តន៍</label>
-
 <div class="age-wrap">
-
 <input id="retirementAge" class="age-slider" type="range" min="0" max="60" value="55" step="1">
-
 <div class="age-num">
-
 <input type="number" id="ageInput" min="0" max="60" value="55"> ឆ្នាំ
-
 </div>
-
 </div>
-
 <div class="units">(0–60)</div>
-
 </div>
-
 <div class="form-group">
-
 <label for="currentDate">ថ្ងៃខែឆ្នាំបច្ចុប្បន្ន</label>
-
 <div class="box">
-
 <input type="date" id="currentDate">
-
 </div>
-
 </div>
-
 </div>
-
 <div class="result-card">
-
 <div class="result-icon">🗓️</div>
-
 <div class="result-body">
-
 <div class="result-title">ចំនួនខែដែលនៅសល់</div>
-
 <div id="monthsLeft" class="months-big">—</div>
-
 <div id="description" class="desc"></div>
-
 </div>
-
 </div>
-
 <div class="foot-note">
-
 💡 គោលបំណង៖ កំណត់រយៈពេលផ្តល់ឥណទានឲ្យបានត្រឹមត្រូវតាមគោលការណ៍
-សម្រាប់ឥណទានប្រើប្រាស់ផ្ទាល់ខ្លួន ដែលធានាដោយប្រាក់បៀវត្សា៕
-
+សម្រាប់ឥណទានប្រើប្រាស់ផ្ទាល់ខ្លួន ដែលធានាដោយប្រាក់បៀវត្ស៕
 </div>
-
 </div>
-
 <!-- ========================= -->
 <!-- LOADING -->
 <!-- ========================= -->
-
 <div
 id="loadingBox"
 class="loading-box"
 style="display:none;">
-
 <div class="spinner"></div>
-
 </div>
-
 <!-- ========================= -->
 <!-- BOTTOM -->
 <!-- ========================= -->
-
 <div id="bottomnav-container"></div>
-
 <!-- NOTIFICATION BADGE -->
-
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
-
 <!-- RETIREMENT LOGIC -->
-
 <script src="../../assets/js/retirement.js"></script>
-
 <!-- PAGE LOADER (component loader, offline, notification badge) -->
-
 <script src="../../assets/js/retirement-loader.js"></script>
-
 </body>
-
 </html>
