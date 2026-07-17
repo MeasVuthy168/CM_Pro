@@ -1,5 +1,17 @@
+:root{
+    --dash-page-bg:#F5F7FA;
+}
+
+[data-theme="dark"]{
+    --dash-page-bg:#002D6B;
+}
+
 /* =========================
    Dashboard Layout
+   NOTE: .dashboard-card itself lives in main.css (not this file),
+   so it isn't retrofitted here — if it currently has its own fixed
+   navy/gold styling, it'll need the same [data-theme="dark"] override
+   treatment to fully complete the light-mode look on this page.
 ========================= */
 
 .dashboard-container{
@@ -8,7 +20,7 @@
 
     padding-bottom:120px;
 
-    background:#002D6B;
+    background:var(--dash-page-bg);
 
     min-height:100vh;
 

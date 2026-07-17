@@ -1,3 +1,17 @@
+:root{
+    --asst-card-bg:#FFFFFF;
+    --asst-border:#D4AF37;
+    --asst-text:#002D6B;
+    --asst-shimmer-mid:#5B84C4;
+}
+
+[data-theme="dark"]{
+    --asst-card-bg:#003B8B;
+    --asst-border:#D4AF37;
+    --asst-text:#FFD700;
+    --asst-shimmer-mid:#fff8dc;
+}
+
 /* =========================
    Assistant Box
 ========================= */
@@ -5,11 +19,11 @@
     margin-top:28px;
     margin-left:4px;
     margin-right:4px;
-    background:#003B8B;
-    border:1px solid #D4AF37;
+    background:var(--asst-card-bg);
+    border:1px solid var(--asst-border);
     border-radius:24px;
     padding:18px 18px 18px 10px;
-    color:#FFD700;
+    color:var(--asst-text);
     display:flex;
     gap:8px;
     align-items:center;
@@ -50,21 +64,27 @@
    across it on a loop — like light catching foil. background-clip:
    text needs a solid-color fallback first for browsers that don't
    support it, so the message is never invisible.
+
+   NOTE: the shimmer's mid-tone (the "bright flash" color the sweep
+   passes through) is theme-aware via --asst-shimmer-mid — a pale
+   cream flash reads fine against the dark-mode navy box, but needs
+   to be a darker blue flash to stay visible against the light-mode
+   white box (a pale cream flash on white would nearly disappear).
 ========================= */
 .assistant-text{
     flex:1;
     line-height:1.6;
     font-size:13px;
     font-weight:700;
-    color:#FFD700;
+    color:var(--asst-text);
     background:
         linear-gradient(
             90deg,
-            #FFD700 0%,
-            #FFD700 35%,
-            #fff8dc 50%,
-            #FFD700 65%,
-            #FFD700 100%
+            var(--asst-text) 0%,
+            var(--asst-text) 35%,
+            var(--asst-shimmer-mid) 50%,
+            var(--asst-text) 65%,
+            var(--asst-text) 100%
         );
     background-size:220% auto;
     -webkit-background-clip:text;
@@ -82,6 +102,14 @@
    brief attention pulse on first paint (3 pulses, then it settles)
    and a NEW badge + dismiss control appear. Toggle via
    data-mode="update" on .assistant-box (JS sets this).
+
+   NOTE: left as fixed cyan tones (not theme-variable) in both
+   themes — this is a system-notice color, not the box's normal
+   decorative theming, same reasoning as why conditional-formatting
+   colors elsewhere in the app don't change with the theme toggle.
+   It already has its own explicit border/text colors independent of
+   .assistant-box's base color, so it reads fine on either the white
+   or navy box background.
 ========================= */
 .assistant-box[data-mode="update"]{
     border-color:#00E5FF;
