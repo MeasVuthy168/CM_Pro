@@ -1,3 +1,33 @@
+:root{
+    --arr-page-bg:#F5F7FA;
+    --arr-card-bg:#FFFFFF;
+    --arr-border:#E2E6ED;
+    --arr-text:#1C2333;
+    --arr-text-muted:#6B7280;
+    --arr-text-muted2:#9AA5B8;
+    --arr-shadow:0 4px 14px rgba(0,0,0,.08);
+    --arr-shadow-modal:0 8px 28px rgba(0,0,0,.25);
+    --arr-navy:#003B8B;
+    --arr-navy-dark:#002D6B;
+    --arr-gold:#D4AF37;
+    --arr-gold-light:#FFD700;
+    --arr-outline-btn-border:#003B8B;
+    --arr-outline-btn-text:#003B8B;
+}
+
+[data-theme="dark"]{
+    --arr-page-bg:#002D6B;
+    --arr-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
+    --arr-border:#D4AF37;
+    --arr-text:#fff;
+    --arr-text-muted:#cdd9ef;
+    --arr-text-muted2:#8fa0bd;
+    --arr-shadow:0 4px 14px rgba(0,0,0,.25);
+    --arr-shadow-modal:0 8px 28px rgba(0,0,0,.45);
+    --arr-outline-btn-border:#D4AF37;
+    --arr-outline-btn-text:#fff;
+}
+
 /* ==========================================
    PAGE
 ========================================== */
@@ -12,7 +42,7 @@ padding:16px;
 
 padding-bottom:90px;
 
-background:#F5F7FA;
+background:var(--arr-page-bg);
 
 min-height:100vh;
 
@@ -34,15 +64,15 @@ box-sizing:border-box;
 
 overflow:hidden;
 
-background:#FFFFFF;
+background:var(--arr-card-bg);
 
-border:1px solid #E2E6ED;
+border:1px solid var(--arr-border);
 
 border-radius:16px;
 
 padding:20px;
 
-box-shadow:0 4px 14px rgba(0,0,0,.08);
+box-shadow:var(--arr-shadow);
 
 margin-bottom:14px;
 
@@ -86,7 +116,7 @@ font-size:12px;
 
 font-weight:700;
 
-color:#6B7280;
+color:var(--arr-text-muted);
 
 white-space:nowrap;
 
@@ -111,7 +141,7 @@ height:42px;
 
 padding:0 10px;
 
-border:1px solid #E2E6ED;
+border:1px solid var(--arr-border);
 
 border-radius:10px;
 
@@ -121,9 +151,9 @@ outline:none;
 
 transition:.2s;
 
-background:#FFFFFF;
+background:var(--arr-card-bg);
 
-color:#1C2333;
+color:var(--arr-text);
 
 -webkit-text-size-adjust:none;
 
@@ -140,6 +170,55 @@ box-shadow:0 0 0 3px rgba(0,59,139,.12);
 
 }
 
+[data-theme="dark"] .filter-group input:focus,
+[data-theme="dark"] .filter-group select:focus{
+
+border-color:var(--arr-gold-light);
+
+box-shadow:0 0 0 3px rgba(255,215,0,.18);
+
+}
+
+/* Secondary buttons (Clear / Cancel All / Reason Cancel) are outline
+   in light mode, filled navy in dark mode — a structural difference,
+   not just a color swap, so these are separate override rules rather
+   than variables. */
+[data-theme="dark"] #btnClear,
+[data-theme="dark"] #btnCancelAllPending,
+[data-theme="dark"] #btnReasonCancel{
+
+background:#00265c;
+
+}
+
+[data-theme="dark"] .summary-row{
+
+border-top:1px solid rgba(212,175,55,.25);
+
+}
+
+[data-theme="dark"] .reason-group input:focus,
+[data-theme="dark"] .reason-group textarea:focus{
+
+border-color:var(--arr-gold-light);
+
+box-shadow:0 0 0 3px rgba(255,215,0,.18);
+
+}
+
+[data-theme="dark"] .suggestion-list li:hover,
+[data-theme="dark"] .suggestion-list li:active{
+
+background:rgba(255,215,0,.15);
+
+}
+
+[data-theme="dark"]{
+
+--arr-pending-text:#FFD700;
+
+}
+
 /* ==========================================
    TOPBAR MENU (Refresh / Export / Print)
    Lives here in the page's own CSS on purpose, NOT in topbar.css —
@@ -147,6 +226,11 @@ box-shadow:0 0 0 3px rgba(0,59,139,.12);
    arrears-loader.js at runtime. Styled to match topbar-action-btn's
    look (semi-transparent white on the navy topbar) since that's
    where it visually ends up living.
+
+   NOTE: this menu is deliberately left DARK in both themes — it
+   visually lives inside the still-navy shared topbar component, not
+   in this page's own light content area, same as the "⋮" menu on
+   every other page.
 ========================================== */
 
 .arrears-menu-wrap{
@@ -275,13 +359,13 @@ height:34px;
 
 padding:0 16px;
 
-border:1.5px solid #003B8B;
+border:1.5px solid var(--arr-outline-btn-border);
 
 border-radius:10px;
 
 background:transparent;
 
-color:#003B8B;
+color:var(--arr-outline-btn-text);
 
 font-size:13px;
 
@@ -350,17 +434,17 @@ margin-top:16px;
 
 padding-top:14px;
 
-border-top:1px solid #E2E6ED;
+border-top:1px solid var(--arr-border);
 
 font-size:13px;
 
-color:#6B7280;
+color:var(--arr-text-muted);
 
 }
 
 .summary-row .num{
 
-color:#002D6B;
+color:var(--arr-navy-dark);
 
 font-weight:700;
 
@@ -376,7 +460,7 @@ border-top:none;
 
 font-size:12px;
 
-color:#9AA5B8;
+color:var(--arr-text-muted2);
 
 }
 
@@ -390,7 +474,7 @@ color:#9AA5B8;
 
 font-size:12px;
 
-color:#6B7280;
+color:var(--arr-text-muted);
 
 margin-bottom:6px;
 
@@ -406,15 +490,15 @@ box-sizing:border-box;
 
 overflow:hidden;
 
-background:#FFFFFF;
+background:var(--arr-card-bg);
 
-border:1px solid #E2E6ED;
+border:1px solid var(--arr-border);
 
 border-radius:16px;
 
 padding:10px;
 
-box-shadow:0 4px 14px rgba(0,0,0,.08);
+box-shadow:var(--arr-shadow);
 
 }
 
@@ -735,6 +819,12 @@ font-weight:700;
    rule further up this file — same !important + matching selector
    prefix approach used there, so this reliably wins regardless of
    source order.
+
+   NOTE: these business-data colors (Loss/Doubtful/Promise Status/
+   etc.) are intentionally the SAME in both light and dark theme —
+   they convey real information about loan classification, not
+   decorative theming, same as Excel's own conditional formatting
+   would look identical regardless of the workbook's color scheme.
 ========================================== */
 
 .table-card tbody tr.row-class-loss td:first-child,
@@ -822,15 +912,15 @@ overflow-y:auto;
 
 box-sizing:border-box;
 
-background:#FFFFFF;
+background:var(--arr-card-bg);
 
-border:1px solid #E2E6ED;
+border:1px solid var(--arr-border);
 
 border-radius:16px;
 
 padding:18px 20px;
 
-box-shadow:0 8px 28px rgba(0,0,0,.25);
+box-shadow:var(--arr-shadow-modal);
 
 }
 
@@ -840,7 +930,7 @@ font-size:14px;
 
 font-weight:700;
 
-color:#002D6B;
+color:var(--arr-navy-dark);
 
 text-transform:uppercase;
 
@@ -854,7 +944,7 @@ margin-bottom:4px;
 
 font-size:13px;
 
-color:#6B7280;
+color:var(--arr-text-muted);
 
 margin-bottom:14px;
 
@@ -882,7 +972,7 @@ font-size:13px;
 
 font-weight:600;
 
-color:#6B7280;
+color:var(--arr-text-muted);
 
 }
 
@@ -895,7 +985,7 @@ box-sizing:border-box;
 
 padding:10px 12px;
 
-border:1px solid #E2E6ED;
+border:1px solid var(--arr-border);
 
 border-radius:10px;
 
@@ -903,9 +993,9 @@ font-size:14px;
 
 outline:none;
 
-background:#FFFFFF;
+background:var(--arr-card-bg);
 
-color:#1C2333;
+color:var(--arr-text);
 
 font-family:inherit;
 
@@ -936,9 +1026,9 @@ top:100%;
 
 margin-top:4px;
 
-background:#FFFFFF;
+background:var(--arr-card-bg);
 
-border:1px solid #E2E6ED;
+border:1px solid var(--arr-border);
 
 border-radius:8px;
 
@@ -966,7 +1056,7 @@ display:block;
 
 padding:8px 12px;
 
-color:#1C2333;
+color:var(--arr-text);
 
 font-size:13px;
 
@@ -987,7 +1077,7 @@ background:rgba(212,175,55,.25);
 
 font-size:12px;
 
-color:#9AA5B8;
+color:var(--arr-text-muted2);
 
 margin:4px 0 14px;
 
@@ -1039,13 +1129,13 @@ color:#002D6B;
 
 .pending-row{
 
-color:#8A6D1D;
+color:var(--arr-pending-text,#8A6D1D);
 
 }
 
 .pending-row .num{
 
-color:#002D6B;
+color:var(--arr-navy-dark);
 
 font-weight:700;
 
@@ -1059,13 +1149,13 @@ height:34px;
 
 padding:0 16px;
 
-border:1.5px solid #003B8B;
+border:1.5px solid var(--arr-outline-btn-border);
 
 border-radius:10px;
 
 background:transparent;
 
-color:#003B8B;
+color:var(--arr-outline-btn-text);
 
 font-size:13px;
 
@@ -1170,9 +1260,9 @@ color:#002D6B;
 
 background:transparent;
 
-border:1.5px solid #003B8B;
+border:1.5px solid var(--arr-outline-btn-border);
 
-color:#003B8B;
+color:var(--arr-outline-btn-text);
 
 }
 
@@ -1262,6 +1352,11 @@ max-height:none;
    do safely (they're built for the normal, unrotated page).
    Auto-hide via a "hidden" class toggled by arrears.js on a timer;
    tapping the table area brings them back temporarily.
+
+   NOTE: these floating overlay bars are deliberately dark in both
+   themes (semi-transparent black over the table content), same
+   rationale as the topbar menu above — they're a floating control
+   surface over content, not page chrome that should re-theme.
 ========================================== */
 
 .landscape-bar{
@@ -1453,6 +1548,10 @@ font-size:11px;
    forced to landscape paper orientation. Sticky positioning is
    switched off for print since it's meaningless on paper and can
    otherwise cause odd repeated-header artifacts across page breaks.
+
+   Print is intentionally NOT theme-aware — it already forces its own
+   ink-saving white/black colors below regardless of what theme the
+   screen was showing when Print was clicked.
 ========================================== */
 
 .print-only-title{
