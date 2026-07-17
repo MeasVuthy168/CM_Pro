@@ -1,3 +1,29 @@
+:root{
+    --set-navy-dark:#002D6B;
+    --set-navy:#003B8B;
+    --set-gold:#D4AF37;
+    --set-gold-light:#FFD700;
+    --set-card-bg:#FFFFFF;
+    --set-border:#E2E6ED;
+    --set-text:#1C2333;
+    --set-text-muted:#6B7280;
+    --set-divider:#E2E6ED;
+    --set-switch-off:#E2E6ED;
+    --set-switch-border:#C9D2DE;
+    --set-shadow:0 4px 14px rgba(0,0,0,.08);
+}
+
+[data-theme="dark"]{
+    --set-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
+    --set-border:#D4AF37;
+    --set-text:#fff;
+    --set-text-muted:#cdd9ef;
+    --set-divider:rgba(212,175,55,.25);
+    --set-switch-off:#00265c;
+    --set-switch-border:#3c5068;
+    --set-shadow:0 4px 14px rgba(0,0,0,.25);
+}
+
 .setting-page{
 
     padding-bottom:100px;
@@ -10,9 +36,9 @@
 
 .profile-card{
 
-    background:linear-gradient(180deg,#003B8B,#002D6B);
+    background:var(--set-card-bg);
 
-    border:1px solid #D4AF37;
+    border:1px solid var(--set-border);
 
     border-radius:16px;
 
@@ -26,7 +52,7 @@
 
     margin:14px 14px;
 
-    box-shadow:0 4px 14px rgba(0,0,0,.25);
+    box-shadow:var(--set-shadow);
 
 }
 
@@ -38,13 +64,13 @@
 
     border-radius:50%;
 
-    border:1px solid #D4AF37;
+    border:1px solid var(--set-gold);
 
     object-fit:cover;
 
     flex-shrink:0;
 
-    background:#00265c;
+    background:var(--set-switch-off);
 
     transition:opacity .2s;
 
@@ -96,7 +122,45 @@
 
     font-weight:bold;
 
-    color:#FFD700;
+    color:var(--set-navy-dark);
+
+    background:
+
+        linear-gradient(
+
+            90deg,
+
+            var(--set-navy-dark) 0%,
+
+            var(--set-navy-dark) 35%,
+
+            var(--set-gold-light) 50%,
+
+            var(--set-navy-dark) 65%,
+
+            var(--set-navy-dark) 100%
+
+        );
+
+    background-size:220% auto;
+
+    -webkit-background-clip:text;
+
+    background-clip:text;
+
+    -webkit-text-fill-color:transparent;
+
+    animation:
+
+        assistantTextEntrance .6s ease-out both,
+
+        assistantTextShimmer 3.5s linear .6s infinite;
+
+}
+
+[data-theme="dark"] .profile-name{
+
+    color:var(--set-gold-light);
 
     background:
 
@@ -124,12 +188,6 @@
 
     -webkit-text-fill-color:transparent;
 
-    animation:
-
-        assistantTextEntrance .6s ease-out both,
-
-        assistantTextShimmer 3.5s linear .6s infinite;
-
 }
 
 /* Only the name is shown in the profile card — hide any other
@@ -147,9 +205,9 @@
 
 .setting-list{
 
-    background:linear-gradient(180deg,#003B8B,#002D6B);
+    background:var(--set-card-bg);
 
-    border:1px solid #D4AF37;
+    border:1px solid var(--set-border);
 
     border-radius:16px;
 
@@ -157,7 +215,7 @@
 
     overflow:hidden;
 
-    box-shadow:0 4px 14px rgba(0,0,0,.25);
+    box-shadow:var(--set-shadow);
 
 }
 
@@ -173,11 +231,11 @@
 
     min-height:66px;
 
-    border-bottom:1px solid rgba(212,175,55,.25);
+    border-bottom:1px solid var(--set-divider);
 
     font-size:16px;
 
-    color:#fff;
+    color:var(--set-text);
 
     cursor:pointer;
 
@@ -192,6 +250,12 @@
 }
 
 .setting-item:active{
+
+    background:rgba(0,59,139,.06);
+
+}
+
+[data-theme="dark"] .setting-item:active{
 
     background:rgba(255,255,255,.06);
 
@@ -225,7 +289,7 @@
 
     font-size:22px;
 
-    color:#D4AF37;
+    color:var(--set-gold);
 
     line-height:1;
 
@@ -243,14 +307,15 @@
 
 .logout{
 
-    color:#ff6b6b;
+    color:#C0392B;
 
     font-weight:bold;
 
 }
 
 /* =========================
-   Switch
+   Switch (reused for both the notification toggle and the
+   new theme toggle)
 ========================= */
 
 .switch{
@@ -285,9 +350,9 @@
 
     bottom:0;
 
-    background:#00265c;
+    background:var(--set-switch-off);
 
-    border:1px solid #3c5068;
+    border:1px solid var(--set-switch-border);
 
     transition:.25s;
 
@@ -315,15 +380,15 @@
 
     border-radius:50%;
 
-    box-shadow:0 2px 6px rgba(0,0,0,.35);
+    box-shadow:0 2px 6px rgba(0,0,0,.25);
 
 }
 
 input:checked + .slider{
 
-    background:#D4AF37;
+    background:var(--set-gold);
 
-    border-color:#D4AF37;
+    border-color:var(--set-gold);
 
 }
 
@@ -331,9 +396,13 @@ input:checked + .slider:before{
 
     transform:translateX(26px);
 
-    background:#002D6B;
+    background:var(--set-navy-dark);
 
 }
+
+/* Theme switch shows a sun/moon-ish tint difference isn't necessary —
+   reuses the same gold-when-on look as the notification switch for
+   visual consistency, no separate styling needed. */
 
 /* ===========================
    LOGOUT DIALOG
@@ -375,15 +444,15 @@ input:checked + .slider:before{
 
     max-width:420px;
 
-    background:linear-gradient(180deg,#003B8B,#002D6B);
+    background:var(--set-card-bg);
 
-    border:1px solid #D4AF37;
+    border:1px solid var(--set-border);
 
     border-radius:18px;
 
     padding:24px;
 
-    box-shadow:0 10px 25px rgba(0,0,0,.4);
+    box-shadow:0 10px 25px rgba(0,0,0,.3);
 
 }
 
@@ -391,7 +460,7 @@ input:checked + .slider:before{
 
     font-size:18px;
 
-    color:#fff;
+    color:var(--set-text);
 
     text-align:center;
 
@@ -445,9 +514,19 @@ input:checked + .slider:before{
 
 #btnLogoutNo{
 
+    background:transparent;
+
+    border:1.5px solid var(--set-navy);
+
+    color:var(--set-navy);
+
+}
+
+[data-theme="dark"] #btnLogoutNo{
+
     background:#00265c;
 
-    border:1px solid #D4AF37;
+    border:1px solid var(--set-gold);
 
     color:#fff;
 
