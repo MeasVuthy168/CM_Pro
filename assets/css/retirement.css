@@ -1,12 +1,56 @@
+:root{
+    --ret-page-bg:#F5F7FA;
+    --ret-card-bg:#FFFFFF;
+    --ret-border:#E2E6ED;
+    --ret-text:#1C2333;
+    --ret-text-muted:#6B7280;
+    --ret-shadow:0 4px 14px rgba(0,0,0,.08);
+    --ret-navy:#003B8B;
+    --ret-navy-dark:#002D6B;
+}
+
+[data-theme="dark"]{
+    --ret-page-bg:#002D6B;
+    --ret-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
+    --ret-border:#D4AF37;
+    --ret-text:#fff;
+    --ret-text-muted:#cdd9ef;
+    --ret-shadow:0 4px 14px rgba(0,0,0,.25);
+}
+
+/* ==========================================
+   PAGE
+   NOTE: this rule was MISSING entirely before, same gap as
+   loanCalculate.css had — every other page (arrears/customers/
+   turnover) has width:100% + box-sizing:border-box + padding here,
+   which is what actually constrains the page to the viewport.
+========================================== */
+
+.page-container{
+
+width:100%;
+
+box-sizing:border-box;
+
+padding:16px;
+
+padding-bottom:90px;
+
+background:var(--ret-page-bg);
+
+min-height:100vh;
+
+}
+
 /* =========================
    Form Card
 ========================= */
 
 .form-card{
 
-    background:#FFFFFF;
+    background:var(--ret-card-bg);
 
-    border:1px solid #E2E6ED;
+    border:1px solid var(--ret-border);
 
     border-radius:16px;
 
@@ -16,7 +60,7 @@
 
     box-sizing:border-box;
 
-    box-shadow:0 4px 14px rgba(0,0,0,.08);
+    box-shadow:var(--ret-shadow);
 
 }
 
@@ -44,7 +88,7 @@
 
     text-align:left;
 
-    color:#6B7280;
+    color:var(--ret-text-muted);
 
     font-size:14px;
 
@@ -66,9 +110,9 @@
 
     height:48px;
 
-    background:#FFFFFF;
+    background:var(--ret-card-bg);
 
-    border:1px solid #E2E6ED;
+    border:1px solid var(--ret-border);
 
     border-radius:10px;
 
@@ -80,7 +124,7 @@
 
     font-size:17px;
 
-    color:#1C2333;
+    color:var(--ret-text);
 
     padding:0 12px;
 
@@ -90,11 +134,25 @@
 
 }
 
+[data-theme="dark"] .box{
+
+    background-color:#00265c;
+
+}
+
 .box:focus-within{
 
-    border-color:#003B8B;
+    border-color:var(--ret-navy);
 
     box-shadow:0 0 0 3px rgba(0,59,139,.12);
+
+}
+
+[data-theme="dark"] .box:focus-within{
+
+    border-color:#FFD700;
+
+    box-shadow:0 0 0 3px rgba(255,215,0,.18);
 
 }
 
@@ -108,7 +166,7 @@
 
     background:transparent;
 
-    color:#1C2333;
+    color:var(--ret-text);
 
     font-family:"Krasar",sans-serif;
 
@@ -144,7 +202,7 @@
 
     border-radius:999px;
 
-    background:linear-gradient(90deg,#D4AF37 0%,#D4AF37 var(--fill,90%),#E2E6ED var(--fill,90%),#E2E6ED 100%);
+    background:linear-gradient(90deg,#D4AF37 0%,#D4AF37 var(--fill,90%),var(--ret-border) var(--fill,90%),var(--ret-border) 100%);
 
     outline:none;
 
@@ -200,9 +258,9 @@
 
     height:48px;
 
-    background:#FFFFFF;
+    background:var(--ret-card-bg);
 
-    border:1px solid #E2E6ED;
+    border:1px solid var(--ret-border);
 
     border-radius:10px;
 
@@ -216,17 +274,31 @@
 
     padding:0 10px;
 
-    color:#1C2333;
+    color:var(--ret-text);
 
     transition:border-color .2s, box-shadow .2s;
 
 }
 
+[data-theme="dark"] .age-num{
+
+    background-color:#00265c;
+
+}
+
 .age-num:focus-within{
 
-    border-color:#003B8B;
+    border-color:var(--ret-navy);
 
     box-shadow:0 0 0 3px rgba(0,59,139,.12);
+
+}
+
+[data-theme="dark"] .age-num:focus-within{
+
+    border-color:#FFD700;
+
+    box-shadow:0 0 0 3px rgba(255,215,0,.18);
 
 }
 
@@ -238,7 +310,7 @@
 
     background:transparent;
 
-    color:#1C2333;
+    color:var(--ret-text);
 
     font-size:17px;
 
@@ -252,7 +324,7 @@
 
 .units{
 
-    color:#6B7280;
+    color:var(--ret-text-muted);
 
     font-size:12px;
 
@@ -280,9 +352,9 @@
 
     border:1px solid #D4AF37;
 
-    background:#FFFFFF;
+    background:var(--ret-card-bg);
 
-    box-shadow:0 4px 14px rgba(0,0,0,.1);
+    box-shadow:var(--ret-shadow);
 
     animation:resultFadeIn .35s ease-out;
 
@@ -328,7 +400,7 @@
 
 .result-title{
 
-    color:#6B7280;
+    color:var(--ret-text-muted);
 
     font-size:13px;
 
@@ -348,9 +420,15 @@
 
     font-weight:800;
 
-    color:#002D6B;
+    color:var(--ret-navy-dark);
 
     line-height:1.2;
+
+}
+
+[data-theme="dark"] .months-big{
+
+    color:#FFD700;
 
 }
 
@@ -360,7 +438,7 @@
 
     font-size:15px;
 
-    color:#1C2333;
+    color:var(--ret-text);
 
     line-height:1.6;
 
@@ -368,15 +446,27 @@
 
 .desc .num{
 
-    color:#002D6B;
+    color:var(--ret-navy-dark);
 
     font-weight:700;
+
+}
+
+[data-theme="dark"] .desc .num{
+
+    color:#FFD700;
 
 }
 
 .desc.retired{
 
     color:#C0392B;
+
+}
+
+[data-theme="dark"] .desc.retired{
+
+    color:#FF6B6B;
 
 }
 
@@ -388,11 +478,69 @@
 
     margin:18px 4px 0;
 
-    color:#6B7280;
+    color:var(--ret-text-muted);
 
     font-size:13px;
 
     line-height:1.7;
+
+}
+
+/* ==========================================
+   LOADING
+   NOTE: this was also missing entirely — #loadingBox/.spinner are
+   referenced in index.html but had no styles anywhere in this file,
+   so the loading overlay was invisible/unstyled. Floating overlay
+   stays dark in both themes, same as every other page's loading box.
+========================================== */
+
+.loading-box{
+
+position:fixed;
+
+left:0;
+
+top:0;
+
+width:100%;
+
+height:100%;
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+background:rgba(0,45,107,.85);
+
+z-index:9999;
+
+}
+
+.spinner{
+
+width:42px;
+
+height:42px;
+
+border:4px solid rgba(212,175,55,.25);
+
+border-top:4px solid #D4AF37;
+
+border-radius:50%;
+
+animation:retirementSpin .8s linear infinite;
+
+}
+
+@keyframes retirementSpin{
+
+100%{
+
+transform:rotate(360deg);
+
+}
 
 }
 
