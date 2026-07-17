@@ -15,26 +15,59 @@ content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no
 name="theme-color"
 content="#032d73">
 
+<!-- Applied before any CSS loads, so there's no flash of the wrong
+     theme on page load. Keep this as the very first thing in <head>. -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
 <link
 rel="stylesheet"
 href="../../assets/css/main.css">
 
 <style>
 
-/* main.css (via base.css) already handles the global reset,
-   font-face, and the app's navy background on html/body — this
-   page only needs its own layout/theme rules on top of that. */
+/* main.css (via base.css) hardcodes navy on html/body — that's
+   outside this page's control, so .wrapper explicitly overrides it
+   with the theme-aware page background instead, same as every other
+   page's .page-container does. */
+
+:root{
+    --about-page-bg:#F5F7FA;
+    --about-card-bg:#FFFFFF;
+    --about-border:#E2E6ED;
+    --about-text:#1C2333;
+    --about-text-muted:#6B7280;
+    --about-navy-dark:#002D6B;
+    --about-logo-bg:#EAF0FB;
+}
+
+[data-theme="dark"]{
+    --about-page-bg:#002D6B;
+    --about-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
+    --about-border:#D4AF37;
+    --about-text:#fff;
+    --about-text-muted:#cdd9ef;
+    --about-logo-bg:#00265c;
+}
 
 .wrapper{
 
 width:100%;
 min-height:100vh;
 
+background:var(--about-page-bg);
+
 display:flex;
 justify-content:center;
 align-items:center;
 
 padding:24px;
+
+box-sizing:border-box;
 
 }
 
@@ -43,13 +76,19 @@ padding:24px;
 width:100%;
 max-width:430px;
 
-background:linear-gradient(180deg,#003B8B,#002D6B);
+background:var(--about-card-bg);
 
-border:1px solid #D4AF37;
+border:1px solid var(--about-border);
 
 border-radius:24px;
 
 padding:24px;
+
+box-shadow:0 10px 30px rgba(0,0,0,.2);
+
+}
+
+[data-theme="dark"] .card{
 
 box-shadow:0 10px 30px rgba(0,0,0,.35);
 
@@ -74,9 +113,9 @@ height:74px;
 
 border-radius:18px;
 
-border:1px solid #D4AF37;
+border:1px solid var(--about-border);
 
-background:#00265c;
+background:var(--about-logo-bg);
 
 object-fit:cover;
 
@@ -96,7 +135,7 @@ min-width:0;
 font-size:22px;
 font-weight:bold;
 
-color:#fff;
+color:var(--about-text);
 
 margin-bottom:2px;
 
@@ -106,6 +145,12 @@ margin-bottom:2px;
 
 font-size:16px;
 font-weight:bold;
+
+color:var(--about-navy-dark);
+
+}
+
+[data-theme="dark"] .version{
 
 color:#FFD700;
 
@@ -134,9 +179,15 @@ margin-bottom:20px;
 font-size:16px;
 font-weight:bold;
 
-color:#FFD700;
+color:var(--about-navy-dark);
 
 margin-bottom:8px;
+
+}
+
+[data-theme="dark"] .sectionTitle{
+
+color:#FFD700;
 
 }
 
@@ -146,7 +197,7 @@ font-size:14px;
 
 line-height:1.6;
 
-color:#cdd9ef;
+color:var(--about-text-muted);
 
 text-align:justify;
 
@@ -154,7 +205,7 @@ text-align:justify;
 
 .sectionBody b{
 
-color:#fff;
+color:var(--about-text);
 
 }
 
@@ -297,6 +348,7 @@ onclick="history.back()">
 <script src="/CM_Pro/config/api.js"></script>
 <script src="/CM_Pro/config/auth.js"></script>
 <script src="/CM_Pro/config/session.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
 
 <script>
 
