@@ -5,8 +5,54 @@ already live in base.css (imported by main.css) — this file
 only holds styles specific to the notifications page.
 ========================================================= */
 
+:root{
+    --notif-page-bg:#F5F7FA;
+    --notif-card-bg:#FFFFFF;
+    --notif-border:#E2E6ED;
+    --notif-text:#1C2333;
+    --notif-text-body:#4B5568;
+    --notif-text-muted:#6B7280;
+    --notif-text-muted2:#9AA5B8;
+    --notif-navy-dark:#002D6B;
+    --notif-shadow:0 4px 14px rgba(0,0,0,.08);
+    --notif-avatar-bg:#E2E6ED;
+}
+
+[data-theme="dark"]{
+    --notif-page-bg:#002D6B;
+    --notif-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
+    --notif-border:#D4AF37;
+    --notif-text:#fff;
+    --notif-text-body:#cdd9ef;
+    --notif-text-muted:#cdd9ef;
+    --notif-text-muted2:#8fa0bd;
+    --notif-shadow:0 4px 14px rgba(0,0,0,.25);
+    --notif-avatar-bg:#00265c;
+}
+
+/* =========================
+   Page
+   NOTE: this was missing entirely before — .page-container had no
+   background here, so it fell through to whatever main.css sets on
+   html/body (fixed navy), same gap several other pages had.
+========================= */
+
+.page-container{
+
+    width:100%;
+
+    box-sizing:border-box;
+
+    background:var(--notif-page-bg);
+
+    min-height:100vh;
+
+}
+
 /* =========================
    Summary
+   Reduced padding/font-size — these were taller than they needed to
+   be for just a label + a number.
 ========================= */
 
 .notify-summary{
@@ -23,35 +69,41 @@ only holds styles specific to the notifications page.
 
     flex:1;
 
-    background:#FFFFFF;
+    background:var(--notif-card-bg);
 
-    border:1px solid #E2E6ED;
+    border:1px solid var(--notif-border);
 
-    border-radius:16px;
+    border-radius:14px;
 
-    padding:18px;
+    padding:12px 14px;
 
-    box-shadow:0 4px 14px rgba(0,0,0,.08);
+    box-shadow:var(--notif-shadow);
 
 }
 
 .summary-label{
 
-    font-size:13px;
+    font-size:12px;
 
-    color:#6B7280;
+    color:var(--notif-text-muted);
 
-    margin-bottom:8px;
+    margin-bottom:4px;
 
 }
 
 .summary-value{
 
-    font-size:26px;
+    font-size:20px;
 
     font-weight:700;
 
-    color:#002D6B;
+    color:var(--notif-navy-dark);
+
+}
+
+[data-theme="dark"] .summary-value{
+
+    color:#FFD700;
 
 }
 
@@ -69,17 +121,17 @@ only holds styles specific to the notifications page.
 
     width:100%;
 
-    height:50px;
+    height:46px;
 
     border:none;
 
-    border-radius:14px;
+    border-radius:12px;
 
     background:linear-gradient(180deg,#FFD700,#D4AF37);
 
     color:#002D6B;
 
-    font-size:16px;
+    font-size:15px;
 
     font-weight:700;
 
@@ -107,25 +159,32 @@ only holds styles specific to the notifications page.
 
 /* =========================
    Card
+   Redesigned to be noticeably shorter: smaller inline icon instead
+   of a large 52px block, message clamped to 2 lines instead of
+   flowing unbounded, and the avatar/type badges shrunk down into a
+   single compact meta row instead of a separate full-height row.
+   This is the same "compact list item" pattern most professional
+   apps use (Gmail, Slack, banking apps) — icon + title + timestamp
+   on one line, a short preview line, then small inline tags.
 ========================= */
 
 .notify-card{
 
-    background:#FFFFFF;
+    background:var(--notif-card-bg);
 
-    border:1px solid #E2E6ED;
+    border:1px solid var(--notif-border);
 
-    border-radius:18px;
+    border-radius:16px;
 
-    padding:16px;
+    padding:12px 14px;
 
-    margin-bottom:14px;
+    margin-bottom:10px;
 
     display:flex;
 
-    gap:14px;
+    gap:10px;
 
-    box-shadow:0 4px 14px rgba(0,0,0,.08);
+    box-shadow:var(--notif-shadow);
 
     position:relative;
 
@@ -143,11 +202,11 @@ only holds styles specific to the notifications page.
 
 .notify-icon{
 
-    width:52px;
+    width:34px;
 
-    height:52px;
+    height:34px;
 
-    border-radius:16px;
+    border-radius:10px;
 
     background:rgba(255,215,0,.12);
 
@@ -157,9 +216,11 @@ only holds styles specific to the notifications page.
 
     justify-content:center;
 
-    font-size:24px;
+    font-size:16px;
 
     flex-shrink:0;
+
+    margin-top:1px;
 
 }
 
@@ -177,43 +238,54 @@ only holds styles specific to the notifications page.
 
     justify-content:space-between;
 
-    gap:10px;
+    align-items:baseline;
 
-    margin-bottom:6px;
+    gap:8px;
+
+    margin-bottom:3px;
 
 }
 
 .notify-card-title{
 
-    font-size:15px;
+    font-size:13.5px;
 
     font-weight:700;
 
-    color:#1C2333;
+    color:var(--notif-text);
 
-    line-height:1.4;
+    line-height:1.35;
 
 }
 
 .notify-time{
 
-    font-size:12px;
+    font-size:11px;
 
-    color:#9AA5B8;
+    color:var(--notif-text-muted2);
 
     white-space:nowrap;
+
+    flex-shrink:0;
 
 }
 
 .notify-message{
 
-    font-size:14px;
+    font-size:13px;
 
-    line-height:1.6;
+    line-height:1.5;
 
-    color:#4B5568;
+    color:var(--notif-text-body);
 
-    margin-bottom:10px;
+    margin-bottom:6px;
+
+    /* Clamp to 2 lines instead of letting long messages grow the
+       card indefinitely — this is the main height reduction. */
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
 
 }
 
@@ -225,11 +297,11 @@ only holds styles specific to the notifications page.
 
     justify-content:space-between;
 
-    gap:10px;
+    gap:8px;
 
     margin-top:2px;
 
-    margin-bottom:10px;
+    margin-bottom:0;
 
 }
 
@@ -239,17 +311,17 @@ only holds styles specific to the notifications page.
 
     align-items:center;
 
-    gap:6px;
+    gap:5px;
 
-    padding:4px 10px 4px 4px;
+    padding:2px 8px 2px 2px;
 
-    border-radius:12px;
+    border-radius:10px;
 
     background:rgba(212,175,55,.15);
 
     color:#8A6D1D;
 
-    font-size:12px;
+    font-size:11px;
 
     font-weight:600;
 
@@ -259,15 +331,15 @@ only holds styles specific to the notifications page.
 
 .notify-user-avatar{
 
-    width:44px;
+    width:22px;
 
-    height:44px;
+    height:22px;
 
     border-radius:50%;
 
     object-fit:cover;
 
-    background:#E2E6ED;
+    background:var(--notif-avatar-bg);
 
     flex-shrink:0;
 
@@ -275,15 +347,15 @@ only holds styles specific to the notifications page.
 
 .notify-type{
 
-    font-size:12px;
+    font-size:11px;
 
     background:rgba(212,175,55,.15);
 
     color:#8A6D1D;
 
-    padding:5px 10px;
+    padding:3px 8px;
 
-    border-radius:10px;
+    border-radius:8px;
 
     font-weight:600;
 
@@ -335,7 +407,7 @@ only holds styles specific to the notifications page.
 
     transform:translateY(-50%);
 
-    font-size:30px;
+    font-size:26px;
 
     font-weight:bold;
 
@@ -353,7 +425,7 @@ only holds styles specific to the notifications page.
 
     content:"✓";
 
-    left:22px;
+    left:20px;
 
     opacity:1;
 
@@ -363,7 +435,7 @@ only holds styles specific to the notifications page.
 
     content:"🗑";
 
-    right:22px;
+    right:20px;
 
     opacity:1;
 
@@ -419,9 +491,15 @@ only holds styles specific to the notifications page.
 
     font-weight:700;
 
-    color:#002D6B;
+    color:var(--notif-navy-dark);
 
     margin-bottom:8px;
+
+}
+
+[data-theme="dark"] .empty-title{
+
+    color:#FFD700;
 
 }
 
@@ -429,7 +507,7 @@ only holds styles specific to the notifications page.
 
     font-size:14px;
 
-    color:#6B7280;
+    color:var(--notif-text-muted);
 
     line-height:1.6;
 
@@ -437,6 +515,8 @@ only holds styles specific to the notifications page.
 
 /* =========================
    Loading
+   Floating overlay — stays dark in both themes, same rationale as
+   every other page's loading box.
 ========================= */
 
 .loading-box{
@@ -505,6 +585,14 @@ only holds styles specific to the notifications page.
 
 /* =========================
    Action Menu (⋮ in topbar)
+   NOTE: this is the DROPDOWN that appears after tapping the "⋮"
+   button — already theme-appropriate as a dark navy/gold menu (same
+   as every other page's "⋮" dropdown, which stay dark since they
+   visually live in the still-navy topbar). The "⋮" TOGGLE BUTTON
+   ITSELF is not defined in this file at all — it's built into the
+   shared topbar component (topbar.html/topbar.js/topbar.css), which
+   isn't part of this file. If its color needs fixing for light mode,
+   that requires editing those shared files directly.
 ========================= */
 
 .notification-menu{
