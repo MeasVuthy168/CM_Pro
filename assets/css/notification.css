@@ -603,15 +603,15 @@ only holds styles specific to the notifications page.
 
     right:15px;
 
-    background:linear-gradient(180deg,#003B8B,#002D6B);
+    background:var(--notif-card-bg);
 
-    border:1px solid #D4AF37;
+    border:1px solid var(--notif-border);
 
     border-radius:14px;
 
     overflow:hidden;
 
-    box-shadow:0 6px 20px rgba(0,0,0,.35);
+    box-shadow:0 6px 20px rgba(0,0,0,.2);
 
     z-index:99999;
 
@@ -629,7 +629,7 @@ only holds styles specific to the notifications page.
 
     background:transparent;
 
-    color:#fff;
+    color:var(--notif-text);
 
     padding:14px;
 
@@ -663,6 +663,13 @@ only holds styles specific to the notifications page.
 
 .notification-menu-item:hover,
 .notification-menu-item:active{
+
+    background:rgba(0,59,139,.06);
+
+}
+
+[data-theme="dark"] .notification-menu-item:hover,
+[data-theme="dark"] .notification-menu-item:active{
 
     background:rgba(255,255,255,.08);
 
