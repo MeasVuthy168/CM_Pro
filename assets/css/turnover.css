@@ -1,397 +1,412 @@
-/* ==========================================
-   PAGE
-========================================== */
-
-.page-container{
-
-padding:16px;
-
-padding-bottom:90px;
-
-background:#F5F7FA;
-
-min-height:100vh;
-
-}
-
-/* ==========================================
-   FORM
-========================================== */
+/* =========================
+   Form Card
+========================= */
 
 .form-card{
 
-background:#FFFFFF;
+    background:#FFFFFF;
 
-border:1px solid #E2E6ED;
+    border:1px solid #E2E6ED;
 
-border-radius:16px;
+    border-radius:16px;
 
-padding:20px;
+    padding:24px 16px 20px;
 
-box-shadow:0 4px 14px rgba(0,0,0,.08);
+    overflow:hidden;
 
-margin-bottom:18px;
+    box-sizing:border-box;
+
+    box-shadow:0 4px 14px rgba(0,0,0,.08);
 
 }
 
 .form-group{
 
-display:flex;
+    display:flex;
 
-flex-direction:column;
+    flex-direction:column;
 
-margin-bottom:15px;
+    align-items:stretch;
+
+    margin-bottom:18px;
+
+    gap:6px;
+
+}
+
+.form-group:last-child{
+
+    margin-bottom:0;
 
 }
 
 .form-group label{
 
-font-size:14px;
+    text-align:left;
 
-font-weight:700;
+    color:#6B7280;
 
-color:#6B7280;
+    font-size:14px;
 
-margin-bottom:6px;
+    font-weight:600;
 
-}
+    line-height:1.3;
 
-.form-group input{
-
-height:44px;
-
-padding:0 12px;
-
-border:1px solid #E2E6ED;
-
-border-radius:10px;
-
-font-size:15px;
-
-outline:none;
-
-transition:.2s;
-
-background:#FFFFFF;
-
-color:#1C2333;
+    letter-spacing:.2px;
 
 }
 
-.form-group input:focus{
+/* =========================
+   Date Box
+========================= */
 
-border-color:#003B8B;
+.box{
 
-box-shadow:0 0 0 3px rgba(0,59,139,.12);
+    width:100%;
 
-}
+    height:48px;
 
-.form-group input[readonly]{
+    background:#FFFFFF;
 
-background:#EAF0FB;
+    border:1px solid #E2E6ED;
 
-font-weight:bold;
+    border-radius:10px;
 
-color:#002D6B;
+    display:flex;
 
-}
+    align-items:center;
 
-/* ==========================================
-   BUTTON
-========================================== */
+    justify-content:center;
 
-.button-row{
+    font-size:17px;
 
-display:flex;
+    color:#1C2333;
 
-gap:10px;
+    padding:0 12px;
 
-margin-top:10px;
+    box-sizing:border-box;
 
-}
-
-.button-row button{
-
-flex:1;
-
-height:44px;
-
-border-radius:10px;
-
-background:transparent;
-
-border:1.5px solid #003B8B;
-
-color:#003B8B;
-
-font-size:15px;
-
-font-weight:bold;
-
-cursor:pointer;
-
-transition:.2s;
+    transition:border-color .2s, box-shadow .2s;
 
 }
 
-.button-row button:active{
+.box:focus-within{
 
-transform:scale(.97);
+    border-color:#003B8B;
 
-}
-
-/* Search is the primary action — gold, like the other pages'
-   calculate/submit buttons. Excel/PDF stay as secondary
-   navy-with-gold-outline buttons. */
-
-#btnSearch{
-
-background:linear-gradient(180deg,#FFD700,#D4AF37);
-
-border-color:#D4AF37;
-
-color:#002D6B;
+    box-shadow:0 0 0 3px rgba(0,59,139,.12);
 
 }
 
-/* ==========================================
-   TABLE
-========================================== */
+.box input[type="date"]{
 
-.table-card{
+    width:100%;
 
-background:#FFFFFF;
+    height:100%;
 
-border:1px solid #E2E6ED;
+    border:none;
 
-border-radius:16px;
+    background:transparent;
 
-padding:10px;
+    color:#1C2333;
 
-box-shadow:0 4px 14px rgba(0,0,0,.08);
+    font-family:"Krasar",sans-serif;
 
-overflow:auto;
+    font-size:16px;
 
-}
-
-/* All selectors below are scoped to .table-card so they can
-   never leak onto any other <table> in the document — notably
-   the dynamically-created table exportPDF() builds for the PDF
-   preview, which used to inherit these as unscoped tag rules
-   (table{color:#fff}, tfoot{color:#FFD700}), making the exported
-   row text render white-on-white / gold and appear "missing". */
-
-.table-card table{
-
-width:100%;
-
-border-collapse:collapse;
-
-font-size:13px;
-
-white-space:nowrap;
-
-color:#222;
-
-background:#fff;
-
-border-radius:10px;
-
-overflow:hidden;
+    outline:none;
 
 }
 
-.table-card thead{
+/* =========================
+   Age slider + numeric input
+========================= */
 
-background:#003B8B;
+.age-wrap{
 
-color:#FFD700;
+    display:flex;
 
-}
+    align-items:center;
 
-.table-card th{
+    gap:12px;
 
-padding:10px 8px;
-
-border:1px solid #2f4670;
-
-font-weight:bold;
+    min-width:0;
 
 }
 
-.table-card td{
+.age-slider{
 
-padding:8px;
+    flex:1;
 
-border:1px solid #e0e0e0;
+    appearance:none;
 
-text-align:center;
+    height:6px;
 
-color:#222;
+    border-radius:999px;
 
-}
+    background:linear-gradient(90deg,#D4AF37 0%,#D4AF37 var(--fill,90%),#E2E6ED var(--fill,90%),#E2E6ED 100%);
 
-.table-card tbody tr:nth-child(even){
+    outline:none;
 
-background:#f5f7fb;
-
-}
-
-.table-card tfoot{
-
-background:#eef1f8;
-
-font-weight:bold;
-
-color:#032d73;
+    cursor:pointer;
 
 }
 
-.table-card tfoot td{
+.age-slider::-webkit-slider-thumb{
 
-padding:10px;
+    appearance:none;
 
-color:#032d73;
+    width:22px;
 
-}
+    height:22px;
 
-/* ==========================================
-   ROW COLORS
-========================================== */
+    border-radius:50%;
 
-.row-newest{
+    background:#003B8B;
 
-background:rgba(40,167,69,.14) !important;
+    border:2px solid #fff;
 
-font-weight:bold;
+    box-shadow:0 2px 6px rgba(0,0,0,.25);
 
-}
-
-.row-oldest{
-
-background:rgba(0,0,0,.04) !important;
+    transition:transform .15s;
 
 }
 
-.row-nodata{
+.age-slider::-webkit-slider-thumb:active{
 
-background:rgba(255,193,7,.14) !important;
-
-color:#7a5c00;
+    transform:scale(1.15);
 
 }
 
-/* ==========================================
-   LOADING
-========================================== */
+.age-slider::-moz-range-thumb{
 
-.loading-box{
+    width:22px;
 
-position:fixed;
+    height:22px;
 
-left:0;
+    border-radius:50%;
 
-top:0;
+    background:#003B8B;
 
-width:100%;
+    border:2px solid #fff;
 
-height:100%;
-
-display:flex;
-
-justify-content:center;
-
-align-items:center;
-
-background:rgba(0,45,107,.85);
-
-z-index:9999;
+    box-shadow:0 2px 6px rgba(0,0,0,.25);
 
 }
 
-.spinner{
+.age-num{
 
-width:42px;
+    flex:0 0 108px;
 
-height:42px;
+    height:48px;
 
-border:4px solid rgba(212,175,55,.25);
+    background:#FFFFFF;
 
-border-top:4px solid #D4AF37;
+    border:1px solid #E2E6ED;
 
-border-radius:50%;
+    border-radius:10px;
 
-animation:turnoverSpin .8s linear infinite;
+    display:flex;
 
-}
+    align-items:center;
 
-@keyframes turnoverSpin{
+    justify-content:center;
 
-100%{
+    gap:4px;
 
-transform:rotate(360deg);
+    padding:0 10px;
 
-}
+    color:#1C2333;
 
-}
-
-/* ==========================================
-   MOBILE
-========================================== */
-
-@media(max-width:480px){
-
-.page-container{
-
-padding:12px;
-
-padding-bottom:90px;
+    transition:border-color .2s, box-shadow .2s;
 
 }
 
-.form-card{
+.age-num:focus-within{
 
-padding:15px;
+    border-color:#003B8B;
 
-}
-
-.form-group label{
-
-font-size:13px;
+    box-shadow:0 0 0 3px rgba(0,59,139,.12);
 
 }
 
-.form-group input{
+.age-num input{
 
-font-size:14px;
+    width:46px;
 
-height:42px;
+    border:none;
 
-}
+    background:transparent;
 
-.button-row button{
+    color:#1C2333;
 
-font-size:14px;
+    font-size:17px;
 
-height:42px;
+    font-weight:600;
 
-}
+    text-align:center;
 
-.table-card table{
-
-font-size:12px;
+    outline:none;
 
 }
 
-.table-card th{
+.units{
 
-padding:8px 6px;
+    color:#6B7280;
+
+    font-size:12px;
+
+    margin-top:4px;
 
 }
 
-.table-card td{
+/* =========================
+   Result Card
+========================= */
 
-padding:7px 5px;
+.result-card{
+
+    margin-top:18px;
+
+    display:flex;
+
+    align-items:flex-start;
+
+    gap:14px;
+
+    padding:18px 16px;
+
+    border-radius:16px;
+
+    border:1px solid #D4AF37;
+
+    background:#FFFFFF;
+
+    box-shadow:0 4px 14px rgba(0,0,0,.1);
+
+    animation:resultFadeIn .35s ease-out;
+
+}
+
+@keyframes resultFadeIn{
+
+    from{ opacity:0; transform:translateY(6px); }
+
+    to{ opacity:1; transform:translateY(0); }
+
+}
+
+.result-icon{
+
+    flex:0 0 auto;
+
+    width:44px;
+
+    height:44px;
+
+    border-radius:12px;
+
+    background:rgba(255,215,0,.12);
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:22px;
+
+}
+
+.result-body{
+
+    flex:1;
+
+    min-width:0;
+
+}
+
+.result-title{
+
+    color:#6B7280;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    text-transform:uppercase;
+
+    letter-spacing:.4px;
+
+    margin-bottom:6px;
+
+}
+
+.months-big{
+
+    font-size:24px;
+
+    font-weight:800;
+
+    color:#002D6B;
+
+    line-height:1.2;
+
+}
+
+.desc{
+
+    margin-top:8px;
+
+    font-size:15px;
+
+    color:#1C2333;
+
+    line-height:1.6;
+
+}
+
+.desc .num{
+
+    color:#002D6B;
+
+    font-weight:700;
+
+}
+
+.desc.retired{
+
+    color:#C0392B;
+
+}
+
+/* =========================
+   Foot note
+========================= */
+
+.foot-note{
+
+    margin:18px 4px 0;
+
+    color:#6B7280;
+
+    font-size:13px;
+
+    line-height:1.7;
+
+}
+
+@media (max-width:420px){
+
+.age-num{
+
+    flex-basis:96px;
+
+}
+
+.months-big{
+
+    font-size:21px;
 
 }
 
