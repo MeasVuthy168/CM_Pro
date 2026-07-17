@@ -1,3 +1,29 @@
+:root{
+    --tvr-page-bg:#F5F7FA;
+    --tvr-card-bg:#FFFFFF;
+    --tvr-border:#E2E6ED;
+    --tvr-text:#1C2333;
+    --tvr-text-muted:#6B7280;
+    --tvr-shadow:0 4px 14px rgba(0,0,0,.08);
+    --tvr-navy:#003B8B;
+    --tvr-navy-dark:#002D6B;
+    --tvr-readonly-bg:#EAF0FB;
+    --tvr-outline-btn-border:#003B8B;
+    --tvr-outline-btn-text:#003B8B;
+}
+
+[data-theme="dark"]{
+    --tvr-page-bg:#002D6B;
+    --tvr-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
+    --tvr-border:#D4AF37;
+    --tvr-text:#fff;
+    --tvr-text-muted:#cdd9ef;
+    --tvr-shadow:0 4px 14px rgba(0,0,0,.25);
+    --tvr-readonly-bg:#001c48;
+    --tvr-outline-btn-border:#D4AF37;
+    --tvr-outline-btn-text:#fff;
+}
+
 /* ==========================================
    PAGE
 ========================================== */
@@ -8,7 +34,7 @@ padding:16px;
 
 padding-bottom:90px;
 
-background:#F5F7FA;
+background:var(--tvr-page-bg);
 
 min-height:100vh;
 
@@ -20,15 +46,15 @@ min-height:100vh;
 
 .form-card{
 
-background:#FFFFFF;
+background:var(--tvr-card-bg);
 
-border:1px solid #E2E6ED;
+border:1px solid var(--tvr-border);
 
 border-radius:16px;
 
 padding:20px;
 
-box-shadow:0 4px 14px rgba(0,0,0,.08);
+box-shadow:var(--tvr-shadow);
 
 margin-bottom:18px;
 
@@ -50,7 +76,7 @@ font-size:14px;
 
 font-weight:700;
 
-color:#6B7280;
+color:var(--tvr-text-muted);
 
 margin-bottom:6px;
 
@@ -62,7 +88,7 @@ height:44px;
 
 padding:0 12px;
 
-border:1px solid #E2E6ED;
+border:1px solid var(--tvr-border);
 
 border-radius:10px;
 
@@ -72,27 +98,47 @@ outline:none;
 
 transition:.2s;
 
-background:#FFFFFF;
+background:var(--tvr-card-bg);
 
-color:#1C2333;
+color:var(--tvr-text);
+
+}
+
+[data-theme="dark"] .form-group input{
+
+background:#00265c;
 
 }
 
 .form-group input:focus{
 
-border-color:#003B8B;
+border-color:var(--tvr-navy);
 
 box-shadow:0 0 0 3px rgba(0,59,139,.12);
 
 }
 
+[data-theme="dark"] .form-group input:focus{
+
+border-color:#FFD700;
+
+box-shadow:0 0 0 3px rgba(255,215,0,.18);
+
+}
+
 .form-group input[readonly]{
 
-background:#EAF0FB;
+background:var(--tvr-readonly-bg);
 
 font-weight:bold;
 
-color:#002D6B;
+color:var(--tvr-navy-dark);
+
+}
+
+[data-theme="dark"] .form-group input[readonly]{
+
+color:#FFD700;
 
 }
 
@@ -120,9 +166,9 @@ border-radius:10px;
 
 background:transparent;
 
-border:1.5px solid #003B8B;
+border:1.5px solid var(--tvr-outline-btn-border);
 
-color:#003B8B;
+color:var(--tvr-outline-btn-text);
 
 font-size:15px;
 
@@ -131,6 +177,12 @@ font-weight:bold;
 cursor:pointer;
 
 transition:.2s;
+
+}
+
+[data-theme="dark"] .button-row button{
+
+background:#00265c;
 
 }
 
@@ -160,15 +212,15 @@ color:#002D6B;
 
 .table-card{
 
-background:#FFFFFF;
+background:var(--tvr-card-bg);
 
-border:1px solid #E2E6ED;
+border:1px solid var(--tvr-border);
 
 border-radius:16px;
 
 padding:10px;
 
-box-shadow:0 4px 14px rgba(0,0,0,.08);
+box-shadow:var(--tvr-shadow);
 
 overflow:auto;
 
@@ -179,7 +231,11 @@ overflow:auto;
    the dynamically-created table exportPDF() builds for the PDF
    preview, which used to inherit these as unscoped tag rules
    (table{color:#fff}, tfoot{color:#FFD700}), making the exported
-   row text render white-on-white / gold and appear "missing". */
+   row text render white-on-white / gold and appear "missing".
+
+   NOTE: the table's OWN internals stay the same white/navy/gold
+   combo in BOTH themes — same rationale as every other page's
+   data table (already high-contrast, matches the rest of the app). */
 
 .table-card table{
 
@@ -283,6 +339,8 @@ color:#7a5c00;
 
 /* ==========================================
    LOADING
+   Floating overlay — stays dark in both themes, same rationale as
+   the landscape bars / topbar menu elsewhere in the app.
 ========================================== */
 
 .loading-box{
