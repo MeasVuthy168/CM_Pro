@@ -1,412 +1,397 @@
-/* =========================
-   Form Card
-========================= */
+/* ==========================================
+   PAGE
+========================================== */
+
+.page-container{
+
+padding:16px;
+
+padding-bottom:90px;
+
+background:#F5F7FA;
+
+min-height:100vh;
+
+}
+
+/* ==========================================
+   FORM
+========================================== */
 
 .form-card{
 
-    background:#FFFFFF;
+background:#FFFFFF;
 
-    border:1px solid #E2E6ED;
+border:1px solid #E2E6ED;
 
-    border-radius:16px;
+border-radius:16px;
 
-    padding:24px 16px 20px;
+padding:20px;
 
-    overflow:hidden;
+box-shadow:0 4px 14px rgba(0,0,0,.08);
 
-    box-sizing:border-box;
-
-    box-shadow:0 4px 14px rgba(0,0,0,.08);
+margin-bottom:18px;
 
 }
 
 .form-group{
 
-    display:flex;
+display:flex;
 
-    flex-direction:column;
+flex-direction:column;
 
-    align-items:stretch;
-
-    margin-bottom:18px;
-
-    gap:6px;
-
-}
-
-.form-group:last-child{
-
-    margin-bottom:0;
+margin-bottom:15px;
 
 }
 
 .form-group label{
 
-    text-align:left;
+font-size:14px;
 
-    color:#6B7280;
+font-weight:700;
 
-    font-size:14px;
+color:#6B7280;
 
-    font-weight:600;
-
-    line-height:1.3;
-
-    letter-spacing:.2px;
+margin-bottom:6px;
 
 }
 
-/* =========================
-   Date Box
-========================= */
+.form-group input{
 
-.box{
+height:44px;
 
-    width:100%;
+padding:0 12px;
 
-    height:48px;
+border:1px solid #E2E6ED;
 
-    background:#FFFFFF;
+border-radius:10px;
 
-    border:1px solid #E2E6ED;
+font-size:15px;
 
-    border-radius:10px;
+outline:none;
 
-    display:flex;
+transition:.2s;
 
-    align-items:center;
+background:#FFFFFF;
 
-    justify-content:center;
-
-    font-size:17px;
-
-    color:#1C2333;
-
-    padding:0 12px;
-
-    box-sizing:border-box;
-
-    transition:border-color .2s, box-shadow .2s;
+color:#1C2333;
 
 }
 
-.box:focus-within{
+.form-group input:focus{
 
-    border-color:#003B8B;
+border-color:#003B8B;
 
-    box-shadow:0 0 0 3px rgba(0,59,139,.12);
-
-}
-
-.box input[type="date"]{
-
-    width:100%;
-
-    height:100%;
-
-    border:none;
-
-    background:transparent;
-
-    color:#1C2333;
-
-    font-family:"Krasar",sans-serif;
-
-    font-size:16px;
-
-    outline:none;
+box-shadow:0 0 0 3px rgba(0,59,139,.12);
 
 }
 
-/* =========================
-   Age slider + numeric input
-========================= */
+.form-group input[readonly]{
 
-.age-wrap{
+background:#EAF0FB;
 
-    display:flex;
+font-weight:bold;
 
-    align-items:center;
-
-    gap:12px;
-
-    min-width:0;
+color:#002D6B;
 
 }
 
-.age-slider{
+/* ==========================================
+   BUTTON
+========================================== */
 
-    flex:1;
+.button-row{
 
-    appearance:none;
+display:flex;
 
-    height:6px;
+gap:10px;
 
-    border-radius:999px;
-
-    background:linear-gradient(90deg,#D4AF37 0%,#D4AF37 var(--fill,90%),#E2E6ED var(--fill,90%),#E2E6ED 100%);
-
-    outline:none;
-
-    cursor:pointer;
+margin-top:10px;
 
 }
 
-.age-slider::-webkit-slider-thumb{
+.button-row button{
 
-    appearance:none;
+flex:1;
 
-    width:22px;
+height:44px;
 
-    height:22px;
+border-radius:10px;
 
-    border-radius:50%;
+background:transparent;
 
-    background:#003B8B;
+border:1.5px solid #003B8B;
 
-    border:2px solid #fff;
+color:#003B8B;
 
-    box-shadow:0 2px 6px rgba(0,0,0,.25);
+font-size:15px;
 
-    transition:transform .15s;
+font-weight:bold;
 
-}
+cursor:pointer;
 
-.age-slider::-webkit-slider-thumb:active{
-
-    transform:scale(1.15);
+transition:.2s;
 
 }
 
-.age-slider::-moz-range-thumb{
+.button-row button:active{
 
-    width:22px;
-
-    height:22px;
-
-    border-radius:50%;
-
-    background:#003B8B;
-
-    border:2px solid #fff;
-
-    box-shadow:0 2px 6px rgba(0,0,0,.25);
+transform:scale(.97);
 
 }
 
-.age-num{
+/* Search is the primary action — gold, like the other pages'
+   calculate/submit buttons. Excel/PDF stay as secondary
+   navy-with-gold-outline buttons. */
 
-    flex:0 0 108px;
+#btnSearch{
 
-    height:48px;
+background:linear-gradient(180deg,#FFD700,#D4AF37);
 
-    background:#FFFFFF;
+border-color:#D4AF37;
 
-    border:1px solid #E2E6ED;
-
-    border-radius:10px;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    gap:4px;
-
-    padding:0 10px;
-
-    color:#1C2333;
-
-    transition:border-color .2s, box-shadow .2s;
+color:#002D6B;
 
 }
 
-.age-num:focus-within{
+/* ==========================================
+   TABLE
+========================================== */
 
-    border-color:#003B8B;
+.table-card{
 
-    box-shadow:0 0 0 3px rgba(0,59,139,.12);
+background:#FFFFFF;
 
-}
+border:1px solid #E2E6ED;
 
-.age-num input{
+border-radius:16px;
 
-    width:46px;
+padding:10px;
 
-    border:none;
+box-shadow:0 4px 14px rgba(0,0,0,.08);
 
-    background:transparent;
-
-    color:#1C2333;
-
-    font-size:17px;
-
-    font-weight:600;
-
-    text-align:center;
-
-    outline:none;
+overflow:auto;
 
 }
 
-.units{
+/* All selectors below are scoped to .table-card so they can
+   never leak onto any other <table> in the document — notably
+   the dynamically-created table exportPDF() builds for the PDF
+   preview, which used to inherit these as unscoped tag rules
+   (table{color:#fff}, tfoot{color:#FFD700}), making the exported
+   row text render white-on-white / gold and appear "missing". */
 
-    color:#6B7280;
+.table-card table{
 
-    font-size:12px;
+width:100%;
 
-    margin-top:4px;
+border-collapse:collapse;
 
-}
+font-size:13px;
 
-/* =========================
-   Result Card
-========================= */
+white-space:nowrap;
 
-.result-card{
+color:#222;
 
-    margin-top:18px;
+background:#fff;
 
-    display:flex;
+border-radius:10px;
 
-    align-items:flex-start;
-
-    gap:14px;
-
-    padding:18px 16px;
-
-    border-radius:16px;
-
-    border:1px solid #D4AF37;
-
-    background:#FFFFFF;
-
-    box-shadow:0 4px 14px rgba(0,0,0,.1);
-
-    animation:resultFadeIn .35s ease-out;
+overflow:hidden;
 
 }
 
-@keyframes resultFadeIn{
+.table-card thead{
 
-    from{ opacity:0; transform:translateY(6px); }
+background:#003B8B;
 
-    to{ opacity:1; transform:translateY(0); }
-
-}
-
-.result-icon{
-
-    flex:0 0 auto;
-
-    width:44px;
-
-    height:44px;
-
-    border-radius:12px;
-
-    background:rgba(255,215,0,.12);
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    font-size:22px;
+color:#FFD700;
 
 }
 
-.result-body{
+.table-card th{
 
-    flex:1;
+padding:10px 8px;
 
-    min-width:0;
+border:1px solid #2f4670;
 
-}
-
-.result-title{
-
-    color:#6B7280;
-
-    font-size:13px;
-
-    font-weight:600;
-
-    text-transform:uppercase;
-
-    letter-spacing:.4px;
-
-    margin-bottom:6px;
+font-weight:bold;
 
 }
 
-.months-big{
+.table-card td{
 
-    font-size:24px;
+padding:8px;
 
-    font-weight:800;
+border:1px solid #e0e0e0;
 
-    color:#002D6B;
+text-align:center;
 
-    line-height:1.2;
-
-}
-
-.desc{
-
-    margin-top:8px;
-
-    font-size:15px;
-
-    color:#1C2333;
-
-    line-height:1.6;
+color:#222;
 
 }
 
-.desc .num{
+.table-card tbody tr:nth-child(even){
 
-    color:#002D6B;
-
-    font-weight:700;
+background:#f5f7fb;
 
 }
 
-.desc.retired{
+.table-card tfoot{
 
-    color:#C0392B;
+background:#eef1f8;
 
-}
+font-weight:bold;
 
-/* =========================
-   Foot note
-========================= */
-
-.foot-note{
-
-    margin:18px 4px 0;
-
-    color:#6B7280;
-
-    font-size:13px;
-
-    line-height:1.7;
+color:#032d73;
 
 }
 
-@media (max-width:420px){
+.table-card tfoot td{
 
-.age-num{
+padding:10px;
 
-    flex-basis:96px;
+color:#032d73;
 
 }
 
-.months-big{
+/* ==========================================
+   ROW COLORS
+========================================== */
 
-    font-size:21px;
+.row-newest{
+
+background:rgba(40,167,69,.14) !important;
+
+font-weight:bold;
+
+}
+
+.row-oldest{
+
+background:rgba(0,0,0,.04) !important;
+
+}
+
+.row-nodata{
+
+background:rgba(255,193,7,.14) !important;
+
+color:#7a5c00;
+
+}
+
+/* ==========================================
+   LOADING
+========================================== */
+
+.loading-box{
+
+position:fixed;
+
+left:0;
+
+top:0;
+
+width:100%;
+
+height:100%;
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+background:rgba(0,45,107,.85);
+
+z-index:9999;
+
+}
+
+.spinner{
+
+width:42px;
+
+height:42px;
+
+border:4px solid rgba(212,175,55,.25);
+
+border-top:4px solid #D4AF37;
+
+border-radius:50%;
+
+animation:turnoverSpin .8s linear infinite;
+
+}
+
+@keyframes turnoverSpin{
+
+100%{
+
+transform:rotate(360deg);
+
+}
+
+}
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media(max-width:480px){
+
+.page-container{
+
+padding:12px;
+
+padding-bottom:90px;
+
+}
+
+.form-card{
+
+padding:15px;
+
+}
+
+.form-group label{
+
+font-size:13px;
+
+}
+
+.form-group input{
+
+font-size:14px;
+
+height:42px;
+
+}
+
+.button-row button{
+
+font-size:14px;
+
+height:42px;
+
+}
+
+.table-card table{
+
+font-size:12px;
+
+}
+
+.table-card th{
+
+padding:8px 6px;
+
+}
+
+.table-card td{
+
+padding:7px 5px;
 
 }
 
