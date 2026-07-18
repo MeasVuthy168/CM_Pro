@@ -24,6 +24,15 @@ name="apple-mobile-web-app-status-bar-style"
 content="black-translucent"
 >
 
+<!-- Applied before any CSS loads, so there's no flash of the wrong
+     theme on page load. Keep this as the very first thing in <head>. -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
 <link
 rel="stylesheet"
 href="../../assets/css/main.css"
@@ -70,6 +79,10 @@ href="/CM_Pro/assets/css/global-splash.css"
 <!-- TOPBAR -->
 
 <script src="/CM_Pro/shared/topbar.js"></script>
+
+<!-- THEME -->
+
+<script src="/CM_Pro/shared/theme.js"></script>
 
 <!-- SPLASH -->
 
