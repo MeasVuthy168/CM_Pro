@@ -26,31 +26,6 @@
     --set-shadow:0 4px 14px rgba(0,0,0,.25);
 }
 
-/* Pins the topbar to the exact same height topbar.css itself
-   defines (78px / 72px on mobile) — a direct safety-net override
-   specific to this page, since the Settings topbar was rendering
-   taller than other pages despite both calling initTopbar() with
-   equivalent config. */
-#topbar-container .topbar{
-
-    min-height:78px !important;
-
-    height:78px !important;
-
-}
-
-@media(max-width:480px){
-
-    #topbar-container .topbar{
-
-        min-height:72px !important;
-
-        height:72px !important;
-
-    }
-
-}
-
 .setting-page{
 
     background:var(--set-page-bg);
