@@ -1602,17 +1602,19 @@ function getTeamCategory(row) {
     return (row.teamLeader || "").trim().toUpperCase() === "FSRO" ? "FSRO" : "Credit Officer";
 }
 
-function buildNoReasonRows(sourceRows, teamFilter) {
+function buildNoReasonRows(sourceRows, branchFilter, teamFilter) {
     const map = new Map();
     sourceRows.forEach(row => {
         const hasNoReason = (parseFloat(row.arreas) || 0) > 0 && !row.akSolution;
         if (!hasNoReason) return;
 
+        const branch = row.branch || "";
+        if (branchFilter && branch !== branchFilter) return;
+
         const team = getTeamCategory(row);
         if (teamFilter && team !== teamFilter) return;
 
         const name = row.coResponse || "(Unknown)";
-        const branch = row.branch || "";
         const key = name + "||" + branch + "||" + team;
 
         if (!map.has(key)) map.set(key, { name, branch, team, count: 0 });
@@ -1621,11 +1623,21 @@ function buildNoReasonRows(sourceRows, teamFilter) {
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
+function populateNoReasonBranchFilter() {
+    const branchEl = document.getElementById("noReasonBranchFilter");
+    if (!branchEl) return;
+    setSelectOptions(branchEl, distinctSorted(allRows, "branch"), { keepFirstN: 1 });
+}
+
 function showNoReasonSummary() {
+    populateNoReasonBranchFilter();
+
+    const branchFilterEl = document.getElementById("noReasonBranchFilter");
     const teamFilterEl = document.getElementById("noReasonTeamFilter");
+    const branchFilter = branchFilterEl ? branchFilterEl.value : "";
     const teamFilter = teamFilterEl ? teamFilterEl.value : "";
 
-    const rows = buildNoReasonRows(currentRows, teamFilter);
+    const rows = buildNoReasonRows(currentRows, branchFilter, teamFilter);
     const tbody = document.getElementById("noReasonTbody");
     tbody.innerHTML = "";
 
@@ -1633,16 +1645,19 @@ function showNoReasonSummary() {
     rows.forEach(r => {
         total += r.count;
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.branch)}</td><td>${escapeHtml(r.team)}</td><td>${r.count}</td>`;
+        tr.innerHTML = `<td>${escapeHtml(r.name)}</td><td>${r.count}</td>`;
         tbody.appendChild(tr);
     });
 
     if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">គ្មានទិន្នន័យ</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="2" style="text-align:center;">គ្មានទិន្នន័យ</td></tr>`;
     }
 
     document.getElementById("noReasonSubtitle").textContent =
         `សរុប ${total} LD  •  ${rows.length} ភ្នាក់ងារ`;
+
+    const lastUploadText = document.getElementById("lastUploadAt")?.textContent || "-";
+    document.getElementById("noReasonLastUpload").textContent = lastUploadText;
 
     document.getElementById("noReasonBackdrop").classList.add("show");
 }
@@ -1652,6 +1667,7 @@ document.getElementById("btnNoReasonSummary")?.addEventListener("click", () => {
     document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
 });
 
+document.getElementById("noReasonBranchFilter")?.addEventListener("change", showNoReasonSummary);
 document.getElementById("noReasonTeamFilter")?.addEventListener("change", showNoReasonSummary);
 
 document.getElementById("btnNoReasonClose")?.addEventListener("click", () => {
