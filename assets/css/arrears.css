@@ -931,9 +931,25 @@ max-width:520px;
 
 }
 
+.noreason-last-upload{
+
+margin-top:2px;
+
+font-size:12px;
+
+opacity:.75;
+
+}
+
+.noreason-branch-filter{
+
+margin:12px 0 6px;
+
+}
+
 .noreason-team-filter{
 
-margin:10px 0 6px;
+margin:8px 0 6px;
 
 }
 
