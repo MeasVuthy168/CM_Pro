@@ -324,6 +324,8 @@ font-size:14px;
 
 font-weight:600;
 
+font-family:'KRASAR',sans-serif;
+
 text-align:left;
 
 padding:0 10px;
@@ -331,6 +333,24 @@ padding:0 10px;
 cursor:pointer;
 
 white-space:nowrap;
+
+display:flex;
+
+align-items:center;
+
+gap:10px;
+
+}
+
+.arrears-menu-dropdown button .menu-icon{
+
+width:20px;
+
+height:20px;
+
+flex:0 0 20px;
+
+object-fit:contain;
 
 }
 
