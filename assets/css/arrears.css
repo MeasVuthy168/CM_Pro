@@ -925,6 +925,49 @@ box-shadow:var(--arr-shadow-modal);
 
 }
 
+.noreason-card{
+
+max-width:520px;
+
+}
+
+.noreason-team-filter{
+
+margin:10px 0 6px;
+
+}
+
+.noreason-table{
+
+width:100%;
+
+border-collapse:collapse;
+
+margin-top:10px;
+
+font-size:13px;
+
+}
+
+.noreason-table th,
+.noreason-table td{
+
+padding:6px 8px;
+
+border-bottom:1px solid var(--arr-border);
+
+text-align:left;
+
+}
+
+.noreason-table th{
+
+background:rgba(0,59,139,.08);
+
+font-weight:700;
+
+}
+
 .reason-title{
 
 font-size:14px;
