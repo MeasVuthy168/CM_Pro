@@ -1,0 +1,1861 @@
+:root{
+    --arr-page-bg:#F5F7FA;
+    --arr-card-bg:#FFFFFF;
+    --arr-border:#E2E6ED;
+    --arr-text:#1C2333;
+    --arr-text-muted:#6B7280;
+    --arr-text-muted2:#9AA5B8;
+    --arr-shadow:0 4px 14px rgba(0,0,0,.08);
+    --arr-shadow-modal:0 8px 28px rgba(0,0,0,.25);
+    --arr-navy:#003B8B;
+    --arr-navy-dark:#002D6B;
+    --arr-gold:#D4AF37;
+    --arr-gold-light:#FFD700;
+    --arr-outline-btn-border:#003B8B;
+    --arr-outline-btn-text:#003B8B;
+}
+
+[data-theme="dark"]{
+    --arr-page-bg:#002D6B;
+    --arr-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
+    --arr-border:#D4AF37;
+    --arr-text:#fff;
+    --arr-text-muted:#cdd9ef;
+    --arr-text-muted2:#8fa0bd;
+    --arr-shadow:0 4px 14px rgba(0,0,0,.25);
+    --arr-shadow-modal:0 8px 28px rgba(0,0,0,.45);
+    --arr-navy-dark:#FFD700;
+    --arr-outline-btn-border:#D4AF37;
+    --arr-outline-btn-text:#fff;
+}
+
+/* ==========================================
+   PAGE
+========================================== */
+
+.page-container{
+
+width:100%;
+
+box-sizing:border-box;
+
+padding:16px;
+
+padding-bottom:90px;
+
+background:var(--arr-page-bg);
+
+min-height:100vh;
+
+}
+
+/* ==========================================
+   FILTER CARD
+   12 filter boxes mirroring the VBA sheet's D2:D4 / F2:F4 /
+   I2:I4 / M2:M4 grid. Grouped visually into the same 4 "columns"
+   the sheet uses (each column = 3 stacked boxes), but laid out
+   as a responsive CSS grid instead of fixed spreadsheet cells.
+========================================== */
+
+.filter-card{
+
+width:100%;
+
+box-sizing:border-box;
+
+overflow:hidden;
+
+background:var(--arr-card-bg);
+
+border:1px solid var(--arr-border);
+
+border-radius:16px;
+
+padding:20px;
+
+box-shadow:var(--arr-shadow);
+
+margin-bottom:14px;
+
+}
+
+.filter-grid{
+
+display:grid;
+
+grid-template-columns:repeat(3,1fr);
+
+gap:12px 14px;
+
+}
+
+@media(min-width:640px){
+
+.filter-grid{
+
+grid-template-columns:repeat(4,1fr);
+
+}
+
+}
+
+.filter-group{
+
+display:flex;
+
+flex-direction:column;
+
+gap:6px;
+
+min-width:0;
+
+}
+
+.filter-group label{
+
+font-size:12px;
+
+font-weight:700;
+
+color:var(--arr-text-muted);
+
+white-space:nowrap;
+
+overflow:hidden;
+
+text-overflow:ellipsis;
+
+-webkit-text-size-adjust:none;
+
+text-size-adjust:none;
+
+}
+
+.filter-group input,
+.filter-group select{
+
+width:100%;
+
+box-sizing:border-box;
+
+height:42px;
+
+padding:0 10px;
+
+border:1px solid var(--arr-border);
+
+border-radius:10px;
+
+font-size:14px;
+
+outline:none;
+
+transition:.2s;
+
+background:var(--arr-card-bg);
+
+color:var(--arr-text);
+
+-webkit-text-size-adjust:none;
+
+text-size-adjust:none;
+
+}
+
+.filter-group input:focus,
+.filter-group select:focus{
+
+border-color:#003B8B;
+
+box-shadow:0 0 0 3px rgba(0,59,139,.12);
+
+}
+
+[data-theme="dark"] .filter-group input:focus,
+[data-theme="dark"] .filter-group select:focus{
+
+border-color:var(--arr-gold-light);
+
+box-shadow:0 0 0 3px rgba(255,215,0,.18);
+
+}
+
+/* Secondary buttons (Clear / Cancel All / Reason Cancel) are outline
+   in light mode, filled navy in dark mode — a structural difference,
+   not just a color swap, so these are separate override rules rather
+   than variables. */
+[data-theme="dark"] #btnClear,
+[data-theme="dark"] #btnCancelAllPending,
+[data-theme="dark"] #btnReasonCancel{
+
+background:#00265c;
+
+}
+
+[data-theme="dark"] .summary-row{
+
+border-top:1px solid rgba(212,175,55,.25);
+
+}
+
+[data-theme="dark"] .reason-group input:focus,
+[data-theme="dark"] .reason-group textarea:focus{
+
+border-color:var(--arr-gold-light);
+
+box-shadow:0 0 0 3px rgba(255,215,0,.18);
+
+}
+
+[data-theme="dark"] .suggestion-list li:hover,
+[data-theme="dark"] .suggestion-list li:active{
+
+background:rgba(255,215,0,.15);
+
+}
+
+[data-theme="dark"]{
+
+--arr-pending-text:#FFD700;
+
+}
+
+/* ==========================================
+   TOPBAR MENU (Refresh / Export / Print)
+   Lives here in the page's own CSS on purpose, NOT in topbar.css —
+   this is Arrears-specific and gets relocated into .topbar-right by
+   arrears-loader.js at runtime. Styled to match topbar-action-btn's
+   look (semi-transparent white on the navy topbar) since that's
+   where it visually ends up living.
+
+   NOTE: this menu is deliberately left DARK in both themes — it
+   visually lives inside the still-navy shared topbar component, not
+   in this page's own light content area, same as the "⋮" menu on
+   every other page.
+========================================== */
+
+.arrears-menu-wrap{
+
+position:relative;
+
+}
+
+.arrears-menu-toggle{
+
+width:40px;
+
+height:40px;
+
+border:none;
+
+border-radius:12px;
+
+background:rgba(255,255,255,.15);
+
+color:#fff;
+
+font-size:20px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+line-height:1;
+
+}
+
+.arrears-menu-toggle:active{
+
+transform:scale(.95);
+
+}
+
+.arrears-menu-dropdown{
+
+display:none;
+
+position:absolute;
+
+top:48px;
+
+right:0;
+
+background:var(--arr-card-bg);
+
+border:1px solid var(--arr-border);
+
+border-radius:12px;
+
+padding:6px;
+
+min-width:190px;
+
+width:max-content;
+
+box-shadow:0 8px 20px rgba(0,0,0,.4);
+
+z-index:200;
+
+flex-direction:column;
+
+gap:4px;
+
+}
+
+.arrears-menu-dropdown.show{
+
+display:flex;
+
+}
+
+.arrears-menu-dropdown button{
+
+height:38px;
+
+border:none;
+
+border-radius:8px;
+
+background:transparent;
+
+color:var(--arr-text);
+
+font-size:14px;
+
+font-weight:600;
+
+text-align:left;
+
+padding:0 10px;
+
+cursor:pointer;
+
+white-space:nowrap;
+
+}
+
+.arrears-menu-dropdown button:active,
+.arrears-menu-dropdown button:hover{
+
+background:rgba(212,175,55,.25);
+
+}
+
+/* Clear button, now inline on the "last uploaded by" summary line */
+.summary-row.upload-meta{
+
+align-items:center;
+
+}
+
+.button-row{
+
+align-items:center;
+
+margin-top:6px;
+
+}
+
+#btnClear{
+
+font-family:'KRASAR',sans-serif;
+
+height:34px;
+
+padding:0 16px;
+
+border:1.5px solid var(--arr-outline-btn-border);
+
+border-radius:10px;
+
+background:transparent;
+
+color:var(--arr-outline-btn-text);
+
+font-size:13px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+transition:.2s;
+
+}
+
+#btnRefresh{
+
+font-family:'KRASAR',sans-serif;
+
+margin-left:auto;
+
+height:34px;
+
+padding:0 16px;
+
+border:none;
+
+border-radius:10px;
+
+background:linear-gradient(180deg,#FFD700,#D4AF37);
+
+color:#002D6B;
+
+font-size:13px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+transition:.2s;
+
+}
+
+#btnRefresh:active{
+
+transform:scale(.97);
+
+}
+
+#btnClear:active{
+
+transform:scale(.97);
+
+}
+
+/* ==========================================
+   SUMMARY ROW
+   Mirrors RefreshSummary's P3 (LD count) / P4 (OS total)
+========================================== */
+
+.summary-row{
+
+display:flex;
+
+flex-wrap:wrap;
+
+gap:10px 20px;
+
+margin-top:16px;
+
+padding-top:14px;
+
+border-top:1px solid var(--arr-border);
+
+font-size:13px;
+
+color:var(--arr-text-muted);
+
+}
+
+.summary-row .num{
+
+color:var(--arr-navy-dark);
+
+font-weight:700;
+
+}
+
+.summary-row.upload-meta{
+
+margin-top:6px;
+
+padding-top:0;
+
+border-top:none;
+
+font-size:12px;
+
+color:var(--arr-text-muted2);
+
+}
+
+/* ==========================================
+   RESULTS TABLE
+   Same clip/scroll split as customers.css — see that file's
+   comment for why .table-card and .table-scroll are separate.
+========================================== */
+
+.rendered-count-note{
+
+font-size:12px;
+
+color:var(--arr-text-muted);
+
+margin-bottom:6px;
+
+text-align:center;
+
+}
+
+.table-card{
+
+width:100%;
+
+box-sizing:border-box;
+
+overflow:hidden;
+
+background:var(--arr-card-bg);
+
+border:1px solid var(--arr-border);
+
+border-radius:16px;
+
+padding:10px;
+
+box-shadow:var(--arr-shadow);
+
+}
+
+.table-scroll{
+
+position:relative;
+
+/* iOS Safari sometimes leaves offscreen content in a scrollable
+   container unpainted until something forces a repaint (matches the
+   symptom: far-right columns blank on load/Clear, fine after other
+   interactions). This forces the container onto its own compositing
+   layer immediately instead of lazily, which is the standard fix. */
+transform:translateZ(0);
+
+-webkit-transform:translateZ(0);
+
+overflow-x:auto;
+
+-webkit-overflow-scrolling:touch;
+
+max-height:60vh;
+
+overflow-y:auto;
+
+}
+
+.table-scroll::-webkit-scrollbar{
+
+height:6px;
+
+width:6px;
+
+}
+
+.table-scroll::-webkit-scrollbar-track{
+
+background:transparent;
+
+}
+
+.table-scroll::-webkit-scrollbar-thumb{
+
+background:rgba(212,175,55,.5);
+
+border-radius:999px;
+
+}
+
+.table-card table{
+
+width:100%;
+
+/* border-collapse:collapse breaks position:sticky on table cells in
+   most mobile WebViews (a well-known cross-browser quirk) — that was
+   the actual reason the frozen header/column weren't sticking at all.
+   border-spacing:0 keeps the grid looking the same as collapse did. */
+border-collapse:separate;
+
+border-spacing:0;
+
+font-size:12px;
+
+white-space:nowrap;
+
+color:#222;
+
+background:#fff;
+
+/* NOTE: this table used to also have border-radius:10px + overflow:hidden
+   to round its own corners. That overflow:hidden sits directly between
+   the sticky <th>/<td> cells and .table-scroll (the real scroll
+   container) — any non-"visible" overflow on an ancestor in that chain
+   is a known, separate way to break position:sticky, independent of
+   the transform/filter/contain checks. Confirmed via screen recording
+   that the header was genuinely scrolling away, not just a rendering
+   glitch — removing this was the actual fix. The card's outer rounded
+   corners (on .table-card) still give the whole thing a rounded look;
+   only the table's own inner corners are square now. */
+
+}
+
+.table-card thead th{
+
+position:sticky;
+
+top:0;
+
+background:#003B8B;
+
+color:#FFD700;
+
+padding:10px 8px;
+
+border:1px solid #2f4670;
+
+font-size:12px;
+
+line-height:1.3;
+
+-webkit-text-size-adjust:none;
+
+text-size-adjust:none;
+
+font-weight:bold;
+
+text-align:left;
+
+z-index:1;
+
+}
+
+.table-card td{
+
+padding:7px 8px;
+
+border:1px solid #e0e0e0;
+
+text-align:left;
+
+color:#222;
+
+font-size:12px;
+
+line-height:1.3;
+
+-webkit-text-size-adjust:none;
+
+text-size-adjust:none;
+
+}
+
+/* Freeze both "No" AND "Customer" while scrolling horizontally.
+   No needs a fixed width (not just auto-sized) so Customer's left
+   offset is a reliable, known value rather than something that could
+   shift if the row-number digit count changes. The header's corner
+   cells need a higher z-index since they're pinned on BOTH axes (top
+   from thead th, left here) and must stay above the frozen body
+   columns when they overlap.
+
+   NOTE: position/left/z-index apply to both th and td here, but
+   background is deliberately split into separate rules below —
+   an earlier version set background:#fff on both, which incorrectly
+   turned the frozen HEADER cells white instead of navy. */
+.table-card th:first-child,
+.table-card td:first-child{
+
+position:sticky;
+
+left:0;
+
+width:44px;
+
+min-width:44px;
+
+max-width:44px;
+
+z-index:2;
+
+}
+
+.table-card th:nth-child(2),
+.table-card td:nth-child(2){
+
+position:sticky;
+
+left:44px;
+
+z-index:2;
+
+}
+
+.table-card thead th:first-child,
+.table-card thead th:nth-child(2){
+
+z-index:3;
+
+background:#003B8B;
+
+}
+
+.table-card tbody td:first-child,
+.table-card tbody td:nth-child(2){
+
+background:#fff;
+
+/* row-class-loss/doubtful set color:#fff on every td in the row for
+   contrast against their dark red backgrounds — but these two columns
+   keep their own white/grey background regardless of row color (by
+   design), so that white text was rendering invisible: white text on
+   a white background. Forcing dark text here specifically overrides
+   that, independent of whatever row classification color is active. */
+color:#222 !important;
+
+}
+
+.table-card tbody tr:nth-child(even) td:first-child,
+.table-card tbody tr:nth-child(even) td:nth-child(2){
+
+background:#f5f7fb;
+
+}
+
+.table-card tbody tr:active td:first-child,
+.table-card tbody tr.row-selected td:first-child,
+.table-card tbody tr:active td:nth-child(2),
+.table-card tbody tr.row-selected td:nth-child(2){
+
+background:rgba(212,175,55,.4);
+
+}
+
+.table-card tbody tr:nth-child(even){
+
+background:#f5f7fb;
+
+}
+
+.table-card tbody tr{
+
+cursor:pointer;
+
+transition:background .12s;
+
+}
+
+.table-card tbody tr:active,
+.table-card tbody tr.row-selected{
+
+background:rgba(212,175,55,.25) !important;
+
+}
+
+.table-card .row-empty td,
+.table-card .row-loading td{
+
+text-align:center;
+
+padding:24px 8px;
+
+color:#666;
+
+font-weight:600;
+
+cursor:default;
+
+}
+
+/* Arrears cells past due read in red, matching the VBA sheet's
+   conditional formatting on the Arrea/Balance columns */
+/* Fixed-width columns: មុខរបរ, មូលហេតុ/ដំណោះស្រាយ, ថ្ងៃសន្យាសង all
+   share the same column width (matched to what a short dd/mm/yyyy
+   date needs) instead of auto-sizing to their content. Truncated to
+   a single line with an ellipsis rather than wrapping — wrapping
+   kept row heights inconsistent whenever មូលហេតុ/ដំណោះស្រាយ held
+   long text, so this trades "see the full text inline" for "every
+   row is the same height" (the full text is still available by
+   tapping the row to open the Reason Arrear panel). If you add/
+   remove/reorder table columns, these nth-child indexes (22, 23, 24)
+   need to be updated to match. */
+.table-card th:nth-child(22),
+.table-card td:nth-child(22),
+.table-card th:nth-child(23),
+.table-card td:nth-child(23),
+.table-card th:nth-child(24),
+.table-card td:nth-child(24){
+
+width:110px;
+
+min-width:110px;
+
+max-width:110px;
+
+white-space:nowrap;
+
+overflow:hidden;
+
+text-overflow:ellipsis;
+
+}
+
+/* DateBackUpReasonArrear (column 26) — sized to fit its full
+   "yyyy-mm-dd hh:mm AM/PM" value without truncating, rather than
+   sharing the narrower 110px width above. */
+.table-card th:nth-child(26),
+.table-card td:nth-child(26){
+
+width:160px;
+
+min-width:160px;
+
+max-width:160px;
+
+white-space:nowrap;
+
+}
+
+.cell-negative{
+
+color:#c0392b;
+
+font-weight:700;
+
+}
+
+/* ==========================================
+   CONDITIONAL FORMATTING
+   Mirrors the Excel Conditional Formatting Rules Manager rules.
+
+   Class (Normal/Special Mention/Sub Standard/Doubtful/Loss) used to
+   color the ENTIRE row. Now scoped to ONLY the No and Day columns
+   (nth-child(1) and nth-child(12)) — every other cell in a
+   classified row stays its normal default color regardless of Class.
+   Normal itself has no color treatment (classRowCssClass() returns
+   no class for it in JS), same as before.
+
+   No is also one of the two frozen/sticky columns, so its background
+   here layers on top of the general sticky-column white-background
+   rule further up this file — same !important + matching selector
+   prefix approach used there, so this reliably wins regardless of
+   source order.
+
+   NOTE: these business-data colors (Loss/Doubtful/Promise Status/
+   etc.) are intentionally the SAME in both light and dark theme —
+   they convey real information about loan classification, not
+   decorative theming, same as Excel's own conditional formatting
+   would look identical regardless of the workbook's color scheme.
+========================================== */
+
+.table-card tbody tr.row-class-loss td:first-child,
+.table-card tbody tr.row-class-loss td:nth-child(12){
+    background:#8B0000 !important;
+    color:#fff !important;
+}
+
+.table-card tbody tr.row-class-doubtful td:first-child,
+.table-card tbody tr.row-class-doubtful td:nth-child(12){
+    background:#FF0000 !important;
+    color:#fff !important;
+}
+
+.table-card tbody tr.row-class-substandard td:first-child,
+.table-card tbody tr.row-class-substandard td:nth-child(12){
+    background:#FFA500 !important;
+}
+
+.table-card tbody tr.row-class-specialmention td:first-child,
+.table-card tbody tr.row-class-specialmention td:nth-child(12){
+    background:#FFFF00 !important;
+}
+
+/* Cell-level: Promise Status (AI) + the AJ/AK/AL follow-up cells */
+.cell-promise-today{ background:#FFFF00 !important; }
+.cell-promise-upcoming{ background:#92D050 !important; }
+.cell-promise-expired{ background:#FF0000 !important; color:#fff; }
+
+/* Default light-blue fill for the follow-up cells when no Promise
+   Status keyword matched (lowest-priority rule, same as the Excel
+   "$B6<>''" fallback rule) */
+.cell-followup-default{ background:#DCE6F1 !important; }
+
+/* Cell-level: duplicate Customer names (column D) */
+.cell-duplicate-customer{ background:#FAC090 !important; }
+
+/* Cell-level: Balance column when PD = Balanced_PD */
+.cell-balance-pd{ background:#C6EFCE !important; color:#FF0000 !important; font-weight:700; }
+
+/* ==========================================
+   REASON ARREAR PANEL
+   Opens on row click — mirrors the AJ/AK/AL follow-up columns,
+   backed by the existing /api/reasonarrear endpoints (keyed by
+   the row's Concate value — see arrears.js for why).
+========================================== */
+
+.reason-backdrop{
+
+display:none;
+
+position:fixed;
+
+inset:0;
+
+background:rgba(0,0,0,.6);
+
+z-index:1000;
+
+align-items:center;
+
+justify-content:center;
+
+padding:20px;
+
+box-sizing:border-box;
+
+}
+
+.reason-backdrop.show{
+
+display:flex;
+
+}
+
+.reason-card{
+
+width:100%;
+
+max-width:480px;
+
+max-height:85vh;
+
+overflow-y:auto;
+
+box-sizing:border-box;
+
+background:var(--arr-card-bg);
+
+border:1px solid var(--arr-border);
+
+border-radius:16px;
+
+padding:18px 20px;
+
+box-shadow:var(--arr-shadow-modal);
+
+}
+
+.noreason-card{
+
+max-width:520px;
+
+}
+
+.noreason-last-upload{
+
+margin-top:2px;
+
+font-size:12px;
+
+opacity:.75;
+
+}
+
+.noreason-branch-filter{
+
+margin:12px 0 6px;
+
+}
+
+.noreason-team-filter{
+
+margin:8px 0 6px;
+
+}
+
+.noreason-table{
+
+width:100%;
+
+border-collapse:collapse;
+
+margin-top:10px;
+
+font-size:13px;
+
+}
+
+.noreason-table th,
+.noreason-table td{
+
+padding:6px 8px;
+
+border-bottom:1px solid var(--arr-border);
+
+text-align:left;
+
+color:var(--arr-text);
+
+}
+
+.noreason-table th{
+
+background:rgba(212,175,55,.15);
+
+font-weight:700;
+
+}
+
+.reason-title{
+
+font-size:14px;
+
+font-weight:700;
+
+color:var(--arr-navy-dark);
+
+text-transform:uppercase;
+
+letter-spacing:.4px;
+
+margin-bottom:4px;
+
+}
+
+.reason-subtitle{
+
+font-size:13px;
+
+color:var(--arr-text-muted);
+
+margin-bottom:14px;
+
+word-break:break-word;
+
+}
+
+.reason-group{
+
+position:relative;
+
+display:flex;
+
+flex-direction:column;
+
+gap:6px;
+
+margin-bottom:12px;
+
+}
+
+.reason-group label{
+
+font-size:13px;
+
+font-weight:600;
+
+color:var(--arr-text-muted);
+
+}
+
+.reason-group input,
+.reason-group textarea{
+
+width:100%;
+
+box-sizing:border-box;
+
+padding:10px 12px;
+
+border:1px solid var(--arr-border);
+
+border-radius:10px;
+
+font-size:14px;
+
+outline:none;
+
+background:var(--arr-card-bg);
+
+color:var(--arr-text);
+
+font-family:inherit;
+
+}
+
+.reason-group textarea{
+
+min-height:70px;
+
+resize:vertical;
+
+}
+
+/* Predictive suggestions for the AJ/AK fields — pulled from other
+   rows' values in the same column, not a native <datalist> since
+   AK is a <textarea> and datalist only works with <input>. */
+.suggestion-list{
+
+display:none;
+
+position:absolute;
+
+left:0;
+
+right:0;
+
+top:100%;
+
+margin-top:4px;
+
+background:var(--arr-card-bg);
+
+border:1px solid var(--arr-border);
+
+border-radius:8px;
+
+max-height:180px;
+
+overflow-y:auto;
+
+z-index:10;
+
+box-shadow:0 4px 12px rgba(0,0,0,.15);
+
+list-style:none;
+
+padding:4px 0;
+
+}
+
+.suggestion-list.show{
+
+display:block;
+
+}
+
+.suggestion-list li{
+
+padding:8px 12px;
+
+color:var(--arr-text);
+
+font-size:13px;
+
+cursor:pointer;
+
+word-break:break-word;
+
+}
+
+.suggestion-list li:hover,
+.suggestion-list li:active{
+
+background:rgba(212,175,55,.25);
+
+}
+
+.reason-meta{
+
+font-size:12px;
+
+color:var(--arr-text-muted2);
+
+margin:4px 0 14px;
+
+}
+
+.reason-pending-note{
+
+font-size:12px;
+
+color:#8A6D1D;
+
+margin:-8px 0 14px;
+
+display:none;
+
+}
+
+.reason-pending-note.show{
+
+display:block;
+
+}
+
+.reason-pending-cancel-link{
+
+background:none;
+
+border:none;
+
+color:#C0392B;
+
+text-decoration:underline;
+
+font-size:12px;
+
+cursor:pointer;
+
+padding:0;
+
+}
+
+#btnReasonSubmit{
+
+background:linear-gradient(180deg,#FFD700,#D4AF37);
+
+color:#002D6B;
+
+}
+
+.pending-row{
+
+color:var(--arr-pending-text,#8A6D1D);
+
+}
+
+.pending-row .num{
+
+color:var(--arr-navy-dark);
+
+font-weight:700;
+
+}
+
+#btnCancelAllPending{
+
+font-family:'KRASAR',sans-serif;
+
+height:34px;
+
+padding:0 16px;
+
+border:1.5px solid var(--arr-outline-btn-border);
+
+border-radius:10px;
+
+background:transparent;
+
+color:var(--arr-outline-btn-text);
+
+font-size:13px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+}
+
+#btnCancelAllPending:active{
+
+transform:scale(.97);
+
+}
+
+#btnSubmitAllPending{
+
+font-family:'KRASAR',sans-serif;
+
+height:34px;
+
+padding:0 16px;
+
+border:none;
+
+border-radius:10px;
+
+background:linear-gradient(180deg,#FFD700,#D4AF37);
+
+color:#002D6B;
+
+font-size:13px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+}
+
+#btnSubmitAllPending:active{
+
+transform:scale(.97);
+
+}
+
+/* Marks cells with a locally-saved-but-not-yet-submitted change —
+   layers on top of (doesn't replace) the normal Promise Status
+   coloring on those same cells, via a dashed gold outline. */
+.cell-pending-local{
+
+outline:2px dashed #FFD700;
+
+outline-offset:-2px;
+
+}
+
+.reason-actions{
+
+display:flex;
+
+flex-wrap:wrap;
+
+gap:10px;
+
+}
+
+.reason-actions button{
+
+flex:1;
+
+height:44px;
+
+border:none;
+
+border-radius:10px;
+
+font-family:'KRASAR',sans-serif;
+
+font-size:14px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+}
+
+#btnReasonSubmit{
+
+flex-basis:100%;
+
+}
+
+#btnReasonSave{
+
+background:linear-gradient(180deg,#FFD700,#D4AF37);
+
+color:#002D6B;
+
+}
+
+#btnReasonCancel{
+
+background:transparent;
+
+border:1.5px solid var(--arr-outline-btn-border);
+
+color:var(--arr-outline-btn-text);
+
+}
+
+/* ==========================================
+   FORCED LANDSCAPE VIEW
+   The first version of this rotated the ENTIRE page (body), which
+   broke badly — the fixed bottomnav, sticky table headers, and
+   nested table-scroll container all fought the transform at once,
+   producing the garbled overlapping layout seen in testing.
+
+   This version is deliberately narrow in scope: everything except
+   the table gets hidden (topbar, filter card, bottomnav, reason
+   modal), and ONLY .table-card gets pulled out of the page flow into
+   a fullscreen fixed overlay, then rotated. Since .table-card's
+   internal scrolling (.table-scroll) is already self-contained, this
+   avoids fighting any other page element entirely.
+
+   The topbar (and the "..." menu's Landscape toggle living inside
+   it) is hidden in this mode, so a separate always-visible exit
+   button is needed — see .landscape-exit-btn below, placed as a
+   child of .table-card so it rotates correctly along with it.
+========================================== */
+
+body.arrears-force-landscape #topbar-container,
+body.arrears-force-landscape .filter-card,
+body.arrears-force-landscape #bottomnav-container,
+body.arrears-force-landscape .reason-backdrop,
+body.arrears-force-landscape #offlineBanner{
+
+display:none !important;
+
+}
+
+body.arrears-force-landscape .page-container{
+
+padding:0;
+
+}
+
+body.arrears-force-landscape .table-card{
+
+position:fixed;
+
+top:0;
+
+left:0;
+
+width:100vh;
+
+height:100vw;
+
+transform-origin:top left;
+
+transform:rotate(90deg) translateY(-100%);
+
+margin:0;
+
+padding:6px;
+
+border-radius:0;
+
+border:none;
+
+z-index:9999;
+
+display:flex;
+
+flex-direction:column;
+
+box-sizing:border-box;
+
+}
+
+body.arrears-force-landscape .table-scroll{
+
+flex:1;
+
+max-height:none;
+
+}
+
+/* ==========================================
+   LANDSCAPE TOP/BOTTOM BARS
+   Both are children of .table-card, so they inherit its rotation
+   automatically instead of needing their own separate transform kept
+   in sync — this is exactly what the real topbar/bottomnav couldn't
+   do safely (they're built for the normal, unrotated page).
+   Auto-hide via a "hidden" class toggled by arrears.js on a timer;
+   tapping the table area brings them back temporarily.
+
+   NOTE: these floating overlay bars are deliberately dark in both
+   themes (semi-transparent black over the table content), same
+   rationale as the topbar menu above — they're a floating control
+   surface over content, not page chrome that should re-theme.
+========================================== */
+
+.landscape-bar{
+
+display:none;
+
+position:absolute;
+
+left:0;
+
+right:0;
+
+align-items:center;
+
+background:rgba(0,0,0,.65);
+
+color:#fff;
+
+z-index:20;
+
+padding:8px 12px;
+
+box-sizing:border-box;
+
+transition:opacity .25s ease, transform .25s ease;
+
+opacity:1;
+
+}
+
+body.arrears-force-landscape .landscape-bar{
+
+display:flex;
+
+}
+
+.landscape-bar.hidden{
+
+opacity:0;
+
+pointer-events:none;
+
+}
+
+.landscape-top-bar{
+
+top:0;
+
+justify-content:space-between;
+
+}
+
+.landscape-top-bar.hidden{
+
+transform:translateY(-100%);
+
+}
+
+.landscape-bottom-bar{
+
+bottom:0;
+
+justify-content:center;
+
+}
+
+.landscape-bottom-bar.hidden{
+
+transform:translateY(100%);
+
+}
+
+#btnExitLandscape{
+
+height:32px;
+
+padding:0 14px;
+
+border:none;
+
+border-radius:8px;
+
+background:rgba(255,255,255,.2);
+
+color:#fff;
+
+font-size:13px;
+
+font-weight:600;
+
+cursor:pointer;
+
+}
+
+#btnExitLandscape:active{
+
+transform:scale(.96);
+
+}
+
+.landscape-row-count{
+
+font-size:12px;
+
+color:#FFD700;
+
+}
+
+.landscape-hint{
+
+font-size:11px;
+
+color:rgba(255,255,255,.75);
+
+}
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media(max-width:480px){
+
+.page-container{
+
+padding:12px;
+
+padding-bottom:90px;
+
+}
+
+.filter-card{
+
+padding:15px;
+
+}
+
+.filter-grid{
+
+gap:8px 8px;
+
+}
+
+.filter-group label{
+
+font-size:10.5px;
+
+}
+
+.filter-group input,
+.filter-group select{
+
+height:38px;
+
+padding:0 6px;
+
+font-size:12.5px;
+
+}
+
+.table-card table{
+
+font-size:11px;
+
+}
+
+.table-card thead th{
+
+padding:8px 6px;
+
+font-size:11px;
+
+}
+
+.table-card td{
+
+padding:6px 6px;
+
+font-size:11px;
+
+}
+
+}
+
+/* ==========================================
+   PRINT
+   Triggered by the existing window.print() call on the Print button
+   — no JS changes needed, browsers apply @media print automatically.
+   Only the table prints (No through Promise Status, columns 1-19),
+   forced to landscape paper orientation. Sticky positioning is
+   switched off for print since it's meaningless on paper and can
+   otherwise cause odd repeated-header artifacts across page breaks.
+
+   Print is intentionally NOT theme-aware — it already forces its own
+   ink-saving white/black colors below regardless of what theme the
+   screen was showing when Print was clicked.
+========================================== */
+
+.print-only-title{
+
+display:none;
+
+}
+
+@media print{
+
+@page{
+
+size:297mm 210mm;
+
+margin:10mm 10mm 16mm 10mm;
+
+@bottom-right{
+
+content:"Page " counter(page) " of " counter(pages);
+
+font-size:9px;
+
+color:#666;
+
+}
+
+}
+
+/* Forces conditional-formatting colors (Loss/Doubtful, Promise
+   Status, duplicate-customer, etc.) to always print, regardless of
+   whether the browser's own "print backgrounds" toggle is on —
+   without this, browsers strip background colors by default to save
+   ink, which is why the colors were inconsistent depending on
+   whatever the device's print settings happened to be. */
+*{
+
+-webkit-print-color-adjust:exact !important;
+
+print-color-adjust:exact !important;
+
+color-adjust:exact !important;
+
+}
+
+.print-only-title{
+
+display:block;
+
+text-align:center;
+
+font-size:22px;
+
+font-weight:700;
+
+color:#000;
+
+margin-bottom:12px;
+
+}
+
+/* This app is normally a fixed-viewport mobile PWA — html/body (and
+   likely other ancestors from main.css/base.css that aren't visible
+   in this file) constrain height and hide overflow so the page
+   behaves like a native app screen, not a scrolling document. Print
+   inherits that same layout unless explicitly reset, which clipped
+   the printed output to roughly one phone-screen's worth of content
+   (the reported "only 6 columns, 12 rows out of 19/200" bug) instead
+   of flowing naturally across full A4 pages. */
+html,
+body{
+
+height:auto !important;
+
+overflow:visible !important;
+
+width:auto !important;
+
+}
+
+/* Page chrome that's meaningless on paper */
+#offlineBanner,
+#topbar-container,
+#bottomnav-container,
+.reason-backdrop,
+.arrears-menu-wrap,
+.rendered-count-note{
+
+display:none !important;
+
+}
+
+/* Buttons/actions inside the filter card aren't useful on paper —
+   but the filter SELECTIONS and summary totals are, per request, so
+   .filter-card itself stays visible (it used to be hidden entirely). */
+.filter-actions,
+.button-row,
+.pending-row{
+
+display:none !important;
+
+}
+
+html,
+body{
+
+background:#fff !important;
+
+}
+
+.page-container{
+
+padding:0;
+
+height:auto !important;
+
+overflow:visible !important;
+
+}
+
+/* ==========================================
+   INK-SAVING COLOR OVERRIDES
+   The navy/gold theme looks good on screen but is expensive to print
+   (large solid-color fills). Everything below forces white
+   backgrounds with black/dark text for print specifically — this
+   does NOT touch the conditional-formatting colors (Loss/Doubtful/
+   Promise Status/etc.), which stay as-is since those convey real
+   information on a printed report, same as Excel's own conditional
+   formatting would.
+========================================== */
+
+.filter-card{
+
+background:#fff !important;
+
+border:1px solid #999 !important;
+
+box-shadow:none !important;
+
+color:#000 !important;
+
+}
+
+.filter-group label{
+
+color:#000 !important;
+
+}
+
+.filter-group input,
+.filter-group select{
+
+background:#fff !important;
+
+border:1px solid #999 !important;
+
+color:#000 !important;
+
+}
+
+.summary-row{
+
+color:#000 !important;
+
+border-top:1px solid #ccc !important;
+
+}
+
+.summary-row .num{
+
+color:#000 !important;
+
+font-weight:700;
+
+}
+
+.table-card{
+
+background:#fff !important;
+
+overflow:visible;
+
+box-shadow:none;
+
+border:1px solid #999;
+
+}
+
+.table-scroll{
+
+overflow:visible !important;
+
+max-height:none !important;
+
+height:auto !important;
+
+}
+
+.table-card th,
+.table-card td{
+
+position:static !important;
+
+}
+
+/* Repeats the header row on every printed page (not just page 1).
+   Browsers only reliably do this with an EXPLICIT display value here
+   — thead/tbody's default table-header-group/table-row-group display
+   can get lost once other rules (like the position:static override
+   above, or the table's own layout mode) are in play. */
+.table-card thead{
+
+display:table-header-group;
+
+}
+
+.table-card tbody{
+
+display:table-row-group;
+
+}
+
+.table-card thead th{
+
+background:#fff !important;
+
+color:#000 !important;
+
+border:1px solid #999 !important;
+
+}
+
+/* Hide columns 20 (CO_ID) through 26 (DateBackUpReasonArrear) —
+   keep only No through Promise Status (columns 1-19). */
+.table-card th:nth-child(n+20),
+.table-card td:nth-child(n+20){
+
+display:none !important;
+
+}
+
+}
