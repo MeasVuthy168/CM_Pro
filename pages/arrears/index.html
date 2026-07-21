@@ -206,6 +206,7 @@ href="../../assets/css/arrears.css">
 <button id="btnExportPdf">Export PDF</button>
 <button id="btnPrint">Print</button>
 <button id="btnLandscape">⤢ Landscape</button>
+<button id="btnNoReasonSummary">មិនទាន់បំពេញ Reason Arrear</button>
 </div>
 </div>
 
@@ -268,6 +269,46 @@ href="../../assets/css/arrears.css">
 <button id="btnReasonSubmit">ដាក់ស្នើមូលហេតុយឺតយ៉ាវ</button>
 </div>
 
+
+</div>
+
+</div>
+
+<!-- ========================= -->
+<!-- NO REASON ARREAR SUMMARY (modal popup) -->
+<!-- ========================= -->
+
+<div id="noReasonBackdrop" class="reason-backdrop">
+
+<div id="noReasonCard" class="reason-card noreason-card">
+
+<div class="reason-title">មិនទាន់បានបំពេញ Reason Arrear</div>
+<div class="reason-subtitle" id="noReasonSubtitle">-</div>
+
+<div class="filter-group noreason-team-filter">
+<label for="noReasonTeamFilter">ក្រុម</label>
+<select id="noReasonTeamFilter">
+<option value="">All</option>
+<option value="Credit Officer">Credit Officer</option>
+<option value="FSRO">FSRO</option>
+</select>
+</div>
+
+<table class="noreason-table">
+<thead>
+<tr>
+<th>Name</th>
+<th>Branch</th>
+<th>Team</th>
+<th>No Reason Arrear</th>
+</tr>
+</thead>
+<tbody id="noReasonTbody"></tbody>
+</table>
+
+<div class="reason-actions">
+<button id="btnNoReasonClose">Close</button>
+</div>
 
 </div>
 
