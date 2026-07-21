@@ -149,15 +149,28 @@ window.addEventListener("load",()=>{
 // =========================
 // LOAD USER INFO
 // =========================
-// The photo gets a skeleton pulse while loading, and one
-// automatic retry (short delay, cache-busted) before falling
-// back to the default avatar — a single dropped request on a
-// flaky mobile connection shouldn't be treated as permanent
-// failure.
+// FIX: /assets/user-photo/:username requires a JWT (requireJwt on
+// the server), but a plain <img src="..."> has no way to send an
+// Authorization header — so a fresh (uncached) request always 401s.
+// It only ever "worked" when the service worker already had a
+// cached 200 response for that exact URL from some earlier
+// successful load. Fetching with fetch() + the Authorization header
+// + converting the response to a blob URL is the actual fix: this
+// still goes through the same service worker (which forwards
+// event.request, headers included), so a successful fetch here also
+// warms the SW cache for next time, same as before — it just
+// actually succeeds now instead of depending on a cache that may
+// not exist yet.
+//
+// The photo still gets a skeleton pulse while loading, and one
+// automatic retry (short delay, cache-busted) before falling back
+// to the default avatar — a single dropped request on a flaky
+// mobile connection shouldn't be treated as permanent failure.
 
 let photoLoadToken=0;
+let photoObjectUrl=null;
 
-function loadProfilePhoto(username){
+async function loadProfilePhoto(username){
 
     const img=document.getElementById("settingPhoto");
 
@@ -173,55 +186,81 @@ function loadProfilePhoto(username){
 
     const myToken=++photoLoadToken;
 
-    let retried=false;
-
     img.classList.add("photo-loading");
 
-    img.onload=function(){
+    async function attempt(isRetry){
 
-        if(myToken!==photoLoadToken) return;
+        try{
 
-        this.classList.remove("photo-loading");
+            const token=
 
-    };
+                localStorage.getItem("token") ||
+                sessionStorage.getItem("token");
 
-    img.onerror=function(){
+            const url=
 
-        if(myToken!==photoLoadToken) return;
+                isRetry ?
+                    `${photoUrl}?retry=${Date.now()}` :
+                    photoUrl;
 
-        if(this.src.indexOf(fallback)!==-1){
+            const res=await fetch(url,{
 
-            this.classList.remove("photo-loading");
+                headers: token ?
+                    { Authorization:`Bearer ${token}` } :
+                    {}
 
-            return;
+            });
+
+            if(myToken!==photoLoadToken) return;
+
+            if(!res.ok){
+
+                throw new Error(`HTTP ${res.status}`);
+
+            }
+
+            const blob=await res.blob();
+
+            if(myToken!==photoLoadToken) return;
+
+            // revoke the previous object URL (if any) before
+            // creating a new one, so these don't leak memory across
+            // repeated loads (bfcache restores, retries, etc.)
+            if(photoObjectUrl){
+
+                URL.revokeObjectURL(photoObjectUrl);
+
+            }
+
+            photoObjectUrl=URL.createObjectURL(blob);
+
+            img.src=photoObjectUrl;
+
+            img.classList.remove("photo-loading");
+
+        }catch(err){
+
+            if(myToken!==photoLoadToken) return;
+
+            if(!isRetry){
+
+                setTimeout(()=>attempt(true),800);
+
+                return;
+
+            }
+
+            console.error("Profile photo load failed:",err);
+
+            img.classList.remove("photo-loading");
+
+            img.src=fallback;
 
         }
 
-        if(!retried){
+    }
 
-            retried=true;
-
-            setTimeout(()=>{
-
-                if(myToken!==photoLoadToken) return;
-
-                this.src=photoUrl+`?retry=${Date.now()}`;
-
-            },800);
-
-            return;
-
-        }
-
-        this.onerror=null;
-
-        this.classList.remove("photo-loading");
-
-        this.src=fallback;
-
-    };
-
-    img.src=photoUrl;
+    attempt(false);
 
 }
 
