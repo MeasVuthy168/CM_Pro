@@ -280,15 +280,17 @@ top:48px;
 
 right:0;
 
-background:linear-gradient(180deg,#003B8B,#002D6B);
+background:var(--arr-card-bg);
 
-border:1px solid #D4AF37;
+border:1px solid var(--arr-border);
 
 border-radius:12px;
 
 padding:6px;
 
-min-width:130px;
+min-width:190px;
+
+width:max-content;
 
 box-shadow:0 8px 20px rgba(0,0,0,.4);
 
@@ -316,7 +318,7 @@ border-radius:8px;
 
 background:transparent;
 
-color:#fff;
+color:var(--arr-text);
 
 font-size:14px;
 
@@ -327,6 +329,8 @@ text-align:left;
 padding:0 10px;
 
 cursor:pointer;
+
+white-space:nowrap;
 
 }
 
@@ -974,11 +978,13 @@ border-bottom:1px solid var(--arr-border);
 
 text-align:left;
 
+color:var(--arr-text);
+
 }
 
 .noreason-table th{
 
-background:rgba(0,59,139,.08);
+background:rgba(212,175,55,.15);
 
 font-weight:700;
 
