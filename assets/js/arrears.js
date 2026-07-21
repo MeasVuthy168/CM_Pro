@@ -1588,6 +1588,83 @@ document.getElementById("btnExportPdf")?.addEventListener("click", () => {
 document.getElementById("btnPrint").addEventListener("click", () => window.print());
 
 // ========================================
+// NO REASON ARREAR SUMMARY
+// Groups the currently-filtered rows (respects whatever Branch /
+// Officer / etc. filters are active) by officer, counting rows
+// where Arreas > 0 and no solution (AK) has been filled in yet —
+// same logic as the VBA COUNTIFS(W=officer, AK="", Q>0, U=branch).
+// Team is derived from teamLeader: literal "FSRO" = FSRO team,
+// anything else (a team leader's name) = Credit Officer — same
+// rule as the VBA UCase(teamMarker)="FSRO" check.
+// ========================================
+
+function getTeamCategory(row) {
+    return (row.teamLeader || "").trim().toUpperCase() === "FSRO" ? "FSRO" : "Credit Officer";
+}
+
+function buildNoReasonRows(sourceRows, teamFilter) {
+    const map = new Map();
+    sourceRows.forEach(row => {
+        const hasNoReason = (parseFloat(row.arreas) || 0) > 0 && !row.akSolution;
+        if (!hasNoReason) return;
+
+        const team = getTeamCategory(row);
+        if (teamFilter && team !== teamFilter) return;
+
+        const name = row.coResponse || "(Unknown)";
+        const branch = row.branch || "";
+        const key = name + "||" + branch + "||" + team;
+
+        if (!map.has(key)) map.set(key, { name, branch, team, count: 0 });
+        map.get(key).count++;
+    });
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function showNoReasonSummary() {
+    const teamFilterEl = document.getElementById("noReasonTeamFilter");
+    const teamFilter = teamFilterEl ? teamFilterEl.value : "";
+
+    const rows = buildNoReasonRows(currentRows, teamFilter);
+    const tbody = document.getElementById("noReasonTbody");
+    tbody.innerHTML = "";
+
+    let total = 0;
+    rows.forEach(r => {
+        total += r.count;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.branch)}</td><td>${escapeHtml(r.team)}</td><td>${r.count}</td>`;
+        tbody.appendChild(tr);
+    });
+
+    if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">គ្មានទិន្នន័យ</td></tr>`;
+    }
+
+    document.getElementById("noReasonSubtitle").textContent =
+        `សរុប ${total} LD  •  ${rows.length} ភ្នាក់ងារ`;
+
+    document.getElementById("noReasonBackdrop").classList.add("show");
+}
+
+document.getElementById("btnNoReasonSummary")?.addEventListener("click", () => {
+    showNoReasonSummary();
+    document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
+});
+
+document.getElementById("noReasonTeamFilter")?.addEventListener("change", showNoReasonSummary);
+
+document.getElementById("btnNoReasonClose")?.addEventListener("click", () => {
+    document.getElementById("noReasonBackdrop").classList.remove("show");
+});
+
+document.getElementById("noReasonBackdrop")?.addEventListener("click", (e) => {
+    if (e.target.id === "noReasonBackdrop") {
+        e.currentTarget.classList.remove("show");
+    }
+});
+
+// ========================================
 // TOPBAR MENU (Refresh / Export / Print)
 // The buttons themselves get physically relocated into the topbar
 // by arrears-loader.js — this just wires the "..." toggle. Closes
