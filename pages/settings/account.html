@@ -431,64 +431,121 @@ function renderAccount(user){
 
     if(user.username){
 
-        const img = document.getElementById("photo");
-
-        const fallback = "/CM_Pro/assets/images/default-user.png";
-
-        const photoUrl = `${API.BASE_URL}/assets/user-photo/${user.username}`;
-
-        let retried = false;
-
-        img.classList.add("photo-loading");
-
-        img.onload = function(){
-
-            this.classList.remove("photo-loading");
-
-        };
-
-        // Intermittent mobile-network failures (request drops,
-        // WebView cold-start, flaky connection) often succeed on
-        // a second attempt a moment later — so retry once with a
-        // short delay before giving up and falling back to the
-        // default avatar. Guarded so it can't loop forever if the
-        // fallback image itself is missing/broken.
-
-        img.onerror = function(){
-
-            if(this.src.indexOf(fallback) !== -1){
-
-                this.classList.remove("photo-loading");
-
-                return;
-
-            }
-
-            if(!retried){
-
-                retried = true;
-
-                setTimeout(()=>{
-
-                    this.src = photoUrl + `?retry=${Date.now()}`;
-
-                },800);
-
-                return;
-
-            }
-
-            this.onerror = null;
-
-            this.classList.remove("photo-loading");
-
-            this.src = fallback;
-
-        };
-
-        img.src = photoUrl;
+        loadProfilePhoto(user.username);
 
     }
+
+}
+
+// =========================================================
+// PHOTO LOADING
+// =========================================================
+// FIX: /assets/user-photo/:username requires a JWT (requireJwt on
+// the server), but a plain <img src="..."> has no way to send an
+// Authorization header — so a fresh (uncached) request always 401s.
+// It only ever "worked" when the service worker already had a
+// cached 200 response for that exact URL from some earlier
+// successful load. Fetching with fetch() + the Authorization header
+// + converting the response to a blob URL is the actual fix: this
+// still goes through the same service worker (which forwards
+// event.request, headers included), so a successful fetch here also
+// warms the SW cache for next time, same as before — it just
+// actually succeeds now instead of depending on a cache that may
+// not exist yet.
+
+let photoLoadToken = 0;
+let photoObjectUrl = null;
+
+async function loadProfilePhoto(username){
+
+    const img = document.getElementById("photo");
+
+    if(!img || !username) return;
+
+    const fallback = "/CM_Pro/assets/images/default-user.png";
+
+    const photoUrl = `${API.BASE_URL}/assets/user-photo/${username}`;
+
+    // Each call gets its own token so an in-flight retry from a
+    // previous call can't clobber a newer, already-successful load.
+
+    const myToken = ++photoLoadToken;
+
+    img.classList.add("photo-loading");
+
+    async function attempt(isRetry){
+
+        try{
+
+            const token =
+
+                localStorage.getItem("token") ||
+                sessionStorage.getItem("token");
+
+            const url =
+
+                isRetry ?
+                    `${photoUrl}?retry=${Date.now()}` :
+                    photoUrl;
+
+            const res = await fetch(url,{
+
+                headers: token ?
+                    { Authorization:`Bearer ${token}` } :
+                    {}
+
+            });
+
+            if(myToken !== photoLoadToken) return;
+
+            if(!res.ok){
+
+                throw new Error(`HTTP ${res.status}`);
+
+            }
+
+            const blob = await res.blob();
+
+            if(myToken !== photoLoadToken) return;
+
+            // revoke the previous object URL (if any) before
+            // creating a new one, so these don't leak memory across
+            // repeated loads (bfcache restores, retries, etc.)
+            if(photoObjectUrl){
+
+                URL.revokeObjectURL(photoObjectUrl);
+
+            }
+
+            photoObjectUrl = URL.createObjectURL(blob);
+
+            img.src = photoObjectUrl;
+
+            img.classList.remove("photo-loading");
+
+        }catch(err){
+
+            if(myToken !== photoLoadToken) return;
+
+            if(!isRetry){
+
+                setTimeout(()=>attempt(true), 800);
+
+                return;
+
+            }
+
+            console.error("Profile photo load failed:", err);
+
+            img.classList.remove("photo-loading");
+
+            img.src = fallback;
+
+        }
+
+    }
+
+    attempt(false);
 
 }
 
@@ -598,7 +655,11 @@ window.addEventListener("pageshow", function(event){
 
     if((event.persisted || broken) && Object.keys(cachedUser).length){
 
-        renderAccount(cachedUser);
+        const u = cachedUser.username ? cachedUser : null;
+
+        if(u){
+            loadProfilePhoto(u.username);
+        }
 
     }
 
