@@ -1,9 +1,18 @@
+/* =====================================================
+   THEME TOKENS
+   Same palette as arrears.css / your other pages, but this file is
+   fully self-contained — page-container, filter-card, table-card,
+   table-scroll etc. all live in arrears.css (page-specific, not
+   main.css), so this page defines its own copies rather than
+   silently depending on another page's CSS file being loaded.
+   ===================================================== */
 :root{
     --cr-page-bg:#F5F7FA;
     --cr-card-bg:#FFFFFF;
     --cr-border:#E2E6ED;
     --cr-text:#1C2333;
     --cr-text-muted:#6B7280;
+    --cr-shadow:0 4px 14px rgba(0,0,0,.08);
     --cr-navy:#003B8B;
     --cr-navy-dark:#002D6B;
     --cr-gold:#D4AF37;
@@ -11,6 +20,8 @@
     --cr-danger:#b3261e;
     --cr-total-bg:#fff8e1;
     --cr-row-alt:#f8f9fc;
+    --cr-skel-base:#eceff4;
+    --cr-skel-shine:#f7f9fc;
 }
 
 [data-theme="dark"]{
@@ -19,42 +30,118 @@
     --cr-border:#D4AF37;
     --cr-text:#fff;
     --cr-text-muted:#cdd9ef;
+    --cr-shadow:0 4px 14px rgba(0,0,0,.25);
     --cr-navy-dark:#FFD700;
     --cr-danger:#ff6b6b;
     --cr-total-bg:#2a2410;
     --cr-row-alt:#00306e;
+    --cr-skel-base:#0a3a86;
+    --cr-skel-shine:#0d4aa8;
+}
+
+*{ box-sizing:border-box; }
+
+/* ===== Page shell (arrears.css defines its own — this page needs its own too) ===== */
+.page-container{
+    width:100%;
+    box-sizing:border-box;
+    padding:16px;
+    padding-bottom:90px;
+    background:var(--cr-page-bg);
+    min-height:100vh;
+    font-family:'KRASAR', sans-serif;
+    color:var(--cr-text);
+}
+.print-only-title{ display:none; }
+
+/* ===== Filter card ===== */
+.filter-card{
+    width:100%;
+    box-sizing:border-box;
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:16px;
+    padding:16px;
+    box-shadow:var(--cr-shadow);
+    margin-bottom:14px;
+}
+.filter-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+.filter-group label{
+    display:block;
+    font-size:11.5px;
+    color:var(--cr-text-muted);
+    margin-bottom:4px;
+    font-weight:600;
+}
+.filter-group input[type="date"]{
+    width:100%;
+    padding:9px 10px;
+    border-radius:10px;
+    border:1px solid var(--cr-border);
+    background:#fff;
+    color:#1C2333;
+    font-size:13px;
+    font-family:'KRASAR', sans-serif;
 }
 
 /* ===== Run button ===== */
 .cr-run-btn{
     width:100%;
-    margin-top:8px;
+    margin-top:12px;
     background:linear-gradient(135deg,var(--cr-navy-dark),var(--cr-navy));
     color:#fff;
     border:none;
-    border-radius:10px;
-    padding:11px;
+    border-radius:12px;
+    padding:13px;
     font-family:'KRASAR',sans-serif;
     font-weight:700;
     font-size:14px;
     cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
 }
-.cr-run-btn:active{ opacity:.85; }
+[data-theme="dark"] .cr-run-btn{
+    background:linear-gradient(135deg,#D4AF37,#FFD700);
+    color:#002D6B;
+}
+.cr-run-btn:active{ opacity:.85; transform:scale(.99); }
+.cr-run-btn:disabled{ opacity:.7; cursor:default; }
+.cr-run-spinner{
+    width:16px; height:16px;
+    border-radius:50%;
+    border:2px solid rgba(255,255,255,.4);
+    border-top-color:#fff;
+    display:none;
+    animation:cr-spin .7s linear infinite;
+}
+[data-theme="dark"] .cr-run-spinner{
+    border:2px solid rgba(0,45,107,.35);
+    border-top-color:#002D6B;
+}
+.cr-run-btn.loading .cr-run-spinner{ display:inline-block; }
+@keyframes cr-spin{ to{ transform:rotate(360deg); } }
 
-/* ===== View toggle ===== */
+/* ===== View toggle (Summary / Detailed) ===== */
 .cr-tabs{
     display:flex;
     background:var(--cr-card-bg);
     border:1px solid var(--cr-border);
-    border-radius:10px;
-    padding:3px;
-    margin:10px 0;
+    border-radius:12px;
+    padding:4px;
+    margin-bottom:10px;
+    box-shadow:var(--cr-shadow);
 }
 .cr-tab{
     flex:1;
     text-align:center;
-    padding:9px 6px;
-    border-radius:8px;
+    padding:10px 6px;
+    border-radius:9px;
     font-size:13px;
     font-weight:700;
     color:var(--cr-text-muted);
@@ -65,6 +152,7 @@
     background:var(--cr-navy-dark);
     color:#fff;
 }
+[data-theme="dark"] .cr-tab.active{ color:#002D6B; }
 .cr-detailed-note{
     background:rgba(179,38,30,.1);
     color:var(--cr-danger);
@@ -75,16 +163,78 @@
     display:none;
 }
 
+/* ===== Section picker ===== */
+.cr-section-card{
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:12px;
+    padding:10px 12px;
+    box-shadow:var(--cr-shadow);
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+.cr-section-label{
+    font-size:11.5px;
+    font-weight:700;
+    color:var(--cr-text-muted);
+    white-space:nowrap;
+}
+.cr-section-select{
+    flex:1;
+    padding:9px 10px;
+    border-radius:10px;
+    border:1px solid var(--cr-border);
+    background:#fff;
+    color:#1C2333;
+    font-size:13px;
+    font-weight:700;
+    font-family:'KRASAR', sans-serif;
+}
+
+.summary-row.upload-meta{
+    font-size:12px;
+    color:var(--cr-text-muted);
+    padding:2px 2px 10px;
+}
+#crPeriodLabel{ color:var(--cr-text); font-weight:600; }
+
+.rendered-count-note{
+    font-size:11.5px;
+    color:var(--cr-text-muted);
+    margin-bottom:6px;
+    padding-left:2px;
+}
+
 /* =====================================================
-   TABLE — base cell styling.
-   NOTE: this block exists in arrears.css too but is NOT part of
-   main.css, so it does not carry over automatically — every page
-   with its own table needs its own copy of these base rules.
+   TABLE CARD
    ===================================================== */
+.table-card{
+    width:100%;
+    box-sizing:border-box;
+    position:relative;
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:16px;
+    padding:10px;
+    box-shadow:var(--cr-shadow);
+    overflow:hidden;
+}
+
+.table-scroll{
+    position:relative;
+    transform:translateZ(0);
+    -webkit-transform:translateZ(0);
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    max-height:65vh;
+    overflow-y:auto;
+    border-radius:10px;
+}
+
 .table-card table{
     width:100%;
-    /* border-collapse:collapse breaks position:sticky on table cells
-       in most mobile WebViews — keep separate, same as Arrears. */
     border-collapse:separate;
     border-spacing:0;
     font-size:12px;
@@ -96,75 +246,56 @@
 .table-card thead th{
     position:sticky;
     top:0;
-    background:var(--cr-navy);
+    background:var(--cr-navy-dark);
     color:var(--cr-gold-light);
-    padding:8px 8px;
+    padding:9px 10px;
     border:1px solid #2f4670;
-    font-size:11px;
+    font-size:11.5px;
     line-height:1.3;
-    -webkit-text-size-adjust:none;
-    text-size-adjust:none;
     font-weight:bold;
     text-align:center;
     z-index:2;
 }
+[data-theme="dark"] .table-card thead th{ color:#002D6B; background:var(--cr-navy-dark); }
 
-/* Sub-header row (# Loan / Value / PAR % ...) stacks directly under
-   the group-header row. Its `top` offset is set dynamically in JS
-   (crSetHeaderOffsets in creditreport.js) because the group row's
-   rendered height varies with font size / text wrapping — a fixed
-   guessed pixel value here is what caused the overlap/misalignment. */
 .table-card thead tr.cr-group-row th{ z-index:4; }
 .table-card thead tr.cr-sub-row th{ z-index:3; }
 
 .table-card td{
-    padding:7px 8px;
+    padding:8px 10px;
     border:1px solid var(--cr-border);
     text-align:right;
     color:var(--cr-text);
-    font-size:11.5px;
+    font-size:12px;
     line-height:1.3;
-    -webkit-text-size-adjust:none;
-    text-size-adjust:none;
 }
 
-/* Sticky first column (Branch) — one frozen column here, not two
-   like Arrears' No+Customer, since there's no row-number column. */
+/* Sticky first column (Branch) */
 .table-card th:first-child,
 .table-card td:first-child{
     position:sticky;
     left:0;
-    min-width:110px;
+    min-width:116px;
     z-index:3;
     text-align:left;
     font-weight:700;
 }
 .table-card thead th:first-child{
     z-index:5;
-    background:var(--cr-navy);
+    background:var(--cr-navy-dark);
     color:var(--cr-gold-light);
 }
+[data-theme="dark"] .table-card thead th:first-child{ color:#002D6B; }
 .table-card tbody td:first-child{
     background:var(--cr-card-bg);
-    color:var(--cr-navy-dark) !important;
+    color:var(--cr-navy) !important;
 }
-.table-card tbody tr:nth-child(even) td:first-child{
-    background:var(--cr-row-alt);
-}
+[data-theme="dark"] .table-card tbody td:first-child{ color:var(--cr-gold-light) !important; }
+.table-card tbody tr:nth-child(even) td:first-child{ background:var(--cr-row-alt); }
 
 .table-card tbody tr:nth-child(even){ background:var(--cr-row-alt); }
 
-.table-card .row-empty td,
-.table-card .row-loading td{
-    text-align:center;
-    padding:24px 8px;
-    color:var(--cr-text-muted);
-    font-weight:600;
-    font-size:13px;
-    white-space:normal;
-}
-
-.th-kh{ font-weight:400; display:block; font-size:10px; }
+.th-kh{ font-weight:400; display:block; font-size:10px; opacity:.85; }
 
 .cr-total-row td{
     background:var(--cr-total-bg) !important;
@@ -175,29 +306,30 @@
 
 .cr-par-high{ color:var(--cr-danger); font-weight:700; }
 
-/* =====================================================
-   LANDSCAPE BARS — hidden by default (same as arrears.css).
-   Without this they render as plain inline text on the page.
-   NOTE: the exit-landscape / rotate-to-landscape JS itself isn't
-   wired up yet on this page (arrears.js has it, creditreport.js
-   doesn't) — these bars will just stay hidden until that's built.
-   ===================================================== */
-.landscape-bar{
-    display:none;
-    position:absolute;
-    left:0;
-    right:0;
-    align-items:center;
-    background:rgba(0,0,0,.65);
-    color:#fff;
-    z-index:20;
-    padding:8px 12px;
-    box-sizing:border-box;
+.cr-empty{
+    text-align:center;
+    color:var(--cr-text-muted);
+    padding:32px 12px;
+    font-size:13px;
 }
-.landscape-top-bar{ top:0; justify-content:space-between; }
-.landscape-bottom-bar{ bottom:0; justify-content:center; }
-.landscape-row-count{ font-size:12px; color:var(--cr-gold-light); }
-.landscape-hint{ font-size:11px; color:rgba(255,255,255,.75); }
+
+/* =====================================================
+   SKELETON LOADING
+   ===================================================== */
+.cr-skeleton{ display:block; padding:4px; }
+.cr-skel-row{
+    height:34px;
+    border-radius:8px;
+    margin-bottom:8px;
+    background:linear-gradient(90deg, var(--cr-skel-base) 25%, var(--cr-skel-shine) 37%, var(--cr-skel-base) 63%);
+    background-size:400% 100%;
+    animation:cr-shimmer 1.4s ease infinite;
+}
+.cr-skel-head{ height:40px; opacity:.9; }
+@keyframes cr-shimmer{
+    0%{ background-position:100% 50%; }
+    100%{ background-position:0 50%; }
+}
 
 /* ===== "..." menu (relocated into topbar) ===== */
 .arrears-menu-wrap{ position:relative; }
@@ -259,6 +391,28 @@
     background:rgba(212,175,55,.25);
 }
 
+/* =====================================================
+   LANDSCAPE BARS — hidden by default.
+   NOTE: exit-landscape JS still isn't wired up (see prior note) —
+   these bars stay hidden until that's built.
+   ===================================================== */
+.landscape-bar{
+    display:none;
+    position:absolute;
+    left:0;
+    right:0;
+    align-items:center;
+    background:rgba(0,0,0,.65);
+    color:#fff;
+    z-index:20;
+    padding:8px 12px;
+    box-sizing:border-box;
+}
+.landscape-top-bar{ top:0; justify-content:space-between; }
+.landscape-bottom-bar{ bottom:0; justify-content:center; }
+.landscape-row-count{ font-size:12px; color:var(--cr-gold-light); }
+.landscape-hint{ font-size:11px; color:rgba(255,255,255,.75); }
+
 @media print{
-    .cr-tabs, .filter-card, .arrears-menu-wrap, .rendered-count-note{ display:none !important; }
+    .cr-tabs, .filter-card, .cr-section-card, .arrears-menu-wrap, .rendered-count-note{ display:none !important; }
 }
