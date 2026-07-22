@@ -1,0 +1,173 @@
+:root{
+    --cr-page-bg:#F5F7FA;
+    --cr-card-bg:#FFFFFF;
+    --cr-border:#E2E6ED;
+    --cr-text:#1C2333;
+    --cr-text-muted:#6B7280;
+    --cr-navy:#003B8B;
+    --cr-navy-dark:#002D6B;
+    --cr-gold:#D4AF37;
+    --cr-gold-light:#FFD700;
+    --cr-danger:#b3261e;
+    --cr-total-bg:#fff8e1;
+    --cr-row-alt:#f8f9fc;
+}
+
+[data-theme="dark"]{
+    --cr-page-bg:#002D6B;
+    --cr-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
+    --cr-border:#D4AF37;
+    --cr-text:#fff;
+    --cr-text-muted:#cdd9ef;
+    --cr-navy-dark:#FFD700;
+    --cr-danger:#ff6b6b;
+    --cr-total-bg:#2a2410;
+    --cr-row-alt:#00306e;
+}
+
+/* ===== Run button ===== */
+.cr-run-btn{
+    width:100%;
+    margin-top:8px;
+    background:linear-gradient(135deg,var(--cr-navy-dark),var(--cr-navy));
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:11px;
+    font-family:'KRASAR',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+}
+.cr-run-btn:active{ opacity:.85; }
+
+/* ===== View toggle ===== */
+.cr-tabs{
+    display:flex;
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:10px;
+    padding:3px;
+    margin:10px 0;
+}
+.cr-tab{
+    flex:1;
+    text-align:center;
+    padding:9px 6px;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:700;
+    color:var(--cr-text-muted);
+    cursor:pointer;
+    user-select:none;
+}
+.cr-tab.active{
+    background:var(--cr-navy-dark);
+    color:#fff;
+}
+.cr-detailed-note{
+    background:rgba(179,38,30,.1);
+    color:var(--cr-danger);
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:12px;
+    margin-bottom:10px;
+    display:none;
+}
+
+/* ===== Table header groups ===== */
+#crTable thead th{ text-align:center; font-size:11px; }
+#crTable thead tr:first-child th{ top:0; z-index:5; }
+#crTable thead tr:nth-child(2) th{ top:34px; z-index:4; }
+.th-kh{ font-weight:400; display:block; font-size:10px; }
+
+/* Sticky first column only (Branch) — this table has one leading
+   column, not two like Arrears, so only :first-child is pinned */
+.table-card th.cr-branch-cell,
+.table-card td.cr-branch-cell,
+.table-card th:first-child,
+.table-card td:first-child{
+    position:sticky;
+    left:0;
+    z-index:2;
+    background:var(--cr-card-bg);
+    text-align:left;
+    font-weight:700;
+    color:var(--cr-navy-dark);
+    min-width:110px;
+}
+.table-card thead th:first-child{ z-index:6; }
+
+#crTable tbody tr:nth-child(even) td{ background:var(--cr-row-alt); }
+#crTable tbody tr:nth-child(even) td:first-child{ background:var(--cr-row-alt); }
+
+.cr-total-row td{
+    background:var(--cr-total-bg) !important;
+    font-weight:800;
+}
+
+.cr-par-high{ color:var(--cr-danger); font-weight:700; }
+
+/* ===== "..." menu (relocated into topbar) ===== */
+.arrears-menu-wrap{ position:relative; }
+.arrears-menu-toggle{
+    width:40px;
+    height:40px;
+    border:none;
+    border-radius:12px;
+    background:rgba(255,255,255,.15);
+    color:#fff;
+    font-size:20px;
+    font-weight:bold;
+    cursor:pointer;
+    line-height:1;
+}
+.arrears-menu-toggle:active{ transform:scale(.95); }
+.arrears-menu-dropdown{
+    display:none;
+    position:absolute;
+    top:48px;
+    right:0;
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:12px;
+    padding:6px;
+    min-width:190px;
+    width:max-content;
+    box-shadow:0 8px 20px rgba(0,0,0,.4);
+    z-index:200;
+    flex-direction:column;
+    gap:4px;
+}
+.arrears-menu-dropdown.show{ display:flex; }
+.arrears-menu-dropdown button{
+    height:38px;
+    border:none;
+    border-radius:8px;
+    background:transparent;
+    color:var(--cr-text);
+    font-size:14px;
+    font-weight:600;
+    font-family:'KRASAR',sans-serif;
+    text-align:left;
+    padding:0 10px;
+    cursor:pointer;
+    white-space:nowrap;
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+.arrears-menu-dropdown button .menu-icon{
+    width:20px;
+    height:20px;
+    flex:0 0 20px;
+    object-fit:contain;
+}
+.arrears-menu-dropdown button:active,
+.arrears-menu-dropdown button:hover{
+    background:rgba(212,175,55,.25);
+}
+
+@media print{
+    .cr-tabs, .filter-card, .arrears-menu-wrap, .rendered-count-note{ display:none !important; }
+}
