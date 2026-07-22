@@ -81,6 +81,27 @@ function crRowHtml(it, isTotal) {
 }
 
 // ========================================
+// STICKY HEADER OFFSET
+// The sub-header row (# Loan / Value / PAR % ...) must stick right
+// under the group-header row (Loan Outstanding / T24 / ...), but the
+// group row's height changes with text wrapping (device width, font
+// size, Khmer vs English line lengths). A fixed guessed px `top`
+// value caused the two rows to overlap/misalign — measure the real
+// rendered height instead and set it as inline style.
+// ========================================
+function crSetHeaderOffsets() {
+    const groupRow = document.querySelector("#crTable thead tr.cr-group-row");
+    const subRow = document.querySelector("#crTable thead tr.cr-sub-row");
+    if (!groupRow || !subRow) return;
+    const h = groupRow.getBoundingClientRect().height;
+    subRow.querySelectorAll("th").forEach(th => {
+        th.style.top = h + "px";
+    });
+}
+window.addEventListener("resize", crSetHeaderOffsets);
+window.addEventListener("orientationchange", () => setTimeout(crSetHeaderOffsets, 200));
+
+// ========================================
 // LOAD REPORT
 // ========================================
 async function crRunReport() {
@@ -116,6 +137,7 @@ async function crRunReport() {
             + crRowHtml(data.total, true);
 
         crRenderedCountNote.textContent = `${data.items.length} branches`;
+        requestAnimationFrame(crSetHeaderOffsets);
     } catch (e) {
         console.error(e);
         crTbody.innerHTML = `<tr class="row-empty"><td colspan="36">Network error loading report.</td></tr>`;
@@ -191,4 +213,5 @@ document.getElementById("btnCrMenu")?.addEventListener("click", () => {
 // ========================================
 // INIT
 // ========================================
+crSetHeaderOffsets();
 crRunReport();
