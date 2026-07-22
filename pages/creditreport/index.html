@@ -112,7 +112,10 @@ href="../../assets/css/creditreport.css">
 
 </div>
 
-<button id="btnCrRun" class="cr-run-btn">View by: Summary Report</button>
+<button id="btnCrRun" class="cr-run-btn">
+<span class="cr-run-label">View Report</span>
+<span class="cr-run-spinner" id="crRunSpinner"></span>
+</button>
 
 </div>
 
@@ -142,11 +145,26 @@ href="../../assets/css/creditreport.css">
 Detailed Report (CO/FSRO breakdown per branch) is not built yet.
 </div>
 
-<div class="summary-row upload-meta" id="crPeriodRow">
-<span>Loan Disbursement: <span class="num" id="crDisbPeriodLabel">-</span></span>
+<!-- ========================= -->
+<!-- SECTION PICKER -->
+<!-- Pick ONE metric group at a time instead of scrolling through
+     36 columns — Branch stays sticky and the table stays narrow
+     enough to read without scrolling for most sections. -->
+<!-- ========================= -->
+
+<div class="cr-section-card">
+<label for="crSection" class="cr-section-label">Showing</label>
+<select id="crSection" class="cr-section-select">
+<option value="outstanding">Loan Outstanding — សមតុល្យឥណទាន</option>
+<option value="disburse">Loan Disburse</option>
+<option value="parT24">Balance Loan at Risk (T24)</option>
+<option value="nbcOverdue">Balance Loan at Risk (NBC Overdue)</option>
+<option value="writeOff">Write Off</option>
+</select>
 </div>
-<div class="summary-row upload-meta">
-<span>Write Off Period: <span class="num" id="crWoPeriodLabel">-</span></span>
+
+<div class="summary-row upload-meta" id="crPeriodRow">
+<span id="crPeriodLabel">-</span>
 </div>
 
 </div>
@@ -168,59 +186,26 @@ Detailed Report (CO/FSRO breakdown per branch) is not built yet.
 <span class="landscape-hint">ចុចអេក្រង់ដើម្បីបង្ហាញ/លាក់ម៉ឺនុយ</span>
 </div>
 
-<div class="table-scroll">
-
-<table id="crTable">
-
-<thead>
-
-<tr class="cr-group-row">
-<th rowspan="2">Branch<br><span class="th-kh">សាខា</span></th>
-<th colspan="3">Loan Outstanding<br><span class="th-kh">សមតុល្យឥណទាន</span></th>
-<th colspan="2" id="crDisbHeader">Loan Disburse</th>
-<th colspan="3">Balance Loan at Risk (T24)</th>
-<th colspan="3">Minor Default</th>
-<th colspan="3">Special Mention</th>
-<th colspan="3">Sub-Standard</th>
-<th colspan="3">Doubtful</th>
-<th colspan="3">Loss</th>
-<th colspan="3">Major Default</th>
-<th colspan="3">Non Performing Loan</th>
-<th colspan="3">Total NBC Overdue</th>
-<th colspan="3">Balance WO</th>
-<th colspan="2" id="crWoHeader">WO</th>
-<th colspan="2">WO Collected</th>
-</tr>
-
-<tr class="cr-sub-row">
-<th># Loan</th><th># Client</th><th>Value</th>
-<th># Loan</th><th>Value</th>
-<th># Loan</th><th>Value</th><th>PAR %</th>
-<th># Loan</th><th>Value</th><th>PAR %</th>
-<th># Loan</th><th>Value</th><th>PAR %</th>
-<th># Loan</th><th>Value</th><th>PAR %</th>
-<th># Loan</th><th>Value</th><th>PAR %</th>
-<th># Loan</th><th>Value</th><th>PAR %</th>
-<th># Loan</th><th>Value</th><th>PAR %</th>
-<th># Loan</th><th>Value</th><th>PAR %</th>
-<th># (cif)</th><th>Int</th><th>Prn</th>
-<th>#</th><th>Prn</th>
-<th>Int</th><th>Prn</th>
-</tr>
-
-</thead>
-
-<tbody id="crTbody">
-
-<tr class="row-loading">
-<td colspan="36">Loading...</td>
-</tr>
-
-</tbody>
-
-</table>
-
+<!-- Skeleton loading state (real card placeholders, not plain text) -->
+<div id="crSkeleton" class="cr-skeleton">
+<div class="cr-skel-row cr-skel-head"></div>
+<div class="cr-skel-row"></div>
+<div class="cr-skel-row"></div>
+<div class="cr-skel-row"></div>
+<div class="cr-skel-row"></div>
+<div class="cr-skel-row"></div>
+<div class="cr-skel-row"></div>
+<div class="cr-skel-row"></div>
 </div>
+
+<div class="table-scroll" id="crTableScroll" style="display:none">
+<table id="crTable">
+<thead id="crThead"></thead>
+<tbody id="crTbody"></tbody>
+</table>
+</div>
+
+<div class="cr-empty" id="crEmptyMsg" style="display:none"></div>
 
 </div>
 
