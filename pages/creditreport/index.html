@@ -1,1 +1,254 @@
 
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>Credit Report</title>
+
+<meta
+name="theme-color"
+content="#032d73">
+
+<!-- Applied before any CSS loads, so there's no flash of the wrong
+     theme on page load. Keep this as the very first thing in <head>. -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
+<link
+rel="stylesheet"
+href="../../assets/css/main.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/creditreport.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
+
+</head>
+
+<body>
+
+<!-- ========================= -->
+<!-- OFFLINE -->
+<!-- ========================= -->
+
+<div id="offlineBanner">
+⚠️ No Internet Connection
+</div>
+
+<!-- ========================= -->
+<!-- CONFIG -->
+<!-- ========================= -->
+
+<script src="../../config/api.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<!-- ========================= -->
+<!-- COMPONENT -->
+<!-- ========================= -->
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+
+<!-- ========================= -->
+<!-- TOPBAR -->
+<!-- ========================= -->
+
+<div id="topbar-container"></div>
+
+<!-- ========================= -->
+<!-- PAGE -->
+<!-- ========================= -->
+
+<div class="page-container">
+
+<div class="print-only-title">របាយការណ៍ឥណទានតាមសាខាប្រចាំថ្ងៃ</div>
+
+<!-- ========================= -->
+<!-- FILTERS / PERIOD -->
+<!-- ========================= -->
+
+<div class="filter-card">
+
+<div class="filter-grid">
+
+<div class="filter-group">
+<label for="crFromDate">ចាប់ផ្តើមផ្តល់ឥណទាន</label>
+<input type="date" id="crFromDate">
+</div>
+
+<div class="filter-group">
+<label for="crToDate">ដល់</label>
+<input type="date" id="crToDate">
+</div>
+
+<div class="filter-group">
+<label for="crWoFromDate">ការលុបចេញ (Write Off) ចាប់ផ្តើម</label>
+<input type="date" id="crWoFromDate">
+</div>
+
+<div class="filter-group">
+<label for="crWoToDate">ដល់</label>
+<input type="date" id="crWoToDate">
+</div>
+
+</div>
+
+<button id="btnCrRun" class="cr-run-btn">View by: Summary Report</button>
+
+</div>
+
+<!-- ========================= -->
+<!-- MENU (relocated into topbar's "..." by creditreport-loader.js, -->
+<!-- same relocate pattern as arrears — see the note there) -->
+<!-- ========================= -->
+<div id="crMenuWrap" class="arrears-menu-wrap">
+<button id="btnCrMenu" class="arrears-menu-toggle" aria-label="More actions">⋮</button>
+<div id="crMenuDropdown" class="arrears-menu-dropdown">
+<button id="btnCrExport"><img src="/CM_Pro/assets/icons/arrear/export_excel.png" alt="" class="menu-icon"><span>Export Excel</span></button>
+<button id="btnCrExportPdf"><img src="/CM_Pro/assets/icons/arrear/export_pdf.png" alt="" class="menu-icon"><span>Export PDF</span></button>
+<button id="btnCrPrint"><img src="/CM_Pro/assets/icons/arrear/print.png" alt="" class="menu-icon"><span>Print</span></button>
+</div>
+</div>
+
+<!-- ========================= -->
+<!-- VIEW TOGGLE (Summary / Detailed) -->
+<!-- ========================= -->
+
+<div class="cr-tabs">
+<div class="cr-tab active" data-view="summary">Summary Report</div>
+<div class="cr-tab" data-view="detailed">Detailed Report</div>
+</div>
+
+<div class="cr-detailed-note" id="crDetailedNote">
+Detailed Report (CO/FSRO breakdown per branch) is not built yet.
+</div>
+
+<div class="summary-row upload-meta" id="crPeriodRow">
+<span>Loan Disbursement: <span class="num" id="crDisbPeriodLabel">-</span></span>
+</div>
+<div class="summary-row upload-meta">
+<span>Write Off Period: <span class="num" id="crWoPeriodLabel">-</span></span>
+</div>
+
+</div>
+
+<!-- ========================= -->
+<!-- TABLE -->
+<!-- ========================= -->
+
+<div class="rendered-count-note" id="crRenderedCountNote"></div>
+
+<div class="table-card">
+
+<div id="landscapeTopBar" class="landscape-bar landscape-top-bar">
+<button id="btnCrExitLandscape" aria-label="Exit landscape">✕ ត្រឡប់ក្រោយ</button>
+<span id="crLandscapeRowCount" class="landscape-row-count"></span>
+</div>
+
+<div id="landscapeBottomBar" class="landscape-bar landscape-bottom-bar">
+<span class="landscape-hint">ចុចអេក្រង់ដើម្បីបង្ហាញ/លាក់ម៉ឺនុយ</span>
+</div>
+
+<div class="table-scroll">
+
+<table id="crTable">
+
+<thead>
+
+<tr>
+<th rowspan="2">Branch<br><span class="th-kh">សាខា</span></th>
+<th colspan="3">Loan Outstanding<br><span class="th-kh">សមតុល្យឥណទាន</span></th>
+<th colspan="2" id="crDisbHeader">Loan Disburse</th>
+<th colspan="3">Balance Loan at Risk (T24)</th>
+<th colspan="3">Minor Default</th>
+<th colspan="3">Special Mention</th>
+<th colspan="3">Sub-Standard</th>
+<th colspan="3">Doubtful</th>
+<th colspan="3">Loss</th>
+<th colspan="3">Major Default</th>
+<th colspan="3">Non Performing Loan</th>
+<th colspan="3">Total NBC Overdue</th>
+<th colspan="3">Balance WO</th>
+<th colspan="2" id="crWoHeader">WO</th>
+<th colspan="2">WO Collected</th>
+</tr>
+
+<tr>
+<th># Loan</th><th># Client</th><th>Value</th>
+<th># Loan</th><th>Value</th>
+<th># Loan</th><th>Value</th><th>PAR %</th>
+<th># Loan</th><th>Value</th><th>PAR %</th>
+<th># Loan</th><th>Value</th><th>PAR %</th>
+<th># Loan</th><th>Value</th><th>PAR %</th>
+<th># Loan</th><th>Value</th><th>PAR %</th>
+<th># Loan</th><th>Value</th><th>PAR %</th>
+<th># Loan</th><th>Value</th><th>PAR %</th>
+<th># Loan</th><th>Value</th><th>PAR %</th>
+<th># (cif)</th><th>Int</th><th>Prn</th>
+<th>#</th><th>Prn</th>
+<th>Int</th><th>Prn</th>
+</tr>
+
+</thead>
+
+<tbody id="crTbody">
+
+<tr class="row-loading">
+<td colspan="36">Loading...</td>
+</tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ========================= -->
+<!-- BOTTOM -->
+<!-- ========================= -->
+
+<div id="bottomnav-container"></div>
+
+<!-- NOTIFICATION BADGE -->
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<!-- EXPORT (SheetJS) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- PDF EXPORT -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- CREDIT REPORT LOGIC -->
+<script src="../../assets/js/creditreport.js"></script>
+
+<!-- PAGE LOADER (component loader, offline, notification badge) -->
+<script src="../../assets/js/creditreport-loader.js"></script>
+
+</body>
+
+</html>
