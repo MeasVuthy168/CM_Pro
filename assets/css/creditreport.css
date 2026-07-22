@@ -19,6 +19,7 @@
     --cr-gold-light:#FFD700;
     --cr-danger:#b3261e;
     --cr-total-bg:#fff8e1;
+    --cr-total-text:#1C2333;
     --cr-row-alt:#f8f9fc;
     --cr-skel-base:#eceff4;
     --cr-skel-shine:#f7f9fc;
@@ -34,6 +35,7 @@
     --cr-navy-dark:#FFD700;
     --cr-danger:#ff6b6b;
     --cr-total-bg:#2a2410;
+    --cr-total-text:#FFD700;
     --cr-row-alt:#00306e;
     --cr-skel-base:#0a3a86;
     --cr-skel-shine:#0d4aa8;
@@ -68,14 +70,25 @@
 .filter-grid{
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:10px;
+    gap:18px 10px;
+    align-items:start;
+}
+.filter-group{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-width:0;
 }
 .filter-group label{
     display:block;
+    position:static;
     font-size:11.5px;
+    line-height:1.4;
     color:var(--cr-text-muted);
-    margin-bottom:4px;
     font-weight:600;
+    /* wrap freely, never clip/overlap the input below it */
+    white-space:normal;
+    word-break:break-word;
 }
 .filter-group input[type="date"]{
     width:100%;
@@ -234,13 +247,18 @@
 }
 
 .table-card table{
-    width:100%;
+    width:auto; /* size to content, don't stretch few columns to fill 100% */
+    min-width:0;
     border-collapse:separate;
     border-spacing:0;
     font-size:12px;
     white-space:nowrap;
     color:var(--cr-text);
     background:var(--cr-card-bg);
+}
+
+.table-card td, .table-card th{
+    max-width:180px;
 }
 
 .table-card thead th{
@@ -262,7 +280,7 @@
 .table-card thead tr.cr-sub-row th{ z-index:3; }
 
 .table-card td{
-    padding:8px 10px;
+    padding:8px 12px;
     border:1px solid var(--cr-border);
     text-align:right;
     color:var(--cr-text);
@@ -299,10 +317,10 @@
 
 .cr-total-row td{
     background:var(--cr-total-bg) !important;
-    color:#1C2333 !important;
+    color:var(--cr-total-text) !important;
     font-weight:800;
 }
-.cr-total-row td:first-child{ color:#1C2333 !important; }
+.cr-total-row td:first-child{ color:var(--cr-total-text) !important; }
 
 .cr-par-high{ color:var(--cr-danger); font-weight:700; }
 
