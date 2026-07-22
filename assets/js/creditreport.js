@@ -155,10 +155,9 @@ function crFmtField(item, field) {
 // RENDER: build thead + tbody for the selected section
 // ========================================
 function crBuildThead(section) {
-    const groupCells = section.groups.map(g => {
-        const kh = g.labelKh ? `<br><span class="th-kh">${g.labelKh}</span>` : "";
-        return `<th colspan="${g.fields.length}">${g.label}${kh}</th>`;
-    }).join("");
+    const groupCells = section.groups.map(g =>
+        `<th colspan="${g.fields.length}">${g.label}</th>`
+    ).join("");
 
     const subCells = section.groups.map(g =>
         g.fields.map(f => `<th>${f.label}</th>`).join("")
@@ -166,7 +165,7 @@ function crBuildThead(section) {
 
     return `
       <tr class="cr-group-row">
-        <th rowspan="2">Branch<br><span class="th-kh">សាខា</span></th>
+        <th rowspan="2">Branch</th>
         ${groupCells}
       </tr>
       <tr class="cr-sub-row">
