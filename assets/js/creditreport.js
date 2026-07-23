@@ -15,7 +15,9 @@ const crToken =
     localStorage.getItem("token") ||
     sessionStorage.getItem("token");
 
-let crData = null; // { items, total } from the last successful fetch
+let crMode = "summary"; // "summary" | "detailed"
+let crSummaryData = null;  // { items, total } from /api/creditreport/summary
+let crDetailedData = null; // { groups, grand } from /api/creditreport/detailed — fetched lazily
 
 // ========================================
 // SECTION DEFINITIONS
@@ -160,7 +162,7 @@ function crFieldClass(field) {
     return "cr-col-num";
 }
 
-function crBuildThead(section) {
+function crBuildThead(section, withTeamCol) {
     const groupCells = section.groups.map(g =>
         `<th colspan="${g.fields.length}">${g.label}</th>`
     ).join("");
@@ -169,9 +171,13 @@ function crBuildThead(section) {
         g.fields.map(f => `<th class="${crFieldClass(f)}">${f.label}</th>`).join("")
     ).join("");
 
+    const leadCol = withTeamCol
+        ? `<th rowspan="2" class="cr-detail-team-col">Team</th><th rowspan="2" class="cr-detail-branch-col">Branch</th>`
+        : `<th rowspan="2" class="cr-branch-col">Branch</th>`;
+
     return `
       <tr class="cr-group-row">
-        <th rowspan="2" class="cr-branch-col">Branch</th>
+        ${leadCol}
         ${groupCells}
       </tr>
       <tr class="cr-sub-row">
@@ -190,18 +196,67 @@ function crBuildRow(item, section, isTotal) {
       </tr>`;
 }
 
-function crRenderSection() {
-    if (!crData) return;
+// team: "CO" | "FSRO" | "Total". branchLabel is repeated on every row
+// (no rowspan merge) to keep the render logic simple.
+function crBuildDetailedRow(item, section, branchLabel, team, isBranchTotal, isGrandRow) {
+    const cells = section.groups.map(g =>
+        g.fields.map(f => crFmtField(item, f)).join("")
+    ).join("");
+    let rowClass = "";
+    if (isGrandRow) rowClass = ' class="cr-total-row"';
+    else if (isBranchTotal) rowClass = ' class="cr-branch-total-row"';
+    return `
+      <tr${rowClass}>
+        <td class="cr-detail-team-col">${team}</td>
+        <td class="cr-detail-branch-col">${branchLabel}</td>
+        ${cells}
+      </tr>`;
+}
+
+function crRenderSummary() {
+    if (!crSummaryData) return;
     const sectionKey = document.getElementById("crSection").value;
     const section = CR_SECTIONS[sectionKey];
 
-    document.getElementById("crThead").innerHTML = crBuildThead(section);
+    document.getElementById("crThead").innerHTML = crBuildThead(section, false);
     document.getElementById("crTbody").innerHTML =
-        crData.items.map(it => crBuildRow(it, section, false)).join("") +
-        crBuildRow(crData.total, section, true);
+        crSummaryData.items.map(it => crBuildRow(it, section, false)).join("") +
+        crBuildRow(crSummaryData.total, section, true);
 
-    document.getElementById("crRenderedCountNote").textContent = `${crData.items.length} branches`;
+    document.getElementById("crRenderedCountNote").textContent = `${crSummaryData.items.length} branches`;
     requestAnimationFrame(crSetHeaderOffsets);
+}
+
+function crRenderDetailed() {
+    if (!crDetailedData) return;
+    const sectionKey = document.getElementById("crSection").value;
+    const section = CR_SECTIONS[sectionKey];
+
+    document.getElementById("crThead").innerHTML = crBuildThead(section, true);
+
+    const rowsHtml = crDetailedData.groups.map(g => {
+        const [co, fsro, total] = g.rows;
+        return (
+            crBuildDetailedRow(co, section, g.branch, "CO", false, false) +
+            crBuildDetailedRow(fsro, section, g.branch, "FSRO", false, false) +
+            crBuildDetailedRow(total, section, g.branch, "Total", true, false)
+        );
+    }).join("");
+
+    const grand = crDetailedData.grand;
+    const grandHtml =
+        crBuildDetailedRow(grand.co, section, "All", "CO", false, false) +
+        crBuildDetailedRow(grand.fsro, section, "All", "FSRO", false, false) +
+        crBuildDetailedRow(grand.total, section, "All", "Total", false, true);
+
+    document.getElementById("crTbody").innerHTML = rowsHtml + grandHtml;
+    document.getElementById("crRenderedCountNote").textContent = `${crDetailedData.groups.length} branches × CO/FSRO/Total`;
+    requestAnimationFrame(crSetHeaderOffsets);
+}
+
+function crRenderSection() {
+    if (crMode === "detailed") crRenderDetailed();
+    else crRenderSummary();
 }
 document.getElementById("crSection").addEventListener("change", crRenderSection);
 
@@ -259,6 +314,9 @@ async function crRunReport() {
     document.getElementById("crPeriodLabel").textContent =
         `Loan Disbursement ${fromDate} to ${toDate}  ·  Write Off ${woFromDate} to ${woToDate}`;
 
+    // Dates changed — any cached Detailed data is now stale.
+    crDetailedData = null;
+
     try {
         const url = `${API.BASE_URL}/api/creditreport/summary?fromDate=${fromDate}&toDate=${toDate}&woFromDate=${woFromDate}&woToDate=${woToDate}`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
@@ -275,9 +333,14 @@ async function crRunReport() {
             return;
         }
 
-        crData = data;
+        crSummaryData = data;
         document.getElementById("crTableScroll").style.display = "block";
-        crRenderSection();
+
+        if (crMode === "detailed") {
+            await crEnsureDetailedLoaded();
+        } else {
+            crRenderSection();
+        }
     } catch (e) {
         console.error(e);
         crHideLoading();
@@ -287,6 +350,49 @@ async function crRunReport() {
 document.getElementById("btnCrRun").addEventListener("click", crRunReport);
 
 // ========================================
+// DETAILED REPORT — fetched lazily (only when the Detailed tab is
+// actually opened) since it's a heavier query than Summary and most
+// visits probably never need the CO/FSRO breakdown.
+// ========================================
+async function crEnsureDetailedLoaded() {
+    if (crDetailedData) {
+        crRenderSection();
+        return;
+    }
+    crShowLoading();
+
+    const fromDate = crToDMY(document.getElementById("crFromDate").value);
+    const toDate = crToDMY(document.getElementById("crToDate").value);
+    const woFromDate = crToDMY(document.getElementById("crWoFromDate").value);
+    const woToDate = crToDMY(document.getElementById("crWoToDate").value);
+
+    try {
+        const url = `${API.BASE_URL}/api/creditreport/detailed?fromDate=${fromDate}&toDate=${toDate}&woFromDate=${woFromDate}&woToDate=${woToDate}`;
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
+        const data = await res.json();
+
+        crHideLoading();
+
+        if (!data.ok) {
+            crShowEmpty(data.message || "Failed to load detailed report.");
+            return;
+        }
+        if (!data.groups || !data.groups.length) {
+            crShowEmpty("No data.");
+            return;
+        }
+
+        crDetailedData = data;
+        document.getElementById("crTableScroll").style.display = "block";
+        crRenderSection();
+    } catch (e) {
+        console.error(e);
+        crHideLoading();
+        crShowEmpty("Network error loading detailed report.");
+    }
+}
+
+// ========================================
 // VIEW TOGGLE (Summary / Detailed)
 // mirrors the VBA Worksheet_Change row show/hide logic as a tab switch
 // ========================================
@@ -294,18 +400,12 @@ document.querySelectorAll(".cr-tab").forEach(tab => {
     tab.addEventListener("click", () => {
         document.querySelectorAll(".cr-tab").forEach(t => t.classList.remove("active"));
         tab.classList.add("active");
-        const view = tab.dataset.view;
-        const note = document.getElementById("crDetailedNote");
-        const tableCard = document.querySelector(".table-card");
-        const sectionCard = document.querySelector(".cr-section-card");
-        if (view === "detailed") {
-            note.style.display = "block";
-            tableCard.style.display = "none";
-            sectionCard.style.display = "none";
+        crMode = tab.dataset.view;
+
+        if (crMode === "detailed") {
+            crEnsureDetailedLoaded();
         } else {
-            note.style.display = "none";
-            tableCard.style.display = "";
-            sectionCard.style.display = "";
+            crRenderSection();
         }
     });
 });
