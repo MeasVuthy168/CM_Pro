@@ -311,6 +311,59 @@
 .table-card tbody tr:nth-child(even) td.cr-branch-col{ background:var(--cr-row-alt); }
 .cr-total-row td.cr-branch-col{ color:var(--cr-total-text) !important; }
 
+/* =====================================================
+   DETAILED REPORT — two-column sticky lead (Team, then Branch).
+   Team's width is fixed so Branch's sticky offset can be a known
+   constant instead of measured at runtime.
+   ===================================================== */
+.table-card .cr-detail-team-col{
+    position:sticky;
+    left:0;
+    width:56px;
+    min-width:56px;
+    z-index:3;
+    text-align:center;
+    font-weight:700;
+}
+.table-card .cr-detail-branch-col{
+    position:sticky;
+    left:56px;
+    min-width:110px;
+    z-index:3;
+    text-align:left;
+    font-weight:700;
+}
+.table-card thead th.cr-detail-team-col,
+.table-card thead th.cr-detail-branch-col{
+    z-index:6 !important;
+    background:var(--cr-navy-dark);
+    color:var(--cr-gold-light);
+}
+[data-theme="dark"] .table-card thead th.cr-detail-team-col,
+[data-theme="dark"] .table-card thead th.cr-detail-branch-col{ color:#002D6B; }
+.table-card tbody td.cr-detail-team-col,
+.table-card tbody td.cr-detail-branch-col{
+    background:var(--cr-card-bg);
+    color:var(--cr-navy) !important;
+}
+[data-theme="dark"] .table-card tbody td.cr-detail-team-col,
+[data-theme="dark"] .table-card tbody td.cr-detail-branch-col{ color:var(--cr-gold-light) !important; }
+
+.cr-total-row td.cr-detail-team-col,
+.cr-total-row td.cr-detail-branch-col{ color:var(--cr-total-text) !important; }
+
+/* Branch-level "Total" sub-row (CO+FSRO for that one branch) — a
+   lighter highlight than the grand cr-total-row at the very bottom. */
+.cr-branch-total-row td{
+    background:rgba(212,175,55,.12) !important;
+    font-weight:700;
+}
+[data-theme="dark"] .cr-branch-total-row td{ background:rgba(212,175,55,.18) !important; }
+.cr-branch-total-row td.cr-detail-team-col,
+.cr-branch-total-row td.cr-detail-branch-col{
+    background:rgba(212,175,55,.12) !important;
+}
+
 .table-card tbody tr:nth-child(even){ background:var(--cr-row-alt); }
 
 .th-kh{ font-weight:400; display:block; font-size:10px; opacity:.85; }
