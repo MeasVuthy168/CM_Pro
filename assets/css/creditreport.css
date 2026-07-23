@@ -257,9 +257,9 @@
     background:var(--cr-card-bg);
 }
 
-.table-card td, .table-card th{
-    max-width:180px;
-}
+.cr-col-num{ min-width:80px; }
+.cr-col-money{ min-width:112px; }
+.cr-col-pct{ min-width:72px; }
 
 .table-card thead th{
     position:sticky;
@@ -299,7 +299,7 @@
     font-weight:700;
 }
 .table-card thead th:first-child{
-    z-index:5;
+    z-index:6 !important;
     background:var(--cr-navy-dark);
     color:var(--cr-gold-light);
 }
