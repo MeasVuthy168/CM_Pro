@@ -1,4 +1,3 @@
-
 // =========================
 // COMPONENT LOADER
 // =========================
@@ -19,7 +18,7 @@ async function loadComponent(id, file) {
         }
         if (id === "topbar-container") {
             initTopbar({
-                title: "Credit Report",
+                title: "Daily Monitoring by Branch",
                 showBack: true,
                 showLogo: false,
                 showProfile: false
