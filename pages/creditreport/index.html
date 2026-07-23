@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>Credit Report</title>
+
+<meta
+name="theme-color"
+content="#032d73">
+
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
+<link
+rel="stylesheet"
+href="../../assets/css/main.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/creditreport/creditreport.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
+
+</head>
+
+<body>
+
+<div id="offlineBanner">
+⚠️ No Internet Connection
+</div>
+
+<script src="../../config/api.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+
+<div id="topbar-container"></div>
+
+<div class="page-container">
+
+<div class="cr-hub-intro">
+<div class="cr-hub-title">Credit Report</div>
+<div class="cr-hub-subtitle">របាយការណ៍ឥណទាន — select a report</div>
+</div>
+
+<div class="cr-hub-list">
+
+<div class="cr-hub-card cr-hub-soon" data-soon="true">
+<div class="cr-hub-icon">👤</div>
+<div class="cr-hub-text">
+<div class="cr-hub-card-title">Daily Arrears by Credit Officer</div>
+<div class="cr-hub-card-sub">ប្រចាំថ្ងៃតាមភ្នាក់ងារ</div>
+</div>
+<div class="cr-hub-badge">Coming soon</div>
+</div>
+
+<div class="cr-hub-card cr-hub-soon" data-soon="true">
+<div class="cr-hub-icon">📋</div>
+<div class="cr-hub-text">
+<div class="cr-hub-card-title">Daily Monitoring by Officer</div>
+<div class="cr-hub-card-sub">ត្រួតពិនិត្យប្រចាំថ្ងៃតាមភ្នាក់ងារ</div>
+</div>
+<div class="cr-hub-badge">Coming soon</div>
+</div>
+
+<a class="cr-hub-card cr-hub-link" href="RepDetailbyBranch.html">
+<div class="cr-hub-icon">🏢</div>
+<div class="cr-hub-text">
+<div class="cr-hub-card-title">Daily Monitoring by Branch</div>
+<div class="cr-hub-card-sub">ត្រួតពិនិត្យប្រចាំថ្ងៃតាមសាខា</div>
+</div>
+<div class="cr-hub-arrow">›</div>
+</a>
+
+<div class="cr-hub-card cr-hub-soon" data-soon="true">
+<div class="cr-hub-icon">📦</div>
+<div class="cr-hub-text">
+<div class="cr-hub-card-title">Daily Monitoring by Product</div>
+<div class="cr-hub-card-sub">ត្រួតពិនិត្យប្រចាំថ្ងៃតាមផលិតផល</div>
+</div>
+<div class="cr-hub-badge">Coming soon</div>
+</div>
+
+<div class="cr-hub-card cr-hub-soon" data-soon="true">
+<div class="cr-hub-icon">📍</div>
+<div class="cr-hub-text">
+<div class="cr-hub-card-title">Daily Monitoring by Location</div>
+<div class="cr-hub-card-sub">ត្រួតពិនិត្យប្រចាំថ្ងៃតាមទីតាំង</div>
+</div>
+<div class="cr-hub-badge">Coming soon</div>
+</div>
+
+</div>
+
+</div>
+
+<div id="cr-hub-toast" class="cr-hub-toast"></div>
+
+<div id="bottomnav-container"></div>
+
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<script src="../../assets/js/creditreport/creditreport.js"></script>
+<script src="../../assets/js/creditreport/creditreport-loader.js"></script>
+
+</body>
+
+</html>
