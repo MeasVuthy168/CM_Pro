@@ -171,7 +171,7 @@ function crBuildThead(section) {
 
     return `
       <tr class="cr-group-row">
-        <th rowspan="2">Branch</th>
+        <th rowspan="2" class="cr-branch-col">Branch</th>
         ${groupCells}
       </tr>
       <tr class="cr-sub-row">
@@ -185,7 +185,7 @@ function crBuildRow(item, section, isTotal) {
     ).join("");
     return `
       <tr${isTotal ? ' class="cr-total-row"' : ""}>
-        <td>${isTotal ? "*** Total" : item.branch}</td>
+        <td class="cr-branch-col">${isTotal ? "*** Total" : item.branch}</td>
         ${cells}
       </tr>`;
 }
