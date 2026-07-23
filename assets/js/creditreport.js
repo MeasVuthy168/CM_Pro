@@ -142,25 +142,31 @@ function crGetByPath(obj, path) {
 }
 function crFmtField(item, field) {
     const v = crGetByPath(item, field.key);
+    const cls = crFieldClass(field);
     if (field.pct) {
         const n = Number(v) || 0;
-        const cls = n >= 0.05 ? ' class="cr-par-high"' : "";
-        return `<td${cls}>${crFmtPct(n)}</td>`;
+        const parCls = n >= 0.05 ? " cr-par-high" : "";
+        return `<td class="${cls}${parCls}">${crFmtPct(n)}</td>`;
     }
-    if (field.money) return `<td>${crFmtNum(v)}</td>`;
-    return `<td>${crFmtNum(v)}</td>`;
+    return `<td class="${cls}">${crFmtNum(v)}</td>`;
 }
 
 // ========================================
 // RENDER: build thead + tbody for the selected section
 // ========================================
+function crFieldClass(field) {
+    if (field.pct) return "cr-col-pct";
+    if (field.money) return "cr-col-money";
+    return "cr-col-num";
+}
+
 function crBuildThead(section) {
     const groupCells = section.groups.map(g =>
         `<th colspan="${g.fields.length}">${g.label}</th>`
     ).join("");
 
     const subCells = section.groups.map(g =>
-        g.fields.map(f => `<th>${f.label}</th>`).join("")
+        g.fields.map(f => `<th class="${crFieldClass(f)}">${f.label}</th>`).join("")
     ).join("");
 
     return `
