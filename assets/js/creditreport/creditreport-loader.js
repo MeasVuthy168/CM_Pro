@@ -23,18 +23,6 @@ async function loadComponent(id, file) {
                 showLogo: false,
                 showProfile: false
             });
-
-            // Relocate the page's own "..." menu (Export/Print, built in
-            // index.html) into the topbar's right side — same relocate
-            // pattern as Daily Arrears (see arrears-loader.js). Moves
-            // the EXISTING elements so the click handlers already wired
-            // in creditreport.js keep working; topbar.html/topbar.css
-            // are never touched.
-            const menuWrap = document.getElementById("crMenuWrap");
-            const topbarRight = document.querySelector("#topbar-container .topbar-right");
-            if (menuWrap && topbarRight) {
-                topbarRight.insertBefore(menuWrap, topbarRight.firstChild);
-            }
         }
     } catch (error) {
         console.error(error);
