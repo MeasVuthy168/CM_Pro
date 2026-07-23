@@ -289,8 +289,7 @@
 }
 
 /* Sticky first column (Branch) */
-.table-card th:first-child,
-.table-card td:first-child{
+.table-card .cr-branch-col{
     position:sticky;
     left:0;
     min-width:116px;
@@ -298,18 +297,19 @@
     text-align:left;
     font-weight:700;
 }
-.table-card thead th:first-child{
+.table-card thead th.cr-branch-col{
     z-index:6 !important;
     background:var(--cr-navy-dark);
     color:var(--cr-gold-light);
 }
-[data-theme="dark"] .table-card thead th:first-child{ color:#002D6B; }
-.table-card tbody td:first-child{
+[data-theme="dark"] .table-card thead th.cr-branch-col{ color:#002D6B; }
+.table-card tbody td.cr-branch-col{
     background:var(--cr-card-bg);
     color:var(--cr-navy) !important;
 }
-[data-theme="dark"] .table-card tbody td:first-child{ color:var(--cr-gold-light) !important; }
-.table-card tbody tr:nth-child(even) td:first-child{ background:var(--cr-row-alt); }
+[data-theme="dark"] .table-card tbody td.cr-branch-col{ color:var(--cr-gold-light) !important; }
+.table-card tbody tr:nth-child(even) td.cr-branch-col{ background:var(--cr-row-alt); }
+.cr-total-row td.cr-branch-col{ color:var(--cr-total-text) !important; }
 
 .table-card tbody tr:nth-child(even){ background:var(--cr-row-alt); }
 
@@ -320,7 +320,6 @@
     color:var(--cr-total-text) !important;
     font-weight:800;
 }
-.cr-total-row td:first-child{ color:var(--cr-total-text) !important; }
 
 .cr-par-high{ color:var(--cr-danger); font-weight:700; }
 
