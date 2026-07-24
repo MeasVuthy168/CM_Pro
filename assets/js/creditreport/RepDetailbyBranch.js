@@ -1,468 +1,630 @@
-// ========================================
-// Credit Report — "RepDetail byBranch" Summary Report web port
-// Reads from GET /api/creditreport/summary (computed live from
-// nbcos/arreast24byco/nbcoverdue/wo/wocolgb — see
-// lib/creditreport-report.js on the backend for the exact formulas).
-//
-// UI note: instead of one 36-column table requiring constant
-// horizontal scroll, the person picks ONE metric group at a time
-// (crSection dropdown) and only that group's columns render, with
-// Branch pinned as the sticky first column. Data is fetched once and
-// cached in crData — switching sections just re-renders, no refetch.
-// ========================================
-
-const crToken =
-    localStorage.getItem("token") ||
-    sessionStorage.getItem("token");
-
-let crMode = "summary"; // "summary" | "detailed"
-let crSummaryData = null;  // { items, total } from /api/creditreport/summary
-let crDetailedData = null; // { groups, grand } from /api/creditreport/detailed — fetched lazily
-
-// ========================================
-// SECTION DEFINITIONS
-// Each field's `key` is a dot-path into a branch item (or `total`).
-// money:true -> thousands-formatted number. pct:true -> XX.XX%.
-// ========================================
-function crGroupPct(prefix, label, labelKh) {
-    return {
-        label, labelKh,
-        fields: [
-            { key: prefix + ".count", label: "# Loan" },
-            { key: prefix + ".value", label: "Value", money: true },
-            { key: prefix + ".parPct", label: "PAR %", pct: true }
-        ]
-    };
+/* =====================================================
+   THEME TOKENS
+   Same palette as arrears.css / your other pages, but this file is
+   fully self-contained — page-container, filter-card, table-card,
+   table-scroll etc. all live in arrears.css (page-specific, not
+   main.css), so this page defines its own copies rather than
+   silently depending on another page's CSS file being loaded.
+   ===================================================== */
+:root{
+    --cr-page-bg:#F5F7FA;
+    --cr-card-bg:#FFFFFF;
+    --cr-border:#E2E6ED;
+    --cr-text:#1C2333;
+    --cr-text-muted:#6B7280;
+    --cr-shadow:0 4px 14px rgba(0,0,0,.08);
+    --cr-navy:#003B8B;
+    --cr-navy-dark:#002D6B;
+    --cr-gold:#D4AF37;
+    --cr-gold-light:#FFD700;
+    --cr-danger:#b3261e;
+    --cr-total-bg:#fff8e1;
+    --cr-total-text:#1C2333;
+    --cr-subtotal-bg:#fbf1d6;
+    --cr-row-alt:#f8f9fc;
+    --cr-skel-base:#eceff4;
+    --cr-skel-shine:#f7f9fc;
 }
 
-const CR_SECTIONS = {
-    outstanding: {
-        groups: [{
-            label: "Loan Outstanding", labelKh: "សមតុល្យឥណទាន",
-            fields: [
-                { key: "loanOutstanding.loan", label: "# Loan" },
-                { key: "loanOutstanding.client", label: "# Client" },
-                { key: "loanOutstanding.value", label: "Value", money: true }
-            ]
-        }]
-    },
-    disburse: {
-        groups: [{
-            label: "Loan Disburse",
-            fields: [
-                { key: "loanDisburse.loan", label: "# Loan" },
-                { key: "loanDisburse.value", label: "Value", money: true }
-            ]
-        }]
-    },
-    parT24: {
-        groups: [{
-            label: "Balance Loan at Risk (T24)",
-            fields: [
-                { key: "parT24.loan", label: "# Loan" },
-                { key: "parT24.value", label: "Value", money: true },
-                { key: "parT24.parPct", label: "PAR %", pct: true }
-            ]
-        }]
-    },
-    nbcOverdue: {
-        groups: [
-            crGroupPct("nbcOverdue.minor", "Minor Default"),
-            crGroupPct("nbcOverdue.specialMention", "Special Mention"),
-            crGroupPct("nbcOverdue.subStandard", "Sub-Standard"),
-            crGroupPct("nbcOverdue.doubtful", "Doubtful"),
-            crGroupPct("nbcOverdue.loss", "Loss"),
-            crGroupPct("nbcOverdue.majorDefault", "Major Default"),
-            crGroupPct("nbcOverdue.nonPerformingLoan", "Non Performing Loan"),
-            crGroupPct("nbcOverdue.total", "Total NBC Overdue")
-        ]
-    },
-    writeOff: {
-        groups: [
-            {
-                label: "Balance WO",
-                fields: [
-                    { key: "writeOff.balanceWO.cif", label: "# (cif)" },
-                    { key: "writeOff.balanceWO.int", label: "Int", money: true },
-                    { key: "writeOff.balanceWO.prn", label: "Prn", money: true }
-                ]
-            },
-            {
-                label: "WO",
-                fields: [
-                    { key: "writeOff.wo.count", label: "#" },
-                    { key: "writeOff.wo.prn", label: "Prn", money: true }
-                ]
-            },
-            {
-                label: "WO Collected",
-                fields: [
-                    { key: "writeOff.woCollected.int", label: "Int", money: true },
-                    { key: "writeOff.woCollected.prn", label: "Prn", money: true }
-                ]
-            }
-        ]
+[data-theme="dark"]{
+    --cr-page-bg:#002D6B;
+    --cr-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
+    --cr-border:#D4AF37;
+    --cr-text:#fff;
+    --cr-text-muted:#cdd9ef;
+    --cr-shadow:0 4px 14px rgba(0,0,0,.25);
+    --cr-navy-dark:#FFD700;
+    --cr-danger:#ff6b6b;
+    --cr-total-bg:#2a2410;
+    --cr-total-text:#FFD700;
+    --cr-subtotal-bg:#241f0c;
+    --cr-row-alt:#00306e;
+    --cr-skel-base:#0a3a86;
+    --cr-skel-shine:#0d4aa8;
+}
+
+*{ box-sizing:border-box; }
+
+/* ===== Page shell (arrears.css defines its own — this page needs its own too) ===== */
+.page-container{
+    width:100%;
+    box-sizing:border-box;
+    padding:16px;
+    padding-bottom:90px;
+    background:var(--cr-page-bg);
+    min-height:100vh;
+    font-family:'KRASAR', sans-serif;
+    color:var(--cr-text);
+}
+.print-only-title{ display:none; }
+
+/* ===== Filter card ===== */
+.filter-card{
+    width:100%;
+    box-sizing:border-box;
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:16px;
+    padding:16px;
+    box-shadow:var(--cr-shadow);
+    margin-bottom:14px;
+}
+.filter-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px 10px;
+    align-items:start;
+}
+.filter-group{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-width:0;
+}
+.filter-group label{
+    display:block;
+    position:static;
+    font-size:11.5px;
+    line-height:1.4;
+    color:var(--cr-text-muted);
+    font-weight:600;
+    /* wrap freely, never clip/overlap the input below it */
+    white-space:normal;
+    word-break:break-word;
+}
+.filter-group input[type="date"]{
+    width:100%;
+    padding:9px 10px;
+    border-radius:10px;
+    border:1px solid var(--cr-border);
+    background:#fff;
+    color:#1C2333;
+    font-size:13px;
+    font-family:'KRASAR', sans-serif;
+}
+
+/* ===== Run button ===== */
+.cr-run-btn{
+    width:100%;
+    margin-top:12px;
+    background:linear-gradient(135deg,var(--cr-navy-dark),var(--cr-navy));
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    padding:13px;
+    font-family:'KRASAR',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+}
+[data-theme="dark"] .cr-run-btn{
+    background:linear-gradient(135deg,#D4AF37,#FFD700);
+    color:#002D6B;
+}
+.cr-run-btn:active{ opacity:.85; transform:scale(.99); }
+.cr-run-btn:disabled{ opacity:.7; cursor:default; }
+.cr-run-spinner{
+    width:16px; height:16px;
+    border-radius:50%;
+    border:2px solid rgba(255,255,255,.4);
+    border-top-color:#fff;
+    display:none;
+    animation:cr-spin .7s linear infinite;
+}
+[data-theme="dark"] .cr-run-spinner{
+    border:2px solid rgba(0,45,107,.35);
+    border-top-color:#002D6B;
+}
+.cr-run-btn.loading .cr-run-spinner{ display:inline-block; }
+@keyframes cr-spin{ to{ transform:rotate(360deg); } }
+
+/* ===== View toggle (Summary / Detailed) ===== */
+.cr-tabs{
+    display:flex;
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:12px;
+    padding:4px;
+    margin-bottom:10px;
+    box-shadow:var(--cr-shadow);
+}
+.cr-tab{
+    flex:1;
+    text-align:center;
+    padding:10px 6px;
+    border-radius:9px;
+    font-size:13px;
+    font-weight:700;
+    color:var(--cr-text-muted);
+    cursor:pointer;
+    user-select:none;
+}
+.cr-tab.active{
+    background:var(--cr-navy-dark);
+    color:#fff;
+}
+[data-theme="dark"] .cr-tab.active{ color:#002D6B; }
+.cr-detailed-note{
+    background:rgba(179,38,30,.1);
+    color:var(--cr-danger);
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:12px;
+    margin-bottom:10px;
+    display:none;
+}
+
+/* ===== Section picker ===== */
+.cr-section-card{
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:12px;
+    padding:10px 12px;
+    box-shadow:var(--cr-shadow);
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+.cr-section-label{
+    font-size:11.5px;
+    font-weight:700;
+    color:var(--cr-text-muted);
+    white-space:nowrap;
+}
+.cr-section-select{
+    flex:1;
+    padding:9px 10px;
+    border-radius:10px;
+    border:1px solid var(--cr-border);
+    background:#fff;
+    color:#1C2333;
+    font-size:13px;
+    font-weight:700;
+    font-family:'KRASAR', sans-serif;
+}
+
+.summary-row.upload-meta{
+    font-size:12px;
+    color:var(--cr-text-muted);
+    padding:2px 2px 10px;
+}
+#crPeriodLabel{ color:var(--cr-text); font-weight:600; }
+
+.rendered-count-note{
+    font-size:11.5px;
+    color:var(--cr-text-muted);
+    margin-bottom:6px;
+    padding-left:2px;
+}
+
+/* =====================================================
+   TABLE CARD
+   ===================================================== */
+.table-card{
+    width:100%;
+    box-sizing:border-box;
+    position:relative;
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:16px;
+    padding:10px;
+    box-shadow:var(--cr-shadow);
+    overflow:hidden;
+}
+
+.table-scroll{
+    position:relative;
+    transform:translateZ(0);
+    -webkit-transform:translateZ(0);
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    max-height:65vh;
+    overflow-y:auto;
+    border-radius:10px;
+}
+
+.table-card table{
+    width:auto; /* size to content, don't stretch few columns to fill 100% */
+    min-width:0;
+    border-collapse:separate;
+    border-spacing:0;
+    font-size:12px;
+    white-space:nowrap;
+    color:var(--cr-text);
+    background:var(--cr-card-bg);
+}
+
+.cr-col-num{ min-width:80px; }
+.cr-col-money{ min-width:112px; }
+.cr-col-pct{ min-width:72px; }
+
+.table-card thead th{
+    position:sticky;
+    top:0;
+    background:var(--cr-navy-dark);
+    color:var(--cr-gold-light);
+    padding:9px 10px;
+    border:1px solid #2f4670;
+    font-size:11.5px;
+    line-height:1.3;
+    font-weight:bold;
+    text-align:center;
+    z-index:2;
+}
+[data-theme="dark"] .table-card thead th{ color:#002D6B; background:var(--cr-navy-dark); }
+
+.table-card thead tr.cr-group-row th{ z-index:4; }
+.table-card thead tr.cr-sub-row th{ z-index:3; }
+
+.table-card td{
+    padding:8px 12px;
+    border:1px solid var(--cr-border);
+    text-align:right;
+    color:var(--cr-text);
+    font-size:12px;
+    line-height:1.3;
+}
+
+/* Sticky first column (Branch) */
+.table-card .cr-branch-col{
+    position:sticky;
+    left:0;
+    min-width:116px;
+    z-index:3;
+    text-align:left;
+    font-weight:700;
+}
+.table-card thead th.cr-branch-col{
+    z-index:6 !important;
+    background:var(--cr-navy-dark);
+    color:var(--cr-gold-light);
+}
+[data-theme="dark"] .table-card thead th.cr-branch-col{ color:#002D6B; }
+.table-card tbody td.cr-branch-col{
+    background:var(--cr-card-bg);
+    color:var(--cr-navy) !important;
+}
+[data-theme="dark"] .table-card tbody td.cr-branch-col{ color:var(--cr-gold-light) !important; }
+.table-card tbody tr:nth-child(even) td.cr-branch-col{ background:var(--cr-row-alt); }
+.cr-total-row td.cr-branch-col{ color:var(--cr-total-text) !important; }
+
+/* =====================================================
+   DETAILED REPORT — two-column sticky lead (Team, then Branch).
+   Team's width is fixed so Branch's sticky offset can be a known
+   constant instead of measured at runtime.
+   ===================================================== */
+.table-card .cr-detail-team-col{
+    position:sticky;
+    left:0;
+    width:56px;
+    min-width:56px;
+    z-index:3;
+    text-align:center;
+    font-weight:700;
+}
+.table-card .cr-detail-branch-col{
+    position:sticky;
+    left:56px;
+    min-width:110px;
+    z-index:3;
+    text-align:left;
+    font-weight:700;
+}
+.table-card thead th.cr-detail-team-col,
+.table-card thead th.cr-detail-branch-col{
+    z-index:6 !important;
+    background:var(--cr-navy-dark);
+    color:var(--cr-gold-light);
+}
+[data-theme="dark"] .table-card thead th.cr-detail-team-col,
+[data-theme="dark"] .table-card thead th.cr-detail-branch-col{ color:#002D6B; }
+.table-card tbody td.cr-detail-team-col,
+.table-card tbody td.cr-detail-branch-col{
+    background:var(--cr-card-bg);
+    color:var(--cr-navy) !important;
+}
+[data-theme="dark"] .table-card tbody td.cr-detail-team-col,
+[data-theme="dark"] .table-card tbody td.cr-detail-branch-col{ color:var(--cr-gold-light) !important; }
+
+.cr-total-row td.cr-detail-team-col,
+.cr-total-row td.cr-detail-branch-col{ color:var(--cr-total-text) !important; }
+
+/* Branch-level "Total" sub-row (CO+FSRO for that one branch) — a
+   lighter highlight than the grand cr-total-row at the very bottom. */
+.cr-branch-total-row td{
+    background:var(--cr-subtotal-bg) !important;
+    font-weight:700;
+}
+.cr-branch-total-row td.cr-detail-team-col,
+.cr-branch-total-row td.cr-detail-branch-col{
+    background:var(--cr-subtotal-bg) !important;
+}
+
+.table-card tbody tr:nth-child(even){ background:var(--cr-row-alt); }
+
+.th-kh{ font-weight:400; display:block; font-size:10px; opacity:.85; }
+
+.cr-total-row td{
+    background:var(--cr-total-bg) !important;
+    color:var(--cr-total-text) !important;
+    font-weight:800;
+}
+
+.cr-par-high{ color:var(--cr-danger); font-weight:700; }
+
+.cr-empty{
+    text-align:center;
+    color:var(--cr-text-muted);
+    padding:32px 12px;
+    font-size:13px;
+}
+
+/* =====================================================
+   SKELETON LOADING
+   ===================================================== */
+.cr-skeleton{ display:block; padding:4px; }
+.cr-skel-row{
+    height:34px;
+    border-radius:8px;
+    margin-bottom:8px;
+    background:linear-gradient(90deg, var(--cr-skel-base) 25%, var(--cr-skel-shine) 37%, var(--cr-skel-base) 63%);
+    background-size:400% 100%;
+    animation:cr-shimmer 1.4s ease infinite;
+}
+.cr-skel-head{ height:40px; opacity:.9; }
+@keyframes cr-shimmer{
+    0%{ background-position:100% 50%; }
+    100%{ background-position:0 50%; }
+}
+
+/* ===== "..." menu (relocated into topbar) ===== */
+.arrears-menu-wrap{ position:relative; }
+.arrears-menu-toggle{
+    width:40px;
+    height:40px;
+    border:none;
+    border-radius:12px;
+    background:rgba(255,255,255,.15);
+    color:#fff;
+    font-size:20px;
+    font-weight:bold;
+    cursor:pointer;
+    line-height:1;
+}
+.arrears-menu-toggle:active{ transform:scale(.95); }
+.arrears-menu-dropdown{
+    display:none;
+    position:absolute;
+    top:48px;
+    right:0;
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:12px;
+    padding:6px;
+    min-width:190px;
+    width:max-content;
+    box-shadow:0 8px 20px rgba(0,0,0,.4);
+    z-index:200;
+    flex-direction:column;
+    gap:4px;
+}
+.arrears-menu-dropdown.show{ display:flex; }
+.arrears-menu-dropdown button{
+    height:38px;
+    border:none;
+    border-radius:8px;
+    background:transparent;
+    color:var(--cr-text);
+    font-size:14px;
+    font-weight:600;
+    font-family:'KRASAR',sans-serif;
+    text-align:left;
+    padding:0 10px;
+    cursor:pointer;
+    white-space:nowrap;
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+.arrears-menu-dropdown button .menu-icon{
+    width:20px;
+    height:20px;
+    flex:0 0 20px;
+    object-fit:contain;
+}
+.arrears-menu-dropdown button:active,
+.arrears-menu-dropdown button:hover{
+    background:rgba(212,175,55,.25);
+}
+
+/* =====================================================
+   LANDSCAPE BARS — hidden by default.
+   NOTE: exit-landscape JS still isn't wired up (see prior note) —
+   these bars stay hidden until that's built.
+   ===================================================== */
+.landscape-bar{
+    display:none;
+    position:absolute;
+    left:0;
+    right:0;
+    align-items:center;
+    background:rgba(0,0,0,.65);
+    color:#fff;
+    z-index:20;
+    padding:8px 12px;
+    box-sizing:border-box;
+}
+.landscape-top-bar{ top:0; justify-content:space-between; }
+.landscape-bottom-bar{ bottom:0; justify-content:center; }
+.landscape-row-count{ font-size:12px; color:var(--cr-gold-light); }
+.landscape-hint{ font-size:11px; color:rgba(255,255,255,.75); }
+
+/* ==========================================
+   LANDSCAPE VIEW TOGGLE
+   Same technique as arrears.css: no real device-rotation API works
+   reliably in a mobile browser tab, so instead only .table-card is
+   pulled out of the page flow into a fullscreen fixed overlay and
+   rotated 90deg via CSS transform — everything else (topbar, filter
+   card, section picker, bottomnav) is hidden rather than fighting
+   the rotation. Landscape bars are children of .table-card so they
+   inherit the rotation automatically.
+========================================== */
+body.cr-force-landscape #topbar-container,
+body.cr-force-landscape .filter-card,
+body.cr-force-landscape .cr-tabs,
+body.cr-force-landscape .cr-section-card,
+body.cr-force-landscape .summary-row.upload-meta,
+body.cr-force-landscape .rendered-count-note,
+body.cr-force-landscape #bottomnav-container,
+body.cr-force-landscape #offlineBanner{
+    display:none !important;
+}
+body.cr-force-landscape .page-container{
+    padding:0;
+}
+body.cr-force-landscape .table-card{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100vh;
+    height:100vw;
+    transform-origin:top left;
+    transform:rotate(90deg) translateY(-100%);
+    margin:0;
+    padding:6px;
+    border-radius:0;
+    border:none;
+    z-index:9999;
+    display:flex;
+    flex-direction:column;
+    box-sizing:border-box;
+}
+body.cr-force-landscape .table-scroll{
+    flex:1;
+    max-height:none;
+}
+body.cr-force-landscape .landscape-bar{
+    display:flex !important;
+}
+body.cr-force-landscape .landscape-bar.hidden{
+    display:none !important;
+}
+
+/* ==========================================
+   PRINT
+   Triggered by window.print() on the Print button. Not theme-aware —
+   forces its own white/black ink-saving colors regardless of what
+   theme was active on screen. Sticky positioning is switched off
+   since it's meaningless on paper.
+========================================== */
+.print-only-title{ display:none; }
+
+@media print{
+    @page{
+        size:297mm 210mm;
+        margin:10mm 10mm 16mm 10mm;
     }
-};
-CR_SECTIONS.all = {
-    groups: [
-        ...CR_SECTIONS.outstanding.groups,
-        ...CR_SECTIONS.disburse.groups,
-        ...CR_SECTIONS.parT24.groups,
-        ...CR_SECTIONS.nbcOverdue.groups,
-        ...CR_SECTIONS.writeOff.groups
-    ]
-};
 
-// ========================================
-// DATE HELPERS
-// ========================================
-function crToDMY(dateStr) {
-    if (!dateStr) return "";
-    const [y, m, d] = dateStr.split("-");
-    return `${d}-${m}-${y}`;
-}
-
-function crSetDefaultDates() {
-    const now = new Date();
-    const y = now.getFullYear();
-    const firstOfMonth = `${y}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-    const today = now.toISOString().slice(0, 10);
-    const yearStart = `${y}-01-01`;
-    const yearEnd = `${y}-12-31`;
-    document.getElementById("crFromDate").value = firstOfMonth;
-    document.getElementById("crToDate").value = today;
-    document.getElementById("crWoFromDate").value = yearStart;
-    document.getElementById("crWoToDate").value = yearEnd;
-}
-crSetDefaultDates();
-
-// ========================================
-// FORMAT HELPERS
-// ========================================
-function crFmtNum(n) {
-    n = Number(n) || 0;
-    return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
-}
-function crFmtPct(n) {
-    n = Number(n) || 0;
-    return (n * 100).toFixed(2) + "%";
-}
-function crGetByPath(obj, path) {
-    return path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj);
-}
-function crFmtField(item, field) {
-    const v = crGetByPath(item, field.key);
-    const cls = crFieldClass(field);
-    if (field.pct) {
-        const n = Number(v) || 0;
-        const parCls = n >= 0.05 ? " cr-par-high" : "";
-        return `<td class="${cls}${parCls}">${crFmtPct(n)}</td>`;
+    *{
+        -webkit-print-color-adjust:exact !important;
+        print-color-adjust:exact !important;
+        color-adjust:exact !important;
     }
-    return `<td class="${cls}">${crFmtNum(v)}</td>`;
-}
 
-// ========================================
-// RENDER: build thead + tbody for the selected section
-// ========================================
-function crFieldClass(field) {
-    if (field.pct) return "cr-col-pct";
-    if (field.money) return "cr-col-money";
-    return "cr-col-num";
-}
-
-function crBuildThead(section, withTeamCol) {
-    const groupCells = section.groups.map(g =>
-        `<th colspan="${g.fields.length}">${g.label}</th>`
-    ).join("");
-
-    const subCells = section.groups.map(g =>
-        g.fields.map(f => `<th class="${crFieldClass(f)}">${f.label}</th>`).join("")
-    ).join("");
-
-    const leadCol = withTeamCol
-        ? `<th rowspan="2" class="cr-detail-team-col">Team</th><th rowspan="2" class="cr-detail-branch-col">Branch</th>`
-        : `<th rowspan="2" class="cr-branch-col">Branch</th>`;
-
-    return `
-      <tr class="cr-group-row">
-        ${leadCol}
-        ${groupCells}
-      </tr>
-      <tr class="cr-sub-row">
-        ${subCells}
-      </tr>`;
-}
-
-function crBuildRow(item, section, isTotal) {
-    const cells = section.groups.map(g =>
-        g.fields.map(f => crFmtField(item, f)).join("")
-    ).join("");
-    return `
-      <tr${isTotal ? ' class="cr-total-row"' : ""}>
-        <td class="cr-branch-col">${isTotal ? "*** Total" : item.branch}</td>
-        ${cells}
-      </tr>`;
-}
-
-// team: "CO" | "FSRO" | "Total". branchLabel is repeated on every row
-// (no rowspan merge) to keep the render logic simple.
-function crBuildDetailedRow(item, section, branchLabel, team, isBranchTotal, isGrandRow) {
-    const cells = section.groups.map(g =>
-        g.fields.map(f => crFmtField(item, f)).join("")
-    ).join("");
-    let rowClass = "";
-    if (isGrandRow) rowClass = ' class="cr-total-row"';
-    else if (isBranchTotal) rowClass = ' class="cr-branch-total-row"';
-    return `
-      <tr${rowClass}>
-        <td class="cr-detail-team-col">${team}</td>
-        <td class="cr-detail-branch-col">${branchLabel}</td>
-        ${cells}
-      </tr>`;
-}
-
-function crRenderSummary() {
-    if (!crSummaryData) return;
-    const sectionKey = document.getElementById("crSection").value;
-    const section = CR_SECTIONS[sectionKey];
-
-    document.getElementById("crThead").innerHTML = crBuildThead(section, false);
-    document.getElementById("crTbody").innerHTML =
-        crSummaryData.items.map(it => crBuildRow(it, section, false)).join("") +
-        crBuildRow(crSummaryData.total, section, true);
-
-    document.getElementById("crRenderedCountNote").textContent = `${crSummaryData.items.length} branches`;
-    requestAnimationFrame(crSetHeaderOffsets);
-}
-
-function crRenderDetailed() {
-    if (!crDetailedData) return;
-    const sectionKey = document.getElementById("crSection").value;
-    const section = CR_SECTIONS[sectionKey];
-
-    document.getElementById("crThead").innerHTML = crBuildThead(section, true);
-
-    const rowsHtml = crDetailedData.groups.map(g => {
-        const [co, fsro, total] = g.rows;
-        return (
-            crBuildDetailedRow(co, section, g.branch, "CO", false, false) +
-            crBuildDetailedRow(fsro, section, g.branch, "FSRO", false, false) +
-            crBuildDetailedRow(total, section, g.branch, "Total", true, false)
-        );
-    }).join("");
-
-    const grand = crDetailedData.grand;
-    const grandHtml =
-        crBuildDetailedRow(grand.co, section, "All", "CO", false, false) +
-        crBuildDetailedRow(grand.fsro, section, "All", "FSRO", false, false) +
-        crBuildDetailedRow(grand.total, section, "All", "Total", false, true);
-
-    document.getElementById("crTbody").innerHTML = rowsHtml + grandHtml;
-    document.getElementById("crRenderedCountNote").textContent = `${crDetailedData.groups.length} branches × CO/FSRO/Total`;
-    requestAnimationFrame(crSetHeaderOffsets);
-}
-
-function crRenderSection() {
-    if (crMode === "detailed") crRenderDetailed();
-    else crRenderSummary();
-}
-document.getElementById("crSection").addEventListener("change", crRenderSection);
-
-// ========================================
-// STICKY HEADER OFFSET
-// The sub-header row must stick right under the group-header row,
-// but the group row's height changes with text wrapping — measure
-// the real rendered height instead of guessing a fixed px value.
-// ========================================
-function crSetHeaderOffsets() {
-    const groupRow = document.querySelector("#crTable thead tr.cr-group-row");
-    const subRow = document.querySelector("#crTable thead tr.cr-sub-row");
-    if (!groupRow || !subRow) return;
-    const h = groupRow.getBoundingClientRect().height;
-    subRow.querySelectorAll("th").forEach(th => { th.style.top = h + "px"; });
-}
-window.addEventListener("resize", crSetHeaderOffsets);
-window.addEventListener("orientationchange", () => setTimeout(crSetHeaderOffsets, 200));
-
-// ========================================
-// LOADING STATE
-// ========================================
-function crShowLoading() {
-    document.getElementById("crSkeleton").style.display = "block";
-    document.getElementById("crTableScroll").style.display = "none";
-    document.getElementById("crEmptyMsg").style.display = "none";
-    const btn = document.getElementById("btnCrRun");
-    btn.classList.add("loading");
-    btn.disabled = true;
-}
-function crHideLoading() {
-    document.getElementById("crSkeleton").style.display = "none";
-    const btn = document.getElementById("btnCrRun");
-    btn.classList.remove("loading");
-    btn.disabled = false;
-}
-function crShowEmpty(msg) {
-    const empty = document.getElementById("crEmptyMsg");
-    empty.textContent = msg;
-    empty.style.display = "block";
-    document.getElementById("crTableScroll").style.display = "none";
-}
-
-// ========================================
-// LOAD REPORT
-// ========================================
-async function crRunReport() {
-    crShowLoading();
-
-    const fromDate = crToDMY(document.getElementById("crFromDate").value);
-    const toDate = crToDMY(document.getElementById("crToDate").value);
-    const woFromDate = crToDMY(document.getElementById("crWoFromDate").value);
-    const woToDate = crToDMY(document.getElementById("crWoToDate").value);
-
-    document.getElementById("crPeriodLabel").textContent =
-        `Loan Disbursement ${fromDate} to ${toDate}  ·  Write Off ${woFromDate} to ${woToDate}`;
-
-    // Dates changed — any cached Detailed data is now stale.
-    crDetailedData = null;
-
-    try {
-        const url = `${API.BASE_URL}/api/creditreport/summary?fromDate=${fromDate}&toDate=${toDate}&woFromDate=${woFromDate}&woToDate=${woToDate}`;
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
-        const data = await res.json();
-
-        crHideLoading();
-
-        if (!data.ok) {
-            crShowEmpty(data.message || "Failed to load report.");
-            return;
-        }
-        if (!data.items || !data.items.length) {
-            crShowEmpty("No data.");
-            return;
-        }
-
-        crSummaryData = data;
-        document.getElementById("crTableScroll").style.display = "block";
-
-        if (crMode === "detailed") {
-            await crEnsureDetailedLoaded();
-        } else {
-            crRenderSection();
-        }
-    } catch (e) {
-        console.error(e);
-        crHideLoading();
-        crShowEmpty("Network error loading report.");
+    .print-only-title{
+        display:block;
+        text-align:center;
+        font-size:22px;
+        font-weight:700;
+        color:#000;
+        margin-bottom:12px;
     }
-}
-document.getElementById("btnCrRun").addEventListener("click", crRunReport);
 
-// ========================================
-// DETAILED REPORT — fetched lazily (only when the Detailed tab is
-// actually opened) since it's a heavier query than Summary and most
-// visits probably never need the CO/FSRO breakdown.
-// ========================================
-async function crEnsureDetailedLoaded() {
-    if (crDetailedData) {
-        crRenderSection();
-        return;
+    html, body{
+        height:auto !important;
+        overflow:visible !important;
+        width:auto !important;
+        background:#fff !important;
     }
-    crShowLoading();
 
-    const fromDate = crToDMY(document.getElementById("crFromDate").value);
-    const toDate = crToDMY(document.getElementById("crToDate").value);
-    const woFromDate = crToDMY(document.getElementById("crWoFromDate").value);
-    const woToDate = crToDMY(document.getElementById("crWoToDate").value);
-
-    try {
-        const url = `${API.BASE_URL}/api/creditreport/detailed?fromDate=${fromDate}&toDate=${toDate}&woFromDate=${woFromDate}&woToDate=${woToDate}`;
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
-        const data = await res.json();
-
-        crHideLoading();
-
-        if (!data.ok) {
-            crShowEmpty(data.message || "Failed to load detailed report.");
-            return;
-        }
-        if (!data.groups || !data.groups.length) {
-            crShowEmpty("No data.");
-            return;
-        }
-
-        crDetailedData = data;
-        document.getElementById("crTableScroll").style.display = "block";
-        crRenderSection();
-    } catch (e) {
-        console.error(e);
-        crHideLoading();
-        crShowEmpty("Network error loading detailed report.");
+    #offlineBanner, #topbar-container, #bottomnav-container,
+    .arrears-menu-wrap, .rendered-count-note, .cr-tabs, .cr-detailed-note{
+        display:none !important;
     }
+
+    .cr-run-btn{ display:none !important; }
+
+    .page-container{
+        padding:0;
+        height:auto !important;
+        overflow:visible !important;
+    }
+
+    .filter-card, .cr-section-card{
+        background:#fff !important;
+        border:1px solid #999 !important;
+        box-shadow:none !important;
+        color:#000 !important;
+    }
+    .filter-group label, .cr-section-label{ color:#000 !important; }
+    .filter-group input, .cr-section-select{
+        background:#fff !important;
+        border:1px solid #999 !important;
+        color:#000 !important;
+    }
+
+    .summary-row{ color:#000 !important; }
+    #crPeriodLabel{ color:#000 !important; }
+
+    .table-card{
+        background:#fff !important;
+        overflow:visible;
+        box-shadow:none;
+        border:1px solid #999;
+    }
+    .table-scroll{
+        overflow:visible !important;
+        max-height:none !important;
+        height:auto !important;
+    }
+    .table-card th, .table-card td{
+        position:static !important;
+        background:#fff !important;
+        color:#000 !important;
+        border:1px solid #999 !important;
+    }
+    .table-card thead{ display:table-header-group; }
+    .table-card tbody{ display:table-row-group; }
+
+    .cr-total-row td, .cr-branch-total-row td{
+        background:#f2f2f2 !important;
+        color:#000 !important;
+        font-weight:800;
+    }
+    .cr-par-high{ color:#000 !important; text-decoration:underline; }
 }
-
-// ========================================
-// VIEW TOGGLE (Summary / Detailed)
-// mirrors the VBA Worksheet_Change row show/hide logic as a tab switch
-// ========================================
-document.querySelectorAll(".cr-tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-        document.querySelectorAll(".cr-tab").forEach(t => t.classList.remove("active"));
-        tab.classList.add("active");
-        crMode = tab.dataset.view;
-
-        if (crMode === "detailed") {
-            crEnsureDetailedLoaded();
-        } else {
-            crRenderSection();
-        }
-    });
-});
-
-// ========================================
-// EXPORT EXCEL (exports the currently visible section)
-// ========================================
-function crExportExcel() {
-    if (typeof XLSX === "undefined") return;
-    const ws = XLSX.utils.table_to_sheet(document.getElementById("crTable"));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "CreditReport");
-    const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    XLSX.writeFile(wb, `CreditReport_${stamp}.xlsx`);
-}
-document.getElementById("btnCrExport")?.addEventListener("click", crExportExcel);
-
-// ========================================
-// EXPORT PDF
-// ========================================
-async function crExportPdf() {
-    if (typeof html2canvas === "undefined" || typeof window.jspdf === "undefined") return;
-    const el = document.querySelector(".table-card");
-    if (!el) return;
-    const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff" });
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const imgHeight = (canvas.height * pageWidth) / canvas.width;
-    pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, pageWidth, imgHeight);
-    const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    pdf.save(`CreditReport_${stamp}.pdf`);
-}
-document.getElementById("btnCrExportPdf")?.addEventListener("click", crExportPdf);
-
-// ========================================
-// PRINT
-// ========================================
-document.getElementById("btnCrPrint")?.addEventListener("click", () => window.print());
-
-// ========================================
-// "..." MENU TOGGLE
-// ========================================
-document.getElementById("btnCrMenu")?.addEventListener("click", () => {
-    document.getElementById("crMenuDropdown")?.classList.toggle("show");
-});
-
-// ========================================
-// INIT
-// ========================================
-crRunReport();
