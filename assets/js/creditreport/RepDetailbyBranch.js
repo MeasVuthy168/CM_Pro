@@ -104,6 +104,15 @@ const CR_SECTIONS = {
         ]
     }
 };
+CR_SECTIONS.all = {
+    groups: [
+        ...CR_SECTIONS.outstanding.groups,
+        ...CR_SECTIONS.disburse.groups,
+        ...CR_SECTIONS.parT24.groups,
+        ...CR_SECTIONS.nbcOverdue.groups,
+        ...CR_SECTIONS.writeOff.groups
+    ]
+};
 
 // ========================================
 // DATE HELPERS
