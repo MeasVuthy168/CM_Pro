@@ -20,6 +20,7 @@
     --cr-danger:#b3261e;
     --cr-total-bg:#fff8e1;
     --cr-total-text:#1C2333;
+    --cr-subtotal-bg:#fbf1d6;
     --cr-row-alt:#f8f9fc;
     --cr-skel-base:#eceff4;
     --cr-skel-shine:#f7f9fc;
@@ -36,6 +37,7 @@
     --cr-danger:#ff6b6b;
     --cr-total-bg:#2a2410;
     --cr-total-text:#FFD700;
+    --cr-subtotal-bg:#241f0c;
     --cr-row-alt:#00306e;
     --cr-skel-base:#0a3a86;
     --cr-skel-shine:#0d4aa8;
@@ -355,13 +357,12 @@
 /* Branch-level "Total" sub-row (CO+FSRO for that one branch) — a
    lighter highlight than the grand cr-total-row at the very bottom. */
 .cr-branch-total-row td{
-    background:rgba(212,175,55,.12) !important;
+    background:var(--cr-subtotal-bg) !important;
     font-weight:700;
 }
-[data-theme="dark"] .cr-branch-total-row td{ background:rgba(212,175,55,.18) !important; }
 .cr-branch-total-row td.cr-detail-team-col,
 .cr-branch-total-row td.cr-detail-branch-col{
-    background:rgba(212,175,55,.12) !important;
+    background:var(--cr-subtotal-bg) !important;
 }
 
 .table-card tbody tr:nth-child(even){ background:var(--cr-row-alt); }
@@ -483,7 +484,147 @@
 .landscape-row-count{ font-size:12px; color:var(--cr-gold-light); }
 .landscape-hint{ font-size:11px; color:rgba(255,255,255,.75); }
 
-@media print{
-    .cr-tabs, .filter-card, .cr-section-card, .arrears-menu-wrap, .rendered-count-note{ display:none !important; }
+/* ==========================================
+   LANDSCAPE VIEW TOGGLE
+   Same technique as arrears.css: no real device-rotation API works
+   reliably in a mobile browser tab, so instead only .table-card is
+   pulled out of the page flow into a fullscreen fixed overlay and
+   rotated 90deg via CSS transform — everything else (topbar, filter
+   card, section picker, bottomnav) is hidden rather than fighting
+   the rotation. Landscape bars are children of .table-card so they
+   inherit the rotation automatically.
+========================================== */
+body.cr-force-landscape #topbar-container,
+body.cr-force-landscape .filter-card,
+body.cr-force-landscape .cr-tabs,
+body.cr-force-landscape .cr-section-card,
+body.cr-force-landscape .summary-row.upload-meta,
+body.cr-force-landscape .rendered-count-note,
+body.cr-force-landscape #bottomnav-container,
+body.cr-force-landscape #offlineBanner{
+    display:none !important;
+}
+body.cr-force-landscape .page-container{
+    padding:0;
+}
+body.cr-force-landscape .table-card{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100vh;
+    height:100vw;
+    transform-origin:top left;
+    transform:rotate(90deg) translateY(-100%);
+    margin:0;
+    padding:6px;
+    border-radius:0;
+    border:none;
+    z-index:9999;
+    display:flex;
+    flex-direction:column;
+    box-sizing:border-box;
+}
+body.cr-force-landscape .table-scroll{
+    flex:1;
+    max-height:none;
+}
+body.cr-force-landscape .landscape-bar{
+    display:flex !important;
+}
+body.cr-force-landscape .landscape-bar.hidden{
+    display:none !important;
 }
 
+/* ==========================================
+   PRINT
+   Triggered by window.print() on the Print button. Not theme-aware —
+   forces its own white/black ink-saving colors regardless of what
+   theme was active on screen. Sticky positioning is switched off
+   since it's meaningless on paper.
+========================================== */
+.print-only-title{ display:none; }
+
+@media print{
+    @page{
+        size:297mm 210mm;
+        margin:10mm 10mm 16mm 10mm;
+    }
+
+    *{
+        -webkit-print-color-adjust:exact !important;
+        print-color-adjust:exact !important;
+        color-adjust:exact !important;
+    }
+
+    .print-only-title{
+        display:block;
+        text-align:center;
+        font-size:22px;
+        font-weight:700;
+        color:#000;
+        margin-bottom:12px;
+    }
+
+    html, body{
+        height:auto !important;
+        overflow:visible !important;
+        width:auto !important;
+        background:#fff !important;
+    }
+
+    #offlineBanner, #topbar-container, #bottomnav-container,
+    .arrears-menu-wrap, .rendered-count-note, .cr-tabs, .cr-detailed-note{
+        display:none !important;
+    }
+
+    .cr-run-btn{ display:none !important; }
+
+    .page-container{
+        padding:0;
+        height:auto !important;
+        overflow:visible !important;
+    }
+
+    .filter-card, .cr-section-card{
+        background:#fff !important;
+        border:1px solid #999 !important;
+        box-shadow:none !important;
+        color:#000 !important;
+    }
+    .filter-group label, .cr-section-label{ color:#000 !important; }
+    .filter-group input, .cr-section-select{
+        background:#fff !important;
+        border:1px solid #999 !important;
+        color:#000 !important;
+    }
+
+    .summary-row{ color:#000 !important; }
+    #crPeriodLabel{ color:#000 !important; }
+
+    .table-card{
+        background:#fff !important;
+        overflow:visible;
+        box-shadow:none;
+        border:1px solid #999;
+    }
+    .table-scroll{
+        overflow:visible !important;
+        max-height:none !important;
+        height:auto !important;
+    }
+    .table-card th, .table-card td{
+        position:static !important;
+        background:#fff !important;
+        color:#000 !important;
+        border:1px solid #999 !important;
+    }
+    .table-card thead{ display:table-header-group; }
+    .table-card tbody{ display:table-row-group; }
+
+    .cr-total-row td, .cr-branch-total-row td{
+        background:#f2f2f2 !important;
+        color:#000 !important;
+        font-weight:800;
+    }
+    .cr-par-high{ color:#000 !important; text-decoration:underline; }
+}
