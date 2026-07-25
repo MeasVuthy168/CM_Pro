@@ -536,6 +536,15 @@
     flex:0 0 20px;
     object-fit:contain;
 }
+/* The other menu items use <img> icons; this one is an emoji in a <span>,
+   so it needs explicit centering to sit on the same baseline as them. */
+.arrears-menu-dropdown button .cr-refresh-icon{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:15px;
+    line-height:1;
+}
 .arrears-menu-dropdown button:active,
 .arrears-menu-dropdown button:hover{
     background:rgba(212,175,55,.25);
