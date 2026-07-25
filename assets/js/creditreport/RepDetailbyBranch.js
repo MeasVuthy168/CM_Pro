@@ -18,6 +18,9 @@ const crToken =
 let crMode = "summary"; // "summary" | "detailed"
 let crSummaryData = null;  // { items, total } from /api/creditreport/summary
 let crDetailedData = null; // { groups, grand } from /api/creditreport/detailed — fetched lazily
+// PAR % at or above this is rendered red in every PAR column.
+const CR_PAR_ALERT = 0.04;
+
 let crLoanReclass = null;  // { value, count } — rendered as a note under the T24 columns
 
 // ========================================
@@ -207,7 +210,8 @@ function crFmtField(item, field) {
     const cls = crFieldClass(field);
     if (field.pct) {
         const n = Number(v) || 0;
-        const parCls = n >= 0.05 ? " cr-par-high" : "";
+        // Anything at or above 4% is flagged red across every PAR column.
+        const parCls = n >= CR_PAR_ALERT ? " cr-par-high" : "";
         return `<td class="${cls}${parCls}">${crFmtPct(n)}</td>`;
     }
     return `<td class="${cls}">${crFmtNum(v)}</td>`;
@@ -251,7 +255,7 @@ function crBuildRow(item, section, isTotal) {
     ).join("");
     return `
       <tr${isTotal ? ' class="cr-total-row"' : ""}>
-        <td class="cr-branch-col">${isTotal ? "*** Total" : item.branch}</td>
+        <td class="cr-branch-col">${isTotal ? "Total" : item.branch}</td>
         ${cells}
       </tr>`;
 }
