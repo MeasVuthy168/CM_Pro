@@ -153,10 +153,11 @@ function crApplyServerDates(data) {
 function crRenderMeta(meta) {
     if (!meta) return;
 
-    document.getElementById("crOverdueReportDate").textContent =
-        meta.overdueReportDate ? crFmtDateDMY(meta.overdueReportDate) : "-";
-    document.getElementById("crT24ReportDate").textContent =
-        meta.t24ReportDate ? crFmtDateDMY(meta.t24ReportDate) : "-";
+    // These arrive pre-formatted from the server (dd/mm/yyyy, plus HH:MM
+    // where the source cell carried a time) — no client-side reformatting.
+    document.getElementById("crOsGridMerge").textContent = meta.osGridMergeText || "-";
+    document.getElementById("crOverdueGridMerge").textContent = meta.overdueGridMergeText || "-";
+    document.getElementById("crArrearsPenalty").textContent = meta.arrearsPenaltyText || "-";
 
     const rc = meta.loanReclass || { value: 0, count: 0 };
     document.getElementById("crLoanReclass").textContent =
@@ -264,7 +265,7 @@ function crRenderSummary() {
         crSummaryData.items.map(it => crBuildRow(it, section, false)).join("") +
         crBuildRow(crSummaryData.total, section, true);
 
-    document.getElementById("crRenderedCountNote").textContent = `${crSummaryData.items.length}`;
+    document.getElementById("crRenderedCountNote").textContent = `${crSummaryData.items.length} Branch`;
     requestAnimationFrame(crSetHeaderOffsets);
 }
 
@@ -291,7 +292,7 @@ function crRenderDetailed() {
         crBuildDetailedRow(grand.total, section, "All", "Total", false, true);
 
     document.getElementById("crTbody").innerHTML = rowsHtml + grandHtml;
-    document.getElementById("crRenderedCountNote").textContent = `${crDetailedData.groups.length} × CO/FSRO/Total`;
+    document.getElementById("crRenderedCountNote").textContent = `${crDetailedData.groups.length} Branch × CO/FSRO/Total`;
     requestAnimationFrame(crSetHeaderOffsets);
 }
 
