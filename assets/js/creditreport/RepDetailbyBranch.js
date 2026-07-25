@@ -18,6 +18,7 @@ const crToken =
 let crMode = "summary"; // "summary" | "detailed"
 let crSummaryData = null;  // { items, total } from /api/creditreport/summary
 let crDetailedData = null; // { groups, grand } from /api/creditreport/detailed — fetched lazily
+let crLoanReclass = null;  // { value, count } — rendered as a note under the T24 columns
 
 // ========================================
 // SECTION DEFINITIONS
@@ -159,9 +160,26 @@ function crRenderMeta(meta) {
     document.getElementById("crOverdueGridMerge").textContent = meta.overdueGridMergeText || "-";
     document.getElementById("crArrearsPenalty").textContent = meta.arrearsPenaltyText || "-";
 
-    const rc = meta.loanReclass || { value: 0, count: 0 };
-    document.getElementById("crLoanReclass").textContent =
-        `$${crFmtNum(rc.value)} · ${crFmtNum(rc.count)} LD`;
+    // Held for the table note — it renders under the T24 columns, not here.
+    crLoanReclass = meta.loanReclass || { value: 0, count: 0 };
+}
+
+// Loan Reclass belongs with the T24 figures (the T24 total includes it),
+// so it's shown as a note under the table whenever those columns are on
+// screen, rather than as a standalone stat in the info card.
+function crRenderReclassNote(sectionKey) {
+    const el = document.getElementById("crReclassNote");
+    const showsT24 = sectionKey === "parT24" || sectionKey === "all";
+
+    if (!showsT24 || !crLoanReclass) {
+        el.style.display = "none";
+        return;
+    }
+
+    el.innerHTML =
+        `<span class="cr-note-label">Balance Loan at Risk (T24) included Reclass:</span> ` +
+        `<span class="cr-note-value">$${crFmtNum(crLoanReclass.value)} · ${crFmtNum(crLoanReclass.count)} LD</span>`;
+    el.style.display = "";
 }
 
 function crFmtDateDMY(yyyymmdd) {
@@ -265,7 +283,7 @@ function crRenderSummary() {
         crSummaryData.items.map(it => crBuildRow(it, section, false)).join("") +
         crBuildRow(crSummaryData.total, section, true);
 
-    document.getElementById("crRenderedCountNote").textContent = `${crSummaryData.items.length} Branch`;
+    crRenderReclassNote(sectionKey);
     requestAnimationFrame(crSetHeaderOffsets);
 }
 
@@ -292,7 +310,7 @@ function crRenderDetailed() {
         crBuildDetailedRow(grand.total, section, "All", "Total", false, true);
 
     document.getElementById("crTbody").innerHTML = rowsHtml + grandHtml;
-    document.getElementById("crRenderedCountNote").textContent = `${crDetailedData.groups.length} Branch × CO/FSRO/Total`;
+    crRenderReclassNote(sectionKey);
     requestAnimationFrame(crSetHeaderOffsets);
 }
 
@@ -329,6 +347,7 @@ function crShowLoading(message = "Loading Report Data...") {
     document.getElementById("crSkeleton").style.display = "block";
     document.getElementById("crTableScroll").style.display = "none";
     document.getElementById("crEmptyMsg").style.display = "none";
+    document.getElementById("crReclassNote").style.display = "none";
     document.getElementById("btnCrRun").disabled = true;
     if (typeof showAppLoading === "function") {
         showAppLoading(message);
@@ -346,6 +365,7 @@ function crShowEmpty(msg) {
     empty.textContent = msg;
     empty.style.display = "block";
     document.getElementById("crTableScroll").style.display = "none";
+    document.getElementById("crReclassNote").style.display = "none";
 }
 
 // Builds the ?fromDate=...&toDate=... query string, OMITTING any date the
