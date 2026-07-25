@@ -321,19 +321,25 @@ window.addEventListener("orientationchange", () => setTimeout(crSetHeaderOffsets
 // ========================================
 // LOADING STATE
 // ========================================
-function crShowLoading() {
+// Uses the app-wide loading overlay (shared/loading.js) rather than an
+// in-button spinner — the button lives inside the collapsible date panel,
+// which is usually closed, so a spinner there would often be invisible
+// while the report was actually loading.
+function crShowLoading(message = "Loading Report Data...") {
     document.getElementById("crSkeleton").style.display = "block";
     document.getElementById("crTableScroll").style.display = "none";
     document.getElementById("crEmptyMsg").style.display = "none";
-    const btn = document.getElementById("btnCrRun");
-    btn.classList.add("loading");
-    btn.disabled = true;
+    document.getElementById("btnCrRun").disabled = true;
+    if (typeof showAppLoading === "function") {
+        showAppLoading(message);
+    }
 }
 function crHideLoading() {
     document.getElementById("crSkeleton").style.display = "none";
-    const btn = document.getElementById("btnCrRun");
-    btn.classList.remove("loading");
-    btn.disabled = false;
+    document.getElementById("btnCrRun").disabled = false;
+    if (typeof hideAppLoading === "function") {
+        hideAppLoading();
+    }
 }
 function crShowEmpty(msg) {
     const empty = document.getElementById("crEmptyMsg");
@@ -723,7 +729,7 @@ if (crMenuToggle && crMenuDropdown) {
 // ========================================
 async function crRefreshData() {
     document.getElementById("crMenuDropdown")?.classList.remove("show");
-    crShowLoading();
+    crShowLoading("Refreshing from database...");
 
     try {
         const res = await fetch(`${API.BASE_URL}/api/creditreport/refresh`, {
@@ -742,7 +748,6 @@ async function crRefreshData() {
         crSummaryData = null;
         crDetailedData = null;
 
-        notify("Refreshing from database — this may take a while.", "info");
         await crRunReport();
     } catch (e) {
         console.error("[refresh data] failed:", e);
