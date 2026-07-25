@@ -83,10 +83,55 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 <div class="print-only-title">របាយការណ៍ឥណទានតាមសាខាប្រចាំថ្ងៃ</div>
 
 <!-- ========================= -->
-<!-- FILTERS / PERIOD -->
+<!-- REPORT INFO + DATE FILTER -->
+<!-- The card leads with the report's current state (periods, "as of"
+     dates, Loan Reclass, branch count). The date pickers stay collapsed
+     behind "Set Report Date" since most visits just read the defaults
+     rather than changing them. -->
 <!-- ========================= -->
 
 <div class="filter-card">
+
+<div class="cr-info-block">
+
+<div class="cr-info-row">
+<span class="cr-info-label">Loan Disbursement</span>
+<span class="cr-info-value" id="crDisbPeriod">-</span>
+</div>
+
+<div class="cr-info-row">
+<span class="cr-info-label">Write Off</span>
+<span class="cr-info-value" id="crWoPeriod">-</span>
+</div>
+
+<div class="cr-info-row">
+<span class="cr-info-label">NBC Overdue as of</span>
+<span class="cr-info-value" id="crOverdueReportDate">-</span>
+</div>
+
+<div class="cr-info-row">
+<span class="cr-info-label">T24 as of</span>
+<span class="cr-info-value" id="crT24ReportDate">-</span>
+</div>
+
+<div class="cr-info-row cr-reclass">
+<span class="cr-info-label">Loan Reclass</span>
+<span class="cr-info-value" id="crLoanReclass">-</span>
+</div>
+
+<div class="cr-info-row cr-info-count">
+<span class="cr-info-label">Branches</span>
+<span class="cr-info-value" id="crRenderedCountNote">-</span>
+</div>
+
+</div>
+
+<button id="btnCrToggleDates" class="cr-setdate-btn" aria-expanded="false">
+<span>Set Report Date</span>
+<span class="cr-setdate-caret">▾</span>
+</button>
+
+<div class="cr-date-panel" id="crDatePanel">
 
 <div class="filter-grid">
 
@@ -116,6 +161,8 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 <span class="cr-run-label">View Report</span>
 <span class="cr-run-spinner" id="crRunSpinner"></span>
 </button>
+
+</div>
 
 </div>
 
@@ -163,30 +210,9 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 </select>
 </div>
 
-<div class="summary-row upload-meta" id="crPeriodRow">
-<span id="crPeriodLabel">-</span>
-</div>
-
-<div class="cr-report-dates" id="crReportDates" style="display:none">
-<div class="cr-report-date-item">
-<span class="cr-rd-label">NBC Overdue as of</span>
-<span class="cr-rd-value" id="crOverdueReportDate">-</span>
-</div>
-<div class="cr-report-date-item">
-<span class="cr-rd-label">T24 as of</span>
-<span class="cr-rd-value" id="crT24ReportDate">-</span>
-</div>
-<div class="cr-report-date-item cr-reclass">
-<span class="cr-rd-label">Loan Reclass</span>
-<span class="cr-rd-value" id="crLoanReclass">-</span>
-</div>
-</div>
-
 <!-- ========================= -->
 <!-- TABLE -->
 <!-- ========================= -->
-
-<div class="rendered-count-note" id="crRenderedCountNote"></div>
 
 <div class="table-card">
 
