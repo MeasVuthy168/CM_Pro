@@ -4,7 +4,7 @@
 
 body{
 
-    background:#032d73;
+    background:#ffffff;
 
     min-height:100vh;
 
@@ -36,13 +36,13 @@ body{
 
     max-width:420px;
 
-    background:#fff;
+    background:#002D6B;
 
     border-radius:28px;
 
     padding:35px 25px;
 
-    box-shadow:0 10px 30px rgba(0,0,0,.18);
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
 
 }
 
@@ -62,7 +62,7 @@ body{
 
     font-size:20px;
 
-    color:#17356f;
+    color:#ffffff;
 
     margin-bottom:10px;
 
@@ -74,7 +74,7 @@ body{
 
     text-align:center;
 
-    color:#888;
+    color:#b9c6e0;
 
     margin-bottom:35px;
 
@@ -105,6 +105,14 @@ body{
     outline:none;
 
     margin-bottom:20px;
+
+    color:#17356f;
+
+}
+
+.input-box::placeholder{
+
+    color:#8a94a6;
 
 }
 
@@ -142,7 +150,7 @@ body{
 
     margin-bottom:25px;
 
-    color:#444;
+    color:#d7deed;
 
     font-size:15px;
 
@@ -170,11 +178,15 @@ body{
 
     border-radius:18px;
 
-    background:#032d73;
+    background:#FFD700;
 
-    color:#fff;
+    color:#002D6B;
 
     font-size:22px;
+
+    font-weight:700;
+
+    font-family:'Krasar', sans-serif;
 
     cursor:pointer;
 
@@ -214,13 +226,13 @@ body{
 
 .success{
 
-    color:#10a844;
+    color:#3ddc74;
 
 }
 
 .error{
 
-    color:#d90429;
+    color:#ff6b6b;
 
 }
 
@@ -234,9 +246,9 @@ body{
 
     margin:20px auto 0;
 
-    border:4px solid #ddd;
+    border:4px solid rgba(255,255,255,.25);
 
-    border-top:4px solid #032d73;
+    border-top:4px solid #FFD700;
 
     border-radius:50%;
 
