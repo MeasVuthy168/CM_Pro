@@ -123,19 +123,54 @@ function crToDMY(dateStr) {
     return `${d}-${m}-${y}`;
 }
 
-function crSetDefaultDates() {
-    const now = new Date();
-    const y = now.getFullYear();
-    const firstOfMonth = `${y}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-    const today = now.toISOString().slice(0, 10);
-    const yearStart = `${y}-01-01`;
-    const yearEnd = `${y}-12-31`;
-    document.getElementById("crFromDate").value = firstOfMonth;
-    document.getElementById("crToDate").value = today;
-    document.getElementById("crWoFromDate").value = yearStart;
-    document.getElementById("crWoToDate").value = yearEnd;
+// Date inputs start EMPTY. On first load we send no date params at all;
+// the server derives the defaults from the data itself (latest OS
+// disbursement date -> 1st of that month, and Jan 1 - Dec 31 of that year
+// for Write Off, mirroring the Excel formulas) and echoes back what it
+// used, which we then fill in below. This avoids the client guessing
+// "today" when the data's latest date may be older or newer.
+let crDatesInitialised = false;
+
+function crApplyServerDates(data) {
+    if (crDatesInitialised) return;
+    const set = (id, dmy) => {
+        if (!dmy) return;
+        // server returns yyyy-mm-dd (toDateKey), which is what <input type=date> wants
+        document.getElementById(id).value = dmy;
+    };
+    set("crFromDate", data.fromDate);
+    set("crToDate", data.toDate);
+    set("crWoFromDate", data.woFromDate);
+    set("crWoToDate", data.woToDate);
+    crDatesInitialised = true;
 }
-crSetDefaultDates();
+
+// ========================================
+// META — report "as of" dates + Loan Reclass summary.
+// These come from the data, not from the filters, so they don't change
+// when the person picks different dates.
+// ========================================
+function crRenderMeta(meta) {
+    if (!meta) return;
+    const box = document.getElementById("crReportDates");
+
+    document.getElementById("crOverdueReportDate").textContent =
+        meta.overdueReportDate ? crFmtDateDMY(meta.overdueReportDate) : "-";
+    document.getElementById("crT24ReportDate").textContent =
+        meta.t24ReportDate ? crFmtDateDMY(meta.t24ReportDate) : "-";
+
+    const rc = meta.loanReclass || { value: 0, count: 0 };
+    document.getElementById("crLoanReclass").textContent =
+        `$${crFmtNum(rc.value)} · ${crFmtNum(rc.count)} LD`;
+
+    box.style.display = "";
+}
+
+function crFmtDateDMY(yyyymmdd) {
+    if (!yyyymmdd) return "-";
+    const [y, m, d] = yyyymmdd.split("-");
+    return `${d}-${m}-${y}`;
+}
 
 // ========================================
 // FORMAT HELPERS
@@ -309,25 +344,33 @@ function crShowEmpty(msg) {
     document.getElementById("crTableScroll").style.display = "none";
 }
 
+// Builds the ?fromDate=...&toDate=... query string, OMITTING any date the
+// person hasn't set. A missing param tells the server to use its own
+// data-derived default rather than us guessing one client-side.
+function crBuildDateQuery() {
+    const parts = [];
+    const add = (param, id) => {
+        const v = document.getElementById(id).value;
+        if (v) parts.push(`${param}=${crToDMY(v)}`);
+    };
+    add("fromDate", "crFromDate");
+    add("toDate", "crToDate");
+    add("woFromDate", "crWoFromDate");
+    add("woToDate", "crWoToDate");
+    return parts.length ? `?${parts.join("&")}` : "";
+}
+
 // ========================================
 // LOAD REPORT
 // ========================================
 async function crRunReport() {
     crShowLoading();
 
-    const fromDate = crToDMY(document.getElementById("crFromDate").value);
-    const toDate = crToDMY(document.getElementById("crToDate").value);
-    const woFromDate = crToDMY(document.getElementById("crWoFromDate").value);
-    const woToDate = crToDMY(document.getElementById("crWoToDate").value);
-
-    document.getElementById("crPeriodLabel").textContent =
-        `Loan Disbursement ${fromDate} to ${toDate}  ·  Write Off ${woFromDate} to ${woToDate}`;
-
     // Dates changed — any cached Detailed data is now stale.
     crDetailedData = null;
 
     try {
-        const url = `${API.BASE_URL}/api/creditreport/summary?fromDate=${fromDate}&toDate=${toDate}&woFromDate=${woFromDate}&woToDate=${woToDate}`;
+        const url = `${API.BASE_URL}/api/creditreport/summary${crBuildDateQuery()}`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
         const data = await res.json();
 
@@ -337,6 +380,16 @@ async function crRunReport() {
             crShowEmpty(data.message || "Failed to load report.");
             return;
         }
+
+        // Server echoes back the dates it actually used — on first load
+        // these are its data-derived defaults, so fill the empty inputs.
+        crApplyServerDates(data);
+        crRenderMeta(data.meta);
+
+        document.getElementById("crPeriodLabel").textContent =
+            `Loan Disbursement ${crFmtDateDMY(data.fromDate)} to ${crFmtDateDMY(data.toDate)}` +
+            `  ·  Write Off ${crFmtDateDMY(data.woFromDate)} to ${crFmtDateDMY(data.woToDate)}`;
+
         if (!data.items || !data.items.length) {
             crShowEmpty("No data.");
             return;
@@ -370,13 +423,8 @@ async function crEnsureDetailedLoaded() {
     }
     crShowLoading();
 
-    const fromDate = crToDMY(document.getElementById("crFromDate").value);
-    const toDate = crToDMY(document.getElementById("crToDate").value);
-    const woFromDate = crToDMY(document.getElementById("crWoFromDate").value);
-    const woToDate = crToDMY(document.getElementById("crWoToDate").value);
-
     try {
-        const url = `${API.BASE_URL}/api/creditreport/detailed?fromDate=${fromDate}&toDate=${toDate}&woFromDate=${woFromDate}&woToDate=${woToDate}`;
+        const url = `${API.BASE_URL}/api/creditreport/detailed${crBuildDateQuery()}`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
         const data = await res.json();
 
