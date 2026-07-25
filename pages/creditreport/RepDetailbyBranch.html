@@ -166,30 +166,10 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 
 </div>
 
-</div>
-
-<!-- ========================= -->
-<!-- MENU (relocated into topbar's "..." by creditreport-loader.js, -->
-<!-- same relocate pattern as arrears — see the note there) -->
-<!-- ========================= -->
-<div id="crMenuWrap" class="arrears-menu-wrap">
-<button id="btnCrMenu" class="arrears-menu-toggle" aria-label="More actions">⋮</button>
-<div id="crMenuDropdown" class="arrears-menu-dropdown">
-<button id="btnCrExport"><img src="/CM_Pro/assets/icons/arrear/export_excel.png" alt="" class="menu-icon"><span>Export Excel</span></button>
-<button id="btnCrExportPdf"><img src="/CM_Pro/assets/icons/arrear/export_pdf.png" alt="" class="menu-icon"><span>Export PDF</span></button>
-<button id="btnCrPrint"><img src="/CM_Pro/assets/icons/arrear/print.png" alt="" class="menu-icon"><span>Print</span></button>
-<button id="btnCrLandscape"><img src="/CM_Pro/assets/icons/arrear/landscape.png" alt="" class="menu-icon"><span>Landscape</span></button>
-<button id="btnCrRefreshData"><span class="menu-icon cr-refresh-icon">🔄</span><span>Refresh Data</span></button>
-</div>
-</div>
-
-<!-- ========================= -->
-<!-- VIEW CONTROLS -->
-<!-- Summary/Detailed toggle + section picker share one card since
-     they're both "what am I looking at" controls. -->
-<!-- ========================= -->
-
-<div class="cr-view-card">
+<!-- View controls live in this same card: Summary/Detailed and the
+     section picker are both "what am I looking at", so they belong
+     with the report's other settings rather than in a card of their own. -->
+<div class="cr-view-controls">
 
 <div class="cr-tabs">
 <div class="cr-tab active" data-view="summary">Summary Report</div>
@@ -208,6 +188,23 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 </select>
 </div>
 
+</div>
+
+</div>
+
+<!-- ========================= -->
+<!-- MENU (relocated into topbar's "..." by creditreport-loader.js, -->
+<!-- same relocate pattern as arrears — see the note there) -->
+<!-- ========================= -->
+<div id="crMenuWrap" class="arrears-menu-wrap">
+<button id="btnCrMenu" class="arrears-menu-toggle" aria-label="More actions">⋮</button>
+<div id="crMenuDropdown" class="arrears-menu-dropdown">
+<button id="btnCrExport"><img src="/CM_Pro/assets/icons/arrear/export_excel.png" alt="" class="menu-icon"><span>Export Excel</span></button>
+<button id="btnCrExportPdf"><img src="/CM_Pro/assets/icons/arrear/export_pdf.png" alt="" class="menu-icon"><span>Export PDF</span></button>
+<button id="btnCrPrint"><img src="/CM_Pro/assets/icons/arrear/print.png" alt="" class="menu-icon"><span>Print</span></button>
+<button id="btnCrLandscape"><img src="/CM_Pro/assets/icons/arrear/landscape.png" alt="" class="menu-icon"><span>Landscape</span></button>
+<button id="btnCrRefreshData"><span class="menu-icon cr-refresh-icon">🔄</span><span>Refresh Data</span></button>
+</div>
 </div>
 
 <div class="cr-detailed-note" id="crDetailedNote" style="display:none"></div>
