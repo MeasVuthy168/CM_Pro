@@ -223,25 +223,38 @@
 }
 .cr-info-row{
     display:flex;
-    align-items:baseline;
+    align-items:flex-start;
     justify-content:space-between;
     gap:12px;
     font-size:12.5px;
-    padding-bottom:7px;
+    padding-bottom:8px;
     border-bottom:1px solid var(--cr-border);
 }
 .cr-info-row:last-child{ border-bottom:none; padding-bottom:0; }
 .cr-info-label{
     color:var(--cr-text-muted);
     font-weight:600;
-    white-space:nowrap;
+    display:flex;
+    align-items:flex-start;
+    gap:7px;
+    /* labels here are long ("NBC Overdue Loan Grid Merge as of"), so let
+       them wrap rather than forcing the value column to shrink */
+    flex:1 1 auto;
+    min-width:0;
+    line-height:1.35;
+}
+.cr-info-icon{
+    font-size:14px;
+    line-height:1.2;
     flex:0 0 auto;
 }
 .cr-info-value{
     color:var(--cr-navy);
     font-weight:800;
     text-align:right;
-    word-break:break-word;
+    flex:0 0 auto;
+    white-space:nowrap;
+    line-height:1.35;
 }
 [data-theme="dark"] .cr-info-value{ color:var(--cr-gold-light); }
 .cr-info-row.cr-reclass .cr-info-value{ color:var(--cr-danger); }
