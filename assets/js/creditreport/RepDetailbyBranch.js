@@ -711,6 +711,47 @@ if (crMenuToggle && crMenuDropdown) {
 // creditreport.css for why. Bars auto-hide after 3s, tapping the
 // table brings them back.
 // ========================================
+// ========================================
+// REFRESH DATA
+// Clears the server's raw-row cache (which otherwise holds Mongo data for
+// up to 10 min) then re-runs the report, so a fresh VBA upload shows up
+// immediately instead of waiting out the TTL.
+//
+// Note this makes the NEXT request pay the full slow fetch again — that's
+// the whole point, but it means this button is deliberately not something
+// to press casually.
+// ========================================
+async function crRefreshData() {
+    document.getElementById("crMenuDropdown")?.classList.remove("show");
+    crShowLoading();
+
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/creditreport/refresh`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${crToken}` }
+        });
+        const data = await res.json();
+
+        if (!data.ok) {
+            crHideLoading();
+            crShowEmpty(data.message || "Could not refresh data.");
+            return;
+        }
+
+        // Local caches are now stale too — drop them so the re-run refetches.
+        crSummaryData = null;
+        crDetailedData = null;
+
+        notify("Refreshing from database — this may take a while.", "info");
+        await crRunReport();
+    } catch (e) {
+        console.error("[refresh data] failed:", e);
+        crHideLoading();
+        crShowEmpty("Network error refreshing data.");
+    }
+}
+document.getElementById("btnCrRefreshData")?.addEventListener("click", crRefreshData);
+
 const btnCrLandscape = document.getElementById("btnCrLandscape");
 const btnCrExitLandscape = document.getElementById("btnCrExitLandscape");
 const crLandscapeTopBar = document.getElementById("landscapeTopBar");
