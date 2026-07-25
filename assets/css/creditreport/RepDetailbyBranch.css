@@ -24,6 +24,9 @@
     --cr-row-alt:#f8f9fc;
     --cr-skel-base:#eceff4;
     --cr-skel-shine:#f7f9fc;
+    --cr-input-bg:#FFFFFF;
+    --cr-input-text:#1C2333;
+    --cr-tabs-track:#eef1f6;
 }
 
 [data-theme="dark"]{
@@ -41,6 +44,9 @@
     --cr-row-alt:#00306e;
     --cr-skel-base:#0a3a86;
     --cr-skel-shine:#0d4aa8;
+    --cr-input-bg:#0a2d63;
+    --cr-input-text:#FFFFFF;
+    --cr-tabs-track:rgba(0,0,0,.22);
 }
 
 *{ box-sizing:border-box; }
@@ -94,11 +100,19 @@
 }
 .filter-group input[type="date"]{
     width:100%;
+    /* iOS gives date inputs a large intrinsic width, and grid/flex
+       children default to min-width:auto — so without this the field
+       refuses to shrink and spills outside the card. */
+    min-width:0;
+    max-width:100%;
+    box-sizing:border-box;
+    -webkit-appearance:none;
+    appearance:none;
     padding:9px 10px;
     border-radius:10px;
     border:1px solid var(--cr-border);
-    background:#fff;
-    color:#1C2333;
+    background:var(--cr-input-bg);
+    color:var(--cr-input-text);
     font-size:13px;
     font-family:'KRASAR', sans-serif;
 }
@@ -127,36 +141,27 @@
 }
 .cr-run-btn:active{ opacity:.85; transform:scale(.99); }
 .cr-run-btn:disabled{ opacity:.7; cursor:default; }
-.cr-run-spinner{
-    width:16px; height:16px;
-    border-radius:50%;
-    border:2px solid rgba(255,255,255,.4);
-    border-top-color:#fff;
-    display:none;
-    animation:cr-spin .7s linear infinite;
-}
-[data-theme="dark"] .cr-run-spinner{
-    border:2px solid rgba(0,45,107,.35);
-    border-top-color:#002D6B;
-}
-.cr-run-btn.loading .cr-run-spinner{ display:inline-block; }
-@keyframes cr-spin{ to{ transform:rotate(360deg); } }
 
-/* ===== View toggle (Summary / Detailed) ===== */
+
+/* ===== View controls (inside the filter card) ===== */
+.cr-view-controls{
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px solid var(--cr-border);
+}
+
 .cr-tabs{
     display:flex;
-    background:var(--cr-card-bg);
-    border:1px solid var(--cr-border);
-    border-radius:12px;
-    padding:4px;
+    background:var(--cr-tabs-track);
+    border-radius:10px;
+    padding:3px;
     margin-bottom:10px;
-    box-shadow:var(--cr-shadow);
 }
 .cr-tab{
     flex:1;
     text-align:center;
     padding:10px 6px;
-    border-radius:9px;
+    border-radius:8px;
     font-size:13px;
     font-weight:700;
     color:var(--cr-text-muted);
@@ -168,6 +173,12 @@
     color:#fff;
 }
 [data-theme="dark"] .cr-tab.active{ color:#002D6B; }
+
+.cr-section-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
 .cr-detailed-note{
     background:rgba(179,38,30,.1);
     color:var(--cr-danger);
@@ -179,17 +190,6 @@
 }
 
 /* ===== Section picker ===== */
-.cr-section-card{
-    background:var(--cr-card-bg);
-    border:1px solid var(--cr-border);
-    border-radius:12px;
-    padding:10px 12px;
-    box-shadow:var(--cr-shadow);
-    margin-bottom:10px;
-    display:flex;
-    align-items:center;
-    gap:10px;
-}
 .cr-section-label{
     font-size:11.5px;
     font-weight:700;
@@ -198,11 +198,12 @@
 }
 .cr-section-select{
     flex:1;
-    padding:9px 10px;
+    min-width:0;
+    padding:10px;
     border-radius:10px;
     border:1px solid var(--cr-border);
-    background:#fff;
-    color:#1C2333;
+    background:var(--cr-input-bg);
+    color:var(--cr-input-text);
     font-size:13px;
     font-weight:700;
     font-family:'KRASAR', sans-serif;
@@ -585,7 +586,6 @@
 body.cr-force-landscape #topbar-container,
 body.cr-force-landscape .filter-card,
 body.cr-force-landscape .cr-tabs,
-body.cr-force-landscape .cr-section-card,
 body.cr-force-landscape .summary-row.upload-meta,
 body.cr-force-landscape .rendered-count-note,
 body.cr-force-landscape #bottomnav-container,
@@ -673,7 +673,7 @@ body.cr-force-landscape .landscape-bar.hidden{
         overflow:visible !important;
     }
 
-    .filter-card, .cr-section-card{
+    .filter-card{
         background:#fff !important;
         border:1px solid #999 !important;
         box-shadow:none !important;
