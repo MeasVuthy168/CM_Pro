@@ -162,10 +162,7 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 
 </div>
 
-<button id="btnCrRun" class="cr-run-btn">
-<span class="cr-run-label">View Report</span>
-<span class="cr-run-spinner" id="crRunSpinner"></span>
-</button>
+<button id="btnCrRun" class="cr-run-btn">View Report</button>
 
 </div>
 
@@ -187,24 +184,19 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 </div>
 
 <!-- ========================= -->
-<!-- VIEW TOGGLE (Summary / Detailed) -->
+<!-- VIEW CONTROLS -->
+<!-- Summary/Detailed toggle + section picker share one card since
+     they're both "what am I looking at" controls. -->
 <!-- ========================= -->
+
+<div class="cr-view-card">
 
 <div class="cr-tabs">
 <div class="cr-tab active" data-view="summary">Summary Report</div>
 <div class="cr-tab" data-view="detailed">Detailed Report</div>
 </div>
 
-<div class="cr-detailed-note" id="crDetailedNote" style="display:none"></div>
-
-<!-- ========================= -->
-<!-- SECTION PICKER -->
-<!-- Pick ONE metric group at a time instead of scrolling through
-     36 columns — Branch stays sticky and the table stays narrow
-     enough to read without scrolling for most sections. -->
-<!-- ========================= -->
-
-<div class="cr-section-card">
+<div class="cr-section-row">
 <label for="crSection" class="cr-section-label">Showing</label>
 <select id="crSection" class="cr-section-select">
 <option value="all">All Sections</option>
@@ -215,6 +207,10 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 <option value="writeOff">Write Off</option>
 </select>
 </div>
+
+</div>
+
+<div class="cr-detailed-note" id="crDetailedNote" style="display:none"></div>
 
 <!-- ========================= -->
 <!-- TABLE -->
