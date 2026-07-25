@@ -152,7 +152,6 @@ function crApplyServerDates(data) {
 // ========================================
 function crRenderMeta(meta) {
     if (!meta) return;
-    const box = document.getElementById("crReportDates");
 
     document.getElementById("crOverdueReportDate").textContent =
         meta.overdueReportDate ? crFmtDateDMY(meta.overdueReportDate) : "-";
@@ -162,8 +161,6 @@ function crRenderMeta(meta) {
     const rc = meta.loanReclass || { value: 0, count: 0 };
     document.getElementById("crLoanReclass").textContent =
         `$${crFmtNum(rc.value)} · ${crFmtNum(rc.count)} LD`;
-
-    box.style.display = "";
 }
 
 function crFmtDateDMY(yyyymmdd) {
@@ -267,7 +264,7 @@ function crRenderSummary() {
         crSummaryData.items.map(it => crBuildRow(it, section, false)).join("") +
         crBuildRow(crSummaryData.total, section, true);
 
-    document.getElementById("crRenderedCountNote").textContent = `${crSummaryData.items.length} branches`;
+    document.getElementById("crRenderedCountNote").textContent = `${crSummaryData.items.length}`;
     requestAnimationFrame(crSetHeaderOffsets);
 }
 
@@ -294,7 +291,7 @@ function crRenderDetailed() {
         crBuildDetailedRow(grand.total, section, "All", "Total", false, true);
 
     document.getElementById("crTbody").innerHTML = rowsHtml + grandHtml;
-    document.getElementById("crRenderedCountNote").textContent = `${crDetailedData.groups.length} branches × CO/FSRO/Total`;
+    document.getElementById("crRenderedCountNote").textContent = `${crDetailedData.groups.length} × CO/FSRO/Total`;
     requestAnimationFrame(crSetHeaderOffsets);
 }
 
@@ -386,9 +383,10 @@ async function crRunReport() {
         crApplyServerDates(data);
         crRenderMeta(data.meta);
 
-        document.getElementById("crPeriodLabel").textContent =
-            `Loan Disbursement ${crFmtDateDMY(data.fromDate)} to ${crFmtDateDMY(data.toDate)}` +
-            `  ·  Write Off ${crFmtDateDMY(data.woFromDate)} to ${crFmtDateDMY(data.woToDate)}`;
+        document.getElementById("crDisbPeriod").textContent =
+            `${crFmtDateDMY(data.fromDate)} to ${crFmtDateDMY(data.toDate)}`;
+        document.getElementById("crWoPeriod").textContent =
+            `${crFmtDateDMY(data.woFromDate)} to ${crFmtDateDMY(data.woToDate)}`;
 
         if (!data.items || !data.items.length) {
             crShowEmpty("No data.");
@@ -409,7 +407,28 @@ async function crRunReport() {
         crShowEmpty("Network error loading report.");
     }
 }
-document.getElementById("btnCrRun").addEventListener("click", crRunReport);
+// ========================================
+// "Set Report Date" — collapses/expands the date pickers.
+// Collapsed by default: the info block above already shows which
+// periods are in effect, so most visits never need to open this.
+// ========================================
+const crDatePanel = document.getElementById("crDatePanel");
+const btnCrToggleDates = document.getElementById("btnCrToggleDates");
+
+function crSetDatePanelOpen(open) {
+    crDatePanel.classList.toggle("open", open);
+    btnCrToggleDates.setAttribute("aria-expanded", open ? "true" : "false");
+    btnCrToggleDates.classList.toggle("open", open);
+}
+
+btnCrToggleDates.addEventListener("click", () => {
+    crSetDatePanelOpen(!crDatePanel.classList.contains("open"));
+});
+
+document.getElementById("btnCrRun").addEventListener("click", () => {
+    crRunReport();
+    crSetDatePanelOpen(false); // collapse once applied — result is shown above
+});
 
 // ========================================
 // DETAILED REPORT — fetched lazily (only when the Detailed tab is
