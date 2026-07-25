@@ -215,6 +215,37 @@
 }
 #crPeriodLabel{ color:var(--cr-text); font-weight:600; }
 
+/* ===== Report "as of" dates + Loan Reclass ===== */
+.cr-report-dates{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:10px;
+}
+.cr-report-date-item{
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:10px;
+    padding:7px 11px;
+    box-shadow:var(--cr-shadow);
+    display:flex;
+    align-items:baseline;
+    gap:7px;
+    font-size:11.5px;
+}
+.cr-rd-label{
+    color:var(--cr-text-muted);
+    font-weight:600;
+    white-space:nowrap;
+}
+.cr-rd-value{
+    color:var(--cr-navy);
+    font-weight:800;
+    white-space:nowrap;
+}
+[data-theme="dark"] .cr-rd-value{ color:var(--cr-gold-light); }
+.cr-report-date-item.cr-reclass .cr-rd-value{ color:var(--cr-danger); }
+
 .rendered-count-note{
     font-size:11.5px;
     color:var(--cr-text-muted);
