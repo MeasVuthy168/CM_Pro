@@ -455,7 +455,21 @@
     font-weight:800;
 }
 
-.cr-par-high{ color:var(--cr-danger); font-weight:700; }
+/* PAR alert colour.
+   Needs `.table-card td` prefix: the base `.table-card td{color:...}` rule
+   has higher specificity than a bare `.cr-par-high`, so without this the
+   red silently loses and only the bold weight shows.
+   The Total rows set their colour with !important, so they need their own
+   override to stay red rather than falling back to the total-row gold. */
+.table-card td.cr-par-high{
+    color:var(--cr-danger);
+    font-weight:800;
+}
+.cr-total-row td.cr-par-high,
+.cr-branch-total-row td.cr-par-high{
+    color:var(--cr-danger) !important;
+    font-weight:800;
+}
 
 /* ===== Table note (Loan Reclass under the T24 columns) ===== */
 .cr-table-note{
