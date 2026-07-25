@@ -110,23 +110,13 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 </div>
 
 <div class="cr-info-row">
-<span class="cr-info-label"><span class="cr-info-icon">⚠️</span>NBC Overdue Loan Grid Merge as of</span>
+<span class="cr-info-label"><span class="cr-info-icon">⚠️</span>NBC Overdue Loan Grid Merge</span>
 <span class="cr-info-value" id="crOverdueGridMerge">-</span>
 </div>
 
 <div class="cr-info-row">
-<span class="cr-info-label"><span class="cr-info-icon">⏱️</span>Payment in Arears with Penalty as of</span>
+<span class="cr-info-label"><span class="cr-info-icon">⏱️</span>Payment in Arears with Penalty</span>
 <span class="cr-info-value" id="crArrearsPenalty">-</span>
-</div>
-
-<div class="cr-info-row cr-reclass">
-<span class="cr-info-label"><span class="cr-info-icon">🔄</span>Loan Reclass</span>
-<span class="cr-info-value" id="crLoanReclass">-</span>
-</div>
-
-<div class="cr-info-row cr-info-count">
-<span class="cr-info-label"><span class="cr-info-icon">🏢</span>Branches</span>
-<span class="cr-info-value" id="crRenderedCountNote">-</span>
 </div>
 
 </div>
@@ -203,7 +193,7 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 <button id="btnCrExportPdf"><img src="/CM_Pro/assets/icons/arrear/export_pdf.png" alt="" class="menu-icon"><span>Export PDF</span></button>
 <button id="btnCrPrint"><img src="/CM_Pro/assets/icons/arrear/print.png" alt="" class="menu-icon"><span>Print</span></button>
 <button id="btnCrLandscape"><img src="/CM_Pro/assets/icons/arrear/landscape.png" alt="" class="menu-icon"><span>Landscape</span></button>
-<button id="btnCrRefreshData"><span class="menu-icon cr-refresh-icon">🔄</span><span>Refresh Data</span></button>
+<button id="btnCrRefreshData"><img src="/CM_Pro/assets/icons/arrear/refresh.png" alt="" class="menu-icon"><span>Refresh Data</span></button>
 </div>
 </div>
 
@@ -244,6 +234,10 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 </div>
 
 <div class="cr-empty" id="crEmptyMsg" style="display:none"></div>
+
+<!-- Shown only when the T24 columns are on screen — mirrors the Excel
+     header note "(T24) included Reclass: ($x and n LD)". -->
+<div class="cr-table-note" id="crReclassNote" style="display:none"></div>
 
 </div>
 
