@@ -27,6 +27,7 @@
     --cr-input-bg:#FFFFFF;
     --cr-input-text:#1C2333;
     --cr-tabs-track:#eef1f6;
+    --cr-note-bg:#fdf6f5;
 }
 
 [data-theme="dark"]{
@@ -47,6 +48,7 @@
     --cr-input-bg:#0a2d63;
     --cr-input-text:#FFFFFF;
     --cr-tabs-track:rgba(0,0,0,.22);
+    --cr-note-bg:rgba(255,107,107,.10);
 }
 
 *{ box-sizing:border-box; }
@@ -143,14 +145,11 @@
 .cr-run-btn:disabled{ opacity:.7; cursor:default; }
 
 
-/* ===== View controls card (tabs + section picker) ===== */
-.cr-view-card{
-    background:var(--cr-card-bg);
-    border:1px solid var(--cr-border);
-    border-radius:12px;
-    padding:10px;
-    box-shadow:var(--cr-shadow);
-    margin-bottom:10px;
+/* ===== View controls (inside the filter card) ===== */
+.cr-view-controls{
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px solid var(--cr-border);
 }
 
 .cr-tabs{
@@ -217,7 +216,6 @@
     color:var(--cr-text-muted);
     padding:2px 2px 10px;
 }
-#crRenderedCountNote{ color:var(--cr-text); font-weight:800; }
 
 /* ===== In-card report info block ===== */
 .cr-info-block{
@@ -261,7 +259,6 @@
     line-height:1.35;
 }
 [data-theme="dark"] .cr-info-value{ color:var(--cr-gold-light); }
-.cr-info-row.cr-reclass .cr-info-value{ color:var(--cr-danger); }
 
 /* ===== "Set Report Date" toggle ===== */
 .cr-setdate-btn{
@@ -460,6 +457,26 @@
 
 .cr-par-high{ color:var(--cr-danger); font-weight:700; }
 
+/* ===== Table note (Loan Reclass under the T24 columns) ===== */
+.cr-table-note{
+    margin-top:10px;
+    padding:9px 11px;
+    border-radius:10px;
+    background:var(--cr-note-bg);
+    border:1px solid var(--cr-border);
+    font-size:12px;
+    line-height:1.4;
+}
+.cr-note-label{
+    color:var(--cr-text-muted);
+    font-weight:600;
+}
+.cr-note-value{
+    color:var(--cr-danger);
+    font-weight:800;
+    white-space:nowrap;
+}
+
 .cr-empty{
     text-align:center;
     color:var(--cr-text-muted);
@@ -540,15 +557,6 @@
     flex:0 0 20px;
     object-fit:contain;
 }
-/* The other menu items use <img> icons; this one is an emoji in a <span>,
-   so it needs explicit centering to sit on the same baseline as them. */
-.arrears-menu-dropdown button .cr-refresh-icon{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:15px;
-    line-height:1;
-}
 .arrears-menu-dropdown button:active,
 .arrears-menu-dropdown button:hover{
     background:rgba(212,175,55,.25);
@@ -589,7 +597,6 @@
 body.cr-force-landscape #topbar-container,
 body.cr-force-landscape .filter-card,
 body.cr-force-landscape .cr-tabs,
-body.cr-force-landscape .cr-view-card,
 body.cr-force-landscape .summary-row.upload-meta,
 body.cr-force-landscape .rendered-count-note,
 body.cr-force-landscape #bottomnav-container,
@@ -677,7 +684,7 @@ body.cr-force-landscape .landscape-bar.hidden{
         overflow:visible !important;
     }
 
-    .filter-card, .cr-view-card{
+    .filter-card{
         background:#fff !important;
         border:1px solid #999 !important;
         box-shadow:none !important;
@@ -692,6 +699,11 @@ body.cr-force-landscape .landscape-bar.hidden{
 
     .summary-row{ color:#000 !important; }
     .cr-info-label, .cr-info-value{ color:#000 !important; }
+    .cr-table-note{
+        background:#fff !important;
+        border:1px solid #999 !important;
+    }
+    .cr-note-label, .cr-note-value{ color:#000 !important; }
 
     .table-card{
         background:#fff !important;
