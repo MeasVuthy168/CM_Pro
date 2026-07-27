@@ -24,6 +24,25 @@ async function loadComponent(id,file){
                 showProfile:false
             });
 
+            // Back goes to whichever page linked here — the dashboard, or
+            // the Credit Report hub (which appends ?from=creditreport).
+            const crFrom = new URLSearchParams(location.search).get("from");
+            const backTarget = crFrom === "creditreport"
+                ? "/CM_Pro/pages/creditreport/index.html"
+                : "/CM_Pro/index.html";
+
+            // initTopbar sets `backBtn.onclick = () => history.back()`.
+            // Reassigning .onclick cleanly replaces that (it's a property,
+            // not addEventListener, so there's no listener to remove).
+            //
+            // An explicit href beats history.back() here: this page can be
+            // reached by reload, bookmark, or PWA restore, where there's no
+            // previous history entry to return to.
+            const backBtn = document.getElementById("topbarBackBtn");
+            if (backBtn) {
+                backBtn.onclick = () => { location.href = backTarget; };
+            }
+
             // Relocate the page's own "..." menu (Export/Print/Landscape,
             // built in index.html) into the topbar's right side. This
             // moves the EXISTING elements rather than rebuilding them,
@@ -65,6 +84,30 @@ updateOnlineStatus();
 // =========================
 // LOAD COMPONENTS
 // =========================
+// =========================
+// BACK DESTINATION PERSISTENCE
+// The ?from= param is how this page knows whether Back should return to
+// the dashboard or the Credit Report hub. Stash it in sessionStorage so
+// the destination survives a reload/PWA restore that drops the query
+// string, and restore it into the URL when it's missing.
+// =========================
+(function persistArrearsOrigin() {
+    const KEY = "arrearsBackFrom";
+    const params = new URLSearchParams(location.search);
+    const from = params.get("from");
+
+    if (from) {
+        sessionStorage.setItem(KEY, from);
+        return;
+    }
+
+    const saved = sessionStorage.getItem(KEY);
+    if (saved) {
+        params.set("from", saved);
+        history.replaceState(null, "", `${location.pathname}?${params}`);
+    }
+})();
+
 loadComponent("topbar-container","/CM_Pro/components/topbar.html");
 loadComponent("bottomnav-container","/CM_Pro/components/bottomnav.html");
 // =========================
