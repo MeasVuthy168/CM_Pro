@@ -24,6 +24,15 @@ async function loadComponent(id, file) {
                 showProfile: false
             });
 
+            // This page is only reachable from the Credit Report hub, so
+            // Back goes there explicitly rather than via history.back()
+            // (which breaks on reload/bookmark/PWA restore, where there's
+            // no previous history entry).
+            const backBtn = document.getElementById("topbarBackBtn");
+            if (backBtn) {
+                backBtn.onclick = () => { location.href = "/CM_Pro/pages/creditreport/index.html"; };
+            }
+
             // Relocate the page's own "..." menu (Export/Print, built in
             // index.html) into the topbar's right side — same relocate
             // pattern as Daily Arrears (see arrears-loader.js). Moves
