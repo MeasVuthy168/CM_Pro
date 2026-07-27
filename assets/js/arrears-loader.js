@@ -84,30 +84,6 @@ updateOnlineStatus();
 // =========================
 // LOAD COMPONENTS
 // =========================
-// =========================
-// BACK DESTINATION PERSISTENCE
-// The ?from= param is how this page knows whether Back should return to
-// the dashboard or the Credit Report hub. Stash it in sessionStorage so
-// the destination survives a reload/PWA restore that drops the query
-// string, and restore it into the URL when it's missing.
-// =========================
-(function persistArrearsOrigin() {
-    const KEY = "arrearsBackFrom";
-    const params = new URLSearchParams(location.search);
-    const from = params.get("from");
-
-    if (from) {
-        sessionStorage.setItem(KEY, from);
-        return;
-    }
-
-    const saved = sessionStorage.getItem(KEY);
-    if (saved) {
-        params.set("from", saved);
-        history.replaceState(null, "", `${location.pathname}?${params}`);
-    }
-})();
-
 loadComponent("topbar-container","/CM_Pro/components/topbar.html");
 loadComponent("bottomnav-container","/CM_Pro/components/bottomnav.html");
 // =========================
