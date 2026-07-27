@@ -23,6 +23,15 @@ async function loadComponent(id, file) {
                 showLogo: false,
                 showProfile: false
             });
+
+            // initTopbar defaults Back to history.back(), which walks to
+            // whatever was viewed previously — including arrears, if the
+            // person just came back from there. This hub always belongs
+            // under the dashboard, so send Back there explicitly.
+            const backBtn = document.getElementById("topbarBackBtn");
+            if (backBtn) {
+                backBtn.onclick = () => { location.href = "/CM_Pro/index.html"; };
+            }
         }
     } catch (error) {
         console.error(error);
