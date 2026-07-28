@@ -147,8 +147,8 @@
 
 /* ===== View controls (inside the filter card) ===== */
 .cr-view-controls{
-    margin-top:14px;
-    padding-top:14px;
+    margin-top:10px;
+    padding-top:10px;
     border-top:1px solid var(--cr-border);
 }
 
@@ -184,7 +184,7 @@
     display:flex;
     align-items:center;
     gap:10px;
-    margin-bottom:8px;
+    margin-bottom:6px;
 }
 .cr-select-row:last-child{ margin-bottom:0; }
 .cr-detailed-note{
@@ -218,7 +218,7 @@
     min-width:0;
     width:100%;
     box-sizing:border-box;
-    padding:10px;
+    padding:7px 10px;
     border-radius:10px;
     border:1px solid var(--cr-border);
     background:var(--cr-input-bg);
