@@ -2,7 +2,7 @@
 // Credit Report — "RepDetail byBranch" Summary Report web port
 // Reads from GET /api/creditreport/summary (computed live from
 // nbcos/arreast24byco/nbcoverdue/wo/wocolgb — see
-// lib/creditreport-report.js on the backend for the exact formulas).
+// lib/creditreport-branch.js on the backend for the exact formulas).
 //
 // UI note: instead of one 36-column table requiring constant
 // horizontal scroll, the person picks ONE metric group at a time
