@@ -176,11 +176,17 @@
 }
 [data-theme="dark"] .cr-tab.active{ color:#002D6B; }
 
+/* Branch / Team / Showing rows.
+   The labels differ in length ("Team" vs "Showing"), so with auto-width
+   labels each select started at a different x and ended up a different
+   width. A fixed label column lines all three up. */
 .cr-select-row{
     display:flex;
     align-items:center;
     gap:10px;
+    margin-bottom:8px;
 }
+.cr-select-row:last-child{ margin-bottom:0; }
 .cr-detailed-note{
     background:rgba(179,38,30,.1);
     color:var(--cr-danger);
@@ -197,10 +203,21 @@
     font-weight:700;
     color:var(--cr-text-muted);
     white-space:nowrap;
+    text-align:left;
+    /* Fixed label column so Branch / Team / Showing selects all start at
+       the same x and come out the same width.
+       min-width:0 is required: flex items default to min-width:auto, so a
+       label wider than the basis (e.g. "Showing") refuses to shrink and
+       shoves its select to the right — which is what staggered them.
+       The basis is set past the longest label so nothing clips. */
+    flex:0 0 76px;
+    min-width:0;
 }
 .cr-select{
-    flex:1;
+    flex:1 1 auto;
     min-width:0;
+    width:100%;
+    box-sizing:border-box;
     padding:10px;
     border-radius:10px;
     border:1px solid var(--cr-border);
