@@ -431,8 +431,10 @@
     color:var(--cr-danger);
     font-weight:800;
 }
-.cr-total-row td.cr-par-high,
-
+.cr-total-row td.cr-par-high{
+    color:var(--cr-danger) !important;
+    font-weight:800;
+}
 
 .cr-empty{
     text-align:center;
@@ -676,5 +678,6 @@ body.cr-force-landscape .landscape-bar.hidden{
     .table-card thead{ display:table-header-group; }
     .table-card tbody{ display:table-row-group; }
 
-    .cr-total-row td,     .cr-par-high{ color:#000 !important; text-decoration:underline; }
+    .cr-total-row td{ background:#f2f2f2 !important; color:#000 !important; font-weight:800; }
+    .cr-par-high{ color:#000 !important; text-decoration:underline; }
 }
