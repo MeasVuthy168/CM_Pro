@@ -1,1 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>Daily Monitoring by Officer</title>
+
+<meta
+name="theme-color"
+content="#032d73">
+
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
+<link
+rel="stylesheet"
+href="../../assets/css/main.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/creditreport/RepDetailbyCO.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
+
+</head>
+
+<body>
+
+<div id="offlineBanner">
+⚠️ No Internet Connection
+</div>
+
+<script src="../../config/api.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+
+<div id="topbar-container"></div>
+
+<div class="page-container">
+
+<div class="print-only-title">របាយការណ៍ត្រួតពិនិត្យប្រចាំថ្ងៃតាមភ្នាក់ងារ</div>
+
+<!-- ========================= -->
+<!-- REPORT INFO + FILTERS -->
+<!-- ========================= -->
+
+<div class="filter-card">
+
+<div class="cr-info-block">
+
+<div class="cr-info-row">
+<span class="cr-info-label"><span class="cr-info-icon">💵</span>Loan Disbursement from</span>
+<span class="cr-info-value" id="crDisbPeriod">-</span>
+</div>
+
+<div class="cr-info-row">
+<span class="cr-info-label"><span class="cr-info-icon">✂️</span>Write Off from</span>
+<span class="cr-info-value" id="crWoPeriod">-</span>
+</div>
+
+<div class="cr-info-row">
+<span class="cr-info-label"><span class="cr-info-icon">👤</span>Officers</span>
+<span class="cr-info-value" id="crOfficerCount">-</span>
+</div>
+
+</div>
+
+<button id="btnCrToggleDates" class="cr-setdate-btn" aria-expanded="false">
+<span>Set Report Date</span>
+<span class="cr-setdate-caret">▾</span>
+</button>
+
+<div class="cr-date-panel" id="crDatePanel">
+
+<div class="filter-grid">
+
+<div class="filter-group">
+<label for="crFromDate">ចាប់ផ្តើមផ្តល់ឥណទាន</label>
+<input type="date" id="crFromDate">
+</div>
+
+<div class="filter-group">
+<label for="crToDate">ដល់</label>
+<input type="date" id="crToDate">
+</div>
+
+<div class="filter-group">
+<label for="crWoFromDate">ចាប់ផ្តើម (Write Off)</label>
+<input type="date" id="crWoFromDate">
+</div>
+
+<div class="filter-group">
+<label for="crWoToDate">ដល់</label>
+<input type="date" id="crWoToDate">
+</div>
+
+</div>
+
+<button id="btnCrRun" class="cr-run-btn">View Report</button>
+
+</div>
+
+<!-- Branch / Team / Section pickers -->
+<div class="cr-view-controls">
+
+<div class="cr-select-row">
+<label for="crBranch" class="cr-select-label">Branch</label>
+<select id="crBranch" class="cr-select">
+<option value="All Branch">All Branch</option>
+</select>
+</div>
+
+<div class="cr-select-row">
+<label for="crTeam" class="cr-select-label">Team</label>
+<select id="crTeam" class="cr-select">
+<option value="All Team">All Team</option>
+<option value="Credit Officer">Credit Officer</option>
+<option value="FSRO">FSRO</option>
+</select>
+</div>
+
+<div class="cr-select-row">
+<label for="crSection" class="cr-select-label">Showing</label>
+<select id="crSection" class="cr-select">
+<option value="all">All Sections</option>
+<option value="outstanding">Loan Outstanding — សមតុល្យឥណទាន</option>
+<option value="disburse">Loan Disburse</option>
+<option value="parT24">Balance Loan at Risk (T24)</option>
+<option value="nbcOverdue">Balance Loan at Risk (NBC Overdue)</option>
+<option value="writeOff">Write Off</option>
+</select>
+</div>
+
+</div>
+
+</div>
+
+<!-- ========================= -->
+<!-- MENU (relocated into topbar by the loader) -->
+<!-- ========================= -->
+<div id="crMenuWrap" class="arrears-menu-wrap">
+<button id="btnCrMenu" class="arrears-menu-toggle" aria-label="More actions">⋮</button>
+<div id="crMenuDropdown" class="arrears-menu-dropdown">
+<button id="btnCrExport"><img src="/CM_Pro/assets/icons/arrear/export_excel.png" alt="" class="menu-icon"><span>Export Excel</span></button>
+<button id="btnCrExportPdf"><img src="/CM_Pro/assets/icons/arrear/export_pdf.png" alt="" class="menu-icon"><span>Export PDF</span></button>
+<button id="btnCrPrint"><img src="/CM_Pro/assets/icons/arrear/print.png" alt="" class="menu-icon"><span>Print</span></button>
+<button id="btnCrLandscape"><img src="/CM_Pro/assets/icons/arrear/landscape.png" alt="" class="menu-icon"><span>Landscape</span></button>
+<button id="btnCrRefreshData"><img src="/CM_Pro/assets/icons/arrear/refresh.png" alt="" class="menu-icon"><span>Refresh Data</span></button>
+</div>
+</div>
+
+<!-- ========================= -->
+<!-- TABLE -->
+<!-- ========================= -->
+
+<div class="table-card">
+
+<div id="landscapeTopBar" class="landscape-bar landscape-top-bar">
+<button id="btnCrExitLandscape" aria-label="Exit landscape">✕ ត្រឡប់ក្រោយ</button>
+<span id="crLandscapeRowCount" class="landscape-row-count"></span>
+</div>
+
+<div id="landscapeBottomBar" class="landscape-bar landscape-bottom-bar">
+<span class="landscape-hint">ចុចអេក្រង់ដើម្បីបង្ហាញ/លាក់ម៉ឺនុយ</span>
+</div>
+
+<div id="crSkeleton" class="cr-skeleton">
+<div class="cr-skel-row cr-skel-head"></div>
+<div class="cr-skel-row"></div>
+<div class="cr-skel-row"></div>
+<div class="cr-skel-row"></div>
+<div class="cr-skel-row"></div>
+<div class="cr-skel-row"></div>
+<div class="cr-skel-row"></div>
+<div class="cr-skel-row"></div>
+</div>
+
+<div class="table-scroll" id="crTableScroll" style="display:none">
+<table id="crTable">
+<thead id="crThead"></thead>
+<tbody id="crTbody"></tbody>
+</table>
+</div>
+
+<div class="cr-empty" id="crEmptyMsg" style="display:none"></div>
+
+</div>
+
+</div>
+
+<div id="bottomnav-container"></div>
+
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script src="../../assets/js/creditreport/RepDetailbyCO.js"></script>
+<script src="../../assets/js/creditreport/RepDetailbyCO-loader.js"></script>
+
+</body>
+
+</html>
 
