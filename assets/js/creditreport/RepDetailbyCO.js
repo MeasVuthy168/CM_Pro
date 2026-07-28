@@ -310,6 +310,13 @@ async function crRunReport() {
         crApplyServerDates(data);
         crPopulateBranches(data.branches);
 
+        // Pre-formatted server-side (dd/mm/yyyy, plus HH:MM where the
+        // source cell carried a time) — no client-side reformatting.
+        const meta = data.meta || {};
+        document.getElementById("crOsGridMerge").textContent = meta.osGridMergeText || "-";
+        document.getElementById("crOverdueGridMerge").textContent = meta.overdueGridMergeText || "-";
+        document.getElementById("crArrearsPenalty").textContent = meta.arrearsPenaltyText || "-";
+
         document.getElementById("crDisbPeriod").textContent =
             `${crFmtDateDMY(data.fromDate)} to ${crFmtDateDMY(data.toDate)}`;
         document.getElementById("crWoPeriod").textContent =
