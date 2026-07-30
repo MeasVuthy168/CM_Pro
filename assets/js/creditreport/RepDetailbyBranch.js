@@ -197,13 +197,12 @@ function crRenderReclassNote(sectionKey) {
             `<span class="cr-note-value">$${crFmtNum(rc.value)} · ${crFmtNum(rc.count)} LD</span>` +
             ` និងដកចេញ Balance PD ` +
             `<span class="cr-note-value cr-note-out">$${crFmtNum(pd.value)} · ${crFmtNum(pd.count)} LD</span>` +
-            ` ។` +
           `</span>` +
         `</div>` +
         `<div class="cr-note-item cr-note-warn">` +
           `<span class="cr-note-lead">ប្រុងប្រយ័ត្នៈ</span> ` +
           `<span class="cr-note-label">Balance Loan at Risk (T24) នឹងស្មើ Overdue នៅថ្ងៃបន្ទាប់ ` +
-            `លុះត្រាបានPD ឥណទាន ដែលមានBalance PD ទាំងអស់។</span>` +
+            `លុះត្រាបានPD ឥណទាន ដែលមាន BalancePD ទាំងអស់</span>` +
         `</div>`;
     el.style.display = "";
 }
