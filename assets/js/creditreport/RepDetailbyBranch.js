@@ -174,7 +174,10 @@ function crRenderMeta(meta) {
 // rather than as standalone stats in the info card.
 function crRenderReclassNote(sectionKey) {
     const el = document.getElementById("crReclassNote");
-    const showsT24 = sectionKey === "parT24" || sectionKey === "all";
+    // Only on the dedicated T24 section. In "All Sections" the T24
+    // columns are one group among many, so a note referring to them
+    // sits too far from what it describes to be readable.
+    const showsT24 = sectionKey === "parT24";
 
     if (!showsT24 || !crLoanReclass) {
         el.style.display = "none";
@@ -194,12 +197,13 @@ function crRenderReclassNote(sectionKey) {
             `<span class="cr-note-value">$${crFmtNum(rc.value)} · ${crFmtNum(rc.count)} LD</span>` +
             ` និងដកចេញ Balance PD ` +
             `<span class="cr-note-value cr-note-out">$${crFmtNum(pd.value)} · ${crFmtNum(pd.count)} LD</span>` +
+            ` ។` +
           `</span>` +
         `</div>` +
         `<div class="cr-note-item cr-note-warn">` +
           `<span class="cr-note-lead">ប្រុងប្រយ័ត្នៈ</span> ` +
-          `<span class="cr-note-label">Balance Loan at Risk (T24) នឹងស្មើ Overdue ថ្ងៃបន្ទាប់ ` +
-            `លុះត្រាបានPD ឥណទាន Balance PD ទាំងអស់</span>` +
+          `<span class="cr-note-label">Balance Loan at Risk (T24) នឹងស្មើ Overdue នៅថ្ងៃបន្ទាប់ ` +
+            `លុះត្រាបានPD ឥណទាន ដែលមានBalance PD ទាំងអស់។</span>` +
         `</div>`;
     el.style.display = "";
 }
