@@ -474,22 +474,45 @@
 /* ===== Table note (Loan Reclass under the T24 columns) ===== */
 .cr-table-note{
     margin-top:10px;
-    padding:9px 11px;
+    padding:10px 12px;
     border-radius:10px;
     background:var(--cr-note-bg);
     border:1px solid var(--cr-border);
     font-size:12px;
-    line-height:1.4;
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+}
+/* Each note is a flowing sentence, so the figures sit inline rather
+   than being pinned to the right like the old two-column version. */
+.cr-note-item{
+    /* Khmer glyphs stack taller than Latin — this needs more leading
+       than the surrounding UI or the wrapped lines touch. */
+    font-family:'KRASAR', sans-serif;
+    line-height:1.7;
+    color:var(--cr-text-muted);
+}
+.cr-note-lead{
+    font-weight:800;
+    color:var(--cr-text);
 }
 .cr-note-label{
-    color:var(--cr-text-muted);
     font-weight:600;
 }
 .cr-note-value{
-    color:var(--cr-danger);
     font-weight:800;
+    color:var(--cr-text);
     white-space:nowrap;
 }
+.cr-note-value.cr-note-out{ color:var(--cr-danger); }
+
+/* Second line is a caution, not a figure — tinted to separate it from
+   the factual first line without shouting. */
+.cr-note-warn{
+    padding-top:6px;
+    border-top:1px dashed var(--cr-border);
+}
+.cr-note-warn .cr-note-lead{ color:var(--cr-danger); }
 
 .cr-empty{
     text-align:center;
@@ -717,7 +740,7 @@ body.cr-force-landscape .landscape-bar.hidden{
         background:#fff !important;
         border:1px solid #999 !important;
     }
-    .cr-note-label, .cr-note-value{ color:#000 !important; }
+    .cr-note-lead, .cr-note-label, .cr-note-value{ color:#000 !important; }
 
     .table-card{
         background:#fff !important;
