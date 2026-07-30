@@ -184,12 +184,25 @@ function crRenderReclassNote(sectionKey) {
     const rc = crLoanReclass;
     const pd = crBalancePD || { value: 0, count: 0 };
 
+    // Line 1 states what the T24 figure does and doesn't contain.
+    // Line 2 is the caveat that it only reconciles with the Overdue
+    // figure once every Balance PD loan has been PD'd.
     el.innerHTML =
-        `<span class="cr-note-label">Balance Loan at Risk (T24) = </span>` +
-        `<span class="cr-note-label">Reclass </span>` +
-        `<span class="cr-note-value">($${crFmtNum(rc.value)} · ${crFmtNum(rc.count)} LD)</span>` +
-        `<span class="cr-note-label"> &minus; Balance PD </span>` +
-        `<span class="cr-note-value">($${crFmtNum(pd.value)} · ${crFmtNum(pd.count)} LD)</span>`;
+        `<div class="cr-note-item">` +
+          `<span class="cr-note-lead">សំគាល់:</span> ` +
+          `<span class="cr-note-label">Balance Loan at Risk (T24)នេះ បានបូកបញ្ចូល ` +
+            `ឥណទានជាប់ចំណាត់ថ្នាក់(Reclass) ` +
+            `<span class="cr-note-value">$${crFmtNum(rc.value)} · ${crFmtNum(rc.count)} LD</span> ` +
+            `និងបានដកចេញនូវ ឥណទានដែលមាន(Balance PD) ` +
+            `<span class="cr-note-value cr-note-out">$${crFmtNum(pd.value)} · ${crFmtNum(pd.count)} LD</span>` +
+          `</span>` +
+        `</div>` +
+        `<div class="cr-note-item cr-note-warn">` +
+          `<span class="cr-note-lead">ប្រុងប្រយ័ត្នៈ</span> ` +
+          `<span class="cr-note-label">Balance Loan at Risk (T24) អាចត្រឹមត្រូវដូច ` +
+            `Balance Loan at Risk (Overdue) ថ្ងៃបន្ទាប់បាន ` +
+            `លុះត្រាបានPD រួចរាល់នូវឥណទានដែលមាន(Balance PD)ទាំងអស់</span>` +
+        `</div>`;
     el.style.display = "";
 }
 
