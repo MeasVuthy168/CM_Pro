@@ -2,7 +2,7 @@
 // Credit Report — "RepDetail byBranch" Summary Report web port
 // Reads from GET /api/creditreport/summary (computed live from
 // nbcos/arreast24byco/nbcoverdue/wo/wocolgb — see
-// lib/creditreport-branch.js on the backend for the exact formulas).
+// lib/creditreport-report.js on the backend for the exact formulas).
 //
 // UI note: instead of one 36-column table requiring constant
 // horizontal scroll, the person picks ONE metric group at a time
@@ -21,7 +21,8 @@ let crDetailedData = null; // { groups, grand } from /api/creditreport/detailed 
 // PAR % at or above this is rendered red in every PAR column.
 const CR_PAR_ALERT = 0.04;
 
-let crLoanReclass = null;  // { value, count } — rendered as a note under the T24 columns
+let crLoanReclass = null;  // { value, count } — rendered in the note under the T24 columns
+let crBalancePD = null;    // { value, count } — the other half of that note
 
 // ========================================
 // SECTION DEFINITIONS
@@ -165,11 +166,12 @@ function crRenderMeta(meta) {
 
     // Held for the table note — it renders under the T24 columns, not here.
     crLoanReclass = meta.loanReclass || { value: 0, count: 0 };
+    crBalancePD = meta.balancePD || { value: 0, count: 0 };
 }
 
-// Loan Reclass belongs with the T24 figures (the T24 total includes it),
-// so it's shown as a note under the table whenever those columns are on
-// screen, rather than as a standalone stat in the info card.
+// Shows how the T24 figure relates to Reclass and Balance PD. Rendered
+// as a note under the table whenever the T24 columns are on screen,
+// rather than as standalone stats in the info card.
 function crRenderReclassNote(sectionKey) {
     const el = document.getElementById("crReclassNote");
     const showsT24 = sectionKey === "parT24" || sectionKey === "all";
@@ -179,9 +181,15 @@ function crRenderReclassNote(sectionKey) {
         return;
     }
 
+    const rc = crLoanReclass;
+    const pd = crBalancePD || { value: 0, count: 0 };
+
     el.innerHTML =
-        `<span class="cr-note-label">Balance Loan at Risk (T24) included Reclass:</span> ` +
-        `<span class="cr-note-value">$${crFmtNum(crLoanReclass.value)} · ${crFmtNum(crLoanReclass.count)} LD</span>`;
+        `<span class="cr-note-label">Balance Loan at Risk (T24) = </span>` +
+        `<span class="cr-note-label">Reclass </span>` +
+        `<span class="cr-note-value">($${crFmtNum(rc.value)} · ${crFmtNum(rc.count)} LD)</span>` +
+        `<span class="cr-note-label"> &minus; Balance PD </span>` +
+        `<span class="cr-note-value">($${crFmtNum(pd.value)} · ${crFmtNum(pd.count)} LD)</span>`;
     el.style.display = "";
 }
 
