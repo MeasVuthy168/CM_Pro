@@ -201,8 +201,8 @@ function crRenderReclassNote(sectionKey) {
         `</div>` +
         `<div class="cr-note-item cr-note-warn">` +
           `<span class="cr-note-lead">ប្រុងប្រយ័ត្នៈ</span> ` +
-          `<span class="cr-note-label">Balance Loan at Risk (T24) នឹងស្មើ Overdue នៅថ្ងៃបន្ទាប់ ` +
-            `លុះត្រាបានPD ឥណទាន ដែលមាន BalancePD ទាំងអស់</span>` +
+          `<span class="cr-note-label">ឥណទាន\u200bដែលមាន Balance PD ត្រូវតែ\u200b PD ` +
+            `អោយបានរួចរាល់ទាំងអស់ក្នុងថ្ងៃ\u200b ។</span>` +
         `</div>`;
     el.style.display = "";
 }
