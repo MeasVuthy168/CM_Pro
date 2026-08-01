@@ -1334,6 +1334,48 @@ function updateGpsButtons() {
 // ========================================
 let arrMap = null;
 let arrMapMarker = null;
+let arrMapLayers = null;
+
+// Street vs satellite. Both are keyless and free — Esri's imagery is
+// usually the more useful of the two for locating a rural house, where
+// OSM often has no road drawn at all.
+const MAP_TILES = {
+    street: {
+        url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        opts: { maxZoom: 19, attribution: "© OpenStreetMap" }
+    },
+    satellite: {
+        url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        // Esri serves imagery to z19 in most of Cambodia; maxNativeZoom
+        // lets Leaflet upscale beyond that instead of showing blank
+        // tiles when the person zooms right in.
+        opts: { maxZoom: 21, maxNativeZoom: 19, attribution: "© Esri" }
+    }
+};
+
+// Remembered across sessions — an officer who prefers satellite
+// shouldn't have to switch every single time.
+const MAP_MODE_KEY = "CMPRO_map_mode";
+
+function currentMapMode() {
+    return localStorage.getItem(MAP_MODE_KEY) === "satellite" ? "satellite" : "street";
+}
+
+function setMapMode(mode) {
+    if (!arrMap || !arrMapLayers) return;
+
+    const next = mode === "satellite" ? "satellite" : "street";
+    const other = next === "satellite" ? "street" : "satellite";
+
+    if (arrMap.hasLayer(arrMapLayers[other])) arrMap.removeLayer(arrMapLayers[other]);
+    if (!arrMap.hasLayer(arrMapLayers[next])) arrMapLayers[next].addTo(arrMap);
+
+    localStorage.setItem(MAP_MODE_KEY, next);
+
+    document.querySelectorAll(".map-mode-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.mode === next);
+    });
+}
 
 // Falls back to Svay Rieng town when the field is empty and the device
 // won't share a position — better than dropping the pin in the ocean
@@ -1362,10 +1404,11 @@ function openMapPicker() {
     if (!arrMap) {
         arrMap = L.map("mapCanvas").setView([start.lat, start.lng], existing ? 17 : 13);
 
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            maxZoom: 19,
-            attribution: "© OpenStreetMap"
-        }).addTo(arrMap);
+        arrMapLayers = {
+            street: L.tileLayer(MAP_TILES.street.url, MAP_TILES.street.opts),
+            satellite: L.tileLayer(MAP_TILES.satellite.url, MAP_TILES.satellite.opts)
+        };
+        arrMapLayers[currentMapMode()].addTo(arrMap);
 
         arrMapMarker = L.marker([start.lat, start.lng], { draggable: true }).addTo(arrMap);
 
@@ -1386,6 +1429,7 @@ function openMapPicker() {
     }
 
     setMapCoords(start.lat, start.lng);
+    setMapMode(currentMapMode());
 
     // Leaflet measures the container on creation; inside a modal that's
     // zero-sized until it's shown, so the tiles render grey without this.
@@ -1395,6 +1439,10 @@ function openMapPicker() {
 function closeMapPicker() {
     document.getElementById("mapBackdrop")?.classList.remove("show");
 }
+
+document.querySelectorAll(".map-mode-btn").forEach(btn => {
+    btn.addEventListener("click", () => setMapMode(btn.dataset.mode));
+});
 
 document.getElementById("btnGpsPick")?.addEventListener("click", openMapPicker);
 document.getElementById("btnMapClose")?.addEventListener("click", closeMapPicker);
