@@ -1200,12 +1200,25 @@ document.getElementById("btnCancelAllPending")?.addEventListener("click", async 
 function renderReasonInfo(row) {
     if (!reasonInfo) return;
 
+    // ផលិតផល carries the digital/non-digital split, since the product
+    // name alone doesn't say which side it falls on.
+    const product = String(row.product ?? "").trim();
+    const productLabel = product
+        ? `${product} - ${DIGITAL_PRODUCTS.includes(product) ? "Digital Loan" : "Non Digital Loan"}`
+        : "";
+
+    // មុខរបរ combines occupation and ministry — either can be blank.
+    const occu = [row.occu, row.ministry]
+        .map(v => String(v ?? "").trim())
+        .filter(v => v && v !== "-")
+        .join(", ");
+
     const items = [
-        ["ទីតាំង", row.location],
+        ["អាស័យដ្ឋាន", row.location],
         ["ថ្ងៃយឺត", row.day],
-        ["មុខរបរ", row.occu],
-        ["ចំណាត់ថ្នាក់", row.osClassify],
-        ["ផលិតផល", row.product]
+        ["មុខរបរ", occu],
+        ["ចំណាត់ថ្នាក់", row.class],
+        ["ផលិតផល", productLabel]
     ];
 
     reasonInfo.innerHTML = items
@@ -1244,6 +1257,14 @@ function parseGps(text) {
     return { lat, lng };
 }
 
+// "មើលលើផែនទី" is hidden until there's a valid coordinate — offering
+// it with nothing to show would just produce an error toast.
+function updateGpsButtons() {
+    const btnOpen = document.getElementById("btnGpsOpen");
+    if (!btnOpen || !reasonGPS) return;
+    btnOpen.style.display = parseGps(reasonGPS.value) ? "" : "none";
+}
+
 function setGpsHint(message, kind) {
     if (!reasonGpsHint) return;
     reasonGpsHint.textContent = message || "";
@@ -1253,6 +1274,7 @@ function setGpsHint(message, kind) {
 // Validate as the person types, so a bad value is caught before saving
 // rather than stored and silently failing to open later.
 reasonGPS?.addEventListener("input", () => {
+    updateGpsButtons();
     const raw = reasonGPS.value.trim();
     if (!raw) { setGpsHint("", ""); return; }
     const ok = !!parseGps(raw);
@@ -1278,6 +1300,7 @@ document.getElementById("btnGpsHere")?.addEventListener("click", () => {
             const lat = pos.coords.latitude.toFixed(6);
             const lng = pos.coords.longitude.toFixed(6);
             reasonGPS.value = `${lat}, ${lng}`;
+            updateGpsButtons();
             setGpsHint(`ភាពត្រឹមត្រូវ ±${Math.round(pos.coords.accuracy)}m`, "ok");
         },
         err => {
@@ -1339,25 +1362,42 @@ function updateReasonNav() {
 
 // Unsaved edits are kept rather than silently dropped: moving away
 // writes the current state to the same local pending store Save uses.
-function stashCurrentReasonEdits() {
+// Snapshot of the values the modal was opened with. Comparing against
+// THIS (rather than against the local pending store) is what stops
+// merely opening and navigating past a record from marking it as an
+// unsaved edit — previously a record already carrying a reason from the
+// server counted as "dirty" the moment it loaded, so paging through 10
+// rows queued 10 phantom submissions.
+let reasonBaseline = null;
+
+function currentReasonValues() {
+    return {
+        aj: reasonAJ.value,
+        ak: reasonAK.value,
+        al: reasonAL.value ? `${reasonAL.value}T00:00:00.000Z` : "",
+        gps: reasonGPS ? reasonGPS.value.trim() : ""
+    };
+}
+
+function snapshotReasonBaseline() {
+    reasonBaseline = currentReasonValues();
+}
+
+function reasonIsDirty() {
+    if (!reasonBaseline) return false;
+    const now = currentReasonValues();
+    return now.aj !== reasonBaseline.aj ||
+           now.ak !== reasonBaseline.ak ||
+           now.al !== reasonBaseline.al ||
+           now.gps !== reasonBaseline.gps;
+}
+
+// Writes the current values to the local pending store. Only called
+// once the person has confirmed they want to keep the edit.
+function commitReasonEdits() {
     if (!selectedRow || !selectedRow.concate) return;
 
-    const aj = reasonAJ.value;
-    const ak = reasonAK.value;
-    const al = reasonAL.value ? `${reasonAL.value}T00:00:00.000Z` : "";
-    const gps = reasonGPS ? reasonGPS.value.trim() : "";
-
-    const pendingMap = getPendingReasonsMap();
-    const existing = pendingMap[selectedRow.concate];
-
-    const dirty = !existing
-        ? !!(aj || ak || al || gps)
-        : (aj !== (existing.aj || "") ||
-           ak !== (existing.ak || "") ||
-           al !== (existing.al || "") ||
-           gps !== (existing.gps || ""));
-
-    if (!dirty) return;
+    const { aj, ak, al, gps } = currentReasonValues();
 
     selectedRow.ajReason = aj;
     selectedRow.akSolution = ak;
@@ -1376,7 +1416,25 @@ async function reasonNavStep(delta) {
     const target = currentRows[i + delta];
     if (!target) return;
 
-    stashCurrentReasonEdits();
+    // Unsaved edits would otherwise vanish without a word. Ask rather
+    // than auto-saving: silently queueing a submission the person
+    // didn't ask for is how the phantom-pending problem started.
+    if (reasonIsDirty()) {
+        const keep = confirm(
+            "អ្នកមិនទាន់រក្សាទុកការកែប្រែទេ។\n\n" +
+            "ចុច OK ដើម្បីរក្សាទុក ឬ Cancel ដើម្បីបោះបង់។"
+        );
+        if (keep) {
+            const gps = reasonGPS ? reasonGPS.value.trim() : "";
+            if (gps && !parseGps(gps)) {
+                notify("ទម្រង់ GPS មិនត្រឹមត្រូវ — ឧ. 11.5564, 104.9282", "warning");
+                reasonGPS.focus();
+                return; // stay put so it can be corrected
+            }
+            commitReasonEdits();
+        }
+    }
+
     await openReasonPanel(target);
 }
 
@@ -1393,22 +1451,51 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "ArrowRight") { e.preventDefault(); reasonNavStep(1); }
 });
 
+// Fetches a record purely to show who last submitted it. Deliberately
+// does not touch the input fields — the local draft owns those.
+async function loadReasonMetaOnly(concate) {
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/reasonarrear/get`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${arrearsToken}`
+            },
+            body: JSON.stringify({ cifs: [concate] })
+        });
+        const data = await res.json();
+        if (!data.ok) return;
+
+        const found = (data.data || [])[0];
+        if (found && found.uploadedBy) {
+            const when = found.uploadedAt ? formatRowDateTime12h(found.uploadedAt) : "";
+            reasonMeta.textContent =
+                `Last updated by ${found.uploadedBy}${when ? " on " + when : ""}`;
+        }
+    } catch (err) {
+        // Non-fatal: the draft is still fully usable without this line.
+        console.warn("[reason meta]", err);
+    }
+}
+
 async function openReasonPanel(row) {
     selectedRow = row;
 
-    reasonSubtitle.textContent = `${row.loanNumber} — ${row.customer}`;
+    reasonSubtitle.textContent = `${row.loanNumber} - ${row.cif} — ${row.customer}`;
     renderReasonInfo(row);
     reasonAJ.value = "";
     reasonAK.value = "";
     reasonAL.value = "";
     if (reasonGPS) reasonGPS.value = "";
     setGpsHint("", "");
+    updateGpsButtons();
     reasonMeta.textContent = "";
     updateReasonNav();
     openReasonModal();
 
     if (!row.concate) {
         notify("This row has no Concate key — cannot load/save its reason.", "warning");
+        snapshotReasonBaseline();
         return;
     }
 
@@ -1424,6 +1511,7 @@ async function openReasonPanel(row) {
         reasonAK.value = localPending.ak || "";
         reasonAL.value = localPending.al ? localPending.al.slice(0, 10) : "";
         if (reasonGPS) reasonGPS.value = localPending.gps || "";
+        updateGpsButtons();
         if (pendingNote) {
             pendingNote.innerHTML = "";
             pendingNote.append(
@@ -1442,7 +1530,15 @@ async function openReasonPanel(row) {
             pendingNote.appendChild(cancelLink);
             pendingNote.classList.add("show");
         }
-        return; // skip the server fetch — this IS the current draft
+
+        snapshotReasonBaseline();
+
+        // The draft above is what's shown in the fields, but the server
+        // still holds who last submitted this record — fetch it purely
+        // for the meta line. (Previously this returned early, which is
+        // why "Last updated by" disappeared once a local draft existed.)
+        loadReasonMetaOnly(row.concate);
+        return;
     }
 
     if (pendingNote) pendingNote.classList.remove("show");
@@ -1474,6 +1570,11 @@ async function openReasonPanel(row) {
         console.error(err);
         notify(err.message || "Could not load reason arrear.", "error");
     }
+
+    // Baseline AFTER loading, so server-supplied values count as the
+    // starting point rather than as unsaved edits.
+    snapshotReasonBaseline();
+    updateGpsButtons();
 }
 
 document.getElementById("btnReasonCancel").addEventListener("click", closeReasonModal);
