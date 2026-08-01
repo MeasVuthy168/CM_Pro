@@ -244,6 +244,9 @@ href="../../assets/css/arrears.css">
 <div class="reason-title">Reason Arrear</div>
 <div class="reason-subtitle" id="reasonSubtitle">-</div>
 
+<!-- Loan context, filled by renderReasonInfo() in arrears.js -->
+<div class="reason-info" id="reasonInfo"></div>
+
 <div class="reason-group">
 <label for="reasonAJ">មុខរបរ</label>
 <input type="text" id="reasonAJ" placeholder="...">
@@ -259,6 +262,16 @@ href="../../assets/css/arrears.css">
 <input type="date" id="reasonAL">
 </div>
 
+<div class="reason-group">
+<label for="reasonGPS">និយាមការ (GPS)</label>
+<div class="reason-gps-row">
+<input type="text" id="reasonGPS" placeholder="11.5564, 104.9282" inputmode="decimal" autocomplete="off">
+<button type="button" id="btnGpsHere" class="reason-gps-btn" title="ទីតាំងបច្ចុប្បន្ន">📍</button>
+<button type="button" id="btnGpsOpen" class="reason-gps-btn" title="បើកផែនទី">🗺️</button>
+</div>
+<div class="reason-gps-hint" id="reasonGpsHint"></div>
+</div>
+
 <div class="reason-meta" id="reasonMeta"></div>
 
 <div class="reason-pending-note" id="reasonPendingNote"></div>
@@ -267,6 +280,14 @@ href="../../assets/css/arrears.css">
 <button id="btnReasonCancel">Cancel</button>
 <button id="btnReasonSave">រក្សាទុក</button>
 <button id="btnReasonSubmit">ដាក់ស្នើមូលហេតុយឺតយ៉ាវ</button>
+</div>
+
+<!-- Move between rows without closing the modal. Follows whatever
+     filter/sort the table currently has. -->
+<div class="reason-nav">
+<button type="button" id="btnReasonPrev" class="reason-nav-btn" title="ថយក្រោយ">‹</button>
+<span class="reason-nav-pos" id="reasonNavPos">-</span>
+<button type="button" id="btnReasonNext" class="reason-nav-btn" title="បន្ទាប់">›</button>
 </div>
 
 
