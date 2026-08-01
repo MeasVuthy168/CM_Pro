@@ -2185,3 +2185,53 @@ display:none !important;
     text-overflow:ellipsis;
     white-space:nowrap;
 }
+
+/* ==========================================
+   REASON ARREAR — field text
+   Values in the four editable fields match the info block above:
+   same 11.5px, same navy. Keeps the whole card reading as one
+   consistent block instead of the inputs shouting at 14px.
+========================================== */
+.reason-group input,
+.reason-group textarea,
+.reason-group select,
+#reasonGPS{
+    font-size:11.5px;
+    font-weight:700;
+    color:var(--arr-navy, #003b8b);
+}
+[data-theme="dark"] .reason-group input,
+[data-theme="dark"] .reason-group textarea,
+[data-theme="dark"] .reason-group select,
+[data-theme="dark"] #reasonGPS{
+    color:var(--arr-gold-light, #ffd700);
+}
+
+/* Placeholders stay muted — they're prompts, not entered values, and
+   navy would make an empty field look filled. */
+.reason-group input::placeholder,
+.reason-group textarea::placeholder{
+    color:var(--arr-text-muted, #6b7280);
+    font-weight:600;
+}
+
+/* The date input renders its own text node on iOS, so it needs the
+   colour set explicitly rather than inheriting. */
+.reason-group input[type="date"]{
+    color:var(--arr-navy, #003b8b);
+}
+[data-theme="dark"] .reason-group input[type="date"]{
+    color:var(--arr-gold-light, #ffd700);
+}
+
+/* Smaller text needs a little more line spacing to stay readable in
+   Khmer, where the glyphs stack. */
+.reason-group textarea#reasonAK{
+    line-height:1.65;
+}
+
+/* Suggestions feed straight into the AJ/AK fields, so they match those
+   fields' size — otherwise the text visibly shrinks on selection. */
+.suggestion-list li{
+    font-size:11.5px;
+}
