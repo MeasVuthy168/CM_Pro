@@ -1257,39 +1257,33 @@ function renderReasonInfo(row) {
         ? `${product} - ${DIGITAL_PRODUCTS.includes(product) ? "Digital Loan" : "Non Digital Loan"}`
         : "";
 
-    // មុខរបរ combines occupation and ministry — either can be blank.
-    const occu = [row.occu, row.ministry]
-        .map(v => String(v ?? "").trim())
-        .filter(v => v && v !== "-")
-        .join(", ");
-
-    // Customer / contract / CIF lead the block — they identify the
-    // record, so they sit on their own rows above the loan details
-    // rather than crammed into a subtitle line.
-    const items = [
-        ["អតិថិជន", row.customer],
-        ["កិច្ចសន្យាលេខ", row.loanNumber],
-        ["លេខអតិថិជន", row.cif],
-        ["អាស័យដ្ឋាន", row.location],
-        ["ថ្ងៃយឺត", row.day],
-        ["មុខរបរ", occu],
-        ["ចំណាត់ថ្នាក់", row.class],
-        ["ផលិតផល", productLabel]
+    // Fixed 4-line layout, two fields per line. Ministry is deliberately
+    // left out of មុខរបរ — it made the line wrap without adding much.
+    const lines = [
+        [["អតិថិជន", row.customer],      ["អាស័យដ្ឋាន", row.location]],
+        [["កិច្ចសន្យាលេខ", row.loanNumber], ["លេខអតិថិជន", row.cif]],
+        [["មុខរបរ", row.occu],            ["ផលិតផល", productLabel]],
+        [["ចំណាត់ថ្នាក់", row.class],       ["ថ្ងៃយឺត", row.day ? `${row.day}ថ្ងៃ` : ""]]
     ];
 
-    // The first three identify the record and get their own full-width
-    // rows; the rest are short enough to flow inline and wrap.
-    const LEAD_ROWS = 3;
-
-    reasonInfo.innerHTML = items
-        // Blank fields are dropped rather than shown as empty rows —
-        // the modal is already tall on a phone.
-        .map(([label, value], i) => ({ label, value: String(value ?? "").trim(), lead: i < LEAD_ROWS }))
-        .filter(x => x.value !== "")
-        .map(x =>
-            `<div class="reason-info-row${x.lead ? " reason-info-lead" : ""}">` +
-              `<span class="reason-info-label">${x.label}</span>` +
-              `<span class="reason-info-value">${escapeHtml(x.value)}</span>` +
+    reasonInfo.innerHTML = lines
+        .map(pairs => pairs
+            // Blank fields drop out, but the line itself stays as long
+            // as one of its two fields has a value — so a missing
+            // address doesn't collapse the customer name onto the row
+            // below it.
+            .map(([label, value]) => ({ label, value: String(value ?? "").trim() }))
+            .filter(x => x.value !== "" && x.value !== "-")
+        )
+        .filter(pairs => pairs.length > 0)
+        .map(pairs =>
+            `<div class="reason-info-line">` +
+              pairs.map(x =>
+                  `<span class="reason-info-cell">` +
+                    `<span class="reason-info-label">${x.label}</span>` +
+                    `<span class="reason-info-value">${escapeHtml(x.value)}</span>` +
+                  `</span>`
+              ).join("") +
             `</div>`
         ).join("");
 }
