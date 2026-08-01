@@ -113,6 +113,56 @@ attachSuggestions(reasonAJ, () => distinctSorted(allRows, "ajReason"));
 attachSuggestions(reasonAK, () => distinctSorted(allRows, "akSolution"));
 
 // ========================================
+// FIELD TEMPLATES
+// Both fields follow a fixed "(label)value, (label)value" shape. The
+// scaffolding is inserted on focus so it never has to be typed, with
+// the caret parked after the first label.
+//
+// A value that is still nothing but scaffolding counts as empty — see
+// isTemplateOnly() — so merely tapping a field and moving on doesn't
+// register as an unsaved edit or save a row of empty brackets.
+// ========================================
+const REASON_TEMPLATES = {
+    reasonAJ: "(ពេលខ្ចី), (បច្ចុប្បន្ន)",
+    reasonAK: "(មូលហេតុ), (ដំណោះស្រាយ)"
+};
+
+// Strips the labels and separators; whatever's left is real content.
+function isTemplateOnly(value, template) {
+    const labels = template.match(/\([^)]*\)/g) || [];
+    let rest = String(value || "");
+    labels.forEach(l => { rest = rest.split(l).join(""); });
+    return rest.replace(/[\s,]/g, "") === "";
+}
+
+function applyTemplate(el) {
+    const tpl = REASON_TEMPLATES[el.id];
+    if (!tpl) return;
+    if (el.value.trim() !== "") return;
+
+    el.value = tpl;
+
+    // Caret after the first "(label)" so typing continues in the right
+    // place instead of at the very end.
+    const pos = tpl.indexOf(")") + 1;
+    requestAnimationFrame(() => {
+        try { el.setSelectionRange(pos, pos); } catch (e) { /* not supported */ }
+    });
+}
+
+[reasonAJ, reasonAK].forEach(el => {
+    el?.addEventListener("focus", () => applyTemplate(el));
+
+    // Clear the field entirely if it's left holding only scaffolding —
+    // otherwise "(ពេលខ្ចី), (បច្ចុប្បន្ន)" would be saved as if it were
+    // a real answer.
+    el?.addEventListener("blur", () => {
+        const tpl = REASON_TEMPLATES[el.id];
+        if (tpl && isTemplateOnly(el.value, tpl)) el.value = "";
+    });
+});
+
+// ========================================
 // DISTINCT VALUE HELPERS
 // ========================================
 
@@ -1275,6 +1325,110 @@ function updateGpsButtons() {
     if (!btnOpen || !reasonGPS) return;
     btnOpen.style.display = parseGps(reasonGPS.value) ? "" : "none";
 }
+
+// ========================================
+// MAP PICKER
+// Leaflet + OpenStreetMap tiles: no API key, and the tiles work in
+// Cambodia without a billing account. The map is created lazily on
+// first open, since most sessions never touch it.
+// ========================================
+let arrMap = null;
+let arrMapMarker = null;
+
+// Falls back to Svay Rieng town when the field is empty and the device
+// won't share a position — better than dropping the pin in the ocean
+// at 0,0.
+const MAP_FALLBACK = { lat: 11.0879, lng: 105.7993 };
+
+function setMapCoords(lat, lng) {
+    const el = document.getElementById("mapCoords");
+    if (el) el.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+}
+
+function openMapPicker() {
+    const backdrop = document.getElementById("mapBackdrop");
+    if (!backdrop) return;
+
+    if (typeof L === "undefined") {
+        notify("មិនអាចផ្ទុកផែនទីបានទេ — សូមពិនិត្យអ៊ីនធឺណិត", "error");
+        return;
+    }
+
+    const existing = parseGps(reasonGPS?.value);
+    const start = existing || MAP_FALLBACK;
+
+    backdrop.classList.add("show");
+
+    if (!arrMap) {
+        arrMap = L.map("mapCanvas").setView([start.lat, start.lng], existing ? 17 : 13);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "© OpenStreetMap"
+        }).addTo(arrMap);
+
+        arrMapMarker = L.marker([start.lat, start.lng], { draggable: true }).addTo(arrMap);
+
+        arrMapMarker.on("dragend", () => {
+            const { lat, lng } = arrMapMarker.getLatLng();
+            setMapCoords(lat, lng);
+        });
+
+        // Tapping the map moves the pin — quicker than dragging it
+        // across a long distance on a phone.
+        arrMap.on("click", (e) => {
+            arrMapMarker.setLatLng(e.latlng);
+            setMapCoords(e.latlng.lat, e.latlng.lng);
+        });
+    } else {
+        arrMap.setView([start.lat, start.lng], existing ? 17 : 13);
+        arrMapMarker.setLatLng([start.lat, start.lng]);
+    }
+
+    setMapCoords(start.lat, start.lng);
+
+    // Leaflet measures the container on creation; inside a modal that's
+    // zero-sized until it's shown, so the tiles render grey without this.
+    setTimeout(() => arrMap.invalidateSize(), 60);
+}
+
+function closeMapPicker() {
+    document.getElementById("mapBackdrop")?.classList.remove("show");
+}
+
+document.getElementById("btnGpsPick")?.addEventListener("click", openMapPicker);
+document.getElementById("btnMapClose")?.addEventListener("click", closeMapPicker);
+
+document.getElementById("mapBackdrop")?.addEventListener("click", (e) => {
+    if (e.target.id === "mapBackdrop") closeMapPicker();
+});
+
+// Centre the picker on the device's position without leaving the map.
+document.getElementById("btnMapHere")?.addEventListener("click", () => {
+    if (!navigator.geolocation) {
+        notify("ឧបករណ៍នេះមិនអាចកំណត់ទីតាំងបានទេ", "warning");
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            const { latitude: lat, longitude: lng } = pos.coords;
+            arrMap.setView([lat, lng], 17);
+            arrMapMarker.setLatLng([lat, lng]);
+            setMapCoords(lat, lng);
+        },
+        () => notify("មិនអាចកំណត់ទីតាំងបានទេ", "warning"),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+});
+
+document.getElementById("btnMapConfirm")?.addEventListener("click", () => {
+    if (!arrMapMarker) return;
+    const { lat, lng } = arrMapMarker.getLatLng();
+    reasonGPS.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    updateGpsButtons();
+    setGpsHint("បានជ្រើសទីតាំងពីផែនទី", "ok");
+    closeMapPicker();
+});
 
 function setGpsHint(message, kind) {
     if (!reasonGpsHint) return;
