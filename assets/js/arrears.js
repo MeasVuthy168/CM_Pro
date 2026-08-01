@@ -1404,15 +1404,30 @@ function openMapPicker() {
         };
         arrMapLayers[currentMapMode()].addTo(arrMap);
 
-        arrMapMarker = L.marker([start.lat, start.lng], { draggable: true }).addTo(arrMap);
+        // A divIcon (CSS-drawn) rather than Leaflet's default marker:
+        // the default loads marker-icon.png relative to leaflet.css, which
+        // 404s from the CDN — the pin was being created but rendering as
+        // nothing, so taps looked like they did nothing.
+        const pinIcon = L.divIcon({
+            className: "map-pin-wrap",
+            html: '<div class="map-pin"></div>',
+            iconSize: [26, 34],
+            iconAnchor: [13, 34]   // tip of the pin sits on the coordinate
+        });
+
+        arrMapMarker = L.marker([start.lat, start.lng], {
+            icon: pinIcon,
+            draggable: true
+        }).addTo(arrMap);
 
         arrMapMarker.on("dragend", () => {
             const { lat, lng } = arrMapMarker.getLatLng();
             setMapCoords(lat, lng);
         });
 
-        // Tapping the map moves the pin — quicker than dragging it
-        // across a long distance on a phone.
+        // Tap anywhere to place the pin. This is the primary way to set
+        // the location — dragging still works, but on a phone tapping the
+        // spot directly is far quicker than dragging across the screen.
         arrMap.on("click", (e) => {
             arrMapMarker.setLatLng(e.latlng);
             setMapCoords(e.latlng.lat, e.latlng.lng);
