@@ -99,6 +99,10 @@ const reasonSubtitle = document.getElementById("reasonSubtitle");
 const reasonAJ = document.getElementById("reasonAJ");
 const reasonAK = document.getElementById("reasonAK");
 const reasonAL = document.getElementById("reasonAL");
+const reasonGPS = document.getElementById("reasonGPS");
+const reasonInfo = document.getElementById("reasonInfo");
+const reasonGpsHint = document.getElementById("reasonGpsHint");
+const reasonNavPos = document.getElementById("reasonNavPos");
 const reasonMeta = document.getElementById("reasonMeta");
 
 let allRows = [];        // every row, parsed to objects, unfiltered
@@ -1008,9 +1012,15 @@ function getPendingReasonsMap() {
     }
 }
 
-function setPendingReason(concate, aj, ak, alISO) {
+function setPendingReason(concate, aj, ak, alISO, gps) {
     const map = getPendingReasonsMap();
-    map[concate] = { aj, ak, al: alISO, savedAt: new Date().toISOString() };
+    map[concate] = {
+        aj,
+        ak,
+        al: alISO,
+        gps: gps || "",
+        savedAt: new Date().toISOString()
+    };
     localStorage.setItem(PENDING_STORAGE_KEY, JSON.stringify(map));
     updatePendingBadge();
 }
@@ -1079,7 +1089,12 @@ async function submitAllPendingReasons() {
         const UP_CHUNK = 1000;
         for (let i = 0; i < concates.length; i += UP_CHUNK) {
             const chunkConcates = concates.slice(i, i + UP_CHUNK);
-            const chunkRows = chunkConcates.map(c => [c, map[c].aj, map[c].ak, map[c].al]);
+            // The 5th element tells the server this client manages GPS. Always
+            // sent, even when empty, so clearing a coordinate actually clears
+            // it server-side. (The VBA still sends 4 — see the backend note.)
+            const chunkRows = chunkConcates.map(c =>
+                [c, map[c].aj, map[c].ak, map[c].al, map[c].gps || ""]
+            );
 
             const res = await fetch(`${API.BASE_URL}/api/reasonarrear/upsert`, {
                 method: "POST",
@@ -1175,14 +1190,221 @@ document.getElementById("btnCancelAllPending")?.addEventListener("click", async 
     notify("បានបោះបង់ការកែប្រែក្នុងម៉ាស៊ីនទាំងអស់", "success");
 });
 
+
+// ========================================
+// REASON ARREAR — info block, GPS, record navigation
+// ========================================
+
+// Loan context shown under the title. Read-only — these come from the
+// arrears row itself, not the reason record, so they're never saved back.
+function renderReasonInfo(row) {
+    if (!reasonInfo) return;
+
+    const items = [
+        ["ទីតាំង", row.location],
+        ["ថ្ងៃយឺត", row.day],
+        ["មុខរបរ", row.occu],
+        ["ចំណាត់ថ្នាក់", row.osClassify],
+        ["ផលិតផល", row.product]
+    ];
+
+    reasonInfo.innerHTML = items
+        // Blank fields are dropped rather than shown as empty rows —
+        // the modal is already tall on a phone.
+        .filter(([, v]) => String(v ?? "").trim() !== "")
+        .map(([label, value]) =>
+            `<div class="reason-info-row">` +
+              `<span class="reason-info-label">${label}</span>` +
+              `<span class="reason-info-value">${escapeHtml(String(value))}</span>` +
+            `</div>`
+        ).join("");
+}
+
+// These values come from uploaded spreadsheet data, which shouldn't
+// contain markup — but they're injected via innerHTML, so escape anyway.
+function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => (
+        { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+    ));
+}
+
+// Accepts "11.5564, 104.9282" or "11.5564,104.9282".
+// Returns null when it isn't a usable coordinate pair.
+function parseGps(text) {
+    const m = String(text || "").trim().match(
+        /^(-?\d{1,2}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$/
+    );
+    if (!m) return null;
+
+    const lat = parseFloat(m[1]);
+    const lng = parseFloat(m[2]);
+    if (!isFinite(lat) || !isFinite(lng)) return null;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+
+    return { lat, lng };
+}
+
+function setGpsHint(message, kind) {
+    if (!reasonGpsHint) return;
+    reasonGpsHint.textContent = message || "";
+    reasonGpsHint.className = "reason-gps-hint" + (kind ? " " + kind : "");
+}
+
+// Validate as the person types, so a bad value is caught before saving
+// rather than stored and silently failing to open later.
+reasonGPS?.addEventListener("input", () => {
+    const raw = reasonGPS.value.trim();
+    if (!raw) { setGpsHint("", ""); return; }
+    const ok = !!parseGps(raw);
+    setGpsHint(
+        ok ? "ទីតាំងត្រឹមត្រូវ" : "ទម្រង់មិនត្រឹមត្រូវ — ឧ. 11.5564, 104.9282",
+        ok ? "ok" : "bad"
+    );
+});
+
+// Fill from the device's current position.
+document.getElementById("btnGpsHere")?.addEventListener("click", () => {
+    if (!navigator.geolocation) {
+        notify("ឧបករណ៍នេះមិនអាចកំណត់ទីតាំងបានទេ", "warning");
+        return;
+    }
+
+    setGpsHint("កំពុងកំណត់ទីតាំង...", "");
+
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            // 6dp is ~0.1m — far past what an address needs, and short
+            // enough to stay readable in the input.
+            const lat = pos.coords.latitude.toFixed(6);
+            const lng = pos.coords.longitude.toFixed(6);
+            reasonGPS.value = `${lat}, ${lng}`;
+            setGpsHint(`ភាពត្រឹមត្រូវ ±${Math.round(pos.coords.accuracy)}m`, "ok");
+        },
+        err => {
+            // Permission denial is the common case and worth naming: the
+            // browser prompt may have been dismissed earlier and won't
+            // reappear on its own.
+            setGpsHint(
+                err.code === err.PERMISSION_DENIED
+                    ? "សូមអនុញ្ញាតការចូលប្រើទីតាំង"
+                    : "មិនអាចកំណត់ទីតាំងបានទេ",
+                "bad"
+            );
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+});
+
+// Open in the platform's map app.
+document.getElementById("btnGpsOpen")?.addEventListener("click", () => {
+    const coords = parseGps(reasonGPS.value);
+    if (!coords) {
+        notify("សូមបញ្ចូលទីតាំងជាមុនសិន", "warning");
+        return;
+    }
+
+    const { lat, lng } = coords;
+
+    // maps.apple.com rather than the maps:// scheme, so it still resolves
+    // in contexts that block custom schemes.
+    const isApple = /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent);
+    const url = isApple
+        ? `https://maps.apple.com/?q=${lat},${lng}`
+        : `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+
+    window.open(url, "_blank", "noopener");
+});
+
+// ---- record navigation ----
+// Walks currentRows, so it follows the active filter and sort rather
+// than the unfiltered set.
+function reasonNavIndex() {
+    if (!selectedRow) return -1;
+    return currentRows.findIndex(r => r.concate === selectedRow.concate);
+}
+
+function updateReasonNav() {
+    const i = reasonNavIndex();
+    const total = currentRows.length;
+
+    if (reasonNavPos) {
+        reasonNavPos.textContent = i >= 0 ? `${i + 1} / ${total}` : "-";
+    }
+
+    const prev = document.getElementById("btnReasonPrev");
+    const next = document.getElementById("btnReasonNext");
+    if (prev) prev.disabled = i <= 0;
+    if (next) next.disabled = i < 0 || i >= total - 1;
+}
+
+// Unsaved edits are kept rather than silently dropped: moving away
+// writes the current state to the same local pending store Save uses.
+function stashCurrentReasonEdits() {
+    if (!selectedRow || !selectedRow.concate) return;
+
+    const aj = reasonAJ.value;
+    const ak = reasonAK.value;
+    const al = reasonAL.value ? `${reasonAL.value}T00:00:00.000Z` : "";
+    const gps = reasonGPS ? reasonGPS.value.trim() : "";
+
+    const pendingMap = getPendingReasonsMap();
+    const existing = pendingMap[selectedRow.concate];
+
+    const dirty = !existing
+        ? !!(aj || ak || al || gps)
+        : (aj !== (existing.aj || "") ||
+           ak !== (existing.ak || "") ||
+           al !== (existing.al || "") ||
+           gps !== (existing.gps || ""));
+
+    if (!dirty) return;
+
+    selectedRow.ajReason = aj;
+    selectedRow.akSolution = ak;
+    selectedRow.alFollowup = al ? formatRowDateDMY(al) : "";
+    selectedRow.promiseStatus = computeStatusFromDate(selectedRow.alFollowup);
+    selectedRow.__pendingSubmit = true;
+
+    setPendingReason(selectedRow.concate, aj, ak, al, gps);
+    updateRowInTable(selectedRow);
+}
+
+async function reasonNavStep(delta) {
+    const i = reasonNavIndex();
+    if (i < 0) return;
+
+    const target = currentRows[i + delta];
+    if (!target) return;
+
+    stashCurrentReasonEdits();
+    await openReasonPanel(target);
+}
+
+document.getElementById("btnReasonPrev")?.addEventListener("click", () => reasonNavStep(-1));
+document.getElementById("btnReasonNext")?.addEventListener("click", () => reasonNavStep(1));
+
+// Arrow keys move records too, but not while typing — otherwise arrowing
+// through text in the reason box would jump rows.
+document.addEventListener("keydown", (e) => {
+    if (!reasonBackdrop.classList.contains("show")) return;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || "")) return;
+
+    if (e.key === "ArrowLeft") { e.preventDefault(); reasonNavStep(-1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); reasonNavStep(1); }
+});
+
 async function openReasonPanel(row) {
     selectedRow = row;
 
     reasonSubtitle.textContent = `${row.loanNumber} — ${row.customer}`;
+    renderReasonInfo(row);
     reasonAJ.value = "";
     reasonAK.value = "";
     reasonAL.value = "";
+    if (reasonGPS) reasonGPS.value = "";
+    setGpsHint("", "");
     reasonMeta.textContent = "";
+    updateReasonNav();
     openReasonModal();
 
     if (!row.concate) {
@@ -1201,6 +1423,7 @@ async function openReasonPanel(row) {
         reasonAJ.value = localPending.aj || "";
         reasonAK.value = localPending.ak || "";
         reasonAL.value = localPending.al ? localPending.al.slice(0, 10) : "";
+        if (reasonGPS) reasonGPS.value = localPending.gps || "";
         if (pendingNote) {
             pendingNote.innerHTML = "";
             pendingNote.append(
@@ -1241,6 +1464,7 @@ async function openReasonPanel(row) {
             reasonAJ.value = found.aj || "";
             reasonAK.value = found.ak || "";
             reasonAL.value = found.al ? found.al.slice(0, 10) : "";
+            if (reasonGPS) reasonGPS.value = found.gps || "";
             if (found.uploadedBy) {
                 const when = found.uploadedAt ? formatRowDateTime12h(found.uploadedAt) : "";
                 reasonMeta.textContent = `Last updated by ${found.uploadedBy}${when ? " on " + when : ""}`;
@@ -1261,6 +1485,15 @@ document.getElementById("btnReasonSave").addEventListener("click", () => {
         return;
     }
 
+    // Refuse a malformed coordinate rather than storing something that
+    // won't open in a map later.
+    const gpsRaw = reasonGPS ? reasonGPS.value.trim() : "";
+    if (gpsRaw && !parseGps(gpsRaw)) {
+        notify("ទម្រង់ GPS មិនត្រឹមត្រូវ — ឧ. 11.5564, 104.9282", "warning");
+        reasonGPS.focus();
+        return;
+    }
+
     const alValue = reasonAL.value ? `${reasonAL.value}T00:00:00.000Z` : "";
 
     // Update in-memory row immediately so the table reflects the edit
@@ -1271,7 +1504,7 @@ document.getElementById("btnReasonSave").addEventListener("click", () => {
     selectedRow.promiseStatus = computeStatusFromDate(selectedRow.alFollowup);
     selectedRow.__pendingSubmit = true;
 
-    setPendingReason(selectedRow.concate, reasonAJ.value, reasonAK.value, alValue);
+    setPendingReason(selectedRow.concate, reasonAJ.value, reasonAK.value, alValue, gpsRaw);
 
     if (!updateRowInTable(selectedRow)) {
         renderTable(currentRows);
