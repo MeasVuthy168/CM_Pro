@@ -2143,3 +2143,45 @@ display:none !important;
    down to an unreadable size on narrow phones. */
 .reason-gps-row{ flex-wrap:wrap; }
 .reason-gps-btn{ flex:1 1 140px; }
+
+/* ---- Street / satellite toggle ---- */
+.map-modes{
+    display:flex;
+    gap:3px;
+    padding:3px;
+    border-radius:9px;
+    background:var(--arr-row-alt, rgba(0,0,0,.06));
+    /* sits between the title and the close button, and shouldn't be
+       squeezed by a long title */
+    margin-left:auto;
+    margin-right:8px;
+}
+.map-mode-btn{
+    padding:5px 11px;
+    border:none;
+    border-radius:7px;
+    background:transparent;
+    color:var(--arr-text-muted, #6b7280);
+    font-family:'KRASAR',sans-serif;
+    font-size:11.5px;
+    font-weight:700;
+    line-height:1.3;
+    white-space:nowrap;
+    cursor:pointer;
+}
+.map-mode-btn.active{
+    background:var(--arr-navy, #003b8b);
+    color:#fff;
+}
+[data-theme="dark"] .map-mode-btn.active{
+    background:var(--arr-gold, #d4af37);
+    color:#1c2333;
+}
+
+/* The title can shrink; the toggle and close button can't. */
+.map-title{
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
