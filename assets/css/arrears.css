@@ -2277,3 +2277,57 @@ display:none !important;
 [data-theme="dark"] .reason-info-cell .reason-info-value{
     color:var(--arr-gold-light, #ffd700);
 }
+
+/* ==========================================
+   MAP PIN
+   Drawn in CSS rather than using Leaflet's default marker, whose
+   marker-icon.png is resolved relative to leaflet.css and 404s from the
+   CDN — the marker existed but rendered as nothing.
+========================================== */
+.map-pin-wrap{
+    /* Leaflet puts its own background/border on .leaflet-div-icon */
+    background:transparent;
+    border:none;
+}
+
+.map-pin{
+    width:26px;
+    height:26px;
+    border-radius:50% 50% 50% 0;
+    transform:rotate(-45deg);
+    background:var(--arr-danger, #b3261e);
+    border:2.5px solid #fff;
+    box-sizing:border-box;
+    box-shadow:0 2px 6px rgba(0,0,0,.45);
+}
+
+/* Inner dot, so the pin reads as a marker rather than a plain blob */
+.map-pin::after{
+    content:"";
+    position:absolute;
+    top:7px;
+    left:7px;
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:#fff;
+}
+
+/* Nudges the pin while it's being dragged so the tip stays visible
+   under the finger. */
+.leaflet-marker-draggable{ cursor:grab; }
+.leaflet-marker-draggable:active{ cursor:grabbing; }
+
+/* Hint that the map itself is tappable */
+.map-canvas{ cursor:crosshair; }
+
+/* Tap-to-place isn't discoverable on its own, so it's stated once
+   between the map and the confirm row. */
+.map-hint{
+    padding:7px 14px 0;
+    font-family:'KRASAR',sans-serif;
+    font-size:11px;
+    font-weight:600;
+    color:var(--arr-text-muted, #6b7280);
+    text-align:center;
+}
