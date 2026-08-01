@@ -2239,3 +2239,41 @@ display:none !important;
 .suggestion-list li{
     font-size:11.5px;
 }
+
+/* ==========================================
+   REASON ARREAR — info block, fixed 4-line layout
+   Replaces the earlier flow-and-wrap arrangement: each line holds two
+   fields, so the same field always lands in the same place regardless
+   of how long the values are.
+========================================== */
+.reason-info{
+    /* switch off the wrap-everything behaviour from the earlier rules */
+    display:block;
+    padding:9px 11px;
+}
+
+.reason-info-line{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:baseline;
+    gap:2px 16px;
+    line-height:1.75;
+}
+
+.reason-info-cell{
+    display:flex;
+    align-items:baseline;
+    gap:5px;
+    min-width:0;
+}
+
+/* The first cell on each line takes the space it needs; the second sits
+   right after it rather than being pushed to the far edge. */
+.reason-info-cell .reason-info-value{
+    font-weight:800;
+    color:var(--arr-navy, #003b8b);
+    word-break:break-word;
+}
+[data-theme="dark"] .reason-info-cell .reason-info-value{
+    color:var(--arr-gold-light, #ffd700);
+}
