@@ -1213,7 +1213,13 @@ function renderReasonInfo(row) {
         .filter(v => v && v !== "-")
         .join(", ");
 
+    // Customer / contract / CIF lead the block — they identify the
+    // record, so they sit on their own rows above the loan details
+    // rather than crammed into a subtitle line.
     const items = [
+        ["អតិថិជន", row.customer],
+        ["កិច្ចសន្យាលេខ", row.loanNumber],
+        ["លេខអតិថិជន", row.cif],
         ["អាស័យដ្ឋាន", row.location],
         ["ថ្ងៃយឺត", row.day],
         ["មុខរបរ", occu],
@@ -1221,14 +1227,19 @@ function renderReasonInfo(row) {
         ["ផលិតផល", productLabel]
     ];
 
+    // The first three identify the record and get their own full-width
+    // rows; the rest are short enough to flow inline and wrap.
+    const LEAD_ROWS = 3;
+
     reasonInfo.innerHTML = items
         // Blank fields are dropped rather than shown as empty rows —
         // the modal is already tall on a phone.
-        .filter(([, v]) => String(v ?? "").trim() !== "")
-        .map(([label, value]) =>
-            `<div class="reason-info-row">` +
-              `<span class="reason-info-label">${label}</span>` +
-              `<span class="reason-info-value">${escapeHtml(String(value))}</span>` +
+        .map(([label, value], i) => ({ label, value: String(value ?? "").trim(), lead: i < LEAD_ROWS }))
+        .filter(x => x.value !== "")
+        .map(x =>
+            `<div class="reason-info-row${x.lead ? " reason-info-lead" : ""}">` +
+              `<span class="reason-info-label">${x.label}</span>` +
+              `<span class="reason-info-value">${escapeHtml(x.value)}</span>` +
             `</div>`
         ).join("");
 }
@@ -1481,7 +1492,7 @@ async function loadReasonMetaOnly(concate) {
 async function openReasonPanel(row) {
     selectedRow = row;
 
-    reasonSubtitle.textContent = `${row.loanNumber} - ${row.cif} — ${row.customer}`;
+    reasonSubtitle.textContent = "";
     renderReasonInfo(row);
     reasonAJ.value = "";
     reasonAK.value = "";
