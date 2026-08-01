@@ -1879,3 +1879,128 @@ display:none !important;
 }
 
 }
+
+/* ==========================================
+   REASON ARREAR — info block, GPS, record nav
+========================================== */
+
+/* ---- Loan context under the title ---- */
+.reason-info{
+    display:flex;
+    flex-wrap:wrap;
+    gap:4px 14px;
+    margin:0 0 14px;
+    padding:9px 11px;
+    border-radius:10px;
+    background:var(--arr-row-alt, rgba(0,0,0,.04));
+    border:1px solid var(--arr-border, #e2e6ed);
+    font-size:11.5px;
+    line-height:1.5;
+}
+.reason-info:empty{ display:none; }
+
+.reason-info-row{
+    display:flex;
+    align-items:baseline;
+    gap:5px;
+    min-width:0;
+}
+.reason-info-label{
+    color:var(--arr-text-muted, #6b7280);
+    font-weight:600;
+    white-space:nowrap;
+}
+.reason-info-value{
+    color:var(--arr-text, #1c2333);
+    font-weight:700;
+    word-break:break-word;
+}
+
+/* ---- Taller reason/solution box ----
+   The old height showed ~2 lines, so longer entries were cut
+   mid-sentence. This fits ~6 and can still be dragged taller. */
+.reason-group textarea#reasonAK{
+    min-height:132px;
+    resize:vertical;
+    line-height:1.55;
+}
+
+/* ---- GPS ---- */
+.reason-gps-row{
+    display:flex;
+    gap:6px;
+    align-items:stretch;
+}
+.reason-gps-row input{
+    flex:1 1 auto;
+    /* lets the input shrink instead of pushing the buttons off the
+       card on narrow phones */
+    min-width:0;
+}
+.reason-gps-btn{
+    flex:0 0 auto;
+    width:42px;
+    border-radius:10px;
+    border:1px solid var(--arr-border, #e2e6ed);
+    background:var(--arr-card-bg, #fff);
+    font-size:17px;
+    line-height:1;
+    cursor:pointer;
+}
+.reason-gps-btn:active{ transform:scale(.96); }
+
+.reason-gps-hint{
+    margin-top:4px;
+    font-size:10.5px;
+    line-height:1.4;
+    /* reserved so the layout doesn't jump when a hint appears/clears */
+    min-height:14px;
+    color:var(--arr-text-muted, #6b7280);
+}
+.reason-gps-hint.ok{ color:#1a7f37; }
+.reason-gps-hint.bad{ color:var(--arr-danger, #b3261e); }
+
+/* ---- Record navigation ---- */
+.reason-nav{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:16px;
+    margin-top:12px;
+    padding-top:10px;
+    border-top:1px solid var(--arr-border, #e2e6ed);
+}
+.reason-nav-btn{
+    width:46px;
+    height:34px;
+    border-radius:10px;
+    border:1px solid var(--arr-border, #e2e6ed);
+    background:var(--arr-card-bg, #fff);
+    color:var(--arr-navy, #003b8b);
+    font-size:20px;
+    font-weight:800;
+    font-family:'KRASAR',sans-serif;
+    line-height:1;
+    cursor:pointer;
+}
+.reason-nav-btn:active:not(:disabled){ transform:scale(.96); }
+.reason-nav-btn:disabled{
+    opacity:.35;
+    cursor:default;
+}
+.reason-nav-pos{
+    font-size:12px;
+    font-weight:700;
+    color:var(--arr-text-muted, #6b7280);
+    min-width:64px;
+    text-align:center;
+}
+
+/* The card is taller now (info block + GPS + nav), so cap it to the
+   viewport and scroll internally rather than letting the action
+   buttons fall off the bottom of the screen. */
+.reason-card{
+    max-height:88vh;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+}
