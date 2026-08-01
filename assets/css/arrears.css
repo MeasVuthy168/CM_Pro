@@ -2228,6 +2228,10 @@ display:none !important;
    Khmer, where the glyphs stack. */
 .reason-group textarea#reasonAK{
     line-height:1.65;
+    /* ~3 lines at the 11.5px field size. Still drag-resizable when a
+       longer note is needed, and scrolls internally past that. */
+    min-height:58px;
+    max-height:92px;
 }
 
 /* Suggestions feed straight into the AJ/AK fields, so they match those
