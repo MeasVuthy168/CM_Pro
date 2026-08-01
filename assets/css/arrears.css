@@ -913,7 +913,10 @@ align-items:center;
 
 justify-content:center;
 
-padding:20px;
+/* Was 20px all round — on a phone that's 40px of the width gone before
+   the card even starts. Tighter sides, small top/bottom so the card can
+   still breathe against the status bar. */
+padding:12px 8px;
 
 box-sizing:border-box;
 
@@ -2007,8 +2010,31 @@ display:none !important;
 /* The card is taller now (info block + GPS + nav), so cap it to the
    viewport and scroll internally rather than letting the action
    buttons fall off the bottom of the screen. */
+/* Fills the available screen rather than sitting in a narrow column:
+   the modal now carries the identity block, address, reason, GPS and
+   nav, so the extra width and height stop it feeling cramped. */
 .reason-card{
-    max-height:88vh;
+    max-width:560px;
+    max-height:94vh;
+    padding:16px 16px 14px;
     overflow-y:auto;
     -webkit-overflow-scrolling:touch;
 }
+
+/* The customer / contract / CIF rows identify the record, so each takes
+   a full row instead of flowing inline with the shorter loan details. */
+.reason-info-row.reason-info-lead{
+    flex:0 0 100%;
+    gap:8px;
+}
+.reason-info-row.reason-info-lead .reason-info-value{
+    color:var(--arr-navy, #003b8b);
+    font-weight:800;
+}
+[data-theme="dark"] .reason-info-row.reason-info-lead .reason-info-value{
+    color:var(--arr-gold-light, #ffd700);
+}
+
+/* Subtitle is now empty — its content moved into the info block. Hidden
+   when blank so it doesn't leave a gap under the title. */
+.reason-subtitle:empty{ display:none; }
