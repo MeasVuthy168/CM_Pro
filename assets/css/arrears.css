@@ -2038,3 +2038,108 @@ display:none !important;
 /* Subtitle is now empty — its content moved into the info block. Hidden
    when blank so it doesn't leave a gap under the title. */
 .reason-subtitle:empty{ display:none; }
+
+/* ==========================================
+   MAP PICKER (Leaflet)
+========================================== */
+.map-backdrop{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.7);
+    /* above .reason-backdrop (1000) — it opens on top of that modal */
+    z-index:1100;
+    align-items:center;
+    justify-content:center;
+    padding:12px 8px;
+    box-sizing:border-box;
+}
+.map-backdrop.show{ display:flex; }
+
+.map-card{
+    width:100%;
+    max-width:560px;
+    height:82vh;
+    display:flex;
+    flex-direction:column;
+    background:var(--arr-card-bg, #fff);
+    border:1px solid var(--arr-border, #e2e6ed);
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:var(--arr-shadow-modal, 0 10px 40px rgba(0,0,0,.4));
+}
+
+.map-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:12px 14px;
+    border-bottom:1px solid var(--arr-border, #e2e6ed);
+}
+.map-title{
+    font-family:'KRASAR',sans-serif;
+    font-weight:800;
+    font-size:14px;
+    color:var(--arr-text, #1c2333);
+}
+.map-close{
+    width:32px;
+    height:32px;
+    border:none;
+    border-radius:9px;
+    background:transparent;
+    color:var(--arr-text-muted, #6b7280);
+    font-size:16px;
+    cursor:pointer;
+}
+
+/* Leaflet needs a real height on its container or it renders nothing. */
+.map-canvas{
+    flex:1 1 auto;
+    min-height:0;
+    width:100%;
+}
+
+.map-foot{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+    padding:10px 14px;
+    border-top:1px solid var(--arr-border, #e2e6ed);
+}
+.map-coords{
+    font-size:12px;
+    font-weight:700;
+    color:var(--arr-text, #1c2333);
+    white-space:nowrap;
+}
+.map-foot-actions{
+    display:flex;
+    gap:8px;
+    margin-left:auto;
+}
+.map-btn{
+    padding:9px 14px;
+    border-radius:10px;
+    border:1px solid var(--arr-border, #e2e6ed);
+    background:var(--arr-card-bg, #fff);
+    color:var(--arr-text, #1c2333);
+    font-family:'KRASAR',sans-serif;
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+}
+.map-btn-primary{
+    background:var(--arr-gold, #d4af37);
+    border-color:var(--arr-gold, #d4af37);
+    color:#1c2333;
+}
+.map-btn:active{ transform:scale(.97); }
+
+/* Three buttons now, so let them wrap rather than squeezing the labels
+   down to an unreadable size on narrow phones. */
+.reason-gps-row{ flex-wrap:wrap; }
+.reason-gps-btn{ flex:1 1 140px; }
