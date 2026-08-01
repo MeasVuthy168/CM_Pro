@@ -237,6 +237,31 @@ href="../../assets/css/arrears.css">
 <!-- REASON ARREAR (modal popup, not inline) -->
 <!-- ========================= -->
 
+<!-- ========================= -->
+<!-- MAP PICKER (drag the pin to set the customer's location) -->
+<!-- ========================= -->
+
+<div id="mapBackdrop" class="map-backdrop">
+<div id="mapCard" class="map-card">
+
+<div class="map-head">
+<span class="map-title">ជ្រើសទីតាំងលើផែនទី</span>
+<button type="button" id="btnMapClose" class="map-close" aria-label="បិទ">✕</button>
+</div>
+
+<div id="mapCanvas" class="map-canvas"></div>
+
+<div class="map-foot">
+<span class="map-coords" id="mapCoords">-</span>
+<div class="map-foot-actions">
+<button type="button" id="btnMapHere" class="map-btn">📍 ទីតាំងខ្ញុំ</button>
+<button type="button" id="btnMapConfirm" class="map-btn map-btn-primary">យល់ព្រម</button>
+</div>
+</div>
+
+</div>
+</div>
+
 <div id="reasonBackdrop" class="reason-backdrop">
 
 <div id="reasonCard" class="reason-card">
@@ -267,7 +292,8 @@ href="../../assets/css/arrears.css">
 <input type="text" id="reasonGPS" placeholder="មិនទាន់កំណត់ទីតាំង" inputmode="decimal" autocomplete="off">
 <div class="reason-gps-row">
 <button type="button" id="btnGpsHere" class="reason-gps-btn"><span>📍</span> កំណត់ទីតាំងបច្ចុប្បន្ន</button>
-<button type="button" id="btnGpsOpen" class="reason-gps-btn"><span>🗺️</span> មើលលើផែនទី</button>
+<button type="button" id="btnGpsPick" class="reason-gps-btn"><span>🗺️</span> ជ្រើសលើផែនទី</button>
+<button type="button" id="btnGpsOpen" class="reason-gps-btn"><span>🧭</span> មើលលើផែនទី</button>
 </div>
 <div class="reason-gps-hint" id="reasonGpsHint"></div>
 </div>
@@ -421,6 +447,10 @@ href="../../assets/css/arrears.css">
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
 
 <!-- EXPORT (SheetJS) -->
+<!-- MAP PICKER (Leaflet + OpenStreetMap — no API key required) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <!-- PDF EXPORT -->
