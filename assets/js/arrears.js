@@ -585,6 +585,25 @@ function parseFlexibleDate(value) {
         }
     }
 
+    // Excel/VBA writes dd/mm/yyyy, but new Date("10/07/2026") reads it as
+    // mm/dd — October 7 instead of 10 July — and redisplays it as
+    // 07/10/2026. Dates with a day above 12 came out Invalid and passed
+    // through untouched, so only SOME rows looked wrong, which is what
+    // made this hard to spot. Parse the slash/dash form explicitly.
+    const dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if (dmy) {
+        const dd = Number(dmy[1]);
+        const mm = Number(dmy[2]);
+        const yyyy = Number(dmy[3]);
+        if (dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12) {
+            const d = new Date(Date.UTC(yyyy, mm - 1, dd));
+            // Rejects impossible dates like 31/02 rather than letting
+            // them roll silently into the next month.
+            if (d.getUTCDate() === dd && d.getUTCMonth() === mm - 1) return d;
+        }
+        return null;
+    }
+
     const parsed = new Date(str);
     return isNaN(parsed.getTime()) ? null : parsed;
 }
@@ -2161,8 +2180,15 @@ function getTeamCategory(row) {
 function buildNoReasonRows(sourceRows, branchFilter, teamFilter) {
     const map = new Map();
     sourceRows.forEach(row => {
-        const hasNoReason = (parseFloat(row.arreas) || 0) > 0 && !row.akSolution;
-        if (!hasNoReason) return;
+        // Mirrors the VBA COUNTIFS: W=officer, AK blank, Q>0, U=branch.
+        // Q is the CIF column, so the guard is simply "this is a real
+        // row" — NOT "arrears amount > 0". The old check required an
+        // arrears figure, which silently dropped every loan whose
+        // arrears cell was blank, zero or "-", hiding officers who did
+        // have unfilled reasons.
+        const hasCif = String(row.cif ?? "").trim() !== "";
+        const solutionFilled = String(row.akSolution ?? "").trim() !== "";
+        if (!hasCif || solutionFilled) return;
 
         const branch = row.branch || "";
         if (branchFilter && branch !== branchFilter) return;
