@@ -203,6 +203,48 @@
   max-width: 640px;
 }
 
+/* ---------- Render account usage card ---------- */
+.adm-render-card {
+  margin-bottom: 18px;
+}
+
+.adm-render-loading {
+  color: var(--adm-text-muted);
+  font-size: 0.85rem;
+  padding: 8px 0;
+}
+
+.adm-render-setup {
+  color: var(--adm-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  padding-top: 4px;
+}
+.adm-render-setup code {
+  background-color: var(--adm-navy-100);
+  color: var(--adm-navy-900);
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 0.78rem;
+}
+[data-theme="dark"] .adm-render-setup code { color: var(--adm-gold-300); }
+
+.adm-render-sources {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 6px 20px;
+}
+
+.adm-render-source-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--adm-text-muted);
+  padding: 3px 0;
+  border-bottom: 1px dashed var(--adm-border);
+}
+
 /* ---------- header ---------- */
 .adm-header {
   display: flex;
@@ -396,14 +438,14 @@
 
 .adm-chart-empty {
   position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  left: 0;
+  right: 0;
+  bottom: 6px;
   text-align: center;
-  padding: 20px;
+  padding: 0 16px;
   color: var(--adm-text-muted);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  display: none;
 }
 
 /* ---------- table ---------- */
