@@ -398,6 +398,30 @@
     if (document.getElementById("admRenderUsageCard")) {
       fetchRenderUsage();
       setInterval(fetchRenderUsage, 5 * 60 * 1000); // Render's data is hourly-resolution — no need to poll fast
+
+      const debugBtn = document.getElementById("admRenderDebugBtn");
+      debugBtn?.addEventListener("click", fetchRenderDebug);
+    }
+  }
+
+  async function fetchRenderDebug() {
+    const btn = document.getElementById("admRenderDebugBtn");
+    const out = document.getElementById("admRenderDebugOutput");
+    btn.textContent = "Loading raw response…";
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/render-usage?debug=1`, { headers: authHeaders() });
+      const data = await res.json();
+      out.value = JSON.stringify(data, null, 2);
+      out.hidden = false;
+      btn.textContent = "Raw response loaded ↓ (tap box to select all, then copy)";
+    } catch (e) {
+      out.value = `Fetch failed: ${e.message}`;
+      out.hidden = false;
+      btn.textContent = "Show raw response (debug)";
+    } finally {
+      btn.disabled = false;
     }
   }
 
