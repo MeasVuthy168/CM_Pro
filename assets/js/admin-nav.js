@@ -63,6 +63,7 @@ function cmRenderToolCards(containerId, excludeKey) {
 document.addEventListener("DOMContentLoaded", () => {
   const activeKey = document.body.dataset.admPage || "";
   cmRenderAdminNav(activeKey);
+  renderSidebarFooter();
 
   if (document.getElementById("admToolsGrid")) {
     cmRenderToolCards("admToolsGrid", activeKey);
@@ -73,6 +74,40 @@ document.addEventListener("DOMContentLoaded", () => {
     userLabelEl.textContent = window.CMAdmin.fullname || window.CMAdmin.username || "Admin";
   }
 });
+
+function renderSidebarFooter() {
+  const sidebar = document.querySelector(".adm-sidebar");
+  if (!sidebar || document.querySelector(".adm-sidebar-footer")) return;
+
+  const footer = document.createElement("div");
+  footer.className = "adm-sidebar-footer";
+  footer.innerHTML = `
+    <a href="/CM_Pro/index.html" class="adm-nav-link">
+      <span class="adm-nav-icon">⬅️</span>
+      <span class="adm-nav-text">Back to App</span>
+    </a>
+    <div class="adm-nav-link adm-nav-logout" id="admLogoutBtn">
+      <span class="adm-nav-icon">🚪</span>
+      <span class="adm-nav-text">Logout</span>
+    </div>
+  `;
+  sidebar.appendChild(footer);
+
+  const logoutBtn = document.getElementById("admLogoutBtn");
+  logoutBtn?.addEventListener("click", () => {
+    if (typeof logout === "function") {
+      logout(); // shared/logout.js — handles confirm + clear storage + redirect
+    } else {
+      // shared/logout.js wasn't loaded on this page — fall back inline
+      if (confirm("Logout CM_Pro ?")) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("loggedInUser");
+        sessionStorage.clear();
+        window.location.replace("/CM_Pro/login.html");
+      }
+    }
+  });
+}
 
 window.CM_ADMIN_TOOLS = CM_ADMIN_TOOLS;
 window.cmRenderAdminNav = cmRenderAdminNav;
