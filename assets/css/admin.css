@@ -159,10 +159,6 @@
   background-color: rgba(192, 57, 43, 0.08);
 }
 
-@media (max-width: 520px) {
-  .adm-topbar-btn-text { display: none; }
-}
-
 /* ---------- hub: tool cards ---------- */
 .adm-tools-grid {
   display: grid;
@@ -291,8 +287,10 @@
 
 .adm-header-right {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+  row-gap: 8px;
   font-size: 0.85rem;
   color: var(--adm-text-muted);
 }
