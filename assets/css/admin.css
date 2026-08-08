@@ -136,6 +136,12 @@
   }
   .adm-sidebar-brand { display: none; }
   .adm-nav-link { flex-shrink: 0; margin-bottom: 0; white-space: nowrap; }
+
+  /* Without this, .adm-header-right has no width limit of its own, so once it
+     wraps below the title it still renders at its full natural content width
+     (sum of every button) instead of the screen width — flex-wrap on it then
+     has nothing to wrap against, and it silently overflows past the edge. */
+  .adm-header-right { width: 100%; }
 }
 
 /* ---------- topbar actions: back to app / logout ---------- */
