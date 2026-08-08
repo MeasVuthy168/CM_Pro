@@ -179,7 +179,7 @@
       wrap.appendChild(emptyEl);
     }
     emptyEl.textContent = message || "Collecting data — check back in a couple of minutes.";
-    emptyEl.hidden = !isEmpty;
+    emptyEl.style.display = isEmpty ? "block" : "none";
     canvas.style.visibility = isEmpty ? "hidden" : "visible";
   }
 
@@ -394,6 +394,63 @@
     }
     fetchStats();
     state.timer = setInterval(fetchStats, POLL_MS);
+
+    if (document.getElementById("admRenderUsageCard")) {
+      fetchRenderUsage();
+      setInterval(fetchRenderUsage, 5 * 60 * 1000); // Render's data is hourly-resolution — no need to poll fast
+    }
+  }
+
+  // ---------- Render account usage (real number, matches Render's dashboard) ----------
+  async function fetchRenderUsage() {
+    const loadingEl = document.getElementById("admRenderLoading");
+    const bodyEl = document.getElementById("admRenderUsageBody");
+    const setupEl = document.getElementById("admRenderSetup");
+
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/render-usage`, { headers: authHeaders() });
+      const data = await res.json();
+
+      if (!data.ok) {
+        loadingEl.hidden = true;
+        bodyEl.hidden = true;
+        setupEl.hidden = false;
+        setupEl.textContent = data.message || setupEl.textContent;
+        return;
+      }
+
+      loadingEl.hidden = true;
+      setupEl.hidden = true;
+      bodyEl.hidden = false;
+
+      document.getElementById("admRenderTotal").textContent = `${data.totalGb.toFixed(2)} GB / ${data.planGb} GB`;
+      document.getElementById("admRenderTotalSub").textContent = `${data.pctUsed}% of monthly free tier used`;
+
+      const bar = document.getElementById("admRenderBar");
+      bar.style.width = `${Math.min(100, data.pctUsed)}%`;
+      bar.classList.toggle("adm-bar-warn", data.pctUsed >= 70 && data.pctUsed < 100);
+      bar.classList.toggle("adm-bar-danger", data.pctUsed >= 100);
+
+      const sourcesEl = document.getElementById("admRenderSources");
+      const entries = Object.entries(data.bySourceGb || {});
+      sourcesEl.innerHTML = entries.length
+        ? entries
+            .sort((a, b) => b[1] - a[1])
+            .map(([label, gb]) => `
+              <div class="adm-render-source-row">
+                <span>${label}</span>
+                <span>${fmtMb(gb * 1024)}</span>
+              </div>
+            `)
+            .join("")
+        : "";
+    } catch (e) {
+      console.error("render-usage fetch failed:", e);
+      loadingEl.hidden = true;
+      bodyEl.hidden = true;
+      setupEl.hidden = false;
+      setupEl.textContent = "Could not reach the server to load Render usage.";
+    }
   }
 
   document.readyState === "loading"
