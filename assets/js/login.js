@@ -27,6 +27,23 @@ if("serviceWorker" in navigator){
 }
 
 // =========================
+// NEXT-PARAM HELPER
+// (same-origin only, so a malicious ?next= can't redirect off-site)
+// =========================
+
+function getSafeNextParam(){
+
+    const raw=new URLSearchParams(window.location.search).get("next");
+
+    if(!raw) return null;
+
+    if(!raw.startsWith("/CM_Pro/")) return null;
+
+    return raw;
+
+}
+
+// =========================
 // AUTO LOGIN
 // =========================
 
@@ -50,13 +67,19 @@ if(existingToken){
 
         const role=(user.role || "user").toLowerCase();
 
+        const next=getSafeNextParam();
+
         window.location.replace(
 
-            role==="admin"
+            next
 
-                ? "/CM_Pro/Admin/adminupload.html"
+                ? next
 
-                : "/CM_Pro/index.html"
+                : role==="admin"
+
+                    ? "/CM_Pro/Admin/adminupload.html"
+
+                    : "/CM_Pro/index.html"
 
         );
 
@@ -380,13 +403,19 @@ form.addEventListener("submit",async(e)=>{
 
             const role=(userData.role || "user").toLowerCase();
 
+            const next=getSafeNextParam();
+
             window.location.href=
 
-                role==="admin"
+                next
 
-                    ? "/CM_Pro/Admin/adminupload.html"
+                    ? next
 
-                    : "/CM_Pro/index.html";
+                    : role==="admin"
+
+                        ? "/CM_Pro/Admin/adminupload.html"
+
+                        : "/CM_Pro/index.html";
 
         },700);
 
