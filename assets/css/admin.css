@@ -64,6 +64,8 @@
   align-self: flex-start;
   height: 100vh;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .adm-sidebar-brand {
@@ -125,6 +127,7 @@
     height: auto;
     position: static;
     display: flex;
+    flex-direction: row;
     overflow-x: auto;
     border-right: none;
     border-bottom: 1px solid var(--adm-border);
@@ -133,6 +136,30 @@
   }
   .adm-sidebar-brand { display: none; }
   .adm-nav-link { flex-shrink: 0; margin-bottom: 0; white-space: nowrap; }
+  .adm-sidebar-footer {
+    flex-direction: row;
+    border-top: none;
+    border-left: 1px solid var(--adm-border);
+    padding: 0 0 0 10px;
+    margin: 0 0 0 6px;
+  }
+}
+
+/* ---------- sidebar footer: back to app / logout ---------- */
+.adm-sidebar-footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--adm-border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.adm-nav-link.adm-nav-logout {
+  color: var(--adm-danger);
+}
+.adm-nav-link.adm-nav-logout:hover {
+  background-color: rgba(192, 57, 43, 0.1);
 }
 
 /* ---------- hub: tool cards ---------- */
