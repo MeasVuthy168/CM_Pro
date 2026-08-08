@@ -77,7 +77,7 @@ if(existingToken){
 
                 : role==="admin"
 
-                    ? "/CM_Pro/Admin/adminupload.html"
+                    ? "/CM_Pro/pages/admin/index.html"
 
                     : "/CM_Pro/index.html"
 
@@ -413,7 +413,7 @@ form.addEventListener("submit",async(e)=>{
 
                     : role==="admin"
 
-                        ? "/CM_Pro/Admin/adminupload.html"
+                        ? "/CM_Pro/pages/admin/index.html"
 
                         : "/CM_Pro/index.html";
 
