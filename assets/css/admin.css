@@ -245,6 +245,27 @@
   border-bottom: 1px dashed var(--adm-border);
 }
 
+.adm-render-debug-btn {
+  margin-top: 14px;
+  font-size: 0.75rem;
+  color: var(--adm-text-muted);
+}
+
+.adm-render-debug-output {
+  margin-top: 10px;
+  width: 100%;
+  min-height: 220px;
+  font-family: monospace;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--adm-border);
+  background-color: var(--adm-bg);
+  color: var(--adm-text);
+  resize: vertical;
+}
+
 /* ---------- header ---------- */
 .adm-header {
   display: flex;
