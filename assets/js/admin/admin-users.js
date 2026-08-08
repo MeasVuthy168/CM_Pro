@@ -1,9 +1,9 @@
 /* =====================================================
    admin-users.js
-   Mirrors modAdminUserPhoto + the VBA UserForm button handlers:
-   click a row to load it into the form, staged photo changes only
-   commit on Save (Add/Edit), branch field only shows for
-   Viewer_Manager_A/B/C, same validation order as the VBA.
+   Table-first User Management: click a row's action icons to
+   edit/reset/delete, "+ Add User" opens a modal. Mirrors the
+   VBA UserForm's validation and staged-photo behavior, just
+   presented as a modal instead of an always-open side panel.
    ===================================================== */
 (function () {
   if (!window.CMAdmin) return; // admin-loader.js already redirected away
@@ -13,62 +13,26 @@
 
   const state = {
     users: [],
-    selectedUsername: null, // null = "new user" context, like VBA's cleared form
-    photoFile: null,        // staged File object (mPhotoChanged equivalent)
-    removePhoto: false,     // mRemovePhoto equivalent
-    photoObjectUrl: null    // for cleanup between previews
+    photoFile: null,     // staged File object for the currently open modal
+    removePhoto: false,
+    photoObjectUrl: null
   };
 
   const el = {
-    username: document.getElementById("ufUsername"),
-    fullname: document.getElementById("ufFullName"),
-    role: document.getElementById("ufRole"),
-    branchField: document.getElementById("ufBranchField"),
-    branch: document.getElementById("ufBranch"),
-    status: document.getElementById("ufStatus"),
-    phone: document.getElementById("ufPhone"),
-
-    photoPreview: document.getElementById("ufPhotoPreview"),
-    photoPlaceholder: document.getElementById("ufPhotoPlaceholder"),
-    photoImg: document.getElementById("ufPhotoImg"),
-    photoInput: document.getElementById("ufPhotoInput"),
-    btnSelectPhoto: document.getElementById("ufBtnSelectPhoto"),
-    btnRemovePhoto: document.getElementById("ufBtnRemovePhoto"),
-
-    btnAdd: document.getElementById("ufBtnAdd"),
-    btnEdit: document.getElementById("ufBtnEdit"),
-    btnClear: document.getElementById("ufBtnClear"),
-    btnDelete: document.getElementById("ufBtnDelete"),
-    btnResetPassword: document.getElementById("ufBtnResetPassword"),
-
     search: document.getElementById("ufSearch"),
     searchRole: document.getElementById("ufSearchRole"),
     searchStatus: document.getElementById("ufSearchStatus"),
-    btnSearch: document.getElementById("ufBtnSearch"),
     btnShowAll: document.getElementById("ufBtnShowAll"),
+    btnAddUser: document.getElementById("ufBtnAddUser"),
 
     tableBody: document.getElementById("admUsersTableBody"),
     tableEmpty: document.getElementById("admUsersTableEmpty"),
-    userCount: document.getElementById("admUserCount"),
 
-    errorBanner: document.getElementById("admUsersError"),
-    successBanner: document.getElementById("admUsersSuccess")
+    formTemplate: document.getElementById("ufFormTemplate")
   };
 
   function authHeaders() {
     return { Authorization: `Bearer ${window.CMAdmin.token}` };
-  }
-
-  function showError(msg) {
-    el.errorBanner.textContent = msg;
-    el.errorBanner.hidden = !msg;
-    if (msg) el.successBanner.hidden = true;
-  }
-
-  function showSuccess(msg) {
-    el.successBanner.textContent = msg;
-    el.successBanner.hidden = !msg;
-    if (msg) el.errorBanner.hidden = true;
   }
 
   function escapeHtml(s) {
@@ -77,120 +41,30 @@
     }[c]));
   }
 
-  function roleLabel(role) {
-    const map = {
-      admin: "Admin", user: "User", viewer: "Viewer",
-      viewer_staff: "Viewer_Staff",
-      viewer_manager_a: "Viewer_Manager_A",
-      viewer_manager_b: "Viewer_Manager_B",
-      viewer_manager_c: "Viewer_Manager_C"
-    };
-    return map[role] || role;
+  const ROLE_LABELS = {
+    admin: "Admin", user: "User", viewer: "Viewer",
+    viewer_staff: "Viewer_Staff",
+    viewer_manager_a: "Viewer_Manager_A",
+    viewer_manager_b: "Viewer_Manager_B",
+    viewer_manager_c: "Viewer_Manager_C"
+  };
+
+  function roleBadgeClass(role) {
+    if (role === "admin") return "adm-badge-role-admin";
+    if (role === "viewer_staff") return "adm-badge-role-viewer_staff";
+    if (BRANCH_ROLES.has(role)) return "adm-badge-role-manager";
+    return "adm-badge-role-user";
   }
 
-  // ---------- branch field visibility ----------
-  function updateBranchVisibility() {
-    const needsBranch = BRANCH_ROLES.has(el.role.value);
-    el.branchField.hidden = !needsBranch;
-    if (!needsBranch) el.branch.value = "";
-  }
-  el.role.addEventListener("change", updateBranchVisibility);
-
-  // ---------- photo preview helpers ----------
-  function resetPhotoPreview() {
-    if (state.photoObjectUrl) {
-      URL.revokeObjectURL(state.photoObjectUrl);
-      state.photoObjectUrl = null;
-    }
-    el.photoImg.hidden = true;
-    el.photoImg.src = "";
-    el.photoPlaceholder.hidden = false;
-    el.photoInput.value = "";
-
-    state.photoFile = null;
-    state.removePhoto = false;
+  function initials(fullname, username) {
+    const src = (fullname || username || "?").trim();
+    const parts = src.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return src.slice(0, 2).toUpperCase();
   }
 
-  function showPhotoBlob(blob) {
-    if (state.photoObjectUrl) URL.revokeObjectURL(state.photoObjectUrl);
-    state.photoObjectUrl = URL.createObjectURL(blob);
-    el.photoImg.src = state.photoObjectUrl;
-    el.photoImg.hidden = false;
-    el.photoPlaceholder.hidden = true;
-  }
-
-  async function loadUserPhoto(username) {
-    try {
-      const res = await fetch(`${API_BASE}/assets/user-photo/${encodeURIComponent(username)}`, {
-        headers: authHeaders()
-      });
-      if (!res.ok) { resetPhotoPreview(); return; }
-      const blob = await res.blob();
-      showPhotoBlob(blob);
-    } catch (e) {
-      resetPhotoPreview();
-    }
-  }
-
-  el.btnSelectPhoto.addEventListener("click", () => el.photoInput.click());
-
-  el.photoInput.addEventListener("change", () => {
-    const file = el.photoInput.files?.[0];
-    if (!file) return;
-    state.photoFile = file;
-    state.removePhoto = false;
-    showPhotoBlob(file);
-  });
-
-  el.btnRemovePhoto.addEventListener("click", () => {
-    resetPhotoPreview();
-    state.removePhoto = true; // set back after reset clears it, same as VBA's btnRemoveUserPhoto_Click
-  });
-
-  // ---------- form clear ----------
-  function clearForm() {
-    el.username.value = "";
-    el.username.disabled = false;
-    el.fullname.value = "";
-    el.role.value = "user";
-    el.status.value = "active";
-    el.phone.value = "";
-    el.branch.value = "";
-    updateBranchVisibility();
-    resetPhotoPreview();
-    state.selectedUsername = null;
-    showError("");
-    showSuccess("");
-  }
-
-  el.btnClear.addEventListener("click", () => {
-    clearForm();
-  });
-
-  // ---------- row click -> populate form ----------
-  function selectUserRow(u) {
-    el.username.value = u.username;
-    el.username.disabled = true; // username isn't editable once created
-    el.fullname.value = u.fullname;
-    el.role.value = u.role;
-    el.status.value = u.isActive ? "active" : "inactive";
-    el.phone.value = u.phone;
-    updateBranchVisibility();
-    el.branch.value = u.branch || "";
-
-    state.selectedUsername = u.username;
-    state.photoFile = null;
-    state.removePhoto = false;
-    el.photoInput.value = "";
-
-    loadUserPhoto(u.username);
-    showError("");
-    showSuccess("");
-  }
-
-  // ---------- render table ----------
+  // ---------- table rendering ----------
   function renderTable(users) {
-    el.userCount.textContent = users.length;
     el.tableBody.innerHTML = "";
 
     if (!users.length) {
@@ -201,16 +75,33 @@
 
     users.forEach((u) => {
       const tr = document.createElement("tr");
-      tr.className = "adm-users-row";
       tr.innerHTML = `
-        <td>${escapeHtml(u.username)}</td>
-        <td>${escapeHtml(u.fullname)}</td>
-        <td>${escapeHtml(roleLabel(u.role))}</td>
-        <td>${u.isActive ? "Active" : "Inactive"}</td>
-        <td>${escapeHtml(u.phone)}</td>
-        <td>${escapeHtml(u.branch || "")}</td>
+        <td>
+          <div class="adm-user-identity">
+            <div class="adm-avatar">${escapeHtml(initials(u.fullname, u.username))}</div>
+            <div class="adm-user-identity-text">
+              <span class="adm-user-identity-name">${escapeHtml(u.fullname || u.username)}</span>
+              <span class="adm-user-identity-username">@${escapeHtml(u.username)}</span>
+            </div>
+          </div>
+        </td>
+        <td><span class="adm-badge ${roleBadgeClass(u.role)}">${escapeHtml(ROLE_LABELS[u.role] || u.role)}</span></td>
+        <td><span class="adm-badge ${u.isActive ? "adm-badge-status-active" : "adm-badge-status-inactive"}">${u.isActive ? "Active" : "Inactive"}</span></td>
+        <td>${escapeHtml(u.phone || "—")}</td>
+        <td>${escapeHtml(u.branch || "—")}</td>
+        <td>
+          <div class="adm-row-actions">
+            <button type="button" class="adm-icon-btn" title="Edit" data-action="edit">✏️</button>
+            <button type="button" class="adm-icon-btn" title="Reset Password" data-action="reset">🔑</button>
+            <button type="button" class="adm-icon-btn adm-icon-btn-danger" title="Delete" data-action="delete">🗑️</button>
+          </div>
+        </td>
       `;
-      tr.addEventListener("click", () => selectUserRow(u));
+
+      tr.querySelector('[data-action="edit"]').addEventListener("click", () => openUserModal(u));
+      tr.querySelector('[data-action="reset"]').addEventListener("click", () => resetPassword(u.username));
+      tr.querySelector('[data-action="delete"]').addEventListener("click", () => deleteUser(u.username));
+
       el.tableBody.appendChild(tr);
     });
   }
@@ -223,9 +114,7 @@
       if (filters.role) params.set("role", filters.role);
       if (filters.status) params.set("status", filters.status);
 
-      const res = await fetch(`${API_BASE}/api/admin/users?${params.toString()}`, {
-        headers: authHeaders()
-      });
+      const res = await fetch(`${API_BASE}/api/admin/users?${params.toString()}`, { headers: authHeaders() });
 
       if (res.status === 401 || res.status === 403) {
         location.replace(window.CM_ADMIN_CONFIG.loginPage);
@@ -239,7 +128,7 @@
       renderTable(state.users);
     } catch (e) {
       console.error("loadUsers failed:", e);
-      showError("Could not load user list.");
+      AdminUI.toast("Could not load user list.", "error");
     }
   }
 
@@ -250,33 +139,61 @@
     loadUsers();
   });
 
-  el.btnSearch.addEventListener("click", () => {
+  function runSearch() {
     loadUsers({
       search: el.search.value.trim(),
       role: el.searchRole.value,
       status: el.searchStatus.value
     });
+  }
+  el.search.addEventListener("keydown", (e) => { if (e.key === "Enter") runSearch(); });
+  el.searchRole.addEventListener("change", runSearch);
+  el.searchStatus.addEventListener("change", runSearch);
+
+  let searchDebounce;
+  el.search.addEventListener("input", () => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(runSearch, 350);
   });
 
-  // ---------- validation ----------
-  function validateBranch() {
-    if (BRANCH_ROLES.has(el.role.value) && !el.branch.value.trim()) {
-      showError("Please select a Branch for this role.");
-      return false;
+  // ---------- photo staging (inside whichever modal is open) ----------
+  function resetPhotoPreview(scope) {
+    if (state.photoObjectUrl) {
+      URL.revokeObjectURL(state.photoObjectUrl);
+      state.photoObjectUrl = null;
     }
-    return true;
+    const img = scope.querySelector("#ufPhotoImg");
+    const placeholder = scope.querySelector("#ufPhotoPlaceholder");
+    const input = scope.querySelector("#ufPhotoInput");
+    img.hidden = true;
+    img.src = "";
+    placeholder.hidden = false;
+    input.value = "";
+
+    state.photoFile = null;
+    state.removePhoto = false;
   }
 
-  function currentBody() {
-    return {
-      fullname: el.fullname.value.trim(),
-      role: el.role.value,
-      phone: el.phone.value.trim(),
-      branch: BRANCH_ROLES.has(el.role.value) ? el.branch.value.trim() : ""
-    };
+  function showPhotoBlob(scope, blob) {
+    if (state.photoObjectUrl) URL.revokeObjectURL(state.photoObjectUrl);
+    state.photoObjectUrl = URL.createObjectURL(blob);
+    const img = scope.querySelector("#ufPhotoImg");
+    const placeholder = scope.querySelector("#ufPhotoPlaceholder");
+    img.src = state.photoObjectUrl;
+    img.hidden = false;
+    placeholder.hidden = true;
   }
 
-  // ---------- staged photo commit (after add/edit succeeds) ----------
+  async function loadUserPhoto(scope, username) {
+    try {
+      const res = await fetch(`${API_BASE}/assets/user-photo/${encodeURIComponent(username)}`, { headers: authHeaders() });
+      if (!res.ok) { resetPhotoPreview(scope); return; }
+      showPhotoBlob(scope, await res.blob());
+    } catch (e) {
+      resetPhotoPreview(scope);
+    }
+  }
+
   async function commitPhotoChanges(username) {
     if (state.removePhoto) {
       await fetch(`${API_BASE}/api/users/photo/${encodeURIComponent(username)}`, {
@@ -291,87 +208,151 @@
       fd.append("file", state.photoFile);
       const res = await fetch(`${API_BASE}/api/users/photo/upload`, {
         method: "POST",
-        headers: authHeaders(), // no Content-Type — browser sets multipart boundary
+        headers: authHeaders(),
         body: fd
       });
-      if (!res.ok) {
-        showError("User saved, but photo upload failed.");
-      }
+      if (!res.ok) AdminUI.toast("User saved, but photo upload failed.", "error");
     }
   }
 
-  // ---------- Add User ----------
-  el.btnAdd.addEventListener("click", async () => {
-    const username = el.username.value.trim();
-    const fullname = el.fullname.value.trim();
-    const role = el.role.value;
+  // ---------- Add / Edit modal ----------
+  function openUserModal(existingUser) {
+    const isEdit = !!existingUser;
+    const bodyNode = el.formTemplate.content.firstElementChild.cloneNode(true);
 
-    if (!username) return showError("Enter username.");
-    if (!fullname) return showError("Enter full name.");
-    if (!role) return showError("Select role.");
-    if (!validateBranch()) return;
+    const fUsername = bodyNode.querySelector("#ufUsername");
+    const fFullname = bodyNode.querySelector("#ufFullName");
+    const fRole = bodyNode.querySelector("#ufRole");
+    const fBranchField = bodyNode.querySelector("#ufBranchField");
+    const fBranch = bodyNode.querySelector("#ufBranch");
+    const fStatus = bodyNode.querySelector("#ufStatus");
+    const fPhone = bodyNode.querySelector("#ufPhone");
+    const fFooter = bodyNode.querySelector("#ufFormFooter");
+    const btnSelectPhoto = bodyNode.querySelector("#ufBtnSelectPhoto");
+    const btnRemovePhoto = bodyNode.querySelector("#ufBtnRemovePhoto");
+    const photoInput = bodyNode.querySelector("#ufPhotoInput");
 
-    const newPass = window.prompt("Enter password for new user:", "123456");
-    if (!newPass || !newPass.trim()) return;
-
-    try {
-      const res = await fetch(`${API_BASE}/api/admin/users`, {
-        method: "POST",
-        headers: { ...authHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password: newPass.trim(), ...currentBody() })
-      });
-      const data = await res.json();
-
-      if (!res.ok || !data.ok) {
-        return showError(data.message || "Add user failed.");
-      }
-
-      await commitPhotoChanges(username);
-      await loadUsers();
-      clearForm();
-      showSuccess("User added successfully.");
-    } catch (e) {
-      console.error("Add user error:", e);
-      showError("Add user failed — could not reach the server.");
+    function updateBranchVisibility() {
+      const needsBranch = BRANCH_ROLES.has(fRole.value);
+      fBranchField.hidden = !needsBranch;
+      if (!needsBranch) fBranch.value = "";
     }
-  });
+    fRole.addEventListener("change", updateBranchVisibility);
 
-  // ---------- Edit User ----------
-  el.btnEdit.addEventListener("click", async () => {
-    const username = state.selectedUsername;
-    if (!username) return showError("Select user first.");
-    if (!validateBranch()) return;
+    btnSelectPhoto.addEventListener("click", () => photoInput.click());
+    photoInput.addEventListener("change", () => {
+      const file = photoInput.files?.[0];
+      if (!file) return;
+      state.photoFile = file;
+      state.removePhoto = false;
+      showPhotoBlob(bodyNode, file);
+    });
+    btnRemovePhoto.addEventListener("click", () => {
+      resetPhotoPreview(bodyNode);
+      state.removePhoto = true;
+    });
 
-    try {
-      const res = await fetch(`${API_BASE}/api/admin/users/${encodeURIComponent(username)}`, {
-        method: "PUT",
-        headers: { ...authHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...currentBody(),
-          isActive: el.status.value === "active"
-        })
-      });
-      const data = await res.json();
-
-      if (!res.ok || !data.ok) {
-        return showError(data.message || "Edit user failed.");
-      }
-
-      await commitPhotoChanges(username);
-      await loadUsers();
-      resetPhotoPreview(); // matches VBA: edit doesn't clear the whole form, just the photo state
-      showSuccess("User updated.");
-    } catch (e) {
-      console.error("Edit user error:", e);
-      showError("Edit user failed — could not reach the server.");
+    if (isEdit) {
+      fUsername.value = existingUser.username;
+      fUsername.disabled = true;
+      fFullname.value = existingUser.fullname;
+      fRole.value = existingUser.role;
+      fStatus.value = existingUser.isActive ? "active" : "inactive";
+      fPhone.value = existingUser.phone;
+      updateBranchVisibility();
+      fBranch.value = existingUser.branch || "";
+      loadUserPhoto(bodyNode, existingUser.username);
+    } else {
+      fRole.value = "user";
+      updateBranchVisibility();
     }
-  });
 
-  // ---------- Delete User ----------
-  el.btnDelete.addEventListener("click", async () => {
-    const username = state.selectedUsername;
-    if (!username) return showError("Select user first.");
-    if (!confirm(`Delete user ${username} ?`)) return;
+    fFooter.innerHTML = `
+      <button type="button" class="adm-btn" id="ufBtnCancel">Cancel</button>
+      <button type="submit" class="adm-btn adm-btn-primary" id="ufBtnSave">${isEdit ? "Save Changes" : "Add User"}</button>
+    `;
+
+    AdminUI.openModal({
+      title: isEdit ? "Edit User" : "Add User",
+      bodyNode,
+      wide: true,
+      onClose: () => {
+        if (state.photoObjectUrl) { URL.revokeObjectURL(state.photoObjectUrl); state.photoObjectUrl = null; }
+        state.photoFile = null;
+        state.removePhoto = false;
+      }
+    });
+
+    bodyNode.querySelector("#ufBtnCancel").addEventListener("click", () => AdminUI.closeModal());
+
+    bodyNode.querySelector("#ufForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const username = fUsername.value.trim();
+      const fullname = fFullname.value.trim();
+      const role = fRole.value;
+      const branch = BRANCH_ROLES.has(role) ? fBranch.value.trim() : "";
+
+      if (!username) return AdminUI.toast("Enter username.", "error");
+      if (!fullname) return AdminUI.toast("Enter full name.", "error");
+      if (BRANCH_ROLES.has(role) && !branch) return AdminUI.toast("Please select a Branch for this role.", "error");
+
+      const body = { fullname, role, phone: fPhone.value.trim(), branch };
+
+      try {
+        if (isEdit) {
+          body.isActive = fStatus.value === "active";
+          const res = await fetch(`${API_BASE}/api/admin/users/${encodeURIComponent(username)}`, {
+            method: "PUT",
+            headers: { ...authHeaders(), "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          });
+          const data = await res.json();
+          if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Edit user failed.", "error");
+
+          await commitPhotoChanges(username);
+          AdminUI.closeModal();
+          await loadUsers();
+          AdminUI.toast("User updated.", "success");
+        } else {
+          const newPass = await AdminUI.prompt({
+            title: "Set Password",
+            label: "Password for new user",
+            defaultValue: "123456"
+          });
+          if (!newPass) return;
+
+          const res = await fetch(`${API_BASE}/api/admin/users`, {
+            method: "POST",
+            headers: { ...authHeaders(), "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password: newPass, ...body })
+          });
+          const data = await res.json();
+          if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Add user failed.", "error");
+
+          await commitPhotoChanges(username);
+          AdminUI.closeModal();
+          await loadUsers();
+          AdminUI.toast("User added successfully.", "success");
+        }
+      } catch (err) {
+        console.error("Save user error:", err);
+        AdminUI.toast("Could not reach the server.", "error");
+      }
+    });
+  }
+
+  el.btnAddUser.addEventListener("click", () => openUserModal(null));
+
+  // ---------- delete ----------
+  async function deleteUser(username) {
+    const ok = await AdminUI.confirm({
+      title: "Delete user?",
+      message: `This permanently deletes <strong>${escapeHtml(username)}</strong>. This can't be undone.`,
+      confirmLabel: "Delete",
+      danger: true
+    });
+    if (!ok) return;
 
     try {
       const res = await fetch(`${API_BASE}/api/admin/users/${encodeURIComponent(username)}`, {
@@ -379,26 +360,23 @@
         headers: authHeaders()
       });
       const data = await res.json();
-
-      if (!res.ok || !data.ok) {
-        return showError(data.message || "Delete failed.");
-      }
+      if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Delete failed.", "error");
 
       await loadUsers();
-      clearForm();
-      showSuccess("User deleted.");
+      AdminUI.toast("User deleted.", "success");
     } catch (e) {
       console.error("Delete user error:", e);
-      showError("Delete failed — could not reach the server.");
+      AdminUI.toast("Delete failed — could not reach the server.", "error");
     }
-  });
+  }
 
-  // ---------- Reset Password ----------
-  el.btnResetPassword.addEventListener("click", async () => {
-    const username = state.selectedUsername;
-    if (!username) return showError("Select user first.");
-
-    const newPass = window.prompt("Enter new password");
+  // ---------- reset password ----------
+  async function resetPassword(username) {
+    const newPass = await AdminUI.prompt({
+      title: "Reset Password",
+      message: `New password for <strong>${escapeHtml(username)}</strong>`,
+      placeholder: "New password"
+    });
     if (!newPass) return;
 
     try {
@@ -408,21 +386,17 @@
         body: JSON.stringify({ newPassword: newPass })
       });
       const data = await res.json();
+      if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Reset password failed.", "error");
 
-      if (!res.ok || !data.ok) {
-        return showError(data.message || "Reset password failed.");
-      }
-
-      showSuccess("Password reset successful.");
+      AdminUI.toast("Password reset successful.", "success");
     } catch (e) {
       console.error("Reset password error:", e);
-      showError("Reset password failed — could not reach the server.");
+      AdminUI.toast("Reset password failed — could not reach the server.", "error");
     }
-  });
+  }
 
   // ---------- init ----------
   function init() {
-    updateBranchVisibility();
     loadUsers();
   }
 
