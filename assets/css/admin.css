@@ -355,6 +355,151 @@
   background-color: #2A2110;
 }
 
+.adm-success-banner {
+  background-color: #E9F9EF;
+  border: 1px solid var(--adm-ok);
+  color: var(--adm-ok);
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+}
+[data-theme="dark"] .adm-success-banner {
+  background-color: #10261A;
+}
+
+/* ---------- buttons: primary / danger variants ---------- */
+.adm-btn-primary {
+  background-color: var(--adm-navy-900);
+  border-color: var(--adm-navy-900);
+  color: #fff;
+  font-weight: 600;
+}
+.adm-btn-primary:hover { border-color: var(--adm-gold-500); }
+
+.adm-btn-danger {
+  color: var(--adm-danger);
+  border-color: var(--adm-danger);
+}
+.adm-btn-danger:hover { background-color: rgba(192, 57, 43, 0.08); }
+
+/* ---------- User Management page ---------- */
+.adm-users-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 480px) 1fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 960px) {
+  .adm-users-layout { grid-template-columns: 1fr; }
+}
+
+.adm-users-form-card,
+.adm-users-list-card {
+  padding: 18px;
+}
+
+.adm-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.adm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--adm-text-muted);
+}
+.adm-field-wide { grid-column: 1 / -1; }
+
+.adm-field input,
+.adm-field select {
+  font-family: inherit;
+  font-size: 0.88rem;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--adm-border);
+  background-color: var(--adm-card-bg);
+  color: var(--adm-text);
+}
+.adm-field input:focus,
+.adm-field select:focus {
+  outline: none;
+  border-color: var(--adm-navy-700);
+}
+
+.adm-photo-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.adm-photo-preview {
+  width: 84px;
+  height: 84px;
+  border-radius: 12px;
+  border: 1px dashed var(--adm-border);
+  background-color: var(--adm-navy-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.adm-photo-preview span {
+  font-size: 0.68rem;
+  color: var(--adm-text-muted);
+  text-align: center;
+  padding: 0 4px;
+}
+.adm-photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.adm-photo-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.adm-users-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.adm-users-search-label {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--adm-border);
+}
+
+.adm-users-search-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.adm-users-table-wrap {
+  margin-top: 12px;
+  max-height: 640px;
+  overflow-y: auto;
+}
+
+.adm-users-row {
+  cursor: pointer;
+}
+.adm-users-row:hover td {
+  background-color: var(--adm-navy-100);
+}
+
 /* ---------- KPI cards ---------- */
 .adm-kpi-grid {
   display: grid;
