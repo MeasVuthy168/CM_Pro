@@ -154,6 +154,35 @@
   // ---------- charts (Chart.js) ----------
   let dailyChart, routesChart;
 
+  function admThemeColors() {
+    const cs = getComputedStyle(document.documentElement);
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    return {
+      text: cs.getPropertyValue("--adm-text").trim() || (isDark ? "#EAF0FF" : "#14213D"),
+      textMuted: cs.getPropertyValue("--adm-text-muted").trim() || "#8FA0C7",
+      grid: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,45,107,0.10)",
+      bar1: cs.getPropertyValue("--adm-navy-700").trim() || "#003B8B",
+      bar2: cs.getPropertyValue("--adm-gold-500").trim() || "#D4AF37"
+    };
+  }
+
+  function toggleChartEmptyState(canvasId, isEmpty) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const wrap = canvas.closest(".adm-chart-wrap");
+    if (!wrap) return;
+
+    let emptyEl = wrap.querySelector(".adm-chart-empty");
+    if (!emptyEl) {
+      emptyEl = document.createElement("div");
+      emptyEl.className = "adm-chart-empty";
+      emptyEl.textContent = "Collecting data — check back in a couple of minutes.";
+      wrap.appendChild(emptyEl);
+    }
+    emptyEl.hidden = !isEmpty;
+    canvas.style.visibility = isEmpty ? "hidden" : "visible";
+  }
+
   const thresholdLinePlugin = {
     id: "admThresholdLine",
     afterDraw(chart) {
@@ -163,8 +192,9 @@
       const y = scales.y.getPixelForValue(gbLimit * 1024); // dailyTotals are in MB
       if (y < chartArea.top || y > chartArea.bottom) return;
 
+      const colors = admThemeColors();
       ctx.save();
-      ctx.strokeStyle = "#D4AF37";
+      ctx.strokeStyle = colors.bar2;
       ctx.lineWidth = 1.5;
       ctx.setLineDash([6, 4]);
       ctx.beginPath();
@@ -173,7 +203,7 @@
       ctx.stroke();
 
       ctx.setLineDash([]);
-      ctx.fillStyle = "#D4AF37";
+      ctx.fillStyle = colors.bar2;
       ctx.font = "11px 'Krasar', sans-serif";
       ctx.textAlign = "right";
       ctx.fillText(`${gbLimit} GB free-tier limit`, chartArea.right, y - 4);
@@ -185,6 +215,10 @@
     const canvas = document.getElementById("admDailyChart");
     if (!canvas || typeof Chart === "undefined") return;
 
+    toggleChartEmptyState("admDailyChart", dailyTotals.length === 0);
+    if (!dailyTotals.length) return;
+
+    const colors = admThemeColors();
     const labels = dailyTotals.map((d) => d.date.slice(5)); // MM-DD
     const values = dailyTotals.map((d) => +d.mb.toFixed(2));
 
@@ -198,7 +232,7 @@
             {
               label: "MB used / day",
               data: values,
-              backgroundColor: "#003B8B",
+              backgroundColor: colors.bar1,
               borderRadius: 4,
               maxBarThickness: 36
             }
@@ -214,10 +248,14 @@
           scales: {
             y: {
               beginAtZero: true,
-              title: { display: true, text: "MB" },
-              grid: { color: "rgba(0,45,107,0.08)" }
+              title: { display: true, text: "MB", color: colors.textMuted },
+              ticks: { color: colors.textMuted },
+              grid: { color: colors.grid }
             },
-            x: { grid: { display: false } }
+            x: {
+              ticks: { color: colors.textMuted },
+              grid: { display: false }
+            }
           }
         }
       });
@@ -232,6 +270,10 @@
     const canvas = document.getElementById("admRoutesChart");
     if (!canvas || typeof Chart === "undefined") return;
 
+    toggleChartEmptyState("admRoutesChart", topRoutes.length === 0);
+    if (!topRoutes.length) return;
+
+    const colors = admThemeColors();
     const top10 = topRoutes.slice(0, 10);
     const labels = top10.map((r) => r.route);
     const values = top10.map((r) => +r.mb.toFixed(2));
@@ -245,7 +287,7 @@
             {
               label: "MB (range total)",
               data: values,
-              backgroundColor: "#D4AF37",
+              backgroundColor: colors.bar2,
               borderRadius: 4,
               maxBarThickness: 22
             }
@@ -257,8 +299,15 @@
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
-            x: { beginAtZero: true, title: { display: true, text: "MB" } },
-            y: { grid: { display: false } }
+            x: {
+              beginAtZero: true,
+              title: { display: true, text: "MB", color: colors.textMuted },
+              ticks: { color: colors.textMuted }
+            },
+            y: {
+              ticks: { color: colors.textMuted },
+              grid: { display: false }
+            }
           }
         }
       });
