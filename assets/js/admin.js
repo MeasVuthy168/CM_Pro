@@ -130,16 +130,16 @@
     const todayGb = todayMb / 1024;
     const pct = Math.min(100, (todayGb / RENDER_FREE_GB) * 100);
 
-    el.kpiTodayGb.textContent = `${todayGb.toFixed(2)} GB`;
-    el.kpiTodayPct.textContent = `${pct.toFixed(0)}% of ${RENDER_FREE_GB} GB free tier`;
-    el.kpiTodayBar.style.width = `${pct}%`;
+    el.kpiTodayGb.textContent = fmtMb(todayMb);
+    el.kpiTodayPct.textContent = `${pct < 0.1 && pct > 0 ? "<0.1" : pct.toFixed(0)}% of ${RENDER_FREE_GB} GB free tier`;
+    el.kpiTodayBar.style.width = `${Math.max(pct, todayMb > 0 ? 0.5 : 0)}%`;
     el.kpiTodayBar.classList.toggle("adm-bar-warn", pct >= 70 && pct < 100);
     el.kpiTodayBar.classList.toggle("adm-bar-danger", pct >= 100);
 
     const lastPoint = state.sparkline[state.sparkline.length - 1];
     el.kpiLiveRate.textContent = lastPoint ? `${fmtMb(lastPoint.mbPerMin)}/min` : "—";
 
-    el.kpiRangeTotal.textContent = `${data.totalGb.toFixed(2)} GB`;
+    el.kpiRangeTotal.textContent = fmtMb(data.totalMb);
 
     const top = (data.topRoutes || [])[0];
     if (top) {
@@ -166,7 +166,7 @@
     };
   }
 
-  function toggleChartEmptyState(canvasId, isEmpty) {
+  function toggleChartEmptyState(canvasId, isEmpty, message) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
     const wrap = canvas.closest(".adm-chart-wrap");
@@ -176,9 +176,9 @@
     if (!emptyEl) {
       emptyEl = document.createElement("div");
       emptyEl.className = "adm-chart-empty";
-      emptyEl.textContent = "Collecting data — check back in a couple of minutes.";
       wrap.appendChild(emptyEl);
     }
+    emptyEl.textContent = message || "Collecting data — check back in a couple of minutes.";
     emptyEl.hidden = !isEmpty;
     canvas.style.visibility = isEmpty ? "hidden" : "visible";
   }
@@ -213,7 +213,12 @@
 
   function renderDailyChart(dailyTotals) {
     const canvas = document.getElementById("admDailyChart");
-    if (!canvas || typeof Chart === "undefined") return;
+    if (!canvas) return;
+
+    if (typeof Chart === "undefined") {
+      toggleChartEmptyState("admDailyChart", true, "Chart library failed to load — check your connection and refresh.");
+      return;
+    }
 
     toggleChartEmptyState("admDailyChart", dailyTotals.length === 0);
     if (!dailyTotals.length) return;
@@ -268,7 +273,12 @@
 
   function renderTopRoutesChart(topRoutes) {
     const canvas = document.getElementById("admRoutesChart");
-    if (!canvas || typeof Chart === "undefined") return;
+    if (!canvas) return;
+
+    if (typeof Chart === "undefined") {
+      toggleChartEmptyState("admRoutesChart", true, "Chart library failed to load — check your connection and refresh.");
+      return;
+    }
 
     toggleChartEmptyState("admRoutesChart", topRoutes.length === 0);
     if (!topRoutes.length) return;
