@@ -26,6 +26,7 @@
 <!-- ========================= -->
 <link rel="stylesheet" href="/CM_Pro/assets/css/base.css">
 <link rel="stylesheet" href="/CM_Pro/assets/css/admin.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
 
 </head>
 <body data-adm-page="users">
@@ -52,7 +53,7 @@
       <div class="adm-header">
         <div class="adm-title-block">
           <h1>User Management · គ្រប់គ្រងអ្នកប្រើប្រាស់</h1>
-          <p>Add, edit, and manage CM_Pro accounts — mirrors the Excel admin panel</p>
+          <p>Add, edit, and manage CM_Pro accounts</p>
         </div>
         <div class="adm-header-right">
           <span class="adm-user-chip" id="admUserLabel">Admin</span>
@@ -60,149 +61,54 @@
         </div>
       </div>
 
-      <div class="adm-error-banner" id="admUsersError" hidden></div>
-      <div class="adm-success-banner" id="admUsersSuccess" hidden></div>
+      <!-- ========================= -->
+      <!-- TOOLBAR -->
+      <!-- ========================= -->
+      <div class="adm-users-toolbar">
+        <input type="text" class="adm-search-input" id="ufSearch" placeholder="Search username, full name, or phone…">
+
+        <select class="adm-toolbar-select" id="ufSearchRole">
+          <option value="all">All Roles</option>
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
+          <option value="viewer_staff">Viewer_Staff</option>
+          <option value="viewer_manager_a">Viewer_Manager_A</option>
+          <option value="viewer_manager_b">Viewer_Manager_B</option>
+          <option value="viewer_manager_c">Viewer_Manager_C</option>
+        </select>
+
+        <select class="adm-toolbar-select" id="ufSearchStatus">
+          <option value="all">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+
+        <div class="adm-toolbar-spacer"></div>
+
+        <button type="button" class="adm-btn" id="ufBtnShowAll">Show All</button>
+        <button type="button" class="adm-btn adm-btn-primary" id="ufBtnAddUser">+ Add User</button>
+      </div>
 
       <!-- ========================= -->
-      <!-- TWO PANEL LAYOUT -->
+      <!-- TABLE -->
       <!-- ========================= -->
-      <div class="adm-users-layout">
-
-        <!-- LEFT: User Information form -->
-        <div class="adm-card adm-users-form-card">
-          <div class="adm-card-label">User Information</div>
-
-          <div class="adm-form-grid">
-            <label class="adm-field">
-              <span>Username</span>
-              <input type="text" id="ufUsername" autocomplete="off">
-            </label>
-
-            <label class="adm-field">
-              <span>Full Name</span>
-              <input type="text" id="ufFullName" autocomplete="off">
-            </label>
-
-            <label class="adm-field">
-              <span>Role</span>
-              <select id="ufRole">
-                <option value="admin">Admin</option>
-                <option value="user">User</option>
-                <option value="viewer_staff">Viewer_Staff</option>
-                <option value="viewer_manager_a">Viewer_Manager_A</option>
-                <option value="viewer_manager_b">Viewer_Manager_B</option>
-                <option value="viewer_manager_c">Viewer_Manager_C</option>
-              </select>
-            </label>
-
-            <label class="adm-field" id="ufBranchField" hidden>
-              <span>Branch</span>
-              <select id="ufBranch">
-                <option value="">— Select Branch —</option>
-                <option value="All Branch">All Branch</option>
-                <option value="Svay Rieng">Svay Rieng</option>
-                <option value="Romeas Haek">Romeas Haek</option>
-                <option value="Kraol Kou">Kraol Kou</option>
-                <option value="Nhor">Nhor</option>
-                <option value="Svay Teab">Svay Teab</option>
-                <option value="Rumduol">Rumduol</option>
-                <option value="Svay Chrom">Svay Chrom</option>
-              </select>
-            </label>
-
-            <label class="adm-field">
-              <span>Status</span>
-              <select id="ufStatus">
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </label>
-
-            <label class="adm-field">
-              <span>Phone</span>
-              <input type="text" id="ufPhone" autocomplete="off">
-            </label>
-          </div>
-
-          <!-- Photo -->
-          <div class="adm-photo-row">
-            <div class="adm-photo-preview" id="ufPhotoPreview">
-              <span id="ufPhotoPlaceholder">No Photo</span>
-              <img id="ufPhotoImg" alt="User photo" hidden>
-            </div>
-            <div class="adm-photo-actions">
-              <button type="button" class="adm-btn" id="ufBtnSelectPhoto">Select Photo…</button>
-              <button type="button" class="adm-btn" id="ufBtnRemovePhoto">Remove Photo</button>
-              <input type="file" id="ufPhotoInput" accept="image/*" hidden>
-            </div>
-          </div>
-
-          <!-- Action buttons -->
-          <div class="adm-users-actions">
-            <button type="button" class="adm-btn adm-btn-primary" id="ufBtnAdd">Add User</button>
-            <button type="button" class="adm-btn adm-btn-primary" id="ufBtnEdit">Edit User</button>
-            <button type="button" class="adm-btn" id="ufBtnClear">Clear</button>
-            <button type="button" class="adm-btn adm-btn-danger" id="ufBtnDelete">Delete User</button>
-            <button type="button" class="adm-btn" id="ufBtnResetPassword">Reset Password</button>
-          </div>
-
-          <!-- Search / Filter -->
-          <div class="adm-card-label adm-users-search-label">Search / Filter</div>
-          <div class="adm-form-grid">
-            <label class="adm-field adm-field-wide">
-              <span>Search</span>
-              <input type="text" id="ufSearch" placeholder="Username, full name, or phone" autocomplete="off">
-            </label>
-
-            <label class="adm-field">
-              <span>Role</span>
-              <select id="ufSearchRole">
-                <option value="all">All Roles</option>
-                <option value="admin">Admin</option>
-                <option value="user">User</option>
-                <option value="viewer_staff">Viewer_Staff</option>
-                <option value="viewer_manager_a">Viewer_Manager_A</option>
-                <option value="viewer_manager_b">Viewer_Manager_B</option>
-                <option value="viewer_manager_c">Viewer_Manager_C</option>
-              </select>
-            </label>
-
-            <label class="adm-field">
-              <span>Status</span>
-              <select id="ufSearchStatus">
-                <option value="all">All</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </label>
-          </div>
-          <div class="adm-users-search-actions">
-            <button type="button" class="adm-btn adm-btn-primary" id="ufBtnSearch">Search</button>
-            <button type="button" class="adm-btn" id="ufBtnShowAll">Show All</button>
-          </div>
+      <div class="adm-card adm-users-list-card">
+        <div class="adm-users-table-wrap">
+          <table class="adm-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Phone</th>
+                <th>Branch</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="admUsersTableBody"></tbody>
+          </table>
+          <div class="adm-table-empty" id="admUsersTableEmpty" hidden>No users found.</div>
         </div>
-
-        <!-- RIGHT: List of Users -->
-        <div class="adm-card adm-users-list-card">
-          <div class="adm-card-label">List of Users (<span id="admUserCount">0</span>)</div>
-          <div class="adm-users-table-wrap">
-            <table class="adm-table">
-              <thead>
-                <tr>
-                  <th>Username</th>
-                  <th>Full Name</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Phone</th>
-                  <th>Branch</th>
-                </tr>
-              </thead>
-              <tbody id="admUsersTableBody"></tbody>
-            </table>
-            <div class="adm-table-empty" id="admUsersTableEmpty" hidden>No users found.</div>
-          </div>
-        </div>
-
       </div>
 
     </main>
@@ -210,7 +116,82 @@
   </div>
 </div>
 
+<!-- Add/Edit User form template — cloned into a modal by admin-users.js -->
+<template id="ufFormTemplate">
+  <form id="ufForm">
+    <div class="adm-form-grid">
+      <label class="adm-field">
+        <span>Username</span>
+        <input type="text" id="ufUsername" autocomplete="off">
+      </label>
+
+      <label class="adm-field">
+        <span>Full Name</span>
+        <input type="text" id="ufFullName" autocomplete="off">
+      </label>
+
+      <label class="adm-field">
+        <span>Role</span>
+        <select id="ufRole">
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
+          <option value="viewer_staff">Viewer_Staff</option>
+          <option value="viewer_manager_a">Viewer_Manager_A</option>
+          <option value="viewer_manager_b">Viewer_Manager_B</option>
+          <option value="viewer_manager_c">Viewer_Manager_C</option>
+        </select>
+      </label>
+
+      <label class="adm-field" id="ufBranchField" hidden>
+        <span>Branch</span>
+        <select id="ufBranch">
+          <option value="">— Select Branch —</option>
+          <option value="All Branch">All Branch</option>
+          <option value="Svay Rieng">Svay Rieng</option>
+          <option value="Romeas Haek">Romeas Haek</option>
+          <option value="Kraol Kou">Kraol Kou</option>
+          <option value="Nhor">Nhor</option>
+          <option value="Svay Teab">Svay Teab</option>
+          <option value="Rumduol">Rumduol</option>
+          <option value="Svay Chrom">Svay Chrom</option>
+        </select>
+      </label>
+
+      <label class="adm-field">
+        <span>Status</span>
+        <select id="ufStatus">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </label>
+
+      <label class="adm-field">
+        <span>Phone</span>
+        <input type="text" id="ufPhone" autocomplete="off">
+      </label>
+    </div>
+
+    <div class="adm-photo-row">
+      <div class="adm-photo-preview" id="ufPhotoPreview">
+        <span id="ufPhotoPlaceholder">No Photo</span>
+        <img id="ufPhotoImg" alt="User photo" hidden>
+      </div>
+      <div class="adm-photo-actions">
+        <button type="button" class="adm-btn" id="ufBtnSelectPhoto">Select Photo…</button>
+        <button type="button" class="adm-btn" id="ufBtnRemovePhoto">Remove Photo</button>
+        <input type="file" id="ufPhotoInput" accept="image/*" hidden>
+      </div>
+    </div>
+
+    <div class="adm-modal-footer" id="ufFormFooter">
+      <!-- buttons injected by admin-users.js depending on add/edit mode -->
+    </div>
+  </form>
+</template>
+
 <script src="/CM_Pro/shared/logout.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-ui.js"></script>
 <script src="/CM_Pro/assets/js/admin/admin-nav.js"></script>
 <script src="/CM_Pro/assets/js/admin/admin-users.js"></script>
 
