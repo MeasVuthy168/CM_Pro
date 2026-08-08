@@ -1,0 +1,322 @@
+/* =====================================================
+   admin.css — Bandwidth Dashboard
+   Follows the existing CM_Pro design system:
+   navy (#002D6B/#003B8B) + gold (#D4AF37/#FFD700), Krasar font,
+   light/dark via [data-theme] on <html>.
+   Variables are prefixed --adm- so they never collide with
+   your global base.css/theme.js tokens.
+   ===================================================== */
+
+:root {
+  --adm-navy-900: #002D6B;
+  --adm-navy-700: #003B8B;
+  --adm-navy-100: #E8EEF9;
+  --adm-gold-500: #D4AF37;
+  --adm-gold-300: #FFD700;
+
+  --adm-bg: #F4F6FB;
+  --adm-card-bg: #FFFFFF;
+  --adm-text: #14213D;
+  --adm-text-muted: #5B6B8C;
+  --adm-border: #E1E6F0;
+  --adm-shadow: 0 2px 10px rgba(0, 45, 107, 0.08);
+  --adm-radius: 14px;
+
+  --adm-ok: #1F9D55;
+  --adm-warn: #C97A00;
+  --adm-danger: #C0392B;
+}
+
+[data-theme="dark"] {
+  --adm-bg: #0B1220;
+  --adm-card-bg: #131C2E;
+  --adm-text: #EAF0FF;
+  --adm-text-muted: #8FA0C7;
+  --adm-border: #223055;
+  --adm-shadow: 0 2px 14px rgba(0, 0, 0, 0.4);
+  --adm-navy-100: #16223F;
+}
+
+.adm-page {
+  min-height: 100vh;
+  background-color: var(--adm-bg);
+  color: var(--adm-text);
+  font-family: "Krasar", "Khmer OS", system-ui, sans-serif;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+* { box-sizing: border-box; }
+
+/* ---------- header ---------- */
+.adm-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.adm-title-block h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  color: var(--adm-navy-900);
+}
+[data-theme="dark"] .adm-title-block h1 { color: var(--adm-gold-300); }
+
+.adm-title-block p {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  color: var(--adm-text-muted);
+}
+
+.adm-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: var(--adm-text-muted);
+}
+
+.adm-user-chip {
+  background-color: var(--adm-navy-100);
+  color: var(--adm-navy-900);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+[data-theme="dark"] .adm-user-chip { color: var(--adm-gold-300); }
+
+.adm-btn {
+  border: 1px solid var(--adm-border);
+  background-color: var(--adm-card-bg);
+  color: var(--adm-text);
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.adm-btn:hover { border-color: var(--adm-navy-700); }
+.adm-btn:active { transform: scale(0.97); }
+
+.adm-range-group { display: flex; gap: 6px; }
+.adm-range-btn {
+  border: 1px solid var(--adm-border);
+  background-color: var(--adm-card-bg);
+  color: var(--adm-text-muted);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.adm-range-btn.adm-active {
+  background-color: var(--adm-navy-900);
+  border-color: var(--adm-navy-900);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ---------- error banner ---------- */
+.adm-error-banner {
+  background-color: #FFF4E5;
+  border: 1px solid var(--adm-warn);
+  color: var(--adm-warn);
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+}
+[data-theme="dark"] .adm-error-banner {
+  background-color: #2A2110;
+}
+
+/* ---------- KPI cards ---------- */
+.adm-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.adm-card {
+  background-color: var(--adm-card-bg);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius);
+  box-shadow: var(--adm-shadow);
+  padding: 16px 18px;
+}
+
+.adm-card-label {
+  font-size: 0.78rem;
+  color: var(--adm-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.adm-card-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--adm-navy-900);
+  line-height: 1.1;
+}
+[data-theme="dark"] .adm-card-value { color: var(--adm-gold-300); }
+
+.adm-card-sub {
+  font-size: 0.78rem;
+  color: var(--adm-text-muted);
+  margin-top: 4px;
+}
+
+.adm-bar-track {
+  height: 8px;
+  border-radius: 999px;
+  background-color: var(--adm-navy-100);
+  margin-top: 10px;
+  overflow: hidden;
+}
+.adm-bar-fill {
+  height: 100%;
+  width: 0%;
+  background-color: var(--adm-navy-700);
+  transition: width 0.4s ease;
+  border-radius: 999px;
+}
+.adm-bar-fill.adm-bar-warn { background-color: var(--adm-warn); }
+.adm-bar-fill.adm-bar-danger { background-color: var(--adm-danger); }
+
+.adm-pulse-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--adm-ok);
+  margin-right: 6px;
+}
+.adm-pulse.adm-pulse-dot,
+.adm-card .adm-pulse {
+  animation: admPulse 1s ease-out;
+}
+@keyframes admPulse {
+  0% { box-shadow: 0 0 0 0 rgba(31, 157, 85, 0.5); }
+  100% { box-shadow: 0 0 0 8px rgba(31, 157, 85, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .adm-pulse { animation: none; }
+}
+
+/* ---------- charts ---------- */
+.adm-charts-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+@media (max-width: 860px) {
+  .adm-charts-grid { grid-template-columns: 1fr; }
+}
+
+.adm-chart-card {
+  background-color: var(--adm-card-bg);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius);
+  box-shadow: var(--adm-shadow);
+  padding: 16px;
+}
+
+.adm-chart-card h2 {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  color: var(--adm-navy-900);
+}
+[data-theme="dark"] .adm-chart-card h2 { color: var(--adm-gold-300); }
+
+.adm-chart-wrap {
+  position: relative;
+  height: 280px;
+}
+
+/* ---------- table ---------- */
+.adm-table-card {
+  background-color: var(--adm-card-bg);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius);
+  box-shadow: var(--adm-shadow);
+  padding: 16px;
+  overflow-x: auto;
+}
+.adm-table-card h2 {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  color: var(--adm-navy-900);
+}
+[data-theme="dark"] .adm-table-card h2 { color: var(--adm-gold-300); }
+
+/* Always separate + spacing (border-collapse breaks sticky headers on mobile WebViews) */
+table.adm-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.85rem;
+}
+
+.adm-table thead th {
+  position: sticky;
+  top: 0;
+  background-color: var(--adm-navy-100);
+  color: var(--adm-navy-900);
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--adm-border);
+}
+[data-theme="dark"] .adm-table thead th { color: var(--adm-gold-300); }
+
+.adm-table tbody td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--adm-border);
+  color: var(--adm-text);
+}
+
+.adm-td-rank {
+  width: 28px;
+  color: var(--adm-text-muted);
+  font-weight: 600;
+}
+.adm-td-route {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--adm-navy-900);
+}
+[data-theme="dark"] .adm-td-route { color: var(--adm-gold-300); }
+
+.adm-pct-track {
+  display: inline-block;
+  width: 80px;
+  height: 6px;
+  border-radius: 999px;
+  background-color: var(--adm-navy-100);
+  overflow: hidden;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.adm-pct-fill {
+  height: 100%;
+  background-color: var(--adm-gold-500);
+}
+.adm-pct-label {
+  font-size: 0.75rem;
+  color: var(--adm-text-muted);
+}
+
+.adm-table-empty {
+  text-align: center;
+  color: var(--adm-text-muted);
+  padding: 20px 0;
+  font-size: 0.85rem;
+}
