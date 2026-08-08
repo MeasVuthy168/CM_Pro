@@ -136,30 +136,31 @@
   }
   .adm-sidebar-brand { display: none; }
   .adm-nav-link { flex-shrink: 0; margin-bottom: 0; white-space: nowrap; }
-  .adm-sidebar-footer {
-    flex-direction: row;
-    border-top: none;
-    border-left: 1px solid var(--adm-border);
-    padding: 0 0 0 10px;
-    margin: 0 0 0 6px;
-  }
 }
 
-/* ---------- sidebar footer: back to app / logout ---------- */
-.adm-sidebar-footer {
-  margin-top: auto;
-  padding-top: 12px;
-  border-top: 1px solid var(--adm-border);
+/* ---------- topbar actions: back to app / logout ---------- */
+.adm-topbar-actions {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
 }
 
-.adm-nav-link.adm-nav-logout {
-  color: var(--adm-danger);
+.adm-topbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.adm-nav-link.adm-nav-logout:hover {
-  background-color: rgba(192, 57, 43, 0.1);
+
+.adm-topbar-logout {
+  color: var(--adm-danger);
+  border-color: var(--adm-danger);
+}
+.adm-topbar-logout:hover {
+  background-color: rgba(192, 57, 43, 0.08);
+}
+
+@media (max-width: 520px) {
+  .adm-topbar-btn-text { display: none; }
 }
 
 /* ---------- hub: tool cards ---------- */
@@ -391,6 +392,18 @@
 .adm-chart-wrap {
   position: relative;
   height: 280px;
+}
+
+.adm-chart-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  color: var(--adm-text-muted);
+  font-size: 0.85rem;
 }
 
 /* ---------- table ---------- */
