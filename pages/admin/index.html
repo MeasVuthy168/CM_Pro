@@ -1,1 +1,142 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>CM_Pro Admin — Bandwidth Dashboard</title>
+
+<meta name="theme-color" content="#002D6B">
+
+<!-- theme flash-prevention: must run before CSS, per shared/theme.js convention -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
+<script src="/CM_Pro/config/api.js"></script>
+
+<!-- auth guard: redirects away if not a logged-in admin -->
+<script src="/CM_Pro/assets/js/admin-loader.js"></script>
+
+<!-- ========================= -->
+<!-- STYLES -->
+<!-- ========================= -->
+<link rel="stylesheet" href="/CM_Pro/assets/css/base.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/admin.css">
+
+<!-- Chart.js (CDN) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+
+</head>
+<body>
+
+<div class="adm-page">
+
+  <!-- ========================= -->
+  <!-- HEADER -->
+  <!-- ========================= -->
+  <div class="adm-header">
+    <div class="adm-title-block">
+      <h1>Bandwidth Dashboard · ផ្ទាំងត្រួតពិនិត្យបញ្ជូនទិន្នន័យ</h1>
+      <p>Realtime HTTP response bandwidth, by route — CM-backend (Render)</p>
+    </div>
+
+    <div class="adm-header-right">
+      <span class="adm-user-chip" id="admUserLabel">Admin</span>
+
+      <div class="adm-range-group">
+        <button class="adm-range-btn adm-active" data-range="1">Today</button>
+        <button class="adm-range-btn" data-range="7">7 Days</button>
+        <button class="adm-range-btn" data-range="30">30 Days</button>
+      </div>
+
+      <span id="admLastUpdated">—</span>
+      <button class="adm-btn" id="admRefreshBtn">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div class="adm-error-banner" id="admErrorBanner" hidden></div>
+
+  <!-- ========================= -->
+  <!-- KPI CARDS -->
+  <!-- ========================= -->
+  <div class="adm-kpi-grid">
+
+    <div class="adm-card">
+      <div class="adm-card-label">Today's Usage</div>
+      <div class="adm-card-value" id="admKpiTodayGb">— GB</div>
+      <div class="adm-bar-track"><div class="adm-bar-fill" id="admKpiTodayBar"></div></div>
+      <div class="adm-card-sub" id="admKpiTodayPct">—</div>
+    </div>
+
+    <div class="adm-card">
+      <div class="adm-card-label"><span class="adm-pulse-dot" id="admKpiLivePulse"></span>Live Rate</div>
+      <div class="adm-card-value" id="admKpiLiveRate">—</div>
+      <div class="adm-card-sub">Server-measured, last ~2 min window</div>
+    </div>
+
+    <div class="adm-card">
+      <div class="adm-card-label">Range Total</div>
+      <div class="adm-card-value" id="admKpiRangeTotal">—</div>
+      <div class="adm-card-sub">Sum of HTTP response bytes, selected range</div>
+    </div>
+
+    <div class="adm-card">
+      <div class="adm-card-label">Top Route</div>
+      <div class="adm-card-value" id="admKpiTopRoute" style="font-size:1.05rem; font-family:monospace;">—</div>
+      <div class="adm-card-sub" id="admKpiTopRouteMb"></div>
+    </div>
+
+  </div>
+
+  <!-- ========================= -->
+  <!-- CHARTS -->
+  <!-- ========================= -->
+  <div class="adm-charts-grid">
+
+    <div class="adm-chart-card">
+      <h2>Daily Bandwidth (MB)</h2>
+      <div class="adm-chart-wrap"><canvas id="admDailyChart"></canvas></div>
+    </div>
+
+    <div class="adm-chart-card">
+      <h2>Top 10 Routes (MB, selected range)</h2>
+      <div class="adm-chart-wrap"><canvas id="admRoutesChart"></canvas></div>
+    </div>
+
+  </div>
+
+  <!-- ========================= -->
+  <!-- TABLE -->
+  <!-- ========================= -->
+  <div class="adm-table-card">
+    <h2>All Routes — Selected Range</h2>
+    <table class="adm-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Route</th>
+          <th>Total</th>
+          <th>Requests</th>
+          <th>Avg / Req</th>
+          <th>Share</th>
+        </tr>
+      </thead>
+      <tbody id="admTableBody"></tbody>
+    </table>
+    <div class="adm-table-empty" id="admTableEmpty" hidden>No data recorded yet for this range.</div>
+  </div>
+
+</div>
+
+<!-- theme toggle API (window.CMTheme) — wire up a toggle button here later if desired -->
+<script src="/CM_Pro/shared/theme.js"></script>
+
+<script src="/CM_Pro/assets/js/admin.js"></script>
+
+</body>
+</html>
