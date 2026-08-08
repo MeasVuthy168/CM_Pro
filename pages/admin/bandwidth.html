@@ -76,6 +76,25 @@
       <div class="adm-error-banner" id="admErrorBanner" hidden></div>
 
       <!-- ========================= -->
+      <!-- RENDER ACCOUNT USAGE (official, matches Render's own dashboard) -->
+      <!-- ========================= -->
+      <div class="adm-card adm-render-card" id="admRenderUsageCard">
+        <div class="adm-card-label">Render Account Usage · This Billing Month</div>
+        <div class="adm-render-loading" id="admRenderLoading">Loading Render usage…</div>
+        <div id="admRenderUsageBody" hidden>
+          <div class="adm-card-value" id="admRenderTotal">— GB</div>
+          <span class="adm-card-sub" id="admRenderTotalSub"></span>
+          <div class="adm-bar-track"><div class="adm-bar-fill" id="admRenderBar"></div></div>
+          <div class="adm-render-sources" id="admRenderSources"></div>
+        </div>
+        <div class="adm-render-setup" id="admRenderSetup" hidden>
+          Render usage isn't connected yet. Add <code>RENDER_API_KEY</code> and
+          <code>RENDER_SERVICE_ID</code> environment variables on Render to show your real
+          account-wide bandwidth here (matches Render's own dashboard exactly).
+        </div>
+      </div>
+
+      <!-- ========================= -->
       <!-- KPI CARDS -->
       <!-- ========================= -->
       <div class="adm-kpi-grid">
