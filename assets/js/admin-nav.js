@@ -63,7 +63,7 @@ function cmRenderToolCards(containerId, excludeKey) {
 document.addEventListener("DOMContentLoaded", () => {
   const activeKey = document.body.dataset.admPage || "";
   cmRenderAdminNav(activeKey);
-  renderSidebarFooter();
+  renderTopbarActions();
 
   if (document.getElementById("admToolsGrid")) {
     cmRenderToolCards("admToolsGrid", activeKey);
@@ -75,23 +75,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-function renderSidebarFooter() {
-  const sidebar = document.querySelector(".adm-sidebar");
-  if (!sidebar || document.querySelector(".adm-sidebar-footer")) return;
+function renderTopbarActions() {
+  const container = document.getElementById("admTopbarActions");
+  if (!container) return;
 
-  const footer = document.createElement("div");
-  footer.className = "adm-sidebar-footer";
-  footer.innerHTML = `
-    <a href="/CM_Pro/index.html" class="adm-nav-link">
-      <span class="adm-nav-icon">⬅️</span>
-      <span class="adm-nav-text">Back to App</span>
+  container.innerHTML = `
+    <a href="/CM_Pro/index.html" class="adm-btn adm-topbar-btn" title="Back to App">
+      <span>⬅️</span><span class="adm-topbar-btn-text">Back to App</span>
     </a>
-    <div class="adm-nav-link adm-nav-logout" id="admLogoutBtn">
-      <span class="adm-nav-icon">🚪</span>
-      <span class="adm-nav-text">Logout</span>
-    </div>
+    <button type="button" class="adm-btn adm-topbar-btn adm-topbar-logout" id="admLogoutBtn" title="Logout">
+      <span>🚪</span><span class="adm-topbar-btn-text">Logout</span>
+    </button>
   `;
-  sidebar.appendChild(footer);
 
   const logoutBtn = document.getElementById("admLogoutBtn");
   logoutBtn?.addEventListener("click", () => {
