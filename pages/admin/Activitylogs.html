@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>CM_Pro Admin — Activity Logs</title>
+
+<meta name="theme-color" content="#002D6B">
+
+<!-- theme flash-prevention -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
+<script src="/CM_Pro/config/api.js"></script>
+
+<!-- auth guard: redirects away if not a logged-in admin -->
+<script src="/CM_Pro/assets/js/admin/admin-loader.js"></script>
+
+<!-- ========================= -->
+<!-- STYLES -->
+<!-- ========================= -->
+<link rel="stylesheet" href="/CM_Pro/assets/css/base.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/admin.css">
+
+<!-- Chart.js (CDN) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+
+</head>
+<body data-adm-page="logs">
+
+<div class="adm-page">
+  <div class="adm-shell">
+
+    <!-- ========================= -->
+    <!-- SIDEBAR (auto-rendered by admin-nav.js) -->
+    <!-- ========================= -->
+    <aside class="adm-sidebar">
+      <div class="adm-sidebar-brand">CM_Pro Admin</div>
+      <nav id="admSidebar"></nav>
+    </aside>
+
+    <!-- ========================= -->
+    <!-- MAIN -->
+    <!-- ========================= -->
+    <main class="adm-main">
+
+      <!-- ========================= -->
+      <!-- HEADER -->
+      <!-- ========================= -->
+      <div class="adm-header">
+        <div class="adm-title-block">
+          <h1>Activity Logs · កំណត់ហេតុសកម្មភាព</h1>
+          <p>Audit trail across the PWA and Excel clients</p>
+        </div>
+        <div class="adm-header-right">
+          <span class="adm-user-chip" id="admUserLabel">Admin</span>
+          <div class="adm-topbar-actions" id="admTopbarActions"></div>
+        </div>
+      </div>
+
+      <!-- ========================= -->
+      <!-- FILTER TOOLBAR -->
+      <!-- ========================= -->
+      <div class="adm-toolbar">
+        <input type="text" class="adm-search-input" id="alKeyword" placeholder="Search username, action, module, message…">
+
+        <label class="adm-field" style="flex-direction:row; align-items:center; gap:6px;">
+          <span>From</span>
+          <input type="date" class="adm-toolbar-select" id="alDateFrom">
+        </label>
+        <label class="adm-field" style="flex-direction:row; align-items:center; gap:6px;">
+          <span>To</span>
+          <input type="date" class="adm-toolbar-select" id="alDateTo">
+        </label>
+
+        <select class="adm-toolbar-select" id="alResult">
+          <option value="all">All Results</option>
+          <option value="Success">Success</option>
+          <option value="Failed">Failed</option>
+        </select>
+
+        <div class="adm-toolbar-spacer"></div>
+
+        <button type="button" class="adm-btn" id="alBtnReset">Reset</button>
+        <button type="button" class="adm-btn adm-btn-primary" id="alBtnSearch">Search</button>
+      </div>
+
+      <div class="adm-range-group" style="margin-bottom:16px;">
+        <button class="adm-range-btn" data-days="1">Today</button>
+        <button class="adm-range-btn" data-days="7">7 Days</button>
+        <button class="adm-range-btn" data-days="30">30 Days</button>
+        <button class="adm-range-btn adm-active" data-days="0">All</button>
+      </div>
+
+      <!-- ========================= -->
+      <!-- SUMMARY STRIP -->
+      <!-- ========================= -->
+      <div class="adm-kpi-grid">
+        <div class="adm-card">
+          <div class="adm-card-label">Logs Loaded</div>
+          <div class="adm-card-value" id="alKpiTotal">0</div>
+        </div>
+        <div class="adm-card">
+          <div class="adm-card-label">✅ Success</div>
+          <div class="adm-card-value" id="alKpiSuccess">0</div>
+        </div>
+        <div class="adm-card">
+          <div class="adm-card-label">❌ Failed</div>
+          <div class="adm-card-value" id="alKpiFailed">0</div>
+        </div>
+        <div class="adm-card">
+          <div class="adm-card-label">👥 Unique Users</div>
+          <div class="adm-card-value" id="alKpiUsers">0</div>
+        </div>
+      </div>
+
+      <!-- ========================= -->
+      <!-- CHARTS -->
+      <!-- ========================= -->
+      <div class="adm-charts-grid">
+        <div class="adm-chart-card">
+          <h2>Activity Over Time</h2>
+          <div class="adm-chart-wrap"><canvas id="alDailyChart"></canvas></div>
+        </div>
+        <div class="adm-chart-card">
+          <h2>Result Breakdown</h2>
+          <div class="adm-chart-wrap"><canvas id="alResultChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="adm-charts-grid">
+        <div class="adm-chart-card">
+          <h2>Top 10 Actions</h2>
+          <div class="adm-chart-wrap"><canvas id="alActionsChart"></canvas></div>
+        </div>
+        <div class="adm-chart-card">
+          <h2>Top 10 Users</h2>
+          <div class="adm-chart-wrap"><canvas id="alUsersChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- ========================= -->
+      <!-- ACTIONS: Export + Cleanup -->
+      <!-- ========================= -->
+      <div class="adm-toolbar" style="margin-top:0;">
+        <div class="adm-toolbar-spacer"></div>
+        <button type="button" class="adm-btn" id="alBtnExport">⬇️ Export CSV</button>
+        <button type="button" class="adm-btn adm-btn-danger" id="alBtnCleanup">🧹 Clean Up Old Logs</button>
+      </div>
+
+      <!-- ========================= -->
+      <!-- TABLE -->
+      <!-- ========================= -->
+      <div class="adm-card adm-users-list-card">
+        <div class="adm-users-table-wrap">
+          <table class="adm-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Module</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody id="alTableBody"></tbody>
+          </table>
+          <div class="adm-table-empty" id="alTableEmpty" hidden>No activity logs found.</div>
+        </div>
+      </div>
+
+      <div class="adm-load-more-wrap">
+        <button type="button" class="adm-btn" id="alBtnLoadMore" hidden>Load More</button>
+      </div>
+
+    </main>
+
+  </div>
+</div>
+
+<script src="/CM_Pro/shared/logout.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-ui.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-nav.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-activitylogs.js"></script>
+
+</body>
+</html>
