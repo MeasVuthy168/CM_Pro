@@ -384,7 +384,7 @@
 .adm-btn-danger:hover { background-color: rgba(192, 57, 43, 0.08); }
 
 /* ---------- User Management page ---------- */
-.adm-users-toolbar {
+.adm-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -472,6 +472,51 @@
 
 .adm-badge-status-active { background-color: #E5F7EC; color: var(--adm-ok); }
 .adm-badge-status-inactive { background-color: var(--adm-navy-100); color: var(--adm-text-muted); }
+.adm-badge-status-failed { background-color: #FBE3E1; color: var(--adm-danger); }
+[data-theme="dark"] .adm-badge-status-failed { background-color: #331512; }
+
+/* ---------- Activity Logs page ---------- */
+.adm-logs-detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--adm-border);
+  font-size: 0.82rem;
+}
+.adm-logs-detail-row span:first-child {
+  color: var(--adm-text-muted);
+  flex-shrink: 0;
+}
+.adm-logs-detail-row span:last-child {
+  text-align: right;
+  word-break: break-word;
+}
+
+.adm-load-more-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 4px;
+}
+
+.adm-cleanup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--adm-text-muted);
+  margin-bottom: 4px;
+}
+.adm-cleanup-field input {
+  font-family: inherit;
+  font-size: 0.88rem;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--adm-border);
+  background-color: var(--adm-card-bg);
+  color: var(--adm-text);
+  width: 100px;
+}
 [data-theme="dark"] .adm-badge-status-active { background-color: #10261A; }
 
 /* row action icon buttons */
