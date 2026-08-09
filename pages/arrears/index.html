@@ -207,6 +207,7 @@ href="../../assets/css/arrears.css">
 <button id="btnPrint"><img src="/CM_Pro/assets/icons/arrear/print.png" alt="" class="menu-icon"><span>Print</span></button>
 <button id="btnLandscape"><img src="/CM_Pro/assets/icons/arrear/landscape.png" alt="" class="menu-icon"><span>Landscape</span></button>
 <button id="btnNoReasonSummary"><img src="/CM_Pro/assets/icons/arrear/noReasonArrear.png" alt="" class="menu-icon"><span>មិនទាន់បំពេញ Reason Arrear</span></button>
+<button id="btnOutArea"><img src="/CM_Pro/assets/icons/arrear/noReasonArrear.png" alt="" class="menu-icon"><span>កែសម្រួលArrearក្រៅតំបន់</span></button>
 </div>
 </div>
 
@@ -368,6 +369,84 @@ href="../../assets/css/arrears.css">
 <div class="reason-actions">
 <button id="btnNoReasonClose">Close</button>
 </div>
+
+</div>
+
+</div>
+
+<!-- ========================= -->
+<!-- OUT-OF-AREA ADDRESS (list -> reassign -> save) -->
+<!-- ========================= -->
+
+<div id="outAreaBackdrop" class="reason-backdrop">
+
+<div id="outAreaCard" class="reason-card noreason-card">
+
+  <!-- LIST SCREEN -->
+  <div id="outAreaListScreen">
+
+    <div class="reason-title">កែសម្រួលArrearក្រៅតំបន់</div>
+    <div class="reason-subtitle" id="outAreaListSubtitle">-</div>
+
+    <div class="reason-group">
+      <label for="outAreaSearch">ស្វែងរក</label>
+      <input type="text" id="outAreaSearch" placeholder="ឈ្មោះ / LD-CIF / សាខា..." autocomplete="off">
+    </div>
+
+    <table class="noreason-table">
+      <thead>
+        <tr>
+          <th>ឈ្មោះ</th>
+          <th>LD-CIF</th>
+          <th>សាខាបច្ចុប្បន្ន</th>
+        </tr>
+      </thead>
+      <tbody id="outAreaTbody"></tbody>
+    </table>
+
+    <div class="reason-actions">
+      <button id="btnOutAreaClose">Close</button>
+    </div>
+
+  </div>
+
+  <!-- DETAIL / REASSIGN SCREEN -->
+  <div id="outAreaDetailScreen" style="display:none;">
+
+    <div class="reason-title">កែសម្រួលArrearក្រៅតំបន់</div>
+    <div class="reason-subtitle" id="outAreaDetailSubtitle">-</div>
+
+    <div class="reason-info" id="outAreaInfo"></div>
+
+    <div class="reason-group">
+      <label for="outAreaNewBranch">សាខាថ្មី</label>
+      <select id="outAreaNewBranch">
+        <option value="">— ជ្រើសសាខា —</option>
+        <option value="Svay Rieng">Svay Rieng</option>
+        <option value="Romeas Haek">Romeas Haek</option>
+        <option value="Kraol Kou">Kraol Kou</option>
+        <option value="Nhor">Nhor</option>
+        <option value="Rumduol">Rumduol</option>
+        <option value="Svay Chrom">Svay Chrom</option>
+        <option value="Svay Teab">Svay Teab</option>
+      </select>
+    </div>
+
+    <div class="reason-group">
+      <label for="outAreaNewCO">ភ្នាក់ងារឥណទានថ្មី</label>
+      <select id="outAreaNewCO">
+        <option value="">— ជ្រើសសាខាមុន —</option>
+      </select>
+    </div>
+
+    <div class="reason-meta" id="outAreaMeta"></div>
+
+    <div class="reason-actions">
+      <button id="btnOutAreaBack">← Back</button>
+      <button id="btnOutAreaSave">រក្សាទុក</button>
+    </div>
+
+  </div>
 
 </div>
 
