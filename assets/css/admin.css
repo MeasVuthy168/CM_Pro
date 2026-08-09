@@ -215,6 +215,29 @@
   margin-bottom: 18px;
 }
 
+/* ---------- Wallpaper page ---------- */
+.adm-wallpaper-card {
+  margin-bottom: 18px;
+}
+
+.adm-wallpaper-preview {
+  margin: 12px 0;
+  border-radius: var(--adm-radius);
+  overflow: hidden;
+  border: 1px solid var(--adm-border);
+  background-color: var(--adm-navy-100);
+  max-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.adm-wallpaper-preview img {
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  display: block;
+}
+
 .adm-version-hero-top {
   display: flex;
   align-items: flex-start;
@@ -234,10 +257,6 @@
   color: var(--adm-text-muted);
   font-size: 0.82rem;
   margin: 8px 0 10px;
-}
-
-.adm-version-hero-actions {
-  margin-top: 4px;
 }
 
 .adm-render-loading {
