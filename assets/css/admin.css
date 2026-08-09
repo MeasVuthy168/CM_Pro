@@ -226,14 +226,15 @@
   overflow: hidden;
   border: 1px solid var(--adm-border);
   background-color: var(--adm-navy-100);
-  max-height: 320px;
+  height: 320px;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .adm-wallpaper-preview img {
   width: 100%;
-  max-height: 320px;
+  height: 100%;
   object-fit: cover;
   display: block;
 }
