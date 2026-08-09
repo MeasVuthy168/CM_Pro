@@ -26,6 +26,8 @@
     heroNotes: document.getElementById("avHeroNotes"),
 
     btnUpload: document.getElementById("avBtnUpload"),
+    downloadsToggle: document.getElementById("avDownloadsToggle"),
+    downloadsToggleLabel: document.getElementById("avDownloadsToggleLabel"),
     btnCleanup: document.getElementById("avBtnCleanup"),
 
     tableBody: document.getElementById("avTableBody"),
@@ -415,10 +417,63 @@
 
   el.btnCleanup.addEventListener("click", openCleanupModal);
 
+  // ---------- downloads kill switch ----------
+  async function loadDownloadsToggle() {
+    try {
+      const res = await fetch(`${API_BASE}/api/app/downloads-enabled`, { headers: authHeaders() });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.message);
+      setToggleUI(data.enabled);
+    } catch (e) {
+      console.error("loadDownloadsToggle failed:", e);
+      // leave the toggle in its default "on" state, but don't block the rest of the page
+    }
+  }
+
+  function setToggleUI(enabled) {
+    el.downloadsToggle.setAttribute("aria-checked", String(enabled));
+    el.downloadsToggle.classList.toggle("adm-toggle-on", enabled);
+    el.downloadsToggleLabel.textContent = enabled ? "On" : "Off";
+  }
+
+  el.downloadsToggle.addEventListener("click", async () => {
+    const currentlyEnabled = el.downloadsToggle.getAttribute("aria-checked") === "true";
+    const turningOff = currentlyEnabled;
+
+    if (turningOff) {
+      const ok = await AdminUI.confirm({
+        title: "Turn off downloads?",
+        message: "This immediately blocks every user from downloading any app version (latest or historical) to save bandwidth. They'll see a message telling them it's temporarily disabled. Turn it back on any time.",
+        confirmLabel: "Turn Off",
+        danger: true
+      });
+      if (!ok) return;
+    }
+
+    const newValue = !currentlyEnabled;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/downloads-enabled`, {
+        method: "POST",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: newValue })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Failed to update.", "error");
+
+      setToggleUI(data.enabled);
+      AdminUI.toast(data.enabled ? "Downloads turned on." : "Downloads turned off.", "success");
+    } catch (e) {
+      console.error("toggle downloads failed:", e);
+      AdminUI.toast("Could not reach the server.", "error");
+    }
+  });
+
   // ---------- init ----------
   async function init() {
     await loadCurrentVersion(); // must resolve first so renderTable() knows which row is "latest"
     loadHistory();
+    loadDownloadsToggle();
   }
 
   document.readyState === "loading"
