@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>CM_Pro Admin — Notifications</title>
+
+<meta name="theme-color" content="#002D6B">
+
+<!-- theme flash-prevention -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
+<script src="/CM_Pro/config/api.js"></script>
+
+<!-- auth guard: redirects away if not a logged-in admin -->
+<script src="/CM_Pro/assets/js/admin/admin-loader.js"></script>
+
+<!-- ========================= -->
+<!-- STYLES -->
+<!-- ========================= -->
+<link rel="stylesheet" href="/CM_Pro/assets/css/base.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/admin.css">
+
+</head>
+<body data-adm-page="notifications">
+
+<div class="adm-page">
+  <div class="adm-shell">
+
+    <!-- ========================= -->
+    <!-- SIDEBAR (auto-rendered by admin-nav.js) -->
+    <!-- ========================= -->
+    <aside class="adm-sidebar">
+      <div class="adm-sidebar-brand">CM_Pro Admin</div>
+      <nav id="admSidebar"></nav>
+    </aside>
+
+    <!-- ========================= -->
+    <!-- MAIN -->
+    <!-- ========================= -->
+    <main class="adm-main">
+
+      <!-- ========================= -->
+      <!-- HEADER -->
+      <!-- ========================= -->
+      <div class="adm-header">
+        <div class="adm-title-block">
+          <h1>Notifications · ការជូនដំណឹង</h1>
+          <p>Send announcements and review notification history</p>
+        </div>
+        <div class="adm-header-right">
+          <span class="adm-user-chip" id="admUserLabel">Admin</span>
+          <div class="adm-topbar-actions" id="admTopbarActions"></div>
+        </div>
+      </div>
+
+      <!-- ========================= -->
+      <!-- SUMMARY STRIP -->
+      <!-- ========================= -->
+      <div class="adm-kpi-grid">
+        <div class="adm-card">
+          <div class="adm-card-label">Total Notifications</div>
+          <div class="adm-card-value" id="nfKpiTotal">0</div>
+        </div>
+        <div class="adm-card">
+          <div class="adm-card-label">Sent Today</div>
+          <div class="adm-card-value" id="nfKpiToday">0</div>
+        </div>
+        <div class="adm-card">
+          <div class="adm-card-label">📱 Active Devices</div>
+          <div class="adm-card-value" id="nfKpiDevices">—</div>
+        </div>
+        <div class="adm-card">
+          <div class="adm-card-label">👥 Reachable Users</div>
+          <div class="adm-card-value" id="nfKpiUsers">—</div>
+        </div>
+      </div>
+
+      <!-- ========================= -->
+      <!-- TOOLBAR -->
+      <!-- ========================= -->
+      <div class="adm-toolbar">
+        <input type="text" class="adm-search-input" id="nfKeyword" placeholder="Search title, message, sender…">
+
+        <select class="adm-toolbar-select" id="nfType">
+          <option value="all">All Types</option>
+          <option value="system">System</option>
+          <option value="upload">Upload</option>
+          <option value="backup">Backup</option>
+          <option value="app">App</option>
+        </select>
+
+        <label class="adm-field" style="flex-direction:row; align-items:center; gap:6px;">
+          <span>From</span>
+          <input type="date" class="adm-toolbar-select" id="nfDateFrom">
+        </label>
+        <label class="adm-field" style="flex-direction:row; align-items:center; gap:6px;">
+          <span>To</span>
+          <input type="date" class="adm-toolbar-select" id="nfDateTo">
+        </label>
+
+        <div class="adm-toolbar-spacer"></div>
+
+        <button type="button" class="adm-btn" id="nfBtnReset">Reset</button>
+        <button type="button" class="adm-btn" id="nfBtnSearch">Search</button>
+        <button type="button" class="adm-btn adm-btn-primary" id="nfBtnSend">+ Send Notification</button>
+      </div>
+
+      <div class="adm-toolbar" style="margin-top:0;">
+        <div class="adm-toolbar-spacer"></div>
+        <button type="button" class="adm-btn adm-btn-danger" id="nfBtnCleanup">🧹 Clean Up Old Notifications</button>
+      </div>
+
+      <!-- ========================= -->
+      <!-- TABLE -->
+      <!-- ========================= -->
+      <div class="adm-card adm-users-list-card">
+        <div class="adm-users-table-wrap">
+          <table class="adm-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Title</th>
+                <th>Target</th>
+                <th>Sent By</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="nfTableBody"></tbody>
+          </table>
+          <div class="adm-table-empty" id="nfTableEmpty" hidden>No notifications found.</div>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+</div>
+
+<!-- Send Notification form template -->
+<template id="nfSendTemplate">
+  <form id="nfSendForm">
+    <div class="adm-form-grid">
+      <label class="adm-field adm-field-wide">
+        <span>Title</span>
+        <input type="text" id="nfFormTitle" autocomplete="off">
+      </label>
+
+      <label class="adm-field adm-field-wide">
+        <span>Message</span>
+        <input type="text" id="nfFormMessage" autocomplete="off">
+      </label>
+
+      <label class="adm-field">
+        <span>Target</span>
+        <select id="nfFormTargetType">
+          <option value="all">All Users</option>
+          <option value="role">By Role</option>
+          <option value="username">Specific Username</option>
+        </select>
+      </label>
+
+      <label class="adm-field" id="nfFormRoleField" hidden>
+        <span>Role</span>
+        <select id="nfFormRole">
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
+          <option value="viewer_staff">Viewer_Staff</option>
+          <option value="viewer_manager_a">Viewer_Manager_A</option>
+          <option value="viewer_manager_b">Viewer_Manager_B</option>
+          <option value="viewer_manager_c">Viewer_Manager_C</option>
+        </select>
+      </label>
+
+      <label class="adm-field" id="nfFormUsernameField" hidden>
+        <span>Username</span>
+        <input type="text" id="nfFormUsername" list="nfUsernameOptions" autocomplete="off">
+        <datalist id="nfUsernameOptions"></datalist>
+      </label>
+    </div>
+
+    <div class="adm-modal-footer">
+      <button type="button" class="adm-btn" id="nfFormCancel">Cancel</button>
+      <button type="submit" class="adm-btn adm-btn-primary" id="nfFormSubmit">Send</button>
+    </div>
+  </form>
+</template>
+
+<script src="/CM_Pro/shared/logout.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-ui.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-nav.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-notifications.js"></script>
+
+</body>
+</html>
