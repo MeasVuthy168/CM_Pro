@@ -12,7 +12,7 @@
   const API_BASE = (window.API && window.API.BASE_URL) || "";
   const APP_NAME = "SVG_CreditMonitoring";
 
-  const state = { versions: [] };
+  const state = { versions: [], latestVersion: "" };
 
   const el = {
     heroLoading: document.getElementById("avHeroLoading"),
@@ -52,6 +52,33 @@
     return (bytes / 1024).toFixed(0) + " KB";
   }
 
+  // A plain <a href> can't send an Authorization header, and this endpoint
+  // requires one — so fetch the file with auth, then trigger a real download
+  // from the resulting blob (same pattern as the user-photo endpoints).
+  async function downloadWithAuth(url, filename) {
+    try {
+      const res = await fetch(url, { headers: authHeaders() });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return AdminUI.toast(data.message || "Download failed.", "error");
+      }
+
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = filename || "download";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (e) {
+      console.error("downloadWithAuth failed:", e);
+      AdminUI.toast("Download failed — could not reach the server.", "error");
+    }
+  }
+
   function timeAgo(iso) {
     if (!iso) return "—";
     const d = new Date(iso);
@@ -82,13 +109,17 @@
       el.heroBody.hidden = false;
 
       el.heroVersion.textContent = `v${data.latestVersion}`;
+      state.latestVersion = data.latestVersion;
       el.heroMandatory.textContent = data.mandatory ? "Mandatory" : "Optional";
       el.heroMandatory.className = `adm-badge ${data.mandatory ? "adm-badge-status-failed" : "adm-badge-status-active"}`;
       el.heroFilename.textContent = data.filename || "—";
       el.heroSize.textContent = fmtBytes(data.size);
       el.heroReleased.textContent = timeAgo(data.releasedAt);
       el.heroNotes.textContent = data.notes || "No release notes provided.";
-      el.heroDownload.href = `${API_BASE}/api/app/download/latest?app=${encodeURIComponent(APP_NAME)}`;
+      el.heroDownload.onclick = () => downloadWithAuth(
+        `${API_BASE}/api/app/download/latest?app=${encodeURIComponent(APP_NAME)}`,
+        data.filename
+      );
     } catch (e) {
       console.error("loadCurrentVersion failed:", e);
       el.heroLoading.hidden = true;
@@ -128,6 +159,7 @@
     el.tableEmpty.hidden = true;
 
     state.versions.forEach((v) => {
+      const isLatest = v.version === state.latestVersion;
       const tr = document.createElement("tr");
       tr.style.cursor = "pointer";
       tr.innerHTML = `
@@ -137,12 +169,23 @@
         <td title="${escapeHtml(v.releasedAt)}">${timeAgo(v.releasedAt)}</td>
         <td>
           <div class="adm-row-actions">
-            <a class="adm-icon-btn" title="Download" href="${API_BASE}/api/app/download/latest?app=${encodeURIComponent(APP_NAME)}" target="_blank" rel="noopener">⬇️</a>
+            ${isLatest
+              ? `<button type="button" class="adm-icon-btn" title="Download" data-action="download">⬇️</button>`
+              : v.releaseUrl
+                ? `<a class="adm-icon-btn" title="View on GitHub" href="${v.releaseUrl}" target="_blank" rel="noopener">🔗</a>`
+                : ""}
           </div>
         </td>
       `;
+      const downloadBtn = tr.querySelector('[data-action="download"]');
+      if (downloadBtn) {
+        downloadBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          downloadWithAuth(`${API_BASE}/api/app/download/latest?app=${encodeURIComponent(APP_NAME)}`, v.filename);
+        });
+      }
       tr.addEventListener("click", (e) => {
-        if (e.target.closest("a")) return; // don't open detail when clicking the download link
+        if (e.target.closest("a") || e.target.closest("button")) return;
         viewDetail(v);
       });
       el.tableBody.appendChild(tr);
@@ -282,8 +325,8 @@
   el.btnCleanup.addEventListener("click", openCleanupModal);
 
   // ---------- init ----------
-  function init() {
-    loadCurrentVersion();
+  async function init() {
+    await loadCurrentVersion(); // must resolve first so renderTable() knows which row is "latest"
     loadHistory();
   }
 
