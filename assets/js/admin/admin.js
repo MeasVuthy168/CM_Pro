@@ -23,7 +23,8 @@
     lastPayload: null,
     sparkline: [], // [{t, mbPerMin}]
     timer: null,
-    fetching: false
+    fetching: false,
+    disabledRoutes: new Set() // "METHOD /path" — loaded once, updated instantly on toggle
   };
 
   // ---------- DOM refs ----------
@@ -344,6 +345,13 @@
       const avg = r.count ? r.bytes / r.count : 0;
       const pct = ((r.bytes / grandTotal) * 100).toFixed(1);
 
+      const spaceIdx = r.route.indexOf(" ");
+      const method = r.route.slice(0, spaceIdx);
+      const path = r.route.slice(spaceIdx + 1);
+      const key = `${method} ${path}`;
+      const isDisabled = state.disabledRoutes.has(key);
+      const isProtected = PROTECTED_ROUTE_KEYS.has(key);
+
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td class="adm-td-rank">${i + 1}</td>
@@ -355,9 +363,77 @@
           <div class="adm-pct-track"><div class="adm-pct-fill" style="width:${pct}%"></div></div>
           <span class="adm-pct-label">${pct}%</span>
         </td>
+        <td>
+          ${isProtected
+            ? `<span class="adm-badge adm-badge-status-inactive" title="Login/kill-switch routes can't be disabled">Protected</span>`
+            : `<button type="button" class="adm-toggle-switch${isDisabled ? "" : " adm-toggle-on"}" data-method="${escapeHtml(method)}" data-path="${escapeHtml(path)}" role="switch" aria-checked="${!isDisabled}"><span class="adm-toggle-knob"></span></button>`
+          }
+        </td>
       `;
+
+      const toggleBtn = tr.querySelector(".adm-toggle-switch");
+      if (toggleBtn) {
+        toggleBtn.addEventListener("click", () => toggleRoute(toggleBtn, method, path));
+      }
+
       el.tableBody.appendChild(tr);
     });
+  }
+
+  const PROTECTED_ROUTE_KEYS = new Set([
+    "POST /api/auth/login",
+    "GET /api/auth/me",
+    "POST /api/auth/bootstrap-admin",
+    "GET /api/admin/disabled-routes",
+    "POST /api/admin/disabled-routes/toggle"
+  ]);
+
+  async function loadDisabledRoutes() {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/disabled-routes`, { headers: authHeaders() });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.message);
+      state.disabledRoutes = new Set((data.routes || []).map(r => `${r.method} ${r.path}`));
+    } catch (e) {
+      console.error("loadDisabledRoutes failed:", e);
+    }
+  }
+
+  async function toggleRoute(btn, method, path) {
+    const key = `${method} ${path}`;
+    const currentlyEnabled = btn.getAttribute("aria-checked") === "true";
+
+    if (currentlyEnabled) {
+      const ok = await AdminUI.confirm({
+        title: "Disable this route?",
+        message: `<code>${method} ${path}</code> will immediately return an error to anyone who calls it, until you turn it back on. Use this to stop a specific endpoint from consuming more bandwidth.`,
+        confirmLabel: "Disable",
+        danger: true
+      });
+      if (!ok) return;
+    }
+
+    const newDisabled = currentlyEnabled;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/disabled-routes/toggle`, {
+        method: "POST",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ method, path, disabled: newDisabled })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Failed to update.", "error");
+
+      if (newDisabled) state.disabledRoutes.add(key);
+      else state.disabledRoutes.delete(key);
+
+      btn.setAttribute("aria-checked", String(!newDisabled));
+      btn.classList.toggle("adm-toggle-on", !newDisabled);
+      AdminUI.toast(newDisabled ? `${key} disabled.` : `${key} enabled.`, "success");
+    } catch (e) {
+      console.error("toggleRoute failed:", e);
+      AdminUI.toast("Could not reach the server.", "error");
+    }
   }
 
   function escapeHtml(s) {
@@ -388,10 +464,11 @@
   });
 
   // ---------- init ----------
-  function init() {
+  async function init() {
     if (el.userLabel) {
       el.userLabel.textContent = window.CMAdmin.fullname || window.CMAdmin.username || "Admin";
     }
+    await loadDisabledRoutes(); // must resolve first so renderTable() shows correct toggle state
     fetchStats();
     state.timer = setInterval(fetchStats, POLL_MS);
 
