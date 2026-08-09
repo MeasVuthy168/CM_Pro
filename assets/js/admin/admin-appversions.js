@@ -159,7 +159,6 @@
     el.tableEmpty.hidden = true;
 
     state.versions.forEach((v) => {
-      const isLatest = v.version === state.latestVersion;
       const tr = document.createElement("tr");
       tr.style.cursor = "pointer";
       tr.innerHTML = `
@@ -169,23 +168,16 @@
         <td title="${escapeHtml(v.releasedAt)}">${timeAgo(v.releasedAt)}</td>
         <td>
           <div class="adm-row-actions">
-            ${isLatest
-              ? `<button type="button" class="adm-icon-btn" title="Download" data-action="download">⬇️</button>`
-              : v.releaseUrl
-                ? `<a class="adm-icon-btn" title="View on GitHub" href="${v.releaseUrl}" target="_blank" rel="noopener">🔗</a>`
-                : ""}
+            <button type="button" class="adm-icon-btn" title="Download" data-action="download">⬇️</button>
           </div>
         </td>
       `;
-      const downloadBtn = tr.querySelector('[data-action="download"]');
-      if (downloadBtn) {
-        downloadBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          downloadWithAuth(`${API_BASE}/api/app/download/latest?app=${encodeURIComponent(APP_NAME)}`, v.filename);
-        });
-      }
+      tr.querySelector('[data-action="download"]').addEventListener("click", (e) => {
+        e.stopPropagation();
+        downloadWithAuth(`${API_BASE}/api/app/download/${encodeURIComponent(v.version)}?app=${encodeURIComponent(APP_NAME)}`, v.filename);
+      });
       tr.addEventListener("click", (e) => {
-        if (e.target.closest("a") || e.target.closest("button")) return;
+        if (e.target.closest("button")) return;
         viewDetail(v);
       });
       el.tableBody.appendChild(tr);
