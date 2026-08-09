@@ -24,7 +24,6 @@
     heroSize: document.getElementById("avHeroSize"),
     heroReleased: document.getElementById("avHeroReleased"),
     heroNotes: document.getElementById("avHeroNotes"),
-    heroDownload: document.getElementById("avHeroDownload"),
 
     btnUpload: document.getElementById("avBtnUpload"),
     btnCleanup: document.getElementById("avBtnCleanup"),
@@ -117,10 +116,6 @@
       el.heroSize.textContent = fmtBytes(data.size);
       el.heroReleased.textContent = timeAgo(data.releasedAt);
       el.heroNotes.textContent = data.notes || "No release notes provided.";
-      el.heroDownload.onclick = () => downloadWithAuth(
-        `${API_BASE}/api/app/download/latest?app=${encodeURIComponent(APP_NAME)}`,
-        data.filename
-      );
     } catch (e) {
       console.error("loadCurrentVersion failed:", e);
       el.heroLoading.hidden = true;
@@ -224,6 +219,8 @@
 
     const fMandatory = bodyNode.querySelector("#avEditMandatory");
     const fNotes = bodyNode.querySelector("#avEditNotes");
+    const fFile = bodyNode.querySelector("#avEditFile");
+    const submitBtn = bodyNode.querySelector("#avEditSubmit");
 
     fMandatory.value = v.mandatory ? "true" : "false";
     fNotes.value = v.notes || "";
@@ -235,21 +232,48 @@
     bodyNode.addEventListener("submit", async (e) => {
       e.preventDefault();
 
+      const file = fFile.files?.[0];
+      const url = `${API_BASE}/api/app/versions/${encodeURIComponent(v.version)}?app=${encodeURIComponent(APP_NAME)}`;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = file ? "Uploading…" : "Saving…";
+
       try {
-        const res = await fetch(`${API_BASE}/api/app/versions/${encodeURIComponent(v.version)}?app=${encodeURIComponent(APP_NAME)}`, {
-          method: "PUT",
-          headers: { ...authHeaders(), "Content-Type": "application/json" },
-          body: JSON.stringify({ notes: fNotes.value.trim(), mandatory: fMandatory.value === "true" })
-        });
+        let res;
+        if (file) {
+          const fd = new FormData();
+          fd.append("notes", fNotes.value.trim());
+          fd.append("mandatory", fMandatory.value);
+          fd.append("file", file);
+          res = await fetch(url, {
+            method: "PUT",
+            headers: authHeaders(), // no Content-Type — browser sets multipart boundary
+            body: fd
+          });
+        } else {
+          res = await fetch(url, {
+            method: "PUT",
+            headers: { ...authHeaders(), "Content-Type": "application/json" },
+            body: JSON.stringify({ notes: fNotes.value.trim(), mandatory: fMandatory.value === "true" })
+          });
+        }
+
         const data = await res.json();
-        if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Update failed.", "error");
+        if (!res.ok || !data.ok) {
+          AdminUI.toast(data.message || "Update failed.", "error");
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Save Changes";
+          return;
+        }
 
         AdminUI.closeModal();
         await Promise.all([loadCurrentVersion(), loadHistory()]);
-        AdminUI.toast("Version updated.", "success");
+        AdminUI.toast(data.fileReplaced ? "Version updated — file replaced." : "Version updated.", "success");
       } catch (err) {
         console.error("edit version failed:", err);
         AdminUI.toast("Could not reach the server.", "error");
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Save Changes";
       }
     });
   }
