@@ -14,6 +14,7 @@ const CM_ADMIN_TOOLS = [
   { key: "users",     label: "User Management",  icon: "👥", href: "/CM_Pro/pages/admin/users.html",       status: "live" },
   { key: "uploads",   label: "Data Uploads",     icon: "⬆️", href: "#",                                    status: "soon" },
   { key: "logs",      label: "Activity Logs",    icon: "🧾", href: "/CM_Pro/pages/admin/activitylogs.html",status: "live" },
+  { key: "notifications", label: "Notifications", icon: "🔔", href: "/CM_Pro/pages/admin/notifications.html", status: "live" },
   { key: "versions",  label: "App Versions",     icon: "📦", href: "#",                                    status: "soon" }
 ];
 
