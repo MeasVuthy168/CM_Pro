@@ -2491,11 +2491,11 @@ async function selectOutAreaCustomer(row) {
 
     document.getElementById("outAreaDetailSubtitle").textContent = row.concate;
     document.getElementById("outAreaInfo").innerHTML = `
-        <div><strong>ឈ្មោះ:</strong> ${escapeHtml(row.customer)}</div>
-        <div><strong>អាសយដ្ឋាន:</strong> ${escapeHtml(row.location)}</div>
-        <div><strong>គណនីកម្ចី:</strong> ${escapeHtml(row.accountLoan)}</div>
-        <div><strong>សាខាបច្ចុប្បន្ន:</strong> ${escapeHtml(row.branch)}</div>
-        <div><strong>ភ្នាក់ងារបច្ចុប្បន្ន:</strong> ${escapeHtml(row.coId)}</div>
+        <div class="outarea-info-row"><strong>ឈ្មោះ:</strong> ${escapeHtml(row.customer)}</div>
+        <div class="outarea-info-row"><strong>អាសយដ្ឋាន:</strong> ${escapeHtml(row.location)}</div>
+        <div class="outarea-info-row"><strong>គណនីកម្ចី:</strong> ${escapeHtml(row.accountLoan)}</div>
+        <div class="outarea-info-row"><strong>សាខាបច្ចុប្បន្ន:</strong> ${escapeHtml(row.branch)}</div>
+        <div class="outarea-info-row"><strong>ភ្នាក់ងារបច្ចុប្បន្ន:</strong> ${escapeHtml(row.coId)}</div>
     `;
 
     const branchSelect = document.getElementById("outAreaNewBranch");
@@ -2560,55 +2560,3 @@ document.getElementById("outAreaSearch")?.addEventListener("input", () => {
 });
 
 document.getElementById("btnOutAreaBack")?.addEventListener("click", () => {
-    document.getElementById("outAreaListScreen").style.display = "block";
-    document.getElementById("outAreaDetailScreen").style.display = "none";
-});
-
-document.getElementById("btnOutAreaSave")?.addEventListener("click", async () => {
-    if (!outAreaSelectedRow) return;
-
-    const newBranch = document.getElementById("outAreaNewBranch").value.trim();
-    const newCoResponse = document.getElementById("outAreaNewCO").value.trim();
-
-    if (!newBranch) return notify("សូមជ្រើសសាខាថ្មី", "warning");
-    if (!newCoResponse) return notify("សូមជ្រើសភ្នាក់ងារឥណទានថ្មី", "warning");
-
-    const uploadedBy =
-        JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}").fullname
-        || "unknown";
-
-    if (typeof showAppLoading === "function") showAppLoading("កំពុងរក្សាទុក...");
-
-    try {
-        const res = await fetch(`${API.BASE_URL}/api/wrongaddress/upsert`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${arrearsToken}`
-            },
-            body: JSON.stringify({
-                ldCif: outAreaSelectedRow.concate,
-                newBranch,
-                newCoResponse,
-                uploadedBy
-            })
-        });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.message || "Save failed.");
-
-        notify("បានរក្សាទុកដោយជោគជ័យ", "success");
-        closeOutAreaModal();
-    } catch (err) {
-        console.error("[outArea] save failed:", err);
-        notify(err.message || "រក្សាទុកបរាជ័យ", "error");
-    } finally {
-        if (typeof hideAppLoading === "function") hideAppLoading();
-    }
-});
-
-// ========================================
-// PAGE READY
-// ========================================
-
-refreshArrears();
-console.log("Daily Arrears Ready.");
