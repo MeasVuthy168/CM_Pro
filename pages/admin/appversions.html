@@ -77,9 +77,6 @@
             <span id="avHeroFilename"></span> · <span id="avHeroSize"></span> · <span id="avHeroReleased"></span>
           </div>
           <p class="adm-modal-message" id="avHeroNotes"></p>
-          <div class="adm-version-hero-actions">
-            <button type="button" class="adm-btn adm-btn-primary" id="avHeroDownload">⬇️ Download Latest</button>
-          </div>
         </div>
         <div class="adm-render-setup" id="avHeroEmpty" hidden>No version has been published yet.</div>
       </div>
@@ -178,9 +175,14 @@
         <span>Release Notes</span>
         <input type="text" id="avEditNotes" autocomplete="off">
       </label>
+
+      <label class="adm-field adm-field-wide">
+        <span>Replace File (optional — leave empty to keep the current file)</span>
+        <input type="file" id="avEditFile" accept=".xlsb,.xlsm,.xls,.xlsx">
+      </label>
     </div>
 
-    <p class="adm-modal-message">Version number and the workbook file itself can't be changed here — upload a new version for that.</p>
+    <p class="adm-modal-message">Replacing the file swaps the asset on this same version's existing GitHub Release — the version number itself doesn't change.</p>
 
     <div class="adm-modal-footer">
       <button type="button" class="adm-btn" id="avEditCancel">Cancel</button>
