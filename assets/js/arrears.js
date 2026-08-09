@@ -2404,6 +2404,12 @@ function getOutAreaCandidates(searchTerm) {
     const q = (searchTerm || "").trim().toLowerCase();
     return currentRows.filter(row => {
         if (!row.concate) return false; // no LD-CIF/Concate key, nothing to reassign
+
+        // Base filter: only customers flagged with the "NoCoRespone" marker
+        // in their coResponse field — matches the VBA's own default view
+        // (btnShowLastBackup_Click presets its search to this same text).
+        if (!(row.coResponse || "").toLowerCase().includes("nocorespone")) return false;
+
         if (!q) return true;
         return (row.customer || "").toLowerCase().includes(q)
             || (row.concate || "").toLowerCase().includes(q)
@@ -2441,8 +2447,8 @@ function renderOutAreaList() {
 
     document.getElementById("outAreaListSubtitle").textContent =
         rows.length > RENDER_CAP
-            ? `${rows.length.toLocaleString()} នាក់ (បង្ហាញ ${RENDER_CAP} ដំបូង — ស្វែងរកដើម្បីតូចចង្អៀត)`
-            : `${rows.length.toLocaleString()} នាក់`;
+            ? `NoCoRespone: ${rows.length.toLocaleString()} នាក់ (បង្ហាញ ${RENDER_CAP} ដំបូង — ស្វែងរកដើម្បីតូចចង្អៀត)`
+            : `NoCoRespone: ${rows.length.toLocaleString()} នាក់`;
 }
 
 function populateOutAreaCoOptions(branch, preselect) {
@@ -2543,6 +2549,7 @@ document.getElementById("btnOutArea")?.addEventListener("click", () => {
 });
 
 document.getElementById("btnOutAreaClose")?.addEventListener("click", closeOutAreaModal);
+document.getElementById("btnOutAreaCloseX")?.addEventListener("click", closeOutAreaModal);
 document.getElementById("outAreaBackdrop")?.addEventListener("click", (e) => {
     if (e.target.id === "outAreaBackdrop") closeOutAreaModal();
 });
