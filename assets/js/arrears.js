@@ -2378,6 +2378,228 @@ Object.entries(filterEls).forEach(([key, el]) => {
 
 
 // ========================================
+// OUT-OF-AREA ADDRESS — កែសម្រួលArrearក្រៅតំបន់
+// List -> pick one customer -> reassign Branch/CO -> Save.
+// The list is built entirely from data already in memory (currentRows,
+// respecting whatever filters are active) — no extra API call needed
+// for browsing/searching. Only Save hits the server.
+//
+// Field mapping confirmed against the VBA (frmOutArea + modCM_Syn's
+// Upload_WrongAddress, firstCol="B" lastCol="D"):
+//   LD-CIF          -> row.concate   (VBA's "LD_CIF" is this same
+//                       Concate/AG column, also used as the Reason
+//                       Arrear key elsewhere in this file)
+//   Name            -> row.customer
+//   Address         -> row.location
+//   Account Loan    -> row.accountLoan
+//   Current Branch  -> row.branch
+//   Current CO      -> row.coId
+// Saved as values=[ldCif, newBranch, newCoResponse] into the SAME
+// "wrongaddress" Mongo collection the VBA bulk-uploads to.
+// ========================================
+
+let outAreaSelectedRow = null;
+
+function getOutAreaCandidates(searchTerm) {
+    const q = (searchTerm || "").trim().toLowerCase();
+    return currentRows.filter(row => {
+        if (!row.concate) return false; // no LD-CIF/Concate key, nothing to reassign
+        if (!q) return true;
+        return (row.customer || "").toLowerCase().includes(q)
+            || (row.concate || "").toLowerCase().includes(q)
+            || (row.branch || "").toLowerCase().includes(q);
+    });
+}
+
+function renderOutAreaList() {
+    const searchTerm = document.getElementById("outAreaSearch").value;
+    const rows = getOutAreaCandidates(searchTerm);
+    const tbody = document.getElementById("outAreaTbody");
+    tbody.innerHTML = "";
+
+    // Cap the DOM rows rendered at once — currentRows can be a few thousand,
+    // and the search box narrows it down quickly. Matches the same
+    // rendered-count-note pattern already used for the main table.
+    const RENDER_CAP = 300;
+    const toRender = rows.slice(0, RENDER_CAP);
+
+    toRender.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.style.cursor = "pointer";
+        tr.innerHTML = `
+            <td>${escapeHtml(row.customer)}</td>
+            <td>${escapeHtml(row.concate)}</td>
+            <td>${escapeHtml(row.branch)}</td>
+        `;
+        tr.addEventListener("click", () => selectOutAreaCustomer(row));
+        tbody.appendChild(tr);
+    });
+
+    if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">គ្មានទិន្នន័យ</td></tr>`;
+    }
+
+    document.getElementById("outAreaListSubtitle").textContent =
+        rows.length > RENDER_CAP
+            ? `${rows.length.toLocaleString()} នាក់ (បង្ហាញ ${RENDER_CAP} ដំបូង — ស្វែងរកដើម្បីតូចចង្អៀត)`
+            : `${rows.length.toLocaleString()} នាក់`;
+}
+
+function populateOutAreaCoOptions(branch, preselect) {
+    const coSelect = document.getElementById("outAreaNewCO");
+    coSelect.innerHTML = "";
+
+    if (!branch) {
+        coSelect.innerHTML = `<option value="">— ជ្រើសសាខាមុន —</option>`;
+        return;
+    }
+
+    // Derived from already-loaded data (which CO names currently appear
+    // for rows assigned to this branch) — same source the page's own
+    // "ភ្នាក់ងារទទួលខុសត្រូវ" filter already treats as the canonical
+    // officer-name list, so this stays consistent with that convention.
+    const coNames = distinctSorted(allRows.filter(r => r.branch === branch), "coResponse");
+
+    coSelect.innerHTML = `<option value="">— ជ្រើសភ្នាក់ងារ —</option>` +
+        coNames.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");
+
+    if (preselect && coNames.includes(preselect)) {
+        coSelect.value = preselect;
+    } else if (preselect) {
+        // saved value isn't in the derived list (e.g. CO no longer has
+        // active rows in this branch) — add it anyway so Save doesn't
+        // silently lose what was previously on record
+        const opt = document.createElement("option");
+        opt.value = preselect;
+        opt.textContent = preselect;
+        coSelect.appendChild(opt);
+        coSelect.value = preselect;
+    }
+}
+
+async function selectOutAreaCustomer(row) {
+    outAreaSelectedRow = row;
+
+    document.getElementById("outAreaListScreen").style.display = "none";
+    document.getElementById("outAreaDetailScreen").style.display = "block";
+
+    document.getElementById("outAreaDetailSubtitle").textContent = row.concate;
+    document.getElementById("outAreaInfo").innerHTML = `
+        <div><strong>ឈ្មោះ:</strong> ${escapeHtml(row.customer)}</div>
+        <div><strong>អាសយដ្ឋាន:</strong> ${escapeHtml(row.location)}</div>
+        <div><strong>គណនីកម្ចី:</strong> ${escapeHtml(row.accountLoan)}</div>
+        <div><strong>សាខាបច្ចុប្បន្ន:</strong> ${escapeHtml(row.branch)}</div>
+        <div><strong>ភ្នាក់ងារបច្ចុប្បន្ន:</strong> ${escapeHtml(row.coId)}</div>
+    `;
+
+    const branchSelect = document.getElementById("outAreaNewBranch");
+    const metaEl = document.getElementById("outAreaMeta");
+    branchSelect.value = "";
+    populateOutAreaCoOptions("", "");
+    metaEl.textContent = "កំពុងពិនិត្យកំណត់ត្រាចាស់...";
+
+    // Check whether this customer already has a saved reassignment, and
+    // pre-fill if so — mirrors the VBA's FindIndexInCurrentCache behavior
+    // for existing entries.
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/wrongaddress/lookup?ldCif=${encodeURIComponent(row.concate)}`, {
+            headers: { Authorization: `Bearer ${arrearsToken}` }
+        });
+        const data = await res.json();
+
+        if (data.ok && data.found) {
+            branchSelect.value = data.newBranch;
+            populateOutAreaCoOptions(data.newBranch, data.newCoResponse);
+            metaEl.textContent = `មានកំណត់ត្រារួចហើយ — ធ្វើបច្ចុប្បន្នភាពដោយ ${data.uploadedBy || "-"}`;
+        } else {
+            metaEl.textContent = "";
+        }
+    } catch (err) {
+        console.error("[outArea] lookup failed:", err);
+        metaEl.textContent = "";
+    }
+}
+
+document.getElementById("outAreaNewBranch")?.addEventListener("change", (e) => {
+    populateOutAreaCoOptions(e.target.value, "");
+});
+
+function openOutAreaModal() {
+    outAreaSelectedRow = null;
+    document.getElementById("outAreaSearch").value = "";
+    document.getElementById("outAreaListScreen").style.display = "block";
+    document.getElementById("outAreaDetailScreen").style.display = "none";
+    renderOutAreaList();
+    document.getElementById("outAreaBackdrop").classList.add("show");
+}
+
+function closeOutAreaModal() {
+    document.getElementById("outAreaBackdrop").classList.remove("show");
+}
+
+document.getElementById("btnOutArea")?.addEventListener("click", () => {
+    openOutAreaModal();
+    document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
+});
+
+document.getElementById("btnOutAreaClose")?.addEventListener("click", closeOutAreaModal);
+document.getElementById("outAreaBackdrop")?.addEventListener("click", (e) => {
+    if (e.target.id === "outAreaBackdrop") closeOutAreaModal();
+});
+
+document.getElementById("outAreaSearch")?.addEventListener("input", () => {
+    clearTimeout(window.__outAreaSearchDebounce);
+    window.__outAreaSearchDebounce = setTimeout(renderOutAreaList, 200);
+});
+
+document.getElementById("btnOutAreaBack")?.addEventListener("click", () => {
+    document.getElementById("outAreaListScreen").style.display = "block";
+    document.getElementById("outAreaDetailScreen").style.display = "none";
+});
+
+document.getElementById("btnOutAreaSave")?.addEventListener("click", async () => {
+    if (!outAreaSelectedRow) return;
+
+    const newBranch = document.getElementById("outAreaNewBranch").value.trim();
+    const newCoResponse = document.getElementById("outAreaNewCO").value.trim();
+
+    if (!newBranch) return notify("សូមជ្រើសសាខាថ្មី", "warning");
+    if (!newCoResponse) return notify("សូមជ្រើសភ្នាក់ងារឥណទានថ្មី", "warning");
+
+    const uploadedBy =
+        JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}").fullname
+        || "unknown";
+
+    if (typeof showAppLoading === "function") showAppLoading("កំពុងរក្សាទុក...");
+
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/wrongaddress/upsert`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${arrearsToken}`
+            },
+            body: JSON.stringify({
+                ldCif: outAreaSelectedRow.concate,
+                newBranch,
+                newCoResponse,
+                uploadedBy
+            })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.message || "Save failed.");
+
+        notify("បានរក្សាទុកដោយជោគជ័យ", "success");
+        closeOutAreaModal();
+    } catch (err) {
+        console.error("[outArea] save failed:", err);
+        notify(err.message || "រក្សាទុកបរាជ័យ", "error");
+    } finally {
+        if (typeof hideAppLoading === "function") hideAppLoading();
+    }
+});
+
+// ========================================
 // PAGE READY
 // ========================================
 
