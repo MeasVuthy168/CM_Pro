@@ -2549,7 +2549,6 @@ document.getElementById("btnOutArea")?.addEventListener("click", () => {
 });
 
 document.getElementById("btnOutAreaClose")?.addEventListener("click", closeOutAreaModal);
-document.getElementById("btnOutAreaCloseX")?.addEventListener("click", closeOutAreaModal);
 document.getElementById("outAreaBackdrop")?.addEventListener("click", (e) => {
     if (e.target.id === "outAreaBackdrop") closeOutAreaModal();
 });
@@ -2606,9 +2605,14 @@ document.getElementById("btnOutAreaSave")?.addEventListener("click", async () =>
         outAreaSelectedRow.coResponse = newCoResponse;
 
         notify("បានរក្សាទុកដោយជោគជ័យ", "success");
-        closeOutAreaModal();
 
+        // Back to the list instead of closing — lets the admin pick the
+        // next customer without having to reopen the whole modal each time.
         renderOutAreaList();
+        document.getElementById("outAreaListScreen").style.display = "block";
+        document.getElementById("outAreaDetailScreen").style.display = "none";
+        outAreaSelectedRow = null;
+
         if (typeof renderTable === "function") renderTable(currentRows);
     } catch (err) {
         console.error("[outArea] save failed:", err);
