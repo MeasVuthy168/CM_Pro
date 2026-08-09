@@ -2349,3 +2349,20 @@ display:none !important;
     padding:12px 14px;
     font-size:15px;
 }
+
+.outarea-toggle-view-btn{
+    display:block;
+    width:100%;
+    margin:4px 0 12px;
+    padding:9px 10px;
+    border-radius:10px;
+    border:1px solid var(--arr-border, #e2e6ed);
+    background:var(--arr-card-bg, #fff);
+    color:var(--arr-navy-dark, #032d73);
+    font-family:'KRASAR',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+}
+.outarea-toggle-view-btn:active{ transform:scale(.98); }
+
