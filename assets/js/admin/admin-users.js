@@ -285,7 +285,7 @@
 
     bodyNode.querySelector("#ufBtnCancel").addEventListener("click", () => AdminUI.closeModal());
 
-    bodyNode.querySelector("#ufForm").addEventListener("submit", async (e) => {
+    bodyNode.addEventListener("submit", async (e) => {
       e.preventDefault();
 
       const username = fUsername.value.trim();
