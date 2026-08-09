@@ -258,7 +258,7 @@
 
     bodyNode.querySelector("#nfFormCancel").addEventListener("click", () => AdminUI.closeModal());
 
-    bodyNode.querySelector("#nfSendForm").addEventListener("submit", async (e) => {
+    bodyNode.addEventListener("submit", async (e) => {
       e.preventDefault();
 
       const title = fTitle.value.trim();
