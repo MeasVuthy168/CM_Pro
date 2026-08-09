@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>CM_Pro Admin — Wallpaper</title>
+
+<meta name="theme-color" content="#002D6B">
+
+<!-- theme flash-prevention -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
+<script src="/CM_Pro/config/api.js"></script>
+
+<!-- auth guard: redirects away if not a logged-in admin -->
+<script src="/CM_Pro/assets/js/admin/admin-loader.js"></script>
+
+<!-- ========================= -->
+<!-- STYLES -->
+<!-- ========================= -->
+<link rel="stylesheet" href="/CM_Pro/assets/css/base.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/admin.css">
+
+</head>
+<body data-adm-page="wallpaper">
+
+<div class="adm-page">
+  <div class="adm-shell">
+
+    <!-- ========================= -->
+    <!-- SIDEBAR (auto-rendered by admin-nav.js) -->
+    <!-- ========================= -->
+    <aside class="adm-sidebar">
+      <div class="adm-sidebar-brand">CM_Pro Admin</div>
+      <nav id="admSidebar"></nav>
+    </aside>
+
+    <!-- ========================= -->
+    <!-- MAIN -->
+    <!-- ========================= -->
+    <main class="adm-main">
+
+      <!-- ========================= -->
+      <!-- HEADER -->
+      <!-- ========================= -->
+      <div class="adm-header">
+        <div class="adm-title-block">
+          <h1>Wallpaper · ផ្ទាំងផ្ទៃខាងក្រោយ</h1>
+          <p>Background image shown across the app and Excel client</p>
+        </div>
+        <div class="adm-header-right">
+          <span class="adm-user-chip" id="admUserLabel">Admin</span>
+          <div class="adm-topbar-actions" id="admTopbarActions"></div>
+        </div>
+      </div>
+
+      <!-- ========================= -->
+      <!-- CURRENT WALLPAPER -->
+      <!-- ========================= -->
+      <div class="adm-card adm-wallpaper-card">
+        <div class="adm-card-label">Current Wallpaper</div>
+
+        <div class="adm-wallpaper-preview">
+          <img id="wpCurrentImg" alt="Current wallpaper">
+        </div>
+
+        <div class="adm-render-loading" id="wpStatusLoading">Loading status…</div>
+        <div class="adm-version-hero-meta" id="wpStatusMeta" hidden></div>
+        <div class="adm-render-setup" id="wpStatusError" hidden></div>
+      </div>
+
+      <!-- ========================= -->
+      <!-- UPLOAD NEW WALLPAPER -->
+      <!-- ========================= -->
+      <div class="adm-card">
+        <div class="adm-card-label">Upload New Wallpaper</div>
+
+        <div class="adm-photo-row" style="margin-top:12px;">
+          <div class="adm-photo-preview" id="wpNewPreviewBox" style="width:120px; height:80px; border-radius:10px;">
+            <span id="wpNewPlaceholder">No file selected</span>
+            <img id="wpNewImg" alt="New wallpaper preview" hidden>
+          </div>
+          <div class="adm-photo-actions">
+            <button type="button" class="adm-btn" id="wpBtnSelect">Select Image…</button>
+            <input type="file" id="wpFileInput" accept="image/*" hidden>
+          </div>
+        </div>
+
+        <p class="adm-modal-message" id="wpUploadStatus" hidden></p>
+
+        <button type="button" class="adm-btn adm-btn-primary" id="wpBtnUpload" disabled>Upload &amp; Replace</button>
+      </div>
+
+    </main>
+
+  </div>
+</div>
+
+<script src="/CM_Pro/shared/logout.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-ui.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-nav.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-wallpaper.js"></script>
+
+</body>
+</html>
