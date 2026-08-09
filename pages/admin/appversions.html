@@ -109,6 +109,7 @@
                 <th>Version</th>
                 <th>Size</th>
                 <th>Type</th>
+                <th>Notes</th>
                 <th>Released</th>
                 <th></th>
               </tr>
@@ -157,6 +158,33 @@
     <div class="adm-modal-footer">
       <button type="button" class="adm-btn" id="avFormCancel">Cancel</button>
       <button type="submit" class="adm-btn adm-btn-primary" id="avFormSubmit">Upload</button>
+    </div>
+  </form>
+</template>
+
+<!-- Edit Version form template -->
+<template id="avEditTemplate">
+  <form id="avEditForm">
+    <div class="adm-form-grid">
+      <label class="adm-field">
+        <span>Type</span>
+        <select id="avEditMandatory">
+          <option value="false">Optional</option>
+          <option value="true">Mandatory</option>
+        </select>
+      </label>
+
+      <label class="adm-field adm-field-wide">
+        <span>Release Notes</span>
+        <input type="text" id="avEditNotes" autocomplete="off">
+      </label>
+    </div>
+
+    <p class="adm-modal-message">Version number and the workbook file itself can't be changed here — upload a new version for that.</p>
+
+    <div class="adm-modal-footer">
+      <button type="button" class="adm-btn" id="avEditCancel">Cancel</button>
+      <button type="submit" class="adm-btn adm-btn-primary" id="avEditSubmit">Save Changes</button>
     </div>
   </form>
 </template>
