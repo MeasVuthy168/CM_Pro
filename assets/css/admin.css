@@ -210,6 +210,36 @@
   margin-bottom: 18px;
 }
 
+/* ---------- App Versions hero card ---------- */
+.adm-version-hero {
+  margin-bottom: 18px;
+}
+
+.adm-version-hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.adm-version-hero-number {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--adm-navy-900);
+  line-height: 1.1;
+}
+[data-theme="dark"] .adm-version-hero-number { color: var(--adm-gold-300); }
+
+.adm-version-hero-meta {
+  color: var(--adm-text-muted);
+  font-size: 0.82rem;
+  margin: 8px 0 10px;
+}
+
+.adm-version-hero-actions {
+  margin-top: 4px;
+}
+
 .adm-render-loading {
   color: var(--adm-text-muted);
   font-size: 0.85rem;
