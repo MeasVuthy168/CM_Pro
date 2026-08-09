@@ -2400,6 +2400,8 @@ Object.entries(filterEls).forEach(([key, el]) => {
 
 let outAreaSelectedRow = null;
 
+let outAreaViewMode = "candidates"; // "candidates" | "edited"
+
 function getOutAreaCandidates(searchTerm) {
     const q = (searchTerm || "").trim().toLowerCase();
     return currentRows.filter(row => {
@@ -2417,39 +2419,115 @@ function getOutAreaCandidates(searchTerm) {
     });
 }
 
-function renderOutAreaList() {
+// Web equivalent of VBA's "Show Last Backup" — everyone who already has a
+// saved reassignment, fetched from the server (not client-side data, since
+// WrongAddress records aren't part of the arrears rows already in memory).
+async function fetchOutAreaEditedItems(searchTerm) {
+    const params = new URLSearchParams();
+    if (searchTerm) params.set("keyword", searchTerm);
+    params.set("limit", "500");
+
+    const res = await fetch(`${API.BASE_URL}/api/wrongaddress/list?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${arrearsToken}` }
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.message || "Failed to load edited list.");
+    return data.items || [];
+}
+
+async function renderOutAreaList() {
     const searchTerm = document.getElementById("outAreaSearch").value;
-    const rows = getOutAreaCandidates(searchTerm);
+    const tbody = document.getElementById("outAreaTbody");
+    const colThree = document.getElementById("outAreaColThree");
+
+    if (outAreaViewMode === "candidates") {
+        colThree.textContent = "សាខាបច្ចុប្បន្ន";
+        const rows = getOutAreaCandidates(searchTerm);
+        renderOutAreaRows(
+            rows.slice(0, 300).map(row => ({
+                customer: row.customer,
+                ldCif: row.concate,
+                thirdCol: row.branch,
+                row // full row object, ready for selectOutAreaCustomer as-is
+            })),
+            rows.length,
+            (rows.length > 300)
+                ? `NoCoRespone: ${rows.length.toLocaleString()} នាក់ (បង្ហាញ 300 ដំបូង — ស្វែងរកដើម្បីតូចចង្អៀត)`
+                : `NoCoRespone: ${rows.length.toLocaleString()} នាក់`
+        );
+        return;
+    }
+
+    // "edited" mode
+    colThree.textContent = "សាខាថ្មី";
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">កំពុងផ្ទុក...</td></tr>`;
+    document.getElementById("outAreaListSubtitle").textContent = "";
+
+    try {
+        const items = await fetchOutAreaEditedItems(searchTerm);
+
+        // Cross-reference the live arrears row for each saved reassignment,
+        // so tapping one opens the SAME familiar detail screen (with real
+        // Name/Address/AccountLoan) rather than a stripped-down version.
+        // Falls back to a partial synthetic row if the loan isn't in the
+        // currently-loaded arrears data for any reason.
+        const mapped = items.map(item => {
+            const liveRow = allRows.find(r => r.concate === item.ldCif);
+            const row = liveRow || {
+                concate: item.ldCif,
+                customer: "(មិនមានក្នុងបញ្ជីបច្ចុប្បន្ន)",
+                location: "",
+                accountLoan: "",
+                branch: item.newBranch,
+                coId: item.newCoResponse,
+                coResponse: item.newCoResponse
+            };
+            return {
+                customer: row.customer,
+                ldCif: item.ldCif,
+                thirdCol: item.newBranch,
+                row
+            };
+        });
+
+        renderOutAreaRows(mapped, mapped.length, `បានកែសម្រួល: ${mapped.length.toLocaleString()} នាក់`);
+    } catch (err) {
+        console.error("[outArea] fetch edited list failed:", err);
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">មិនអាចផ្ទុកទិន្នន័យបានទេ</td></tr>`;
+    }
+}
+
+function renderOutAreaRows(entries, totalCount, subtitleText) {
     const tbody = document.getElementById("outAreaTbody");
     tbody.innerHTML = "";
 
-    // Cap the DOM rows rendered at once — currentRows can be a few thousand,
-    // and the search box narrows it down quickly. Matches the same
-    // rendered-count-note pattern already used for the main table.
-    const RENDER_CAP = 300;
-    const toRender = rows.slice(0, RENDER_CAP);
-
-    toRender.forEach(row => {
+    entries.forEach(entry => {
         const tr = document.createElement("tr");
         tr.style.cursor = "pointer";
         tr.innerHTML = `
-            <td>${escapeHtml(row.customer)}</td>
-            <td>${escapeHtml(row.concate)}</td>
-            <td>${escapeHtml(row.branch)}</td>
+            <td>${escapeHtml(entry.customer)}</td>
+            <td>${escapeHtml(entry.ldCif)}</td>
+            <td>${escapeHtml(entry.thirdCol)}</td>
         `;
-        tr.addEventListener("click", () => selectOutAreaCustomer(row));
+        tr.addEventListener("click", () => selectOutAreaCustomer(entry.row));
         tbody.appendChild(tr);
     });
 
-    if (!rows.length) {
+    if (!entries.length) {
         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">គ្មានទិន្នន័យ</td></tr>`;
     }
 
-    document.getElementById("outAreaListSubtitle").textContent =
-        rows.length > RENDER_CAP
-            ? `NoCoRespone: ${rows.length.toLocaleString()} នាក់ (បង្ហាញ ${RENDER_CAP} ដំបូង — ស្វែងរកដើម្បីតូចចង្អៀត)`
-            : `NoCoRespone: ${rows.length.toLocaleString()} នាក់`;
+    document.getElementById("outAreaListSubtitle").textContent = subtitleText;
 }
+
+document.getElementById("btnOutAreaToggleView")?.addEventListener("click", (e) => {
+    outAreaViewMode = outAreaViewMode === "candidates" ? "edited" : "candidates";
+    e.target.textContent = outAreaViewMode === "candidates"
+        ? "មើលកំណត់ត្រាដែលបានកែសម្រួល"
+        : "មើលអតិថិជនត្រូវកែសម្រួល";
+    document.getElementById("outAreaSearch").value = "";
+    renderOutAreaList();
+});
 
 function populateOutAreaCoOptions(branch, preselect) {
     const coSelect = document.getElementById("outAreaNewCO");
@@ -2532,7 +2610,9 @@ document.getElementById("outAreaNewBranch")?.addEventListener("change", (e) => {
 
 function openOutAreaModal() {
     outAreaSelectedRow = null;
+    outAreaViewMode = "candidates";
     document.getElementById("outAreaSearch").value = "";
+    document.getElementById("btnOutAreaToggleView").textContent = "មើលកំណត់ត្រាដែលបានកែសម្រួល";
     document.getElementById("outAreaListScreen").style.display = "block";
     document.getElementById("outAreaDetailScreen").style.display = "none";
     renderOutAreaList();
