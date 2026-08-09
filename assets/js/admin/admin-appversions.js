@@ -32,7 +32,8 @@
     tableBody: document.getElementById("avTableBody"),
     tableEmpty: document.getElementById("avTableEmpty"),
 
-    uploadTemplate: document.getElementById("avUploadTemplate")
+    uploadTemplate: document.getElementById("avUploadTemplate"),
+    editTemplate: document.getElementById("avEditTemplate")
   };
 
   function authHeaders() {
@@ -161,20 +162,32 @@
     state.versions.forEach((v) => {
       const tr = document.createElement("tr");
       tr.style.cursor = "pointer";
+      const notesPreview = (v.notes || "").slice(0, 40) + ((v.notes || "").length > 40 ? "…" : "");
       tr.innerHTML = `
         <td><strong>v${escapeHtml(v.version)}</strong></td>
         <td>${fmtBytes(v.size)}</td>
         <td><span class="adm-badge ${v.mandatory ? "adm-badge-status-failed" : "adm-badge-status-inactive"}">${v.mandatory ? "Mandatory" : "Optional"}</span></td>
+        <td>${escapeHtml(notesPreview || "—")}</td>
         <td title="${escapeHtml(v.releasedAt)}">${timeAgo(v.releasedAt)}</td>
         <td>
           <div class="adm-row-actions">
             <button type="button" class="adm-icon-btn" title="Download" data-action="download">⬇️</button>
+            <button type="button" class="adm-icon-btn" title="Edit" data-action="edit">✏️</button>
+            <button type="button" class="adm-icon-btn adm-icon-btn-danger" title="Delete" data-action="delete">🗑️</button>
           </div>
         </td>
       `;
       tr.querySelector('[data-action="download"]').addEventListener("click", (e) => {
         e.stopPropagation();
         downloadWithAuth(`${API_BASE}/api/app/download/${encodeURIComponent(v.version)}?app=${encodeURIComponent(APP_NAME)}`, v.filename);
+      });
+      tr.querySelector('[data-action="edit"]').addEventListener("click", (e) => {
+        e.stopPropagation();
+        openEditModal(v);
+      });
+      tr.querySelector('[data-action="delete"]').addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteVersion(v);
       });
       tr.addEventListener("click", (e) => {
         if (e.target.closest("button")) return;
@@ -203,6 +216,68 @@
       </div>
     `).join("");
     AdminUI.openModal({ title: `Version v${escapeHtml(v.version)}`, bodyNode: body, wide: true });
+  }
+
+  // ---------- edit version (notes/mandatory only) ----------
+  function openEditModal(v) {
+    const bodyNode = el.editTemplate.content.firstElementChild.cloneNode(true);
+
+    const fMandatory = bodyNode.querySelector("#avEditMandatory");
+    const fNotes = bodyNode.querySelector("#avEditNotes");
+
+    fMandatory.value = v.mandatory ? "true" : "false";
+    fNotes.value = v.notes || "";
+
+    AdminUI.openModal({ title: `Edit v${v.version}`, bodyNode, wide: true });
+
+    bodyNode.querySelector("#avEditCancel").addEventListener("click", () => AdminUI.closeModal());
+
+    bodyNode.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      try {
+        const res = await fetch(`${API_BASE}/api/app/versions/${encodeURIComponent(v.version)}?app=${encodeURIComponent(APP_NAME)}`, {
+          method: "PUT",
+          headers: { ...authHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify({ notes: fNotes.value.trim(), mandatory: fMandatory.value === "true" })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Update failed.", "error");
+
+        AdminUI.closeModal();
+        await Promise.all([loadCurrentVersion(), loadHistory()]);
+        AdminUI.toast("Version updated.", "success");
+      } catch (err) {
+        console.error("edit version failed:", err);
+        AdminUI.toast("Could not reach the server.", "error");
+      }
+    });
+  }
+
+  // ---------- delete a single version ----------
+  async function deleteVersion(v) {
+    const ok = await AdminUI.confirm({
+      title: `Delete v${escapeHtml(v.version)}?`,
+      message: `This removes v${escapeHtml(v.version)} from CM_Pro's version tracking. It does <strong>not</strong> delete the underlying GitHub Release — only the record here.`,
+      confirmLabel: "Delete",
+      danger: true
+    });
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/app/versions/${encodeURIComponent(v.version)}?app=${encodeURIComponent(APP_NAME)}`, {
+        method: "DELETE",
+        headers: authHeaders()
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Delete failed.", "error");
+
+      await Promise.all([loadCurrentVersion(), loadHistory()]);
+      AdminUI.toast(`v${v.version} deleted.`, "success");
+    } catch (e) {
+      console.error("delete version failed:", e);
+      AdminUI.toast("Delete failed — could not reach the server.", "error");
+    }
   }
 
   // ---------- upload new version ----------
