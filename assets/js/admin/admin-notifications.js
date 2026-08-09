@@ -20,6 +20,7 @@
     btnReset: document.getElementById("nfBtnReset"),
     btnSend: document.getElementById("nfBtnSend"),
     btnCleanup: document.getElementById("nfBtnCleanup"),
+    btnPrune: document.getElementById("nfBtnPrune"),
 
     kpiTotal: document.getElementById("nfKpiTotal"),
     kpiToday: document.getElementById("nfKpiToday"),
@@ -335,6 +336,45 @@
   }
 
   el.btnCleanup.addEventListener("click", openCleanupModal);
+
+  // ---------- prune dead subscriptions ----------
+  async function pruneSubscriptions() {
+    const ok = await AdminUI.confirm({
+      title: "Prune dead subscriptions?",
+      message: "This sends a small test push to every stored subscription right now to check which are still alive. Dead ones (404/410) are deleted immediately. Devices that are genuinely still active may briefly show a low-priority \"System Check\" notification. This can take a little while for a large list.",
+      confirmLabel: "Run Prune",
+      danger: false
+    });
+    if (!ok) return;
+
+    el.btnPrune.disabled = true;
+    el.btnPrune.textContent = "Pruning…";
+
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/notifications/prune-subscriptions`, {
+        method: "POST",
+        headers: authHeaders()
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        AdminUI.toast(data.message || "Prune failed.", "error");
+      } else {
+        AdminUI.toast(
+          `Checked ${data.totalChecked} — ${data.alive} alive, ${data.pruned} removed, ${data.errors} transient errors.`,
+          "success"
+        );
+        loadPushStats();
+      }
+    } catch (e) {
+      console.error("prune failed:", e);
+      AdminUI.toast("Prune failed — could not reach the server.", "error");
+    } finally {
+      el.btnPrune.disabled = false;
+      el.btnPrune.textContent = "📡 Prune Dead Subscriptions";
+    }
+  }
+
+  el.btnPrune.addEventListener("click", pruneSubscriptions);
 
   // ---------- init ----------
   function init() {
