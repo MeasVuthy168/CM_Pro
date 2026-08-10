@@ -2422,26 +2422,29 @@ function getOutAreaCandidates(searchTerm) {
 // Web equivalent of VBA's "Show Last Backup" — everyone who already has a
 // saved reassignment, fetched from the server (not client-side data, since
 // WrongAddress records aren't part of the arrears rows already in memory).
-async function fetchOutAreaEditedItems(searchTerm) {
+async function fetchOutAreaEditedItems(searchTerm, runCleanup) {
     const params = new URLSearchParams();
     if (searchTerm) params.set("keyword", searchTerm);
     params.set("limit", "500");
+    if (runCleanup) params.set("cleanup", "1");
 
     const res = await fetch(`${API.BASE_URL}/api/wrongaddress/list?${params.toString()}`, {
         headers: { Authorization: `Bearer ${arrearsToken}` }
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Failed to load edited list.");
-    return data.items || [];
+    return data;
 }
 
-async function renderOutAreaList() {
+async function renderOutAreaList(runCleanup = false) {
     const searchTerm = document.getElementById("outAreaSearch").value;
     const tbody = document.getElementById("outAreaTbody");
     const colThree = document.getElementById("outAreaColThree");
+    const colFour = document.getElementById("outAreaColFour");
 
     if (outAreaViewMode === "candidates") {
         colThree.textContent = "សាខាបច្ចុប្បន្ន";
+        if (colFour) colFour.hidden = true;
         const rows = getOutAreaCandidates(searchTerm);
         renderOutAreaRows(
             rows.slice(0, 300).map(row => ({
@@ -2453,18 +2456,25 @@ async function renderOutAreaList() {
             rows.length,
             (rows.length > 300)
                 ? `NoCoRespone: ${rows.length.toLocaleString()} នាក់ (បង្ហាញ 300 ដំបូង — ស្វែងរកដើម្បីតូចចង្អៀត)`
-                : `NoCoRespone: ${rows.length.toLocaleString()} នាក់`
+                : `NoCoRespone: ${rows.length.toLocaleString()} នាក់`,
+            false
         );
         return;
     }
 
     // "edited" mode
     colThree.textContent = "សាខាថ្មី";
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">កំពុងផ្ទុក...</td></tr>`;
+    if (colFour) colFour.hidden = false;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">កំពុងផ្ទុក...</td></tr>`;
     document.getElementById("outAreaListSubtitle").textContent = "";
 
     try {
-        const items = await fetchOutAreaEditedItems(searchTerm);
+        const data = await fetchOutAreaEditedItems(searchTerm, runCleanup);
+        const items = data.items || [];
+
+        if (runCleanup && data.deletedStale > 0) {
+            notify(`បានលុបកំណត់ត្រាចាស់ ${data.deletedStale} (មិនមានក្នុងបញ្ជីបច្ចុប្បន្ន)`, "info");
+        }
 
         // Cross-reference the live arrears row for each saved reassignment,
         // so tapping one opens the SAME familiar detail screen (with real
@@ -2490,14 +2500,14 @@ async function renderOutAreaList() {
             };
         });
 
-        renderOutAreaRows(mapped, mapped.length, `បានកែសម្រួល: ${mapped.length.toLocaleString()} នាក់`);
+        renderOutAreaRows(mapped, mapped.length, `បានកែសម្រួល: ${mapped.length.toLocaleString()} នាក់`, true);
     } catch (err) {
         console.error("[outArea] fetch edited list failed:", err);
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">មិនអាចផ្ទុកទិន្នន័យបានទេ</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">មិនអាចផ្ទុកទិន្នន័យបានទេ</td></tr>`;
     }
 }
 
-function renderOutAreaRows(entries, totalCount, subtitleText) {
+function renderOutAreaRows(entries, totalCount, subtitleText, showActions) {
     const tbody = document.getElementById("outAreaTbody");
     tbody.innerHTML = "";
 
@@ -2508,13 +2518,30 @@ function renderOutAreaRows(entries, totalCount, subtitleText) {
             <td>${escapeHtml(entry.customer)}</td>
             <td>${escapeHtml(entry.ldCif)}</td>
             <td>${escapeHtml(entry.thirdCol)}</td>
+            ${showActions ? `
+            <td class="outarea-row-actions">
+                <button type="button" class="outarea-row-btn" data-action="edit" title="កែសម្រួល">✏️</button>
+                <button type="button" class="outarea-row-btn outarea-row-btn-danger" data-action="delete" title="លុប">🗑️</button>
+            </td>` : ""}
         `;
         tr.addEventListener("click", () => selectOutAreaCustomer(entry.row));
+
+        if (showActions) {
+            tr.querySelector('[data-action="edit"]').addEventListener("click", (e) => {
+                e.stopPropagation();
+                selectOutAreaCustomer(entry.row);
+            });
+            tr.querySelector('[data-action="delete"]').addEventListener("click", (e) => {
+                e.stopPropagation();
+                deleteWrongAddressRecord(entry.ldCif);
+            });
+        }
+
         tbody.appendChild(tr);
     });
 
     if (!entries.length) {
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">គ្មានទិន្នន័យ</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${showActions ? 4 : 3}" style="text-align:center;">គ្មានទិន្នន័យ</td></tr>`;
     }
 
     document.getElementById("outAreaListSubtitle").textContent = subtitleText;
@@ -2526,7 +2553,7 @@ document.getElementById("btnOutAreaToggleView")?.addEventListener("click", (e) =
         ? "មើលកំណត់ត្រាដែលបានកែសម្រួល"
         : "មើលអតិថិជនត្រូវកែសម្រួល";
     document.getElementById("outAreaSearch").value = "";
-    renderOutAreaList();
+    renderOutAreaList(outAreaViewMode === "edited"); // cleanup only on switching INTO edited view
 });
 
 function populateOutAreaCoOptions(branch, preselect) {
@@ -2561,11 +2588,15 @@ function populateOutAreaCoOptions(branch, preselect) {
     }
 }
 
+let outAreaHasSavedRecord = false; // tracks whether the currently viewed customer has a real WrongAddress record to delete
+
 async function selectOutAreaCustomer(row) {
     outAreaSelectedRow = row;
+    outAreaHasSavedRecord = false;
 
     document.getElementById("outAreaListScreen").style.display = "none";
     document.getElementById("outAreaDetailScreen").style.display = "block";
+    document.getElementById("btnOutAreaDelete").style.display = "none";
 
     document.getElementById("outAreaDetailSubtitle").textContent = row.concate;
     document.getElementById("outAreaInfo").innerHTML = `
@@ -2595,12 +2626,50 @@ async function selectOutAreaCustomer(row) {
             branchSelect.value = data.newBranch;
             populateOutAreaCoOptions(data.newBranch, data.newCoResponse);
             metaEl.textContent = `មានកំណត់ត្រារួចហើយ — ធ្វើបច្ចុប្បន្នភាពដោយ ${data.uploadedBy || "-"}`;
+            outAreaHasSavedRecord = true;
+            document.getElementById("btnOutAreaDelete").style.display = "block";
         } else {
             metaEl.textContent = "";
         }
     } catch (err) {
         console.error("[outArea] lookup failed:", err);
         metaEl.textContent = "";
+    }
+}
+
+document.getElementById("btnOutAreaDelete")?.addEventListener("click", async () => {
+    if (!outAreaSelectedRow || !outAreaHasSavedRecord) return;
+    await deleteWrongAddressRecord(outAreaSelectedRow.concate);
+});
+
+// Shared by both the detail screen's Delete button and the inline 🗑️
+// buttons in the "edited" list — same confirm + API call + refresh either way.
+async function deleteWrongAddressRecord(ldCif) {
+    if (!confirm(`តើអ្នកពិតជាចង់លុបកំណត់ត្រា ${ldCif} មែនទេ?`)) return;
+
+    if (typeof showAppLoading === "function") showAppLoading("កំពុងលុប...");
+
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/wrongaddress/${encodeURIComponent(ldCif)}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${arrearsToken}` }
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.message || "Delete failed.");
+
+        notify("បានលុបដោយជោគជ័យ", "success");
+
+        // Back to the list, refreshed — same pattern as a successful Save.
+        renderOutAreaList();
+        document.getElementById("outAreaListScreen").style.display = "block";
+        document.getElementById("outAreaDetailScreen").style.display = "none";
+        outAreaSelectedRow = null;
+        outAreaHasSavedRecord = false;
+    } catch (err) {
+        console.error("[outArea] delete failed:", err);
+        notify(err.message || "លុបបរាជ័យ", "error");
+    } finally {
+        if (typeof hideAppLoading === "function") hideAppLoading();
     }
 }
 
