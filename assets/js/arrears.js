@@ -2444,6 +2444,9 @@ async function renderOutAreaList() {
     if (outAreaViewMode === "candidates") {
         colThree.textContent = "សាខាបច្ចុប្បន្ន";
         if (colFour) colFour.hidden = true;
+        document.getElementById("outAreaColCheck").hidden = true;
+        document.getElementById("outAreaBulkBar").hidden = true;
+        outAreaSelectedForDelete.clear();
         const rows = getOutAreaCandidates(searchTerm);
         renderOutAreaRows(
             rows.slice(0, 300).map(row => ({
@@ -2456,6 +2459,7 @@ async function renderOutAreaList() {
             (rows.length > 300)
                 ? `NoCoRespone: ${rows.length.toLocaleString()} នាក់ (បង្ហាញ 300 ដំបូង — ស្វែងរកដើម្បីតូចចង្អៀត)`
                 : `NoCoRespone: ${rows.length.toLocaleString()} នាក់`,
+            false,
             false
         );
         return;
@@ -2464,7 +2468,8 @@ async function renderOutAreaList() {
     // "edited" mode
     colThree.textContent = "សាខាថ្មី";
     if (colFour) colFour.hidden = false;
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">កំពុងផ្ទុក...</td></tr>`;
+    document.getElementById("outAreaColCheck").hidden = false;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">កំពុងផ្ទុក...</td></tr>`;
     document.getElementById("outAreaListSubtitle").textContent = "";
 
     try {
@@ -2497,14 +2502,24 @@ async function renderOutAreaList() {
             };
         });
 
-        renderOutAreaRows(mapped, mapped.length, `បានកែសម្រួល: ${mapped.length.toLocaleString()} នាក់`, true);
+        renderOutAreaRows(mapped, mapped.length, buildEditedSubtitle(mapped), true, true);
     } catch (err) {
         console.error("[outArea] fetch edited list failed:", err);
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">មិនអាចផ្ទុកទិន្នន័យបានទេ</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">មិនអាចផ្ទុកទិន្នន័យបានទេ</td></tr>`;
     }
 }
 
-function renderOutAreaRows(entries, totalCount, subtitleText, showActions) {
+function buildEditedSubtitle(mapped) {
+    const staleCount = mapped.filter(m => m.isStale).length;
+    const base = `បានកែសម្រួល: ${mapped.length.toLocaleString()} នាក់`;
+    return staleCount > 0
+        ? `${base} · មិនមានក្នុងបញ្ជីបច្ចុប្បន្ន: ${staleCount.toLocaleString()} នាក់`
+        : base;
+}
+
+let outAreaSelectedForDelete = new Set(); // LD-CIFs currently checked for bulk delete
+
+function renderOutAreaRows(entries, totalCount, subtitleText, showActions, showCheckbox) {
     const tbody = document.getElementById("outAreaTbody");
     tbody.innerHTML = "";
 
@@ -2513,6 +2528,8 @@ function renderOutAreaRows(entries, totalCount, subtitleText, showActions) {
         tr.style.cursor = "pointer";
         if (entry.isStale) tr.classList.add("outarea-row-stale");
         tr.innerHTML = `
+            ${showCheckbox ? `
+            <td class="outarea-row-check"><input type="checkbox" class="outarea-row-checkbox" data-ldcif="${escapeHtml(entry.ldCif)}" ${outAreaSelectedForDelete.has(entry.ldCif) ? "checked" : ""}></td>` : ""}
             <td>${escapeHtml(entry.customer)}</td>
             <td>${escapeHtml(entry.ldCif)}</td>
             <td>${escapeHtml(entry.thirdCol)}</td>
@@ -2523,6 +2540,16 @@ function renderOutAreaRows(entries, totalCount, subtitleText, showActions) {
             </td>` : ""}
         `;
         tr.addEventListener("click", () => selectOutAreaCustomer(entry.row));
+
+        if (showCheckbox) {
+            const checkbox = tr.querySelector(".outarea-row-checkbox");
+            checkbox.addEventListener("click", (e) => e.stopPropagation());
+            checkbox.addEventListener("change", () => {
+                if (checkbox.checked) outAreaSelectedForDelete.add(entry.ldCif);
+                else outAreaSelectedForDelete.delete(entry.ldCif);
+                updateOutAreaBulkBar();
+            });
+        }
 
         if (showActions) {
             tr.querySelector('[data-action="edit"]').addEventListener("click", (e) => {
@@ -2538,8 +2565,9 @@ function renderOutAreaRows(entries, totalCount, subtitleText, showActions) {
         tbody.appendChild(tr);
     });
 
+    const colCount = (showCheckbox ? 1 : 0) + (showActions ? 4 : 3);
     if (!entries.length) {
-        tbody.innerHTML = `<tr><td colspan="${showActions ? 4 : 3}" style="text-align:center;">គ្មានទិន្នន័យ</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;">គ្មានទិន្នន័យ</td></tr>`;
     }
 
     document.getElementById("outAreaListSubtitle").textContent = subtitleText;
@@ -2551,6 +2579,10 @@ document.getElementById("btnOutAreaToggleView")?.addEventListener("click", (e) =
         ? "មើលកំណត់ត្រាដែលបានកែសម្រួល"
         : "មើលអតិថិជនត្រូវកែសម្រួល";
     document.getElementById("outAreaSearch").value = "";
+    outAreaSelectedForDelete.clear();
+    document.getElementById("outAreaBulkBar").hidden = true;
+    const selectAll = document.getElementById("outAreaSelectAll");
+    if (selectAll) selectAll.checked = false;
     renderOutAreaList();
 });
 
@@ -2678,10 +2710,12 @@ document.getElementById("outAreaNewBranch")?.addEventListener("change", (e) => {
 function openOutAreaModal() {
     outAreaSelectedRow = null;
     outAreaViewMode = "candidates";
+    outAreaSelectedForDelete.clear();
     document.getElementById("outAreaSearch").value = "";
     document.getElementById("btnOutAreaToggleView").textContent = "មើលកំណត់ត្រាដែលបានកែសម្រួល";
     document.getElementById("outAreaListScreen").style.display = "block";
     document.getElementById("outAreaDetailScreen").style.display = "none";
+    document.getElementById("outAreaBulkBar").hidden = true;
     renderOutAreaList();
     document.getElementById("outAreaBackdrop").classList.add("show");
 }
@@ -2696,8 +2730,60 @@ document.getElementById("btnOutArea")?.addEventListener("click", () => {
 });
 
 document.getElementById("btnOutAreaClose")?.addEventListener("click", closeOutAreaModal);
+document.getElementById("btnOutAreaCloseX")?.addEventListener("click", closeOutAreaModal);
 document.getElementById("outAreaBackdrop")?.addEventListener("click", (e) => {
     if (e.target.id === "outAreaBackdrop") closeOutAreaModal();
+});
+
+document.getElementById("outAreaSelectAll")?.addEventListener("change", (e) => {
+    const checkboxes = document.querySelectorAll(".outarea-row-checkbox");
+    checkboxes.forEach(cb => {
+        cb.checked = e.target.checked;
+        const ldCif = cb.dataset.ldcif;
+        if (e.target.checked) outAreaSelectedForDelete.add(ldCif);
+        else outAreaSelectedForDelete.delete(ldCif);
+    });
+    updateOutAreaBulkBar();
+});
+
+function updateOutAreaBulkBar() {
+    const bar = document.getElementById("outAreaBulkBar");
+    const countEl = document.getElementById("outAreaBulkCount");
+    const count = outAreaSelectedForDelete.size;
+
+    bar.hidden = count === 0;
+    countEl.textContent = `បានជ្រើសរើស ${count.toLocaleString()} នាក់`;
+}
+
+document.getElementById("btnOutAreaBulkDelete")?.addEventListener("click", async () => {
+    const ldCifs = [...outAreaSelectedForDelete];
+    if (!ldCifs.length) return;
+
+    if (!confirm(`តើអ្នកពិតជាចង់លុបកំណត់ត្រាដែលបានជ្រើសរើសចំនួន ${ldCifs.length} មែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`)) return;
+
+    if (typeof showAppLoading === "function") showAppLoading("កំពុងលុប...");
+
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/wrongaddress/bulk-delete`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${arrearsToken}`
+            },
+            body: JSON.stringify({ ldCifs })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.message || "Bulk delete failed.");
+
+        notify(`បានលុប ${data.deletedCount} កំណត់ត្រា`, "success");
+        outAreaSelectedForDelete.clear();
+        renderOutAreaList();
+    } catch (err) {
+        console.error("[outArea] bulk delete failed:", err);
+        notify(err.message || "លុបបរាជ័យ", "error");
+    } finally {
+        if (typeof hideAppLoading === "function") hideAppLoading();
+    }
 });
 
 document.getElementById("outAreaSearch")?.addEventListener("input", () => {
