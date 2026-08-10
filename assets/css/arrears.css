@@ -2421,3 +2421,74 @@ display:none !important;
     color:#ff6b6b;
     background:rgba(255,107,107,.10);
 }
+
+/* ---- Sticky header: title + always-reachable close button, so an
+   800-row list doesn't force scrolling all the way down just to close ---- */
+.outarea-sticky-header{
+    position:sticky;
+    top:-18px;
+    margin:-18px -20px 10px;
+    padding:16px 16px 12px 20px;
+    background:var(--arr-card-bg, #fff);
+    z-index:5;
+    border-bottom:1px solid var(--arr-border, #e2e6ed);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+}
+.outarea-close-x{
+    flex-shrink:0;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    border:1px solid var(--arr-border, #e2e6ed);
+    background:var(--arr-card-bg, #fff);
+    color:var(--arr-text, #1c2333);
+    font-size:15px;
+    line-height:1;
+    cursor:pointer;
+}
+.outarea-close-x:active{ transform:scale(.93); }
+
+/* ---- Checkbox column + bulk delete bar ---- */
+.outarea-row-check,
+#outAreaColCheck{
+    width:34px;
+    text-align:center !important;
+}
+.outarea-row-checkbox,
+#outAreaSelectAll{
+    width:18px;
+    height:18px;
+}
+
+.outarea-bulk-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:10px;
+    padding:10px 12px;
+    border-radius:10px;
+    background:rgba(212,175,55,.15);
+    border:1px solid var(--arr-border, #e2e6ed);
+    font-size:13px;
+    font-weight:600;
+}
+.outarea-bulk-delete-btn{
+    flex-shrink:0;
+    padding:8px 12px;
+    border-radius:8px;
+    border:1px solid #e08a8a;
+    background:#fff;
+    color:#c0392b;
+    font-family:'KRASAR',sans-serif;
+    font-size:12.5px;
+    font-weight:700;
+    cursor:pointer;
+}
+.outarea-bulk-delete-btn:active{ transform:scale(.97); }
+[data-theme="dark"] .outarea-bulk-delete-btn{
+    background:#1c2333;
+}
