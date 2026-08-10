@@ -2409,3 +2409,15 @@ display:none !important;
     background:#1c2333;
     border-color:#3a4258;
 }
+
+/* Rows whose LD-CIF isn't in the currently-loaded arrears data — likely a
+   closed/removed loan. Flagged visually so it's easy to spot and manually
+   review/delete via the 🗑️ button (no auto-delete anymore). */
+.outarea-row-stale td{
+    color:#c0392b;
+    background:rgba(192,57,43,.06);
+}
+[data-theme="dark"] .outarea-row-stale td{
+    color:#ff6b6b;
+    background:rgba(255,107,107,.10);
+}
