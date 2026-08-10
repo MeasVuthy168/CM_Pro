@@ -2422,11 +2422,10 @@ function getOutAreaCandidates(searchTerm) {
 // Web equivalent of VBA's "Show Last Backup" — everyone who already has a
 // saved reassignment, fetched from the server (not client-side data, since
 // WrongAddress records aren't part of the arrears rows already in memory).
-async function fetchOutAreaEditedItems(searchTerm, runCleanup) {
+async function fetchOutAreaEditedItems(searchTerm) {
     const params = new URLSearchParams();
     if (searchTerm) params.set("keyword", searchTerm);
     params.set("limit", "500");
-    if (runCleanup) params.set("cleanup", "1");
 
     const res = await fetch(`${API.BASE_URL}/api/wrongaddress/list?${params.toString()}`, {
         headers: { Authorization: `Bearer ${arrearsToken}` }
@@ -2436,7 +2435,7 @@ async function fetchOutAreaEditedItems(searchTerm, runCleanup) {
     return data;
 }
 
-async function renderOutAreaList(runCleanup = false) {
+async function renderOutAreaList() {
     const searchTerm = document.getElementById("outAreaSearch").value;
     const tbody = document.getElementById("outAreaTbody");
     const colThree = document.getElementById("outAreaColThree");
@@ -2469,12 +2468,8 @@ async function renderOutAreaList(runCleanup = false) {
     document.getElementById("outAreaListSubtitle").textContent = "";
 
     try {
-        const data = await fetchOutAreaEditedItems(searchTerm, runCleanup);
+        const data = await fetchOutAreaEditedItems(searchTerm);
         const items = data.items || [];
-
-        if (runCleanup && data.deletedStale > 0) {
-            notify(`បានលុបកំណត់ត្រាចាស់ ${data.deletedStale} (មិនមានក្នុងបញ្ជីបច្ចុប្បន្ន)`, "info");
-        }
 
         // Cross-reference the live arrears row for each saved reassignment,
         // so tapping one opens the SAME familiar detail screen (with real
@@ -2553,7 +2548,7 @@ document.getElementById("btnOutAreaToggleView")?.addEventListener("click", (e) =
         ? "មើលកំណត់ត្រាដែលបានកែសម្រួល"
         : "មើលអតិថិជនត្រូវកែសម្រួល";
     document.getElementById("outAreaSearch").value = "";
-    renderOutAreaList(outAreaViewMode === "edited"); // cleanup only on switching INTO edited view
+    renderOutAreaList();
 });
 
 function populateOutAreaCoOptions(branch, preselect) {
