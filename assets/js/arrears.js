@@ -2425,7 +2425,7 @@ function getOutAreaCandidates(searchTerm) {
 async function fetchOutAreaEditedItems(searchTerm) {
     const params = new URLSearchParams();
     if (searchTerm) params.set("keyword", searchTerm);
-    params.set("limit", "500");
+    params.set("limit", "2000"); // matches the backend's max cap — shows the full list, not just the newest 500
 
     const res = await fetch(`${API.BASE_URL}/api/wrongaddress/list?${params.toString()}`, {
         headers: { Authorization: `Bearer ${arrearsToken}` }
@@ -2478,6 +2478,7 @@ async function renderOutAreaList() {
         // currently-loaded arrears data for any reason.
         const mapped = items.map(item => {
             const liveRow = allRows.find(r => r.concate === item.ldCif);
+            const isStale = !liveRow;
             const row = liveRow || {
                 concate: item.ldCif,
                 customer: "(មិនមានក្នុងបញ្ជីបច្ចុប្បន្ន)",
@@ -2491,6 +2492,7 @@ async function renderOutAreaList() {
                 customer: row.customer,
                 ldCif: item.ldCif,
                 thirdCol: item.newBranch,
+                isStale,
                 row
             };
         });
@@ -2509,6 +2511,7 @@ function renderOutAreaRows(entries, totalCount, subtitleText, showActions) {
     entries.forEach(entry => {
         const tr = document.createElement("tr");
         tr.style.cursor = "pointer";
+        if (entry.isStale) tr.classList.add("outarea-row-stale");
         tr.innerHTML = `
             <td>${escapeHtml(entry.customer)}</td>
             <td>${escapeHtml(entry.ldCif)}</td>
