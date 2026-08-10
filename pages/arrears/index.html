@@ -385,7 +385,11 @@ href="../../assets/css/arrears.css">
   <!-- LIST SCREEN -->
   <div id="outAreaListScreen">
 
-    <div class="reason-title">កែសម្រួលArrearក្រៅតំបន់</div>
+    <div class="outarea-sticky-header">
+      <div class="reason-title" style="margin:0;">កែសម្រួលArrearក្រៅតំបន់</div>
+      <button type="button" id="btnOutAreaCloseX" class="outarea-close-x" aria-label="បិទ">✕</button>
+    </div>
+
     <div class="reason-subtitle" id="outAreaListSubtitle">-</div>
 
     <div class="reason-group">
@@ -397,9 +401,15 @@ href="../../assets/css/arrears.css">
       មើលកំណត់ត្រាដែលបានកែសម្រួល
     </button>
 
+    <div id="outAreaBulkBar" class="outarea-bulk-bar" hidden>
+      <span id="outAreaBulkCount">0</span>
+      <button type="button" id="btnOutAreaBulkDelete" class="outarea-bulk-delete-btn">🗑️ លុបដែលបានជ្រើសរើស</button>
+    </div>
+
     <table class="noreason-table">
       <thead>
         <tr>
+          <th id="outAreaColCheck" hidden><input type="checkbox" id="outAreaSelectAll"></th>
           <th>ឈ្មោះ</th>
           <th>LD-CIF</th>
           <th id="outAreaColThree">សាខាបច្ចុប្បន្ន</th>
