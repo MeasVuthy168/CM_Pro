@@ -2571,6 +2571,15 @@ function renderOutAreaRows(entries, totalCount, subtitleText, showActions, showC
     }
 
     document.getElementById("outAreaListSubtitle").textContent = subtitleText;
+
+    // Keep the bulk-delete bar and "select all" checkbox in sync with the
+    // actual selection state after every render — without this, both stay
+    // showing stale count/visibility from before (e.g. after a successful
+    // delete clears the selection, or after switching back to candidates
+    // mode where there's nothing to select at all).
+    const selectAll = document.getElementById("outAreaSelectAll");
+    if (selectAll) selectAll.checked = false;
+    updateOutAreaBulkBar();
 }
 
 document.getElementById("btnOutAreaToggleView")?.addEventListener("click", (e) => {
