@@ -2922,6 +2922,28 @@ document.getElementById("btnOutAreaSave")?.addEventListener("click", async () =>
 });
 
 // ========================================
+// DEBUG: OS lookup diagnostic (temporary, admin-only)
+// ========================================
+document.getElementById("btnOutAreaDebugRun")?.addEventListener("click", async () => {
+    const ldCif = document.getElementById("outAreaDebugLdCif").value.trim();
+    const out = document.getElementById("outAreaDebugOutput");
+    if (!ldCif) return;
+
+    out.hidden = false;
+    out.value = "កំពុងពិនិត្យ...";
+
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/grid/debug-lookup?ldCif=${encodeURIComponent(ldCif)}`, {
+            headers: { Authorization: `Bearer ${arrearsToken}` }
+        });
+        const data = await res.json();
+        out.value = JSON.stringify(data, null, 2);
+    } catch (err) {
+        out.value = "Failed: " + err.message;
+    }
+});
+
+// ========================================
 // PAGE READY
 // ========================================
 
