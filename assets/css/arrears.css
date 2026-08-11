@@ -2505,3 +2505,33 @@ display:none !important;
 [data-theme="dark"] .outarea-bulk-delete-btn{
     background:#1c2333;
 }
+
+.outarea-debug-box{
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px dashed var(--arr-border, #e2e6ed);
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}
+.outarea-debug-box input{
+    padding:8px 10px;
+    border-radius:8px;
+    border:1px solid var(--arr-border, #e2e6ed);
+    background:var(--arr-card-bg, #fff);
+    color:var(--arr-text, #1c2333);
+    font-size:13px;
+}
+.outarea-debug-output{
+    width:100%;
+    min-height:180px;
+    font-family:monospace;
+    font-size:11px;
+    line-height:1.4;
+    padding:8px;
+    border-radius:8px;
+    border:1px solid var(--arr-border, #e2e6ed);
+    background:var(--arr-bg, #f4f6fb);
+    color:var(--arr-text, #1c2333);
+    resize:vertical;
+}
