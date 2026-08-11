@@ -427,6 +427,16 @@ href="../../assets/css/arrears.css">
       <button id="btnOutAreaClose">Close</button>
     </div>
 
+    <!-- Diagnostic tool for investigating why a specific LD-CIF isn't
+         matching against OS as expected — admin only, temporary until the
+         root cause of the Paid-off miscount is confirmed and fixed. -->
+    <div class="outarea-debug-box">
+      <label for="outAreaDebugLdCif" style="font-size:12px; font-weight:600;">🔍 Debug OS Lookup (admin)</label>
+      <input type="text" id="outAreaDebugLdCif" placeholder="បិទភ្ជាប់ LD-CIF ដើម្បីពិនិត្យ..." autocomplete="off">
+      <button type="button" id="btnOutAreaDebugRun" class="outarea-toggle-view-btn">រត់ការពិនិត្យ</button>
+      <textarea id="outAreaDebugOutput" class="outarea-debug-output" readonly hidden></textarea>
+    </div>
+
   </div>
 
   <!-- DETAIL / REASSIGN SCREEN -->
