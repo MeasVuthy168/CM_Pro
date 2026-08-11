@@ -2446,6 +2446,7 @@ async function renderOutAreaList() {
         if (colFour) colFour.hidden = true;
         document.getElementById("outAreaColCheck").hidden = true;
         document.getElementById("outAreaBulkBar").hidden = true;
+        document.getElementById("btnOutAreaSelectPaidOff").hidden = true;
         outAreaSelectedForDelete.clear();
         const rows = getOutAreaCandidates(searchTerm);
         renderOutAreaRows(
@@ -2469,6 +2470,7 @@ async function renderOutAreaList() {
     colThree.textContent = "សាខាថ្មី";
     if (colFour) colFour.hidden = false;
     document.getElementById("outAreaColCheck").hidden = false;
+    document.getElementById("btnOutAreaSelectPaidOff").hidden = false;
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">កំពុងផ្ទុក...</td></tr>`;
     document.getElementById("outAreaListSubtitle").textContent = "";
 
@@ -2476,32 +2478,51 @@ async function renderOutAreaList() {
         const data = await fetchOutAreaEditedItems(searchTerm);
         const items = data.items || [];
 
-        // Cross-reference the live arrears row for each saved reassignment,
-        // so tapping one opens the SAME familiar detail screen (with real
-        // Name/Address/AccountLoan) rather than a stripped-down version.
-        // Falls back to a partial synthetic row if the loan isn't in the
-        // currently-loaded arrears data for any reason.
+        // For anything not in currently-loaded arrears data, batch-lookup
+        // the REAL data from OS — exactly what the VBA's own VLOOKUP does.
+        // Found in OS -> real Name/Address/Branch. Not found -> "Paid off".
+        // (No more invented placeholder text — your VBA only has these two
+        // outcomes, so the web version shouldn't show a third made-up one.)
+        const missingLdCifs = items
+            .filter(item => !allRows.find(r => r.concate === item.ldCif))
+            .map(item => item.ldCif);
+        const osLookup = await fetchOsLookupBatch(missingLdCifs);
+
         const mapped = items.map(item => {
             const liveRow = allRows.find(r => r.concate === item.ldCif);
-            const isStale = !liveRow;
-            const row = liveRow || {
-                concate: item.ldCif,
-                customer: "(មិនមានក្នុងបញ្ជីបច្ចុប្បន្ន)",
-                location: "",
-                accountLoan: "",
-                branch: item.newBranch,
-                coId: item.newCoResponse,
-                coResponse: item.newCoResponse
-            };
+            const osMatch = osLookup[item.ldCif];
+            const isPaidOff = !liveRow && !osMatch;
+
+            const row = liveRow || (osMatch
+                ? {
+                    concate: item.ldCif,
+                    customer: osMatch.name || "(គ្មានឈ្មោះក្នុង OS)",
+                    location: osMatch.address || "",
+                    accountLoan: "",
+                    branch: osMatch.branch || item.newBranch,
+                    branchCode: osMatch.branchCode || "",
+                    coId: osMatch.coOwner || item.newCoResponse,
+                    coResponse: osMatch.coOwner || item.newCoResponse
+                }
+                : {
+                    concate: item.ldCif,
+                    customer: "Paid off (បានទូទាត់)",
+                    location: "",
+                    accountLoan: "",
+                    branch: item.newBranch,
+                    coId: item.newCoResponse,
+                    coResponse: item.newCoResponse
+                });
             return {
                 customer: row.customer,
                 ldCif: item.ldCif,
                 thirdCol: item.newBranch,
-                isStale,
+                isPaidOff,
                 row
             };
         });
 
+        outAreaPaidOffLdCifs = new Set(mapped.filter(m => m.isPaidOff).map(m => m.ldCif));
         renderOutAreaRows(mapped, mapped.length, buildEditedSubtitle(mapped), true, true);
     } catch (err) {
         console.error("[outArea] fetch edited list failed:", err);
@@ -2509,15 +2530,34 @@ async function renderOutAreaList() {
     }
 }
 
+async function fetchOsLookupBatch(ldCifs) {
+    if (!ldCifs.length) return {};
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/grid/lookup-batch`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${arrearsToken}`
+            },
+            body: JSON.stringify({ ldCifs })
+        });
+        const data = await res.json();
+        return data.ok ? (data.items || {}) : {};
+    } catch (err) {
+        console.error("[outArea] OS lookup-batch failed:", err);
+        return {}; // fail safe — everything falls back to "Paid off" rather than crashing
+    }
+}
+
 function buildEditedSubtitle(mapped) {
-    const staleCount = mapped.filter(m => m.isStale).length;
-    const base = `បានកែសម្រួល: ${mapped.length.toLocaleString()} នាក់`;
-    return staleCount > 0
-        ? `${base} · មិនមានក្នុងបញ្ជីបច្ចុប្បន្ន: ${staleCount.toLocaleString()} នាក់`
-        : base;
+    const paidOffCount = mapped.filter(m => m.isPaidOff).length;
+    let text = `បានកែសម្រួល: ${mapped.length.toLocaleString()} នាក់`;
+    if (paidOffCount > 0) text += ` · Paid off: ${paidOffCount.toLocaleString()} នាក់`;
+    return text;
 }
 
 let outAreaSelectedForDelete = new Set(); // LD-CIFs currently checked for bulk delete
+let outAreaPaidOffLdCifs = new Set();     // LD-CIFs marked "Paid off" in the current render — powers the quick "select all Paid off" action
 
 function renderOutAreaRows(entries, totalCount, subtitleText, showActions, showCheckbox) {
     const tbody = document.getElementById("outAreaTbody");
@@ -2526,7 +2566,7 @@ function renderOutAreaRows(entries, totalCount, subtitleText, showActions, showC
     entries.forEach(entry => {
         const tr = document.createElement("tr");
         tr.style.cursor = "pointer";
-        if (entry.isStale) tr.classList.add("outarea-row-stale");
+        if (entry.isPaidOff) tr.classList.add("outarea-row-paidoff");
         tr.innerHTML = `
             ${showCheckbox ? `
             <td class="outarea-row-check"><input type="checkbox" class="outarea-row-checkbox" data-ldcif="${escapeHtml(entry.ldCif)}" ${outAreaSelectedForDelete.has(entry.ldCif) ? "checked" : ""}></td>` : ""}
@@ -2643,6 +2683,7 @@ async function selectOutAreaCustomer(row) {
         <div class="outarea-info-row"><strong>អាសយដ្ឋាន:</strong> ${escapeHtml(row.location)}</div>
         <div class="outarea-info-row"><strong>គណនីកម្ចី:</strong> ${escapeHtml(row.accountLoan)}</div>
         <div class="outarea-info-row"><strong>សាខាបច្ចុប្បន្ន:</strong> ${escapeHtml(row.branch)}</div>
+        ${row.branchCode ? `<div class="outarea-info-row"><strong>លេខកូដសាខា:</strong> ${escapeHtml(row.branchCode)}</div>` : ""}
         <div class="outarea-info-row"><strong>ភ្នាក់ងារបច្ចុប្បន្ន:</strong> ${escapeHtml(row.coId)}</div>
     `;
 
@@ -2720,6 +2761,7 @@ function openOutAreaModal() {
     outAreaSelectedRow = null;
     outAreaViewMode = "candidates";
     outAreaSelectedForDelete.clear();
+    outAreaPaidOffLdCifs.clear();
     document.getElementById("outAreaSearch").value = "";
     document.getElementById("btnOutAreaToggleView").textContent = "មើលកំណត់ត្រាដែលបានកែសម្រួល";
     document.getElementById("outAreaListScreen").style.display = "block";
@@ -2751,6 +2793,18 @@ document.getElementById("outAreaSelectAll")?.addEventListener("change", (e) => {
         const ldCif = cb.dataset.ldcif;
         if (e.target.checked) outAreaSelectedForDelete.add(ldCif);
         else outAreaSelectedForDelete.delete(ldCif);
+    });
+    updateOutAreaBulkBar();
+});
+
+document.getElementById("btnOutAreaSelectPaidOff")?.addEventListener("click", () => {
+    const checkboxes = document.querySelectorAll(".outarea-row-checkbox");
+    checkboxes.forEach(cb => {
+        const ldCif = cb.dataset.ldcif;
+        if (outAreaPaidOffLdCifs.has(ldCif)) {
+            cb.checked = true;
+            outAreaSelectedForDelete.add(ldCif);
+        }
     });
     updateOutAreaBulkBar();
 });
