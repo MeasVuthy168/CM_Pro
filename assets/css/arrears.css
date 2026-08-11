@@ -2476,6 +2476,7 @@ display:none !important;
     font-size:13px;
     font-weight:600;
 }
+.outarea-bulk-bar[hidden]{ display:none; }
 .outarea-bulk-delete-btn{
     flex-shrink:0;
     padding:8px 12px;
