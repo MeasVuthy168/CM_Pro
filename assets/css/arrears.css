@@ -2410,9 +2410,8 @@ display:none !important;
     border-color:#3a4258;
 }
 
-/* Rows whose LD-CIF isn't in the currently-loaded arrears data — likely a
-   closed/removed loan. Flagged visually so it's easy to spot and manually
-   review/delete via the 🗑️ button (no auto-delete anymore). */
+/* Rows whose LD-CIF isn't in the currently-loaded arrears data AND is still
+   an active loan in OS — genuinely worth a look, kept red/attention-grabbing. */
 .outarea-row-stale td{
     color:#c0392b;
     background:rgba(192,57,43,.06);
@@ -2420,6 +2419,18 @@ display:none !important;
 [data-theme="dark"] .outarea-row-stale td{
     color:#ff6b6b;
     background:rgba(255,107,107,.10);
+}
+
+/* Rows for a loan that's no longer in OS at all — inferred "Paid off",
+   same logic as the VBA's own VLOOKUP-against-OS fallback. This is a GOOD
+   outcome, not a problem, so it's deliberately calm/muted, not red. */
+.outarea-row-paidoff td{
+    color:#5b7a63;
+    background:rgba(91,122,99,.07);
+}
+[data-theme="dark"] .outarea-row-paidoff td{
+    color:#8fbf9a;
+    background:rgba(143,191,154,.10);
 }
 
 /* ---- Sticky header: title + always-reachable close button, so an
