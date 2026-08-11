@@ -2760,7 +2760,10 @@ function updateOutAreaBulkBar() {
     const countEl = document.getElementById("outAreaBulkCount");
     const count = outAreaSelectedForDelete.size;
 
-    bar.hidden = count === 0;
+    // Only ever visible in the "edited" view — the "candidates" view has no
+    // checkboxes at all, so the bar has no business showing there regardless
+    // of count (defensive, in case selection state ever gets out of sync).
+    bar.hidden = (outAreaViewMode !== "edited") || count === 0;
     countEl.textContent = `បានជ្រើសរើស ${count.toLocaleString()} នាក់`;
 }
 
