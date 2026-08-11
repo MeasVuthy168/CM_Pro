@@ -2365,6 +2365,7 @@ display:none !important;
     cursor:pointer;
 }
 .outarea-toggle-view-btn:active{ transform:scale(.98); }
+.outarea-toggle-view-btn[hidden]{ display:none; }
 
 .outarea-delete-btn{
     display:block;
