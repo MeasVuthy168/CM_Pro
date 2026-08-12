@@ -2486,12 +2486,21 @@ async function renderOutAreaList() {
         const missingLdCifs = items
             .filter(item => !allRows.find(r => r.concate === item.ldCif))
             .map(item => item.ldCif);
-        const osLookup = await fetchOsLookupBatch(missingLdCifs);
+        const { items: osLookup, failedLdCifs } = await fetchOsLookupBatch(missingLdCifs);
+
+        if (failedLdCifs.size > 0) {
+            notify(`ការត្រួតពិនិត្យ OS បរាជ័យសម្រាប់ ${failedLdCifs.size} កំណត់ត្រា — មិនបានចាត់ថ្នាក់ជា Paid off ទេ (ដើម្បីជៀសវាងកំហុស)`, "error");
+        }
 
         const mapped = items.map(item => {
             const liveRow = allRows.find(r => r.concate === item.ldCif);
             const osMatch = osLookup[item.ldCif];
-            const isPaidOff = !liveRow && !osMatch;
+            const lookupFailed = failedLdCifs.has(item.ldCif);
+            // Only ever mark "Paid off" when the OS check actually ran and
+            // genuinely found nothing — never as a side effect of a failed
+            // request. A failed check falls back to the same honest "not
+            // currently in arrears, status unknown" state instead.
+            const isPaidOff = !liveRow && !osMatch && !lookupFailed;
 
             const row = liveRow || (osMatch
                 ? {
@@ -2506,7 +2515,7 @@ async function renderOutAreaList() {
                 }
                 : {
                     concate: item.ldCif,
-                    customer: "Paid off (បានទូទាត់)",
+                    customer: lookupFailed ? "(មិនអាចត្រួតពិនិត្យបាន)" : "Paid off (បានទូទាត់)",
                     location: "",
                     accountLoan: "",
                     branch: item.newBranch,
@@ -2530,29 +2539,47 @@ async function renderOutAreaList() {
     }
 }
 
+// Chunked (200 at a time) and resilient — a slow/failed chunk no longer
+// silently marks everything in it as "Paid off". Each ldCif that couldn't
+// actually be checked comes back in failedLdCifs so the caller can show an
+// honest "unknown" state instead of a confident wrong answer.
 async function fetchOsLookupBatch(ldCifs) {
-    if (!ldCifs.length) return {};
-    try {
-        const res = await fetch(`${API.BASE_URL}/api/grid/lookup-batch`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${arrearsToken}`
-            },
-            body: JSON.stringify({ ldCifs })
-        });
-        const data = await res.json();
-        return data.ok ? (data.items || {}) : {};
-    } catch (err) {
-        console.error("[outArea] OS lookup-batch failed:", err);
-        return {}; // fail safe — everything falls back to "Paid off" rather than crashing
+    const CHUNK_SIZE = 200;
+    const items = {};
+    const failedLdCifs = new Set();
+
+    for (let i = 0; i < ldCifs.length; i += CHUNK_SIZE) {
+        const chunk = ldCifs.slice(i, i + CHUNK_SIZE);
+        try {
+            const res = await fetch(`${API.BASE_URL}/api/grid/lookup-batch`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${arrearsToken}`
+                },
+                body: JSON.stringify({ ldCifs: chunk })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                Object.assign(items, data.items || {});
+            } else {
+                chunk.forEach(c => failedLdCifs.add(c));
+            }
+        } catch (err) {
+            console.error("[outArea] OS lookup-batch chunk failed:", err);
+            chunk.forEach(c => failedLdCifs.add(c));
+        }
     }
+
+    return { items, failedLdCifs };
 }
 
 function buildEditedSubtitle(mapped) {
     const paidOffCount = mapped.filter(m => m.isPaidOff).length;
+    const unknownCount = mapped.filter(m => m.customer === "(មិនអាចត្រួតពិនិត្យបាន)").length;
     let text = `បានកែសម្រួល: ${mapped.length.toLocaleString()} នាក់`;
     if (paidOffCount > 0) text += ` · Paid off: ${paidOffCount.toLocaleString()} នាក់`;
+    if (unknownCount > 0) text += ` · មិនអាចត្រួតពិនិត្យបាន: ${unknownCount.toLocaleString()} នាក់`;
     return text;
 }
 
