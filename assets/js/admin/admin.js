@@ -24,7 +24,18 @@
     sparkline: [], // [{t, mbPerMin}]
     timer: null,
     fetching: false,
-    disabledRoutes: new Set() // "METHOD /path" — loaded once, updated instantly on toggle
+    disabledRoutes: new Set(), // "METHOD /path" — loaded once, updated instantly on toggle
+    routeAllowedRoles: new Map() // "METHOD /path" -> array of role strings, only present when restricted
+  };
+
+  const ALL_ROLES = ["admin", "user", "viewer_staff", "viewer_manager_a", "viewer_manager_b", "viewer_manager_c"];
+  const ROLE_LABELS = {
+    admin: "Admin",
+    user: "User",
+    viewer_staff: "Viewer Staff",
+    viewer_manager_a: "Viewer Manager A",
+    viewer_manager_b: "Viewer Manager B",
+    viewer_manager_c: "Viewer Manager C"
   };
 
   // ---------- DOM refs ----------
@@ -369,6 +380,12 @@
             : `<button type="button" class="adm-toggle-switch${isDisabled ? "" : " adm-toggle-on"}" data-method="${escapeHtml(method)}" data-path="${escapeHtml(path)}" role="switch" aria-checked="${!isDisabled}"><span class="adm-toggle-knob"></span></button>`
           }
         </td>
+        <td>
+          ${isProtected
+            ? `<span class="adm-badge adm-badge-status-inactive">Protected</span>`
+            : `<button type="button" class="adm-roles-btn">${roleSummaryLabel(key)}</button>`
+          }
+        </td>
       `;
 
       const toggleBtn = tr.querySelector(".adm-toggle-switch");
@@ -376,8 +393,20 @@
         toggleBtn.addEventListener("click", () => toggleRoute(toggleBtn, method, path));
       }
 
+      const rolesBtn = tr.querySelector(".adm-roles-btn");
+      if (rolesBtn) {
+        rolesBtn.addEventListener("click", () => openRoleEditor(method, path));
+      }
+
       el.tableBody.appendChild(tr);
     });
+  }
+
+  function roleSummaryLabel(key) {
+    const roles = state.routeAllowedRoles.get(key);
+    if (!roles || roles.length === 0) return "All roles";
+    if (roles.length === 1) return ROLE_LABELS[roles[0]] || roles[0];
+    return `${roles.length} roles`;
   }
 
   const PROTECTED_ROUTE_KEYS = new Set([
@@ -397,6 +426,75 @@
     } catch (e) {
       console.error("loadDisabledRoutes failed:", e);
     }
+  }
+
+  async function loadRouteAllowedRoles() {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/route-roles`, { headers: authHeaders() });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.message);
+      state.routeAllowedRoles = new Map(
+        (data.routes || []).map(r => [`${r.method} ${r.path}`, r.allowedRoles])
+      );
+    } catch (e) {
+      console.error("loadRouteAllowedRoles failed:", e);
+    }
+  }
+
+  function openRoleEditor(method, path) {
+    const key = `${method} ${path}`;
+    const currentRoles = new Set(state.routeAllowedRoles.get(key) || []); // empty = all roles allowed
+
+    const bodyNode = document.createElement("div");
+    bodyNode.className = "adm-role-editor";
+    bodyNode.innerHTML = `
+      <p class="adm-role-editor-hint">
+        <code>${escapeHtml(method)} ${escapeHtml(path)}</code><br>
+        Leave everything unchecked (or check all) to allow every role. Check specific roles to restrict this endpoint to only them.
+      </p>
+      <div class="adm-role-checklist">
+        ${ALL_ROLES.map(role => `
+          <label class="adm-role-check-row">
+            <input type="checkbox" value="${role}" ${currentRoles.has(role) ? "checked" : ""}>
+            <span>${ROLE_LABELS[role]}</span>
+          </label>
+        `).join("")}
+      </div>
+      <div class="adm-role-editor-actions">
+        <button type="button" id="admRoleEditorCancel">Cancel</button>
+        <button type="button" id="admRoleEditorSave" class="adm-role-editor-save">Save</button>
+      </div>
+    `;
+
+    const { body: mountedBody } = AdminUI.openModal({ title: "Allowed Roles", bodyNode });
+
+    mountedBody.querySelector("#admRoleEditorCancel").addEventListener("click", () => AdminUI.closeModal());
+    mountedBody.querySelector("#admRoleEditorSave").addEventListener("click", async () => {
+      const selected = [...mountedBody.querySelectorAll(".adm-role-checklist input:checked")].map(cb => cb.value);
+
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/route-roles/set`, {
+          method: "POST",
+          headers: { ...authHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify({ method, path, allowedRoles: selected })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Failed to update.", "error");
+
+        if (data.allowedRoles && data.allowedRoles.length > 0) {
+          state.routeAllowedRoles.set(key, data.allowedRoles);
+        } else {
+          state.routeAllowedRoles.delete(key);
+        }
+
+        AdminUI.closeModal();
+        AdminUI.toast(`${key} access updated.`, "success");
+        renderTable(state.lastPayload?.topRoutes || []);
+      } catch (e) {
+        console.error("route-roles/set failed:", e);
+        AdminUI.toast("Could not reach the server.", "error");
+      }
+    });
   }
 
   async function toggleRoute(btn, method, path) {
@@ -469,6 +567,7 @@
       el.userLabel.textContent = window.CMAdmin.fullname || window.CMAdmin.username || "Admin";
     }
     await loadDisabledRoutes(); // must resolve first so renderTable() shows correct toggle state
+    await loadRouteAllowedRoles(); // same — must resolve before first renderTable() call
     fetchStats();
     state.timer = setInterval(fetchStats, POLL_MS);
 
