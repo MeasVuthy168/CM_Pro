@@ -356,6 +356,11 @@
       const avg = r.count ? r.bytes / r.count : 0;
       const pct = ((r.bytes / grandTotal) * 100).toFixed(1);
 
+      // "OUT <hostname>" rows are outbound calls THIS server made (to
+      // GitHub, Render's own metrics API, etc.) — not a real Express route,
+      // so neither the kill switch nor role restriction applies to them.
+      const isOutbound = r.route.startsWith("OUT ");
+
       const spaceIdx = r.route.indexOf(" ");
       const method = r.route.slice(0, spaceIdx);
       const path = r.route.slice(spaceIdx + 1);
@@ -366,7 +371,7 @@
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td class="adm-td-rank">${i + 1}</td>
-        <td class="adm-td-route">${escapeHtml(r.route)}</td>
+        <td class="adm-td-route">${escapeHtml(r.route)}${isOutbound ? ' <span class="adm-badge adm-badge-status-inactive" title="Outbound call this server made — not one of its own routes">Outbound</span>' : ""}</td>
         <td>${fmtMb(r.mb)}</td>
         <td>${r.count.toLocaleString()}</td>
         <td>${fmtMb(avg / 1024 / 1024)}</td>
@@ -375,13 +380,17 @@
           <span class="adm-pct-label">${pct}%</span>
         </td>
         <td>
-          ${isProtected
+          ${isOutbound
+            ? `<span class="adm-badge adm-badge-status-inactive" title="Kill switch only applies to this server's own routes">N/A</span>`
+            : isProtected
             ? `<span class="adm-badge adm-badge-status-inactive" title="Login/kill-switch routes can't be disabled">Protected</span>`
             : `<button type="button" class="adm-toggle-switch${isDisabled ? "" : " adm-toggle-on"}" data-method="${escapeHtml(method)}" data-path="${escapeHtml(path)}" role="switch" aria-checked="${!isDisabled}"><span class="adm-toggle-knob"></span></button>`
           }
         </td>
         <td>
-          ${isProtected
+          ${isOutbound
+            ? `<span class="adm-badge adm-badge-status-inactive" title="Role restriction only applies to this server's own routes">N/A</span>`
+            : isProtected
             ? `<span class="adm-badge adm-badge-status-inactive">Protected</span>`
             : `<button type="button" class="adm-roles-btn">${roleSummaryLabel(key)}</button>`
           }
