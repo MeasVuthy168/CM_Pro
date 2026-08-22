@@ -1090,3 +1090,26 @@ table.adm-table {
   padding: 20px 0;
   font-size: 0.85rem;
 }
+
+.adm-info-asterisk {
+  cursor: help;
+  color: var(--adm-gold-500);
+  font-weight: 700;
+}
+
+.adm-tracking-note {
+  margin: -6px 0 22px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background-color: var(--adm-navy-100);
+  color: var(--adm-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.adm-tracking-note code {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--adm-navy-900);
+}
+[data-theme="dark"] .adm-tracking-note code { color: var(--adm-gold-300); }
+
