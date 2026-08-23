@@ -1,0 +1,298 @@
+/* =====================================================
+   admin-bandwidth.css — Bandwidth Dashboard only
+   Loaded ONLY by pages/admin/bandwidth.html, after admin.css, so every
+   rule here layers on top of (or overrides) the shared admin component
+   styles without touching any other admin page. Uses the same --adm-*
+   tokens admin.css already defines (navy/gold, light+dark) — no new
+   color system, just a more deliberate arrangement of the existing one.
+   ===================================================== */
+
+/* ---------- header ---------- */
+.adm-bw-header { margin-bottom: 22px; }
+
+.adm-bw-title-block {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.adm-bw-title-icon {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  background: linear-gradient(135deg, var(--adm-navy-900), var(--adm-navy-700));
+  box-shadow: 0 4px 14px rgba(0, 45, 107, 0.28);
+}
+[data-theme="dark"] .adm-bw-title-icon {
+  background: linear-gradient(135deg, var(--adm-gold-500), var(--adm-gold-300));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.adm-bw-title-block h1 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.adm-bw-title-km {
+  font-size: 0.8em;
+  font-weight: 500;
+  color: var(--adm-text-muted);
+}
+
+.adm-bw-updated {
+  font-size: 0.78rem;
+  color: var(--adm-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.adm-bw-updated::before { content: "🕐"; font-size: 0.85em; }
+
+.adm-bw-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.adm-bw-refresh-icon {
+  display: inline-block;
+  transition: transform 0.4s ease;
+}
+.adm-bw-refresh:active .adm-bw-refresh-icon { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) {
+  .adm-bw-refresh-icon { transition: none; }
+}
+
+/* ---------- Render Account Usage hero ---------- */
+.adm-render-card {
+  position: relative;
+  padding-top: 22px;
+  overflow: hidden;
+}
+.adm-render-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--adm-navy-900), var(--adm-gold-500));
+}
+
+.adm-render-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.adm-render-card-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0;
+}
+.adm-render-card-icon { font-size: 1rem; }
+
+.adm-render-live-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--adm-ok);
+  background-color: rgba(31, 157, 85, 0.12);
+  padding: 4px 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.adm-render-live-dot { margin-right: 0; }
+[data-theme="dark"] .adm-render-live-chip { background-color: #10261A; }
+
+.adm-render-body {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) 1fr;
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 760px) {
+  .adm-render-body { grid-template-columns: 1fr; }
+}
+
+.adm-render-body-main { min-width: 0; }
+.adm-render-value { font-size: 2.3rem; }
+.adm-render-bar-track { height: 10px; }
+
+.adm-render-sources {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  border-left: 1px solid var(--adm-border);
+  padding-left: 20px;
+}
+@media (max-width: 760px) {
+  .adm-render-sources {
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid var(--adm-border);
+    padding-top: 14px;
+  }
+}
+
+.adm-render-source-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background-color: var(--adm-navy-100);
+  border-bottom: none;
+  font-size: 0.72rem;
+}
+.adm-render-source-row span:first-child {
+  color: var(--adm-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 0.66rem;
+}
+.adm-render-source-row span:last-child {
+  color: var(--adm-navy-900);
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+[data-theme="dark"] .adm-render-source-row span:last-child { color: var(--adm-gold-300); }
+
+/* ---------- KPI cards ---------- */
+.adm-kpi-card {
+  position: relative;
+  padding-top: 20px;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.adm-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0, 45, 107, 0.14);
+}
+[data-theme="dark"] .adm-kpi-card:hover {
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+}
+@media (prefers-reduced-motion: reduce) {
+  .adm-kpi-card { transition: none; }
+  .adm-kpi-card:hover { transform: none; }
+}
+
+.adm-kpi-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.adm-kpi-card[data-accent="navy"]::before { background-color: var(--adm-navy-700); }
+.adm-kpi-card[data-accent="green"]::before { background-color: var(--adm-ok); }
+.adm-kpi-card[data-accent="gold"]::before {
+  background: linear-gradient(90deg, var(--adm-gold-500), var(--adm-gold-300));
+}
+.adm-kpi-card[data-accent="violet"]::before { background-color: #6B3FA0; }
+[data-theme="dark"] .adm-kpi-card[data-accent="violet"]::before { background-color: #9B7FE0; }
+
+.adm-kpi-icon {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  font-size: 1.05rem;
+  opacity: 0.5;
+}
+.adm-kpi-card .adm-card-label { padding-right: 26px; }
+
+.adm-kpi-route-value {
+  font-size: 1.05rem;
+  font-family: monospace;
+  word-break: break-word;
+}
+
+/* ---------- tracking note callout ---------- */
+.adm-tracking-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border-left: 3px solid var(--adm-gold-500);
+}
+.adm-tracking-note-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ---------- chart cards ---------- */
+.adm-chart-card-head { margin-bottom: 12px; }
+.adm-chart-card-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.adm-chart-card-icon { font-size: 1rem; }
+.adm-chart-card-sub {
+  display: block;
+  font-size: 0.76rem;
+  color: var(--adm-text-muted);
+  margin-top: 2px;
+}
+.adm-chart-wrap { height: 300px; }
+
+/* ---------- table ---------- */
+.adm-table-card { overflow: visible; }
+.adm-table-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adm-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+table.adm-table tbody tr { transition: background-color 0.12s ease; }
+table.adm-table tbody tr:hover { background-color: var(--adm-navy-100); }
+table.adm-table tbody tr:nth-child(even) { background-color: rgba(0, 45, 107, 0.025); }
+[data-theme="dark"] table.adm-table tbody tr:nth-child(even) { background-color: rgba(255, 255, 255, 0.025); }
+
+.adm-route-chip {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background-color: var(--adm-navy-100);
+}
+
+.adm-badge-flow-out { background-color: #EDE7FB; color: #6B3FA0; }
+.adm-badge-flow-in { background-color: #E3F1FC; color: #1A5C8C; }
+.adm-badge-flow-db { background-color: #E1F5F0; color: #0F7A64; }
+[data-theme="dark"] .adm-badge-flow-out { background-color: #2B1F3D; color: #C9A6EE; }
+[data-theme="dark"] .adm-badge-flow-in { background-color: #12293B; color: #7FC1EE; }
+[data-theme="dark"] .adm-badge-flow-db { background-color: #0F2A22; color: #6FE0C0; }
+
+/* ---------- gentle entrance ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .adm-render-card,
+  .adm-kpi-card,
+  .adm-chart-card,
+  .adm-table-card {
+    animation: admBwFadeIn 0.35s ease both;
+  }
+  .adm-kpi-card:nth-child(1) { animation-delay: 0.02s; }
+  .adm-kpi-card:nth-child(2) { animation-delay: 0.06s; }
+  .adm-kpi-card:nth-child(3) { animation-delay: 0.10s; }
+  .adm-kpi-card:nth-child(4) { animation-delay: 0.14s; }
+}
+@keyframes admBwFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}

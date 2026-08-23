@@ -388,17 +388,17 @@
       const isProtected = PROTECTED_ROUTE_KEYS.has(key);
 
       const syntheticBadge = isOutbound
-        ? ' <span class="adm-badge adm-badge-status-inactive" title="Outbound call this server made — not one of its own routes">Outbound</span>'
+        ? ' <span class="adm-badge adm-badge-flow-out" title="Outbound call this server made — not one of its own routes">↗ Outbound</span>'
         : isInbound
-        ? ' <span class="adm-badge adm-badge-status-inactive" title="Request-body bytes received on this route — see its own row above/below for response bytes">Request Body</span>'
+        ? ' <span class="adm-badge adm-badge-flow-in" title="Request-body bytes received on this route — see its own row above/below for response bytes">↘ Request Body</span>'
         : isDbRead
-        ? ' <span class="adm-badge adm-badge-status-inactive" title="Approximate MongoDB read size for this route\'s query — see its own row above/below for response bytes">DB Read (approx)</span>'
+        ? ' <span class="adm-badge adm-badge-flow-db" title="Approximate MongoDB read size for this route\'s query — see its own row above/below for response bytes">⛁ DB Read (approx)</span>'
         : "";
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td class="adm-td-rank">${i + 1}</td>
-        <td class="adm-td-route">${escapeHtml(r.route)}${syntheticBadge}</td>
+        <td class="adm-td-route"><span class="adm-route-chip">${escapeHtml(r.route)}</span>${syntheticBadge}</td>
         <td>${fmtMb(r.mb)}</td>
         <td>${r.count.toLocaleString()}</td>
         <td>${fmtMb(avg / 1024 / 1024)}</td>
