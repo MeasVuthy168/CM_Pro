@@ -103,7 +103,7 @@
       <div class="adm-kpi-grid">
 
         <div class="adm-card">
-          <div class="adm-card-label">Today's Usage <span class="adm-info-asterisk" title="Tracked HTTP routes (both request-body and response bytes) + outbound calls only — see note below">*</span></div>
+          <div class="adm-card-label">Today's Usage <span class="adm-info-asterisk" title="Tracked HTTP routes (request-body + response bytes) + outbound calls + approximate DB-read bytes on bulk row endpoints — see note below">*</span></div>
           <div class="adm-card-value" id="admKpiTodayGb">— GB</div>
           <div class="adm-bar-track"><div class="adm-bar-fill" id="admKpiTodayBar"></div></div>
           <div class="adm-card-sub" id="admKpiTodayPct">—</div>
@@ -116,9 +116,9 @@
         </div>
 
         <div class="adm-card">
-          <div class="adm-card-label">Range Total <span class="adm-info-asterisk" title="Tracked HTTP routes (both request-body and response bytes) + outbound calls only — see note below">*</span></div>
+          <div class="adm-card-label">Range Total <span class="adm-info-asterisk" title="Tracked HTTP routes (request-body + response bytes) + outbound calls + approximate DB-read bytes on bulk row endpoints — see note below">*</span></div>
           <div class="adm-card-value" id="admKpiRangeTotal">—</div>
-          <div class="adm-card-sub">Sum of tracked HTTP (in + out) + outbound-call bytes, selected range</div>
+          <div class="adm-card-sub">Sum of tracked HTTP (in + out) + outbound-call + approx. DB-read bytes, selected range</div>
         </div>
 
         <div class="adm-card">
@@ -132,13 +132,17 @@
       <p class="adm-tracking-note">
         * "Today's Usage" and "Range Total" cover HTTP routes this server handles — both the
         request-body bytes it receives (uploads, e.g. the VBA sync tool's bulk row uploads,
-        shown as separate <code>IN &lt;route&gt;</code> rows in the table below) and the response
-        bytes it sends back — plus outbound calls it makes via <code>fetch()</code> (GitHub,
-        Render's own API, etc.) — they do <strong>not</strong> include MongoDB database traffic,
-        which uses a different (non-HTTP) connection this dashboard can't measure. For your true
-        total bandwidth, always trust <strong>"Render Account Usage"</strong> above — it comes
-        directly from Render's own billing API and already accounts for everything, including
-        database traffic.
+        shown as separate <code>IN &lt;route&gt;</code> rows below) and the response bytes it
+        sends back — plus outbound calls it makes via <code>fetch()</code> (GitHub, Render's own
+        API, etc.). For the wide bulk row-fetching endpoints (ArreasT24ByCO, NBC Overdue, the
+        main OS/CreditMonitoring grid, Debit Turn Over, etc.) they also include an
+        <strong>approximate</strong> size of what each query pulled from MongoDB Atlas, shown as
+        separate <code>DB &lt;route&gt;</code> rows below — approximate because it's measured from
+        the JSON size of the fields actually returned, not a true wire-byte count. Smaller,
+        infrequent database calls elsewhere in the app (login, notifications, user management,
+        etc.) are still <strong>not</strong> covered. For your true total bandwidth, always trust
+        <strong>"Render Account Usage"</strong> above — it comes directly from Render's own
+        billing API and already accounts for everything, including all database traffic.
       </p>
 
       <!-- ========================= -->

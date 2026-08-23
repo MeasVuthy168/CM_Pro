@@ -359,21 +359,27 @@
       // "OUT <hostname>" rows are outbound calls THIS server made (to
       // GitHub, Render's own metrics API, etc.); "IN <method> <path>" rows
       // are request-BODY bytes received on one of this server's own
-      // routes (e.g. the VBA sync tool's bulk uploads to /api/grid/rows).
-      // Neither is a toggleable/role-restrictable target in its own
-      // right — an "IN" row's underlying route already has its own
-      // separate (non-prefixed) row for its response bytes, and that's
-      // where the real kill switch / role controls for that route live —
-      // so both prefixes get the same badge-only, N/A treatment.
+      // routes (e.g. the VBA sync tool's bulk uploads to /api/grid/rows);
+      // "DB <method> <path>" rows are an approximate size of what that
+      // route's MongoDB query pulled from Atlas (the leg between this
+      // server and the database, which the response-bytes tracker can't
+      // see at all — often the largest of the three for a wide bulk
+      // row-fetching endpoint). None of the three prefixes is a
+      // toggleable/role-restrictable target in its own right — the
+      // underlying route already has its own separate (non-prefixed) row
+      // for its response bytes, and that's where the real kill switch /
+      // role controls for that route live — so all three prefixes get
+      // the same badge-only, N/A treatment.
       const isOutbound = r.route.startsWith("OUT ");
       const isInbound = r.route.startsWith("IN ");
-      const isSynthetic = isOutbound || isInbound;
+      const isDbRead = r.route.startsWith("DB ");
+      const isSynthetic = isOutbound || isInbound || isDbRead;
 
-      // Strip the "IN " prefix before parsing method/path so an inbound
+      // Strip the "IN "/"DB " prefix before parsing method/path so that
       // row's underlying route still displays correctly if ever needed —
       // "OUT <hostname>" has no method/path structure at all, so it's
       // left as-is (its parsed "method"/"path" below are never used).
-      const parseable = isInbound ? r.route.slice(3) : r.route;
+      const parseable = (isInbound || isDbRead) ? r.route.slice(3) : r.route;
       const spaceIdx = parseable.indexOf(" ");
       const method = parseable.slice(0, spaceIdx);
       const path = parseable.slice(spaceIdx + 1);
@@ -385,6 +391,8 @@
         ? ' <span class="adm-badge adm-badge-status-inactive" title="Outbound call this server made — not one of its own routes">Outbound</span>'
         : isInbound
         ? ' <span class="adm-badge adm-badge-status-inactive" title="Request-body bytes received on this route — see its own row above/below for response bytes">Request Body</span>'
+        : isDbRead
+        ? ' <span class="adm-badge adm-badge-status-inactive" title="Approximate MongoDB read size for this route\'s query — see its own row above/below for response bytes">DB Read (approx)</span>'
         : "";
 
       const tr = document.createElement("tr");
