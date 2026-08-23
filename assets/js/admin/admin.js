@@ -667,19 +667,21 @@
       bar.classList.toggle("adm-bar-warn", data.pctUsed >= 70 && data.pctUsed < 100);
       bar.classList.toggle("adm-bar-danger", data.pctUsed >= 100);
 
-      // "Unbilled Charges" — estimated GB used beyond the free tier this
-      // billing month. Render's API has no billing/invoice endpoint at all
-      // (confirmed against their public API reference), so this is NOT a
-      // real dollar figure — just the overage in GB, computed from the same
-      // totalGb/planGb this card already has. The dollar amount, if any,
-      // only exists on Render's own billing dashboard.
-      const overageGb = Math.max(0, data.totalGb - data.planGb);
+      // "Unbilled Charges" — server-computed estimate (see fetchRenderUsage()
+      // in CM-backend): GB used beyond the free tier this billing month,
+      // priced at Render's real Outgoing Bandwidth overage rate ($0.15/GB,
+      // confirmed off the account's own Billing page — Render's API has no
+      // billing/invoice endpoint to read this from directly). Still an
+      // estimate, not the actual invoice line, since it's derived from the
+      // Metrics API rather than Render's billing engine.
       const overageEl = document.getElementById("admRenderOverage");
       const overageTextEl = document.getElementById("admRenderOverageText");
       if (overageEl && overageTextEl) {
+        const overageGb = data.overageGb || 0;
+        const unbilledUsd = data.estimatedUnbilledUsd || 0;
         overageTextEl.textContent = overageGb > 0
-          ? `Unbilled Charges (est.): ${overageGb.toFixed(2)} GB over free tier`
-          : `Unbilled Charges: none — within free tier`;
+          ? `Unbilled Charges (est.): $${unbilledUsd.toFixed(2)} (${overageGb.toFixed(2)} GB over free tier @ $${(data.overageUsdPerGb || 0.15).toFixed(2)}/GB)`
+          : `Unbilled Charges: $0.00 — within free tier`;
         overageEl.classList.toggle("adm-render-overage-active", overageGb > 0);
       }
 
