@@ -102,7 +102,7 @@
             <div class="adm-render-overage" id="admRenderOverage">
               <span class="adm-render-overage-icon" aria-hidden="true">💳</span>
               <span id="admRenderOverageText">—</span>
-              <span class="adm-info-asterisk" title="Estimated using Render's real Outgoing Bandwidth overage rate ($0.15/GB, confirmed off the account's own Billing page — Render's API has no billing/invoice endpoint to read this from directly). Still an estimate, not the actual invoice line, since it's computed from the Metrics API rather than Render's billing engine.">*</span>
+              <span class="adm-info-asterisk" title="Estimated using Render's real Outgoing Bandwidth overage rate ($0.15/GB, confirmed off the account's own Billing page — Render's API has no billing/invoice endpoint to read this from directly). Still an estimate, not the actual invoice line: it's computed from the Metrics API, which can run a few minutes to tens of minutes behind Render's own billing engine, so this figure may read slightly LOWER than the real Billing page until the metrics catch up.">*</span>
             </div>
           </div>
           <div class="adm-render-sources" id="admRenderSources"></div>
