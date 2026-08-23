@@ -357,21 +357,40 @@
       const pct = ((r.bytes / grandTotal) * 100).toFixed(1);
 
       // "OUT <hostname>" rows are outbound calls THIS server made (to
-      // GitHub, Render's own metrics API, etc.) — not a real Express route,
-      // so neither the kill switch nor role restriction applies to them.
+      // GitHub, Render's own metrics API, etc.); "IN <method> <path>" rows
+      // are request-BODY bytes received on one of this server's own
+      // routes (e.g. the VBA sync tool's bulk uploads to /api/grid/rows).
+      // Neither is a toggleable/role-restrictable target in its own
+      // right — an "IN" row's underlying route already has its own
+      // separate (non-prefixed) row for its response bytes, and that's
+      // where the real kill switch / role controls for that route live —
+      // so both prefixes get the same badge-only, N/A treatment.
       const isOutbound = r.route.startsWith("OUT ");
+      const isInbound = r.route.startsWith("IN ");
+      const isSynthetic = isOutbound || isInbound;
 
-      const spaceIdx = r.route.indexOf(" ");
-      const method = r.route.slice(0, spaceIdx);
-      const path = r.route.slice(spaceIdx + 1);
+      // Strip the "IN " prefix before parsing method/path so an inbound
+      // row's underlying route still displays correctly if ever needed —
+      // "OUT <hostname>" has no method/path structure at all, so it's
+      // left as-is (its parsed "method"/"path" below are never used).
+      const parseable = isInbound ? r.route.slice(3) : r.route;
+      const spaceIdx = parseable.indexOf(" ");
+      const method = parseable.slice(0, spaceIdx);
+      const path = parseable.slice(spaceIdx + 1);
       const key = `${method} ${path}`;
       const isDisabled = state.disabledRoutes.has(key);
       const isProtected = PROTECTED_ROUTE_KEYS.has(key);
 
+      const syntheticBadge = isOutbound
+        ? ' <span class="adm-badge adm-badge-status-inactive" title="Outbound call this server made — not one of its own routes">Outbound</span>'
+        : isInbound
+        ? ' <span class="adm-badge adm-badge-status-inactive" title="Request-body bytes received on this route — see its own row above/below for response bytes">Request Body</span>'
+        : "";
+
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td class="adm-td-rank">${i + 1}</td>
-        <td class="adm-td-route">${escapeHtml(r.route)}${isOutbound ? ' <span class="adm-badge adm-badge-status-inactive" title="Outbound call this server made — not one of its own routes">Outbound</span>' : ""}</td>
+        <td class="adm-td-route">${escapeHtml(r.route)}${syntheticBadge}</td>
         <td>${fmtMb(r.mb)}</td>
         <td>${r.count.toLocaleString()}</td>
         <td>${fmtMb(avg / 1024 / 1024)}</td>
@@ -380,7 +399,7 @@
           <span class="adm-pct-label">${pct}%</span>
         </td>
         <td>
-          ${isOutbound
+          ${isSynthetic
             ? `<span class="adm-badge adm-badge-status-inactive" title="Kill switch only applies to this server's own routes">N/A</span>`
             : isProtected
             ? `<span class="adm-badge adm-badge-status-inactive" title="Login/kill-switch routes can't be disabled">Protected</span>`
@@ -388,7 +407,7 @@
           }
         </td>
         <td>
-          ${isOutbound
+          ${isSynthetic
             ? `<span class="adm-badge adm-badge-status-inactive" title="Role restriction only applies to this server's own routes">N/A</span>`
             : isProtected
             ? `<span class="adm-badge adm-badge-status-inactive">Protected</span>`

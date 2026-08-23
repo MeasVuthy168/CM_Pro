@@ -103,7 +103,7 @@
       <div class="adm-kpi-grid">
 
         <div class="adm-card">
-          <div class="adm-card-label">Today's Usage <span class="adm-info-asterisk" title="Tracked HTTP routes + outbound calls only — see note below">*</span></div>
+          <div class="adm-card-label">Today's Usage <span class="adm-info-asterisk" title="Tracked HTTP routes (both request-body and response bytes) + outbound calls only — see note below">*</span></div>
           <div class="adm-card-value" id="admKpiTodayGb">— GB</div>
           <div class="adm-bar-track"><div class="adm-bar-fill" id="admKpiTodayBar"></div></div>
           <div class="adm-card-sub" id="admKpiTodayPct">—</div>
@@ -116,9 +116,9 @@
         </div>
 
         <div class="adm-card">
-          <div class="adm-card-label">Range Total <span class="adm-info-asterisk" title="Tracked HTTP routes + outbound calls only — see note below">*</span></div>
+          <div class="adm-card-label">Range Total <span class="adm-info-asterisk" title="Tracked HTTP routes (both request-body and response bytes) + outbound calls only — see note below">*</span></div>
           <div class="adm-card-value" id="admKpiRangeTotal">—</div>
-          <div class="adm-card-sub">Sum of tracked HTTP + outbound-call bytes, selected range</div>
+          <div class="adm-card-sub">Sum of tracked HTTP (in + out) + outbound-call bytes, selected range</div>
         </div>
 
         <div class="adm-card">
@@ -130,12 +130,15 @@
       </div>
 
       <p class="adm-tracking-note">
-        * "Today's Usage" and "Range Total" cover HTTP routes this server handles, plus outbound
-        calls it makes via <code>fetch()</code> (GitHub, Render's own API, etc.) — they do
-        <strong>not</strong> include MongoDB database traffic, which uses a different (non-HTTP)
-        connection this dashboard can't measure. For your true total bandwidth, always trust
-        <strong>"Render Account Usage"</strong> above — it comes directly from Render's own
-        billing API and already accounts for everything, including database traffic.
+        * "Today's Usage" and "Range Total" cover HTTP routes this server handles — both the
+        request-body bytes it receives (uploads, e.g. the VBA sync tool's bulk row uploads,
+        shown as separate <code>IN &lt;route&gt;</code> rows in the table below) and the response
+        bytes it sends back — plus outbound calls it makes via <code>fetch()</code> (GitHub,
+        Render's own API, etc.) — they do <strong>not</strong> include MongoDB database traffic,
+        which uses a different (non-HTTP) connection this dashboard can't measure. For your true
+        total bandwidth, always trust <strong>"Render Account Usage"</strong> above — it comes
+        directly from Render's own billing API and already accounts for everything, including
+        database traffic.
       </p>
 
       <!-- ========================= -->
