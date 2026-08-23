@@ -99,6 +99,11 @@
             <div class="adm-card-value adm-render-value" id="admRenderTotal">— GB</div>
             <span class="adm-card-sub" id="admRenderTotalSub"></span>
             <div class="adm-bar-track adm-render-bar-track"><div class="adm-bar-fill" id="admRenderBar"></div></div>
+            <div class="adm-render-overage" id="admRenderOverage">
+              <span class="adm-render-overage-icon" aria-hidden="true">💳</span>
+              <span id="admRenderOverageText">—</span>
+              <span class="adm-info-asterisk" title="Estimated bandwidth used beyond the free 5GB tier this billing month — not a real dollar amount, since Render's per-GB overage price isn't exposed by their public API. Check Render's own billing dashboard for the actual charge.">*</span>
+            </div>
           </div>
           <div class="adm-render-sources" id="admRenderSources"></div>
         </div>
@@ -152,20 +157,22 @@
       <p class="adm-tracking-note">
         <span class="adm-tracking-note-icon" aria-hidden="true">ℹ️</span>
         <span>
-          <strong>"Today's Usage"</strong> and <strong>"Range Total"</strong> cover HTTP routes this
-          server handles — both the request-body bytes it receives (uploads, e.g. the VBA sync
-          tool's bulk row uploads, shown as separate <code>IN &lt;route&gt;</code> rows below) and
-          the response bytes it sends back — plus outbound calls it makes via
-          <code>fetch()</code> (GitHub, Render's own API, etc.). For the wide bulk row-fetching
-          endpoints (ArreasT24ByCO, NBC Overdue, the main OS/CreditMonitoring grid, Debit Turn Over,
-          etc.) they also include an <strong>approximate</strong> size of what each query pulled
-          from MongoDB Atlas, shown as separate <code>DB &lt;route&gt;</code> rows below —
-          approximate because it's measured from the JSON size of the fields actually returned,
-          not a true wire-byte count. Smaller, infrequent database calls elsewhere in the app
-          (login, notifications, user management, etc.) are still <strong>not</strong> covered.
-          For your true total bandwidth, always trust <strong>"Render Account Usage"</strong>
-          above — it comes directly from Render's own billing API and already accounts for
-          everything, including all database traffic.
+          <strong>"Today's Usage"</strong> និង <strong>"Range Total"</strong> គ្របដណ្ដប់លើ HTTP
+          routes ដែលម៉ាស៊ីនមេនេះដោះស្រាយ — ទាំងទិន្នន័យ request-body ដែលវាទទួល (ការផ្ទុកឡើង
+          ដូចជាការផ្ទុកឡើងជាបាច់របស់ឧបករណ៍ធ្វើសមកាលកម្ម VBA ដែលបង្ហាញជាជួរដេក
+          <code>IN &lt;route&gt;</code> ដាច់ដោយឡែកខាងក្រោម) និងទិន្នន័យ response ដែលវាផ្ញើត្រឡប់ —
+          បូកនឹងការហៅចេញក្រៅដែលវាធ្វើតាមរយៈ <code>fetch()</code> (ដូចជា GitHub, Render's own API
+          ។ល។)។ សម្រាប់ endpoints ដែលទាញយកទិន្នន័យជាបាច់ធំៗ (ArreasT24ByCO, NBC Overdue,
+          OS/CreditMonitoring grid សំខាន់, Debit Turn Over ។ល។) ពួកវាក៏រួមបញ្ចូលទំហំ
+          <strong>ប្រហាក់ប្រហែល</strong> នៃអ្វីដែល query នីមួយៗបានទាញយកចេញពី MongoDB Atlas ដែល
+          បង្ហាញជាជួរដេក <code>DB &lt;route&gt;</code> ដាច់ដោយឡែកខាងក្រោម — ជាតម្លៃប្រហាក់ប្រហែល
+          ព្រោះវាត្រូវបានវាស់ស្ទង់ពីទំហំ JSON នៃទិន្នន័យដែលត្រូវបានត្រឡប់មកវិញជាក់ស្តែង
+          មិនមែនជាចំនួន byte ពិតប្រាកដតាមខ្សែបណ្ដាញនោះទេ។ ការហៅទិន្នន័យតូចៗ និងកម្រកើតមានឡើង
+          ផ្សេងទៀតនៅក្នុងកម្មវិធី (ដូចជា ការចូលប្រើប្រាស់, ការជូនដំណឹង, ការគ្រប់គ្រងអ្នកប្រើប្រាស់
+          ។ល។) នៅតែ<strong>មិន</strong>ទាន់ត្រូវបានតាមដានទេ។ សម្រាប់ទំហំបញ្ជូនទិន្នន័យពិតប្រាកដសរុប
+          របស់អ្នក សូមទុកចិត្តលើ <strong>"Render Account Usage"</strong> ខាងលើជានិច្ច — វាមកពី
+          Render's own billing API ដោយផ្ទាល់ ហើយបានគណនារួចរាល់នូវអ្វីៗគ្រប់យ៉ាង
+          រួមទាំងចរាចរណ៍ទិន្នន័យ database ទាំងអស់។
         </span>
       </p>
 

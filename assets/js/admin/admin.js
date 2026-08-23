@@ -667,6 +667,22 @@
       bar.classList.toggle("adm-bar-warn", data.pctUsed >= 70 && data.pctUsed < 100);
       bar.classList.toggle("adm-bar-danger", data.pctUsed >= 100);
 
+      // "Unbilled Charges" — estimated GB used beyond the free tier this
+      // billing month. Render's API has no billing/invoice endpoint at all
+      // (confirmed against their public API reference), so this is NOT a
+      // real dollar figure — just the overage in GB, computed from the same
+      // totalGb/planGb this card already has. The dollar amount, if any,
+      // only exists on Render's own billing dashboard.
+      const overageGb = Math.max(0, data.totalGb - data.planGb);
+      const overageEl = document.getElementById("admRenderOverage");
+      const overageTextEl = document.getElementById("admRenderOverageText");
+      if (overageEl && overageTextEl) {
+        overageTextEl.textContent = overageGb > 0
+          ? `Unbilled Charges (est.): ${overageGb.toFixed(2)} GB over free tier`
+          : `Unbilled Charges: none — within free tier`;
+        overageEl.classList.toggle("adm-render-overage-active", overageGb > 0);
+      }
+
       const sourcesEl = document.getElementById("admRenderSources");
       const entries = Object.entries(data.bySourceGb || {});
       sourcesEl.innerHTML = entries.length

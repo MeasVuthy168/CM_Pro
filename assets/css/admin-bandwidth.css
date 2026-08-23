@@ -129,6 +129,20 @@
 .adm-render-value { font-size: 2.3rem; }
 .adm-render-bar-track { height: 10px; }
 
+.adm-render-overage {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 0.78rem;
+  color: var(--adm-text-muted);
+}
+.adm-render-overage-icon { font-size: 0.9rem; }
+.adm-render-overage-active {
+  color: var(--adm-danger);
+  font-weight: 700;
+}
+
 .adm-render-sources {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
