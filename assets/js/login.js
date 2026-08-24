@@ -300,9 +300,22 @@ if(rememberedLogin){
 
     document.getElementById("username").value=rememberedLogin.username || "";
 
-    document.getElementById("password").value=rememberedLogin.password || "";
-
     rememberMe.checked=true;
+
+    // Older builds stored the plaintext password alongside the username —
+    // scrub it from this browser's localStorage the first time this runs,
+    // rather than leaving it sitting there until the next login.
+    if("password" in rememberedLogin){
+
+        localStorage.setItem(
+
+            "remember_login",
+
+            JSON.stringify({username:rememberedLogin.username || ""})
+
+        );
+
+    }
 
 }
 
@@ -447,6 +460,13 @@ form.addEventListener("submit",async(e)=>{
         );
 
         // ===== REMEMBER LOGIN =====
+        // Only the username is persisted — the token set above (already
+        // in localStorage when Remember Me is checked) is what actually
+        // keeps the session alive across visits. Storing the plaintext
+        // password here too gained nothing but risk: anyone who can read
+        // this origin's localStorage (an XSS elsewhere, a malicious
+        // extension, a shared machine) would get the real account
+        // password, not just a scoped/expiring token.
 
         if(rememberMe.checked){
 
@@ -454,7 +474,7 @@ form.addEventListener("submit",async(e)=>{
 
                 "remember_login",
 
-                JSON.stringify({username,password})
+                JSON.stringify({username})
 
             );
 

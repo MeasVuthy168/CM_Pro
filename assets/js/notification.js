@@ -256,8 +256,8 @@ class="
 notify-card
 ${item.isRead ? "" : "unread"}
 "
-data-id="${item._id}"
-data-url="${item.url || ''}"
+data-id="${escapeHtml(item._id)}"
+data-url="${escapeHtml(item.url || '')}"
 >
 
 <div class="notify-icon">
@@ -808,9 +808,12 @@ function escapeHtml(text){
 const div=
 document.createElement("div");
 
-div.textContent=text;
+div.textContent=text == null ? "" : String(text);
 
-return div.innerHTML;
+// textContent->innerHTML escapes & < > but not quotes, which this needs
+// too — several callers interpolate this into quoted HTML attributes
+// (data-url, avatar src), not just text nodes.
+return div.innerHTML.replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 
 }
 
