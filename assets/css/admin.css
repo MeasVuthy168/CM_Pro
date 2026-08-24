@@ -923,6 +923,33 @@
 }
 [data-theme="dark"] .adm-card-value { color: var(--adm-gold-300); }
 
+.adm-suspicious-card {
+  border-color: var(--adm-danger);
+  background-color: #FBE3E1;
+  margin-bottom: 16px;
+}
+[data-theme="dark"] .adm-suspicious-card {
+  background-color: #331512;
+}
+.adm-suspicious-card .adm-card-label {
+  color: var(--adm-danger);
+}
+.adm-suspicious-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.adm-suspicious-list li {
+  font-size: 0.85rem;
+  color: var(--adm-text);
+}
+.adm-suspicious-list li strong {
+  color: var(--adm-danger);
+}
+
 .adm-card-sub {
   font-size: 0.78rem;
   color: var(--adm-text-muted);

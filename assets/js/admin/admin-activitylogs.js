@@ -22,6 +22,7 @@
     dateFrom: document.getElementById("alDateFrom"),
     dateTo: document.getElementById("alDateTo"),
     result: document.getElementById("alResult"),
+    action: document.getElementById("alAction"),
     btnSearch: document.getElementById("alBtnSearch"),
     btnReset: document.getElementById("alBtnReset"),
     rangeButtons: document.querySelectorAll(".adm-range-btn"),
@@ -30,6 +31,9 @@
     kpiSuccess: document.getElementById("alKpiSuccess"),
     kpiFailed: document.getElementById("alKpiFailed"),
     kpiUsers: document.getElementById("alKpiUsers"),
+
+    suspiciousCard: document.getElementById("alSuspiciousCard"),
+    suspiciousList: document.getElementById("alSuspiciousList"),
 
     btnExport: document.getElementById("alBtnExport"),
     btnCleanup: document.getElementById("alBtnCleanup"),
@@ -73,9 +77,27 @@
       keyword: el.keyword.value.trim(),
       dateFrom: el.dateFrom.value,
       dateTo: el.dateTo.value,
-      result: el.result.value
+      result: el.result.value,
+      action: el.action.value
     };
   }
+
+  // The backend's GET /api/activitylogs already accepts an exact-match
+  // `action` filter — the dropdown just wasn't wired up to it before.
+  // Populated from whatever's actually been seen in the loaded logs
+  // rather than a hardcoded list, so it never drifts out of sync with
+  // real action names (Login, Save, Delete User, etc.).
+  function refreshActionOptions() {
+    const current = el.action.value;
+    const actions = [...new Set(state.logs.map((l) => l.action).filter(Boolean))].sort();
+
+    el.action.innerHTML = `<option value="all">All Actions</option>` +
+      actions.map((a) => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join("");
+
+    if (actions.includes(current)) el.action.value = current;
+  }
+
+  el.action.addEventListener("change", () => fetchLogs(true));
 
   function applyDatePreset(days) {
     el.rangeButtons.forEach((b) => b.classList.remove("adm-active"));
@@ -105,6 +127,7 @@
   el.btnReset.addEventListener("click", () => {
     el.keyword.value = "";
     el.result.value = "all";
+    el.action.value = "all";
     applyDatePreset(0);
   });
 
@@ -123,6 +146,7 @@
       const params = new URLSearchParams();
       if (filters.keyword) params.set("keyword", filters.keyword);
       if (filters.result && filters.result !== "all") params.set("result", filters.result);
+      if (filters.action && filters.action !== "all") params.set("action", filters.action);
       params.set("limit", String(PAGE_SIZE));
 
       if (!reset && state.logs.length) {
@@ -152,6 +176,8 @@
       renderTable();
       renderSummary();
       renderCharts(state.logs);
+      renderSuspiciousActivity();
+      refreshActionOptions();
       el.btnLoadMore.hidden = !state.hasMore;
     } catch (e) {
       console.error("fetchLogs failed:", e);
@@ -350,6 +376,56 @@
     el.kpiUsers.textContent = new Set(state.logs.map((l) => l.username).filter(Boolean)).size;
   }
 
+  // ---------- suspicious activity ----------
+  // Client-side heuristic over whatever's currently loaded (no new
+  // backend aggregation needed) — flags the two classic brute-force
+  // shapes: many failed logins piling up on one account (targeted
+  // guessing), and many failed logins from one IP spread across
+  // several different accounts (credential stuffing / scanning).
+  const SUSPICIOUS_FAILED_LOGIN_THRESHOLD = 5;
+
+  function renderSuspiciousActivity() {
+    const failedLogins = state.logs.filter((l) => l.action === "Login" && l.result === "Failed");
+
+    const byUsername = new Map(); // username -> { count, lastIp, lastAt }
+    const byIp = new Map(); // ip -> { count, usernames:Set, lastAt }
+
+    for (const l of failedLogins) {
+      const username = l.username || "(unknown username)";
+      const ip = l.ipAddress || "(unknown IP)";
+
+      const u = byUsername.get(username) || { count: 0, lastIp: "", lastAt: "" };
+      u.count++;
+      if (!u.lastAt || l.logAt > u.lastAt) { u.lastAt = l.logAt; u.lastIp = ip; }
+      byUsername.set(username, u);
+
+      const i = byIp.get(ip) || { count: 0, usernames: new Set(), lastAt: "" };
+      i.count++;
+      i.usernames.add(username);
+      if (!i.lastAt || l.logAt > i.lastAt) i.lastAt = l.logAt;
+      byIp.set(ip, i);
+    }
+
+    const items = [];
+
+    for (const [username, u] of byUsername) {
+      if (u.count < SUSPICIOUS_FAILED_LOGIN_THRESHOLD) continue;
+      items.push(`🔒 <strong>${escapeHtml(username)}</strong> — ${u.count} failed logins (most recent from ${escapeHtml(u.lastIp)}, ${timeAgo(u.lastAt)})`);
+    }
+
+    // Only surfaced when it spans multiple accounts — a single user
+    // failing repeatedly from one IP is already covered by the
+    // byUsername entry above, so this stays specific to the
+    // multi-account pattern the per-username view can't show.
+    for (const [ip, i] of byIp) {
+      if (i.count < SUSPICIOUS_FAILED_LOGIN_THRESHOLD || i.usernames.size < 2) continue;
+      items.push(`🌐 IP <strong>${escapeHtml(ip)}</strong> — ${i.count} failed logins across ${i.usernames.size} accounts (most recent ${timeAgo(i.lastAt)})`);
+    }
+
+    el.suspiciousCard.hidden = items.length === 0;
+    el.suspiciousList.innerHTML = items.map((html) => `<li>${html}</li>`).join("");
+  }
+
   function resultBadgeClass(result) {
     if (result === "Success") return "adm-badge-status-active";
     if (result === "Failed") return "adm-badge-status-failed";
@@ -383,6 +459,7 @@
         <td>${escapeHtml(log.action)}</td>
         <td>${escapeHtml(log.module || "—")}</td>
         <td><span class="adm-badge ${resultBadgeClass(log.result)}">${escapeHtml(log.result || "—")}</span></td>
+        <td>${escapeHtml(log.ipAddress || "—")}</td>
       `;
       tr.addEventListener("click", () => openDetailModal(log));
       el.tableBody.appendChild(tr);
