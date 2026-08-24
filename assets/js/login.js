@@ -46,6 +46,42 @@ function getSafeNextParam(){
 // =========================
 // AUTO LOGIN
 // =========================
+// Trusting an existing token/next blindly here is what caused the
+// admin<->login bounce loop: an admin page redirects here with
+// ?next=<itself> whenever its own guard rejects the token (expired,
+// or a non-admin role) — if this block redirected straight back to
+// that same next without re-checking the token, the two pages would
+// just keep replacing each other forever. Decoding the JWT here
+// (same approach as assets/js/admin/admin-loader.js's cmDecodeJwt)
+// lets this block tell "stale token" apart from "valid token, wrong
+// destination" and stop the bounce instead of perpetuating it.
+
+function cmDecodeJwtPayload(token){
+
+    try{
+
+        const payload=token.split(".")[1];
+
+        const base64=payload.replace(/-/g,"+").replace(/_/g,"/");
+
+        const json=decodeURIComponent(
+
+            atob(base64)
+                .split("")
+                .map(c=>"%"+c.charCodeAt(0).toString(16).padStart(2,"0"))
+                .join("")
+
+        );
+
+        return JSON.parse(json);
+
+    }catch{
+
+        return null;
+
+    }
+
+}
 
 const existingToken=
 
@@ -57,35 +93,68 @@ const existingToken=
 
 if(existingToken){
 
-    try{
+    const jwtPayload=cmDecodeJwtPayload(existingToken);
 
-        const user=JSON.parse(
+    const tokenExpired=
 
-            localStorage.getItem("loggedInUser") || "{}"
+        !jwtPayload
 
-        );
+        ||
 
-        const role=(user.role || "user").toLowerCase();
+        (jwtPayload.exp && Date.now()>=jwtPayload.exp*1000);
 
-        const next=getSafeNextParam();
+    if(tokenExpired){
 
-        window.location.replace(
+        // Stale/undecodable token — clear it and fall through to the
+        // normal login form instead of bouncing straight back to
+        // whatever page sent us here.
+        localStorage.removeItem("token");
+        localStorage.removeItem("loggedInUser");
+        sessionStorage.clear();
 
-            next
+    }else{
 
-                ? next
+        try{
 
-                : role==="admin"
+            const user=JSON.parse(
 
-                    ? "/CM_Pro/pages/admin/index.html"
+                localStorage.getItem("loggedInUser") || "{}"
 
-                    : "/CM_Pro/index.html"
+            );
 
-        );
+            const role=String(
 
-    }catch{
+                jwtPayload.role || user.role || "user"
 
-        window.location.replace("/CM_Pro/index.html");
+            ).toLowerCase();
+
+            const next=getSafeNextParam();
+
+            // Only honor ?next= if this token's role can actually
+            // reach it — otherwise fall back to the role's own default
+            // page rather than re-triggering the page that rejected us.
+            const nextNeedsAdmin=
+                next && next.startsWith("/CM_Pro/pages/admin/");
+
+            const destination=
+
+                (next && (!nextNeedsAdmin || role==="admin"))
+
+                    ? next
+
+                    : role==="admin"
+
+                        ? "/CM_Pro/pages/admin/index.html"
+
+                        : "/CM_Pro/index.html";
+
+            window.location.replace(destination);
+
+        }catch{
+
+            window.location.replace("/CM_Pro/index.html");
+
+        }
 
     }
 
