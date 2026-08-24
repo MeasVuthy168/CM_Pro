@@ -84,6 +84,10 @@
           <option value="Failed">Failed</option>
         </select>
 
+        <select class="adm-toolbar-select" id="alAction">
+          <option value="all">All Actions</option>
+        </select>
+
         <div class="adm-toolbar-spacer"></div>
 
         <button type="button" class="adm-btn" id="alBtnReset">Reset</button>
@@ -95,6 +99,15 @@
         <button class="adm-range-btn" data-days="7">7 Days</button>
         <button class="adm-range-btn" data-days="30">30 Days</button>
         <button class="adm-range-btn adm-active" data-days="0">All</button>
+      </div>
+
+      <!-- ========================= -->
+      <!-- SUSPICIOUS ACTIVITY (hidden unless the currently-loaded
+           logs actually contain a repeated-failed-login pattern) -->
+      <!-- ========================= -->
+      <div class="adm-card adm-suspicious-card" id="alSuspiciousCard" hidden>
+        <div class="adm-card-label">🚨 Suspicious Activity — repeated failed logins in the loaded range</div>
+        <ul id="alSuspiciousList" class="adm-suspicious-list"></ul>
       </div>
 
       <!-- ========================= -->
@@ -166,6 +179,7 @@
                 <th>Action</th>
                 <th>Module</th>
                 <th>Result</th>
+                <th>IP</th>
               </tr>
             </thead>
             <tbody id="alTableBody"></tbody>
