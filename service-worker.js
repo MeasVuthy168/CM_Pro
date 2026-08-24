@@ -6,7 +6,7 @@ console.log("🔥 SERVICE WORKER LOADED");
    CM_Pro – Production Service Worker
 ========================================================= */
 
-const SW_VERSION = "v267";
+const SW_VERSION = "v268";
 
 const CACHE_NAME = `cm-pro-cache-${SW_VERSION}`;
 
@@ -693,11 +693,19 @@ self.addEventListener(
 
         event.notification.close();
 
+        // data.url comes straight from the push payload — whatever
+        // created the notification set it, not necessarily this app.
+        // Restricting it to an in-app path before handing it to
+        // openWindow() below stops a notification from ever being able
+        // to pop an external (phishing) site when the user taps it,
+        // same reasoning as login.js's getSafeNextParam().
+        const rawUrl =
+            event.notification?.data?.url || "";
+
         const url =
-
-            event.notification?.data?.url ||
-
-            "/CM_Pro/index.html";
+            rawUrl.startsWith("/CM_Pro/")
+                ? rawUrl
+                : "/CM_Pro/index.html";
 
         event.waitUntil(
 

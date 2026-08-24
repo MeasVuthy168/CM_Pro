@@ -17,6 +17,20 @@ function escapeHtml(text){
 
 }
 
+// notification.url comes straight from the push payload, same as
+// title/message above — restricting it to an in-app path before it's
+// ever handed to location.href (see the onDetail callbacks below)
+// stops a notification from being able to send a click into an
+// external (phishing) site, same reasoning as login.js's
+// getSafeNextParam() and service-worker.js's notificationclick guard.
+function safeNotificationUrl(url){
+
+  return (typeof url === "string" && url.startsWith("/CM_Pro/"))
+    ? url
+    : "/CM_Pro/pages/notifications/";
+
+}
+
 const CMToast = {
 
   version: "3.0",
@@ -708,7 +722,7 @@ async function cmFlushPendingNotifications() {
 
       onDetail() {
 
-        location.href = n.url || "/CM_Pro/pages/notifications/";
+        location.href = safeNotificationUrl(n.url);
 
       }
 
@@ -805,7 +819,7 @@ function handleSWMessage(msg) {
 
       onDetail() {
 
-        location.href = n.url || "/CM_Pro/pages/notifications/";
+        location.href = safeNotificationUrl(n.url);
 
       }
 
