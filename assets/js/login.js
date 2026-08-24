@@ -576,7 +576,7 @@ if(fingerprintBtn){
         }catch(err){
 
             console.error(err);
-            showMessage(err.message || "ការចូលដោយស្នាមម្រាមដៃបានបរាជ័យ","error");
+            showMessage(err.message || "ការចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខបានបរាជ័យ","error");
 
         }finally{
 
