@@ -145,6 +145,11 @@ function crFmtDateDMY(yyyymmdd) {
     const [y, m, d] = yyyymmdd.split("-");
     return `${d}-${m}-${y}`;
 }
+function crEscapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text == null ? "" : String(text);
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
 function crFmtNum(n) {
     n = Number(n) || 0;
     return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
@@ -197,7 +202,7 @@ function crBuildRow(item, section, isTotal) {
     ).join("");
     return `
       <tr${isTotal ? ' class="cr-total-row"' : ""}>
-        <td class="cr-name-col">${isTotal ? "Total" : item.name}</td>
+        <td class="cr-name-col">${isTotal ? "Total" : crEscapeHtml(item.name)}</td>
         ${cells}
       </tr>`;
 }
