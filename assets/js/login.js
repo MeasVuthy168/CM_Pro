@@ -369,6 +369,94 @@ function setLoading(isLoading){
 // LOGIN
 // =========================
 
+// Shared by both the password submit handler below and the fingerprint
+// login button — same token storage / loggedInUser cache / remember-me /
+// redirect logic regardless of which credential the server accepted.
+function completeLogin(data,remember){
+
+    // ===== CLEAR TOKEN =====
+
+    localStorage.removeItem("token");
+
+    sessionStorage.removeItem("token");
+
+    // ===== SAVE TOKEN =====
+
+    if(remember){
+
+        localStorage.setItem("token",data.token);
+
+    }else{
+
+        sessionStorage.setItem("token",data.token);
+
+    }
+
+    // ===== USER DATA =====
+
+    const userData=data.user || data.data || data;
+
+    localStorage.setItem(
+
+        "loggedInUser",
+
+        JSON.stringify({
+
+            username:userData.username || "",
+
+            fullname:userData.fullname || "",
+
+            role:userData.role || "user"
+
+        })
+
+    );
+
+    // ===== REMEMBER LOGIN =====
+    // Only the username is persisted — the token set above (already
+    // in localStorage when Remember Me is checked) is what actually
+    // keeps the session alive across visits. Storing the plaintext
+    // password here too gained nothing but risk: anyone who can read
+    // this origin's localStorage (an XSS elsewhere, a malicious
+    // extension, a shared machine) would get the real account
+    // password, not just a scoped/expiring token.
+
+    if(remember){
+
+        localStorage.setItem(
+
+            "remember_login",
+
+            JSON.stringify({username:userData.username || ""})
+
+        );
+
+    }else{
+
+        localStorage.removeItem("remember_login");
+
+    }
+
+    // ===== REDIRECT =====
+
+    const role=(userData.role || "user").toLowerCase();
+
+    const next=getSafeNextParam();
+
+    window.location.href=
+
+        next
+
+            ? next
+
+            : role==="admin"
+
+                ? "/CM_Pro/pages/admin/index.html"
+
+                : "/CM_Pro/index.html";
+
+}
+
 form.addEventListener("submit",async(e)=>{
 
     e.preventDefault();
@@ -421,90 +509,13 @@ form.addEventListener("submit",async(e)=>{
 
         }
 
-        // ===== CLEAR TOKEN =====
-
-        localStorage.removeItem("token");
-
-        sessionStorage.removeItem("token");
-
-        // ===== SAVE TOKEN =====
-
-        if(rememberMe.checked){
-
-            localStorage.setItem("token",data.token);
-
-        }else{
-
-            sessionStorage.setItem("token",data.token);
-
-        }
-
-        // ===== USER DATA =====
-
-        const userData=data.user || data.data || data;
-
-        localStorage.setItem(
-
-            "loggedInUser",
-
-            JSON.stringify({
-
-                username:userData.username || "",
-
-                fullname:userData.fullname || "",
-
-                role:userData.role || "user"
-
-            })
-
-        );
-
-        // ===== REMEMBER LOGIN =====
-        // Only the username is persisted — the token set above (already
-        // in localStorage when Remember Me is checked) is what actually
-        // keeps the session alive across visits. Storing the plaintext
-        // password here too gained nothing but risk: anyone who can read
-        // this origin's localStorage (an XSS elsewhere, a malicious
-        // extension, a shared machine) would get the real account
-        // password, not just a scoped/expiring token.
-
-        if(rememberMe.checked){
-
-            localStorage.setItem(
-
-                "remember_login",
-
-                JSON.stringify({username})
-
-            );
-
-        }else{
-
-            localStorage.removeItem("remember_login");
-
-        }
-
         showMessage("Login successful","success");
 
         // ===== REDIRECT =====
 
         setTimeout(()=>{
 
-            const role=(userData.role || "user").toLowerCase();
-
-            const next=getSafeNextParam();
-
-            window.location.href=
-
-                next
-
-                    ? next
-
-                    : role==="admin"
-
-                        ? "/CM_Pro/pages/admin/index.html"
-
-                        : "/CM_Pro/index.html";
+            completeLogin(data,rememberMe.checked);
 
         },700);
 
@@ -521,6 +532,61 @@ form.addEventListener("submit",async(e)=>{
     }
 
 });
+
+// =========================
+// FINGERPRINT LOGIN
+// =========================
+
+const fingerprintBtn=document.getElementById("fingerprintLoginBtn");
+
+if(fingerprintBtn){
+
+    if(typeof isWebAuthnAvailable==="function" && isWebAuthnAvailable()){
+
+        fingerprintBtn.hidden=false;
+
+    }
+
+    fingerprintBtn.addEventListener("click",async()=>{
+
+        const username=document.getElementById("username").value.trim();
+
+        if(!username){
+
+            showMessage("សូមវាយបញ្ចូល Username មុនសិន","error");
+            return;
+
+        }
+
+        try{
+
+            setLoading(true);
+            showMessage("","");
+
+            const data=await webauthnLogin(username);
+
+            showMessage("Login successful","success");
+
+            setTimeout(()=>{
+
+                completeLogin(data,rememberMe.checked);
+
+            },500);
+
+        }catch(err){
+
+            console.error(err);
+            showMessage(err.message || "ការចូលដោយស្នាមម្រាមដៃបានបរាជ័យ","error");
+
+        }finally{
+
+            setLoading(false);
+
+        }
+
+    });
+
+}
 
 // =========================
 // HIDE SPLASH

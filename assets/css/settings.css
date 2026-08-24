@@ -293,6 +293,25 @@
 
 }
 
+/* No icon image exists for the fingerprint row yet — an emoji glyph
+   in the same 24x24 footprint keeps it aligned with the image-based
+   icons above/below it without needing a new asset file. */
+.setting-icon-emoji{
+
+    width:24px;
+
+    height:24px;
+
+    flex-shrink:0;
+
+    font-size:19px;
+
+    line-height:24px;
+
+    text-align:center;
+
+}
+
 .setting-arrow{
 
     font-size:22px;
