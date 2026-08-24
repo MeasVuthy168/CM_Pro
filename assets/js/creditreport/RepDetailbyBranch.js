@@ -216,6 +216,26 @@ function crFmtDateDMY(yyyymmdd) {
 // ========================================
 // FORMAT HELPERS
 // ========================================
+// table_to_sheet() reads raw DOM text (branch names among it) straight
+// into cells — Excel treats a cell string starting with =, +, -, @, or a
+// tab/CR as a formula when the file is opened, so this neutralizes any
+// such string cell (a leading apostrophe forces plain text) before the
+// workbook is written. Only touches string cells (t:"s"); numeric report
+// figures are untouched.
+function crSanitizeSheetFormulas(ws) {
+    if (!ws["!ref"]) return;
+    const range = XLSX.utils.decode_range(ws["!ref"]);
+    for (let r = range.s.r; r <= range.e.r; r++) {
+        for (let c = range.s.c; c <= range.e.c; c++) {
+            const cell = ws[XLSX.utils.encode_cell({ r, c })];
+            if (cell && cell.t === "s" && /^[=+\-@\t\r]/.test(cell.v)) {
+                cell.v = `'${cell.v}`;
+                if (cell.w) cell.w = cell.v;
+            }
+        }
+    }
+}
+
 function crEscapeHtml(text) {
     const div = document.createElement("div");
     div.textContent = text == null ? "" : String(text);
@@ -569,6 +589,7 @@ function crExportExcel() {
         return;
     }
     const ws = XLSX.utils.table_to_sheet(table);
+    crSanitizeSheetFormulas(ws);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "CreditReport");
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "");
