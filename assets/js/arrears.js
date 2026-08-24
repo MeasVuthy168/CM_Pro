@@ -1929,6 +1929,19 @@ async function refreshArrears() {
     }
 }
 
+// Excel (and other spreadsheet apps) treat a cell string starting with
+// =, +, -, @, or a tab/CR as a formula when the file is opened — several
+// of the fields below are free text loan officers type into the Reason
+// Arrear panel (akSolution etc.), so without this a note that happens to
+// start with one of those characters would silently become a live
+// formula for whoever opens the exported report. Prefixing with a
+// leading apostrophe forces Excel to treat it as plain text instead;
+// non-string values (numbers) pass through untouched.
+function sanitizeForSpreadsheet(value) {
+    if (typeof value !== "string") return value;
+    return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+}
+
 function exportArrears() {
     if (!currentRows.length) {
         notify("Nothing to export.", "warning");
@@ -1936,9 +1949,9 @@ function exportArrears() {
     }
     const sheetData = currentRows.map((row, i) => ({
         No: i + 1,
-        Customer: row.customer,
-        "Loan Number": row.loanNumber,
-        Location: row.location,
+        Customer: sanitizeForSpreadsheet(row.customer),
+        "Loan Number": sanitizeForSpreadsheet(row.loanNumber),
+        Location: sanitizeForSpreadsheet(row.location),
         DisDate: row.disDate,
         "Prn.OS": row.prnOS,
         "Int.OS": row.intOS,
@@ -1948,18 +1961,18 @@ function exportArrears() {
         Arreas: row.arreas,
         Day: row.day,
         Balnce: row.balance,
-        "Account Loan": row.accountLoan,
-        Tell: row.tell,
-        CIF: row.cif,
-        Occu: row.occu,
-        Ministry: row.ministry,
-        "Promise Status": row.promiseStatus,
-        CO_ID: row.coId,
-        "CIF_អ្នករួមខ្ចី": row.cifCoborrower,
-        "មុខរបរ": row.ajReason,
-        "មូលហេតុ/ដំណោះស្រាយ": row.akSolution,
+        "Account Loan": sanitizeForSpreadsheet(row.accountLoan),
+        Tell: sanitizeForSpreadsheet(row.tell),
+        CIF: sanitizeForSpreadsheet(row.cif),
+        Occu: sanitizeForSpreadsheet(row.occu),
+        Ministry: sanitizeForSpreadsheet(row.ministry),
+        "Promise Status": sanitizeForSpreadsheet(row.promiseStatus),
+        CO_ID: sanitizeForSpreadsheet(row.coId),
+        "CIF_អ្នករួមខ្ចី": sanitizeForSpreadsheet(row.cifCoborrower),
+        "មុខរបរ": sanitizeForSpreadsheet(row.ajReason),
+        "មូលហេតុ/ដំណោះស្រាយ": sanitizeForSpreadsheet(row.akSolution),
         "ថ្ងៃសន្យាសង": row.alFollowup,
-        User: row.user,
+        User: sanitizeForSpreadsheet(row.user),
         DateBackUpReasonArrear: formatRowDateTime12h(row.dateBackup)
     }));
 
