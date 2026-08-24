@@ -216,6 +216,11 @@ function crFmtDateDMY(yyyymmdd) {
 // ========================================
 // FORMAT HELPERS
 // ========================================
+function crEscapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text == null ? "" : String(text);
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
 function crFmtNum(n) {
     n = Number(n) || 0;
     return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
@@ -277,7 +282,7 @@ function crBuildRow(item, section, isTotal) {
     ).join("");
     return `
       <tr${isTotal ? ' class="cr-total-row"' : ""}>
-        <td class="cr-branch-col">${isTotal ? "Total" : item.branch}</td>
+        <td class="cr-branch-col">${isTotal ? "Total" : crEscapeHtml(item.branch)}</td>
         ${cells}
       </tr>`;
 }
@@ -294,7 +299,7 @@ function crBuildDetailedRow(item, section, branchLabel, team, isBranchTotal, isG
     return `
       <tr${rowClass}>
         <td class="cr-detail-team-col">${team}</td>
-        <td class="cr-detail-branch-col">${branchLabel}</td>
+        <td class="cr-detail-branch-col">${crEscapeHtml(branchLabel)}</td>
         ${cells}
       </tr>`;
 }

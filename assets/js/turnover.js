@@ -223,6 +223,16 @@ function getLast12MonthEnds(prepared){
 }
 
 // ========================================
+// SAFE HTML
+// ========================================
+
+function escapeHtml(text){
+    const div=document.createElement("div");
+    div.textContent=text == null ? "" : String(text);
+    return div.innerHTML.replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+// ========================================
 // FORMAT NUMBER
 // ========================================
 
@@ -351,7 +361,7 @@ function renderTable(items){
 
             tr.innerHTML=`
 
-                <td>${item.requestText}</td>
+                <td>${escapeHtml(item.requestText)}</td>
 
                 <td colspan="4">
                     No Data
