@@ -189,12 +189,15 @@ return;
 
 emptyBox.style.display="none";
 
-list.forEach(item=>{
-
-notifyList.innerHTML+=
-createNotificationCard(item);
-
-});
+// innerHTML += inside a loop forces the browser to re-serialize and
+// re-parse the ENTIRE growing list on every single iteration (the whole
+// DOM built so far gets thrown away and rebuilt from a string each time)
+// — O(n²) work that's barely noticeable at 10 items but made the page
+// hang for a long time once a user had hundreds/thousands of
+// notifications. Building the full HTML string first and assigning it
+// once does the same rendering in a single parse pass.
+notifyList.innerHTML=
+list.map(createNotificationCard).join("");
 
 enableSwipeCards();
 
