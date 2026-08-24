@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Fingerprint Login - CM_Pro</title>
+<meta name="theme-color" content="#032d73">
+
+<!-- Applied before any CSS loads, so there's no flash of the wrong
+     theme on page load. Keep this as the very first thing in <head>. -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
+<link rel="stylesheet" href="../../assets/css/main.css">
+
+<style>
+
+:root{
+    --fp-page-bg:#F5F7FA;
+    --fp-card-bg:#FFFFFF;
+    --fp-border:#E2E6ED;
+    --fp-text:#1C2333;
+    --fp-text-muted:#6B7280;
+    --fp-navy-dark:#002D6B;
+}
+
+[data-theme="dark"]{
+    --fp-page-bg:#002D6B;
+    --fp-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
+    --fp-border:#D4AF37;
+    --fp-text:#fff;
+    --fp-text-muted:#cdd9ef;
+}
+
+.fp-page{
+    background:var(--fp-page-bg);
+    min-height:100vh;
+    box-sizing:border-box;
+    padding:16px;
+    padding-bottom:100px;
+}
+
+.fp-card{
+    background:var(--fp-card-bg);
+    border:1px solid var(--fp-border);
+    border-radius:16px;
+    padding:20px;
+    margin-bottom:14px;
+}
+
+.fp-intro-icon{
+    font-size:40px;
+    text-align:center;
+    margin-bottom:8px;
+}
+
+.fp-intro-title{
+    font-size:17px;
+    font-weight:700;
+    color:var(--fp-text);
+    text-align:center;
+    margin-bottom:6px;
+}
+
+.fp-intro-text{
+    font-size:13.5px;
+    color:var(--fp-text-muted);
+    text-align:center;
+    line-height:1.5;
+}
+
+.fp-unsupported{
+    background:#FBE3E1;
+    color:#C0392B;
+    border-radius:12px;
+    padding:14px;
+    font-size:13.5px;
+    text-align:center;
+    line-height:1.5;
+}
+[data-theme="dark"] .fp-unsupported{
+    background:#331512;
+}
+
+.fp-add-btn{
+    width:100%;
+    height:52px;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(180deg,#FFD700,#D4AF37);
+    color:#002D6B;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+}
+.fp-add-btn:active{ transform:scale(.98); }
+.fp-add-btn:disabled{
+    opacity:.55;
+    cursor:default;
+}
+
+.fp-section-label{
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--fp-text-muted);
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    margin:18px 4px 8px;
+}
+
+.fp-device-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:14px 4px;
+    border-bottom:1px solid var(--fp-border);
+}
+.fp-device-row:last-child{
+    border-bottom:none;
+}
+
+.fp-device-icon{
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    background:rgba(212,175,55,.15);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    flex-shrink:0;
+}
+
+.fp-device-info{
+    flex:1;
+    min-width:0;
+}
+.fp-device-name{
+    font-size:14.5px;
+    font-weight:700;
+    color:var(--fp-text);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+.fp-device-date{
+    font-size:12px;
+    color:var(--fp-text-muted);
+}
+
+.fp-device-remove{
+    width:36px;
+    height:36px;
+    border-radius:10px;
+    border:1px solid #e08a8a;
+    background:transparent;
+    color:#C0392B;
+    font-size:15px;
+    cursor:pointer;
+    flex-shrink:0;
+}
+.fp-device-remove:active{ transform:scale(.94); }
+
+.fp-empty{
+    text-align:center;
+    color:var(--fp-text-muted);
+    font-size:13.5px;
+    padding:20px 0;
+}
+
+</style>
+
+</head>
+<body>
+
+<div id="offlineBanner">
+⚠️ No Internet Connection
+</div>
+
+<div id="topbar-container"></div>
+
+<div class="fp-page">
+
+<div class="fp-card">
+<div class="fp-intro-icon">👆</div>
+<div class="fp-intro-title">ការចូលដោយស្នាមម្រាមដៃ</div>
+<div class="fp-intro-text">
+ចុះឈ្មោះស្នាមម្រាមដៃ ឬ Face ID លើឧបករណ៍នេះ ដើម្បីចូលប្រើប្រាស់ដោយមិនចាំបាច់វាយពាក្យសម្ងាត់។
+</div>
+</div>
+
+<div id="fpUnsupported" class="fp-card fp-unsupported" hidden>
+ឧបករណ៍ ឬកម្មវិធីរុករកនេះ មិនគាំទ្រការចូលដោយស្នាមម្រាមដៃទេ។
+</div>
+
+<div id="fpSupportedArea">
+
+<button type="button" id="fpAddBtn" class="fp-add-btn">
+<span>➕</span> បន្ថែមឧបករណ៍នេះ
+</button>
+
+<div class="fp-section-label">ឧបករណ៍ដែលបានចុះឈ្មោះ</div>
+
+<div id="fpDeviceList" class="fp-card">
+<div class="fp-empty">កំពុងផ្ទុក...</div>
+</div>
+
+</div>
+
+</div>
+
+<div id="bottomnav-container"></div>
+
+<script src="../../config/api.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+<script src="/CM_Pro/assets/js/webauthn.js"></script>
+
+<script src="../../assets/js/settings-fingerprint.js"></script>
+
+</body>
+</html>

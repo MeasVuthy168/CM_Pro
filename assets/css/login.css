@@ -206,6 +206,48 @@ body{
 
 }
 
+/* Hidden by default — login.js only unhides it once
+   isWebAuthnAvailable() confirms the browser actually supports it. */
+.fingerprint-login-btn{
+
+    width:100%;
+
+    height:52px;
+
+    margin-top:12px;
+
+    border:1.5px solid #FFD700;
+
+    border-radius:16px;
+
+    background:transparent;
+
+    color:#FFD700;
+
+    font-size:16px;
+
+    font-weight:700;
+
+    font-family:'Krasar', sans-serif;
+
+    cursor:pointer;
+
+    transition:.2s;
+
+}
+
+.fingerprint-login-btn:hover{
+
+    background:rgba(255,215,0,.1);
+
+}
+
+.fingerprint-login-btn:disabled{
+
+    opacity:.6;
+
+}
+
 /* =========================
    Status + Loading
 ========================= */
