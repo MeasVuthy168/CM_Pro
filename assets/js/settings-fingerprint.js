@@ -185,7 +185,7 @@ fpAddBtn?.addEventListener("click", async () => {
 
         await webauthnRegister(label);
 
-        notify("បានចុះឈ្មោះស្នាមម្រាមដៃដោយជោគជ័យ", "success");
+        notify("បានចុះឈ្មោះស្នាមម្រាមដៃ ឬ ផ្ទៃមុខដោយជោគជ័យ", "success");
 
         fpRefreshDevices();
 
