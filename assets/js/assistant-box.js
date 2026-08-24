@@ -13,6 +13,12 @@
 const ASSISTANT_APP_NAME = 'SVG_CreditMonitoring';
 const ASSISTANT_ABOUT_URL = './pages/settings/about.html';
 
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text == null ? '' : String(text);
+    return div.innerHTML;
+}
+
 function getGreeting(fullname) {
     const h = new Date().getHours();
     const period = h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening';
@@ -79,7 +85,7 @@ function renderUpdateBox(box, textEl, notification) {
     }
 
     textEl.innerHTML = `
-        <span class="update-version">កំណែថ្មី Version ${version} មកដល់ហើយ!</span>
+        <span class="update-version">កំណែថ្មី Version ${escapeHtml(version)} មកដល់ហើយ!</span>
         <span class="update-highlights">សូមចូលទៅ Download កំណែថ្មីក្នុងកម្មវិធី Excel ឈ្មោះ SVG Credit Monitoring</span>
         <button class="assistant-cta" onclick="location.href='${ASSISTANT_ABOUT_URL}'">ចុចមើលព៌តមានកំណែថ្មី</button>
     `;

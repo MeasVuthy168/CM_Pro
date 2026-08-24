@@ -3,6 +3,20 @@
 // Version 3.0
 // ===========================================
 
+// Escapes for both HTML text content and quoted attribute values (title/
+// message/uploadedBy/photo below all land in one or the other, and all can
+// carry attacker-controlled text — pushed notification data ends up here
+// verbatim, so this has to be attribute-safe, not just tag-safe).
+function escapeHtml(text){
+
+  const div=document.createElement("div");
+
+  div.textContent=text == null ? "" : String(text);
+
+  return div.innerHTML.replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+
+}
+
 const CMToast = {
 
   version: "3.0",
@@ -317,21 +331,21 @@ const CMToast = {
 
       <div class="cm-toast-center">
         <div class="cm-toast-title">
-          ${title}
+          ${escapeHtml(title)}
         </div>
 
         <div class="cm-toast-message">
-          ${message}
+          ${escapeHtml(message)}
         </div>
 
         <div class="cm-toast-meta">
           <div class="cm-toast-user">
             <img
               class="cm-toast-avatar"
-              src="${photo}"
+              src="${escapeHtml(photo)}"
               onerror="this.src='/CM_Pro/assets/images/default-user.png'">
             <span class="cm-toast-username">
-              ${uploadedBy}
+              ${escapeHtml(uploadedBy)}
             </span>
           </div>
 

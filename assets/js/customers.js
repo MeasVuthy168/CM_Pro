@@ -58,7 +58,11 @@ function escapeHtml(text){
 
     div.textContent=text == null ? "" : String(text);
 
-    return div.innerHTML;
+    // textContent->innerHTML escapes & < > but not quotes — harmless for
+    // today's text-node-only callers, but keeps this consistent with the
+    // other escapeHtml() copies in this codebase in case an attribute
+    // usage gets added here later.
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
 }
 

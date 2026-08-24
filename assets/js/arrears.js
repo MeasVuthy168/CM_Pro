@@ -302,7 +302,10 @@ function notify(message, type = "info") {
 function escapeHtml(text) {
     const div = document.createElement("div");
     div.textContent = text == null ? "" : String(text);
-    return div.innerHTML;
+    // textContent->innerHTML escapes & < > but not quotes — this also feeds
+    // quoted HTML attributes (data-ldcif, option value) elsewhere in this
+    // file, so those need escaping too.
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
 // ========================================
