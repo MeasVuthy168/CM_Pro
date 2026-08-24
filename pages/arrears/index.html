@@ -336,6 +336,9 @@ href="../../assets/css/arrears.css">
 
 <div id="noReasonCard" class="reason-card noreason-card">
 
+<!-- LIST SCREEN: officers, each with their unfilled-reason count -->
+<div id="noReasonListScreen">
+
 <div class="reason-title">មិនទាន់បានបំពេញ Reason Arrear</div>
 <div class="reason-subtitle" id="noReasonSubtitle">-</div>
 <div class="reason-subtitle noreason-last-upload">ទិន្នន័យចុងក្រោយនៅ <span id="noReasonLastUpload">-</span></div>
@@ -368,6 +371,40 @@ href="../../assets/css/arrears.css">
 
 <div class="reason-actions">
 <button id="btnNoReasonClose">Close</button>
+</div>
+
+</div>
+
+<!-- CLIENTS SCREEN: the selected officer's own unfilled-reason loans.
+     Tapping a client closes this modal and opens the real Reason
+     Arrear panel for that loan, same as tapping a row in the main
+     table would. -->
+<div id="noReasonClientsScreen" style="display:none;">
+
+<div class="outarea-sticky-header">
+<div class="reason-title" style="margin:0;" id="noReasonClientsTitle">-</div>
+<button type="button" id="btnNoReasonClientsCloseX" class="outarea-close-x" aria-label="បិទ">✕</button>
+</div>
+
+<div class="reason-subtitle" id="noReasonClientsSubtitle">-</div>
+
+<table class="noreason-table">
+<thead>
+<tr>
+<th>No</th>
+<th>អតិថិជន</th>
+<th>លេខកិច្ចសន្យា</th>
+<th>CIF</th>
+<th>ថ្ងៃយឺត</th>
+</tr>
+</thead>
+<tbody id="noReasonClientsTbody"></tbody>
+</table>
+
+<div class="reason-actions">
+<button id="btnNoReasonClientsBack">← ត្រឡប់ក្រោយ</button>
+</div>
+
 </div>
 
 </div>

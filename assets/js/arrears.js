@@ -2199,8 +2199,15 @@ function buildNoReasonRows(sourceRows, branchFilter, teamFilter) {
         const name = row.coResponse || "(Unknown)";
         const key = name + "||" + branch + "||" + team;
 
-        if (!map.has(key)) map.set(key, { name, branch, team, count: 0 });
-        map.get(key).count++;
+        // rows[] keeps a reference to the actual arrears row objects
+        // (not copies) — clicking a client in the drill-down screen
+        // hands one of these straight to openReasonPanel(), same object
+        // the main table's own row click uses, so nav/save behave
+        // identically.
+        if (!map.has(key)) map.set(key, { name, branch, team, count: 0, rows: [] });
+        const entry = map.get(key);
+        entry.count++;
+        entry.rows.push(row);
     });
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -2211,6 +2218,16 @@ function populateNoReasonBranchFilter() {
     setSelectOptions(branchEl, distinctSorted(allRows, "branch"), { keepFirstN: 1 });
 }
 
+// Holds the officer groups from the most recent showNoReasonSummary()
+// call, so the click handler on #noReasonTbody can look one up by the
+// index stashed on its <tr> without re-filtering currentRows.
+let noReasonGroups = [];
+
+// Whichever officer's client list is currently open in the drill-down
+// screen, so its own row-click handler can resolve a tapped row back
+// to the real arrears row object.
+let noReasonClientRows = [];
+
 function showNoReasonSummary() {
     populateNoReasonBranchFilter();
 
@@ -2220,13 +2237,16 @@ function showNoReasonSummary() {
     const teamFilter = teamFilterEl ? teamFilterEl.value : "";
 
     const rows = buildNoReasonRows(currentRows, branchFilter, teamFilter);
+    noReasonGroups = rows;
+
     const tbody = document.getElementById("noReasonTbody");
     tbody.innerHTML = "";
 
     let total = 0;
-    rows.forEach(r => {
+    rows.forEach((r, i) => {
         total += r.count;
         const tr = document.createElement("tr");
+        tr.dataset.groupIndex = i;
         tr.innerHTML = `<td>${escapeHtml(r.name)}</td><td>${r.count}</td>`;
         tbody.appendChild(tr);
     });
@@ -2241,8 +2261,69 @@ function showNoReasonSummary() {
     const lastUploadText = document.getElementById("lastUploadAt")?.textContent || "-";
     document.getElementById("noReasonLastUpload").textContent = lastUploadText;
 
+    showNoReasonListScreen();
     document.getElementById("noReasonBackdrop").classList.add("show");
 }
+
+function showNoReasonListScreen() {
+    document.getElementById("noReasonClientsScreen").style.display = "none";
+    document.getElementById("noReasonListScreen").style.display = "block";
+}
+
+// Drill-down: the officer's own unfilled-reason loans, so staff can
+// jump straight to a specific client instead of hunting for them in
+// the full table.
+function showNoReasonClients(group) {
+    noReasonClientRows = group.rows;
+
+    const tbody = document.getElementById("noReasonClientsTbody");
+    tbody.innerHTML = "";
+
+    group.rows.forEach((row, i) => {
+        const tr = document.createElement("tr");
+        tr.dataset.rowIndex = i;
+        tr.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${escapeHtml(row.customer)}</td>
+            <td>${escapeHtml(row.loanNumber)}</td>
+            <td>${escapeHtml(row.cif)}</td>
+            <td>${escapeHtml(row.day ? row.day + "ថ្ងៃ" : "")}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    document.getElementById("noReasonClientsTitle").textContent = group.name;
+    document.getElementById("noReasonClientsSubtitle").textContent =
+        `${group.branch || "-"}  •  ${group.team}  •  ${group.count} LD`;
+
+    document.getElementById("noReasonListScreen").style.display = "none";
+    document.getElementById("noReasonClientsScreen").style.display = "block";
+}
+
+document.getElementById("noReasonTbody")?.addEventListener("click", (e) => {
+    const tr = e.target.closest("tr[data-group-index]");
+    if (!tr) return;
+    const group = noReasonGroups[Number(tr.dataset.groupIndex)];
+    if (group) showNoReasonClients(group);
+});
+
+document.getElementById("noReasonClientsTbody")?.addEventListener("click", (e) => {
+    const tr = e.target.closest("tr[data-row-index]");
+    if (!tr) return;
+    const row = noReasonClientRows[Number(tr.dataset.rowIndex)];
+    if (!row) return;
+
+    document.getElementById("noReasonBackdrop").classList.remove("show");
+    showNoReasonListScreen(); // reset for next time this modal opens
+    openReasonPanel(row);
+});
+
+document.getElementById("btnNoReasonClientsBack")?.addEventListener("click", showNoReasonListScreen);
+
+document.getElementById("btnNoReasonClientsCloseX")?.addEventListener("click", () => {
+    document.getElementById("noReasonBackdrop").classList.remove("show");
+    showNoReasonListScreen();
+});
 
 document.getElementById("btnNoReasonSummary")?.addEventListener("click", () => {
     showNoReasonSummary();
@@ -2259,6 +2340,7 @@ document.getElementById("btnNoReasonClose")?.addEventListener("click", () => {
 document.getElementById("noReasonBackdrop")?.addEventListener("click", (e) => {
     if (e.target.id === "noReasonBackdrop") {
         e.currentTarget.classList.remove("show");
+        showNoReasonListScreen();
     }
 });
 

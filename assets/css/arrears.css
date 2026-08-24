@@ -1013,6 +1013,21 @@ font-weight:700;
 
 }
 
+/* Officer rows (list screen) and client rows (drill-down screen) are
+   both clickable — this table doesn't otherwise look interactive. */
+.noreason-table tbody tr{
+
+cursor:pointer;
+
+}
+
+.noreason-table tbody tr:hover,
+.noreason-table tbody tr:active{
+
+background:rgba(212,175,55,.15);
+
+}
+
 .reason-title{
 
 font-size:14px;
