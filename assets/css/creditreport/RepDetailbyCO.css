@@ -51,6 +51,29 @@
     --cr-note-bg:rgba(255,107,107,.10);
 }
 
+/* ACCENT THEMES (gold/green/purple) — see settings.css for rationale. */
+[data-theme="gold"]{
+    --cr-navy:#8A5A00;
+    --cr-navy-dark:#6B4500;
+    --cr-gold:#D4AF37;
+    --cr-gold-light:#FFD700;
+    --cr-border:#C9971F;
+}
+[data-theme="green"]{
+    --cr-navy:#1B6B3A;
+    --cr-navy-dark:#124A28;
+    --cr-gold:#4CAF50;
+    --cr-gold-light:#8BE28F;
+    --cr-border:#4CAF50;
+}
+[data-theme="purple"]{
+    --cr-navy:#6A1B9A;
+    --cr-navy-dark:#4A148C;
+    --cr-gold:#9C27B0;
+    --cr-gold-light:#CE93D8;
+    --cr-border:#9C27B0;
+}
+
 *{ box-sizing:border-box; }
 
 /* ===== Page shell (arrears.css defines its own — this page needs its own too) ===== */

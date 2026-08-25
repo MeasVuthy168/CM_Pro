@@ -12,6 +12,11 @@
     --card-shadow:0 4px 12px rgba(0,0,0,.25);
 }
 
+/* ACCENT THEMES (gold/green/purple) — see settings.css for rationale. */
+[data-theme="gold"]{ --card-border:#C9971F; }
+[data-theme="green"]{ --card-border:#4CAF50; }
+[data-theme="purple"]{ --card-border:#9C27B0; }
+
 /* =========================
    Dashboard Grid
 ========================= */

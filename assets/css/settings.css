@@ -26,6 +26,33 @@
     --set-shadow:0 4px 14px rgba(0,0,0,.25);
 }
 
+/* ==========================================
+   ACCENT THEMES (gold/green/purple)
+   Same light page/card background as the default theme — only the
+   navy/gold "brand" accent swaps to a different color family, so
+   these stay readable without needing their own dark-mode-style text/
+   background overrides. See shared/theme.js for the full theme list.
+========================================== */
+[data-theme="gold"]{
+    --set-navy-dark:#6B4500;
+    --set-navy:#8A5A00;
+    --set-border:#C9971F;
+}
+[data-theme="green"]{
+    --set-navy-dark:#124A28;
+    --set-navy:#1B6B3A;
+    --set-gold:#4CAF50;
+    --set-gold-light:#8BE28F;
+    --set-border:#4CAF50;
+}
+[data-theme="purple"]{
+    --set-navy-dark:#4A148C;
+    --set-navy:#6A1B9A;
+    --set-gold:#9C27B0;
+    --set-gold-light:#CE93D8;
+    --set-border:#9C27B0;
+}
+
 .setting-page{
 
     background:var(--set-page-bg);
@@ -408,9 +435,103 @@ input:checked + .slider:before{
 
 }
 
-/* Theme switch shows a sun/moon-ish tint difference isn't necessary —
-   reuses the same gold-when-on look as the notification switch for
-   visual consistency, no separate styling needed. */
+/* =========================
+   Theme Picker
+   One round swatch button per theme (colored via inline style from
+   CM_THEME_LIST, not a CSS class per theme, since the list itself
+   lives in shared/theme.js). The active swatch gets a ring + a
+   checkmark; light/white swatches need their own border since white-
+   on-white would otherwise be invisible against the card background.
+========================= */
+
+.theme-picker{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    flex-wrap:wrap;
+
+    justify-content:flex-end;
+
+}
+
+.theme-swatch{
+
+    position:relative;
+
+    width:28px;
+
+    height:28px;
+
+    border-radius:50%;
+
+    border:1px solid var(--set-border);
+
+    cursor:pointer;
+
+    padding:0;
+
+    flex-shrink:0;
+
+    transition:transform .15s;
+
+}
+
+.theme-swatch:active{
+
+    transform:scale(.9);
+
+}
+
+.theme-swatch-check{
+
+    position:absolute;
+
+    inset:0;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    color:#fff;
+
+    font-size:13px;
+
+    font-weight:bold;
+
+    text-shadow:0 1px 2px rgba(0,0,0,.5);
+
+    opacity:0;
+
+}
+
+.theme-swatch.active{
+
+    box-shadow:0 0 0 2px var(--set-card-bg), 0 0 0 4px var(--set-gold);
+
+}
+
+.theme-swatch.active .theme-swatch-check{
+
+    opacity:1;
+
+}
+
+/* The light/white swatch's checkmark needs a dark shadow to read
+   against a white circle instead of the default white-on-white glow
+   tuned for the other, darker swatch colors. */
+.theme-swatch[data-theme-id="light"] .theme-swatch-check{
+
+    color:var(--set-navy-dark);
+
+    text-shadow:none;
+
+}
 
 /* ===========================
    LOGOUT DIALOG

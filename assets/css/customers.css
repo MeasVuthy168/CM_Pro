@@ -20,6 +20,27 @@
     --cst-shadow:0 4px 14px rgba(0,0,0,.25);
 }
 
+/* ACCENT THEMES (gold/green/purple) — see settings.css for rationale. */
+[data-theme="gold"]{
+    --cst-navy:#8A5A00;
+    --cst-navy-dark:#6B4500;
+    --cst-border:#C9971F;
+}
+[data-theme="green"]{
+    --cst-navy:#1B6B3A;
+    --cst-navy-dark:#124A28;
+    --cst-gold:#4CAF50;
+    --cst-gold-light:#8BE28F;
+    --cst-border:#4CAF50;
+}
+[data-theme="purple"]{
+    --cst-navy:#6A1B9A;
+    --cst-navy-dark:#4A148C;
+    --cst-gold:#9C27B0;
+    --cst-gold-light:#CE93D8;
+    --cst-border:#9C27B0;
+}
+
 /* ==========================================
    PAGE
 ========================================== */
