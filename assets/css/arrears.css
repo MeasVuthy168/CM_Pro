@@ -99,6 +99,136 @@ grid-template-columns:repeat(4,1fr);
 
 }
 
+/* ==========================================
+   PRIMARY / ADVANCED FILTER SPLIT
+   Keyword/Branch/Officer/Promise Status stay visible at all times;
+   the other 8 boxes are collapsed by default behind a toggle so a
+   phone screen isn't showing all 12 filter boxes before you've even
+   looked at the table. The search box spans the full row on its own
+   line (filter-group-wide) since it's the one most people reach for
+   first and typing is easier in a wider box.
+========================================== */
+
+.filter-grid-primary{
+
+margin-bottom:12px;
+
+}
+
+.filter-group-wide{
+
+grid-column:1 / -1;
+
+}
+
+.filter-advanced-toggle{
+
+width:100%;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+gap:8px;
+
+height:38px;
+
+border:1px dashed var(--arr-border);
+
+border-radius:10px;
+
+background:transparent;
+
+color:var(--arr-text-muted);
+
+font-family:'KRASAR',sans-serif;
+
+font-size:12.5px;
+
+font-weight:700;
+
+cursor:pointer;
+
+}
+
+.filter-advanced-toggle:active{
+
+transform:scale(.98);
+
+}
+
+.filter-advanced-badge{
+
+min-width:18px;
+
+height:18px;
+
+padding:0 5px;
+
+border-radius:999px;
+
+background:var(--arr-gold);
+
+color:#002D6B;
+
+font-size:11px;
+
+font-weight:800;
+
+line-height:18px;
+
+text-align:center;
+
+}
+
+.filter-advanced-badge[hidden]{
+
+display:none;
+
+}
+
+.filter-advanced-caret{
+
+transition:transform .2s ease;
+
+font-size:11px;
+
+}
+
+.filter-advanced-toggle[aria-expanded="true"] .filter-advanced-caret{
+
+transform:rotate(180deg);
+
+}
+
+.filter-grid-advanced{
+
+overflow:hidden;
+
+max-height:0;
+
+opacity:0;
+
+margin-top:0;
+
+transition:max-height .25s ease, opacity .2s ease, margin-top .25s ease;
+
+}
+
+.filter-grid-advanced.show{
+
+/* Generously large so 8 boxes across any viewport width always fit —
+   only acts as a transition target, never actually clips real content. */
+max-height:600px;
+
+opacity:1;
+
+margin-top:12px;
+
+}
+
 .filter-group{
 
 display:flex;
@@ -509,6 +639,8 @@ text-align:center;
 
 .table-card{
 
+position:relative;
+
 width:100%;
 
 box-sizing:border-box;
@@ -524,6 +656,50 @@ border-radius:16px;
 padding:10px;
 
 box-shadow:var(--arr-shadow);
+
+}
+
+/* ==========================================
+   HORIZONTAL SCROLL HINT
+   A 26-column table has far more columns than fit on a phone screen,
+   with no visual cue that there's more to the right until you
+   accidentally swipe into it. This fades the table's right edge —
+   a standard "there's more this way" affordance — without needing to
+   track actual scroll position in JS. Purely decorative, so it's
+   removed for print/landscape where it would just add clutter.
+========================================== */
+
+.table-card::after{
+
+content:"";
+
+position:absolute;
+
+top:10px;
+
+right:10px;
+
+bottom:10px;
+
+width:22px;
+
+background:linear-gradient(90deg, transparent, rgba(0,0,0,.10));
+
+pointer-events:none;
+
+border-radius:0 16px 16px 0;
+
+}
+
+[data-theme="dark"] .table-card::after{
+
+background:linear-gradient(90deg, transparent, rgba(0,0,0,.35));
+
+}
+
+body.arrears-force-landscape .table-card::after{
+
+display:none;
 
 }
 
@@ -692,6 +868,11 @@ position:sticky;
 left:44px;
 
 z-index:2;
+
+/* Marks where the frozen columns end and the horizontally-scrollable
+   ones begin — without this the two areas look identical and the
+   freeze isn't obvious until you're mid-scroll. */
+box-shadow:2px 0 4px rgba(0,0,0,.12);
 
 }
 
@@ -2519,4 +2700,57 @@ display:none !important;
 .outarea-bulk-delete-btn:active{ transform:scale(.97); }
 [data-theme="dark"] .outarea-bulk-delete-btn{
     background:#1c2333;
+}
+
+/* ==========================================
+   COLUMN VISIBILITY PICKER
+   Reuses .reason-card/.noreason-card for the modal shell (same sticky
+   header pattern as the Out-of-Area list). Column labels are read
+   straight from the live table headers by JS, so this list can never
+   drift out of sync with the actual columns.
+========================================== */
+.menu-icon-emoji{
+    width:20px;
+    flex:0 0 20px;
+    font-size:15px;
+    line-height:1;
+    text-align:center;
+}
+
+.columns-list{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    max-height:50vh;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    margin-bottom:12px;
+}
+
+.columns-list-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:9px 6px;
+    border-bottom:1px solid var(--arr-border, #e2e6ed);
+    font-size:13.5px;
+    color:var(--arr-text, #1c2333);
+}
+.columns-list-item:last-child{ border-bottom:none; }
+
+.columns-list-item input{
+    width:18px;
+    height:18px;
+    flex-shrink:0;
+}
+
+.columns-list-item label{
+    flex:1;
+    min-width:0;
+    word-break:break-word;
+    cursor:pointer;
+}
+
+.columns-list-locked{
+    opacity:.55;
 }

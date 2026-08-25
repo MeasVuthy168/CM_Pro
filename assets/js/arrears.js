@@ -481,6 +481,7 @@ function applyFilters() {
 
     renderTable(currentRows);
     renderSummary(currentRows);
+    updateAdvancedFilterBadge();
 }
 
 function clearFilters() {
@@ -2472,6 +2473,152 @@ Object.entries(filterEls).forEach(([key, el]) => {
     } else {
         el.addEventListener("input", applyFiltersDebounced);
     }
+});
+
+// ========================================
+// ADVANCED FILTERS TOGGLE
+// The 8 less-frequently-used filter boxes (Officer Response, Team
+// Leader, Currency, OS Classify, Class, PD, Occupation, Product Type)
+// are collapsed by default so a phone screen isn't showing all 12
+// filter boxes before the table itself. Collapsed state persists per
+// device; the badge shows how many of the HIDDEN filters are
+// currently active, so a collapsed panel never silently hides an
+// active filter from view.
+// ========================================
+
+const ADVANCED_FILTER_KEYS = [
+    "officerResponse", "teamLeader", "currency", "osClassify",
+    "class", "pd", "occupation", "productType"
+];
+const ADVANCED_FILTERS_OPEN_KEY = "arrears_advanced_filters_open";
+
+const btnToggleAdvancedFilters = document.getElementById("btnToggleAdvancedFilters");
+const advancedFilterGrid = document.getElementById("advancedFilterGrid");
+const advancedFilterBadge = document.getElementById("advancedFilterBadge");
+
+function setAdvancedFiltersOpen(open) {
+    if (!btnToggleAdvancedFilters || !advancedFilterGrid) return;
+    advancedFilterGrid.classList.toggle("show", open);
+    btnToggleAdvancedFilters.setAttribute("aria-expanded", open ? "true" : "false");
+    localStorage.setItem(ADVANCED_FILTERS_OPEN_KEY, open ? "1" : "0");
+}
+
+function updateAdvancedFilterBadge() {
+    if (!advancedFilterBadge) return;
+    const activeCount = ADVANCED_FILTER_KEYS.filter(key => filterEls[key].value.trim() !== "").length;
+    advancedFilterBadge.textContent = String(activeCount);
+    advancedFilterBadge.hidden = activeCount === 0;
+}
+
+if (btnToggleAdvancedFilters && advancedFilterGrid) {
+    btnToggleAdvancedFilters.addEventListener("click", () => {
+        setAdvancedFiltersOpen(!advancedFilterGrid.classList.contains("show"));
+    });
+    setAdvancedFiltersOpen(localStorage.getItem(ADVANCED_FILTERS_OPEN_KEY) === "1");
+    updateAdvancedFilterBadge();
+}
+
+// ========================================
+// COLUMN VISIBILITY
+// Lets each device hide table columns it doesn't care about, since
+// 26 columns is far more than fits on a phone. Column labels are
+// read straight off the live <thead> rather than hardcoded here, so
+// this can never drift out of sync if columns are ever added/
+// reordered. No (1) and Customer (2) are excluded — they're the
+// frozen/sticky columns the rest of the layout (and updateRowInTable's
+// fixed cell indexes) depends on always being present.
+// ========================================
+
+const HIDDEN_COLUMNS_KEY = "arrears_hidden_columns";
+const LOCKED_COLUMN_INDEXES = [1, 2]; // 1-based: No, Customer
+
+function loadHiddenColumns() {
+    try {
+        const raw = JSON.parse(localStorage.getItem(HIDDEN_COLUMNS_KEY) || "[]");
+        return new Set(Array.isArray(raw) ? raw.filter(n => Number.isInteger(n)) : []);
+    } catch {
+        return new Set();
+    }
+}
+
+function saveHiddenColumns(set) {
+    localStorage.setItem(HIDDEN_COLUMNS_KEY, JSON.stringify(Array.from(set)));
+}
+
+let hiddenColumns = loadHiddenColumns();
+
+function applyHiddenColumns() {
+    let styleEl = document.getElementById("arrearsHiddenColsStyle");
+    if (!styleEl) {
+        styleEl = document.createElement("style");
+        styleEl.id = "arrearsHiddenColsStyle";
+        document.head.appendChild(styleEl);
+    }
+    const rules = Array.from(hiddenColumns)
+        .filter(n => !LOCKED_COLUMN_INDEXES.includes(n))
+        .map(n => `.table-card th:nth-child(${n}),.table-card td:nth-child(${n}){display:none}`)
+        .join("");
+    styleEl.textContent = rules;
+}
+
+function getColumnLabels() {
+    return Array.from(document.querySelectorAll("#arrearsTable thead th"))
+        .map(th => th.textContent.trim());
+}
+
+function renderColumnsPicker() {
+    const list = document.getElementById("columnsList");
+    if (!list) return;
+
+    const labels = getColumnLabels();
+    list.innerHTML = labels.map((label, i) => {
+        const colIndex = i + 1;
+        const locked = LOCKED_COLUMN_INDEXES.includes(colIndex);
+        const checked = locked || !hiddenColumns.has(colIndex);
+        return `
+            <div class="columns-list-item${locked ? " columns-list-locked" : ""}">
+                <input type="checkbox" id="colVis${colIndex}" data-col="${colIndex}" ${checked ? "checked" : ""} ${locked ? "disabled" : ""}>
+                <label for="colVis${colIndex}">${escapeHtml(label)}</label>
+            </div>
+        `;
+    }).join("");
+
+    list.querySelectorAll("input[type=checkbox]").forEach(cb => {
+        cb.addEventListener("change", () => {
+            const colIndex = Number(cb.dataset.col);
+            if (cb.checked) hiddenColumns.delete(colIndex);
+            else hiddenColumns.add(colIndex);
+            saveHiddenColumns(hiddenColumns);
+            applyHiddenColumns();
+        });
+    });
+}
+
+applyHiddenColumns(); // restore saved column visibility on page load
+
+const columnsBackdrop = document.getElementById("columnsBackdrop");
+
+document.getElementById("btnColumns")?.addEventListener("click", () => {
+    renderColumnsPicker();
+    columnsBackdrop.classList.add("show");
+    document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
+});
+
+function closeColumnsModal() {
+    columnsBackdrop.classList.remove("show");
+}
+
+document.getElementById("btnColumnsClose")?.addEventListener("click", closeColumnsModal);
+document.getElementById("btnColumnsCloseX")?.addEventListener("click", closeColumnsModal);
+columnsBackdrop?.addEventListener("click", (e) => {
+    if (e.target.id === "columnsBackdrop") closeColumnsModal();
+});
+
+document.getElementById("btnColumnsShowAll")?.addEventListener("click", () => {
+    hiddenColumns = new Set();
+    saveHiddenColumns(hiddenColumns);
+    applyHiddenColumns();
+    renderColumnsPicker();
 });
 
 

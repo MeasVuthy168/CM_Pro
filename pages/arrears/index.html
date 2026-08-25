@@ -89,9 +89,18 @@ href="../../assets/css/arrears.css">
 
 <div class="filter-card">
 
-<div class="filter-grid">
+<!-- Most-used filters — always visible. The remaining ones (mirroring
+     the VBA sheet's F2:F4/I2:I4/M2:M4 columns) are less commonly
+     touched day-to-day, so they're tucked behind the "advanced
+     filters" toggle below instead of all 12 competing for attention
+     at once on a phone screen. -->
+<div class="filter-grid filter-grid-primary">
 
-<!-- Column 1 (D2:D4 in the sheet) -->
+<div class="filter-group filter-group-wide">
+<label for="fKeyword">ស្វែងរកឈ្មោះ</label>
+<input type="text" id="fKeyword" placeholder="វាយឈ្មោះអតិថិជន..." autocomplete="off">
+</div>
+
 <div class="filter-group">
 <label for="fBranch">សាខា</label>
 <select id="fBranch">
@@ -100,15 +109,37 @@ href="../../assets/css/arrears.css">
 </div>
 
 <div class="filter-group">
-<label for="fOfficerResponse">ភ្នាក់ងារទទួលខុសត្រូវ</label>
-<select id="fOfficerResponse">
+<label for="fOfficerOwner">ភ្នាក់ងារផ្ទាល់ខ្លួន(ID)</label>
+<select id="fOfficerOwner">
 <option value="">All</option>
 </select>
 </div>
 
 <div class="filter-group">
-<label for="fOfficerOwner">ភ្នាក់ងារផ្ទាល់ខ្លួន(ID)</label>
-<select id="fOfficerOwner">
+<label for="fPromiseStatus">ស្ថានភាពសន្យា</label>
+<select id="fPromiseStatus">
+<option value="">All</option>
+<option value="មិនទាន់សន្យា">មិនទាន់សន្យា</option>
+<option value="Today_Payment">Today_Payment</option>
+<option value="Upcoming_left">Upcoming_left</option>
+<option value="Expired">Expired</option>
+</select>
+</div>
+
+</div>
+
+<button type="button" id="btnToggleAdvancedFilters" class="filter-advanced-toggle" aria-expanded="false">
+<span>តម្រងបន្ថែម</span>
+<span id="advancedFilterBadge" class="filter-advanced-badge" hidden>0</span>
+<span class="filter-advanced-caret" aria-hidden="true">▾</span>
+</button>
+
+<div class="filter-grid filter-grid-advanced" id="advancedFilterGrid">
+
+<!-- Column 1 (D2:D4 in the sheet) -->
+<div class="filter-group">
+<label for="fOfficerResponse">ភ្នាក់ងារទទួលខុសត្រូវ</label>
+<select id="fOfficerResponse">
 <option value="">All</option>
 </select>
 </div>
@@ -178,22 +209,6 @@ href="../../assets/css/arrears.css">
 </select>
 </div>
 
-<div class="filter-group">
-<label for="fKeyword">ស្វែងរកឈ្មោះ</label>
-<input type="text" id="fKeyword" placeholder="Type to search..." autocomplete="off">
-</div>
-
-<div class="filter-group">
-<label for="fPromiseStatus">ស្ថានភាពសន្យា</label>
-<select id="fPromiseStatus">
-<option value="">All</option>
-<option value="មិនទាន់សន្យា">មិនទាន់សន្យា</option>
-<option value="Today_Payment">Today_Payment</option>
-<option value="Upcoming_left">Upcoming_left</option>
-<option value="Expired">Expired</option>
-</select>
-</div>
-
 </div>
 
 <!-- Export/Print get relocated into the topbar's "..." menu
@@ -208,6 +223,7 @@ href="../../assets/css/arrears.css">
 <button id="btnLandscape"><img src="/CM_Pro/assets/icons/arrear/landscape.png" alt="" class="menu-icon"><span>Landscape</span></button>
 <button id="btnNoReasonSummary"><img src="/CM_Pro/assets/icons/arrear/noReasonArrear.png" alt="" class="menu-icon"><span>មិនទាន់បំពេញ Reason Arrear</span></button>
 <button id="btnOutArea"><img src="/CM_Pro/assets/icons/arrear/out_area.png" alt="" class="menu-icon"><span>កែសម្រួលArrearក្រៅតំបន់</span></button>
+<button id="btnColumns"><span class="menu-icon menu-icon-emoji">☰</span><span>លាក់/បង្ហាញជួរឈរ</span></button>
 </div>
 </div>
 
@@ -507,6 +523,32 @@ href="../../assets/css/arrears.css">
     </div>
 
   </div>
+
+</div>
+
+</div>
+
+<!-- ========================= -->
+<!-- COLUMN VISIBILITY (show/hide table columns, saved per device) -->
+<!-- ========================= -->
+
+<div id="columnsBackdrop" class="reason-backdrop">
+
+<div id="columnsCard" class="reason-card noreason-card">
+
+<div class="outarea-sticky-header">
+<div class="reason-title" style="margin:0;">លាក់/បង្ហាញជួរឈរ</div>
+<button type="button" id="btnColumnsCloseX" class="outarea-close-x" aria-label="បិទ">✕</button>
+</div>
+
+<div class="reason-subtitle">ជម្រើសនេះរក្សាទុកលើឧបករណ៍នេះតែប៉ុណ្ណោះ។ ជួរ No និង Customer នៅតែបង្ហាញជានិច្ច។</div>
+
+<div id="columnsList" class="columns-list"></div>
+
+<div class="reason-actions">
+<button type="button" id="btnColumnsShowAll">បង្ហាញទាំងអស់</button>
+<button type="button" id="btnColumnsClose">Close</button>
+</div>
 
 </div>
 
