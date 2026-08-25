@@ -30,6 +30,30 @@
   --sc-danger: #FF6B6B;
 }
 
+/* ACCENT THEMES (gold/green/purple) — see settings.css for rationale. */
+[data-theme="gold"] {
+  --sc-navy: #8A5A00;
+  --sc-navy-dark: #6B4500;
+  --sc-border: #C9971F;
+  --sc-badge-text: #6B4500;
+}
+[data-theme="green"] {
+  --sc-navy: #1B6B3A;
+  --sc-navy-dark: #124A28;
+  --sc-gold: #4CAF50;
+  --sc-gold-light: #8BE28F;
+  --sc-border: #4CAF50;
+  --sc-badge-text: #124A28;
+}
+[data-theme="purple"] {
+  --sc-navy: #6A1B9A;
+  --sc-navy-dark: #4A148C;
+  --sc-gold: #9C27B0;
+  --sc-gold-light: #CE93D8;
+  --sc-border: #9C27B0;
+  --sc-badge-text: #4A148C;
+}
+
 [data-theme="dark"] .sc-header-text h1,
 [data-theme="dark"] .sc-card-cif,
 [data-theme="dark"] .sc-summary-value,

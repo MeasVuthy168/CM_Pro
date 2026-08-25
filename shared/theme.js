@@ -1,6 +1,10 @@
 // shared/theme.js
 //
-// App-wide light/dark theme toggle.
+// App-wide theme picker: light, dark, plus 3 light-background accent
+// themes (gold/green/purple) that swap the app's navy/gold brand
+// accent for a different color family while keeping the same white
+// card/page background as light mode — dark stays the only theme
+// with a dark page background.
 //
 // HOW TO ADD THIS TO A PAGE:
 // 1. In <head>, BEFORE your CSS <link> tags, add this tiny inline
@@ -14,24 +18,36 @@
 //      </script>
 //
 // 2. Include this file (shared/theme.js) anywhere in <body> for the
-//    toggle API (window.CMTheme).
+//    toggle API (window.CMTheme) and the theme list (CM_THEME_LIST).
 //
-// 3. In that page's own CSS, add a [data-theme="dark"] block that
-//    re-declares its CSS custom properties with dark values. This
-//    ONLY works for CSS files already written with :root variables
-//    (currently: spotcheck.css, settings.css). Files with hardcoded
-//    hex colors (arrears.css, customers.css, turnover.css,
-//    retirement.css, notification.css, loanCalculate.css) need to be
-//    retrofitted to use variables before dark mode will do anything
-//    on those pages — the toggle will still SAVE their preference
-//    globally, it just won't visually change those specific pages
-//    yet.
+// 3. In that page's own CSS, each theme needs a matching
+//    [data-theme="<id>"] block re-declaring that file's CSS custom
+//    properties. Most page CSS files already carry the full set
+//    (light default in :root + dark/gold/green/purple overrides);
+//    a few very simple pages only vary their page background and
+//    don't need per-accent-theme overrides at all.
 
 (function () {
   const STORAGE_KEY = "cm_theme";
 
+  // Single source of truth for the picker UI (Settings page) — id
+  // must match the [data-theme="id"] selectors used across the CSS
+  // files, swatch is what the picker button renders as its color
+  // preview, label is the Khmer name shown next to it.
+  const CM_THEME_LIST = [
+    { id: "light", label: "ស", swatch: "#FFFFFF" },
+    { id: "dark", label: "ខ្មៅ", swatch: "#003B8B" },
+    { id: "gold", label: "មាស", swatch: "#D4AF37" },
+    { id: "green", label: "បៃតង", swatch: "#4CAF50" },
+    { id: "purple", label: "ស្វាយ", swatch: "#9C27B0" }
+  ];
+  const VALID_THEME_IDS = CM_THEME_LIST.map(t => t.id);
+
   function getStoredTheme() {
-    return localStorage.getItem(STORAGE_KEY) || "light";
+    const stored = localStorage.getItem(STORAGE_KEY) || "light";
+    // Guards against a stale/invalid value (e.g. an old build, or
+    // manually-edited localStorage) resulting in an unstyled page.
+    return VALID_THEME_IDS.includes(stored) ? stored : "light";
   }
 
   function applyTheme(theme) {
@@ -39,6 +55,7 @@
   }
 
   function setTheme(theme) {
+    if (!VALID_THEME_IDS.includes(theme)) return;
     localStorage.setItem(STORAGE_KEY, theme);
     applyTheme(theme);
   }
@@ -48,9 +65,15 @@
   // have done this before first paint).
   applyTheme(getStoredTheme());
 
+  window.CM_THEME_LIST = CM_THEME_LIST;
+
   window.CMTheme = {
     get: getStoredTheme,
     set: setTheme,
+    list: function () { return CM_THEME_LIST; },
+    // Kept for any old binary light/dark callers — cycles back to
+    // light from any of the 3 accent themes too, rather than getting
+    // stuck flipping between just two of the five theme values.
     toggle: function () {
       const next = getStoredTheme() === "dark" ? "light" : "dark";
       setTheme(next);

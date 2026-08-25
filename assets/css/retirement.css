@@ -18,6 +18,23 @@
     --ret-shadow:0 4px 14px rgba(0,0,0,.25);
 }
 
+/* ACCENT THEMES (gold/green/purple) — see settings.css for rationale. */
+[data-theme="gold"]{
+    --ret-navy:#8A5A00;
+    --ret-navy-dark:#6B4500;
+    --ret-border:#C9971F;
+}
+[data-theme="green"]{
+    --ret-navy:#1B6B3A;
+    --ret-navy-dark:#124A28;
+    --ret-border:#4CAF50;
+}
+[data-theme="purple"]{
+    --ret-navy:#6A1B9A;
+    --ret-navy-dark:#4A148C;
+    --ret-border:#9C27B0;
+}
+
 /* ==========================================
    PAGE
    NOTE: this rule was MISSING entirely before, same gap as

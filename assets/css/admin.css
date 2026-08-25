@@ -37,6 +37,30 @@
   --adm-navy-100: #16223F;
 }
 
+/* ACCENT THEMES (gold/green/purple) — see settings.css for rationale. */
+[data-theme="gold"] {
+  --adm-navy-900: #6B4500;
+  --adm-navy-700: #8A5A00;
+  --adm-navy-100: #FFF6DC;
+  --adm-border: #C9971F;
+}
+[data-theme="green"] {
+  --adm-navy-900: #124A28;
+  --adm-navy-700: #1B6B3A;
+  --adm-navy-100: #E8F5E9;
+  --adm-gold-500: #4CAF50;
+  --adm-gold-300: #8BE28F;
+  --adm-border: #4CAF50;
+}
+[data-theme="purple"] {
+  --adm-navy-900: #4A148C;
+  --adm-navy-700: #6A1B9A;
+  --adm-navy-100: #F3E5F5;
+  --adm-gold-500: #9C27B0;
+  --adm-gold-300: #CE93D8;
+  --adm-border: #9C27B0;
+}
+
 .adm-page {
   min-height: 100vh;
   background-color: var(--adm-bg);

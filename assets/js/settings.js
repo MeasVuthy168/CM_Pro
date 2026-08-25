@@ -375,28 +375,46 @@ async function initNotificationSwitch(){
 }
 
 // =========================
-// THEME SWITCH
+// THEME PICKER
 // =========================
-// Reuses the same .switch UI as the notification toggle above.
-// window.CMTheme comes from shared/theme.js — checked = dark,
-// unchecked = light. The actual color values live in each page's
-// own CSS via [data-theme="dark"] blocks; this switch just flips
-// the shared data-theme attribute + localStorage flag that every
-// page reads on load.
+// window.CMTheme / window.CM_THEME_LIST come from shared/theme.js.
+// Renders one round swatch button per theme (color = that theme's
+// own preview color); tapping one flips the shared data-theme
+// attribute + localStorage flag that every page reads on load. The
+// actual color values for each theme live in each page's own CSS via
+// [data-theme="<id>"] blocks.
 
 function initThemeSwitch(){
 
-    const toggle=document.getElementById("themeToggle");
+    const picker=document.getElementById("themePicker");
 
-    if(!toggle || !window.CMTheme) return;
+    if(!picker || !window.CMTheme || !window.CM_THEME_LIST) return;
 
-    toggle.checked = CMTheme.get()==="dark";
+    function render(){
 
-    toggle.onchange=function(){
+        const current=CMTheme.get();
 
-        CMTheme.set(this.checked ? "dark" : "light");
+        picker.innerHTML = CM_THEME_LIST.map(t => `
+            <button
+                type="button"
+                class="theme-swatch${t.id===current ? " active" : ""}"
+                data-theme-id="${t.id}"
+                style="background:${t.swatch}"
+                aria-label="${t.label}"
+                title="${t.label}"
+            ><span class="theme-swatch-check">✓</span></button>
+        `).join("");
 
-    };
+        picker.querySelectorAll(".theme-swatch").forEach(btn => {
+            btn.addEventListener("click", () => {
+                CMTheme.set(btn.dataset.themeId);
+                render();
+            });
+        });
+
+    }
+
+    render();
 
 }
 

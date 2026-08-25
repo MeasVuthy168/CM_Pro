@@ -12,6 +12,23 @@
     --asst-shimmer-mid:#fff8dc;
 }
 
+/* ACCENT THEMES (gold/green/purple) — see settings.css for rationale. */
+[data-theme="gold"]{
+    --asst-border:#C9971F;
+    --asst-text:#8A5A00;
+    --asst-shimmer-mid:#D4AF37;
+}
+[data-theme="green"]{
+    --asst-border:#4CAF50;
+    --asst-text:#1B6B3A;
+    --asst-shimmer-mid:#8BE28F;
+}
+[data-theme="purple"]{
+    --asst-border:#9C27B0;
+    --asst-text:#6A1B9A;
+    --asst-shimmer-mid:#CE93D8;
+}
+
 /* =========================
    Assistant Box
 ========================= */
