@@ -2477,8 +2477,8 @@ Object.entries(filterEls).forEach(([key, el]) => {
 
 // ========================================
 // ADVANCED FILTERS TOGGLE
-// The 8 less-frequently-used filter boxes (Officer Response, Team
-// Leader, Currency, OS Classify, Class, PD, Occupation, Product Type)
+// The 8 less-frequently-used filter boxes (Officer Owner(ID), Promise
+// Status, Currency, OS Classify, Class, PD, Occupation, Product Type)
 // are collapsed by default so a phone screen isn't showing all 12
 // filter boxes before the table itself. Collapsed state persists per
 // device; the badge shows how many of the HIDDEN filters are
@@ -2487,7 +2487,7 @@ Object.entries(filterEls).forEach(([key, el]) => {
 // ========================================
 
 const ADVANCED_FILTER_KEYS = [
-    "officerResponse", "teamLeader", "currency", "osClassify",
+    "officerOwner", "promiseStatus", "currency", "osClassify",
     "class", "pd", "occupation", "productType"
 ];
 const ADVANCED_FILTERS_OPEN_KEY = "arrears_advanced_filters_open";
