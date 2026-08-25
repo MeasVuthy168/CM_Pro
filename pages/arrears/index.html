@@ -89,11 +89,10 @@ href="../../assets/css/arrears.css">
 
 <div class="filter-card">
 
-<!-- Most-used filters — always visible. The remaining ones (mirroring
-     the VBA sheet's F2:F4/I2:I4/M2:M4 columns) are less commonly
-     touched day-to-day, so they're tucked behind the "advanced
-     filters" toggle below instead of all 12 competing for attention
-     at once on a phone screen. -->
+<!-- Most-used filters — always visible. The remaining ones are less
+     commonly touched day-to-day, so they're tucked behind the
+     "advanced filters" toggle below instead of all 12 competing for
+     attention at once on a phone screen. -->
 <div class="filter-grid filter-grid-primary">
 
 <div class="filter-group filter-group-wide">
@@ -109,20 +108,16 @@ href="../../assets/css/arrears.css">
 </div>
 
 <div class="filter-group">
-<label for="fOfficerOwner">ភ្នាក់ងារផ្ទាល់ខ្លួន(ID)</label>
-<select id="fOfficerOwner">
+<label for="fOfficerResponse">ភ្នាក់ងារទទួលខុសត្រូវ</label>
+<select id="fOfficerResponse">
 <option value="">All</option>
 </select>
 </div>
 
 <div class="filter-group">
-<label for="fPromiseStatus">ស្ថានភាពសន្យា</label>
-<select id="fPromiseStatus">
+<label for="fTeamLeader">អនុប្រធាន/ផ្នែកFSRO</label>
+<select id="fTeamLeader">
 <option value="">All</option>
-<option value="មិនទាន់សន្យា">មិនទាន់សន្យា</option>
-<option value="Today_Payment">Today_Payment</option>
-<option value="Upcoming_left">Upcoming_left</option>
-<option value="Expired">Expired</option>
 </select>
 </div>
 
@@ -138,17 +133,20 @@ href="../../assets/css/arrears.css">
 
 <!-- Column 1 (D2:D4 in the sheet) -->
 <div class="filter-group">
-<label for="fOfficerResponse">ភ្នាក់ងារទទួលខុសត្រូវ</label>
-<select id="fOfficerResponse">
+<label for="fOfficerOwner">ភ្នាក់ងារផ្ទាល់ខ្លួន(ID)</label>
+<select id="fOfficerOwner">
 <option value="">All</option>
 </select>
 </div>
 
-<!-- Column 2 (F2:F4) -->
 <div class="filter-group">
-<label for="fTeamLeader">អនុប្រធាន/ផ្នែកFSRO</label>
-<select id="fTeamLeader">
+<label for="fPromiseStatus">ស្ថានភាពសន្យា</label>
+<select id="fPromiseStatus">
 <option value="">All</option>
+<option value="មិនទាន់សន្យា">មិនទាន់សន្យា</option>
+<option value="Today_Payment">Today_Payment</option>
+<option value="Upcoming_left">Upcoming_left</option>
+<option value="Expired">Expired</option>
 </select>
 </div>
 
@@ -223,7 +221,7 @@ href="../../assets/css/arrears.css">
 <button id="btnLandscape"><img src="/CM_Pro/assets/icons/arrear/landscape.png" alt="" class="menu-icon"><span>Landscape</span></button>
 <button id="btnNoReasonSummary"><img src="/CM_Pro/assets/icons/arrear/noReasonArrear.png" alt="" class="menu-icon"><span>មិនទាន់បំពេញ Reason Arrear</span></button>
 <button id="btnOutArea"><img src="/CM_Pro/assets/icons/arrear/out_area.png" alt="" class="menu-icon"><span>កែសម្រួលArrearក្រៅតំបន់</span></button>
-<button id="btnColumns"><span class="menu-icon menu-icon-emoji">☰</span><span>លាក់/បង្ហាញជួរឈរ</span></button>
+<button id="btnColumns"><img src="/CM_Pro/assets/icons/arrear/columns.png" alt="" class="menu-icon"><span>លាក់/បង្ហាញជួរឈរ</span></button>
 </div>
 </div>
 
