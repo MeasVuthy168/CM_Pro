@@ -117,7 +117,10 @@ let lastRenderSignature=null;
 const errorBox=document.getElementById("errorBox");
 const emptyTitle=document.getElementById("emptyTitle");
 const emptySubtitle=document.getElementById("emptySubtitle");
-const notifyBadgeEl=document.getElementById("notificationBadge");
+// NOTE: not captured at module top-level — the bottom-nav component
+// that contains this element is loaded asynchronously by the page
+// loader, so a const captured here would freeze on null forever.
+// updateBadgeDisplay() below looks it up fresh on every call instead.
 
 // =========================================================
 // LOAD
@@ -960,6 +963,8 @@ function markReadInState(id){
 // =========================================================
 
 function updateBadgeDisplay(count){
+
+    const notifyBadgeEl=document.getElementById("notificationBadge");
 
     if(!notifyBadgeEl) return;
 

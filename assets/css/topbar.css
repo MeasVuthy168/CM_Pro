@@ -22,9 +22,23 @@
 
     box-sizing:border-box;
 
-    position:relative;
+    position:fixed;
+
+    top:0;
+    left:0;
 
     z-index:100;
+
+}
+
+/* The topbar is now fixed/out of flow — this reserves the same
+   space it used to occupy so page content doesn't jump underneath
+   it. #topbar-container is the empty wrapper div every page has
+   right before its content, so this is the one place that needs
+   the fix rather than every page's own CSS. */
+#topbar-container{
+
+    min-height:78px;
 
 }
 
@@ -319,6 +333,12 @@
         min-height:72px;
 
         padding:8px 10px;
+
+    }
+
+    #topbar-container{
+
+        min-height:72px;
 
     }
 

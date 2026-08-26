@@ -52,6 +52,20 @@ async function loadComponent(id,file){
 
         }
 
+        // Set the active nav item right when bottomnav actually
+        // finishes loading — avoids racing a blind setTimeout
+        // against a possibly-slow network fetch.
+
+        if(id==="bottomnav-container"){
+
+            const items=document.querySelectorAll(".bottom-nav-item");
+
+            items.forEach(item=>item.classList.remove("active"));
+
+            items[2]?.classList.add("active");
+
+        }
+
     }catch(error){
 
         console.error("Component load error:",error);
