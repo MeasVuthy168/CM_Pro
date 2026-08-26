@@ -18,10 +18,10 @@
     --card-border:#C9971F;
 }
 
-/* DARK GRAY THEME — flat neutral dark, no border outline. */
+/* DARK GRAY THEME — flat neutral dark, a subtle neutral border, not the loud accent-colored outline other themes use. */
 [data-theme="darkgray"]{
     --card-bg:#363A41;
-    --card-border:transparent;
+    --card-border:#474C55;
     --card-text:#F0F1F3;
     --card-shadow:0 4px 12px rgba(0,0,0,.35);
 }

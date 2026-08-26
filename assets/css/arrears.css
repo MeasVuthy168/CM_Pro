@@ -43,13 +43,12 @@
     --arr-outline-btn-text:#8A5A00;
 }
 
-/* DARK GRAY THEME — flat neutral dark, no border outline (outline
-   buttons keep a visible border since that's functional, not
-   decorative — otherwise they'd be invisible). */
+/* DARK GRAY THEME — flat neutral dark with a subtle neutral border
+   instead of the accent-colored one other themes use. */
 [data-theme="darkgray"]{
     --arr-page-bg:#2B2E33;
     --arr-card-bg:#363A41;
-    --arr-border:transparent;
+    --arr-border:#474C55;
     --arr-text:#F0F1F3;
     --arr-text-muted:#A9AEB6;
     --arr-text-muted2:#82868F;

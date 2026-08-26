@@ -41,11 +41,11 @@
   --sc-badge-text: #6B4500;
 }
 
-/* DARK GRAY THEME — flat neutral dark, no border outline. */
+/* DARK GRAY THEME — flat neutral dark, a subtle neutral border, not the loud accent-colored outline other themes use. */
 [data-theme="darkgray"] {
   --sc-bg: #2B2E33;
   --sc-card-bg: #363A41;
-  --sc-border: transparent;
+  --sc-border: #474C55;
   --sc-text: #F0F1F3;
   --sc-text-muted: #A9AEB6;
   --sc-navy: #D8DAE0;

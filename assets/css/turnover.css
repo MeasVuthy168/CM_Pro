@@ -37,12 +37,12 @@
     --tvr-outline-btn-text:#8A5A00;
 }
 
-/* DARK GRAY THEME — flat neutral dark, no border outline (outline
-   button keeps a visible border since that's functional). */
+/* DARK GRAY THEME — flat neutral dark with a subtle neutral border
+   instead of the accent-colored one other themes use. */
 [data-theme="darkgray"]{
     --tvr-page-bg:#2B2E33;
     --tvr-card-bg:#363A41;
-    --tvr-border:transparent;
+    --tvr-border:#474C55;
     --tvr-text:#F0F1F3;
     --tvr-text-muted:#A9AEB6;
     --tvr-shadow:0 4px 14px rgba(0,0,0,.35);

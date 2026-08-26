@@ -40,13 +40,13 @@
 
 /* ==========================================
    DARK GRAY THEME
-   Flat neutral dark, no border outline — card separation comes from
-   the bg/card contrast + shadow instead.
+   Flat neutral dark with a subtle neutral border instead of the
+   accent-colored one other themes use.
 ========================================== */
 [data-theme="darkgray"]{
     --set-page-bg:#2B2E33;
     --set-card-bg:#363A41;
-    --set-border:transparent;
+    --set-border:#474C55;
     --set-text:#F0F1F3;
     --set-text-muted:#A9AEB6;
     --set-navy-dark:#D8DAE0;
