@@ -2406,6 +2406,9 @@ display:none !important;
     background:var(--arr-gold, #d4af37);
     color:#1c2333;
 }
+[data-theme="darkgray"] .map-mode-btn.active{
+    color:#1c2333;
+}
 
 /* The title can shrink; the toggle and close button can't. */
 .map-title{

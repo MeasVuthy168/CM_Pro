@@ -441,6 +441,12 @@ input:checked + .slider:before{
 
 }
 
+[data-theme="darkgray"] input:checked + .slider:before{
+
+    background:#1C2333;
+
+}
+
 /* =========================
    Theme Picker
    One round swatch button per theme (colored via inline style from

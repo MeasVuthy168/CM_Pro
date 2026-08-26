@@ -136,6 +136,8 @@
   color: #fff;
 }
 .sc-btn-navy:hover { filter: brightness(1.1); }
+[data-theme="darkgray"] .sc-btn-navy { color: #1C2333; }
+[data-theme="darkgray"] .sc-btn-gold { color: #1C2333; }
 
 .sc-btn-outline {
   background: transparent;
@@ -327,6 +329,7 @@
   white-space: nowrap;
   font-family: var(--sc-font);
 }
+[data-theme="darkgray"] .sc-action-btn { color: #1C2333; }
 
 .sc-action-btn img {
   width: 14px;
@@ -398,6 +401,8 @@
 }
 .sc-panel-header h2 { font-size: 16px; margin: 0; }
 .sc-panel-header .sc-icon-btn { color: #fff; }
+[data-theme="darkgray"] .sc-panel-header,
+[data-theme="darkgray"] .sc-panel-header .sc-icon-btn { color: #1C2333; }
 
 .sc-tabs {
   display: flex;
