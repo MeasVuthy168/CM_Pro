@@ -102,6 +102,13 @@ window.addEventListener(
 
     ()=>{
 
+        // The notifications list page (assets/js/notification.js)
+        // already fetches this same unread count as part of its own
+        // load, and drives this exact badge element from it directly
+        // — an independent fetch here would just be a second request
+        // for the same number, at the same moment.
+        if(window.__CM_NOTIF_PAGE_ACTIVE) return;
+
         loadNotificationBadge();
 
     }
@@ -110,11 +117,17 @@ window.addEventListener(
 
 // =========================================================
 // AUTO REFRESH
+// Skipped while backgrounded (nothing to update if no one's looking)
+// and on the notifications list page (its own 30s poll already keeps
+// this badge current — see the comment above).
 // =========================================================
 
 setInterval(
 
     ()=>{
+
+        if(document.hidden) return;
+        if(window.__CM_NOTIF_PAGE_ACTIVE) return;
 
         loadNotificationBadge();
 
@@ -138,7 +151,9 @@ document.addEventListener(
 
             document.visibilityState ===
 
-            "visible"
+            "visible" &&
+
+            !window.__CM_NOTIF_PAGE_ACTIVE
 
         ){
 

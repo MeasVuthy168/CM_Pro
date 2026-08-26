@@ -73,6 +73,12 @@ function decodeJwtPayload(token){
 const currentUser =
     decodeJwtPayload(notificationToken);
 
+// Tells shared/assets/js/notification-badge.js "this page already
+// polls the full list every 30s and keeps the badge in sync itself
+// (see updateBadgeDisplay below) — its own periodic poll on THIS page
+// would just be a second redundant fetch of the same information.
+window.__CM_NOTIF_PAGE_ACTIVE = true;
+
 // Mirrors the server's canUserSeeNotification() — used only to
 // decide whether to optimistically render a live push locally;
 // the reconcile fetch afterwards always reflects the real,
@@ -100,6 +106,23 @@ function canSeeNotificationLocally(notify){
 }
 
 // =========================================================
+// STATE
+// The full last-known list lives here (not just scattered across the
+// DOM) so filtering, summary counts, and the render-skip check below
+// all have one source of truth to work from.
+// =========================================================
+
+let allNotifications=[];
+let currentFilter="all"; // "all" | "unread"
+let hasLoadedOnce=false;
+let lastRenderSignature=null;
+
+const errorBox=document.getElementById("errorBox");
+const emptyTitle=document.getElementById("emptyTitle");
+const emptySubtitle=document.getElementById("emptySubtitle");
+const notifyBadgeEl=document.getElementById("notificationBadge");
+
+// =========================================================
 // LOAD
 // =========================================================
 
@@ -107,7 +130,7 @@ async function loadNotifications(){
 
     try{
 
-        showLoading(true);
+        showLoading(!hasLoadedOnce);
 
         const response = await fetch(
 
@@ -143,9 +166,22 @@ async function loadNotifications(){
 
             [];
 
-        renderNotifications(
-            notifications
-        );
+        allNotifications=notifications;
+        hasLoadedOnce=true;
+
+        hideError();
+        renderList();
+
+        // Same response the list itself came from already carries the
+        // unread count — updating the shared topbar badge from it
+        // directly means this page never needs its own separate poll
+        // of /api/notifications/unread-count (see notification-badge.js).
+        const unread =
+            typeof data.unreadCount === "number"
+            ? data.unreadCount
+            : notifications.filter(x=>!x.isRead).length;
+
+        updateBadgeDisplay(unread);
 
     }catch(error){
 
@@ -154,7 +190,15 @@ async function loadNotifications(){
             error
         );
 
-        showEmpty();
+        // A background refresh (the 30s poll, or coming back from a
+        // backgrounded tab) failing shouldn't blow away a perfectly
+        // good list already on screen — only show the error state if
+        // nothing has ever loaded successfully yet.
+        if(!hasLoadedOnce){
+
+            showError();
+
+        }
 
     }finally{
 
@@ -166,68 +210,118 @@ async function loadNotifications(){
 
 // =========================================================
 // RENDER
+// A signature of the currently-visible slice is compared against the
+// last render — the 30s poll (and the reconcile fetch after a live
+// push) call this every time regardless of whether anything actually
+// changed, and rebuilding notifyList.innerHTML from scratch when
+// nothing did would reset scroll position and cancel any swipe the
+// user has mid-gesture for no reason.
 // =========================================================
 
-function renderNotifications(list){
+function getVisibleList(){
 
-notifyList.innerHTML="";
-
-unreadCount.innerText=
-
-list.filter(x=>!x.isRead).length;
-
-totalCount.innerText=
-list.length;
-
-if(!list.length){
-
-showEmpty();
-
-return;
+    return currentFilter==="unread"
+        ? allNotifications.filter(x=>!x.isRead)
+        : allNotifications;
 
 }
 
-emptyBox.style.display="none";
+function computeSignature(list){
 
-// innerHTML += inside a loop forces the browser to re-serialize and
-// re-parse the ENTIRE growing list on every single iteration (the whole
-// DOM built so far gets thrown away and rebuilt from a string each time)
-// — O(n²) work that's barely noticeable at 10 items but made the page
-// hang for a long time once a user had hundreds/thousands of
-// notifications. Building the full HTML string first and assigning it
-// once does the same rendering in a single parse pass.
-notifyList.innerHTML=
-list.map(createNotificationCard).join("");
-
-enableSwipeCards();
-
-hydrateAvatars(notifyList);
+    return list.map(x=>`${x._id}:${x.isRead?1:0}`).join(",");
 
 }
+
+function renderList(){
+
+    // A card mid-swipe has its own inline transform driving it —
+    // rebuilding the list out from under a finger still on the screen
+    // would yank it back to rest. Wait for the gesture to finish
+    // (touchend always clears "swiping") instead of dropping the
+    // update; ~400ms is well under the 30s poll interval so this
+    // never meaningfully delays a real update.
+    if(notifyList.querySelector(".notify-card.swiping")){
+
+        setTimeout(renderList,400);
+        return;
+
+    }
+
+    updateSummaryFromState();
+
+    const visible=getVisibleList();
+    const signature=computeSignature(visible);
+
+    if(signature===lastRenderSignature){
+        return;
+    }
+
+    lastRenderSignature=signature;
+
+    if(!visible.length){
+
+        showEmpty();
+        return;
+
+    }
+
+    emptyBox.style.display="none";
+
+    // innerHTML += inside a loop forces the browser to re-serialize and
+    // re-parse the ENTIRE growing list on every single iteration (the whole
+    // DOM built so far gets thrown away and rebuilt from a string each time)
+    // — O(n²) work that's barely noticeable at 10 items but made the page
+    // hang for a long time once a user had hundreds/thousands of
+    // notifications. Building the full HTML string first and assigning it
+    // once does the same rendering in a single parse pass.
+    notifyList.innerHTML=
+    visible.map(createNotificationCard).join("");
+
+    enableSwipeCards();
+    bindCardActionButtons();
+
+    hydrateAvatars(notifyList);
+
+}
+
+// =========================================================
+// FILTER TABS
+// =========================================================
+
+document.querySelectorAll(".notify-filter-tab").forEach(tab=>{
+
+    tab.addEventListener("click",()=>{
+
+        if(tab.dataset.filter===currentFilter) return;
+
+        document.querySelectorAll(".notify-filter-tab").forEach(t=>t.classList.remove("active"));
+        tab.classList.add("active");
+
+        currentFilter=tab.dataset.filter;
+
+        // Force a rebuild even if the signature matches the last render
+        // of the OTHER filter — switching tabs always needs a repaint.
+        lastRenderSignature=null;
+        renderList();
+
+    });
+
+});
 
 // =========================================================
 // UPDATE SUMMARY
+// Always reflects the FULL list, independent of which filter tab is
+// active — "Unread" showing only 3 cards shouldn't make the summary
+// row claim there are only 3 notifications in total.
 // =========================================================
 
-function updateSummary(){
+function updateSummaryFromState(){
 
-    const cards =
+    totalCount.innerText=
+        allNotifications.length;
 
-        document.querySelectorAll(
-            ".notify-card"
-        );
-
-    const unread =
-
-        document.querySelectorAll(
-            ".notify-card.unread"
-        );
-
-    totalCount.innerText =
-        cards.length;
-
-    unreadCount.innerText =
-        unread.length;
+    unreadCount.innerText=
+        allNotifications.filter(x=>!x.isRead).length;
 
 }
 // =========================================================
@@ -235,7 +329,10 @@ function updateSummary(){
 // Open button removed — a tap/click on the card does nothing
 // for now. Redirecting to a specific page on click is a
 // planned feature, not wired up yet. Swipe gestures (mark
-// read / delete) are the only interactions on a card today.
+// read / delete) still work, but they're not the only way in any
+// more — see .notify-actions below, which does the same two things
+// via always-visible buttons (swipe alone was undiscoverable, and
+// doesn't exist at all for a mouse/desktop user).
 // =========================================================
 
 function createNotificationCard(item){
@@ -321,9 +418,74 @@ ${escapeHtml(item.type || "system")}
 
 </div>
 
+<div class="notify-actions">
+
+${item.isRead ? "" : `<button type="button" class="notify-action-btn notify-mark-read-btn" data-action="read" aria-label="Mark as read" title="Mark as read">✓</button>`}
+
+<button type="button" class="notify-action-btn notify-delete-btn" data-action="delete" aria-label="Delete" title="Delete">🗑</button>
+
+</div>
+
 </div>
 
 `;
+
+}
+
+// =========================================================
+// ALWAYS-VISIBLE ACTION BUTTONS
+// Same two actions as the swipe gestures (see enableSwipeCards),
+// just reachable with a plain tap/click instead of a drag.
+// =========================================================
+
+function bindCardActionButtons(){
+
+    notifyList.querySelectorAll(".notify-action-btn").forEach(btn=>{
+
+        if(btn.dataset.actionBound==="true") return;
+        btn.dataset.actionBound="true";
+
+        btn.addEventListener("click",async(e)=>{
+
+            e.stopPropagation();
+
+            const card=btn.closest(".notify-card");
+            if(!card) return;
+
+            const id=card.dataset.id;
+            const action=btn.dataset.action;
+
+            if(action==="delete"){
+
+                vibrate([50,50,50]);
+                await deleteNotification(id);
+                removeFromState(id);
+
+                card.style.transform="translateX(-120%)";
+                card.style.opacity=0;
+
+                setTimeout(()=>{
+
+                    card.remove();
+                    updateSummaryFromState();
+
+                },250);
+
+            }else if(action==="read"){
+
+                vibrate(40);
+                await markRead(id);
+                markReadInState(id);
+
+                card.classList.remove("unread");
+                btn.remove();
+                updateSummaryFromState();
+
+            }
+
+        });
+
+    });
 
 }
 
@@ -535,6 +697,7 @@ function enableSwipeCards(){
                     vibrate([50,50,50]);
 
                     await deleteNotification(id);
+                    removeFromState(id);
 
                     card.style.transform="translateX(-120%)";
 
@@ -544,7 +707,7 @@ function enableSwipeCards(){
 
                         card.remove();
 
-                        updateSummary();
+                        updateSummaryFromState();
 
                     },250);
 
@@ -553,6 +716,7 @@ function enableSwipeCards(){
                     vibrate(40);
 
                     await markRead(id);
+                    markReadInState(id);
 
                     card.style.transform="translateX(100%)";
 
@@ -562,7 +726,10 @@ function enableSwipeCards(){
 
                         card.classList.remove("unread");
 
-                        updateSummary();
+                        const btn=card.querySelector(".notify-mark-read-btn");
+                        if(btn) btn.remove();
+
+                        updateSummaryFromState();
 
                     },150);
 
@@ -736,16 +903,97 @@ async function deleteNotification(id){
 
 
 // =========================================================
+// LOCAL STATE HELPERS
+// Keep `allNotifications` (and the summary/badge derived from it) in
+// sync with actions the user just took, instead of waiting on the
+// next 30s poll to notice the server-side change.
+// =========================================================
+
+function removeFromState(id){
+
+    allNotifications=allNotifications.filter(x=>String(x._id)!==String(id));
+    lastRenderSignature=computeSignature(getVisibleList());
+
+}
+
+function markReadInState(id){
+
+    const item=allNotifications.find(x=>String(x._id)===String(id));
+    if(item) item.isRead=true;
+
+    lastRenderSignature=computeSignature(getVisibleList());
+
+}
+
+// =========================================================
+// BADGE
+// Same rendering the shared topbar badge (notification-badge.js)
+// does — duplicated here rather than shared so this page can drive it
+// straight from data it already has, without an extra fetch.
+// =========================================================
+
+function updateBadgeDisplay(count){
+
+    if(!notifyBadgeEl) return;
+
+    if(count>0){
+
+        notifyBadgeEl.style.display="flex";
+        notifyBadgeEl.innerText=count>99 ? "99+" : count;
+
+    }else{
+
+        notifyBadgeEl.style.display="none";
+
+    }
+
+}
+
+// =========================================================
 // EMPTY
 // =========================================================
 
 function showEmpty(){
 
-notifyList.innerHTML="";
+    notifyList.innerHTML="";
+    emptyBox.style.display="flex";
 
-emptyBox.style.display="flex";
+    if(currentFilter==="unread"){
+
+        emptyTitle.innerText="No Unread Notifications";
+        emptySubtitle.innerText="You're all caught up 🎉";
+
+    }else{
+
+        emptyTitle.innerText="No Notifications";
+        emptySubtitle.innerText="Everything is up to date 🎉";
+
+    }
 
 }
+
+// =========================================================
+// ERROR
+// Distinct from EMPTY — a failed load and "genuinely zero
+// notifications" are different situations and shouldn't look
+// identical to the user.
+// =========================================================
+
+function showError(){
+
+    notifyList.innerHTML="";
+    emptyBox.style.display="none";
+    if(errorBox) errorBox.style.display="flex";
+
+}
+
+function hideError(){
+
+    if(errorBox) errorBox.style.display="none";
+
+}
+
+document.getElementById("errorRetryBtn")?.addEventListener("click",loadNotifications);
 
 // =========================================================
 // LOADING
@@ -824,11 +1072,27 @@ return div.innerHTML.replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 // AUTO REFRESH
 // =========================================================
 
+// Skips the fetch while the tab/app is backgrounded — there's no one
+// looking at it, so there's nothing to gain from keeping the list
+// current every 30s. Coming back to the tab (visibilitychange below)
+// refreshes it immediately instead, so it's never stale on return.
 setInterval(()=>{
 
-loadNotifications();
+    if(document.hidden) return;
+
+    loadNotifications();
 
 },30000);
+
+document.addEventListener("visibilitychange",()=>{
+
+    if(document.visibilityState==="visible"){
+
+        loadNotifications();
+
+    }
+
+});
 
 // =========================================================
 // BROADCAST CHANNEL (primary realtime path)
@@ -871,17 +1135,16 @@ if("BroadcastChannel" in window){
         // just for the optimistic render.
         if(!canSeeNotificationLocally(notification)) return;
 
-        // Already on screen (e.g. reconcile beat the broadcast) —
-        // don't duplicate it.
+        // Already known (e.g. reconcile beat the broadcast) — don't
+        // duplicate it. Checked against state, not the DOM, since the
+        // DOM only holds whatever the CURRENT filter tab shows.
         if(
 
-            notifyList.querySelector(
-                `[data-id="${notification.id}"]`
+            allNotifications.some(
+                x=>String(x._id)===String(notification.id)
             )
 
         ) return;
-
-        emptyBox.style.display = "none";
 
         const item = {
 
@@ -903,19 +1166,15 @@ if("BroadcastChannel" in window){
 
         };
 
-        notifyList.insertAdjacentHTML(
+        allNotifications=[item, ...allNotifications];
 
-            "afterbegin",
-
-            createNotificationCard(item)
-
-        );
-
-        enableSwipeCards();
-
-        hydrateAvatars(notifyList);
-
-        updateSummary();
+        // A brand-new push is always unread, so it belongs in the
+        // visible list under either filter tab — going through the
+        // normal renderList() path (instead of a one-off DOM insert)
+        // keeps this consistent with everything else that changes
+        // allNotifications.
+        lastRenderSignature=null;
+        renderList();
 
     }
 

@@ -165,6 +165,65 @@ only holds styles specific to the notifications page.
 }
 
 /* =========================
+   Filter Tabs (All / Unread)
+   Client-side filter over the already-fetched list — the summary
+   counts above always reflect the FULL list regardless of which tab
+   is active, only the cards shown here change.
+========================= */
+
+.notify-filter-tabs{
+
+    display:flex;
+
+    gap:8px;
+
+    padding:0 14px 12px;
+
+}
+
+.notify-filter-tab{
+
+    flex:1;
+
+    height:38px;
+
+    border:1px solid var(--notif-border);
+
+    border-radius:10px;
+
+    background:var(--notif-card-bg);
+
+    color:var(--notif-text-muted);
+
+    font-family:'KRASAR',sans-serif;
+
+    font-size:13px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:.15s;
+
+}
+
+.notify-filter-tab:active{
+
+    transform:scale(.97);
+
+}
+
+.notify-filter-tab.active{
+
+    background:linear-gradient(180deg,#FFD700,#D4AF37);
+
+    border-color:#D4AF37;
+
+    color:#002D6B;
+
+}
+
+/* =========================
    List
 ========================= */
 
@@ -381,6 +440,79 @@ only holds styles specific to the notifications page.
 }
 
 /* =========================
+   Always-visible actions
+   Swipe (mark read / delete) is powerful but completely undiscoverable
+   on its own — nothing on an idle card hints it's there. These two
+   small buttons do the exact same actions as the swipe gestures, are
+   always visible, and also give desktop/mouse users (who can't swipe
+   at all) a way to interact with a single card.
+========================= */
+
+.notify-actions{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:6px;
+
+    flex-shrink:0;
+
+    justify-content:center;
+
+}
+
+.notify-action-btn{
+
+    width:28px;
+
+    height:28px;
+
+    border:1px solid var(--notif-border);
+
+    border-radius:8px;
+
+    background:var(--notif-card-bg);
+
+    color:var(--notif-text-muted);
+
+    font-size:13px;
+
+    line-height:1;
+
+    cursor:pointer;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+}
+
+.notify-action-btn:active{
+
+    transform:scale(.92);
+
+}
+
+.notify-mark-read-btn{
+
+    color:#1a7f37;
+
+    border-color:#1a7f37;
+
+}
+
+.notify-delete-btn{
+
+    color:#c0392b;
+
+    border-color:#e08a8a;
+
+}
+
+/* =========================
    Swipe actions
 ========================= */
 
@@ -527,6 +659,20 @@ only holds styles specific to the notifications page.
     color:var(--notif-text-muted);
 
     line-height:1.6;
+
+}
+
+.error-icon{
+
+    font-size:44px;
+
+    margin-bottom:14px;
+
+}
+
+#errorRetryBtn{
+
+    margin-top:18px;
 
 }
 
@@ -689,5 +835,123 @@ only holds styles specific to the notifications page.
 [data-theme="dark"] .notification-menu-item:active{
 
     background:rgba(255,255,255,.08);
+
+}
+
+/* =========================
+   CONFIRM DIALOG
+   Same shape/class names as the logout dialog in settings.css, kept
+   as its own local copy here (this page doesn't load settings.css)
+   so "Delete All" gets the app's own styled confirm instead of the
+   browser's native confirm() popup.
+========================= */
+
+.dialog{
+
+    position:fixed;
+
+    inset:0;
+
+    display:none;
+
+    justify-content:center;
+
+    align-items:center;
+
+    background:rgba(0,0,0,.55);
+
+    z-index:99999;
+
+}
+
+.dialog.show{
+
+    display:flex;
+
+}
+
+.dialog-box{
+
+    width:90%;
+
+    max-width:420px;
+
+    background:var(--notif-card-bg);
+
+    border:1px solid var(--notif-border);
+
+    border-radius:18px;
+
+    padding:24px;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.3);
+
+}
+
+.dialog-title{
+
+    font-size:16px;
+
+    color:var(--notif-text);
+
+    text-align:center;
+
+    line-height:1.5;
+
+    margin-bottom:22px;
+
+}
+
+.dialog-buttons{
+
+    display:flex;
+
+    gap:12px;
+
+}
+
+.dialog-buttons button{
+
+    flex:1;
+
+    height:48px;
+
+    border:none;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-size:15px;
+
+    font-weight:700;
+
+    font-family:'KRASAR',sans-serif;
+
+    transition:transform .15s;
+
+}
+
+.dialog-buttons button:active{
+
+    transform:scale(.97);
+
+}
+
+#btnDeleteAllYes{
+
+    background:#d9534f;
+
+    color:#fff;
+
+}
+
+#btnDeleteAllNo{
+
+    background:transparent;
+
+    border:1.5px solid var(--notif-border);
+
+    color:var(--notif-text);
 
 }
