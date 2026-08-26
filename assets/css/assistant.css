@@ -20,6 +20,14 @@
     --asst-shimmer-mid:#D4AF37;
 }
 
+/* DARK GRAY THEME — flat neutral dark, no border outline. */
+[data-theme="darkgray"]{
+    --asst-card-bg:#363A41;
+    --asst-border:transparent;
+    --asst-text:#D8DAE0;
+    --asst-shimmer-mid:#A9AEB6;
+}
+
 /* =========================
    Assistant Box
 ========================= */

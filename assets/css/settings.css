@@ -38,6 +38,27 @@
     --set-border:#C9971F;
 }
 
+/* ==========================================
+   DARK GRAY THEME
+   Flat neutral dark, no border outline — card separation comes from
+   the bg/card contrast + shadow instead.
+========================================== */
+[data-theme="darkgray"]{
+    --set-page-bg:#2B2E33;
+    --set-card-bg:#363A41;
+    --set-border:transparent;
+    --set-text:#F0F1F3;
+    --set-text-muted:#A9AEB6;
+    --set-navy-dark:#D8DAE0;
+    --set-navy:#D8DAE0;
+    --set-gold:#D8DAE0;
+    --set-gold-light:#E8EAED;
+    --set-divider:rgba(255,255,255,.08);
+    --set-switch-off:#40454D;
+    --set-switch-border:#565B64;
+    --set-shadow:0 4px 14px rgba(0,0,0,.35);
+}
+
 .setting-page{
 
     background:var(--set-page-bg);
@@ -70,7 +91,7 @@
 
     padding:22px;
 
-    margin:14px 14px;
+    margin:24px 14px 14px;
 
     box-shadow:var(--set-shadow);
 

@@ -30,6 +30,20 @@
     --cst-border:#C9971F;
 }
 
+/* DARK GRAY THEME — flat neutral dark, no border outline. */
+[data-theme="darkgray"]{
+    --cst-page-bg:#2B2E33;
+    --cst-card-bg:#363A41;
+    --cst-border:transparent;
+    --cst-text:#F0F1F3;
+    --cst-text-muted:#A9AEB6;
+    --cst-navy:#D8DAE0;
+    --cst-navy-dark:#D8DAE0;
+    --cst-gold:#D8DAE0;
+    --cst-gold-light:#E8EAED;
+    --cst-shadow:0 4px 14px rgba(0,0,0,.35);
+}
+
 /* ==========================================
    PAGE
 ========================================== */
