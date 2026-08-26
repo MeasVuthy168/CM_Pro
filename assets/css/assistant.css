@@ -60,19 +60,27 @@
 
 /* =========================
    ROBOT ICON
-   The dance itself (arms/head/body) is now animated inside
-   robot.svg's own <style> block, since it's loaded via a plain
-   <img> tag and outer page CSS can't reach into it. This outer
-   rule just sizes the image and adds a whole-image glow pulse,
-   which filter:drop-shadow can still do on a plain <img>.
+   The dance itself (arms/head/body) is animated inside robot.svg's
+   own <style> block, since it's loaded via a plain <img> tag and
+   outer page CSS can't reach into it.
+
+   IMPORTANT: never animate `filter`/`transform` directly on this
+   <img>, and don't give it its own stacking context (position/
+   z-index) without a real reason to. Either one gets iOS Safari to
+   promote the image onto a cached compositing layer, and that cached
+   bitmap does NOT get re-rasterized when the user pinch-zooms the
+   page — it just gets scaled up, which is what made the robot look
+   soft/blurry when zoomed in on iOS. A plain, un-promoted <img>
+   stays vector-crisp at any zoom level. (There used to be an
+   animated glow here via animation:robotGlow, but its @keyframes is
+   commented out in animation.css — see the update-mode variant below
+   for how the glow effect is done instead, without touching the
+   image itself.)
 ========================= */
 .assistant-icon{
-    position:relative;
-    z-index:1;
     width:101px;
     height:114px;
     object-fit:contain;
-    animation:robotGlow 1.1s ease-in-out infinite;
 }
 
 /* =========================
@@ -134,8 +142,12 @@
     animation:updateBorderPulse 1s ease-in-out 3;
 }
 
-.assistant-box[data-mode="update"] .assistant-icon{
-    animation:robotGlowCyan 1.1s ease-in-out infinite;
+/* Glow lives on the WRAPPER (a box-shadow pulse), not on the <img>
+   itself — see the comment on .assistant-icon above for why an
+   animated filter directly on the image caused it to blur on iOS. */
+.assistant-box[data-mode="update"] .assistant-icon-wrap{
+    border-radius:50%;
+    animation:robotGlowCyanWrap 1.1s ease-in-out infinite;
 }
 
 .assistant-box[data-mode="update"] .assistant-text{
@@ -246,9 +258,9 @@
     50%{ box-shadow:0 4px 12px rgba(0,0,0,0.2), 0 0 0 4px rgba(0,229,255,0.35); }
 }
 
-@keyframes robotGlowCyan{
-    0%, 100%{ filter:drop-shadow(0 0 2px rgba(0,229,255,0.3)); }
-    50%{ filter:drop-shadow(0 0 8px rgba(0,229,255,0.7)); }
+@keyframes robotGlowCyanWrap{
+    0%, 100%{ box-shadow:0 0 6px 1px rgba(0,229,255,0.3); }
+    50%{ box-shadow:0 0 16px 4px rgba(0,229,255,0.7); }
 }
 
 @keyframes badgeBounce{
