@@ -30,21 +30,14 @@ only holds styles specific to the notifications page.
     --notif-avatar-bg:#00265c;
 }
 
-/* ACCENT THEMES (gold/green/purple) — see settings.css for rationale. */
+/* GOLD THEME — its own warm page/card background, not just a
+   border/accent swap. */
 [data-theme="gold"]{
+    --notif-page-bg:#FFF8E7;
+    --notif-card-bg:#FFFDF6;
     --notif-navy-dark:#6B4500;
     --notif-border:#C9971F;
     --notif-avatar-bg:#FFF6DC;
-}
-[data-theme="green"]{
-    --notif-navy-dark:#124A28;
-    --notif-border:#4CAF50;
-    --notif-avatar-bg:#E8F5E9;
-}
-[data-theme="purple"]{
-    --notif-navy-dark:#4A148C;
-    --notif-border:#9C27B0;
-    --notif-avatar-bg:#F3E5F5;
 }
 
 /* =========================

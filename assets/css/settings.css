@@ -27,30 +27,15 @@
 }
 
 /* ==========================================
-   ACCENT THEMES (gold/green/purple)
-   Same light page/card background as the default theme — only the
-   navy/gold "brand" accent swaps to a different color family, so
-   these stay readable without needing their own dark-mode-style text/
-   background overrides. See shared/theme.js for the full theme list.
+   GOLD THEME
+   Its own warm page/card background, not just a border/accent swap.
 ========================================== */
 [data-theme="gold"]{
+    --set-page-bg:#FFF8E7;
+    --set-card-bg:#FFFDF6;
     --set-navy-dark:#6B4500;
     --set-navy:#8A5A00;
     --set-border:#C9971F;
-}
-[data-theme="green"]{
-    --set-navy-dark:#124A28;
-    --set-navy:#1B6B3A;
-    --set-gold:#4CAF50;
-    --set-gold-light:#8BE28F;
-    --set-border:#4CAF50;
-}
-[data-theme="purple"]{
-    --set-navy-dark:#4A148C;
-    --set-navy:#6A1B9A;
-    --set-gold:#9C27B0;
-    --set-gold-light:#CE93D8;
-    --set-border:#9C27B0;
 }
 
 .setting-page{

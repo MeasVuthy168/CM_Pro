@@ -1,10 +1,7 @@
 // shared/theme.js
 //
-// App-wide theme picker: light, dark, plus 3 light-background accent
-// themes (gold/green/purple) that swap the app's navy/gold brand
-// accent for a different color family while keeping the same white
-// card/page background as light mode — dark stays the only theme
-// with a dark page background.
+// App-wide theme picker: light, dark, gold — each with its own page
+// and card background (not just an accent/border swap).
 //
 // HOW TO ADD THIS TO A PAGE:
 // 1. In <head>, BEFORE your CSS <link> tags, add this tiny inline
@@ -37,9 +34,7 @@
   const CM_THEME_LIST = [
     { id: "light", label: "ស", swatch: "#FFFFFF" },
     { id: "dark", label: "ខ្មៅ", swatch: "#003B8B" },
-    { id: "gold", label: "មាស", swatch: "#D4AF37" },
-    { id: "green", label: "បៃតង", swatch: "#4CAF50" },
-    { id: "purple", label: "ស្វាយ", swatch: "#9C27B0" }
+    { id: "gold", label: "មាស", swatch: "#D4AF37" }
   ];
   const VALID_THEME_IDS = CM_THEME_LIST.map(t => t.id);
 
@@ -72,8 +67,8 @@
     set: setTheme,
     list: function () { return CM_THEME_LIST; },
     // Kept for any old binary light/dark callers — cycles back to
-    // light from any of the 3 accent themes too, rather than getting
-    // stuck flipping between just two of the five theme values.
+    // light from gold too, rather than getting stuck flipping between
+    // just two of the three theme values.
     toggle: function () {
       const next = getStoredTheme() === "dark" ? "light" : "dark";
       setTheme(next);
