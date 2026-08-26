@@ -6,7 +6,7 @@ console.log("🔥 SERVICE WORKER LOADED");
    CM_Pro – Production Service Worker
 ========================================================= */
 
-const SW_VERSION = "v290";
+const SW_VERSION = "v291";
 
 const CACHE_NAME = `cm-pro-cache-${SW_VERSION}`;
 
@@ -131,7 +131,16 @@ self.addEventListener(
 );
 
 // =========================================================
-// FETCH CACHE-FIRST
+// FETCH NETWORK-FIRST
+// Cache-first previously meant that once a file was cached under
+// some version, it kept being served from that cache forever with
+// no re-check against the network — a new SW_VERSION only helps
+// once the browser actually re-installs/activates it, which on some
+// devices (especially installed/home-screen PWAs) can lag well
+// behind the deploy, or not happen promptly at all. Network-first
+// means every load gets whatever is actually live right now
+// whenever there's connectivity; the cache is purely the offline
+// fallback, refreshed on every successful fetch.
 // =========================================================
 
 self.addEventListener(
@@ -152,69 +161,61 @@ self.addEventListener(
 
         event.respondWith(
 
-            caches.match(event.request)
+            fetch(event.request)
 
-                .then(cached=>{
+                .then(response=>{
 
-                    // =========================
-                    // RETURN CACHE
-                    // =========================
+                    // invalid response
+                    if(
+                        !response ||
 
-                    if(cached){
+                        response.status !== 200 ||
 
-                        return cached;
+                        response.type !== "basic"
+                    ){
+
+                        return response;
 
                     }
 
+                    // clone response
+                    const responseClone =
+                        response.clone();
+
+                    // save to cache (offline fallback for next time)
+                    caches.open(CACHE_NAME)
+
+                        .then(cache=>{
+
+                            cache.put(
+
+                                event.request,
+
+                                responseClone
+
+                            );
+
+                        });
+
+                    return response;
+
+                })
+
+                .catch(()=>{
+
                     // =========================
-                    // FETCH NETWORK
+                    // OFFLINE — SERVE FROM CACHE
                     // =========================
 
-                    return fetch(event.request)
+                    return caches.match(event.request)
 
-                        .then(response=>{
+                        .then(cached=>{
 
-                            // invalid response
-                            if(
-                                !response ||
+                            if(cached){
 
-                                response.status !== 200 ||
-
-                                response.type !== "basic"
-                            ){
-
-                                return response;
+                                return cached;
 
                             }
-
-                            // clone response
-                            const responseClone =
-                                response.clone();
-
-                            // save to cache
-                            caches.open(CACHE_NAME)
-
-                                .then(cache=>{
-
-                                    cache.put(
-
-                                        event.request,
-
-                                        responseClone
-
-                                    );
-
-                                });
-
-                            return response;
-
-                        })
-
-                        .catch(()=>{
-
-                            // =========================
-                            // OPTIONAL OFFLINE PAGE
-                            // =========================
 
                             if(
                                 event.request.mode ===
