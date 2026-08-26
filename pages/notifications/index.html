@@ -194,6 +194,20 @@ href="/CM_Pro/assets/css/global-splash.css"
 
     </div>
 
+    <!-- FILTER TABS -->
+
+    <div class="notify-filter-tabs" id="notifyFilterTabs">
+
+        <button type="button" class="notify-filter-tab active" data-filter="all">
+            ទាំងអស់
+        </button>
+
+        <button type="button" class="notify-filter-tab" data-filter="unread">
+            មិនទាន់អាន
+        </button>
+
+    </div>
+
     <!-- LIST -->
 
     <div
@@ -214,17 +228,46 @@ href="/CM_Pro/assets/css/global-splash.css"
             class="empty-img"
         >
 
-        <div class="empty-title">
+        <div class="empty-title" id="emptyTitle">
 
             No Notifications
 
         </div>
 
-        <div class="empty-subtitle">
+        <div class="empty-subtitle" id="emptySubtitle">
 
             Everything is up to date 🎉
 
         </div>
+
+    </div>
+
+    <!-- ERROR (distinct from empty — a failed load looks nothing like
+         "genuinely zero notifications") -->
+
+    <div
+        class="empty-box"
+        id="errorBox"
+        style="display:none;"
+    >
+
+        <div class="error-icon">⚠️</div>
+
+        <div class="empty-title">
+
+            មិនអាចផ្ទុកបានទេ
+
+        </div>
+
+        <div class="empty-subtitle">
+
+            សូមពិនិត្យការតភ្ជាប់អ៊ីនធឺណិត ហើយសាកល្បងម្តងទៀត
+
+        </div>
+
+        <button type="button" class="refresh-btn" id="errorRetryBtn">
+            ព្យាយាមម្តងទៀត
+        </button>
 
     </div>
 
@@ -236,6 +279,31 @@ href="/CM_Pro/assets/css/global-splash.css"
     >
 
         <div class="spinner"></div>
+
+    </div>
+
+</div>
+
+<!-- DELETE ALL CONFIRM (replaces the native confirm() popup with a
+     dialog that matches the rest of the app's style) -->
+
+<div id="deleteAllDialog" class="dialog">
+
+    <div class="dialog-box">
+
+        <div class="dialog-title">
+
+            តើអ្នកពិតជាចង់លុបការជូនដំណឹងទាំងអស់មែនទេ?
+
+        </div>
+
+        <div class="dialog-buttons">
+
+            <button id="btnDeleteAllYes">លុប</button>
+
+            <button id="btnDeleteAllNo">បោះបង់</button>
+
+        </div>
 
     </div>
 

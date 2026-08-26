@@ -100,12 +100,29 @@ function initNotificationMenuActions(){
     }
 
     const deleteBtn=document.getElementById("menuDeleteAll");
+    const deleteAllDialog=document.getElementById("deleteAllDialog");
 
-    if(deleteBtn){
+    if(deleteBtn && deleteAllDialog){
 
-        deleteBtn.onclick=async()=>{
+        // Native confirm() looked out of place next to the rest of the
+        // app's own styled dialogs (e.g. the logout confirm in
+        // Settings) — this is the same dialog/dialog-box/dialog-buttons
+        // pattern, just local to this page's own CSS.
+        deleteBtn.onclick=()=>{
 
-            if(!confirm("Delete all notifications?")) return;
+            deleteAllDialog.classList.add("show");
+
+        };
+
+        document.getElementById("btnDeleteAllNo")?.addEventListener("click",()=>{
+
+            deleteAllDialog.classList.remove("show");
+
+        });
+
+        document.getElementById("btnDeleteAllYes")?.addEventListener("click",async()=>{
+
+            deleteAllDialog.classList.remove("show");
 
             try{
 
@@ -141,7 +158,7 @@ function initNotificationMenuActions(){
 
             }
 
-        };
+        });
 
     }
 
