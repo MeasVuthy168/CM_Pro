@@ -48,6 +48,17 @@
   --adm-border: #C9971F;
 }
 
+/* DARK GRAY THEME — flat neutral dark, no border outline. */
+[data-theme="darkgray"] {
+  --adm-bg: #2B2E33;
+  --adm-card-bg: #363A41;
+  --adm-text: #F0F1F3;
+  --adm-text-muted: #A9AEB6;
+  --adm-border: transparent;
+  --adm-shadow: 0 2px 14px rgba(0, 0, 0, 0.4);
+  --adm-navy-100: #40454D;
+}
+
 .adm-page {
   min-height: 100vh;
   background-color: var(--adm-bg);

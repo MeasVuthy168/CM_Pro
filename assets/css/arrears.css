@@ -43,6 +43,26 @@
     --arr-outline-btn-text:#8A5A00;
 }
 
+/* DARK GRAY THEME — flat neutral dark, no border outline (outline
+   buttons keep a visible border since that's functional, not
+   decorative — otherwise they'd be invisible). */
+[data-theme="darkgray"]{
+    --arr-page-bg:#2B2E33;
+    --arr-card-bg:#363A41;
+    --arr-border:transparent;
+    --arr-text:#F0F1F3;
+    --arr-text-muted:#A9AEB6;
+    --arr-text-muted2:#82868F;
+    --arr-shadow:0 4px 14px rgba(0,0,0,.35);
+    --arr-shadow-modal:0 8px 28px rgba(0,0,0,.5);
+    --arr-navy:#D8DAE0;
+    --arr-navy-dark:#D8DAE0;
+    --arr-gold:#D8DAE0;
+    --arr-gold-light:#E8EAED;
+    --arr-outline-btn-border:#D8DAE0;
+    --arr-outline-btn-text:#D8DAE0;
+}
+
 /* ==========================================
    PAGE
 ========================================== */

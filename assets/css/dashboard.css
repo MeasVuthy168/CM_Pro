@@ -10,6 +10,10 @@
     --dash-page-bg:#FFF8E7;
 }
 
+[data-theme="darkgray"]{
+    --dash-page-bg:#2B2E33;
+}
+
 /* =========================
    Dashboard Layout
    NOTE: .dashboard-grid and .dashboard-card live in cards.css, not

@@ -34,7 +34,8 @@
   const CM_THEME_LIST = [
     { id: "light", label: "ស", swatch: "#FFFFFF" },
     { id: "dark", label: "ខ្មៅ", swatch: "#003B8B" },
-    { id: "gold", label: "មាស", swatch: "#D4AF37" }
+    { id: "gold", label: "មាស", swatch: "#D4AF37" },
+    { id: "darkgray", label: "ប្រផេះ", swatch: "#3A3F47" }
   ];
   const VALID_THEME_IDS = CM_THEME_LIST.map(t => t.id);
 

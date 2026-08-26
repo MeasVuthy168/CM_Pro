@@ -33,6 +33,19 @@
     --lc-select-arrow:%238A5A00;
 }
 
+/* DARK GRAY THEME — flat neutral dark, no border outline. */
+[data-theme="darkgray"]{
+    --lc-page-bg:#2B2E33;
+    --lc-card-bg:#363A41;
+    --lc-border:transparent;
+    --lc-text:#F0F1F3;
+    --lc-text-muted:#A9AEB6;
+    --lc-shadow:0 4px 14px rgba(0,0,0,.35);
+    --lc-navy:#D8DAE0;
+    --lc-navy-dark:#D8DAE0;
+    --lc-select-arrow:%23D8DAE0;
+}
+
 /* ==========================================
    PAGE
    NOTE: this rule was MISSING entirely before — every other page

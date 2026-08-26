@@ -40,6 +40,21 @@ only holds styles specific to the notifications page.
     --notif-avatar-bg:#FFF6DC;
 }
 
+/* DARK GRAY THEME — flat neutral dark, no border outline (card
+   separation comes from the bg/card contrast + shadow instead). */
+[data-theme="darkgray"]{
+    --notif-page-bg:#2B2E33;
+    --notif-card-bg:#363A41;
+    --notif-border:transparent;
+    --notif-text:#F0F1F3;
+    --notif-text-body:#C7CBD1;
+    --notif-text-muted:#A9AEB6;
+    --notif-text-muted2:#82868F;
+    --notif-navy-dark:#D8DAE0;
+    --notif-shadow:0 4px 14px rgba(0,0,0,.35);
+    --notif-avatar-bg:#40454D;
+}
+
 /* =========================
    Page
    NOTE: this was missing entirely before — .page-container had no

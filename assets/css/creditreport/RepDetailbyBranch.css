@@ -63,6 +63,20 @@
     --cr-border:#C9971F;
 }
 
+/* DARK GRAY THEME — flat neutral dark, no border outline. */
+[data-theme="darkgray"]{
+    --cr-page-bg:#2B2E33;
+    --cr-card-bg:#363A41;
+    --cr-border:transparent;
+    --cr-text:#F0F1F3;
+    --cr-text-muted:#A9AEB6;
+    --cr-shadow:0 4px 14px rgba(0,0,0,.35);
+    --cr-navy:#D8DAE0;
+    --cr-navy-dark:#D8DAE0;
+    --cr-gold:#D8DAE0;
+    --cr-gold-light:#E8EAED;
+}
+
 *{ box-sizing:border-box; }
 
 /* ===== Page shell (arrears.css defines its own — this page needs its own too) ===== */

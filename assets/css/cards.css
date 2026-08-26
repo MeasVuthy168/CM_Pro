@@ -18,6 +18,14 @@
     --card-border:#C9971F;
 }
 
+/* DARK GRAY THEME — flat neutral dark, no border outline. */
+[data-theme="darkgray"]{
+    --card-bg:#363A41;
+    --card-border:transparent;
+    --card-text:#F0F1F3;
+    --card-shadow:0 4px 12px rgba(0,0,0,.35);
+}
+
 /* =========================
    Dashboard Grid
 ========================= */
