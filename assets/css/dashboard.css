@@ -6,6 +6,10 @@
     --dash-page-bg:#002D6B;
 }
 
+[data-theme="gold"]{
+    --dash-page-bg:#FFF8E7;
+}
+
 /* =========================
    Dashboard Layout
    NOTE: .dashboard-grid and .dashboard-card live in cards.css, not

@@ -24,30 +24,17 @@
     --tvr-outline-btn-text:#fff;
 }
 
-/* ACCENT THEMES (gold/green/purple) — see settings.css for rationale. */
+/* GOLD THEME — its own warm page/card background, not just a
+   border/accent swap. */
 [data-theme="gold"]{
+    --tvr-page-bg:#FFF8E7;
+    --tvr-card-bg:#FFFDF6;
     --tvr-navy:#8A5A00;
     --tvr-navy-dark:#6B4500;
     --tvr-border:#C9971F;
     --tvr-readonly-bg:#FFF6DC;
     --tvr-outline-btn-border:#8A5A00;
     --tvr-outline-btn-text:#8A5A00;
-}
-[data-theme="green"]{
-    --tvr-navy:#1B6B3A;
-    --tvr-navy-dark:#124A28;
-    --tvr-border:#4CAF50;
-    --tvr-readonly-bg:#E8F5E9;
-    --tvr-outline-btn-border:#1B6B3A;
-    --tvr-outline-btn-text:#1B6B3A;
-}
-[data-theme="purple"]{
-    --tvr-navy:#6A1B9A;
-    --tvr-navy-dark:#4A148C;
-    --tvr-border:#9C27B0;
-    --tvr-readonly-bg:#F3E5F5;
-    --tvr-outline-btn-border:#6A1B9A;
-    --tvr-outline-btn-text:#6A1B9A;
 }
 
 /* ==========================================

@@ -20,26 +20,17 @@
     --lc-select-arrow:%23FFD700;
 }
 
-/* ACCENT THEMES (gold/green/purple) — see settings.css for rationale.
-   --lc-select-arrow feeds a <select> background-image data URI, so it
-   needs a URL-encoded "#" (%23) same as the other values here. */
+/* GOLD THEME — its own warm page/card background, not just a
+   border/accent swap. --lc-select-arrow feeds a <select>
+   background-image data URI, so it needs a URL-encoded "#" (%23)
+   same as the other values here. */
 [data-theme="gold"]{
+    --lc-page-bg:#FFF8E7;
+    --lc-card-bg:#FFFDF6;
     --lc-navy:#8A5A00;
     --lc-navy-dark:#6B4500;
     --lc-border:#C9971F;
     --lc-select-arrow:%238A5A00;
-}
-[data-theme="green"]{
-    --lc-navy:#1B6B3A;
-    --lc-navy-dark:#124A28;
-    --lc-border:#4CAF50;
-    --lc-select-arrow:%231B6B3A;
-}
-[data-theme="purple"]{
-    --lc-navy:#6A1B9A;
-    --lc-navy-dark:#4A148C;
-    --lc-border:#9C27B0;
-    --lc-select-arrow:%236A1B9A;
 }
 
 /* ==========================================
