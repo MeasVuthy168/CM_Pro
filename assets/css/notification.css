@@ -40,12 +40,12 @@ only holds styles specific to the notifications page.
     --notif-avatar-bg:#FFF6DC;
 }
 
-/* DARK GRAY THEME — flat neutral dark, no border outline (card
-   separation comes from the bg/card contrast + shadow instead). */
+/* DARK GRAY THEME — flat neutral dark with a subtle neutral border
+   instead of the accent-colored one other themes use. */
 [data-theme="darkgray"]{
     --notif-page-bg:#2B2E33;
     --notif-card-bg:#363A41;
-    --notif-border:transparent;
+    --notif-border:#474C55;
     --notif-text:#F0F1F3;
     --notif-text-body:#C7CBD1;
     --notif-text-muted:#A9AEB6;

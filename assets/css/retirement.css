@@ -28,11 +28,11 @@
     --ret-border:#C9971F;
 }
 
-/* DARK GRAY THEME — flat neutral dark, no border outline. */
+/* DARK GRAY THEME — flat neutral dark, a subtle neutral border, not the loud accent-colored outline other themes use. */
 [data-theme="darkgray"]{
     --ret-page-bg:#2B2E33;
     --ret-card-bg:#363A41;
-    --ret-border:transparent;
+    --ret-border:#474C55;
     --ret-text:#F0F1F3;
     --ret-text-muted:#A9AEB6;
     --ret-shadow:0 4px 14px rgba(0,0,0,.35);
