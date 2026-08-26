@@ -236,7 +236,52 @@ if(
 
     }
 
-} 
+}
+
+    // =========================
+    // SPACER SYNC
+    // The topbar is position:fixed (see topbar.css), so
+    // #topbar-container no longer grows with it — it needs its
+    // height set explicitly to whatever the topbar actually renders
+    // at, or content underneath gets covered. Dashboard mode (logo +
+    // profile photo + name) is taller than the plain title bar, and
+    // the height can shift again once the profile ring wrapper gets
+    // inserted after the photo loads — so this keeps watching, not
+    // just measuring once.
+    // =========================
+
+    const spacerEl =
+        document.getElementById(
+            "topbar-container"
+        );
+
+    const topbarEl =
+        document.querySelector(
+            ".topbar"
+        );
+
+    if(spacerEl && topbarEl){
+
+        const syncSpacerHeight = ()=>{
+            spacerEl.style.minHeight =
+                topbarEl.offsetHeight + "px";
+        };
+
+        syncSpacerHeight();
+
+        if(
+            window.ResizeObserver &&
+            !topbarEl._spacerObserverAttached
+        ){
+
+            topbarEl._spacerObserverAttached = true;
+
+            new ResizeObserver(syncSpacerHeight)
+                .observe(topbarEl);
+
+        }
+
+    }
 
 };
 
