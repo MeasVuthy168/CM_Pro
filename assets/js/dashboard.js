@@ -163,10 +163,19 @@ updateOnlineStatus();
 // =========================
 // CARD VIBRATION
 // =========================
+// iOS Safari doesn't support the Vibration API — except some iOS
+// versions expose a `navigator.vibrate` function that silently
+// no-ops OR (reported on-device) actually buzzes, so feature-
+// detecting `navigator.vibrate` alone isn't reliable there. Skip it
+// outright on iOS rather than trusting the feature check.
+
+function isIOSDevice(){
+    return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
 
 document.addEventListener("click",(e)=>{
 
-    if(e.target.closest(".dashboard-card") && navigator.vibrate){
+    if(e.target.closest(".dashboard-card") && navigator.vibrate && !isIOSDevice()){
 
         navigator.vibrate(20);
 

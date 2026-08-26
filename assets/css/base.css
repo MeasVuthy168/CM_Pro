@@ -48,3 +48,50 @@ body{
     font-family:"Krasar",Arial,sans-serif;
 
 }
+
+/* =========================
+   TOUCH POLISH
+   Makes taps feel like a native app, not a web page:
+
+   - -webkit-touch-callout:none stops iOS Safari's own long-press
+     "callout" bubble (Copy/Save/Open) on links and images. Android's
+     equivalent long-press "peek" menu isn't a CSS-controllable thing
+     — see shared/touch-polish.js for that half of the fix.
+   - -webkit-tap-highlight-color:transparent removes the gray flash
+     WebKit shows on every tap by default.
+
+   Re-enabled for input/textarea/contenteditable below — people still
+   need to select and copy text they've typed into those.
+========================= */
+a,
+button,
+img,
+[role="button"]{
+
+    -webkit-touch-callout:none;
+
+    -webkit-tap-highlight-color:transparent;
+
+}
+
+img{
+
+    -webkit-user-drag:none;
+
+    user-drag:none;
+
+}
+
+*{
+
+    -webkit-tap-highlight-color:transparent;
+
+}
+
+input,
+textarea,
+[contenteditable="true"]{
+
+    -webkit-touch-callout:default;
+
+}
