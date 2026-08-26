@@ -162,6 +162,7 @@
     white-space:nowrap;
 }
 [data-theme="dark"] .cr-hub-toast{ background:var(--cr-gold-light); color:#002D6B; }
+[data-theme="darkgray"] .cr-hub-toast{ color:#1C2333; }
 .cr-hub-toast.show{
     opacity:1;
     transform:translate(-50%, 0);

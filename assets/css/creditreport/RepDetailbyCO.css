@@ -61,6 +61,16 @@
     --cr-gold:#D4AF37;
     --cr-gold-light:#FFD700;
     --cr-border:#C9971F;
+    --cr-total-bg:#FFF1CC;
+    --cr-total-text:#6B4500;
+    --cr-subtotal-bg:#FFF6DC;
+    --cr-row-alt:#FFFBF0;
+    --cr-skel-base:#FDF1D8;
+    --cr-skel-shine:#FFF8E7;
+    --cr-input-bg:#FFFDF6;
+    --cr-input-text:#1C2333;
+    --cr-tabs-track:#FDF1D8;
+    --cr-note-bg:#FDF6F5;
 }
 
 /* DARK GRAY THEME — flat neutral dark, a subtle neutral border, not the loud accent-colored outline other themes use. */
@@ -75,6 +85,17 @@
     --cr-navy-dark:#D8DAE0;
     --cr-gold:#D8DAE0;
     --cr-gold-light:#E8EAED;
+    --cr-danger:#FF6B6B;
+    --cr-total-bg:#40454D;
+    --cr-total-text:#D8DAE0;
+    --cr-subtotal-bg:#383C43;
+    --cr-row-alt:#313539;
+    --cr-skel-base:#383C43;
+    --cr-skel-shine:#454A52;
+    --cr-input-bg:#363A41;
+    --cr-input-text:#F0F1F3;
+    --cr-tabs-track:rgba(255,255,255,.08);
+    --cr-note-bg:rgba(255,107,107,.10);
 }
 
 *{ box-sizing:border-box; }
@@ -167,6 +188,9 @@
     background:linear-gradient(135deg,#D4AF37,#FFD700);
     color:#002D6B;
 }
+[data-theme="darkgray"] .cr-run-btn{
+    color:#1C2333;
+}
 .cr-run-btn:active{ opacity:.85; transform:scale(.99); }
 .cr-run-btn:disabled{ opacity:.7; cursor:default; }
 
@@ -201,6 +225,7 @@
     color:#fff;
 }
 [data-theme="dark"] .cr-tab.active{ color:#002D6B; }
+[data-theme="darkgray"] .cr-tab.active{ color:#1C2333; }
 
 /* Branch / Team / Showing rows.
    The labels differ in length ("Team" vs "Showing"), so with auto-width
@@ -400,6 +425,7 @@
     z-index:2;
 }
 [data-theme="dark"] .table-card thead th{ color:#002D6B; background:var(--cr-navy-dark); }
+[data-theme="darkgray"] .table-card thead th{ background:#1F2226; color:#D8DAE0; }
 
 .table-card thead tr.cr-group-row th{ z-index:4; }
 .table-card thead tr.cr-sub-row th{ z-index:3; }
@@ -428,6 +454,7 @@
     color:var(--cr-gold-light);
 }
 [data-theme="dark"] .table-card thead th.cr-name-col{ color:#002D6B; }
+[data-theme="darkgray"] .table-card thead th.cr-name-col{ background:#1F2226; color:#D8DAE0; }
 .table-card tbody td.cr-name-col{
     background:var(--cr-card-bg);
     color:var(--cr-navy) !important;
