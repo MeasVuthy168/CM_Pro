@@ -90,9 +90,9 @@ only holds styles specific to the notifications page.
 
     border:1px solid var(--notif-border);
 
-    border-radius:14px;
+    border-radius:12px;
 
-    padding:12px 14px;
+    padding:8px 12px;
 
     box-shadow:var(--notif-shadow);
 
@@ -100,17 +100,17 @@ only holds styles specific to the notifications page.
 
 .summary-label{
 
-    font-size:12px;
+    font-size:11px;
 
     color:var(--notif-text-muted);
 
-    margin-bottom:4px;
+    margin-bottom:2px;
 
 }
 
 .summary-value{
 
-    font-size:20px;
+    font-size:16px;
 
     font-weight:700;
 
@@ -125,14 +125,65 @@ only holds styles specific to the notifications page.
 }
 
 /* =========================
-   Refresh
+   Pull to Refresh
+   Height is driven directly from JS on every touchmove frame (see
+   notification.js) while dragging — .snapping only gets added right
+   before the two settle states (spring back to 0, or hold open while
+   refreshing), so the indicator doesn't lag behind the finger during
+   the actual drag.
 ========================= */
 
-.refresh-row{
+.pull-refresh-indicator{
 
-    padding:0 14px 14px;
+    height:0;
+
+    overflow:hidden;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
 
 }
+
+.pull-refresh-indicator.snapping{
+
+    transition:height .25s ease;
+
+}
+
+.pull-refresh-spinner{
+
+    width:24px;
+
+    height:24px;
+
+    border:3px solid rgba(212,175,55,.25);
+
+    border-top:3px solid #D4AF37;
+
+    border-radius:50%;
+
+    transition:transform .15s ease;
+
+}
+
+.pull-refresh-indicator.ready .pull-refresh-spinner{
+
+    transform:rotate(180deg);
+
+}
+
+.pull-refresh-indicator.spinning .pull-refresh-spinner{
+
+    animation:notifySpin .7s linear infinite;
+
+}
+
+/* =========================
+   Refresh (still used by the error state's retry button)
+========================= */
 
 .refresh-btn{
 
@@ -268,11 +319,28 @@ only holds styles specific to the notifications page.
 
     animation:notifyFadeIn .25s ease;
 
+    /* Swipe itself tracks the finger 1:1 with no transition (see
+       .swiping below, which turns this off) — this is only for what
+       happens on release: springing back to rest, or sliding out on
+       delete/mark-read. Without it those snapped straight to their
+       final position with no motion at all. */
+    transition:transform .25s cubic-bezier(.22,.61,.36,1), opacity .25s ease;
+
 }
 
 .notify-card.unread{
 
     border-left:4px solid #FFD700;
+
+}
+
+/* Read cards recede rather than carrying an icon/button to mark them
+   done — title and message dim to the same muted tone used
+   everywhere else in the app for secondary text. */
+.notify-card:not(.unread) .notify-card-title,
+.notify-card:not(.unread) .notify-message{
+
+    color:var(--notif-text-muted);
 
 }
 
@@ -436,79 +504,6 @@ only holds styles specific to the notifications page.
     font-weight:600;
 
     flex-shrink:0;
-
-}
-
-/* =========================
-   Always-visible actions
-   Swipe (mark read / delete) is powerful but completely undiscoverable
-   on its own — nothing on an idle card hints it's there. These two
-   small buttons do the exact same actions as the swipe gestures, are
-   always visible, and also give desktop/mouse users (who can't swipe
-   at all) a way to interact with a single card.
-========================= */
-
-.notify-actions{
-
-    display:flex;
-
-    flex-direction:column;
-
-    gap:6px;
-
-    flex-shrink:0;
-
-    justify-content:center;
-
-}
-
-.notify-action-btn{
-
-    width:28px;
-
-    height:28px;
-
-    border:1px solid var(--notif-border);
-
-    border-radius:8px;
-
-    background:var(--notif-card-bg);
-
-    color:var(--notif-text-muted);
-
-    font-size:13px;
-
-    line-height:1;
-
-    cursor:pointer;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-}
-
-.notify-action-btn:active{
-
-    transform:scale(.92);
-
-}
-
-.notify-mark-read-btn{
-
-    color:#1a7f37;
-
-    border-color:#1a7f37;
-
-}
-
-.notify-delete-btn{
-
-    color:#c0392b;
-
-    border-color:#e08a8a;
 
 }
 

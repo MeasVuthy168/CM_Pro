@@ -17,9 +17,6 @@ document.getElementById("loadingBox");
 const emptyBox=
 document.getElementById("emptyBox");
 
-const refreshBtn=
-document.getElementById("refreshBtn");
-
 const readAllBtn=
 document.getElementById("readAllBtn");
 
@@ -278,7 +275,6 @@ function renderList(){
     visible.map(createNotificationCard).join("");
 
     enableSwipeCards();
-    bindCardActionButtons();
 
     hydrateAvatars(notifyList);
 
@@ -329,10 +325,12 @@ function updateSummaryFromState(){
 // Open button removed — a tap/click on the card does nothing
 // for now. Redirecting to a specific page on click is a
 // planned feature, not wired up yet. Swipe gestures (mark
-// read / delete) still work, but they're not the only way in any
-// more — see .notify-actions below, which does the same two things
-// via always-visible buttons (swipe alone was undiscoverable, and
-// doesn't exist at all for a mouse/desktop user).
+// read / delete) are the only interactions on a card — an
+// always-visible tick/bin button pair used to sit here too, but
+// they cluttered the card next to the swipe gesture that already
+// did the same two things, so they're gone; a read card is now
+// signaled by its text dimming instead (see .notify-card:not(.unread)
+// in notification.css).
 // =========================================================
 
 function createNotificationCard(item){
@@ -418,74 +416,9 @@ ${escapeHtml(item.type || "system")}
 
 </div>
 
-<div class="notify-actions">
-
-${item.isRead ? "" : `<button type="button" class="notify-action-btn notify-mark-read-btn" data-action="read" aria-label="Mark as read" title="Mark as read">✓</button>`}
-
-<button type="button" class="notify-action-btn notify-delete-btn" data-action="delete" aria-label="Delete" title="Delete">🗑</button>
-
-</div>
-
 </div>
 
 `;
-
-}
-
-// =========================================================
-// ALWAYS-VISIBLE ACTION BUTTONS
-// Same two actions as the swipe gestures (see enableSwipeCards),
-// just reachable with a plain tap/click instead of a drag.
-// =========================================================
-
-function bindCardActionButtons(){
-
-    notifyList.querySelectorAll(".notify-action-btn").forEach(btn=>{
-
-        if(btn.dataset.actionBound==="true") return;
-        btn.dataset.actionBound="true";
-
-        btn.addEventListener("click",async(e)=>{
-
-            e.stopPropagation();
-
-            const card=btn.closest(".notify-card");
-            if(!card) return;
-
-            const id=card.dataset.id;
-            const action=btn.dataset.action;
-
-            if(action==="delete"){
-
-                vibrate([50,50,50]);
-                await deleteNotification(id);
-                removeFromState(id);
-
-                card.style.transform="translateX(-120%)";
-                card.style.opacity=0;
-
-                setTimeout(()=>{
-
-                    card.remove();
-                    updateSummaryFromState();
-
-                },250);
-
-            }else if(action==="read"){
-
-                vibrate(40);
-                await markRead(id);
-                markReadInState(id);
-
-                card.classList.remove("unread");
-                btn.remove();
-                updateSummaryFromState();
-
-            }
-
-        });
-
-    });
 
 }
 
@@ -726,9 +659,6 @@ function enableSwipeCards(){
 
                         card.classList.remove("unread");
 
-                        const btn=card.querySelector(".notify-mark-read-btn");
-                        if(btn) btn.remove();
-
                         updateSummaryFromState();
 
                     },150);
@@ -835,16 +765,113 @@ console.error(error);
 });
 
 // =========================================================
-// REFRESH
+// PULL TO REFRESH
+// Replaces the old static "⟳ Refresh" button — dragging down from
+// the very top of the page now triggers the same loadNotifications()
+// call. Only takes over the gesture once the page is already
+// scrolled to the top AND the drag is downward; any other scroll
+// (including scrolling back up from further down the list) is left
+// completely alone.
 // =========================================================
 
-refreshBtn.addEventListener("click",()=>{
+(function initPullToRefresh(){
 
-loadNotifications();
+    const indicator=document.getElementById("pullRefreshIndicator");
+    if(!indicator) return;
 
-});
+    const THRESHOLD=64;
+    const MAX_PULL=90;
 
+    let startY=0;
+    let pulling=false;
+    let refreshing=false;
 
+    function atTop(){
+
+        return (window.scrollY || document.documentElement.scrollTop || 0) <= 0;
+
+    }
+
+    window.addEventListener("touchstart",(e)=>{
+
+        if(!e.touches || !e.touches[0]) return;
+
+        if(refreshing || !atTop()){
+            pulling=false;
+            return;
+        }
+
+        startY=e.touches[0].clientY;
+        pulling=true;
+
+        // No transition while actively tracking the finger — only on
+        // the snap-back/settle after release (added back in touchend).
+        indicator.classList.remove("snapping");
+
+    },{passive:true});
+
+    window.addEventListener("touchmove",(e)=>{
+
+        if(!pulling || !e.touches || !e.touches[0]) return;
+
+        const diff=e.touches[0].clientY-startY;
+
+        if(diff<=0 || !atTop()){
+
+            pulling=false;
+            indicator.classList.add("snapping");
+            indicator.style.height="0px";
+            indicator.classList.remove("ready");
+            return;
+
+        }
+
+        // Only preventDefault once this is clearly a deliberate
+        // downward pull at the top of the page — this is what stops
+        // the browser's own overscroll/bounce from fighting the
+        // indicator, without touching scrolling anywhere else.
+        e.preventDefault();
+
+        const pull=Math.min(diff*0.5,MAX_PULL);
+
+        indicator.style.height=pull+"px";
+        indicator.classList.toggle("ready",pull>=THRESHOLD);
+
+    },{passive:false});
+
+    window.addEventListener("touchend",()=>{
+
+        if(!pulling) return;
+
+        pulling=false;
+        indicator.classList.add("snapping");
+
+        const pulledEnough=indicator.classList.contains("ready");
+        indicator.classList.remove("ready");
+
+        if(pulledEnough && !refreshing){
+
+            refreshing=true;
+            indicator.classList.add("spinning");
+            indicator.style.height="48px";
+
+            loadNotifications().finally(()=>{
+
+                refreshing=false;
+                indicator.classList.remove("spinning");
+                indicator.style.height="0px";
+
+            });
+
+        }else{
+
+            indicator.style.height="0px";
+
+        }
+
+    });
+
+})();
 
 
 // =========================================================
@@ -1231,6 +1258,14 @@ function toggleNotificationMenu(){
 }
 
 // click outside
+// Registered on the CAPTURE phase, not bubble — a bubble-phase
+// listener here would never fire for a tap on anything that calls
+// e.stopPropagation() on its own click handler (confirmed: this is
+// exactly why the menu used to stay open when tapping certain
+// buttons elsewhere on the page). Capture fires on the way DOWN to
+// the target, before any handler on the target itself gets a chance
+// to stop propagation, so this closes the menu on a tap anywhere
+// outside it, no matter what that element's own click handler does.
 
 document.addEventListener(
 
@@ -1262,7 +1297,9 @@ document.addEventListener(
 
         }
 
-    }
+    },
+
+    true
 
 );
 
