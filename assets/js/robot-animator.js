@@ -29,62 +29,74 @@
      - startWelcomeLoop(): welcome() by itself only plays ONCE — it
        rises, waves, returns to the hip rest, and hands back to idle(),
        same as any other one-shot gesture. startWelcomeLoop() is what
-       makes the greeting repeat: it just calls welcome(), waits a
-       short "relaxed at the waist" pause, and calls welcome() again,
-       forever, until stopWelcomeLoop() is called. Each cycle is an
-       ordinary welcome() call starting from wherever the arm actually
-       is (idle's hip rest — welcome() always ends there), so looping
-       never resets/teleports anything; it's "greet again", not
-       "restart the whole animation". If another gesture interrupts a
-       cycle mid-flight, welcome() reports that back and the loop stops
-       itself rather than fighting for control — see welcome()'s and
+       makes the greeting repeat: it plays a one-time "notice the user"
+       intro, then calls welcome() over and over, forever, until
+       stopWelcomeLoop() is called. Each cycle is an ordinary welcome()
+       call starting from wherever the arm actually is (idle's hip
+       rest — welcome() always ends there), so looping never resets or
+       teleports anything; it's "greet again", not "restart the whole
+       animation". If another gesture interrupts a cycle mid-flight,
+       welcome() reports that back and the loop stops itself rather
+       than fighting for control — see welcome()'s and
        startWelcomeLoop()'s own comments below.
 
    PHASES (welcome() and wave())
-   Both are built from the same three shared phases, just at
-   different speeds/amplitudes:
-     1. _riseToWelcome() — a brief ANTICIPATION dip (the shoulder/elbow
-        coil slightly deeper into the hip rest before the big move,
-        like a small wind-up), then the RISE itself (shoulder+elbow
-        ease from hip to the welcome stance), while the wrist/hand
-        trail slightly behind and briefly overshoot past their resting
-        wave-ready tilt before settling — a FOLLOW-THROUGH, simulating
-        inertia in the lighter distal joints. The head turns/tilts
-        toward the rising arm and the torso takes a very small
-        weight-shift lean the opposite way, both holding through the
-        next phase.
-     2. _waveCycles2() / _waveCycles1() — the shoulder/elbow hold at
-        the welcome stance with only a tiny sway (stable, per the
-        brief); the wrist does the actual waving (left → center →
-        right → center, repeated), with the hand/fingers doing a
-        small synchronized open/close flex. Head and torso stay as
-        phase 1 left them.
-     3. _lowerToHip() — the REVERSE cascade the brief asks for: the
-        wrist/hand snap back to neutral quickly, within the first part
-        of this phase's own duration, while the shoulder/elbow take
-        the phase's FULL duration to ease back down to the hip rest —
-        so the distal joints visibly settle well before the proximal
-        ones finish, joint by joint from the hand inward. Head and
-        torso un-tilt back to neutral in step with the arm lowering.
+   The right arm's greeting is NOT one rotate-the-whole-arm animation —
+   it's a chain of small phases, each starting exactly where the
+   previous one left off (every phase's offset-0 keyframe value matches
+   the previous phase's offset-1 value, for every key it touches), so
+   nothing ever snaps between them:
+     _noticeAndSettle() [once, at startWelcomeLoop() start]
+       -> _relaxHold() -> _anticipate() -> (brief sleep) ->
+       _riseToWelcome() -> _settleAtWelcome() -> _waveCycles2() ->
+       _followThrough() -> _lowerToHip() -> [loops back to _relaxHold()]
+   See each phase's own comment below for what it does. The key
+   structural idea, repeated throughout: within the RISE, the ELBOW
+   LEADS the SHOULDER — it finishes bending well before the shoulder
+   finishes its rise (offset 0.78 vs 1.0), then holds — rather than the
+   two moving in lockstep, which is what made earlier versions read as
+   "the whole arm rotating as one rigid object" instead of a shoulder
+   initiating and an elbow following through. See CRITICAL below for
+   why leading (not lagging) is the safe direction. Distal joints
+   (wrist, then hand) start even later and settle even later, giving
+   the shoulder -> elbow -> forearm -> wrist -> hand cascade the brief
+   asks for. The RETURN phase (_lowerToHip) reverses this: hand/wrist
+   snap back within the first third of its duration while shoulder/
+   elbow take the phase's full duration — distal joints settle first,
+   proximal joints last, exactly backwards from the rise.
 
    Every phase is cancellable mid-flight: welcome()/wave() bump
    `_gestureGen` and each `await` between phases re-checks it, so a
    newer gesture call (or think()/success()/attention()) always wins
    immediately rather than fighting the old sequence for control.
 
-   CRITICAL: keep the right arm's shoulder and elbow keyframes on
-   IDENTICAL offsets within any single phase. An earlier version
-   staggered them (elbow bending later than the shoulder, or
-   straightening out before the shoulder finished lowering) and —
-   confirmed by measuring the actual rendered bounding box across the
-   full animation with a headless browser — that transiently recreated
-   a near-straight arm at a still-raised shoulder angle, reaching much
-   further than either animation's own held values ever specified.
-   The wrist/hand are free to run on their own independent offsets
-   (that's exactly how the follow-through/reverse-cascade above work)
-   because wrist rotation doesn't extend the arm's reach the way a
-   desynced shoulder/elbow pair does — but if you touch the shoulder
-   or elbow keyframes, re-verify with the same kind of sweep (sample
+   CRITICAL: the shoulder must never LAG a raised elbow's implied reach,
+   and the elbow must never LAG a raised shoulder's implied reach — an
+   earlier version staggered shoulder/elbow the wrong way (elbow
+   bending later than the shoulder rose, or straightening out before
+   the shoulder finished lowering) and — confirmed by measuring the
+   actual rendered bounding box across the full animation with a
+   headless browser — that transiently recreated a near-straight arm at
+   a still-raised shoulder angle, reaching much further than either
+   animation's own held values ever specified. The fix isn't "keep them
+   in lockstep forever" (that's what made the arm look rigid) — it's
+   "the elbow may only ever be AHEAD of where lockstep would put it,
+   never behind": a MORE-bent elbow than the naive interpolation can
+   only pull the hand CLOSER to the shoulder, never further out, so
+   _riseToWelcome() compresses the elbow's bend into an EARLIER offset
+   window (0 to 0.78) than the shoulder's full rise (0 to 1) — the
+   elbow is always at least as bent as it needs to be for the current
+   shoulder angle. _lowerToHip() keeps shoulder/elbow on IDENTICAL
+   offsets, because during the RETURN the dangerous direction flips
+   (an elbow straightening out AHEAD of the shoulder lowering would be
+   the unsafe one) and there's no motion-quality reason to stagger that
+   direction anyway — the wrist/hand's reverse cascade already carries
+   the "distal joints move independently" feeling for the return.
+   The wrist/hand are always free to run on fully independent offsets
+   from the shoulder/elbow (that's how the follow-through/reverse-
+   cascade work) because wrist rotation doesn't extend the arm's reach
+   the way a shoulder/elbow desync does. If you touch the shoulder or
+   elbow keyframes, re-verify with the same kind of sweep (sample
    getBoundingClientRect() of #cm-pro-robot every ~50-100ms across a
    full playthrough) rather than eyeballing it.
 
@@ -100,6 +112,11 @@
   "use strict";
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  // Small bounded randomization so consecutive welcome() cycles aren't
+  // pixel-identical (a head turn of 3deg one cycle, 4deg the next,
+  // etc.) — keeps `range` small everywhere it's used so the variation
+  // reads as organic rather than random/jittery.
+  const jitter = (base, range) => base + (Math.random() * 2 - 1) * range;
 
   // Element ids this animator needs, and the transform-origin (in the
   // SVG's own user-space units, matching robot.svg's viewBox — NOT
@@ -468,67 +485,218 @@
     }
 
     // ============ WELCOME / WAVE PHASES ============
-    // Shared building blocks for welcome() and wave() — see the file
-    // header for what each phase represents. `duration` lets the two
-    // gestures reuse identical motion *shapes* at different speeds
-    // (welcome() slower/more deliberate, wave() a quicker acknowledgment).
-    // `includeHeadBody` skips the head/face/torso choreography for the
-    // lighter wave() so a quick wave doesn't also commit the head to a
-    // multi-second turn-and-return.
+    // Every phase below starts exactly where the previous one in the
+    // chain ends, for every key it touches — that's what keeps the
+    // whole sequence snap-free. See the file header for the phase
+    // order and the shoulder/elbow safety rule.
 
-    _riseToWelcome(duration, includeHeadBody) {
-      const specs = [
+    // ONE-TIME intro, played once by startWelcomeLoop() before the
+    // repeating cycle starts: the robot "notices" the user (head
+    // center -> slight turn -> back to center) and both hands settle
+    // more deliberately into the waist — left hand starts first, right
+    // hand ~110ms later, so the two read as independent limbs arriving
+    // rather than a mirrored pair moving in lockstep.
+    _noticeAndSettle() {
+      return this._playGesture(["head", "leftArm", "leftElbow", "rightArm", "rightElbow"], [
         {
-          // Shoulder: a brief anticipation dip deeper into the hip
-          // rest (a small "coil"), then the rise itself.
+          key: "head",
+          keyframes: [
+            { transform: "rotate(0deg)", offset: 0 },
+            { transform: "rotate(5deg)", offset: 0.55 },
+            { transform: "rotate(0deg)", offset: 1 },
+          ],
+          options: { duration: 700, easing: "ease-in-out", fill: "forwards" },
+        },
+        {
+          key: "leftArm",
+          keyframes: [
+            { transform: `rotate(${LEFT_HIP_BASE.shoulder + 3}deg)`, offset: 0 },
+            { transform: `rotate(${LEFT_HIP_BASE.shoulder}deg)`, offset: 1 },
+          ],
+          options: { duration: 600, delay: 180, easing: GESTURE_EASE, fill: "forwards" },
+        },
+        {
+          key: "leftElbow",
+          keyframes: [
+            { transform: `rotate(${LEFT_HIP_BASE.elbow - 4}deg)`, offset: 0 },
+            { transform: `rotate(${LEFT_HIP_BASE.elbow}deg)`, offset: 1 },
+          ],
+          options: { duration: 600, delay: 180, easing: GESTURE_EASE, fill: "forwards" },
+        },
+        {
+          key: "rightArm",
+          keyframes: [
+            { transform: `rotate(${RIGHT_HIP_BASE.shoulder - 3}deg)`, offset: 0 },
+            { transform: `rotate(${RIGHT_HIP_BASE.shoulder}deg)`, offset: 1 },
+          ],
+          options: { duration: 600, delay: 290, easing: GESTURE_EASE, fill: "forwards" },
+        },
+        {
+          key: "rightElbow",
+          keyframes: [
+            { transform: `rotate(${RIGHT_HIP_BASE.elbow + 4}deg)`, offset: 0 },
+            { transform: `rotate(${RIGHT_HIP_BASE.elbow}deg)`, offset: 1 },
+          ],
+          options: { duration: 600, delay: 290, easing: GESTURE_EASE, fill: "forwards" },
+        },
+      ]);
+    }
+
+    // The "waiting at the waist" hold at the start of every cycle
+    // (including the first) — replaces what used to be a dead sleep()
+    // with real, small, returning-to-baseline motion, so the robot
+    // never reads as frozen even during the pause.
+    //
+    // IMPORTANT: this phase must explicitly hold rightArm/rightElbow at
+    // RIGHT_HIP_BASE, even though nothing about them visually changes
+    // here. welcome() pauses their idle loop (_pauseIdle) right before
+    // this phase runs, and RIGHT_HIP_BASE isn't the identity transform
+    // — without a replacement animation, cancelling idle's would leave
+    // them un-driven for this phase's whole duration, and an un-driven
+    // SVG element renders at its base (unrotated) pose, i.e. the arm
+    // would visibly drop to hanging straight down for the length of the
+    // hold, then jump back to the hip pose when _anticipate() starts.
+    // (rightWrist/rightHand/body/face don't need this: their resting
+    // idle value already IS the identity transform, so no snap risk.)
+    _relaxHold(duration) {
+      const tilt = jitter(2, 1);
+      return this._run([
+        {
+          key: "head",
+          keyframes: [
+            { transform: "rotate(0deg)", offset: 0 },
+            { transform: `rotate(${tilt}deg)`, offset: 0.5 },
+            { transform: "rotate(0deg)", offset: 1 },
+          ],
+          options: { duration, easing: "ease-in-out", fill: "forwards" },
+        },
+        {
           key: "rightArm",
           keyframes: [
             { transform: `rotate(${RIGHT_HIP_BASE.shoulder}deg)`, offset: 0 },
-            { transform: `rotate(${RIGHT_ANTICIPATION.shoulder}deg)`, offset: 0.12 },
-            { transform: `rotate(${RIGHT_WELCOME_BASE.shoulder}deg)`, offset: 0.62 },
+            { transform: `rotate(${RIGHT_HIP_BASE.shoulder - 1}deg)`, offset: 0.5 },
+            { transform: `rotate(${RIGHT_HIP_BASE.shoulder}deg)`, offset: 1 },
+          ],
+          options: { duration, easing: "ease-in-out", fill: "forwards" },
+        },
+        {
+          key: "rightElbow",
+          keyframes: [
+            { transform: `rotate(${RIGHT_HIP_BASE.elbow}deg)`, offset: 0 },
+            { transform: `rotate(${RIGHT_HIP_BASE.elbow + 1.5}deg)`, offset: 0.5 },
+            { transform: `rotate(${RIGHT_HIP_BASE.elbow}deg)`, offset: 1 },
+          ],
+          options: { duration, easing: "ease-in-out", fill: "forwards" },
+        },
+        {
+          key: "rightWrist",
+          keyframes: [
+            { transform: "rotate(0deg)", offset: 0 },
+            { transform: "rotate(-2deg)", offset: 0.5 },
+            { transform: "rotate(0deg)", offset: 1 },
+          ],
+          options: { duration, easing: "ease-in-out", fill: "forwards" },
+        },
+        {
+          key: "body",
+          keyframes: [
+            { transform: "translate(0px, 0px)", offset: 0 },
+            { transform: "translate(0px, -1.5px)", offset: 0.5 },
+            { transform: "translate(0px, 0px)", offset: 1 },
+          ],
+          options: { duration, easing: "ease-in-out", fill: "forwards" },
+        },
+      ]);
+    }
+
+    // ANTICIPATION: before the arm commits to rising, the body
+    // prepares — a tiny weight-shift starts, the shoulder/elbow coil
+    // slightly deeper into the hip rest, the head turns a touch
+    // further right. welcome() follows this with a brief sleep() (the
+    // "pause ~100-200ms" the brief asks for) before the rise begins.
+    _anticipate(duration, variation) {
+      return this._run([
+        {
+          key: "body",
+          keyframes: [
+            { transform: "translate(0px, 0px)", offset: 0 },
+            { transform: "translate(-1px, -0.5px)", offset: 1 },
+          ],
+          options: { duration, easing: GESTURE_EASE, fill: "forwards" },
+        },
+        {
+          key: "rightArm",
+          keyframes: [
+            { transform: `rotate(${RIGHT_HIP_BASE.shoulder}deg)`, offset: 0 },
+            { transform: `rotate(${RIGHT_ANTICIPATION.shoulder}deg)`, offset: 1 },
+          ],
+          options: { duration, easing: GESTURE_EASE, fill: "forwards" },
+        },
+        {
+          key: "rightElbow",
+          keyframes: [
+            { transform: `rotate(${RIGHT_HIP_BASE.elbow}deg)`, offset: 0 },
+            { transform: `rotate(${RIGHT_ANTICIPATION.elbow}deg)`, offset: 1 },
+          ],
+          options: { duration, easing: GESTURE_EASE, fill: "forwards" },
+        },
+        {
+          key: "head",
+          keyframes: [
+            { transform: "rotate(0deg)", offset: 0 },
+            { transform: `rotate(${variation.headStart}deg)`, offset: 1 },
+          ],
+          options: { duration, easing: GESTURE_EASE, fill: "forwards" },
+        },
+      ]);
+    }
+
+    // THE RISE. Shoulder rises across the FULL duration (offset 0->1);
+    // the elbow's bend is compressed into offset 0->0.78 then holds —
+    // it LEADS the shoulder, finishing its bend before the shoulder
+    // finishes rising (see the file header for why this is the safe
+    // direction and what breaks the "one rigid object" look). Wrist
+    // starts later still (0.22), trails, briefly overshoots past its
+    // resting tilt, and settles by the end; the hand settles LAST,
+    // turning toward the user right at the tail. Head/face/body
+    // continue straight on from wherever _anticipate() left them.
+    _riseToWelcome(duration, includeHeadBody, variation) {
+      const specs = [
+        {
+          key: "rightArm",
+          keyframes: [
+            { transform: `rotate(${RIGHT_ANTICIPATION.shoulder}deg)`, offset: 0 },
             { transform: `rotate(${RIGHT_WELCOME_BASE.shoulder}deg)`, offset: 1 },
           ],
           options: { duration, easing: GESTURE_EASE, fill: "forwards" },
         },
         {
-          // Elbow — SAME offsets as the shoulder above. See the file
-          // header: staggering these is what causes the arm to
-          // transiently overreach.
           key: "rightElbow",
           keyframes: [
-            { transform: `rotate(${RIGHT_HIP_BASE.elbow}deg)`, offset: 0 },
-            { transform: `rotate(${RIGHT_ANTICIPATION.elbow}deg)`, offset: 0.12 },
-            { transform: `rotate(${RIGHT_WELCOME_BASE.elbow}deg)`, offset: 0.62 },
+            { transform: `rotate(${RIGHT_ANTICIPATION.elbow}deg)`, offset: 0 },
+            { transform: `rotate(${RIGHT_WELCOME_BASE.elbow}deg)`, offset: 0.78 },
             { transform: `rotate(${RIGHT_WELCOME_BASE.elbow}deg)`, offset: 1 },
-          ],
-          options: { duration, easing: GESTURE_EASE, fill: "forwards" },
-        },
-        {
-          // Wrist trails the shoulder/elbow's rise, briefly overshoots
-          // past its resting wave-ready tilt, then settles — the
-          // follow-through that makes the rise feel like it has mass,
-          // rather than every joint arriving at the same instant.
-          key: "rightWrist",
-          keyframes: [
-            { transform: "rotate(0deg)", offset: 0 },
-            { transform: "rotate(0deg)", offset: 0.12 },
-            { transform: "rotate(-8deg)", offset: 0.66 },
-            { transform: "rotate(-14deg)", offset: 0.76 },
-            { transform: "rotate(-4deg)", offset: 0.92 },
-            { transform: "rotate(-4deg)", offset: 1 },
           ],
           options: { duration, easing: "ease-out", fill: "forwards" },
         },
         {
-          // Hand — palm turns slightly toward the user and opens a
-          // touch as it arrives, with its own small follow-through.
+          key: "rightWrist",
+          keyframes: [
+            { transform: "rotate(0deg)", offset: 0 },
+            { transform: "rotate(0deg)", offset: 0.22 },
+            { transform: "rotate(-7deg)", offset: 0.7 },
+            { transform: "rotate(-11deg)", offset: 0.84 },
+            { transform: "rotate(0deg)", offset: 1 },
+          ],
+          options: { duration, easing: "ease-out", fill: "forwards" },
+        },
+        {
           key: "rightHand",
           keyframes: [
             { transform: "rotate(0deg) scale(1)", offset: 0 },
-            { transform: "rotate(0deg) scale(1)", offset: 0.15 },
-            { transform: "rotate(6deg) scale(1.04)", offset: 0.7 },
-            { transform: "rotate(6deg) scale(1.06)", offset: 0.82 },
-            { transform: "rotate(4deg) scale(1.02)", offset: 1 },
+            { transform: "rotate(0deg) scale(1)", offset: 0.35 },
+            { transform: "rotate(5deg) scale(1.04)", offset: 0.82 },
+            { transform: "rotate(3deg) scale(1.02)", offset: 1 },
           ],
           options: { duration, easing: "ease-out", fill: "forwards" },
         },
@@ -536,39 +704,26 @@
       if (includeHeadBody) {
         specs.push(
           {
-            // Head turns/tilts toward the rising arm, holding through
-            // the wave phase that follows (returned to neutral only in
-            // _lowerToHip) — the head should look like it's noticing
-            // its own arm move, not sit disconnected from the action.
             key: "head",
             keyframes: [
-              { transform: "rotate(0deg)", offset: 0 },
-              { transform: "rotate(0deg)", offset: 0.1 },
-              { transform: "rotate(6deg)", offset: 0.55 },
-              { transform: "rotate(6deg)", offset: 1 },
+              { transform: `rotate(${variation.headStart}deg)`, offset: 0 },
+              { transform: `rotate(${variation.headTarget}deg)`, offset: 1 },
             ],
             options: { duration, easing: GESTURE_EASE, fill: "forwards" },
           },
           {
             key: "face",
             keyframes: [
-              { transform: "translateX(0px)", opacity: 1, offset: 0 },
-              { transform: "translateX(0px)", opacity: 1, offset: 0.1 },
-              { transform: "translateX(3px)", opacity: 1, offset: 0.55 },
+              { transform: "translateX(1px)", opacity: 1, offset: 0 },
               { transform: "translateX(3px)", opacity: 1, offset: 1 },
             ],
             options: { duration, easing: GESTURE_EASE, fill: "forwards" },
           },
           {
-            // Torso: a very small weight-shift lean away from the
-            // raised arm (physical counterbalance), on top of a single
-            // breathing dip — holds through the wave phase too.
             key: "body",
             keyframes: [
-              { transform: "translate(0px, 0px)", offset: 0 },
-              { transform: "translate(0px, -2px)", offset: 0.3 },
-              { transform: "translate(-2px, -3px)", offset: 0.62 },
-              { transform: "translate(-2px, -3px)", offset: 1 },
+              { transform: "translate(-1px, -0.5px)", offset: 0 },
+              { transform: "translate(-2.5px, -2.5px)", offset: 1 },
             ],
             options: { duration, easing: GESTURE_EASE, fill: "forwards" },
           }
@@ -577,19 +732,96 @@
       return this._run(specs);
     }
 
-    // Shoulder/elbow hold the welcome stance (small stable sway only,
-    // per the brief — the shoulder should read as relatively stable),
-    // while the wrist does two full left→center→right→center cycles
-    // and the hand does a small synchronized flex. Ends with the wrist
-    // back at the same -4deg tilt _riseToWelcome() settled it to, so
-    // _lowerToHip() has a clean, matching starting point.
-    _waveCycles2(duration) {
+    // Lighter rise for the quick standalone wave() — starts directly
+    // from the hip rest (no anticipation lead-in) but keeps the same
+    // elbow-leads-shoulder cascade, just compressed. Arm-only, no
+    // head/torso choreography.
+    _riseToWelcomeQuick(duration) {
       return this._run([
         {
           key: "rightArm",
           keyframes: [
+            { transform: `rotate(${RIGHT_HIP_BASE.shoulder}deg)`, offset: 0 },
+            { transform: `rotate(${RIGHT_WELCOME_BASE.shoulder}deg)`, offset: 1 },
+          ],
+          options: { duration, easing: GESTURE_EASE, fill: "forwards" },
+        },
+        {
+          key: "rightElbow",
+          keyframes: [
+            { transform: `rotate(${RIGHT_HIP_BASE.elbow}deg)`, offset: 0 },
+            { transform: `rotate(${RIGHT_WELCOME_BASE.elbow}deg)`, offset: 0.7 },
+            { transform: `rotate(${RIGHT_WELCOME_BASE.elbow}deg)`, offset: 1 },
+          ],
+          options: { duration, easing: "ease-out", fill: "forwards" },
+        },
+        {
+          key: "rightWrist",
+          keyframes: [
+            { transform: "rotate(0deg)", offset: 0 },
+            { transform: "rotate(0deg)", offset: 0.25 },
+            { transform: "rotate(-9deg)", offset: 0.75 },
+            { transform: "rotate(-3deg)", offset: 0.92 },
+            { transform: "rotate(0deg)", offset: 1 },
+          ],
+          options: { duration, easing: "ease-out", fill: "forwards" },
+        },
+        {
+          key: "rightHand",
+          keyframes: [
+            { transform: "rotate(0deg) scale(1)", offset: 0 },
+            { transform: "rotate(0deg) scale(1)", offset: 0.3 },
+            { transform: "rotate(4deg) scale(1.04)", offset: 0.85 },
+            { transform: "rotate(3deg) scale(1.02)", offset: 1 },
+          ],
+          options: { duration, easing: "ease-out", fill: "forwards" },
+        },
+      ]);
+    }
+
+    // A brief "arrival" beat right after the rise finishes and before
+    // the wave starts — a small net-zero blip (bump and return) on the
+    // hand/wrist, distinguishing "just arrived" from "now waving"
+    // without changing the values _waveCycles2() starts from.
+    _settleAtWelcome(duration) {
+      return this._run([
+        {
+          key: "rightHand",
+          keyframes: [
+            { transform: "rotate(3deg) scale(1.02)", offset: 0 },
+            { transform: "rotate(3deg) scale(1.05)", offset: 0.5 },
+            { transform: "rotate(3deg) scale(1.02)", offset: 1 },
+          ],
+          options: { duration, easing: "ease-in-out", fill: "forwards" },
+        },
+        {
+          key: "rightWrist",
+          keyframes: [
+            { transform: "rotate(0deg)", offset: 0 },
+            { transform: "rotate(-2deg)", offset: 0.5 },
+            { transform: "rotate(0deg)", offset: 1 },
+          ],
+          options: { duration, easing: "ease-in-out", fill: "forwards" },
+        },
+      ]);
+    }
+
+    // THE WAVE. Shoulder/elbow barely move (well under 1deg — "mostly
+    // stable" per the brief); the wrist carries the wave itself, two
+    // small left-center-right-center cycles at 5-10deg (jittered per
+    // cycle via `variation.waveAmp`, and the two cycles use slightly
+    // different amplitude from each other so they don't read as an
+    // exact repeat), with the hand/fingers doing a small synchronized
+    // open/close flex. Includes a tiny head tilt if includeHeadBody.
+    _waveCycles2(duration, includeHeadBody, variation) {
+      const amp = variation.waveAmp;
+      const amp2 = Math.max(5, amp - 2);
+      const specs = [
+        {
+          key: "rightArm",
+          keyframes: [
             { transform: `rotate(${RIGHT_WELCOME_BASE.shoulder}deg)`, offset: 0 },
-            { transform: `rotate(${RIGHT_WELCOME_BASE.shoulder - 1.5}deg)`, offset: 0.5 },
+            { transform: `rotate(${RIGHT_WELCOME_BASE.shoulder - 0.8}deg)`, offset: 0.5 },
             { transform: `rotate(${RIGHT_WELCOME_BASE.shoulder}deg)`, offset: 1 },
           ],
           options: { duration, easing: WAVE_EASE, fill: "forwards" },
@@ -598,7 +830,7 @@
           key: "rightElbow",
           keyframes: [
             { transform: `rotate(${RIGHT_WELCOME_BASE.elbow}deg)`, offset: 0 },
-            { transform: `rotate(${RIGHT_WELCOME_BASE.elbow + 2}deg)`, offset: 0.5 },
+            { transform: `rotate(${RIGHT_WELCOME_BASE.elbow + 1}deg)`, offset: 0.5 },
             { transform: `rotate(${RIGHT_WELCOME_BASE.elbow}deg)`, offset: 1 },
           ],
           options: { duration, easing: WAVE_EASE, fill: "forwards" },
@@ -606,88 +838,94 @@
         {
           key: "rightWrist",
           keyframes: [
-            { transform: "rotate(-4deg)", offset: 0 },
-            { transform: "rotate(-18deg)", offset: 0.12 },
-            { transform: "rotate(-4deg)", offset: 0.28 },
-            { transform: "rotate(10deg)", offset: 0.4 },
-            { transform: "rotate(-4deg)", offset: 0.55 },
-            { transform: "rotate(-18deg)", offset: 0.67 },
-            { transform: "rotate(-4deg)", offset: 0.8 },
-            { transform: "rotate(8deg)", offset: 0.9 },
-            { transform: "rotate(-4deg)", offset: 1 },
+            { transform: "rotate(0deg)", offset: 0 },
+            { transform: `rotate(${-amp}deg)`, offset: 0.14 },
+            { transform: "rotate(0deg)", offset: 0.3 },
+            { transform: `rotate(${amp}deg)`, offset: 0.42 },
+            { transform: "rotate(0deg)", offset: 0.58 },
+            { transform: `rotate(${-amp2}deg)`, offset: 0.72 },
+            { transform: "rotate(0deg)", offset: 0.86 },
+            { transform: `rotate(${amp2}deg)`, offset: 0.95 },
+            { transform: "rotate(0deg)", offset: 1 },
           ],
           options: { duration, easing: WAVE_EASE, fill: "forwards" },
         },
         {
           key: "rightHand",
           keyframes: [
-            { transform: "rotate(4deg) scale(1.02)", offset: 0 },
-            { transform: "rotate(2deg) scale(1.05)", offset: 0.12 },
-            { transform: "rotate(4deg) scale(1.02)", offset: 0.28 },
-            { transform: "rotate(6deg) scale(1.05)", offset: 0.4 },
-            { transform: "rotate(4deg) scale(1.02)", offset: 0.55 },
-            { transform: "rotate(2deg) scale(1.05)", offset: 0.67 },
-            { transform: "rotate(4deg) scale(1.02)", offset: 0.8 },
-            { transform: "rotate(5deg) scale(1.04)", offset: 0.9 },
-            { transform: "rotate(4deg) scale(1.02)", offset: 1 },
+            { transform: "rotate(3deg) scale(1.02)", offset: 0 },
+            { transform: "rotate(1deg) scale(1.05)", offset: 0.14 },
+            { transform: "rotate(3deg) scale(1.02)", offset: 0.3 },
+            { transform: "rotate(5deg) scale(1.05)", offset: 0.42 },
+            { transform: "rotate(3deg) scale(1.02)", offset: 0.58 },
+            { transform: "rotate(1deg) scale(1.05)", offset: 0.72 },
+            { transform: "rotate(3deg) scale(1.02)", offset: 0.86 },
+            { transform: "rotate(4deg) scale(1.04)", offset: 0.95 },
+            { transform: "rotate(3deg) scale(1.02)", offset: 1 },
           ],
           options: { duration, easing: WAVE_EASE, fill: "forwards" },
         },
-      ]);
-    }
-
-    // Lighter one-cycle version for the quicker standalone wave().
-    _waveCycles1(duration) {
-      return this._run([
-        {
-          key: "rightArm",
+      ];
+      if (includeHeadBody) {
+        specs.push({
+          key: "head",
           keyframes: [
-            { transform: `rotate(${RIGHT_WELCOME_BASE.shoulder}deg)`, offset: 0 },
-            { transform: `rotate(${RIGHT_WELCOME_BASE.shoulder - 1.5}deg)`, offset: 0.5 },
-            { transform: `rotate(${RIGHT_WELCOME_BASE.shoulder}deg)`, offset: 1 },
+            { transform: `rotate(${variation.headTarget}deg)`, offset: 0 },
+            { transform: `rotate(${variation.headTarget + 1.5}deg)`, offset: 0.5 },
+            { transform: `rotate(${variation.headTarget}deg)`, offset: 1 },
           ],
           options: { duration, easing: WAVE_EASE, fill: "forwards" },
+        });
+      }
+      return this._run(specs);
+    }
+
+    // FOLLOW-THROUGH: the hand doesn't stop dead the instant the wave
+    // ends — it continues a couple degrees, the wrist and elbow settle
+    // a beat behind it, then everything eases back to exactly the
+    // wave's own resting values (a net-zero blip, like
+    // _settleAtWelcome) — mechanical inertia, not a value change
+    // _lowerToHip() needs to know about.
+    _followThrough(duration) {
+      return this._run([
+        {
+          key: "rightHand",
+          keyframes: [
+            { transform: "rotate(3deg) scale(1.02)", offset: 0 },
+            { transform: "rotate(1deg) scale(1.06)", offset: 0.4 },
+            { transform: "rotate(3deg) scale(1.02)", offset: 1 },
+          ],
+          options: { duration, easing: "ease-out", fill: "forwards" },
+        },
+        {
+          key: "rightWrist",
+          keyframes: [
+            { transform: "rotate(0deg)", offset: 0 },
+            { transform: "rotate(-3deg)", offset: 0.4 },
+            { transform: "rotate(0deg)", offset: 1 },
+          ],
+          options: { duration, easing: "ease-out", fill: "forwards" },
         },
         {
           key: "rightElbow",
           keyframes: [
             { transform: `rotate(${RIGHT_WELCOME_BASE.elbow}deg)`, offset: 0 },
-            { transform: `rotate(${RIGHT_WELCOME_BASE.elbow + 2}deg)`, offset: 0.5 },
+            { transform: `rotate(${RIGHT_WELCOME_BASE.elbow - 1.5}deg)`, offset: 0.4 },
             { transform: `rotate(${RIGHT_WELCOME_BASE.elbow}deg)`, offset: 1 },
           ],
-          options: { duration, easing: WAVE_EASE, fill: "forwards" },
-        },
-        {
-          key: "rightWrist",
-          keyframes: [
-            { transform: "rotate(-4deg)", offset: 0 },
-            { transform: "rotate(-18deg)", offset: 0.22 },
-            { transform: "rotate(-4deg)", offset: 0.5 },
-            { transform: "rotate(10deg)", offset: 0.72 },
-            { transform: "rotate(-4deg)", offset: 1 },
-          ],
-          options: { duration, easing: WAVE_EASE, fill: "forwards" },
-        },
-        {
-          key: "rightHand",
-          keyframes: [
-            { transform: "rotate(4deg) scale(1.02)", offset: 0 },
-            { transform: "rotate(2deg) scale(1.05)", offset: 0.22 },
-            { transform: "rotate(4deg) scale(1.02)", offset: 0.5 },
-            { transform: "rotate(6deg) scale(1.05)", offset: 0.72 },
-            { transform: "rotate(4deg) scale(1.02)", offset: 1 },
-          ],
-          options: { duration, easing: WAVE_EASE, fill: "forwards" },
+          options: { duration, easing: "ease-out", fill: "forwards" },
         },
       ]);
     }
 
-    // Reverse cascade back to the hip rest: the wrist/hand snap back
-    // to neutral quickly (within roughly the first third of this
-    // phase's own duration), while the shoulder/elbow take the FULL
-    // duration to ease back down — so the hand visibly settles well
-    // before the shoulder finishes lowering, distal joints first.
-    _lowerToHip(duration, includeHeadBody) {
+    // THE RETURN. Reverse cascade: wrist/hand snap back to neutral
+    // within roughly the first third of this phase's own duration,
+    // while the shoulder/elbow — on IDENTICAL offsets, see the file
+    // header for why this direction stays lockstep — take the FULL
+    // duration to ease back down to the hip rest. The hand visibly
+    // settles well before the shoulder finishes lowering. Head/face/
+    // body un-tilt back to neutral in step with the arm lowering.
+    _lowerToHip(duration, includeHeadBody, variation) {
       const specs = [
         {
           key: "rightArm",
@@ -710,8 +948,8 @@
         {
           key: "rightWrist",
           keyframes: [
-            { transform: "rotate(-4deg)", offset: 0 },
-            { transform: "rotate(2deg)", offset: 0.18 },
+            { transform: "rotate(0deg)", offset: 0 },
+            { transform: "rotate(3deg)", offset: 0.18 },
             { transform: "rotate(0deg)", offset: 0.35 },
             { transform: "rotate(0deg)", offset: 1 },
           ],
@@ -720,7 +958,7 @@
         {
           key: "rightHand",
           keyframes: [
-            { transform: "rotate(4deg) scale(1.02)", offset: 0 },
+            { transform: "rotate(3deg) scale(1.02)", offset: 0 },
             { transform: "rotate(-1deg) scale(0.99)", offset: 0.2 },
             { transform: "rotate(0deg) scale(1)", offset: 0.38 },
             { transform: "rotate(0deg) scale(1)", offset: 1 },
@@ -733,7 +971,7 @@
           {
             key: "head",
             keyframes: [
-              { transform: "rotate(6deg)", offset: 0 },
+              { transform: `rotate(${variation.headTarget}deg)`, offset: 0 },
               { transform: "rotate(0deg)", offset: 0.6 },
               { transform: "rotate(0deg)", offset: 1 },
             ],
@@ -751,7 +989,7 @@
           {
             key: "body",
             keyframes: [
-              { transform: "translate(-2px, -3px)", offset: 0 },
+              { transform: "translate(-2.5px, -2.5px)", offset: 0 },
               { transform: "translate(0px, 0px)", offset: 0.85 },
               { transform: "translate(0px, 0px)", offset: 1 },
             ],
@@ -764,34 +1002,50 @@
 
     // ============ GESTURES ============
 
-    // The full, unhurried welcome ceremony: a short settle-pause
-    // (hands are already resting at the waist from idle — this is the
-    // brief confirming beat before committing to the gesture),
-    // anticipation, rise, two wave cycles with head/torso coordination
-    // throughout, then the full reverse-cascade return to the waist
-    // (RIGHT_ARM_WAIST — see idle()'s rightArm/rightElbow keyframes).
-    // Resolves `true` if it played all the way through, `false` if a
-    // newer gesture call interrupted it partway — startWelcomeLoop()
-    // below uses that to know whether it's still safe to keep looping.
+    // One repeating cycle of the welcome ceremony: relax-hold ->
+    // anticipation -> (pause) -> rise -> settle -> 2 waves ->
+    // follow-through -> return to the waist. See the PHASES section
+    // above for what each step does. A handful of small values
+    // (head-turn amplitude, wave amplitude) are re-rolled within a
+    // narrow, pre-verified-safe range each call so consecutive cycles
+    // aren't identical. Resolves `true` if it played all the way
+    // through, `false` if a newer gesture call interrupted it partway —
+    // startWelcomeLoop() below uses that to know whether it's still
+    // safe to keep looping.
     async welcome() {
       const keys = ["head", "face", "body", "rightArm", "rightElbow", "rightWrist", "rightHand"];
       this._cancelGesture();
       const gen = this._gestureGen;
       this._pauseIdle(keys);
 
-      await sleep(450); // hands already at the waist — a brief pause before reaching out
+      const variation = {
+        headStart: jitter(4, 1),
+        headTarget: jitter(7, 1.5),
+        waveAmp: jitter(8, 2),
+      };
+
+      await this._relaxHold(this._welcomeRelaxMs || 850);
       if (gen !== this._gestureGen) return false;
 
-      await this._riseToWelcome(1900, true);
+      await this._anticipate(260, variation);
       if (gen !== this._gestureGen) return false;
 
-      await this._waveCycles2(1700);
+      await sleep(150); // hold at the coiled position — see ANTICIPATION in the file header
       if (gen !== this._gestureGen) return false;
 
-      await sleep(220); // brief hold before returning, so the gesture doesn't feel clipped short
+      await this._riseToWelcome(950, true, variation);
       if (gen !== this._gestureGen) return false;
 
-      await this._lowerToHip(1700, true);
+      await this._settleAtWelcome(260);
+      if (gen !== this._gestureGen) return false;
+
+      await this._waveCycles2(1000, true, variation);
+      if (gen !== this._gestureGen) return false;
+
+      await this._followThrough(260);
+      if (gen !== this._gestureGen) return false;
+
+      await this._lowerToHip(950, true, variation);
       if (gen !== this._gestureGen) return false;
 
       this._finishGesture(keys);
@@ -799,33 +1053,37 @@
     }
 
     // Backward-compatible alias — existing call sites (e.g. index.html's
-    // page-load trigger) call robot.greet(). Plays the ceremony ONCE;
-    // use startWelcomeLoop() (below) for the continuously-repeating
-    // waist <-> welcome cycle.
+    // page-load trigger) call robot.greet(). Plays ONE cycle; use
+    // startWelcomeLoop() (below) for the continuously-repeating version.
     greet() {
       return this.welcome();
     }
 
-    // Runs welcome() on a loop: RIGHT_ARM_WAIST -> RIGHT_ARM_WELCOME ->
-    // wave -> RIGHT_ARM_WAIST -> pause -> RIGHT_ARM_WELCOME again ->
-    // ... forever, until stopWelcomeLoop() is called. Each iteration is
-    // a full, ordinary welcome() call — the arm always eases smoothly
-    // from wherever it currently is (idle()'s hip rest, since
-    // welcome() always hands back to idle() between cycles) rather than
-    // ever being reset/teleported, so the loop is just "greet again"
-    // repeated, not "restart the whole animation from frame 0".
-    // If some OTHER gesture (think()/success()/attention()/a manual
-    // wave()) interrupts a cycle mid-flight, welcome() resolves false
-    // and the loop stops on its own instead of fighting for control —
-    // call startWelcomeLoop() again afterward to resume it.
-    async startWelcomeLoop(pauseMs) {
+    // Runs welcome() on a loop, forever, until stopWelcomeLoop() is
+    // called. Plays the one-time _noticeAndSettle() intro first (the
+    // robot "noticing" the user and settling its hands at the waist),
+    // then repeats welcome()'s own relax-hold -> anticipate -> rise ->
+    // wave -> return cycle — welcome()'s leading _relaxHold() phase IS
+    // the "pause at the waist" between greetings, so no extra dead
+    // sleep() is layered on top of it. Every cycle starts from wherever
+    // the arm actually is (idle's hip rest — welcome() always ends
+    // there), so looping never resets/teleports anything; it's "greet
+    // again", not "restart the whole animation from frame 0". If some
+    // OTHER gesture (think()/success()/attention()/a manual wave())
+    // interrupts a cycle mid-flight, welcome() reports that back and
+    // the loop stops itself rather than fighting for control — call
+    // startWelcomeLoop() again afterward to resume it.
+    async startWelcomeLoop(relaxHoldMs) {
       if (this._welcomeLoopActive) return; // already looping — don't stack a second loop
       this._welcomeLoopActive = true;
-      const restMs = typeof pauseMs === "number" ? pauseMs : 750; // "robot relaxed at the waist" beat between greetings
+      this._welcomeRelaxMs = typeof relaxHoldMs === "number" ? relaxHoldMs : 850;
+
+      await this._noticeAndSettle();
+      if (!this._welcomeLoopActive) return;
+
       while (this._welcomeLoopActive) {
         const completed = await this.welcome();
         if (!completed || !this._welcomeLoopActive) break;
-        await sleep(restMs);
       }
       this._welcomeLoopActive = false;
     }
@@ -837,27 +1095,28 @@
       this._welcomeLoopActive = false;
     }
 
-    // A quicker, lighter acknowledgment wave — rises faster, waves
-    // once, returns faster, and skips the head/torso choreography so
-    // it reads as a quick "hi" rather than the full welcome ceremony.
-    // Reusable standalone (e.g. "user opens a feature"). Resolves
-    // `true`/`false` the same way welcome() does.
+    // A quicker, lighter acknowledgment wave — the same elbow-leads
+    // rise and reverse-cascade return as welcome(), just faster and
+    // arm-only (no head/torso choreography, no anticipation lead-in),
+    // so it reads as a quick "hi" rather than the full welcome
+    // ceremony. Reusable standalone (e.g. "user opens a feature").
+    // Resolves `true`/`false` the same way welcome() does.
     async wave() {
-      const keys = ["head", "face", "body", "rightArm", "rightElbow", "rightWrist", "rightHand"];
+      const keys = ["rightArm", "rightElbow", "rightWrist", "rightHand"];
       this._cancelGesture();
       const gen = this._gestureGen;
       this._pauseIdle(keys);
 
-      await this._riseToWelcome(1100, false);
+      await this._riseToWelcomeQuick(750);
       if (gen !== this._gestureGen) return false;
 
-      await this._waveCycles1(900);
+      await this._waveCycles2(650, false, { waveAmp: 8 });
       if (gen !== this._gestureGen) return false;
 
-      await sleep(150);
+      await sleep(120);
       if (gen !== this._gestureGen) return false;
 
-      await this._lowerToHip(1000, false);
+      await this._lowerToHip(700, false, {});
       if (gen !== this._gestureGen) return false;
 
       this._finishGesture(keys);
