@@ -37,12 +37,14 @@
    bottom padding is kept in sync with this box's real height by
    syncAssistantBoxSpacer() in dashboard.js, since update-mode's
    extra CTA/highlight lines make it taller than the plain greeting.
+   The 14px gap above the nav (rather than sitting flush against it)
+   is deliberate — matches the reference design's breathing room.
 ========================= */
 .assistant-box{
     position:fixed;
     left:16px;
     right:16px;
-    bottom:78px;
+    bottom:92px;
     z-index:50;
     background:var(--asst-card-bg);
     border:1px solid var(--asst-border);
@@ -309,11 +311,108 @@
     color:#1C2333;
 }
 
-.assistant-mic-btn.listening{
-    animation:assistantMicPulse 1s ease-in-out infinite;
+/* =========================
+   VOICE COMMAND SHEET
+   A bottom sheet, not the app's centered .dialog pattern — deliberately
+   kept light/white in every theme (like the topbar's "⋮" menus and the
+   arrears map-mode bar) rather than theme-variable-driven, since it's a
+   transient system overlay, not page content.
+========================= */
+.voice-modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.5);
+    z-index:3000;
+    display:none;
+    align-items:flex-end;
+    justify-content:center;
 }
 
-@keyframes assistantMicPulse{
-    0%, 100%{ box-shadow:0 2px 8px rgba(0,0,0,0.3), 0 0 0 0 rgba(212,175,55,.5); }
-    50%{ box-shadow:0 2px 8px rgba(0,0,0,0.3), 0 0 0 8px rgba(212,175,55,0); }
+.voice-modal.show{
+    display:flex;
+}
+
+.voice-sheet{
+    width:100%;
+    max-width:480px;
+    background:#FFFFFF;
+    border-radius:28px 28px 0 0;
+    padding:28px 24px 40px;
+    box-shadow:0 -8px 30px rgba(0,0,0,.3);
+    text-align:center;
+    animation:voiceSheetSlideUp .25s ease-out both;
+}
+
+@keyframes voiceSheetSlideUp{
+    from{ transform:translateY(100%); }
+    to{ transform:translateY(0); }
+}
+
+.voice-sheet-greeting{
+    font-size:15px;
+    color:#6B7280;
+    margin-bottom:6px;
+}
+
+.voice-sheet-status{
+    font-size:22px;
+    font-weight:800;
+    color:#1C2333;
+    min-height:60px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0 8px;
+}
+
+.voice-sheet-btn-wrap{
+    position:relative;
+    width:110px;
+    height:110px;
+    margin:14px auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.voice-sheet-ring{
+    position:absolute;
+    inset:0;
+    border-radius:50%;
+    background:rgba(212,175,55,.18);
+}
+
+.voice-sheet-btn-wrap.listening .voice-sheet-ring{
+    animation:voiceRingPulse 1.4s ease-out infinite;
+}
+
+@keyframes voiceRingPulse{
+    0%{ transform:scale(.72); opacity:.9; }
+    100%{ transform:scale(1.35); opacity:0; }
+}
+
+.voice-sheet-btn{
+    position:relative;
+    width:72px;
+    height:72px;
+    border:none;
+    border-radius:50%;
+    background:linear-gradient(180deg,#FFD700,#D4AF37);
+    color:#002D6B;
+    font-size:26px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 4px 14px rgba(0,0,0,.25);
+}
+
+.voice-sheet-btn:active{
+    transform:scale(.94);
+}
+
+.voice-sheet-hint{
+    font-size:13px;
+    color:#9AA5B8;
+    margin-top:6px;
 }

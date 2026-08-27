@@ -1,9 +1,12 @@
 /* =========================================================
    VOICE COMMAND
-   Mic button on the Home page's assistant box. Uses the Web Speech
-   API (SpeechRecognition) — not supported in every browser (notably
-   older/some non-Chromium mobile browsers), so this fails soft with
-   a toast rather than breaking the page when it's missing.
+   Mic button on the Home page's assistant box opens a bottom sheet
+   (like the reference app) that shows the live transcript as it's
+   recognized and auto-navigates once a known command matches. Uses
+   the Web Speech API (SpeechRecognition) — not supported in every
+   browser (notably some non-Chromium mobile browsers), so this fails
+   soft: the mic button hides itself rather than offering something
+   that can never work.
 
    Commands are matched by simple substring containment against the
    recognized phrase (case-insensitive), checked in the order listed
@@ -40,14 +43,28 @@ function matchVoiceCommand(transcript) {
     return null;
 }
 
-function voiceToast(type, title, message) {
-    if (typeof CMToast === "undefined") return;
-    CMToast.show({ type, title, message, duration: 3500 });
+function getVoiceUserFirstName() {
+    try {
+        const raw = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser");
+        if (raw) {
+            const u = JSON.parse(raw);
+            const full = u?.fullname || u?.username;
+            if (full) return String(full).trim().split(/\s+/)[0];
+        }
+    } catch (e) {}
+    return "";
 }
 
 function initVoiceCommand() {
     const micBtn = document.getElementById("assistantMicBtn");
-    if (!micBtn) return;
+    const modal = document.getElementById("voiceModal");
+    const sheet = modal?.querySelector(".voice-sheet");
+    const greetingEl = document.getElementById("voiceGreeting");
+    const statusEl = document.getElementById("voiceStatus");
+    const btnWrap = document.getElementById("voiceBtnWrap");
+    const stopBtn = document.getElementById("voiceStopBtn");
+
+    if (!micBtn || !modal) return;
 
     const SpeechRecognitionCtor =
         window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -61,49 +78,76 @@ function initVoiceCommand() {
 
     const recognition = new SpeechRecognitionCtor();
     recognition.lang = "en-US";
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
-    let listening = false;
+    let active = false;
+    let matched = false;
+
+    function openModal() {
+        const name = getVoiceUserFirstName();
+        greetingEl.textContent = name ? `Hi ${name},` : "Hi,";
+        statusEl.textContent = "What can I do for you?";
+        btnWrap.classList.add("listening");
+        modal.classList.add("show");
+    }
+
+    function closeModal() {
+        modal.classList.remove("show");
+        btnWrap.classList.remove("listening");
+    }
+
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+            recognition.stop();
+        }
+    });
+
+    stopBtn.addEventListener("click", () => {
+        recognition.stop();
+    });
 
     recognition.onstart = () => {
-        listening = true;
-        micBtn.classList.add("listening");
-        voiceToast("info", "Listening...", "Try saying “Open Daily Arrears” or “Switch to Dark Mode”");
+        active = true;
+        matched = false;
     };
 
     recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        const command = matchVoiceCommand(transcript);
+        const result = event.results[0];
+        const transcript = result[0].transcript;
+        statusEl.textContent = transcript;
 
-        if (command) {
-            voiceToast("success", "Voice Command", `Opening ${command.label}...`);
-            setTimeout(() => command.action(), 600);
-        } else {
-            voiceToast("warning", "Not Recognized", `Didn't catch a known command in "${transcript}"`);
+        if (result.isFinal) {
+            const command = matchVoiceCommand(transcript);
+            if (command) {
+                matched = true;
+                btnWrap.classList.remove("listening");
+                statusEl.textContent = command.label;
+                setTimeout(() => command.action(), 600);
+            }
         }
     };
 
     recognition.onerror = (event) => {
         if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-            voiceToast("error", "Microphone Blocked", "Allow microphone access in your browser/app settings to use voice commands.");
+            statusEl.textContent = "Microphone access blocked";
         } else if (event.error === "no-speech") {
-            voiceToast("warning", "No Speech Detected", "Didn't hear anything — try again.");
-        } else {
-            voiceToast("error", "Voice Command Error", "Something went wrong — please try again.");
+            statusEl.textContent = "Didn't hear anything";
+        } else if (event.error !== "aborted") {
+            statusEl.textContent = "Something went wrong";
         }
     };
 
     recognition.onend = () => {
-        listening = false;
-        micBtn.classList.remove("listening");
+        active = false;
+        if (matched) return;
+        // No final match — leave whatever's on screen visible briefly,
+        // then close so the sheet doesn't just sit there stalled.
+        setTimeout(closeModal, 1400);
     };
 
     micBtn.addEventListener("click", () => {
-        if (listening) {
-            recognition.stop();
-            return;
-        }
+        openModal();
         try {
             recognition.start();
         } catch (err) {
