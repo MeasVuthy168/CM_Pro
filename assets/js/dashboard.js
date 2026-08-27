@@ -218,7 +218,7 @@ function syncAssistantBoxSpacer(){
     const sync=()=>{
 
         container.style.paddingBottom=
-            (box.offsetHeight + 78 + 20) + "px";
+            (box.offsetHeight + 92 + 20) + "px";
 
     };
 
