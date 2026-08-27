@@ -183,6 +183,13 @@ function initVoiceCommand() {
                 statusEl.textContent = command.label;
                 stopListening();
                 setTimeout(() => command.action(), 600);
+            } else {
+                // Stop right here, while the session is still verifiably
+                // active — by the time onend fires naturally, the service
+                // has already disconnected on its own and abort() there is
+                // a no-op, which is why the mic kept recording past the
+                // "not found" result even after adding a call in onend.
+                stopListening();
             }
         }
     };
