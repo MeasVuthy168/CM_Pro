@@ -86,6 +86,8 @@ function initVoiceCommand() {
 
     let matched = false;
     let heardAnything = false;
+    let hadError = false;
+    let cancelledByUser = false;
     let snackbarTimer = null;
 
     function openModal() {
@@ -120,17 +122,21 @@ function initVoiceCommand() {
         }, 5000);
     }
 
-    modal.addEventListener("click", (e) => {
-        if (e.target === modal) {
-            stopListening();
-            closeModal();
-        }
-    });
-
-    stopBtn.addEventListener("click", () => {
+    // Tapping stop / outside is a deliberate cancel, not a failed
+    // command — the abort() this triggers still fires onerror/onend
+    // just like any other stop, so this flag is what keeps that from
+    // being mistaken for "heard something, didn't understand it".
+    function userStop() {
+        cancelledByUser = true;
         stopListening();
         closeModal();
+    }
+
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) userStop();
     });
+
+    stopBtn.addEventListener("click", userStop);
 
     snackbarHelp.addEventListener("click", () => {
         location.href = VOICE_HELP_URL;
@@ -144,6 +150,8 @@ function initVoiceCommand() {
     recognition.onstart = () => {
         matched = false;
         heardAnything = false;
+        hadError = false;
+        cancelledByUser = false;
     };
 
     recognition.onresult = (event) => {
@@ -165,21 +173,48 @@ function initVoiceCommand() {
     };
 
     recognition.onerror = (event) => {
+        // "aborted" is us calling stop()/abort() ourselves (a match,
+        // or the user cancelling) — not a real failure, and already
+        // handled by whichever of those triggered it.
+        if (event.error === "aborted") return;
+
+        hadError = true;
         if (event.error === "not-allowed" || event.error === "service-not-allowed") {
             statusEl.textContent = "Microphone access blocked";
         } else if (event.error === "no-speech") {
             statusEl.textContent = "Didn't hear anything";
-        } else if (event.error !== "aborted") {
+        } else {
             statusEl.textContent = "Something went wrong";
         }
     };
 
     recognition.onend = () => {
-        if (matched) return;
-        closeModal();
-        if (heardAnything) {
-            showNotFoundSnackbar();
+        if (matched || cancelledByUser) return;
+
+        // Listening has genuinely stopped either way — drop the
+        // pulsing ring now even though the sheet itself stays up a
+        // moment longer below, so it doesn't look like it's still
+        // recording.
+        btnWrap.classList.remove("listening");
+
+        if (hadError) {
+            // Give the user a moment to actually read the message
+            // above before the sheet disappears out from under it.
+            setTimeout(closeModal, 1500);
+            return;
         }
+
+        if (heardAnything) {
+            // Same reasoning — let the unrecognized phrase sit on
+            // screen briefly before swapping to the snackbar.
+            setTimeout(() => {
+                closeModal();
+                showNotFoundSnackbar();
+            }, 700);
+            return;
+        }
+
+        closeModal();
     };
 
     micBtn.addEventListener("click", () => {
@@ -188,8 +223,11 @@ function initVoiceCommand() {
             recognition.start();
         } catch (err) {
             // start() throws if called while already running/starting —
-            // a rapid double-tap is the only realistic cause here.
+            // a rapid double-tap is the only realistic cause here. Don't
+            // leave the sheet stuck showing "listening" forever.
             console.warn("[voice-command] start failed:", err);
+            statusEl.textContent = "Couldn't start listening";
+            setTimeout(closeModal, 1200);
         }
     });
 }
