@@ -147,6 +147,21 @@ function initVoiceCommand() {
     // make sure the mic is released rather than riding the unload.
     window.addEventListener("pagehide", stopListening);
 
+    // Mobile browsers (Safari especially) often freeze the page into
+    // the back-forward cache instead of unloading it when a matched
+    // command navigates away — the sheet was mid-"show" at that
+    // instant. Navigating back then restores that exact frozen DOM
+    // with no JS re-running, so the stale "Customer Search" sheet
+    // reappeared over the Home page. event.persisted is how a bfcache
+    // restore is told apart from a normal fresh load.
+    window.addEventListener("pageshow", (event) => {
+        if (!event.persisted) return;
+        stopListening();
+        closeModal();
+        snackbar.classList.remove("show");
+        clearTimeout(snackbarTimer);
+    });
+
     recognition.onstart = () => {
         matched = false;
         heardAnything = false;
