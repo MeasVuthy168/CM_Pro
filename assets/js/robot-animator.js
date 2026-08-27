@@ -26,6 +26,19 @@
        → hold/wave → return rather than "rotate → stop → rotate".
        think()/success()/attention() stay single-phase (see
        _playGesture) since they don't need the same choreography.
+     - startWelcomeLoop(): welcome() by itself only plays ONCE — it
+       rises, waves, returns to the hip rest, and hands back to idle(),
+       same as any other one-shot gesture. startWelcomeLoop() is what
+       makes the greeting repeat: it just calls welcome(), waits a
+       short "relaxed at the waist" pause, and calls welcome() again,
+       forever, until stopWelcomeLoop() is called. Each cycle is an
+       ordinary welcome() call starting from wherever the arm actually
+       is (idle's hip rest — welcome() always ends there), so looping
+       never resets/teleports anything; it's "greet again", not
+       "restart the whole animation". If another gesture interrupts a
+       cycle mid-flight, welcome() reports that back and the loop stops
+       itself rather than fighting for control — see welcome()'s and
+       startWelcomeLoop()'s own comments below.
 
    PHASES (welcome() and wave())
    Both are built from the same three shared phases, just at
@@ -755,8 +768,11 @@
     // (hands are already resting at the waist from idle — this is the
     // brief confirming beat before committing to the gesture),
     // anticipation, rise, two wave cycles with head/torso coordination
-    // throughout, then the full reverse-cascade return to idle. This
-    // is what plays automatically on page load.
+    // throughout, then the full reverse-cascade return to the waist
+    // (RIGHT_ARM_WAIST — see idle()'s rightArm/rightElbow keyframes).
+    // Resolves `true` if it played all the way through, `false` if a
+    // newer gesture call interrupted it partway — startWelcomeLoop()
+    // below uses that to know whether it's still safe to keep looping.
     async welcome() {
       const keys = ["head", "face", "body", "rightArm", "rightElbow", "rightWrist", "rightHand"];
       this._cancelGesture();
@@ -764,33 +780,68 @@
       this._pauseIdle(keys);
 
       await sleep(450); // hands already at the waist — a brief pause before reaching out
-      if (gen !== this._gestureGen) return;
+      if (gen !== this._gestureGen) return false;
 
       await this._riseToWelcome(1900, true);
-      if (gen !== this._gestureGen) return;
+      if (gen !== this._gestureGen) return false;
 
       await this._waveCycles2(1700);
-      if (gen !== this._gestureGen) return;
+      if (gen !== this._gestureGen) return false;
 
       await sleep(220); // brief hold before returning, so the gesture doesn't feel clipped short
-      if (gen !== this._gestureGen) return;
+      if (gen !== this._gestureGen) return false;
 
       await this._lowerToHip(1700, true);
-      if (gen !== this._gestureGen) return;
+      if (gen !== this._gestureGen) return false;
 
       this._finishGesture(keys);
+      return true;
     }
 
     // Backward-compatible alias — existing call sites (e.g. index.html's
-    // page-load trigger) call robot.greet().
+    // page-load trigger) call robot.greet(). Plays the ceremony ONCE;
+    // use startWelcomeLoop() (below) for the continuously-repeating
+    // waist <-> welcome cycle.
     greet() {
       return this.welcome();
+    }
+
+    // Runs welcome() on a loop: RIGHT_ARM_WAIST -> RIGHT_ARM_WELCOME ->
+    // wave -> RIGHT_ARM_WAIST -> pause -> RIGHT_ARM_WELCOME again ->
+    // ... forever, until stopWelcomeLoop() is called. Each iteration is
+    // a full, ordinary welcome() call — the arm always eases smoothly
+    // from wherever it currently is (idle()'s hip rest, since
+    // welcome() always hands back to idle() between cycles) rather than
+    // ever being reset/teleported, so the loop is just "greet again"
+    // repeated, not "restart the whole animation from frame 0".
+    // If some OTHER gesture (think()/success()/attention()/a manual
+    // wave()) interrupts a cycle mid-flight, welcome() resolves false
+    // and the loop stops on its own instead of fighting for control —
+    // call startWelcomeLoop() again afterward to resume it.
+    async startWelcomeLoop(pauseMs) {
+      if (this._welcomeLoopActive) return; // already looping — don't stack a second loop
+      this._welcomeLoopActive = true;
+      const restMs = typeof pauseMs === "number" ? pauseMs : 750; // "robot relaxed at the waist" beat between greetings
+      while (this._welcomeLoopActive) {
+        const completed = await this.welcome();
+        if (!completed || !this._welcomeLoopActive) break;
+        await sleep(restMs);
+      }
+      this._welcomeLoopActive = false;
+    }
+
+    // Stops startWelcomeLoop() after the in-flight welcome() finishes
+    // its current cycle (it does not abort mid-gesture) — the loop
+    // checks this flag at each of its own checkpoints, never mid-limb.
+    stopWelcomeLoop() {
+      this._welcomeLoopActive = false;
     }
 
     // A quicker, lighter acknowledgment wave — rises faster, waves
     // once, returns faster, and skips the head/torso choreography so
     // it reads as a quick "hi" rather than the full welcome ceremony.
-    // Reusable standalone (e.g. "user opens a feature").
+    // Reusable standalone (e.g. "user opens a feature"). Resolves
+    // `true`/`false` the same way welcome() does.
     async wave() {
       const keys = ["head", "face", "body", "rightArm", "rightElbow", "rightWrist", "rightHand"];
       this._cancelGesture();
@@ -798,18 +849,19 @@
       this._pauseIdle(keys);
 
       await this._riseToWelcome(1100, false);
-      if (gen !== this._gestureGen) return;
+      if (gen !== this._gestureGen) return false;
 
       await this._waveCycles1(900);
-      if (gen !== this._gestureGen) return;
+      if (gen !== this._gestureGen) return false;
 
       await sleep(150);
-      if (gen !== this._gestureGen) return;
+      if (gen !== this._gestureGen) return false;
 
       await this._lowerToHip(1000, false);
-      if (gen !== this._gestureGen) return;
+      if (gen !== this._gestureGen) return false;
 
       this._finishGesture(keys);
+      return true;
     }
 
     // A small head-tilt "considering" gesture with a subtle hand
@@ -924,10 +976,12 @@
       ]);
     }
 
-    // Cancels every animation (idle + any in-flight gesture) and
-    // leaves the rig in its static neutral pose. Useful for cleanup
-    // if the embedding page removes/hides the robot.
+    // Cancels every animation (idle + any in-flight gesture), stops
+    // startWelcomeLoop() if it's running, and leaves the rig in its
+    // static neutral pose. Useful for cleanup if the embedding page
+    // removes/hides the robot.
     stop() {
+      this.stopWelcomeLoop();
       this._cancelGesture();
       for (const k in this._idleAnims) this._idleAnims[k].cancel();
       this._idleAnims = Object.create(null);
@@ -947,6 +1001,12 @@
   };
   global.robotWelcome = function () {
     return global.cmProRobot && global.cmProRobot.welcome();
+  };
+  global.robotStartWelcomeLoop = function (pauseMs) {
+    return global.cmProRobot && global.cmProRobot.startWelcomeLoop(pauseMs);
+  };
+  global.robotStopWelcomeLoop = function () {
+    return global.cmProRobot && global.cmProRobot.stopWelcomeLoop();
   };
   global.robotWave = function () {
     return global.cmProRobot && global.cmProRobot.wave();
