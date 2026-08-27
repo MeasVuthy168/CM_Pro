@@ -72,7 +72,7 @@ width:100%;
 
 box-sizing:border-box;
 
-padding:16px;
+padding:16px 0;
 
 padding-bottom:90px;
 
@@ -1799,7 +1799,7 @@ color:rgba(255,255,255,.75);
 
 .page-container{
 
-padding:12px;
+padding:12px 0;
 
 padding-bottom:90px;
 

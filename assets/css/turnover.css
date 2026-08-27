@@ -59,7 +59,7 @@
 
 .page-container{
 
-padding:16px;
+padding:16px 0;
 
 padding-bottom:90px;
 
@@ -430,7 +430,7 @@ transform:rotate(360deg);
 
 .page-container{
 
-padding:12px;
+padding:12px 0;
 
 padding-bottom:90px;
 
