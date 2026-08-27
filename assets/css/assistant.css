@@ -30,11 +30,20 @@
 
 /* =========================
    Assistant Box
+   Fixed just above the bottom nav (78px, see bottomnav.css — that
+   height never varies, so this can be a plain CSS constant rather
+   than needing the topbar's JS-measured approach) so it stays put
+   while the dashboard grid scrolls underneath it. The page's own
+   bottom padding is kept in sync with this box's real height by
+   syncAssistantBoxSpacer() in dashboard.js, since update-mode's
+   extra CTA/highlight lines make it taller than the plain greeting.
 ========================= */
 .assistant-box{
-    margin-top:28px;
-    margin-left:4px;
-    margin-right:4px;
+    position:fixed;
+    left:16px;
+    right:16px;
+    bottom:78px;
+    z-index:50;
     background:var(--asst-card-bg);
     border:1px solid var(--asst-border);
     border-radius:24px;
@@ -137,7 +146,6 @@
 ========================= */
 .assistant-box[data-mode="update"]{
     border-color:#00E5FF;
-    position:relative;
     animation:updateBorderPulse 1s ease-in-out 3;
 }
 
@@ -265,4 +273,47 @@
 @keyframes badgeBounce{
     0%, 100%{ transform:translateY(0); }
     50%{ transform:translateY(-2px); }
+}
+
+/* =========================
+   VOICE COMMAND MIC BUTTON
+   Sits in the box's bottom-right corner. --asst-border is already
+   the theme's accent color in every theme (gold/navy/silver), so
+   reusing it here keeps the button in step with the box without a
+   new variable.
+========================= */
+.assistant-mic-btn{
+    position:absolute;
+    right:10px;
+    bottom:10px;
+    width:38px;
+    height:38px;
+    border:none;
+    border-radius:50%;
+    background:var(--asst-border);
+    color:#002D6B;
+    font-size:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 2px 8px rgba(0,0,0,0.3);
+    transition:transform .15s ease;
+    flex-shrink:0;
+}
+.assistant-mic-btn:active{
+    transform:scale(.92);
+}
+
+[data-theme="darkgray"] .assistant-mic-btn{
+    color:#1C2333;
+}
+
+.assistant-mic-btn.listening{
+    animation:assistantMicPulse 1s ease-in-out infinite;
+}
+
+@keyframes assistantMicPulse{
+    0%, 100%{ box-shadow:0 2px 8px rgba(0,0,0,0.3), 0 0 0 0 rgba(212,175,55,.5); }
+    50%{ box-shadow:0 2px 8px rgba(0,0,0,0.3), 0 0 0 8px rgba(212,175,55,0); }
 }
