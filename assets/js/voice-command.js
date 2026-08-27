@@ -33,6 +33,8 @@ const VOICE_COMMANDS = [
     { keywords: ["gold mode"], action: () => CMTheme.set("gold"), label: "Gold Mode" },
 ];
 
+const VOICE_HELP_URL = "/CM_Pro/pages/settings/voicecommand.html";
+
 function matchVoiceCommand(transcript) {
     const text = transcript.toLowerCase();
     for (const cmd of VOICE_COMMANDS) {
@@ -58,11 +60,12 @@ function getVoiceUserFirstName() {
 function initVoiceCommand() {
     const micBtn = document.getElementById("assistantMicBtn");
     const modal = document.getElementById("voiceModal");
-    const sheet = modal?.querySelector(".voice-sheet");
     const greetingEl = document.getElementById("voiceGreeting");
     const statusEl = document.getElementById("voiceStatus");
     const btnWrap = document.getElementById("voiceBtnWrap");
     const stopBtn = document.getElementById("voiceStopBtn");
+    const snackbar = document.getElementById("voiceSnackbar");
+    const snackbarHelp = document.getElementById("voiceSnackbarHelp");
 
     if (!micBtn || !modal) return;
 
@@ -81,8 +84,9 @@ function initVoiceCommand() {
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
-    let active = false;
     let matched = false;
+    let heardAnything = false;
+    let snackbarTimer = null;
 
     function openModal() {
         const name = getVoiceUserFirstName();
@@ -97,24 +101,55 @@ function initVoiceCommand() {
         btnWrap.classList.remove("listening");
     }
 
+    // Stops the mic track itself, not just the recognition session —
+    // without this, some WebView/native bridges keep the underlying
+    // audio-recording session alive past recognition.onend, which is
+    // what was surfacing the OS-level "Stop audio recording?" prompt
+    // when the sheet closed or the page navigated away mid-listen.
+    function stopListening() {
+        try {
+            recognition.abort();
+        } catch (e) {}
+    }
+
+    function showNotFoundSnackbar() {
+        clearTimeout(snackbarTimer);
+        snackbar.classList.add("show");
+        snackbarTimer = setTimeout(() => {
+            snackbar.classList.remove("show");
+        }, 5000);
+    }
+
     modal.addEventListener("click", (e) => {
         if (e.target === modal) {
-            recognition.stop();
+            stopListening();
+            closeModal();
         }
     });
 
     stopBtn.addEventListener("click", () => {
-        recognition.stop();
+        stopListening();
+        closeModal();
     });
 
+    snackbarHelp.addEventListener("click", () => {
+        location.href = VOICE_HELP_URL;
+    });
+
+    // Safety net: if the page unloads for any other reason while
+    // still listening (a matched command's own navigation included),
+    // make sure the mic is released rather than riding the unload.
+    window.addEventListener("pagehide", stopListening);
+
     recognition.onstart = () => {
-        active = true;
         matched = false;
+        heardAnything = false;
     };
 
     recognition.onresult = (event) => {
         const result = event.results[0];
         const transcript = result[0].transcript;
+        if (transcript.trim()) heardAnything = true;
         statusEl.textContent = transcript;
 
         if (result.isFinal) {
@@ -123,6 +158,7 @@ function initVoiceCommand() {
                 matched = true;
                 btnWrap.classList.remove("listening");
                 statusEl.textContent = command.label;
+                stopListening();
                 setTimeout(() => command.action(), 600);
             }
         }
@@ -139,11 +175,11 @@ function initVoiceCommand() {
     };
 
     recognition.onend = () => {
-        active = false;
         if (matched) return;
-        // No final match — leave whatever's on screen visible briefly,
-        // then close so the sheet doesn't just sit there stalled.
-        setTimeout(closeModal, 1400);
+        closeModal();
+        if (heardAnything) {
+            showNotFoundSnackbar();
+        }
     };
 
     micBtn.addEventListener("click", () => {

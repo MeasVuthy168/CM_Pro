@@ -416,3 +416,65 @@
     color:#9AA5B8;
     margin-top:6px;
 }
+
+/* =========================
+   VOICE "NOT FOUND" SNACKBAR
+   Sits just above the bottom nav (same offset as .assistant-box)
+   when a recognized phrase didn't match any known command. Kept
+   theme-invariant dark, same rationale as the sheet above.
+========================= */
+.voice-snackbar{
+    position:fixed;
+    left:16px;
+    right:16px;
+    bottom:92px;
+    z-index:2500;
+    background:#22262E;
+    color:#F0F1F3;
+    border-radius:14px;
+    padding:14px 16px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    box-shadow:0 6px 20px rgba(0,0,0,.35);
+    transform:translateY(20px);
+    opacity:0;
+    pointer-events:none;
+    transition:transform .2s ease, opacity .2s ease;
+}
+
+.voice-snackbar.show{
+    transform:translateY(0);
+    opacity:1;
+    pointer-events:auto;
+}
+
+.voice-snackbar-icon{
+    flex-shrink:0;
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    background:#3B82F6;
+    color:#fff;
+    font-size:13px;
+    font-weight:800;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.voice-snackbar-text{
+    flex:1;
+    font-size:14px;
+}
+
+.voice-snackbar-help{
+    flex-shrink:0;
+    background:none;
+    border:none;
+    color:#5B9CFF;
+    font-size:14px;
+    font-weight:800;
+    cursor:pointer;
+    padding:4px 6px;
+}
