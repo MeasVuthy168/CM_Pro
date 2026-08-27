@@ -51,7 +51,7 @@
 
 .page-container{
     width:100%;
-    padding:16px;
+    padding:16px 0;
     padding-bottom:90px;
     background:var(--cr-page-bg);
     min-height:100vh;
@@ -60,6 +60,10 @@
 }
 
 .cr-hub-intro{
+    /* Bare heading text, not a card — .page-container no longer
+       provides side padding (cards now sit edge-to-edge), so this
+       needs its own so it doesn't touch the screen edges. */
+    padding:0 16px;
     margin-bottom:16px;
 }
 .cr-hub-title{

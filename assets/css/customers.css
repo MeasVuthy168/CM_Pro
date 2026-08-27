@@ -54,7 +54,7 @@ width:100%;
 
 box-sizing:border-box;
 
-padding:16px;
+padding:16px 0;
 
 padding-bottom:90px;
 
@@ -531,7 +531,7 @@ cursor:default;
 
 .page-container{
 
-padding:12px;
+padding:12px 0;
 
 padding-bottom:90px;
 
