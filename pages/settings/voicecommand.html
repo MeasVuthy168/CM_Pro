@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>Voice Command - CM_Pro</title>
+
+<meta
+name="theme-color"
+content="#032d73">
+
+<!-- Applied before any CSS loads, so there's no flash of the wrong
+     theme on page load. Keep this as the very first thing in <head>. -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
+<link
+rel="stylesheet"
+href="../../assets/css/main.css">
+
+<style>
+
+:root{
+    --vc-page-bg:#F5F7FA;
+    --vc-card-bg:#FFFFFF;
+    --vc-border:#E2E6ED;
+    --vc-text:#1C2333;
+    --vc-text-muted:#6B7280;
+    --vc-navy-dark:#002D6B;
+}
+
+[data-theme="dark"]{
+    --vc-page-bg:#002D6B;
+    --vc-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
+    --vc-border:#D4AF37;
+    --vc-text:#fff;
+    --vc-text-muted:#cdd9ef;
+}
+
+[data-theme="gold"]{
+    --vc-page-bg:#FFF8E7;
+    --vc-card-bg:#FFFDF6;
+    --vc-border:#C9971F;
+    --vc-navy-dark:#6B4500;
+}
+
+[data-theme="darkgray"]{
+    --vc-page-bg:#2B2E33;
+    --vc-card-bg:#363A41;
+    --vc-border:#474C55;
+    --vc-text:#F0F1F3;
+    --vc-text-muted:#A9AEB6;
+    --vc-navy-dark:#D8DAE0;
+}
+
+.wrapper{
+
+width:100%;
+min-height:100vh;
+
+background:var(--vc-page-bg);
+
+display:flex;
+justify-content:center;
+
+padding:24px;
+
+box-sizing:border-box;
+
+}
+
+.card{
+
+width:100%;
+max-width:430px;
+
+background:var(--vc-card-bg);
+
+border:1px solid var(--vc-border);
+
+border-radius:24px;
+
+padding:24px;
+
+box-shadow:0 10px 30px rgba(0,0,0,.2);
+
+height:fit-content;
+
+}
+
+[data-theme="dark"] .card{
+
+box-shadow:0 10px 30px rgba(0,0,0,.35);
+
+}
+
+.vc-header{
+
+display:flex;
+align-items:center;
+gap:14px;
+
+margin-bottom:18px;
+
+}
+
+.vc-header-icon{
+
+width:56px;
+height:56px;
+
+flex-shrink:0;
+
+border-radius:16px;
+
+background:linear-gradient(180deg,#FFD700,#D4AF37);
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+font-size:26px;
+
+}
+
+.vc-title{
+
+font-size:20px;
+font-weight:bold;
+
+color:var(--vc-text);
+
+}
+
+.line{
+
+height:3px;
+
+background:#D4AF37;
+
+border-radius:20px;
+
+margin:0 0 20px;
+
+}
+
+.section{
+
+margin-bottom:20px;
+
+}
+
+.sectionTitle{
+
+font-size:16px;
+font-weight:bold;
+
+color:var(--vc-navy-dark);
+
+margin-bottom:8px;
+
+}
+
+[data-theme="dark"] .sectionTitle{
+
+color:#FFD700;
+
+}
+
+.sectionBody{
+
+font-size:14px;
+
+line-height:1.6;
+
+color:var(--vc-text-muted);
+
+text-align:justify;
+
+}
+
+.cmd-list{
+
+margin:0;
+padding-left:22px;
+
+font-size:14px;
+
+line-height:1.9;
+
+color:var(--vc-text-muted);
+
+}
+
+.cmd-list b{
+
+color:var(--vc-text);
+
+}
+
+.subheading{
+
+font-size:14px;
+font-weight:bold;
+
+color:var(--vc-text);
+
+margin:16px 0 8px;
+
+}
+
+.backBtn{
+
+display:block;
+
+width:100%;
+
+height:52px;
+
+margin-top:20px;
+
+border:none;
+
+border-radius:14px;
+
+background:linear-gradient(180deg,#FFD700,#D4AF37);
+
+color:#002D6B;
+
+font-size:18px;
+
+font-weight:700;
+
+cursor:pointer;
+
+transition:.15s;
+
+}
+
+.backBtn:active{
+
+transform:scale(.98);
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="wrapper">
+
+<div class="card">
+
+<div class="vc-header">
+
+<div class="vc-header-icon">🎤</div>
+
+<div class="vc-title">Voice Command</div>
+
+</div>
+
+<div class="line"></div>
+
+<div class="section">
+
+<div class="sectionTitle">What is voice command?</div>
+
+<div class="sectionBody">
+Voice commands in CM_Pro are a hands-free way to move around the app.
+Tap the microphone on the Home page and speak a command, such as
+<b>"Open Daily Arrears"</b> or <b>"Switch to Dark Mode"</b>, and the
+app opens that page or applies that theme for you.
+</div>
+
+</div>
+
+<div class="section">
+
+<div class="sectionTitle">What you can say</div>
+
+<div class="subheading">I. Open a page</div>
+
+<ol class="cmd-list">
+<li>Open <b>Customer Search</b></li>
+<li>Open <b>Daily Arrears</b></li>
+<li>Open <b>Average Turnover</b></li>
+<li>Open <b>Spot Check</b></li>
+<li>Open <b>Officer Task</b></li>
+<li>Open <b>Credit Report</b></li>
+<li>Open <b>Loan Calculate</b></li>
+<li>Open <b>Retirement</b></li>
+<li>Open <b>Notification</b></li>
+<li>Open <b>Setting</b></li>
+<li>Open <b>Home</b></li>
+</ol>
+
+<div class="subheading">II. Change the app theme</div>
+
+<ol class="cmd-list">
+<li>Switch to <b>Light Mode</b></li>
+<li>Switch to <b>Dark Mode</b></li>
+<li>Switch to <b>Gold Mode</b></li>
+<li>Switch to <b>Dark Gray Mode</b></li>
+</ol>
+
+</div>
+
+<div class="section">
+
+<div class="sectionTitle">Conclusion</div>
+
+<div class="sectionBody">
+Voice commands are currently limited to opening pages and switching
+themes. We're continuing to expand the range of supported commands
+and improve recognition accuracy over time.
+</div>
+
+</div>
+
+<button
+class="backBtn"
+onclick="history.back()">
+
+Ok, got it
+
+</button>
+
+</div>
+
+</div>
+
+</body>
+
+</html>
