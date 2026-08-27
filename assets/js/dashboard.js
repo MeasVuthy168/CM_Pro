@@ -198,6 +198,45 @@ document.addEventListener("click",(e)=>{
 });
 
 // =========================
+// ASSISTANT BOX SPACER
+// The box is position:fixed above the bottom nav (see assistant.css)
+// so it doesn't scroll with the grid — the grid's own bottom padding
+// needs to reserve exactly that much space, or its last row ends up
+// hidden underneath the box. The box's height isn't constant (update
+// mode adds a CTA line, "Coming soon" text wraps differently per
+// device), so this keeps watching it rather than measuring once.
+// =========================
+
+function syncAssistantBoxSpacer(){
+
+    const box=document.querySelector(".assistant-box");
+
+    const container=document.querySelector(".dashboard-container");
+
+    if(!box || !container) return;
+
+    const sync=()=>{
+
+        container.style.paddingBottom=
+            (box.offsetHeight + 78 + 20) + "px";
+
+    };
+
+    sync();
+
+    if(window.ResizeObserver && !box._spacerObserverAttached){
+
+        box._spacerObserverAttached=true;
+
+        new ResizeObserver(sync).observe(box);
+
+    }
+
+}
+
+syncAssistantBoxSpacer();
+
+// =========================
 // LOAD COMPONENTS
 // =========================
 
