@@ -629,11 +629,26 @@ only holds styles specific to the notifications page.
 
 .empty-img{
 
+    /* Holds the inlined robot.svg (injected by assets/js/robot-embed.js,
+       not an <img> — see index.html's assistant-icon comment for why).
+       aspect-ratio matches the SVG's own viewBox so the container gets
+       a sized box before/without the fetch resolving, and the inner
+       svg (100%/100%) fills it. */
     width:130px;
+
+    aspect-ratio:510/790;
 
     margin-bottom:18px;
 
     opacity:.85;
+
+}
+
+.empty-img svg{
+
+    width:100%;
+
+    height:100%;
 
 }
 
