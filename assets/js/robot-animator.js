@@ -97,6 +97,15 @@
 
   const GESTURE_EASE = "cubic-bezier(0.42, 0, 0.2, 1)"; // a controlled, motor-like ease — no bounce/overshoot
 
+  // Permanent resting-pose bases for the two arms (not momentary
+  // gesture peaks — these are the angles idle() holds at all times).
+  // Left: hand resting on the hip. Right: raised in a "welcome" stance
+  // — reusing the already clipping-verified shoulder/elbow angles that
+  // greet()/wave() used as their momentary peak in earlier versions of
+  // this rig, now held as the default instead of just visited briefly.
+  const LEFT_HIP_BASE = { shoulder: 32, elbow: -92 };
+  const RIGHT_WELCOME_BASE = { shoulder: -78, elbow: -50 };
+
   class CMProRobotAnimator {
     /**
      * @param {SVGSVGElement} svgRoot - the injected, inline robot.svg root <svg>.
@@ -201,33 +210,90 @@
         );
       }
       if (want("leftArm")) {
+        // Base pose: hand resting on the hip (LEFT_HIP_BASE), not
+        // hanging straight down — see the constants above. Small
+        // sway on top of that base, same technique as before.
         loop(
           "leftArm",
           [
-            { transform: "rotate(0deg)" },
-            { transform: "rotate(-2.5deg)", offset: 0.25 },
-            { transform: "rotate(1deg)", offset: 0.5 },
-            { transform: "rotate(-1.5deg)", offset: 0.75 },
-            { transform: "rotate(0deg)" },
+            { transform: `rotate(${LEFT_HIP_BASE.shoulder}deg)` },
+            { transform: `rotate(${LEFT_HIP_BASE.shoulder - 2.5}deg)`, offset: 0.25 },
+            { transform: `rotate(${LEFT_HIP_BASE.shoulder + 1}deg)`, offset: 0.5 },
+            { transform: `rotate(${LEFT_HIP_BASE.shoulder - 1.5}deg)`, offset: 0.75 },
+            { transform: `rotate(${LEFT_HIP_BASE.shoulder}deg)` },
           ],
           3400
         );
       }
+      if (want("leftElbow")) {
+        loop(
+          "leftElbow",
+          [
+            { transform: `rotate(${LEFT_HIP_BASE.elbow}deg)` },
+            { transform: `rotate(${LEFT_HIP_BASE.elbow + 3}deg)`, offset: 0.5 },
+            { transform: `rotate(${LEFT_HIP_BASE.elbow}deg)` },
+          ],
+          3600,
+          -600
+        );
+      }
+      if (want("leftWrist")) {
+        loop(
+          "leftWrist",
+          [
+            { transform: "rotate(0deg)" },
+            { transform: "rotate(4deg)", offset: 0.5 },
+            { transform: "rotate(0deg)" },
+          ],
+          3000,
+          -900
+        );
+      }
       if (want("rightArm")) {
-        // Same idle sway as the left arm, but a different duration
-        // (not a delay offset of the same period) so the two arms
-        // drift in and out of phase over time instead of moving as a
-        // mirrored pair — reads as more organic.
+        // Base pose: raised in a "welcome" stance (RIGHT_WELCOME_BASE)
+        // — this is the same shoulder/elbow angle previously used only
+        // as the momentary peak of greet()/wave(), now held as the
+        // resting default. Small sway on top, different duration than
+        // the left arm's so the two don't move as a mirrored pair.
         loop(
           "rightArm",
           [
-            { transform: "rotate(0deg)" },
-            { transform: "rotate(2deg)", offset: 0.25 },
-            { transform: "rotate(-1deg)", offset: 0.5 },
-            { transform: "rotate(1.5deg)", offset: 0.75 },
-            { transform: "rotate(0deg)" },
+            { transform: `rotate(${RIGHT_WELCOME_BASE.shoulder}deg)` },
+            { transform: `rotate(${RIGHT_WELCOME_BASE.shoulder + 2}deg)`, offset: 0.25 },
+            { transform: `rotate(${RIGHT_WELCOME_BASE.shoulder - 1}deg)`, offset: 0.5 },
+            { transform: `rotate(${RIGHT_WELCOME_BASE.shoulder + 1.5}deg)`, offset: 0.75 },
+            { transform: `rotate(${RIGHT_WELCOME_BASE.shoulder}deg)` },
           ],
           3800
+        );
+      }
+      if (want("rightElbow")) {
+        loop(
+          "rightElbow",
+          [
+            { transform: `rotate(${RIGHT_WELCOME_BASE.elbow}deg)` },
+            { transform: `rotate(${RIGHT_WELCOME_BASE.elbow - 3}deg)`, offset: 0.5 },
+            { transform: `rotate(${RIGHT_WELCOME_BASE.elbow}deg)` },
+          ],
+          3200,
+          -1100
+        );
+      }
+      if (want("rightWrist")) {
+        // A slow, gentle side-to-side on top of the welcome pose — the
+        // arm always reads as "raised in greeting", this is just what
+        // keeps it from looking frozen mid-gesture. greet()/wave()
+        // pause this and play a faster, more deliberate wave flourish
+        // on top for the same joint.
+        loop(
+          "rightWrist",
+          [
+            { transform: "rotate(0deg)" },
+            { transform: "rotate(6deg)", offset: 0.5 },
+            { transform: "rotate(0deg)" },
+          ],
+          3400,
+          -1700
         );
       }
       if (want("leftHand")) {
@@ -330,13 +396,15 @@
 
     // ============ GESTURES ============
 
-    // Page-load greeting: head glances over, the right arm raises with
-    // a clearly bent elbow, a small two-beat wave, then everything
-    // returns to idle. ~2s, matching a natural, unhurried greeting —
-    // not a fast cartoon flourish.
+    // Page-load greeting: the right arm is already raised in its
+    // permanent welcome pose (idle()'s RIGHT_WELCOME_BASE), so this
+    // only needs to layer a head glance and a small two-beat wave of
+    // the wrist/hand on top — it no longer raises the shoulder/elbow
+    // itself. ~2s, matching a natural, unhurried greeting — not a fast
+    // cartoon flourish.
     greet() {
       const dur = 2000;
-      return this._playGesture(["head", "rightArm", "rightHand"], [
+      return this._playGesture(["head", "rightWrist", "rightHand"], [
         {
           key: "head",
           keyframes: [
@@ -349,38 +417,9 @@
           options: { duration: dur, easing: GESTURE_EASE, fill: "forwards" },
         },
         {
-          // Shoulder — raises the upper arm out to the side. Deliberately
-          // NOT a full overhead swing: the elbow (below) folds the
-          // forearm back up toward the head instead, which both reads as
-          // a natural bent-elbow wave and needs far less canvas than
-          // swinging one straight segment through the same arc would.
-          key: "rightArm",
-          keyframes: [
-            { transform: "rotate(0deg)", offset: 0 },
-            { transform: "rotate(0deg)", offset: 0.2 },
-            { transform: "rotate(-78deg)", offset: 0.45 },
-            { transform: "rotate(-78deg)", offset: 0.78 },
-            { transform: "rotate(0deg)", offset: 1 },
-          ],
-          options: { duration: dur, easing: GESTURE_EASE, fill: "forwards" },
-        },
-        {
-          // Elbow — starts bending at the SAME offset the shoulder
-          // starts rising (not later), and finishes its bend before the
-          // shoulder finishes rising. See the file header: staggering
-          // these is what caused the arm to transiently overreach.
-          key: "rightElbow",
-          keyframes: [
-            { transform: "rotate(0deg)", offset: 0 },
-            { transform: "rotate(0deg)", offset: 0.2 },
-            { transform: "rotate(-50deg)", offset: 0.4 },
-            { transform: "rotate(-50deg)", offset: 0.78 },
-            { transform: "rotate(0deg)", offset: 1 },
-          ],
-          options: { duration: dur, easing: GESTURE_EASE, fill: "forwards" },
-        },
-        {
-          // Wrist — two small waves once the arm is raised (~1.1s, ~1.3s).
+          // Wrist — two small waves, relative to the arm's already-raised
+          // welcome-pose base (idle() holds the shoulder/elbow there
+          // continuously, so this gesture doesn't need to move them).
           key: "rightWrist",
           keyframes: [
             { transform: "rotate(0deg)", offset: 0 },
@@ -411,38 +450,20 @@
     }
 
     // A shorter, standalone friendly wave (no head movement) — reusable
-    // on its own, e.g. for "user interaction" events.
+    // on its own, e.g. for "user interaction" events. Like greet(), the
+    // arm is already raised via the permanent welcome pose, so this
+    // only plays the wrist/hand flourish on top of it.
     wave() {
       const dur = 1400;
-      return this._playGesture(["rightArm", "rightHand"], [
-        {
-          key: "rightArm",
-          keyframes: [
-            { transform: "rotate(0deg)", offset: 0 },
-            { transform: "rotate(-78deg)", offset: 0.35 },
-            { transform: "rotate(-78deg)", offset: 0.75 },
-            { transform: "rotate(0deg)", offset: 1 },
-          ],
-          options: { duration: dur, easing: GESTURE_EASE, fill: "forwards" },
-        },
-        {
-          key: "rightElbow",
-          keyframes: [
-            { transform: "rotate(0deg)", offset: 0 },
-            { transform: "rotate(-50deg)", offset: 0.3 },
-            { transform: "rotate(-50deg)", offset: 0.75 },
-            { transform: "rotate(0deg)", offset: 1 },
-          ],
-          options: { duration: dur, easing: GESTURE_EASE, fill: "forwards" },
-        },
+      return this._playGesture(["rightWrist", "rightHand"], [
         {
           key: "rightWrist",
           keyframes: [
             { transform: "rotate(0deg)", offset: 0 },
-            { transform: "rotate(0deg)", offset: 0.35 },
-            { transform: "rotate(16deg)", offset: 0.48 },
-            { transform: "rotate(-12deg)", offset: 0.58 },
-            { transform: "rotate(14deg)", offset: 0.68 },
+            { transform: "rotate(0deg)", offset: 0.1 },
+            { transform: "rotate(16deg)", offset: 0.3 },
+            { transform: "rotate(-12deg)", offset: 0.45 },
+            { transform: "rotate(14deg)", offset: 0.6 },
             { transform: "rotate(0deg)", offset: 0.8 },
             { transform: "rotate(0deg)", offset: 1 },
           ],
@@ -452,10 +473,10 @@
           key: "rightHand",
           keyframes: [
             { transform: "scale(1)", offset: 0 },
-            { transform: "scale(1)", offset: 0.35 },
-            { transform: "scale(1.05)", offset: 0.48 },
-            { transform: "scale(1)", offset: 0.58 },
-            { transform: "scale(1.05)", offset: 0.68 },
+            { transform: "scale(1)", offset: 0.1 },
+            { transform: "scale(1.05)", offset: 0.3 },
+            { transform: "scale(1)", offset: 0.42 },
+            { transform: "scale(1.05)", offset: 0.55 },
             { transform: "scale(1)", offset: 0.8 },
             { transform: "scale(1)", offset: 1 },
           ],
@@ -482,12 +503,14 @@
           options: { duration: dur, easing: GESTURE_EASE, fill: "forwards" },
         },
         {
+          // Small dip relative to the arm's already-resting hip-pose
+          // base (idle() holds the shoulder there continuously).
           key: "leftArm",
           keyframes: [
-            { transform: "rotate(0deg)", offset: 0 },
-            { transform: "rotate(-6deg)", offset: 0.3 },
-            { transform: "rotate(-6deg)", offset: 0.7 },
-            { transform: "rotate(0deg)", offset: 1 },
+            { transform: `rotate(${LEFT_HIP_BASE.shoulder}deg)`, offset: 0 },
+            { transform: `rotate(${LEFT_HIP_BASE.shoulder - 6}deg)`, offset: 0.3 },
+            { transform: `rotate(${LEFT_HIP_BASE.shoulder - 6}deg)`, offset: 0.7 },
+            { transform: `rotate(${LEFT_HIP_BASE.shoulder}deg)`, offset: 1 },
           ],
           options: { duration: dur, easing: GESTURE_EASE, fill: "forwards" },
         },
