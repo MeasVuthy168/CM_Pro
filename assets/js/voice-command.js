@@ -206,6 +206,14 @@ function initVoiceCommand() {
     recognition.onend = () => {
         if (matched || cancelledByUser) return;
 
+        // onend firing doesn't guarantee the underlying mic session is
+        // actually released (some WebView/native bridges keep recording
+        // past it) — the same reason the matched-command and user-cancel
+        // paths already call this explicitly. The error/no-match/silent
+        // paths below were missing it, which is what let the mic keep
+        // recording after a "Voice command not found" result.
+        stopListening();
+
         // Listening has genuinely stopped either way — drop the
         // pulsing ring now even though the sheet itself stays up a
         // moment longer below, so it doesn't look like it's still
