@@ -70,27 +70,35 @@
 
 /* =========================
    ROBOT ICON
-   The dance itself (arms/head/body) is animated inside robot.svg's
-   own <style> block, since it's loaded via a plain <img> tag and
-   outer page CSS can't reach into it.
+   #assistantRobotSlot — the robot is inlined by assets/js/robot-embed.js
+   (fetches robot.svg and injects its markup here) rather than loaded
+   via <img>, specifically so assets/js/robot-animator.js can reach
+   its elements and drive idle/greet/wave/think/success/attention from
+   JS. The injected <svg> itself carries width="100%" height="100%",
+   so it fills this box and its own viewBox + default preserveAspectRatio
+   ("xMidYMid meet") scale it to fit exactly like object-fit:contain
+   would on an <img> — no extra sizing rule needed here.
 
-   IMPORTANT: never animate `filter`/`transform` directly on this
-   <img>, and don't give it its own stacking context (position/
-   z-index) without a real reason to. Either one gets iOS Safari to
-   promote the image onto a cached compositing layer, and that cached
-   bitmap does NOT get re-rasterized when the user pinch-zooms the
-   page — it just gets scaled up, which is what made the robot look
-   soft/blurry when zoomed in on iOS. A plain, un-promoted <img>
-   stays vector-crisp at any zoom level. (There used to be an
-   animated glow here via animation:robotGlow, but its @keyframes is
-   commented out in animation.css — see the update-mode variant below
-   for how the glow effect is done instead, without touching the
-   image itself.)
+   IMPORTANT: never animate `filter` directly on this element or give
+   it its own stacking context (position/z-index) without a real
+   reason to — either one gets iOS Safari to promote it onto a cached
+   compositing layer, and that cached bitmap does NOT get
+   re-rasterized when the user pinch-zooms the page, which is what
+   made the robot look soft/blurry when zoomed in on iOS previously.
+   robot-animator.js only ever animates `transform`/`opacity` on
+   individual inner elements, never on this outer box, so this stays
+   un-promoted and vector-crisp at any zoom level.
 ========================= */
 .assistant-icon{
     width:101px;
     height:114px;
-    object-fit:contain;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.assistant-icon svg{
+    width:100%;
+    height:100%;
 }
 
 /* =========================

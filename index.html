@@ -64,6 +64,8 @@
 <script src="/CM_Pro/assets/js/toast.js"></script>
 <script src="./assets/js/assistant-box.js"></script>
 <script src="./assets/js/voice-command.js"></script>
+<script src="./assets/js/robot-animator.js"></script>
+<script src="./assets/js/robot-embed.js"></script>
 
 <!-- ========================= -->
 <!-- TOPBAR -->
@@ -153,7 +155,7 @@ Officer Task
 <div class="assistant-box">
 
 <div class="assistant-icon-wrap">
-<img src="./assets/images/robot.svg" class="assistant-icon">
+<div id="assistantRobotSlot" class="assistant-icon"></div>
 </div>
 
 <div class="assistant-text" id="assistantText">
@@ -221,6 +223,15 @@ Officer Task
   // fullname is read automatically from the loggedInUser object in
   // storage (set at login, cleared by session.js's autoLogout).
   initAssistantBox();
+
+  // The robot is inlined (not an <img>) specifically so it can be
+  // driven from JS — see assets/js/robot-embed.js for why. Greets
+  // once the greeting card has actually loaded.
+  embedCMProRobot(document.getElementById("assistantRobotSlot"), {
+    src: "./assets/images/robot.svg",
+  }).then((robot) => {
+    if (robot) robot.greet();
+  });
 </script>
 
 </body>

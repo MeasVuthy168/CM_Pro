@@ -1,29 +1,37 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="108 -12 510 790" width="100%" height="100%">
 
   <!-- =====================================================================
-       CM_Pro ROBOT MASCOT — polish pass
+       CM_Pro ROBOT MASCOT — static rig
        =====================================================================
-       RESPONSIVE SIZING: width/height are "100%" rather than fixed pixel
-       values — the viewBox alone defines the aspect ratio, and the
-       element scales to fill whatever container it's placed in (the
-       Home assistant-box <img>'s own CSS width/height, or the full
-       viewport if the file is opened directly). A previous version had
-       fixed width="500" height="850" attributes, which made a standalone
-       open of the file render at a literal 500x850px regardless of a
-       taller phone viewport — that's what "too small with too much
-       empty space" was: the intrinsic size winning over the viewport,
-       not a scaling bug in the embedded usage.
+       This file is now a pure "rig": shapes, materials, and the joint
+       hierarchy only — it has NO animation of its own (no <style>/
+       @keyframes). All motion (the continuous idle, and the one-shot
+       greet/wave/think/success/attention gestures) is driven from
+       JavaScript via the Web Animations API — see
+       assets/js/robot-animator.js. That split exists because the
+       gestures need to be triggerable on demand from app code
+       (robot.greet(), robot.wave(), ...), which a plain <img>-embedded
+       SVG with baked-in CSS keyframes can never support — script in the
+       parent page cannot reach into an <img>'s SVG document at all.
+       This file is fetched and injected inline into the page by
+       assets/js/robot-embed.js specifically so robot-animator.js can
+       reach its elements by id.
+
+       RESPONSIVE SIZING: width/height are "100%" — the viewBox alone
+       defines the aspect ratio, and the element scales to fill whatever
+       container it's placed in.
 
        VIEWBOX: measured empirically, not guessed — a headless browser
        sampled the actual rendered bounding box of #cm-pro-robot across
-       the full 7s animation cycle (rest pose through the peak of the
-       wave, elbow bend, and hand flutter all included) and the viewBox
-       is that measured extent plus a safety margin on every side. If
-       you change any animation's amplitude or a limb's length,
-       re-measure rather than eyeballing a new value.
+       full gesture playthroughs (rest pose through the peak of the
+       wave/greet, elbow bend, and hand flutter all included) and the
+       viewBox is that measured extent plus a safety margin on every
+       side. If you change a gesture's amplitude or a limb's length,
+       re-measure (see robot-animator.js's own comments) rather than
+       eyeballing a new value.
 
        SVG HIERARCHY (mirrors the actual mechanical structure — every
-       joint's CSS rotation pivot is exactly its own parent <g>, so
+       joint's transform-origin is exactly its own parent <g>, so
        rotating a shoulder carries its whole arm, rotating an elbow
        carries the forearm+hand, etc. — nothing can separate):
          #cm-pro-robot
@@ -41,9 +49,8 @@
              #waist-joint
              #neck
              #head > #face (the visor)
-             #right-arm > (mirrored — this is the one that periodically
-                           raises to wave, then returns to resting at
-                           the side)
+             #right-arm > (mirrored — this is the one that plays the
+                           greet/wave gestures)
 
        QUICK EDIT GUIDE:
        MATERIALS  -> <defs>. bodyGrad = white/light-gray shell plates,
@@ -53,16 +60,12 @@
        HEAD/VISOR -> search "HEAD".  TORSO -> search "TORSO".
        ARMS       -> search "LEFT ARM" / "RIGHT ARM".
        LEGS       -> search "LEFT LEG" / "RIGHT LEG".
-       ACTIONS    -> every @keyframes is named after what it moves. The
-                     wave raises the arm diagonally to roughly head
-                     height with a clearly bent elbow (not a straight
-                     stick), then returns to resting at the side.
 
        NO RASTER FILTERS: deliberately no <feGaussianBlur>/<feDropShadow>
        and no filter:drop-shadow()/filter:blur() anywhere — a filter
        forces the renderer to rasterize that element into an offscreen
-       bitmap sized for the small ~100px on-screen icon, and iOS Safari
-       then just scales that fixed bitmap (doesn't re-rasterize) on
+       bitmap sized for the small on-screen icon, and iOS Safari then
+       just scales that fixed bitmap (doesn't re-rasterize) on
        pinch-zoom, which reads as blurry. Every glow/halo here is a
        plain radial-gradient shape fading to transparent instead
        (visorHalo, statusGlow) — real vector fills, crisp at any zoom. -->
@@ -121,116 +124,6 @@
       <stop offset="100%" stop-color="#4fd8ec" stop-opacity="0"/>
     </radialGradient>
 
-    <style>
-
-      /* ============ ANIMATION KEYFRAMES ============
-         None of these animate `filter`. Idle amplitudes stay small so
-         nothing visibly separates at a joint seam; the wave's elbow
-         bend is deliberately larger than idle amplitudes so the arm
-         reads as a jointed limb rather than one straight segment when
-         raised. */
-
-      @keyframes float-body {
-        0%, 100% { transform: translateY(0px); }
-        50%      { transform: translateY(-4px); }
-      }
-      @keyframes idle-head-look {
-        0%, 100% { transform: rotate(-3deg); }
-        30%      { transform: rotate(2deg); }
-        60%      { transform: rotate(4deg); }
-        80%      { transform: rotate(-1deg); }
-      }
-      @keyframes visor-blink {
-        0%, 90%, 100% { opacity: 1; }
-        94% { opacity: 0.5; }
-        97% { opacity: 1; }
-      }
-      @keyframes neck-status-pulse {
-        0%, 100% { opacity: 0.9; transform: scale(1); }
-        50%      { opacity: 0.45; transform: scale(1.2); }
-      }
-      @keyframes right-arm-greet-cycle {
-        /* Rests hanging at the side for most of the cycle, then the
-           shoulder raises the upper arm out to the side — a smaller
-           swing than a straight-arm wave needs, because the elbow
-           (below) folds the forearm back up toward the head rather
-           than the whole arm extending straight out. That combination
-           reads as a natural bent-elbow wave AND needs much less
-           canvas than swinging one straight segment through the same
-           arc would. */
-        0%, 55%  { transform: rotate(0deg); }
-        66%      { transform: rotate(-78deg); }
-        84%      { transform: rotate(-78deg); }
-        100%     { transform: rotate(0deg); }
-      }
-      @keyframes right-forearm-wag-cycle {
-        /* Folds sharply at the elbow once the upper arm is raised and
-           HOLDS the fold steady (no oscillation — the actual "waving"
-           motion comes entirely from the wrist/hand flutter below, not
-           from swinging the elbow back and forth). Its 0/66/84/100%
-           breakpoints deliberately MATCH right-arm-greet-cycle's own —
-           an earlier version returned the elbow to straight on a
-           shorter/different window than the shoulder's return, which
-           (measured empirically) briefly recreated a near-straight arm
-           at a still-raised shoulder angle every cycle, right when the
-           wave was lowering, no matter how the peak angles themselves
-           were tuned. Keeping both animations on identical timing
-           windows is what actually fixed it. */
-        0%, 55%  { transform: rotate(0deg); }
-        66%, 84% { transform: rotate(-50deg); }
-        100%     { transform: rotate(0deg); }
-      }
-      @keyframes right-hand-flutter-cycle {
-        0%, 55%   { transform: rotate(0deg); }
-        68%       { transform: rotate(14deg); }
-        74%       { transform: rotate(-10deg); }
-        80%       { transform: rotate(14deg); }
-        88%, 100% { transform: rotate(0deg); }
-      }
-      @keyframes idle-arm-sway {
-        0%, 100% { transform: rotate(0deg); }
-        25%      { transform: rotate(-2.5deg); }
-        50%      { transform: rotate(1deg); }
-        75%      { transform: rotate(-1.5deg); }
-      }
-      @keyframes idle-hand-flex {
-        0%, 100% { transform: rotate(0deg) scale(1); }
-        50%      { transform: rotate(5deg) scale(1.04); }
-      }
-      @keyframes idle-foot-rock {
-        /* Feet stay close to stable — this is deliberately smaller
-           than the other idle amplitudes. */
-        0%, 100% { transform: rotate(0deg); }
-        50%      { transform: rotate(1.5deg); }
-      }
-      @keyframes floor-shadow {
-        0%, 100% { transform: scale(1); opacity: 0.3; }
-        50%      { transform: scale(0.96); opacity: 0.24; }
-      }
-
-      /* ============ ANIMATION ASSIGNMENTS ============
-         transform-origin values match each part's actual joint/pivot
-         point in the markup below — if you move a part, update the
-         matching transform-origin here too. */
-
-      .anim-body { animation: float-body 4s ease-in-out infinite; transform-origin: 240px 737px; }
-      .anim-head { animation: idle-head-look 5.5s ease-in-out infinite; transform-origin: 240px 168px; }
-      .anim-visor { animation: visor-blink 4.5s ease-in-out infinite; }
-      .anim-neck-status { animation: neck-status-pulse 2.4s ease-in-out infinite; transform-origin: center; }
-
-      .anim-right-arm { animation: right-arm-greet-cycle 7s ease-in-out infinite; transform-origin: 320px 200px; }
-      .anim-right-forearm { animation: right-forearm-wag-cycle 7s ease-in-out infinite; transform-origin: 320px 330px; }
-      .anim-right-hand { animation: right-hand-flutter-cycle 7s ease-in-out infinite; transform-origin: 320px 400px; }
-
-      .anim-left-arm { animation: idle-arm-sway 3.4s ease-in-out infinite; transform-origin: 160px 200px; }
-      .anim-left-hand-flex { animation: idle-hand-flex 2.2s ease-in-out infinite; transform-origin: 160px 417px; }
-      .anim-right-hand-flex { animation: idle-hand-flex 2.4s ease-in-out infinite 0.4s; transform-origin: 320px 417px; }
-
-      .anim-foot-left { animation: idle-foot-rock 2.8s ease-in-out infinite; transform-origin: 207px 673px; }
-      .anim-foot-right { animation: idle-foot-rock 2.8s ease-in-out infinite 1.4s; transform-origin: 273px 673px; }
-
-      .anim-shadow { animation: floor-shadow 4s ease-in-out infinite; transform-origin: 240px 737px; }
-    </style>
   </defs>
 
   <g id="cm-pro-robot">
@@ -239,17 +132,14 @@
          it, so the character never looks like it's floating off the
          ground it's supposedly standing on. -->
     <g id="shadow">
-      <ellipse class="anim-shadow" cx="240" cy="737" rx="104" ry="16" fill="#000000" opacity="0.3"/>
+      <ellipse id="shadow-ellipse" cx="240" cy="737" rx="104" ry="16" fill="#000000" opacity="0.3"/>
     </g>
 
-    <!-- Everything below is inside .anim-body, including the legs — the
+    <!-- Everything below is inside #body, including the legs — the
          whole character breathes/bobs as one rigid unit. -->
-    <g id="body" class="anim-body">
+    <g id="body">
 
-      <!-- ============ LEFT LEG ============
-           Thicker and slightly shorter than the previous pass, per
-           feedback that the legs read as too long/thin relative to
-           the torso. -->
+      <!-- ============ LEFT LEG ============ -->
       <g id="left-leg">
         <circle id="left-hip-joint" cx="207" cy="388" r="18" fill="url(#jointGrad)"/>
         <rect id="left-thigh" x="178" y="390" width="58" height="155" rx="26" fill="url(#bodyGrad)"/>
@@ -269,7 +159,7 @@
         <rect x="189" y="565" width="8" height="94" rx="4" fill="#ffffff" opacity="0.3"/>
         <path d="M 207 575 L 207 655" stroke="#000000" stroke-width="1" opacity="0.08"/>
         <circle id="left-ankle" cx="207" cy="673" r="16" fill="url(#jointGrad)"/>
-        <g id="left-foot" class="anim-foot-left">
+        <g id="left-foot">
           <rect x="190" y="671" width="34" height="10" rx="5" fill="url(#bodyGrad)"/>
           <rect x="173" y="679" width="68" height="34" rx="17" fill="url(#blackLimbs)"/>
           <rect x="186" y="685" width="42" height="5" rx="2.5" fill="#7a7f88" opacity="0.4"/>
@@ -296,7 +186,7 @@
         <rect x="283" y="565" width="8" height="94" rx="4" fill="#ffffff" opacity="0.3"/>
         <path d="M 273 575 L 273 655" stroke="#000000" stroke-width="1" opacity="0.08"/>
         <circle id="right-ankle" cx="273" cy="673" r="16" fill="url(#jointGrad)"/>
-        <g id="right-foot" class="anim-foot-right">
+        <g id="right-foot">
           <rect x="256" y="671" width="34" height="10" rx="5" fill="url(#bodyGrad)"/>
           <rect x="239" y="679" width="68" height="34" rx="17" fill="url(#blackLimbs)"/>
           <rect x="252" y="685" width="42" height="5" rx="2.5" fill="#7a7f88" opacity="0.4"/>
@@ -307,12 +197,9 @@
       </g>
 
       <!-- ============ HIP ============
-           Reduced in size/darkness dominance so it reads as an
-           integrated pelvis rather than a separate black belt: a
-           lighter, thinner "belt trim" blends its top edge into the
-           waist joint above, and the block itself is shorter than the
-           previous pass. Drawn after both legs so it cleanly bridges
-           down to both thigh tops. -->
+           Integrated pelvis: a light "belt trim" blends its top edge
+           into the waist joint above. Drawn after both legs so it
+           cleanly bridges down to both thigh tops. -->
       <g id="hip">
         <rect x="188" y="346" width="104" height="8" rx="4" fill="url(#bodyGrad)"/>
         <rect x="176" y="352" width="128" height="36" rx="16" fill="url(#jointGrad)"/>
@@ -324,12 +211,12 @@
         <circle cx="240" cy="380" r="2.5" fill="#0b0c0e" opacity="0.5"/>
       </g>
 
-      <!-- ============ LEFT ARM (idle sway, rests at the side) ============
-           Thicker than before, elbow lands around waist height, hand
-           lands around the upper/middle thigh. #left-shoulder pivots
-           the whole arm; #left-elbow (nested) pivots the forearm+hand;
-           #left-wrist (nested further) pivots just the hand. -->
-      <g id="left-arm" class="anim-left-arm">
+      <!-- ============ LEFT ARM (rests at the side, idles independently
+           of the right) ============
+           #left-shoulder pivots the whole arm; #left-elbow (nested)
+           pivots the forearm+hand; #left-wrist (nested further) pivots
+           just the hand. -->
+      <g id="left-arm">
         <!-- layered shoulder housing: a lighter ring behind a dark
              joint center, instead of one plain dark ball -->
         <circle id="left-shoulder" cx="160" cy="200" r="26" fill="url(#bodyGrad)"/>
@@ -344,7 +231,7 @@
           <rect x="149" y="336" width="7" height="56" rx="3.5" fill="#ffffff" opacity="0.3"/>
           <g id="left-wrist">
             <circle cx="160" cy="400" r="14" fill="url(#jointGrad)"/>
-            <g id="left-hand" class="anim-left-hand-flex">
+            <g id="left-hand">
               <rect x="140" y="398" width="40" height="38" rx="12" fill="url(#blackLimbs)"/>
               <circle cx="149" cy="407" r="4.5" fill="#ffffff" opacity="0.2"/>
               <!-- 3 uniform, simplified fingers -->
@@ -361,10 +248,8 @@
       </g>
 
       <!-- ============ TORSO ============
-           Narrower and slightly more compact than before, with an
-           added subtle center-shading ellipse for roundness: two
-           layered armor panels (a chest, a taper into a narrower ab
-           plate) with a visible panel seam, plus the engraved
+           Two layered armor panels (a chest, a taper into a narrower
+           ab plate) with a visible panel seam, plus the engraved
            wordmark. -->
       <g id="torso">
         <rect id="chest-panel" x="165" y="174" width="150" height="92" rx="32" fill="url(#bodyGrad)"/>
@@ -394,8 +279,7 @@
 
       <!-- ============ NECK ============
            A collar flare bridges into the head above, then the ridged
-           connector, then small side plates — a clearer mechanical
-           transition than a plain block. -->
+           connector, then small side plates. -->
       <g id="neck">
         <rect x="214" y="138" width="52" height="10" rx="5" fill="url(#bodyGrad)"/>
         <rect x="220" y="142" width="40" height="32" rx="8" fill="url(#jointGrad)"/>
@@ -407,17 +291,16 @@
         <!-- "power on" status light, thin gold ring for the one
              remaining brand accent -->
         <circle cx="206" cy="159" r="8" fill="url(#statusGlow)"/>
-        <circle class="anim-neck-status" cx="206" cy="159" r="4" fill="url(#statusCore)"/>
+        <circle id="neck-status" cx="206" cy="159" r="4" fill="url(#statusCore)"/>
         <circle cx="206" cy="159" r="4.8" fill="none" stroke="#D4AF37" stroke-width="1" opacity="0.8"/>
       </g>
 
       <!-- ============ HEAD ============
-           Slightly larger than the previous pass (grown upward, so the
-           neck/torso below are untouched) — a rounded dome plus a
-           distinct lower jaw plate reads as mechanical/segmented
-           rather than one plain ball, and sits directly on the neck's
-           collar flare so it feels attached rather than floating. -->
-      <g id="head" class="anim-head">
+           A rounded dome plus a distinct lower jaw plate reads as
+           mechanical/segmented rather than one plain ball, and sits
+           directly on the neck's collar flare so it feels attached
+           rather than floating above the body. -->
+      <g id="head">
         <rect x="182" y="29" width="116" height="101" rx="37" fill="url(#headShellGrad)"/>
         <rect x="207" y="118" width="66" height="20" rx="10" fill="url(#headShellGrad)"/>
         <ellipse cx="208" cy="50" rx="33" ry="15" fill="#ffffff" opacity="0.4"/>
@@ -426,8 +309,8 @@
         <rect x="291" y="72" width="7" height="15" rx="3.5" fill="#0b0c0e" opacity="0.3"/>
 
         <!-- ============ FACE (visor) ============ -->
-        <g id="face" class="anim-visor">
-          <circle cx="240" cy="76" r="57" fill="url(#visorHalo)"/>
+        <g id="face">
+          <circle id="visor-halo" cx="240" cy="76" r="57" fill="url(#visorHalo)"/>
           <rect x="190" y="44" width="100" height="71" rx="29" fill="url(#jointGrad)"/>
           <rect x="195" y="48" width="90" height="63" rx="25" fill="url(#visorGrad)"/>
           <path d="M 205 61 L 242 91" stroke="#ffffff" stroke-width="9" stroke-linecap="round" opacity="0.22"/>
@@ -439,33 +322,34 @@
         <circle cx="240" cy="37" r="3.3" fill="#4fd8ec"/>
       </g>
 
-      <!-- ============ RIGHT ARM (periodic wave, rests at the side) ============
+      <!-- ============ RIGHT ARM (rests at the side; plays the
+           greet/wave gestures) ============
            Mirrors the left arm's geometry about x=240 at rest.
            #right-shoulder rotates the whole arm, #right-elbow (nested)
-           bends it, #right-wrist (nested further) flutters the hand,
-           all nested so a shoulder rotation carries the rest along
-           with it. Drawn last so it stays on top of the torso/head
-           while waving. -->
-      <g id="right-arm" class="anim-right-arm">
+           bends it, #right-wrist (nested further) turns the hand, all
+           nested so a shoulder rotation carries the rest along with
+           it. Drawn last so it stays on top of the torso/head while
+           gesturing. -->
+      <g id="right-arm">
         <circle id="right-shoulder" cx="320" cy="200" r="26" fill="url(#bodyGrad)"/>
         <ellipse cx="316" cy="212" rx="20" ry="10" fill="#000000" opacity="0.06"/>
         <circle cx="320" cy="200" r="16" fill="url(#jointGrad)"/>
         <rect id="right-upper-arm" x="299" y="200" width="42" height="130" rx="19" fill="url(#bodyGrad)"/>
         <rect x="325" y="208" width="8" height="104" rx="4" fill="#ffffff" opacity="0.3"/>
-        <g id="right-elbow" class="anim-right-forearm">
+        <g id="right-elbow">
           <circle cx="320" cy="330" r="17" fill="url(#jointGrad)"/>
           <circle cx="320" cy="330" r="9" fill="#1c1e22"/>
           <rect id="right-forearm" x="302" y="330" width="36" height="70" rx="16" fill="url(#bodyGrad)"/>
           <rect x="324" y="336" width="7" height="56" rx="3.5" fill="#ffffff" opacity="0.3"/>
-          <g id="right-wrist" class="anim-right-hand">
+          <g id="right-wrist">
             <circle cx="320" cy="400" r="14" fill="url(#jointGrad)"/>
-            <g id="right-hand" class="anim-right-hand-flex">
+            <g id="right-hand">
               <rect x="300" y="398" width="40" height="38" rx="12" fill="url(#blackLimbs)"/>
               <circle cx="331" cy="407" r="4.5" fill="#ffffff" opacity="0.2"/>
-              <rect x="327" y="432" width="10" height="23" rx="5" fill="url(#blackLimbs)" transform="rotate(10 332 436)"/>
-              <rect x="315" y="434" width="10" height="25" rx="5" fill="url(#blackLimbs)"/>
-              <rect x="303" y="432" width="10" height="23" rx="5" fill="url(#blackLimbs)" transform="rotate(-10 308 436)"/>
-              <rect x="338" y="410" width="10" height="20" rx="5" fill="url(#blackLimbs)" transform="rotate(36 343 411)"/>
+              <rect id="right-finger-1" x="327" y="432" width="10" height="23" rx="5" fill="url(#blackLimbs)" transform="rotate(10 332 436)"/>
+              <rect id="right-finger-2" x="315" y="434" width="10" height="25" rx="5" fill="url(#blackLimbs)"/>
+              <rect id="right-finger-3" x="303" y="432" width="10" height="23" rx="5" fill="url(#blackLimbs)" transform="rotate(-10 308 436)"/>
+              <rect id="right-thumb" x="338" y="410" width="10" height="20" rx="5" fill="url(#blackLimbs)" transform="rotate(36 343 411)"/>
             </g>
           </g>
         </g>

@@ -215,10 +215,10 @@ href="/CM_Pro/assets/css/global-splash.css"
         style="display:none;"
     >
 
-        <img
-            src="../../assets/images/robot.svg"
+        <div
+            id="emptyRobotSlot"
             class="empty-img"
-        >
+        ></div>
 
         <div class="empty-title" id="emptyTitle">
 
@@ -316,6 +316,18 @@ href="/CM_Pro/assets/css/global-splash.css"
 <!-- PAGE LOADER (component loader, menu, offline, push, splash) -->
 
 <script src="../../assets/js/notification-loader.js"></script>
+
+<!-- ROBOT MASCOT (empty-state icon) -->
+<!-- Inlined (not an <img>) for the same reason as the Home page's —
+     see assets/js/robot-embed.js. Idles on its own once embedded; no
+     explicit greet() here, this isn't a greeting card. -->
+<script src="/CM_Pro/assets/js/robot-animator.js"></script>
+<script src="/CM_Pro/assets/js/robot-embed.js"></script>
+<script>
+  embedCMProRobot(document.getElementById("emptyRobotSlot"), {
+    src: "../../assets/images/robot.svg",
+  });
+</script>
 
 </body>
 
