@@ -225,12 +225,14 @@ Officer Task
   initAssistantBox();
 
   // The robot is inlined (not an <img>) specifically so it can be
-  // driven from JS — see assets/js/robot-embed.js for why. Greets
-  // once the greeting card has actually loaded.
+  // driven from JS — see assets/js/robot-embed.js for why. Once the
+  // greeting card has loaded, starts the continuous welcome loop
+  // (waist -> welcome -> wave -> waist -> pause -> welcome again -> ...)
+  // rather than a one-shot greet() that would only play once.
   embedCMProRobot(document.getElementById("assistantRobotSlot"), {
     src: "./assets/images/robot.svg",
   }).then((robot) => {
-    if (robot) robot.greet();
+    if (robot) robot.startWelcomeLoop();
   });
 </script>
 
