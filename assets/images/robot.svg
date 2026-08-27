@@ -45,12 +45,17 @@
              #left-arm  > left-shoulder, left-upper-arm,
                           left-elbow > left-forearm,
                           left-wrist > left-hand (3 fingers + thumb)
+             #right-arm > (mirrored — this is the one that plays the
+                           greet/wave gestures; drawn immediately after
+                           #left-arm, both BEFORE #torso, so both
+                           shoulders tuck behind the chest panel and
+                           both hands render above #hip identically —
+                           see the RIGHT ARM comment below for why this
+                           stays correct through the raised gesture)
              #torso
              #waist-joint
              #neck
              #head > #face (the visor)
-             #right-arm > (mirrored — this is the one that plays the
-                           greet/wave gestures)
 
        QUICK EDIT GUIDE:
        MATERIALS  -> <defs>. bodyGrad = white/light-gray shell plates,
@@ -247,6 +252,51 @@
         </g>
       </g>
 
+      <!-- ============ RIGHT ARM (rests at the side; plays the
+           greet/wave gestures) ============
+           Mirrors the left arm's geometry about x=240 at rest, AND is
+           drawn in the same relative DOM position as #left-arm (right
+           after it, before #torso) so it gets identical depth
+           treatment: the shoulder socket tucks behind the chest panel's
+           edge exactly like the left one does, and the hand still
+           renders above #hip (drawn earlier) so it reads in front of
+           the pelvis at the hip-rest pose. This is safe for the
+           welcome/wave gesture specifically because that gesture only
+           ever swings the shoulder further OUTWARD (RIGHT_HIP_BASE's
+           -32deg through the anticipation dip to RIGHT_WELCOME_BASE's
+           -78deg in robot-animator.js — monotonically away from the
+           torso, never back across it), so the raised arm never needs
+           to render in front of the torso/head — verify this holds
+           with the same bounding-box sweep if you ever add a gesture
+           that swings the shoulder toward center instead.
+           #right-shoulder rotates the whole arm, #right-elbow (nested)
+           bends it, #right-wrist (nested further) turns the hand, all
+           nested so a shoulder rotation carries the rest along with it. -->
+      <g id="right-arm">
+        <circle id="right-shoulder" cx="320" cy="200" r="26" fill="url(#bodyGrad)"/>
+        <ellipse cx="316" cy="212" rx="20" ry="10" fill="#000000" opacity="0.06"/>
+        <circle cx="320" cy="200" r="16" fill="url(#jointGrad)"/>
+        <rect id="right-upper-arm" x="299" y="200" width="42" height="130" rx="19" fill="url(#bodyGrad)"/>
+        <rect x="325" y="208" width="8" height="104" rx="4" fill="#ffffff" opacity="0.3"/>
+        <g id="right-elbow">
+          <circle cx="320" cy="330" r="17" fill="url(#jointGrad)"/>
+          <circle cx="320" cy="330" r="9" fill="#1c1e22"/>
+          <rect id="right-forearm" x="302" y="330" width="36" height="70" rx="16" fill="url(#bodyGrad)"/>
+          <rect x="324" y="336" width="7" height="56" rx="3.5" fill="#ffffff" opacity="0.3"/>
+          <g id="right-wrist">
+            <circle cx="320" cy="400" r="14" fill="url(#jointGrad)"/>
+            <g id="right-hand">
+              <rect x="300" y="398" width="40" height="38" rx="12" fill="url(#blackLimbs)"/>
+              <circle cx="331" cy="407" r="4.5" fill="#ffffff" opacity="0.2"/>
+              <rect id="right-finger-1" x="327" y="432" width="10" height="23" rx="5" fill="url(#blackLimbs)" transform="rotate(10 332 436)"/>
+              <rect id="right-finger-2" x="315" y="434" width="10" height="25" rx="5" fill="url(#blackLimbs)"/>
+              <rect id="right-finger-3" x="303" y="432" width="10" height="23" rx="5" fill="url(#blackLimbs)" transform="rotate(-10 308 436)"/>
+              <rect id="right-thumb" x="338" y="410" width="10" height="20" rx="5" fill="url(#blackLimbs)" transform="rotate(36 343 411)"/>
+            </g>
+          </g>
+        </g>
+      </g>
+
       <!-- ============ TORSO ============
            Two layered armor panels (a chest, a taper into a narrower
            ab plate) with a visible panel seam, plus the engraved
@@ -320,39 +370,6 @@
         </g>
 
         <circle cx="240" cy="37" r="3.3" fill="#4fd8ec"/>
-      </g>
-
-      <!-- ============ RIGHT ARM (rests at the side; plays the
-           greet/wave gestures) ============
-           Mirrors the left arm's geometry about x=240 at rest.
-           #right-shoulder rotates the whole arm, #right-elbow (nested)
-           bends it, #right-wrist (nested further) turns the hand, all
-           nested so a shoulder rotation carries the rest along with
-           it. Drawn last so it stays on top of the torso/head while
-           gesturing. -->
-      <g id="right-arm">
-        <circle id="right-shoulder" cx="320" cy="200" r="26" fill="url(#bodyGrad)"/>
-        <ellipse cx="316" cy="212" rx="20" ry="10" fill="#000000" opacity="0.06"/>
-        <circle cx="320" cy="200" r="16" fill="url(#jointGrad)"/>
-        <rect id="right-upper-arm" x="299" y="200" width="42" height="130" rx="19" fill="url(#bodyGrad)"/>
-        <rect x="325" y="208" width="8" height="104" rx="4" fill="#ffffff" opacity="0.3"/>
-        <g id="right-elbow">
-          <circle cx="320" cy="330" r="17" fill="url(#jointGrad)"/>
-          <circle cx="320" cy="330" r="9" fill="#1c1e22"/>
-          <rect id="right-forearm" x="302" y="330" width="36" height="70" rx="16" fill="url(#bodyGrad)"/>
-          <rect x="324" y="336" width="7" height="56" rx="3.5" fill="#ffffff" opacity="0.3"/>
-          <g id="right-wrist">
-            <circle cx="320" cy="400" r="14" fill="url(#jointGrad)"/>
-            <g id="right-hand">
-              <rect x="300" y="398" width="40" height="38" rx="12" fill="url(#blackLimbs)"/>
-              <circle cx="331" cy="407" r="4.5" fill="#ffffff" opacity="0.2"/>
-              <rect id="right-finger-1" x="327" y="432" width="10" height="23" rx="5" fill="url(#blackLimbs)" transform="rotate(10 332 436)"/>
-              <rect id="right-finger-2" x="315" y="434" width="10" height="25" rx="5" fill="url(#blackLimbs)"/>
-              <rect id="right-finger-3" x="303" y="432" width="10" height="23" rx="5" fill="url(#blackLimbs)" transform="rotate(-10 308 436)"/>
-              <rect id="right-thumb" x="338" y="410" width="10" height="20" rx="5" fill="url(#blackLimbs)" transform="rotate(36 343 411)"/>
-            </g>
-          </g>
-        </g>
       </g>
 
     </g>
