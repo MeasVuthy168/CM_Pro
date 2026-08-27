@@ -79,10 +79,17 @@ function initVoiceCommand() {
         return;
     }
 
-    const recognition = new SpeechRecognitionCtor();
-    recognition.lang = "en-US";
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
+    // A fresh instance per session (never reused across mic taps) rather
+    // than one long-lived instance — iOS Safari's WebKit engine has a
+    // long-documented bug where the OS "microphone in use" indicator can
+    // outlive stop()/abort() on a SpeechRecognition object entirely
+    // (https://github.com/WebAudio/web-speech-api/issues/96). Dropping
+    // every reference to a finished instance instead of restarting it is
+    // the community-recommended mitigation, since some WebKit versions
+    // tie the underlying audio session's teardown to the object no
+    // longer being referenced rather than to stop()/abort() actually
+    // being called.
+    let recognition = null;
 
     let matched = false;
     let heardAnything = false;
@@ -108,10 +115,14 @@ function initVoiceCommand() {
     // audio-recording session alive past recognition.onend, which is
     // what was surfacing the OS-level "Stop audio recording?" prompt
     // when the sheet closed or the page navigated away mid-listen.
+    // Both stop() (graceful) and abort() (immediate) are called since
+    // reports of this WebKit bug are inconsistent about which one
+    // actually triggers Safari's internal teardown on a given version —
+    // calling either on an already-ended session is a harmless no-op.
     function stopListening() {
-        try {
-            recognition.abort();
-        } catch (e) {}
+        if (!recognition) return;
+        try { recognition.stop(); } catch (e) {}
+        try { recognition.abort(); } catch (e) {}
     }
 
     function showNotFoundSnackbar() {
@@ -162,92 +173,103 @@ function initVoiceCommand() {
         clearTimeout(snackbarTimer);
     });
 
-    recognition.onstart = () => {
-        matched = false;
-        heardAnything = false;
-        hadError = false;
-        cancelledByUser = false;
-    };
+    function createRecognition() {
+        const rec = new SpeechRecognitionCtor();
+        rec.lang = "en-US";
+        rec.interimResults = true;
+        rec.maxAlternatives = 1;
 
-    recognition.onresult = (event) => {
-        const result = event.results[0];
-        const transcript = result[0].transcript;
-        if (transcript.trim()) heardAnything = true;
-        statusEl.textContent = transcript;
+        rec.onstart = () => {
+            matched = false;
+            heardAnything = false;
+            hadError = false;
+            cancelledByUser = false;
+        };
 
-        if (result.isFinal) {
-            const command = matchVoiceCommand(transcript);
-            if (command) {
-                matched = true;
-                btnWrap.classList.remove("listening");
-                statusEl.textContent = command.label;
-                stopListening();
-                setTimeout(() => command.action(), 600);
-            } else {
-                // Stop right here, while the session is still verifiably
-                // active — by the time onend fires naturally, the service
-                // has already disconnected on its own and abort() there is
-                // a no-op, which is why the mic kept recording past the
-                // "not found" result even after adding a call in onend.
-                stopListening();
+        rec.onresult = (event) => {
+            const result = event.results[0];
+            const transcript = result[0].transcript;
+            if (transcript.trim()) heardAnything = true;
+            statusEl.textContent = transcript;
+
+            if (result.isFinal) {
+                const command = matchVoiceCommand(transcript);
+                if (command) {
+                    matched = true;
+                    btnWrap.classList.remove("listening");
+                    statusEl.textContent = command.label;
+                    stopListening();
+                    setTimeout(() => command.action(), 600);
+                } else {
+                    // Stop right here, while the session is still
+                    // verifiably active — by the time onend fires
+                    // naturally, the service has already disconnected on
+                    // its own and abort() there is a no-op, which is why
+                    // the mic kept recording past the "not found" result
+                    // even after adding a call in onend.
+                    stopListening();
+                }
             }
-        }
-    };
+        };
 
-    recognition.onerror = (event) => {
-        // "aborted" is us calling stop()/abort() ourselves (a match,
-        // or the user cancelling) — not a real failure, and already
-        // handled by whichever of those triggered it.
-        if (event.error === "aborted") return;
+        rec.onerror = (event) => {
+            // "aborted" is us calling stop()/abort() ourselves (a match,
+            // or the user cancelling) — not a real failure, and already
+            // handled by whichever of those triggered it.
+            if (event.error === "aborted") return;
 
-        hadError = true;
-        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-            statusEl.textContent = "Microphone access blocked";
-        } else if (event.error === "no-speech") {
-            statusEl.textContent = "Didn't hear anything";
-        } else {
-            statusEl.textContent = "Something went wrong";
-        }
-    };
+            hadError = true;
+            if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+                statusEl.textContent = "Microphone access blocked";
+            } else if (event.error === "no-speech") {
+                statusEl.textContent = "Didn't hear anything";
+            } else {
+                statusEl.textContent = "Something went wrong";
+            }
+        };
 
-    recognition.onend = () => {
-        if (matched || cancelledByUser) return;
+        rec.onend = () => {
+            // Drop every reference to this finished instance rather than
+            // reusing it for the next mic tap — see the comment on the
+            // `recognition` declaration above for why.
+            if (recognition === rec) {
+                rec.onstart = rec.onresult = rec.onerror = rec.onend = null;
+                recognition = null;
+            }
 
-        // onend firing doesn't guarantee the underlying mic session is
-        // actually released (some WebView/native bridges keep recording
-        // past it) — the same reason the matched-command and user-cancel
-        // paths already call this explicitly. The error/no-match/silent
-        // paths below were missing it, which is what let the mic keep
-        // recording after a "Voice command not found" result.
-        stopListening();
+            if (matched || cancelledByUser) return;
 
-        // Listening has genuinely stopped either way — drop the
-        // pulsing ring now even though the sheet itself stays up a
-        // moment longer below, so it doesn't look like it's still
-        // recording.
-        btnWrap.classList.remove("listening");
+            // Listening has genuinely stopped either way — drop the
+            // pulsing ring now even though the sheet itself stays up a
+            // moment longer below, so it doesn't look like it's still
+            // recording.
+            btnWrap.classList.remove("listening");
 
-        if (hadError) {
-            // Give the user a moment to actually read the message
-            // above before the sheet disappears out from under it.
-            setTimeout(closeModal, 1500);
-            return;
-        }
+            if (hadError) {
+                // Give the user a moment to actually read the message
+                // above before the sheet disappears out from under it.
+                setTimeout(closeModal, 1500);
+                return;
+            }
 
-        if (heardAnything) {
-            // Same reasoning — let the unrecognized phrase sit on
-            // screen briefly before swapping to the snackbar.
-            setTimeout(() => {
-                closeModal();
-                showNotFoundSnackbar();
-            }, 700);
-            return;
-        }
+            if (heardAnything) {
+                // Same reasoning — let the unrecognized phrase sit on
+                // screen briefly before swapping to the snackbar.
+                setTimeout(() => {
+                    closeModal();
+                    showNotFoundSnackbar();
+                }, 700);
+                return;
+            }
 
-        closeModal();
-    };
+            closeModal();
+        };
+
+        return rec;
+    }
 
     micBtn.addEventListener("click", () => {
+        recognition = createRecognition();
         openModal();
         try {
             recognition.start();
