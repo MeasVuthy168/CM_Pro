@@ -1,76 +1,74 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 800" width="480" height="800">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="100 -50 500 850" width="500" height="850">
 
   <!-- =====================================================================
-       CM_Pro ROBOT MASCOT — realistic humanoid redesign
+       CM_Pro ROBOT MASCOT — polished humanoid redesign
        =====================================================================
-       Proportioned like a real bipedal robot (reference: a Unitree-style
-       humanoid) rather than a cartoon character: taller, wider shoulders
-       than waist, thicker limbs, a mechanical visor helmet, and simplified
-       3-finger-plus-thumb hands. Brand identity is kept intentionally
-       understated — a faint engraved "CM PRO" wordmark on the chest plate
-       and a thin gold ring around the neck status light — the same way a
-       real product robot carries a manufacturer's mark rather than a
-       bright applied logo patch.
+       VIEWBOX: measured empirically, not guessed — a headless browser
+       sampled the actual rendered bounding box of #cm-pro-robot across
+       the full 7s animation cycle (rest pose through the peak of the
+       wave, elbow bend, and hand flutter all included) and the viewBox
+       below is that measured extent (x≈123..583, y≈-33..776) plus a
+       ~15-25px safety margin on every side — snug enough to avoid
+       excessive empty space, generous enough that no frame of the
+       animation ever clips. If you change any animation's amplitude or
+       a limb's length, re-measure rather than eyeballing a new value.
 
-       SVG HIERARCHY (matches the robot's actual mechanical structure —
-       each joint's rotation pivot is exactly its parent <g>, so rotating
-       a shoulder carries its whole arm with it):
-         #robot
-           #head (contains #face = the visor)
-           #neck
-           #torso
-           #left-arm  > #left-shoulder, #left-upper-arm,
-                        #left-elbow > #left-forearm,
-                        #left-wrist > #left-hand (3 fingers + thumb)
-           #right-arm > (same nesting, mirrored)
-           #hip
-           #left-leg  > #left-hip-joint, #left-thigh,
-                        #left-knee > #left-shin,
-                        #left-ankle > #left-foot
-           #right-leg > (same nesting, mirrored)
+       SVG HIERARCHY (mirrors the actual mechanical structure — every
+       joint's CSS rotation pivot is exactly its own parent <g>, so
+       rotating a shoulder carries its whole arm, rotating an elbow
+       carries the forearm+hand, etc. — nothing can separate):
+         #cm-pro-robot
+           #shadow
+           #body (breathes/bobs as one rigid unit)
+             #left-leg  > left-hip-joint, left-thigh,
+                          left-knee > left-shin,
+                          left-ankle > left-foot
+             #right-leg > (mirrored)
+             #hip
+             #left-arm  > left-shoulder, left-upper-arm,
+                          left-elbow > left-forearm,
+                          left-wrist > left-hand (3 fingers + thumb)
+             #torso
+             #waist-joint
+             #neck
+             #head > #face (the visor)
+             #right-arm > (mirrored — this is the one that periodically
+                           raises to wave, then returns to resting at
+                           the side)
 
        QUICK EDIT GUIDE:
-       MATERIALS  -> <defs> below. bodyGrad = white/light-gray shell
-                     plates, jointGrad = dark navy-black mechanical
-                     joints, blackLimbs = hands + feet, visorGrad = the
-                     blue-glass visor, statusGlow = the neck status
-                     light halo.
-       HEAD/VISOR -> search "HEAD" — helmet dome + jaw plate + visor.
-       TORSO      -> search "TORSO" — chest panel + ab panel + wordmark.
-       ARMS       -> search "LEFT ARM" / "RIGHT ARM" — right arm is the
-                     one that periodically raises to wave, then returns
-                     to resting at the side.
-       HANDS      -> nested at the end of each arm — a palm block plus
-                     3 static fingers and a thumb, angled outward.
+       MATERIALS  -> <defs>. bodyGrad = white/light-gray shell plates,
+                     jointGrad = dark navy-black mechanical joints,
+                     blackLimbs = hands + feet, visorGrad = the
+                     blue-glass visor.
+       HEAD/VISOR -> search "HEAD".  TORSO -> search "TORSO".
+       ARMS       -> search "LEFT ARM" / "RIGHT ARM".
        LEGS       -> search "LEFT LEG" / "RIGHT LEG".
        ACTIONS    -> every @keyframes is named after what it moves. The
-                     rest pose (arms hanging at the sides) is the
-                     default; the wave is a periodic gesture layered on
-                     top so it reads as an occasional greeting, not
-                     nonstop waving.
+                     wave is deliberately a moderate arc (forearm rises
+                     to roughly head height, not straight overhead) —
+                     both more natural-looking and far cheaper on canvas
+                     space than a full overhead swing.
 
        NO RASTER FILTERS: deliberately no <feGaussianBlur>/<feDropShadow>
-       and no filter:drop-shadow()/filter:blur() anywhere. Applying a
-       filter to an SVG element forces the renderer to rasterize that
-       element into an offscreen bitmap sized for the small ~100px
-       on-screen icon — iOS Safari then just scales that fixed bitmap
-       (doesn't re-rasterize) on pinch-zoom, which reads as blurry.
-       Every glow/halo here is a plain radial-gradient shape fading to
-       transparent instead (visorHalo, statusGlow) — real vector fills,
-       crisp at any zoom level. -->
+       and no filter:drop-shadow()/filter:blur() anywhere — a filter
+       forces the renderer to rasterize that element into an offscreen
+       bitmap sized for the small ~100px on-screen icon, and iOS Safari
+       then just scales that fixed bitmap (doesn't re-rasterize) on
+       pinch-zoom, which reads as blurry. Every glow/halo here is a
+       plain radial-gradient shape fading to transparent instead
+       (visorHalo, statusGlow) — real vector fills, crisp at any zoom. -->
 
   <defs>
 
     <!-- ============ MATERIAL GRADIENTS ============ -->
 
-    <!-- Helmet dome — cool white/light-gray composite shell -->
     <radialGradient id="headShellGrad" cx="36%" cy="26%" r="78%">
       <stop offset="0%" stop-color="#ffffff"/>
       <stop offset="65%" stop-color="#e2e5ea"/>
       <stop offset="100%" stop-color="#b7bcc4"/>
     </radialGradient>
 
-    <!-- Body shell plates — torso/arms/legs -->
     <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#fbfcfe"/>
       <stop offset="42%" stop-color="#e4e7ec"/>
@@ -78,16 +76,13 @@
       <stop offset="100%" stop-color="#98a0ab"/>
     </linearGradient>
 
-    <!-- Dark navy-black mechanical joints — shoulders/elbows/knees/
-         neck/waist/hip. Tinted toward navy rather than neutral gray so
-         it still reads as CM_Pro's dark accent, not generic metal. -->
+    <!-- Dark navy-black mechanical joints -->
     <linearGradient id="jointGrad" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#525a6b"/>
       <stop offset="50%" stop-color="#2b3140"/>
       <stop offset="100%" stop-color="#12151d"/>
     </linearGradient>
 
-    <!-- Blue-glass HUD visor -->
     <linearGradient id="visorGrad" x1="20%" y1="0%" x2="80%" y2="100%">
       <stop offset="0%" stop-color="#a9e6f2"/>
       <stop offset="35%" stop-color="#4fb8d8"/>
@@ -95,21 +90,18 @@
       <stop offset="100%" stop-color="#0e3f68"/>
     </linearGradient>
 
-    <!-- Soft glow behind the visor — a gradient halo, not a blur filter -->
     <radialGradient id="visorHalo" cx="50%" cy="35%" r="65%">
       <stop offset="0%" stop-color="#7fd8ef" stop-opacity="0.5"/>
       <stop offset="70%" stop-color="#7fd8ef" stop-opacity="0.15"/>
       <stop offset="100%" stop-color="#7fd8ef" stop-opacity="0"/>
     </radialGradient>
 
-    <!-- Matte near-black — hands + feet -->
     <linearGradient id="blackLimbs" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#3a3d44"/>
       <stop offset="30%" stop-color="#1c1e22"/>
       <stop offset="100%" stop-color="#07080a"/>
     </linearGradient>
 
-    <!-- Small cyan "power on" status light + its halo -->
     <radialGradient id="statusCore" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="#eafeff"/>
       <stop offset="60%" stop-color="#4fd8ec"/>
@@ -124,27 +116,23 @@
     <style>
 
       /* ============ ANIMATION KEYFRAMES ============
-         None of these animate `filter` — see the NO RASTER FILTERS
-         note above for why that matters on iOS. Amplitudes are kept
-         small throughout (a few degrees / pixels) so nothing ever
-         visibly separates at a joint seam. */
+         None of these animate `filter`. Amplitudes are kept small
+         throughout so nothing visibly separates at a joint seam, and
+         the wave's shoulder swing raises the arm diagonally (forearm rises
+         to roughly head height) rather than a full overhead swing —
+         natural-looking and far cheaper on canvas space. */
 
       @keyframes float-body {
-        /* Whole-body breathing bob — legs move with it as one rigid
-           unit, so the feet never appear to float free of the ankles. */
         0%, 100% { transform: translateY(0px); }
         50%      { transform: translateY(-5px); }
       }
       @keyframes idle-head-look {
-        /* Very subtle wandering look, not a metronomic tilt. */
         0%, 100% { transform: rotate(-3deg); }
         30%      { transform: rotate(2deg); }
         60%      { transform: rotate(4deg); }
         80%      { transform: rotate(-1deg); }
       }
       @keyframes visor-blink {
-        /* Brief brightness dip standing in for an eye-blink, since the
-           face is one glass visor rather than a pair of eyes. */
         0%, 90%, 100% { opacity: 1; }
         94% { opacity: 0.5; }
         97% { opacity: 1; }
@@ -154,34 +142,33 @@
         50%      { opacity: 0.45; transform: scale(1.2); }
       }
       @keyframes right-arm-greet-cycle {
-        /* Rests hanging at the side for most of the cycle, then swings
-           up to wave, then returns — a periodic greeting rather than a
-           constant wave. */
+        /* Rests hanging at the side for most of the cycle, then raises
+           diagonally up-and-out to roughly head height (like a real
+           wave — NOT a full 90deg horizontal reach, which pushed the
+           hand far off to the side and needed a much wider canvas for
+           no visual benefit), then returns. */
         0%, 55%  { transform: rotate(0deg); }
-        66%      { transform: rotate(-150deg); }
-        84%      { transform: rotate(-150deg); }
+        66%      { transform: rotate(-132deg); }
+        84%      { transform: rotate(-132deg); }
         100%     { transform: rotate(0deg); }
       }
       @keyframes right-forearm-wag-cycle {
-        /* Stays straight (following the upper arm) while resting, only
-           bends/wags at the elbow during the wave window. */
         0%, 60%   { transform: rotate(0deg); }
-        66%       { transform: rotate(-30deg); }
-        71%       { transform: rotate(-8deg); }
-        76%       { transform: rotate(-32deg); }
-        81%       { transform: rotate(-8deg); }
-        86%       { transform: rotate(-25deg); }
+        66%       { transform: rotate(-26deg); }
+        71%       { transform: rotate(-6deg); }
+        76%       { transform: rotate(-28deg); }
+        81%       { transform: rotate(-6deg); }
+        86%       { transform: rotate(-20deg); }
         92%, 100% { transform: rotate(0deg); }
       }
       @keyframes right-hand-flutter-cycle {
         0%, 62%   { transform: rotate(0deg); }
-        68%       { transform: rotate(14deg); }
-        74%       { transform: rotate(-10deg); }
-        80%       { transform: rotate(14deg); }
+        68%       { transform: rotate(12deg); }
+        74%       { transform: rotate(-9deg); }
+        80%       { transform: rotate(12deg); }
         88%, 100% { transform: rotate(0deg); }
       }
       @keyframes idle-arm-sway {
-        /* Continuous small idle sway for the resting (non-waving) arm. */
         0%, 100% { transform: rotate(0deg); }
         25%      { transform: rotate(-2.5deg); }
         50%      { transform: rotate(1deg); }
@@ -210,240 +197,248 @@
       .anim-visor { animation: visor-blink 4.5s ease-in-out infinite; }
       .anim-neck-status { animation: neck-status-pulse 2.4s ease-in-out infinite; transform-origin: center; }
 
-      .anim-right-arm { animation: right-arm-greet-cycle 7s ease-in-out infinite; transform-origin: 340px 200px; }
-      .anim-right-forearm { animation: right-forearm-wag-cycle 7s ease-in-out infinite; transform-origin: 340px 320px; }
-      .anim-right-hand { animation: right-hand-flutter-cycle 7s ease-in-out infinite; transform-origin: 340px 430px; }
+      .anim-right-arm { animation: right-arm-greet-cycle 7s ease-in-out infinite; transform-origin: 325px 200px; }
+      .anim-right-forearm { animation: right-forearm-wag-cycle 7s ease-in-out infinite; transform-origin: 325px 330px; }
+      .anim-right-hand { animation: right-hand-flutter-cycle 7s ease-in-out infinite; transform-origin: 325px 400px; }
 
-      .anim-left-arm { animation: idle-arm-sway 3.4s ease-in-out infinite; transform-origin: 140px 200px; }
-      .anim-left-hand-flex { animation: idle-hand-flex 2.2s ease-in-out infinite; transform-origin: 140px 447px; }
-      .anim-right-hand-flex { animation: idle-hand-flex 2.4s ease-in-out infinite 0.4s; transform-origin: 340px 447px; }
+      .anim-left-arm { animation: idle-arm-sway 3.4s ease-in-out infinite; transform-origin: 155px 200px; }
+      .anim-left-hand-flex { animation: idle-hand-flex 2.2s ease-in-out infinite; transform-origin: 155px 415px; }
+      .anim-right-hand-flex { animation: idle-hand-flex 2.4s ease-in-out infinite 0.4s; transform-origin: 325px 415px; }
 
-      .anim-foot-left { animation: idle-foot-rock 2.8s ease-in-out infinite; transform-origin: 205px 700px; }
-      .anim-foot-right { animation: idle-foot-rock 2.8s ease-in-out infinite 1.4s; transform-origin: 275px 700px; }
+      .anim-foot-left { animation: idle-foot-rock 2.8s ease-in-out infinite; transform-origin: 207px 698px; }
+      .anim-foot-right { animation: idle-foot-rock 2.8s ease-in-out infinite 1.4s; transform-origin: 273px 698px; }
 
       .anim-shadow { animation: floor-shadow 4s ease-in-out infinite; transform-origin: 240px 760px; }
     </style>
   </defs>
 
-  <!-- Ground contact shadow — stays put while the body breathes above
-       it, so the character never looks like it's floating off the
-       ground it's supposedly standing on. -->
-  <ellipse class="anim-shadow" cx="240" cy="760" rx="100" ry="16" fill="#000000" opacity="0.3"/>
+  <g id="cm-pro-robot">
 
-  <g id="robot">
+    <!-- Ground contact shadow — stays put while the body breathes above
+         it, so the character never looks like it's floating off the
+         ground it's supposedly standing on. -->
+    <g id="shadow">
+      <ellipse class="anim-shadow" cx="240" cy="760" rx="100" ry="16" fill="#000000" opacity="0.3"/>
+    </g>
 
     <!-- Everything below is inside .anim-body, including the legs — the
          whole character breathes/bobs as one rigid unit. -->
-    <g class="anim-body">
+    <g id="body" class="anim-body">
 
-      <!-- ============ LEFT LEG ============
-           #left-hip-joint -> #left-thigh -> #left-knee -> #left-shin ->
-           #left-ankle -> #left-foot, all static except the foot, which
-           gets a small idle rock about the ankle. -->
+      <!-- ============ LEFT LEG ============ -->
       <g id="left-leg">
-        <circle id="left-hip-joint" cx="205" cy="390" r="19" fill="url(#jointGrad)"/>
-        <rect id="left-thigh" x="178" y="392" width="54" height="168" rx="24" fill="url(#bodyGrad)"/>
-        <rect x="186" y="400" width="10" height="140" rx="5" fill="#ffffff" opacity="0.3"/>
+        <circle id="left-hip-joint" cx="207" cy="390" r="18" fill="url(#jointGrad)"/>
+        <rect id="left-thigh" x="180" y="392" width="54" height="168" rx="24" fill="url(#bodyGrad)"/>
+        <rect x="188" y="400" width="10" height="140" rx="5" fill="#ffffff" opacity="0.3"/>
+        <!-- subtle panel line down the thigh, mechanical rather than a
+             plain tube -->
+        <path d="M 207 410 L 207 550" stroke="#000000" stroke-width="1" opacity="0.08"/>
         <g id="left-knee">
-          <circle cx="205" cy="560" r="20" fill="url(#jointGrad)"/>
-          <!-- light kneecap plate layered over the dark hinge -->
-          <rect x="192" y="548" width="26" height="22" rx="11" fill="url(#bodyGrad)"/>
+          <circle cx="207" cy="560" r="19" fill="url(#jointGrad)"/>
+          <!-- light kneecap plate layered over the dark hinge, with a
+               small inner mechanical detail so it reads as a real
+               joint rather than a plain ring -->
+          <rect x="194" y="548" width="26" height="22" rx="11" fill="url(#bodyGrad)"/>
+          <circle cx="207" cy="560" r="6" fill="url(#jointGrad)"/>
+          <rect x="198" y="559" width="6" height="2" rx="1" fill="#0b0c0e" opacity="0.5"/>
+          <rect x="210" y="559" width="6" height="2" rx="1" fill="#0b0c0e" opacity="0.5"/>
         </g>
-        <rect id="left-shin" x="182" y="572" width="46" height="128" rx="20" fill="url(#bodyGrad)"/>
-        <rect x="188" y="580" width="8" height="104" rx="4" fill="#ffffff" opacity="0.3"/>
-        <circle id="left-ankle" cx="205" cy="700" r="15" fill="url(#jointGrad)"/>
+        <rect id="left-shin" x="184" y="572" width="46" height="126" rx="20" fill="url(#bodyGrad)"/>
+        <rect x="190" y="580" width="8" height="102" rx="4" fill="#ffffff" opacity="0.3"/>
+        <path d="M 207 590 L 207 674" stroke="#000000" stroke-width="1" opacity="0.08"/>
+        <circle id="left-ankle" cx="207" cy="698" r="15" fill="url(#jointGrad)"/>
         <g id="left-foot" class="anim-foot-left">
-          <rect x="190" y="698" width="30" height="10" rx="5" fill="url(#bodyGrad)"/>
-          <rect x="172" y="706" width="66" height="38" rx="15" fill="url(#blackLimbs)"/>
-          <rect x="186" y="713" width="30" height="6" rx="3" fill="#7a7f88" opacity="0.5"/>
-          <rect x="167" y="738" width="76" height="18" rx="9" fill="#141416"/>
-          <rect x="167" y="738" width="76" height="6" rx="3" fill="#ffffff" opacity="0.25"/>
-          <ellipse cx="205" cy="714" rx="24" ry="6" fill="#ffffff" opacity="0.12"/>
+          <rect x="192" y="696" width="30" height="10" rx="5" fill="url(#bodyGrad)"/>
+          <rect x="176" y="704" width="62" height="32" rx="16" fill="url(#blackLimbs)"/>
+          <rect x="188" y="710" width="38" height="5" rx="2.5" fill="#7a7f88" opacity="0.4"/>
+          <rect x="171" y="734" width="72" height="16" rx="8" fill="#141416"/>
+          <rect x="171" y="734" width="72" height="5" rx="2.5" fill="#ffffff" opacity="0.25"/>
+          <ellipse cx="207" cy="712" rx="22" ry="5" fill="#ffffff" opacity="0.12"/>
         </g>
       </g>
 
-      <!-- ============ RIGHT LEG (mirrors the left) ============ -->
+      <!-- ============ RIGHT LEG (mirrors the left about x=240) ============ -->
       <g id="right-leg">
-        <circle id="right-hip-joint" cx="275" cy="390" r="19" fill="url(#jointGrad)"/>
-        <rect id="right-thigh" x="248" y="392" width="54" height="168" rx="24" fill="url(#bodyGrad)"/>
-        <rect x="284" y="400" width="10" height="140" rx="5" fill="#ffffff" opacity="0.3"/>
+        <circle id="right-hip-joint" cx="273" cy="390" r="18" fill="url(#jointGrad)"/>
+        <rect id="right-thigh" x="246" y="392" width="54" height="168" rx="24" fill="url(#bodyGrad)"/>
+        <rect x="282" y="400" width="10" height="140" rx="5" fill="#ffffff" opacity="0.3"/>
+        <path d="M 273 410 L 273 550" stroke="#000000" stroke-width="1" opacity="0.08"/>
         <g id="right-knee">
-          <circle cx="275" cy="560" r="20" fill="url(#jointGrad)"/>
-          <rect x="262" y="548" width="26" height="22" rx="11" fill="url(#bodyGrad)"/>
+          <circle cx="273" cy="560" r="19" fill="url(#jointGrad)"/>
+          <rect x="260" y="548" width="26" height="22" rx="11" fill="url(#bodyGrad)"/>
+          <circle cx="273" cy="560" r="6" fill="url(#jointGrad)"/>
+          <rect x="264" y="559" width="6" height="2" rx="1" fill="#0b0c0e" opacity="0.5"/>
+          <rect x="276" y="559" width="6" height="2" rx="1" fill="#0b0c0e" opacity="0.5"/>
         </g>
-        <rect id="right-shin" x="252" y="572" width="46" height="128" rx="20" fill="url(#bodyGrad)"/>
-        <rect x="284" y="580" width="8" height="104" rx="4" fill="#ffffff" opacity="0.3"/>
-        <circle id="right-ankle" cx="275" cy="700" r="15" fill="url(#jointGrad)"/>
+        <rect id="right-shin" x="250" y="572" width="46" height="126" rx="20" fill="url(#bodyGrad)"/>
+        <rect x="282" y="580" width="8" height="102" rx="4" fill="#ffffff" opacity="0.3"/>
+        <path d="M 273 590 L 273 674" stroke="#000000" stroke-width="1" opacity="0.08"/>
+        <circle id="right-ankle" cx="273" cy="698" r="15" fill="url(#jointGrad)"/>
         <g id="right-foot" class="anim-foot-right">
-          <rect x="260" y="698" width="30" height="10" rx="5" fill="url(#bodyGrad)"/>
-          <rect x="242" y="706" width="66" height="38" rx="15" fill="url(#blackLimbs)"/>
-          <rect x="264" y="713" width="30" height="6" rx="3" fill="#7a7f88" opacity="0.5"/>
-          <rect x="237" y="738" width="76" height="18" rx="9" fill="#141416"/>
-          <rect x="237" y="738" width="76" height="6" rx="3" fill="#ffffff" opacity="0.25"/>
-          <ellipse cx="275" cy="714" rx="24" ry="6" fill="#ffffff" opacity="0.12"/>
+          <rect x="258" y="696" width="30" height="10" rx="5" fill="url(#bodyGrad)"/>
+          <rect x="242" y="704" width="62" height="32" rx="16" fill="url(#blackLimbs)"/>
+          <rect x="254" y="710" width="38" height="5" rx="2.5" fill="#7a7f88" opacity="0.4"/>
+          <rect x="237" y="734" width="72" height="16" rx="8" fill="#141416"/>
+          <rect x="237" y="734" width="72" height="5" rx="2.5" fill="#ffffff" opacity="0.25"/>
+          <ellipse cx="273" cy="712" rx="22" ry="5" fill="#ffffff" opacity="0.12"/>
         </g>
       </g>
 
       <!-- ============ HIP ============
-           Dark mechanical band across the hips with two small pivot
-           disks near its outer edges (kept near the edges, not
-           centered, so it reads as a mechanical yoke rather than a
-           second face). Drawn after both legs so it cleanly bridges
-           the waist down to both thigh tops. -->
+           Integrated into the torso silhouette rather than reading as
+           a separate slapped-on rectangle: a light "belt trim" strip
+           blends its top edge into the waist joint above it, and it's
+           narrower/shorter than before with generous overlap into both
+           the waist above and the thighs below. Drawn after both legs
+           so it cleanly bridges down to both thigh tops. -->
       <g id="hip">
-        <rect x="165" y="350" width="150" height="48" rx="16" fill="url(#jointGrad)"/>
-        <circle cx="182" cy="372" r="10" fill="url(#bodyGrad)"/>
-        <circle cx="182" cy="372" r="4" fill="url(#jointGrad)"/>
-        <circle cx="298" cy="372" r="10" fill="url(#bodyGrad)"/>
-        <circle cx="298" cy="372" r="4" fill="url(#jointGrad)"/>
-        <!-- small panel bolts for mechanical detail -->
+        <rect x="182" y="344" width="116" height="10" rx="5" fill="url(#bodyGrad)"/>
+        <rect x="172" y="350" width="136" height="46" rx="18" fill="url(#jointGrad)"/>
+        <circle cx="188" cy="372" r="9" fill="url(#bodyGrad)"/>
+        <circle cx="188" cy="372" r="4" fill="url(#jointGrad)"/>
+        <circle cx="292" cy="372" r="9" fill="url(#bodyGrad)"/>
+        <circle cx="292" cy="372" r="4" fill="url(#jointGrad)"/>
         <circle cx="240" cy="360" r="2.5" fill="#0b0c0e" opacity="0.5"/>
-        <circle cx="240" cy="386" r="2.5" fill="#0b0c0e" opacity="0.5"/>
+        <circle cx="240" cy="384" r="2.5" fill="#0b0c0e" opacity="0.5"/>
       </g>
 
       <!-- ============ LEFT ARM (idle sway, rests at the side) ============
-           #left-shoulder pivots the whole arm; #left-elbow (nested)
-           pivots the forearm+hand; #left-wrist (nested further) pivots
-           just the hand — mirrors the right arm's rig so both could
-           drive the same kind of animation if ever needed. -->
+           Shortened/re-proportioned so the elbow lands around waist
+           height and the hand lands around the upper/middle thigh
+           instead of reaching too far down. #left-shoulder pivots the
+           whole arm; #left-elbow (nested) pivots the forearm+hand;
+           #left-wrist (nested further) pivots just the hand. -->
       <g id="left-arm" class="anim-left-arm">
-        <circle id="left-shoulder" cx="140" cy="200" r="22" fill="url(#jointGrad)"/>
-        <rect id="left-upper-arm" x="120" y="200" width="40" height="120" rx="18" fill="url(#bodyGrad)"/>
-        <rect x="127" y="208" width="8" height="96" rx="4" fill="#ffffff" opacity="0.3"/>
+        <!-- layered shoulder housing: a lighter ring behind a dark
+             joint center, instead of one plain dark ball -->
+        <circle id="left-shoulder" cx="155" cy="200" r="24" fill="url(#bodyGrad)"/>
+        <circle cx="155" cy="200" r="15" fill="url(#jointGrad)"/>
+        <rect id="left-upper-arm" x="136" y="200" width="38" height="130" rx="17" fill="url(#bodyGrad)"/>
+        <rect x="143" y="208" width="7" height="104" rx="3.5" fill="#ffffff" opacity="0.3"/>
         <g id="left-elbow">
-          <circle cx="140" cy="320" r="17" fill="url(#jointGrad)"/>
-          <rect id="left-forearm" x="123" y="320" width="34" height="110" rx="16" fill="url(#bodyGrad)"/>
-          <rect x="129" y="328" width="7" height="86" rx="3.5" fill="#ffffff" opacity="0.3"/>
+          <circle cx="155" cy="330" r="16" fill="url(#jointGrad)"/>
+          <circle cx="155" cy="330" r="8" fill="#1c1e22"/>
+          <rect id="left-forearm" x="139" y="330" width="32" height="70" rx="15" fill="url(#bodyGrad)"/>
+          <rect x="145" y="336" width="6" height="56" rx="3" fill="#ffffff" opacity="0.3"/>
           <g id="left-wrist">
-            <circle cx="140" cy="430" r="14" fill="url(#jointGrad)"/>
+            <circle cx="155" cy="400" r="13" fill="url(#jointGrad)"/>
             <g id="left-hand" class="anim-left-hand-flex">
-              <rect x="122" y="430" width="36" height="34" rx="10" fill="url(#blackLimbs)"/>
-              <circle cx="130" cy="438" r="4" fill="#ffffff" opacity="0.2"/>
-              <!-- 3 simplified fingers -->
-              <rect x="125" y="460" width="9" height="24" rx="4.5" fill="url(#blackLimbs)" transform="rotate(-12 129.5 464)"/>
-              <rect x="135.5" y="463" width="9" height="27" rx="4.5" fill="url(#blackLimbs)"/>
-              <rect x="146" y="460" width="9" height="24" rx="4.5" fill="url(#blackLimbs)" transform="rotate(12 150.5 464)"/>
-              <!-- thumb, angled outward away from the body -->
-              <rect x="113" y="436" width="9" height="20" rx="4.5" fill="url(#blackLimbs)" transform="rotate(-38 117.5 438)"/>
+              <rect x="137" y="398" width="36" height="34" rx="11" fill="url(#blackLimbs)"/>
+              <circle cx="145" cy="406" r="4" fill="#ffffff" opacity="0.2"/>
+              <!-- 3 uniform, simplified fingers -->
+              <rect x="140" y="428" width="9" height="20" rx="4.5" fill="url(#blackLimbs)" transform="rotate(-10 144.5 432)"/>
+              <rect x="150.5" y="430" width="9" height="22" rx="4.5" fill="url(#blackLimbs)"/>
+              <rect x="161" y="428" width="9" height="20" rx="4.5" fill="url(#blackLimbs)" transform="rotate(10 165.5 432)"/>
+              <!-- thumb, angled outward, attached inside the palm's
+                   footprint so it stays visually connected at any
+                   rotation -->
+              <rect x="130" y="406" width="9" height="18" rx="4.5" fill="url(#blackLimbs)" transform="rotate(-36 134.5 407)"/>
             </g>
           </g>
         </g>
       </g>
 
       <!-- ============ TORSO ============
-           Two layered armor panels (wide chest / narrower waist taper)
-           instead of one plain slab, with a subtle panel seam between
-           them, plus the engraved wordmark. -->
+           Narrower than before, closer to a real humanoid's build: two
+           layered armor panels (a wider chest, a taper into a
+           narrower ab plate) with a visible panel seam, plus the
+           engraved wordmark. -->
       <g id="torso">
-        <rect id="chest-panel" x="150" y="172" width="180" height="95" rx="38" fill="url(#bodyGrad)"/>
-        <rect id="ab-panel" x="172" y="250" width="136" height="90" rx="30" fill="url(#bodyGrad)"/>
-        <!-- panel seam between chest and ab plates -->
-        <path d="M 180 256 Q 240 268 300 256" fill="none" stroke="#000000" stroke-width="2" opacity="0.1"/>
-        <path d="M 180 260 Q 240 272 300 260" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.25"/>
-        <!-- top gloss -->
-        <ellipse cx="200" cy="196" rx="36" ry="18" fill="#ffffff" opacity="0.28"/>
-        <!-- 3D touch: shadow crescent along the ab panel's bottom edge -->
-        <path d="M 182 322 Q 240 340 298 322 L 296 334 Q 240 350 184 334 Z" fill="#000000" opacity="0.1"/>
-        <!-- center seam -->
-        <path d="M 240 184 L 240 322" stroke="#ffffff" stroke-width="1.5" opacity="0.1"/>
-        <!-- panel bolts, top corners of the chest plate -->
-        <circle cx="168" cy="188" r="2.5" fill="#0b0c0e" opacity="0.35"/>
-        <circle cx="312" cy="188" r="2.5" fill="#0b0c0e" opacity="0.35"/>
-        <!-- engraved "CM PRO" wordmark — subtle pressed-in look via a
-             lighter offset above and a darker offset below the main
-             fill, no bright colored patch. -->
-        <text x="240" y="221" font-family="'Segoe UI', Arial, sans-serif" font-size="17" font-weight="800" fill="#ffffff" fill-opacity="0.55" text-anchor="middle" letter-spacing="2.5">CM PRO</text>
-        <text x="240" y="223.5" font-family="'Segoe UI', Arial, sans-serif" font-size="17" font-weight="800" fill="#5b6068" fill-opacity="0.4" text-anchor="middle" letter-spacing="2.5">CM PRO</text>
+        <rect id="chest-panel" x="160" y="174" width="160" height="94" rx="34" fill="url(#bodyGrad)"/>
+        <rect id="ab-panel" x="178" y="250" width="124" height="88" rx="28" fill="url(#bodyGrad)"/>
+        <path d="M 186 256 Q 240 267 294 256" fill="none" stroke="#000000" stroke-width="2" opacity="0.1"/>
+        <path d="M 186 260 Q 240 271 294 260" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.25"/>
+        <ellipse cx="200" cy="196" rx="32" ry="16" fill="#ffffff" opacity="0.28"/>
+        <path d="M 188 320 Q 240 336 292 320 L 290 332 Q 240 346 190 332 Z" fill="#000000" opacity="0.1"/>
+        <path d="M 240 184 L 240 320" stroke="#ffffff" stroke-width="1.5" opacity="0.1"/>
+        <circle cx="176" cy="188" r="2.5" fill="#0b0c0e" opacity="0.35"/>
+        <circle cx="304" cy="188" r="2.5" fill="#0b0c0e" opacity="0.35"/>
+        <!-- engraved "CM PRO" wordmark — subtle pressed-in look, no
+             bright colored patch -->
+        <text x="240" y="221" font-family="'Segoe UI', Arial, sans-serif" font-size="16" font-weight="800" fill="#ffffff" fill-opacity="0.55" text-anchor="middle" letter-spacing="2.2">CM PRO</text>
+        <text x="240" y="223.5" font-family="'Segoe UI', Arial, sans-serif" font-size="16" font-weight="800" fill="#5b6068" fill-opacity="0.4" text-anchor="middle" letter-spacing="2.2">CM PRO</text>
       </g>
 
       <!-- ============ WAIST JOINT ============
-           Dark rotating collar bridging the ab plate down to the hip
-           yoke — visible in the reference just below the torso. Drawn
-           after the torso so it overlaps both cleanly. -->
+           Dark rotating collar bridging the ab plate down to the hip. -->
       <g id="waist-joint">
-        <rect x="190" y="326" width="100" height="26" rx="10" fill="url(#jointGrad)"/>
-        <rect x="200" y="332" width="80" height="3" rx="1.5" fill="#0b0c0e" opacity="0.6"/>
-        <rect x="200" y="340" width="80" height="3" rx="1.5" fill="#0b0c0e" opacity="0.6"/>
+        <rect x="196" y="328" width="88" height="24" rx="10" fill="url(#jointGrad)"/>
+        <rect x="204" y="334" width="72" height="3" rx="1.5" fill="#0b0c0e" opacity="0.6"/>
+        <rect x="204" y="342" width="72" height="3" rx="1.5" fill="#0b0c0e" opacity="0.6"/>
       </g>
 
       <!-- ============ NECK ============
-           Central connector, ridge lines, and small side greebles for
-           visible mechanical layering between the head and torso. -->
+           A collar flare bridges into the head above, then the ridged
+           connector, then small side plates — a clearer mechanical
+           transition than a plain block. -->
       <g id="neck">
-        <rect x="222" y="140" width="36" height="34" rx="8" fill="url(#jointGrad)"/>
-        <rect x="230" y="148" width="20" height="2.5" rx="1.25" fill="#0b0c0e" opacity="0.6"/>
-        <rect x="230" y="155" width="20" height="2.5" rx="1.25" fill="#0b0c0e" opacity="0.6"/>
-        <rect x="230" y="162" width="20" height="2.5" rx="1.25" fill="#0b0c0e" opacity="0.6"/>
-        <rect x="230" y="169" width="20" height="2.5" rx="1.25" fill="#0b0c0e" opacity="0.6"/>
-        <!-- small side connector plates -->
-        <rect x="214" y="148" width="7" height="18" rx="3" fill="url(#bodyGrad)"/>
-        <rect x="259" y="148" width="7" height="18" rx="3" fill="url(#bodyGrad)"/>
+        <rect x="214" y="138" width="52" height="10" rx="5" fill="url(#bodyGrad)"/>
+        <rect x="220" y="142" width="40" height="32" rx="8" fill="url(#jointGrad)"/>
+        <rect x="228" y="150" width="24" height="2.5" rx="1.25" fill="#0b0c0e" opacity="0.6"/>
+        <rect x="228" y="157" width="24" height="2.5" rx="1.25" fill="#0b0c0e" opacity="0.6"/>
+        <rect x="228" y="164" width="24" height="2.5" rx="1.25" fill="#0b0c0e" opacity="0.6"/>
+        <rect x="212" y="150" width="7" height="18" rx="3" fill="url(#bodyGrad)"/>
+        <rect x="261" y="150" width="7" height="18" rx="3" fill="url(#bodyGrad)"/>
         <!-- "power on" status light, thin gold ring for the one
              remaining brand accent -->
-        <circle cx="208" cy="157" r="8" fill="url(#statusGlow)"/>
-        <circle class="anim-neck-status" cx="208" cy="157" r="4" fill="url(#statusCore)"/>
-        <circle cx="208" cy="157" r="4.8" fill="none" stroke="#D4AF37" stroke-width="1" opacity="0.8"/>
+        <circle cx="206" cy="159" r="8" fill="url(#statusGlow)"/>
+        <circle class="anim-neck-status" cx="206" cy="159" r="4" fill="url(#statusCore)"/>
+        <circle cx="206" cy="159" r="4.8" fill="none" stroke="#D4AF37" stroke-width="1" opacity="0.8"/>
       </g>
 
       <!-- ============ HEAD ============
-           A rounded dome plus a distinct lower jaw plate (rather than
-           one uniform capsule) reads as more mechanical/segmented and
-           less like a plain cartoon ball-head. -->
+           A rounded dome plus a distinct lower jaw plate reads as
+           mechanical/segmented rather than one plain ball, and now
+           sits directly on the neck's collar flare so it feels
+           attached rather than floating above the body. -->
       <g id="head" class="anim-head">
-        <rect x="188" y="40" width="104" height="92" rx="34" fill="url(#headShellGrad)"/>
+        <rect x="188" y="42" width="104" height="90" rx="34" fill="url(#headShellGrad)"/>
         <rect x="210" y="120" width="60" height="18" rx="9" fill="url(#headShellGrad)"/>
-        <!-- top gloss -->
-        <ellipse cx="214" cy="60" rx="30" ry="14" fill="#ffffff" opacity="0.4"/>
-        <!-- chin shadow crescent -->
+        <ellipse cx="214" cy="62" rx="30" ry="14" fill="#ffffff" opacity="0.4"/>
         <path d="M 214 130 Q 240 140 266 130 L 266 136 Q 240 146 214 136 Z" fill="#000000" opacity="0.12"/>
-        <!-- side head vents -->
-        <rect x="188" y="82" width="6" height="14" rx="3" fill="#0b0c0e" opacity="0.3"/>
-        <rect x="286" y="82" width="6" height="14" rx="3" fill="#0b0c0e" opacity="0.3"/>
+        <rect x="188" y="84" width="6" height="14" rx="3" fill="#0b0c0e" opacity="0.3"/>
+        <rect x="286" y="84" width="6" height="14" rx="3" fill="#0b0c0e" opacity="0.3"/>
 
         <!-- ============ FACE (visor) ============ -->
         <g id="face" class="anim-visor">
-          <circle cx="240" cy="86" r="54" fill="url(#visorHalo)"/>
-          <!-- thin dark bezel frame around the glass, like a HUD display -->
-          <rect x="196" y="54" width="88" height="64" rx="26" fill="url(#jointGrad)"/>
-          <rect x="201" y="58" width="78" height="56" rx="22" fill="url(#visorGrad)"/>
-          <!-- glossy diagonal streak -->
-          <path d="M 210 70 L 244 98" stroke="#ffffff" stroke-width="8" stroke-linecap="round" opacity="0.22"/>
-          <!-- small HUD tick marks -->
-          <rect x="209" y="63" width="3" height="7" rx="1.5" fill="#ffffff" opacity="0.4"/>
-          <rect x="216" y="63" width="3" height="7" rx="1.5" fill="#ffffff" opacity="0.3"/>
-          <!-- pale mouth-vent slot -->
-          <rect x="222" y="102" width="36" height="9" rx="4.5" fill="#eef3f6" opacity="0.9"/>
+          <circle cx="240" cy="88" r="52" fill="url(#visorHalo)"/>
+          <rect x="196" y="56" width="88" height="64" rx="26" fill="url(#jointGrad)"/>
+          <rect x="201" y="60" width="78" height="56" rx="22" fill="url(#visorGrad)"/>
+          <path d="M 210 72 L 244 100" stroke="#ffffff" stroke-width="8" stroke-linecap="round" opacity="0.22"/>
+          <rect x="209" y="65" width="3" height="7" rx="1.5" fill="#ffffff" opacity="0.4"/>
+          <rect x="216" y="65" width="3" height="7" rx="1.5" fill="#ffffff" opacity="0.3"/>
+          <rect x="222" y="104" width="36" height="9" rx="4.5" fill="#eef3f6" opacity="0.9"/>
         </g>
 
-        <!-- forehead sensor -->
-        <circle cx="240" cy="48" r="3" fill="#4fd8ec"/>
+        <circle cx="240" cy="50" r="3" fill="#4fd8ec"/>
       </g>
 
       <!-- ============ RIGHT ARM (periodic wave, rests at the side) ============
-           Mirrors the left arm's geometry at rest — #right-shoulder
-           rotates the whole arm, #right-elbow (nested) bends it,
-           #right-wrist (nested further) flutters the hand, all nested
-           so a shoulder rotation carries the rest along with it. Drawn
-           last so it stays on top of the torso/head while waving. -->
+           Mirrors the left arm's geometry about x=240 at rest.
+           #right-shoulder rotates the whole arm, #right-elbow (nested)
+           bends it, #right-wrist (nested further) flutters the hand,
+           all nested so a shoulder rotation carries the rest along
+           with it. Drawn last so it stays on top of the torso/head
+           while waving. -->
       <g id="right-arm" class="anim-right-arm">
-        <circle id="right-shoulder" cx="340" cy="200" r="22" fill="url(#jointGrad)"/>
-        <rect id="right-upper-arm" x="320" y="200" width="40" height="120" rx="18" fill="url(#bodyGrad)"/>
-        <rect x="345" y="208" width="8" height="96" rx="4" fill="#ffffff" opacity="0.3"/>
+        <circle id="right-shoulder" cx="325" cy="200" r="24" fill="url(#bodyGrad)"/>
+        <circle cx="325" cy="200" r="15" fill="url(#jointGrad)"/>
+        <rect id="right-upper-arm" x="306" y="200" width="38" height="130" rx="17" fill="url(#bodyGrad)"/>
+        <rect x="330" y="208" width="7" height="104" rx="3.5" fill="#ffffff" opacity="0.3"/>
         <g id="right-elbow" class="anim-right-forearm">
-          <circle cx="340" cy="320" r="17" fill="url(#jointGrad)"/>
-          <rect id="right-forearm" x="323" y="320" width="34" height="110" rx="16" fill="url(#bodyGrad)"/>
-          <rect x="344" y="328" width="7" height="86" rx="3.5" fill="#ffffff" opacity="0.3"/>
+          <circle cx="325" cy="330" r="16" fill="url(#jointGrad)"/>
+          <circle cx="325" cy="330" r="8" fill="#1c1e22"/>
+          <rect id="right-forearm" x="309" y="330" width="32" height="70" rx="15" fill="url(#bodyGrad)"/>
+          <rect x="329" y="336" width="6" height="56" rx="3" fill="#ffffff" opacity="0.3"/>
           <g id="right-wrist" class="anim-right-hand">
-            <circle cx="340" cy="430" r="14" fill="url(#jointGrad)"/>
+            <circle cx="325" cy="400" r="13" fill="url(#jointGrad)"/>
             <g id="right-hand" class="anim-right-hand-flex">
-              <rect x="322" y="430" width="36" height="34" rx="10" fill="url(#blackLimbs)"/>
-              <circle cx="350" cy="438" r="4" fill="#ffffff" opacity="0.2"/>
-              <!-- 3 simplified fingers -->
-              <rect x="325" y="460" width="9" height="24" rx="4.5" fill="url(#blackLimbs)" transform="rotate(-12 329.5 464)"/>
-              <rect x="335.5" y="463" width="9" height="27" rx="4.5" fill="url(#blackLimbs)"/>
-              <rect x="346" y="460" width="9" height="24" rx="4.5" fill="url(#blackLimbs)" transform="rotate(12 350.5 464)"/>
-              <!-- thumb, angled outward away from the body -->
-              <rect x="358" y="436" width="9" height="20" rx="4.5" fill="url(#blackLimbs)" transform="rotate(38 362.5 438)"/>
+              <rect x="307" y="398" width="36" height="34" rx="11" fill="url(#blackLimbs)"/>
+              <circle cx="335" cy="406" r="4" fill="#ffffff" opacity="0.2"/>
+              <rect x="331" y="428" width="9" height="20" rx="4.5" fill="url(#blackLimbs)" transform="rotate(10 335.5 432)"/>
+              <rect x="320.5" y="430" width="9" height="22" rx="4.5" fill="url(#blackLimbs)"/>
+              <rect x="310" y="428" width="9" height="20" rx="4.5" fill="url(#blackLimbs)" transform="rotate(-10 314.5 432)"/>
+              <rect x="341" y="406" width="9" height="18" rx="4.5" fill="url(#blackLimbs)" transform="rotate(36 345.5 407)"/>
             </g>
           </g>
         </g>
