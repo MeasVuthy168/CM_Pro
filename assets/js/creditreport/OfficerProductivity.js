@@ -14,35 +14,39 @@
 // carried in the URL query string and finds the matching officer by
 // name — see opReadHandoff()/opFetchAndFindOfficer() below.
 //
-// NEW BACKEND ENDPOINTS THIS PAGE NEEDS (NOT YET IMPLEMENTED)
+// BACKEND ENDPOINTS
 // The 5 summary cards use figures the /byco endpoint already returns
-// per officer, so those work today with zero backend changes. But
-// each card's "List of Client" (and, for Loan Disburse, "Chart")
-// sub-view needs CLIENT-LEVEL data that doesn't exist anywhere yet.
-// This file calls two new endpoints, designed here but requiring
-// backend implementation before they'll return real data:
+// per officer. Each card's "List of Client" (and, for Loan Disburse,
+// "Chart") sub-view calls two more endpoints (CM-backend's
+// lib/creditreport-co.js):
 //
 //   GET /api/creditreport/byco/officer-clients
 //     ?section=<outstanding|disburse|parT24|nbcOverdue|writeOff>
 //     &name=<officer name>&officerId=<officer id, if known>
 //     &branch=&team=&fromDate=&toDate=&woFromDate=&woToDate=
-//   -> { ok, items: [{ name, cif, loanNumber, disburseDate, address, productType }, ...] }
+//   -> { ok, items: [{ name, cif, loanNumber, disburseDate, address,
+//                       productType, loanSize, osUsd }, ...] }
 //   One row per client/loan under that officer + category, filtered
 //   by the same date/branch/team filters the report is currently
-//   showing.
+//   showing. loanSize/osUsd are OS-sheet-only figures (Loan Size USD /
+//   OS USD) — only populated for outstanding/disburse, "" elsewhere.
+//   nbcOverdue currently has no confirmed client-identity column in
+//   the Overdue sheet, so it returns { ok:false, message } explaining
+//   that gap instead of a fabricated or silently-empty list.
 //
 //   GET /api/creditreport/byco/officer-disburse-chart
 //     ?name=<officer name>&officerId=<officer id, if known>
 //     &branch=&team=&fromDate=&toDate=
 //   -> { ok, labels: [...], values: [...] }
-//   A time-bucketed (e.g. daily) disbursement value series for this
-//   officer within the report's disbursement date range — only used
-//   by the Loan Disburse card's Chart tab.
+//   A daily disbursement value series for this officer, zero-filled
+//   for every calendar day from fromDate to toDate (a continuous
+//   timeline, not just days with activity) — only used by the Loan
+//   Disburse card's Chart tab.
 //
-// Until those exist server-side, both sub-views fail gracefully with
-// a plain, honest message (see opErrorHtml) rather than fabricating
-// placeholder client data — this is a financial app, so a fake name/
-// loan row here would be actively misleading, not just an empty state.
+// Both fail gracefully with a plain, honest message (see opErrorHtml)
+// on any real failure rather than fabricating placeholder client data
+// — this is a financial app, so a fake name/loan row here would be
+// actively misleading, not just an empty state.
 // ========================================
 
 const OP_CATEGORIES = [
@@ -332,6 +336,8 @@ async function opBuildClientListHtml(sectionKey) {
               <th>Disburse Date</th>
               <th>Address</th>
               <th>Product Type</th>
+              <th>Loan Size</th>
+              <th>OS USD</th>
             </tr>
           </thead>
           <tbody>
@@ -342,6 +348,8 @@ async function opBuildClientListHtml(sectionKey) {
               <td>${opEscapeHtml(opFmtDateDMY(r.disburseDate))}</td>
               <td>${opEscapeHtml(r.address)}</td>
               <td>${opEscapeHtml(r.productType)}</td>
+              <td>${r.loanSize === "" || r.loanSize == null ? "" : opEscapeHtml(opFmtNum(r.loanSize))}</td>
+              <td>${r.osUsd === "" || r.osUsd == null ? "" : opEscapeHtml(opFmtNum(r.osUsd))}</td>
             </tr>`).join("")}
           </tbody>
         </table>
@@ -373,22 +381,34 @@ async function opRenderDisburseChart(sectionKey, wrap) {
         return;
     }
     const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const lineColor = isDark ? "#FFD700" : "#003B8B";
+    // Timeline over the full date range (backend zero-fills every day from
+    // fromDate to toDate), so a line reads better than one bar per day —
+    // especially once the range spans most of a month.
     new Chart(wrap.querySelector("canvas").getContext("2d"), {
-        type: "bar",
+        type: "line",
         data: {
             labels,
             datasets: [{
                 label: "Disbursement Value",
                 data: values,
-                backgroundColor: isDark ? "#FFD700" : "#003B8B",
-                borderRadius: 4
+                borderColor: lineColor,
+                backgroundColor: isDark ? "rgba(255,215,0,0.15)" : "rgba(0,59,139,0.12)",
+                fill: true,
+                tension: 0.25,
+                pointRadius: labels.length > 20 ? 0 : 3,
+                pointHoverRadius: 5,
+                pointBackgroundColor: lineColor
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } }
+            scales: {
+                y: { beginAtZero: true },
+                x: { ticks: { autoSkip: true, maxTicksLimit: 12 } }
+            }
         }
     });
 }
