@@ -463,6 +463,23 @@
 .table-card tbody tr:nth-child(even) td.cr-name-col{ background:var(--cr-row-alt); }
 .cr-total-row td.cr-name-col{ color:var(--cr-total-text) !important; }
 
+/* Officer name -> drill-down into OfficerProductivity.html. Reset to a
+   plain button but keep the exact same text styling as the (now
+   unclickable) Total row's name cell, plus a small chevron so it
+   reads as tappable rather than looking identical to a static label. */
+.cr-officer-link{
+    all:unset;
+    cursor:pointer;
+    color:inherit;
+    font:inherit;
+    font-weight:inherit;
+}
+.cr-officer-link::after{
+    content:" \203A";
+    opacity:.55;
+}
+.cr-officer-link:active{ opacity:.7; }
+
 
 .table-card tbody tr:nth-child(even){ background:var(--cr-row-alt); }
 

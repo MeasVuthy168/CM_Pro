@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>Officer Productivity</title>
+
+<meta
+name="theme-color"
+content="#032d73">
+
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
+<link
+rel="stylesheet"
+href="../../assets/css/main.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/creditreport/OfficerProductivity.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
+
+</head>
+
+<body>
+
+<div id="offlineBanner">
+⚠️ No Internet Connection
+</div>
+
+<script src="../../config/api.js"></script>
+<script src="/CM_Pro/shared/touch-polish.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+
+<div id="topbar-container"></div>
+
+<div class="page-container">
+
+<!-- ========================= -->
+<!-- OFFICER HEADER -->
+<!-- ========================= -->
+
+<div class="op-header-card" id="opHeaderCard" style="display:none">
+<div class="op-avatar" id="opAvatar">?</div>
+<div class="op-header-text">
+<div class="op-officer-name" id="opOfficerName">-</div>
+<div class="op-officer-meta" id="opOfficerMeta"></div>
+</div>
+</div>
+
+<!-- Skeleton while the officer's summary is being resolved -->
+<div class="op-page-skel" id="opPageSkel">
+<div class="op-skel-card"></div>
+<div class="op-skel-card"></div>
+<div class="op-skel-card"></div>
+<div class="op-skel-card"></div>
+<div class="op-skel-card"></div>
+</div>
+
+<div class="op-empty" id="opEmpty" style="display:none"></div>
+
+<!-- ========================= -->
+<!-- CATEGORY CARDS -->
+<!-- Each card is built the same way by OfficerProductivity.js from
+     OP_CATEGORIES — see that file for the field mapping per category.
+     Markup here is just the empty shell (#opCards is populated at
+     runtime). -->
+<!-- ========================= -->
+
+<div class="op-cards" id="opCards" style="display:none"></div>
+
+</div>
+
+<div id="bottomnav-container"></div>
+
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+
+<script src="../../assets/js/creditreport/OfficerProductivity.js"></script>
+<script src="../../assets/js/creditreport/OfficerProductivity-loader.js"></script>
+
+</body>
+
+</html>

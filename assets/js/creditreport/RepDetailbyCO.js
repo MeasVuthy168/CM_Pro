@@ -216,13 +216,16 @@ function crBuildThead(section) {
       <tr class="cr-sub-row">${subCells}</tr>`;
 }
 
-function crBuildRow(item, section, isTotal) {
+function crBuildRow(item, section, isTotal, idx) {
     const cells = section.groups.map(g =>
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
+    const nameCell = isTotal
+        ? "Total"
+        : `<button type="button" class="cr-officer-link" data-idx="${idx}">${crEscapeHtml(item.name)}</button>`;
     return `
       <tr${isTotal ? ' class="cr-total-row"' : ""}>
-        <td class="cr-name-col">${isTotal ? "Total" : crEscapeHtml(item.name)}</td>
+        <td class="cr-name-col">${nameCell}</td>
         ${cells}
       </tr>`;
 }
@@ -233,11 +236,47 @@ function crRenderSection() {
 
     document.getElementById("crThead").innerHTML = crBuildThead(section);
     document.getElementById("crTbody").innerHTML =
-        crData.items.map(it => crBuildRow(it, section, false)).join("") +
+        crData.items.map((it, idx) => crBuildRow(it, section, false, idx)).join("") +
         crBuildRow(crData.total, section, true);
 
     requestAnimationFrame(crSetHeaderOffsets);
 }
+
+// ========================================
+// OFFICER DRILL-DOWN
+// Clicking an officer's name hands the row's already-fetched data
+// (crData.items[idx]) plus the report's current filters to
+// OfficerProductivity.html via sessionStorage — see that page's own
+// header comment for why (instant first paint, no refetch) and its
+// fallback path if this cache is missing/stale.
+// ========================================
+document.getElementById("crTbody").addEventListener("click", (e) => {
+    const link = e.target.closest(".cr-officer-link");
+    if (!link || !crData) return;
+    const item = crData.items[Number(link.dataset.idx)];
+    if (!item) return;
+
+    const meta = {
+        branch: document.getElementById("crBranch").value,
+        team: document.getElementById("crTeam").value,
+        fromDate: document.getElementById("crFromDate").value,
+        toDate: document.getElementById("crToDate").value,
+        woFromDate: document.getElementById("crWoFromDate").value,
+        woToDate: document.getElementById("crWoToDate").value
+    };
+    sessionStorage.setItem("cr_officer_detail", JSON.stringify({ officer: item, meta }));
+
+    const q = new URLSearchParams({
+        name: item.name,
+        branch: meta.branch,
+        team: meta.team,
+        fromDate: meta.fromDate,
+        toDate: meta.toDate,
+        woFromDate: meta.woFromDate,
+        woToDate: meta.woToDate
+    });
+    location.href = `OfficerProductivity.html?${q.toString()}`;
+});
 
 // Sub-header row sticks under the group row; the group row's height
 // varies with text wrapping, so it's measured rather than hardcoded.
