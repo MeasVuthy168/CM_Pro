@@ -1,0 +1,278 @@
+/* =====================================================
+   THEME TOKENS
+   Same palette/approach as RepDetailbyCO.css — this file is fully
+   self-contained rather than depending on that page's CSS being
+   loaded (see that file's own header comment for why).
+   ===================================================== */
+:root{
+    --cr-page-bg:#F5F7FA;
+    --cr-card-bg:#FFFFFF;
+    --cr-border:#E2E6ED;
+    --cr-text:#1C2333;
+    --cr-text-muted:#6B7280;
+    --cr-shadow:0 4px 14px rgba(0,0,0,.08);
+    --cr-navy:#003B8B;
+    --cr-navy-dark:#002D6B;
+    --cr-gold:#D4AF37;
+    --cr-gold-light:#FFD700;
+    --cr-danger:#b3261e;
+    --cr-row-alt:#f8f9fc;
+    --cr-skel-base:#eceff4;
+    --cr-skel-shine:#f7f9fc;
+    --cr-input-bg:#FFFFFF;
+    --cr-input-text:#1C2333;
+    --cr-chip-bg:#eef1f6;
+}
+[data-theme="dark"]{
+    --cr-page-bg:#002D6B;
+    --cr-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
+    --cr-border:#D4AF37;
+    --cr-text:#fff;
+    --cr-text-muted:#cdd9ef;
+    --cr-shadow:0 4px 14px rgba(0,0,0,.25);
+    --cr-navy-dark:#FFD700;
+    --cr-danger:#ff6b6b;
+    --cr-row-alt:#00306e;
+    --cr-skel-base:#0a3a86;
+    --cr-skel-shine:#0d4aa8;
+    --cr-input-bg:#0a2d63;
+    --cr-input-text:#FFFFFF;
+    --cr-chip-bg:rgba(255,255,255,.08);
+}
+[data-theme="gold"]{
+    --cr-page-bg:#FFF8E7;
+    --cr-card-bg:#FFFDF6;
+    --cr-navy:#8A5A00;
+    --cr-navy-dark:#6B4500;
+    --cr-gold:#D4AF37;
+    --cr-gold-light:#FFD700;
+    --cr-border:#C9971F;
+    --cr-row-alt:#FFFBF0;
+    --cr-skel-base:#FDF1D8;
+    --cr-skel-shine:#FFF8E7;
+    --cr-input-bg:#FFFDF6;
+    --cr-input-text:#1C2333;
+    --cr-chip-bg:#FDF1D8;
+}
+[data-theme="darkgray"]{
+    --cr-page-bg:#2B2E33;
+    --cr-card-bg:#363A41;
+    --cr-border:#474C55;
+    --cr-text:#F0F1F3;
+    --cr-text-muted:#A9AEB6;
+    --cr-shadow:0 4px 14px rgba(0,0,0,.35);
+    --cr-navy:#D8DAE0;
+    --cr-navy-dark:#D8DAE0;
+    --cr-gold:#D8DAE0;
+    --cr-gold-light:#E8EAED;
+    --cr-danger:#FF6B6B;
+    --cr-row-alt:#313539;
+    --cr-skel-base:#383C43;
+    --cr-skel-shine:#454A52;
+    --cr-input-bg:#363A41;
+    --cr-input-text:#F0F1F3;
+    --cr-chip-bg:rgba(255,255,255,.06);
+}
+
+*{ box-sizing:border-box; }
+
+.page-container{
+    width:100%;
+    padding:16px 0;
+    padding-bottom:90px;
+    background:var(--cr-page-bg);
+    min-height:100vh;
+    font-family:'KRASAR', sans-serif;
+    color:var(--cr-text);
+}
+
+/* ===== Officer header card ===== */
+.op-header-card{
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:16px;
+    padding:16px;
+    box-shadow:var(--cr-shadow);
+    margin-bottom:14px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+.op-avatar{
+    flex:0 0 auto;
+    width:46px;
+    height:46px;
+    border-radius:50%;
+    background:linear-gradient(135deg,var(--cr-navy-dark),var(--cr-navy));
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:800;
+    font-size:17px;
+}
+[data-theme="dark"] .op-avatar{ color:#002D6B; background:linear-gradient(135deg,#D4AF37,#FFD700); }
+[data-theme="darkgray"] .op-avatar{ color:#1C2333; }
+.op-header-text{ min-width:0; flex:1 1 auto; }
+.op-officer-name{ font-size:16.5px; font-weight:800; word-break:break-word; }
+.op-officer-meta{
+    margin-top:3px;
+    font-size:12px;
+    color:var(--cr-text-muted);
+    display:flex;
+    flex-wrap:wrap;
+    gap:4px 8px;
+}
+.op-meta-chip{
+    background:var(--cr-chip-bg);
+    border-radius:999px;
+    padding:2px 9px;
+    white-space:nowrap;
+}
+
+/* ===== Category cards ===== */
+.op-cards{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
+.op-card{
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:14px;
+    box-shadow:var(--cr-shadow);
+    overflow:hidden;
+}
+.op-card-head{
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:14px;
+    background:transparent;
+    border:none;
+    cursor:pointer;
+    text-align:left;
+    font-family:'KRASAR', sans-serif;
+    color:var(--cr-text);
+}
+.op-card-icon{
+    flex:0 0 auto;
+    width:38px;
+    height:38px;
+    border-radius:10px;
+    background:var(--cr-chip-bg);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+}
+.op-card-title{ flex:1 1 auto; min-width:0; }
+.op-card-label{ font-size:13.5px; font-weight:700; }
+.op-card-stats{
+    margin-top:3px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:3px 14px;
+    font-size:12px;
+    color:var(--cr-text-muted);
+}
+.op-card-stats b{ color:var(--cr-navy); font-weight:800; }
+[data-theme="dark"] .op-card-stats b{ color:var(--cr-gold-light); }
+.op-card-caret{
+    flex:0 0 auto;
+    font-size:14px;
+    color:var(--cr-text-muted);
+    transition:transform .15s ease;
+}
+.op-card.open .op-card-caret{ transform:rotate(180deg); }
+
+.op-card-panel{
+    display:none;
+    border-top:1px solid var(--cr-border);
+    padding:12px 14px 16px;
+}
+.op-card.open .op-card-panel{ display:block; }
+
+/* Segmented "List of Client" / "Chart" chooser */
+.op-mode-tabs{
+    display:flex;
+    background:var(--cr-chip-bg);
+    border-radius:10px;
+    padding:3px;
+    margin-bottom:12px;
+}
+.op-mode-tab{
+    flex:1;
+    text-align:center;
+    padding:9px 6px;
+    border-radius:8px;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--cr-text-muted);
+    cursor:pointer;
+    user-select:none;
+    background:none;
+    border:none;
+    font-family:'KRASAR', sans-serif;
+}
+.op-mode-tab.active{ background:var(--cr-navy-dark); color:#fff; }
+[data-theme="dark"] .op-mode-tab.active{ color:#002D6B; }
+[data-theme="darkgray"] .op-mode-tab.active{ color:#1C2333; }
+
+.op-mode-body{ min-height:60px; }
+
+/* ===== Client list table ===== */
+.op-client-table-wrap{ overflow-x:auto; border-radius:10px; border:1px solid var(--cr-border); }
+.op-client-table{ width:100%; border-collapse:collapse; font-size:12.5px; white-space:nowrap; }
+.op-client-table th{
+    background:var(--cr-row-alt);
+    color:var(--cr-text-muted);
+    font-weight:700;
+    text-align:left;
+    padding:9px 10px;
+    position:sticky;
+    top:0;
+}
+.op-client-table td{ padding:9px 10px; border-top:1px solid var(--cr-border); }
+.op-client-table tr:nth-child(even) td{ background:var(--cr-row-alt); }
+
+/* ===== Chart ===== */
+.op-chart-wrap{
+    position:relative;
+    height:220px;
+    padding:6px 2px;
+}
+
+/* ===== Loading / empty / error states shared by both sub-views ===== */
+.op-state{
+    padding:22px 10px;
+    text-align:center;
+    color:var(--cr-text-muted);
+    font-size:13px;
+}
+.op-state.op-state-error{ color:var(--cr-danger); }
+.op-skel-line{
+    height:14px;
+    border-radius:7px;
+    margin:8px 0;
+    background:linear-gradient(90deg,var(--cr-skel-base) 25%,var(--cr-skel-shine) 37%,var(--cr-skel-base) 63%);
+    background-size:400% 100%;
+    animation:opShimmer 1.4s ease infinite;
+}
+@keyframes opShimmer{ 0%{ background-position:100% 50%; } 100%{ background-position:0 50%; } }
+
+/* Page-level skeleton/empty while the officer's own summary is loading */
+.op-page-skel{ display:flex; flex-direction:column; gap:10px; }
+.op-page-skel .op-skel-card{
+    height:70px;
+    border-radius:14px;
+    background:linear-gradient(90deg,var(--cr-skel-base) 25%,var(--cr-skel-shine) 37%,var(--cr-skel-base) 63%);
+    background-size:400% 100%;
+    animation:opShimmer 1.4s ease infinite;
+}
+.op-empty{
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:14px;
+    padding:28px 16px;
+    text-align:center;
+    color:var(--cr-text-muted);
+    font-size:13.5px;
+}
