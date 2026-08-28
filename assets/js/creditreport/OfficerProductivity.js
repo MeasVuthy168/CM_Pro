@@ -30,9 +30,6 @@
 //   by the same date/branch/team filters the report is currently
 //   showing. loanSize/osUsd are OS-sheet-only figures (Loan Size USD /
 //   OS USD) — only populated for outstanding/disburse, "" elsewhere.
-//   nbcOverdue currently has no confirmed client-identity column in
-//   the Overdue sheet, so it returns { ok:false, message } explaining
-//   that gap instead of a fabricated or silently-empty list.
 //
 //   GET /api/creditreport/byco/officer-disburse-chart
 //     ?name=<officer name>&officerId=<officer id, if known>
