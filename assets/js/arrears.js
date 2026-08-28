@@ -309,12 +309,72 @@ function escapeHtml(text) {
 }
 
 // ========================================
+// RAW-ROW CACHE (sessionStorage, short TTL)
+// This page previously re-downloaded the ENTIRE table (up to 15000
+// rows x 41 columns) on every single page load/reload with zero
+// caching — refreshArrears() runs unconditionally once at script
+// load, so every visit paid for a full bulk fetch. Since this data
+// only actually changes when someone runs the Excel
+// Upload_ArreasT24ByCO sync (not continuously), a short TTL cache
+// eliminates most of that redundant traffic without ever showing
+// stale-by-more-than-a-few-minutes data. The per-row "Reason Arrear"
+// fields (promise status, follow-up notes) are NOT part of this cache
+// — refreshArrears() always re-fetches those live via the separate
+// fetchReasonArrearData() overlay below, cache or no cache, so a
+// cache hit here never shows stale promise/follow-up status.
+//
+// Caches the compact raw `values` arrays (pre-parseRow), not the
+// fully-keyed parsed objects — much smaller when JSON-stringified.
+// Size-checked before writing and wrapped in try/catch: sessionStorage
+// has a small quota (~5-10MB), so on an unusually large table this
+// silently skips caching rather than throwing QuotaExceededError and
+// breaking the page — a cache miss is safe, a crash isn't.
+// ========================================
+const ARREARS_CACHE_KEY = "arrears_raw_rows_cache_v1";
+const ARREARS_CACHE_TTL_MS = 3 * 60 * 1000;
+const ARREARS_CACHE_MAX_BYTES = 4 * 1024 * 1024; // stay well under sessionStorage's quota
+
+function readArrearsRowsCache() {
+    try {
+        const raw = sessionStorage.getItem(ARREARS_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.rows)) return null;
+        if (Date.now() - parsed.fetchedAt > ARREARS_CACHE_TTL_MS) return null;
+        return parsed.rows;
+    } catch (e) {
+        return null;
+    }
+}
+
+function writeArrearsRowsCache(valuesArrays) {
+    try {
+        const payload = JSON.stringify({ fetchedAt: Date.now(), rows: valuesArrays });
+        if (payload.length > ARREARS_CACHE_MAX_BYTES) {
+            console.warn(`[arrears cache] ${(payload.length / 1024 / 1024).toFixed(1)}MB exceeds the cache cap — skipping cache, every load will hit the network`);
+            return;
+        }
+        sessionStorage.setItem(ARREARS_CACHE_KEY, payload);
+    } catch (e) {
+        // Quota exceeded or storage unavailable (private browsing, etc.) —
+        // caching is an optimization, not a requirement, so just skip it.
+        console.warn("[arrears cache] could not write cache (non-fatal):", e.message);
+    }
+}
+
+// ========================================
 // FETCH ALL ROWS (paginated — server caps at 1000/request,
 // sheet can hold up to 15000 rows, so we loop until a page
 // comes back short of the limit)
 // ========================================
 
 async function fetchAllArrearsRows() {
+    const cached = readArrearsRowsCache();
+    if (cached) {
+        console.log(`[arrears cache] using cached rows (${cached.length} rows, age < ${ARREARS_CACHE_TTL_MS / 1000}s) — skipped the network fetch`);
+        return cached.map(parseRow);
+    }
+
     const limit = 1000;
     const BATCH_SIZE = 5; // fetch this many pages concurrently before checking if more exist
     let startRow = 6; // matches the sheet's own data start row
@@ -357,7 +417,9 @@ async function fetchAllArrearsRows() {
         startRow += BATCH_SIZE * limit;
     }
 
-    return all.map(r => parseRow(r.values || []));
+    const valuesArrays = all.map(r => r.values || []);
+    writeArrearsRowsCache(valuesArrays);
+    return valuesArrays.map(parseRow);
 }
 
 function parseRow(values) {
