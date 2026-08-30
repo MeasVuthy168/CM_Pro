@@ -21,21 +21,29 @@
 // lib/creditreport-co.js):
 //
 //   GET /api/creditreport/byco/officer-clients
-//     ?section=<outstanding|disburse|parT24|nbcOverdue|nbcOverdueArea|
-//               writeOff|writeOffArea>
+//     ?section=<outstanding|disburse|parT24|parT24Area|nbcOverdue|
+//               nbcOverdueArea|writeOff|writeOffArea>
 //     &name=<officer name>&officerId=<officer id, if known>
 //     &branch=&team=&fromDate=&toDate=&woFromDate=&woToDate=
 //   -> { ok, items: [{ name, cif, loanNumber, disburseDate, address,
-//                       productType, loanSize, osUsd }, ...] }
+//                       productType, loanSize, osUsd,
+//                       prnOS, intOS, prnDue, intDue, penalty, arreas,
+//                       day, balance, accountLoan }, ...] }
 //   One row per client/loan under that officer + category, filtered
 //   by the same date/branch/team filters the report is currently
 //   showing. loanSize/osUsd are OS-sheet-only figures (Loan Size USD /
 //   OS USD) — only populated for outstanding/disburse, "" elsewhere.
-//   nbcOverdueArea/writeOffArea are the "Area" (in-area, ក្នុងតំបន់)
-//   counterparts to nbcOverdue/writeOff ("Own") — same officer-clients
-//   endpoint, a different section value, backing those two cards'
-//   Own/Area tab split (see OP_CATEGORIES' clientLists below). name= is
-//   what the backend joins Area rows on, unlike Own's officerId join.
+//   prnOS..accountLoan are ArreasT24ByCO-only (arrears.js's own COL
+//   map) — only populated for parT24/parT24Area, undefined elsewhere;
+//   see opArrearsTableHtml() below, which renders them for nbcOverdue/
+//   nbcOverdueArea too (simply blank there, since the Overdue sheet
+//   backing those doesn't carry them).
+//   parT24Area/nbcOverdueArea/writeOffArea are the "Area" (in-area,
+//   ក្នុងតំបន់) counterparts to parT24/nbcOverdue/writeOff ("Own") —
+//   same officer-clients endpoint, a different section value, backing
+//   those three cards' Own/Area tab split (see OP_CATEGORIES'
+//   clientLists below). name= is what the backend joins Area rows on,
+//   unlike Own's officerId join.
 //
 //   GET /api/creditreport/byco/officer-disburse-chart
 //     ?name=<officer name>&officerId=<officer id, if known>
@@ -102,10 +110,27 @@ const OP_CATEGORIES = [
         icon: "📈",
         label: "Balance Loan at Risk (T24)",
         chart: false,
-        stats: [
-            { key: "parT24.loan", label: "Loan" },
-            { key: "parT24.value", label: "Value", money: true },
-            { key: "parT24.parPct", label: "PAR", pct: true }
+        statGroups: [
+            {
+                label: "Own",
+                fields: [
+                    { key: "parT24.loan", label: "Loan" },
+                    { key: "parT24.value", label: "Value", money: true },
+                    { key: "parT24.parPct", label: "PAR", pct: true }
+                ]
+            },
+            {
+                label: "Area",
+                fields: [
+                    { key: "parT24Area.loan", label: "Loan" },
+                    { key: "parT24Area.value", label: "Value", money: true },
+                    { key: "parT24Area.parPct", label: "PAR", pct: true }
+                ]
+            }
+        ],
+        clientLists: [
+            { section: "parT24", label: "Own" },
+            { section: "parT24Area", label: "Area" }
         ]
     },
     {
@@ -432,6 +457,11 @@ async function opEnsureModeLoaded(card, mode) {
     }
 }
 
+// T24 and NBC Overdue's client lists (both Own and Area) use the richer
+// arrears-style table (opArrearsTableHtml) instead of the generic one —
+// see that function for why.
+const OP_ARREARS_SECTIONS = new Set(["parT24", "parT24Area", "nbcOverdue", "nbcOverdueArea"]);
+
 async function opBuildClientListHtml(sectionKey) {
     const q = opBuildQuery(opState.meta);
     const officer = opState.officer;
@@ -445,7 +475,8 @@ async function opBuildClientListHtml(sectionKey) {
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Could not load the client list.");
 
-    return opClientTableHtml(data.items || []);
+    const rows = data.items || [];
+    return OP_ARREARS_SECTIONS.has(sectionKey) ? opArrearsTableHtml(rows) : opClientTableHtml(rows);
 }
 
 // Shared by the category "List of Client" tab above and the heatmap's
@@ -480,6 +511,68 @@ function opClientTableHtml(rows, { showDate = true } = {}) {
               <td>${opEscapeHtml(r.productType)}</td>
               <td>${r.loanSize === "" || r.loanSize == null ? "" : opEscapeHtml(opFmtNum(r.loanSize))}</td>
               <td>${r.osUsd === "" || r.osUsd == null ? "" : opEscapeHtml(opFmtNum(r.osUsd))}</td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>`;
+}
+
+// The T24 (Balance Loan at Risk) client list, both Own and Area, backs
+// this from CM-backend's officer-clients section=parT24/parT24Area — the
+// same arrears.js-style row shape that page's own table already uses
+// (Prn.OS/Int.OS/Prn.Due/Int.Due/Penalty/Arreas/Day/Balnce/Account Loan),
+// rather than the generic outstanding/disburse/writeOff column set
+// opClientTableHtml() renders. NBC Overdue's list (Own/Area) shares this
+// same table on request, even though its rows only carry
+// name/cif/loanNumber/disburseDate/address (mapped to Customer/CIF/Loan
+// Number/DisDate/Location below) — every arrears-only field just renders
+// blank there, since the Overdue sheet backing it doesn't carry them
+// (same "blank rather than guess" convention opClientTableHtml() already
+// follows for e.g. Write Off's Loan Size/OS USD).
+function opArrearsTableHtml(rows) {
+    if (!rows.length) return `<div class="op-state">No clients found for this category.</div>`;
+
+    const cell = v => (v === "" || v == null) ? "" : opEscapeHtml(opFmtNum(v));
+
+    return `
+      <div class="op-client-table-wrap">
+        <table class="op-client-table">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Customer</th>
+              <th>Loan Number</th>
+              <th>Location</th>
+              <th>DisDate</th>
+              <th>Prn.OS</th>
+              <th>Int.OS</th>
+              <th>Prn.Due</th>
+              <th>Int.Due</th>
+              <th>Penalty</th>
+              <th>Arreas</th>
+              <th>Day</th>
+              <th>Balnce</th>
+              <th>Account Loan</th>
+              <th>CIF</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((r, i) => `<tr>
+              <td>${i + 1}</td>
+              <td>${opEscapeHtml(r.name)}</td>
+              <td>${opEscapeHtml(r.loanNumber)}</td>
+              <td>${opEscapeHtml(r.address)}</td>
+              <td>${opEscapeHtml(opFmtDateDMY(r.disburseDate))}</td>
+              <td>${cell(r.prnOS)}</td>
+              <td>${cell(r.intOS)}</td>
+              <td>${cell(r.prnDue)}</td>
+              <td>${cell(r.intDue)}</td>
+              <td>${cell(r.penalty)}</td>
+              <td>${cell(r.arreas)}</td>
+              <td>${cell(r.day)}</td>
+              <td>${cell(r.balance)}</td>
+              <td>${r.accountLoan ? opEscapeHtml(r.accountLoan) : ""}</td>
+              <td>${opEscapeHtml(r.cif)}</td>
             </tr>`).join("")}
           </tbody>
         </table>
