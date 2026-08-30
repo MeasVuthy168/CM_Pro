@@ -359,7 +359,14 @@ async function opBuildClientListHtml(sectionKey) {
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Could not load the client list.");
 
-    const rows = data.items || [];
+    return opClientTableHtml(data.items || []);
+}
+
+// Shared by the category "List of Client" tab above and the heatmap's
+// per-day client list below (see opWireDayClientPanel) — showDate is off
+// for the latter since every row on a single day shares the same
+// disburse date, already shown in that panel's own header.
+function opClientTableHtml(rows, { showDate = true } = {}) {
     if (!rows.length) return `<div class="op-state">No clients found for this category.</div>`;
 
     return `
@@ -370,7 +377,7 @@ async function opBuildClientListHtml(sectionKey) {
               <th>Name</th>
               <th>CIF</th>
               <th>Loan Number</th>
-              <th>Disburse Date</th>
+              ${showDate ? "<th>Disburse Date</th>" : ""}
               <th>Address</th>
               <th>Product Type</th>
               <th>Loan Size</th>
@@ -382,7 +389,7 @@ async function opBuildClientListHtml(sectionKey) {
               <td>${opEscapeHtml(r.name)}</td>
               <td>${opEscapeHtml(r.cif)}</td>
               <td>${opEscapeHtml(r.loanNumber)}</td>
-              <td>${opEscapeHtml(opFmtDateDMY(r.disburseDate))}</td>
+              ${showDate ? `<td>${opEscapeHtml(opFmtDateDMY(r.disburseDate))}</td>` : ""}
               <td>${opEscapeHtml(r.address)}</td>
               <td>${opEscapeHtml(r.productType)}</td>
               <td>${r.loanSize === "" || r.loanSize == null ? "" : opEscapeHtml(opFmtNum(r.loanSize))}</td>
@@ -526,7 +533,8 @@ function opBuildDisburseHeatmapHtml(dates, values, counts, officer, meta) {
         <button type="button" class="op-heat-nav-btn" data-dir="prev" aria-label="Previous month">‹</button>
         <span class="op-heat-nav-label">${opEscapeHtml(monthLabel)}</span>
         <button type="button" class="op-heat-nav-btn" data-dir="next" aria-label="Next month">›</button>
-      </div>`;
+      </div>
+      <div class="op-heat-day-panel"></div>`;
 }
 
 // Wires the prev/next month buttons appended by opBuildDisburseHeatmapHtml.
@@ -575,12 +583,10 @@ function opShowHeatTooltip(cell, tooltip) {
     tooltip.classList.add("show");
 }
 
-// clickToShow is only enabled in the fullscreen view (see
-// opOpenChartFullscreen) — in the small inline view a cell's click needs
-// to bubble up to opOpenChartFullscreen's own listener untouched so
-// tapping anywhere on the heatmap still opens fullscreen, rather than
-// being consumed here first.
-function opWireHeatmapTooltips(container, clickToShow) {
+// Hover-only (desktop mouse) — a cell click is handled separately by
+// opWireDayClientPanel below, which shows the day's actual client list
+// rather than repeating this tooltip's value/count preview.
+function opWireHeatmapTooltips(container) {
     const tooltip = opEnsureHeatTooltip();
     container.querySelectorAll(".op-heat-cell:not(.op-heat-pad)").forEach(cell => {
         cell.addEventListener("mouseenter", () => opShowHeatTooltip(cell, tooltip));
@@ -590,16 +596,77 @@ function opWireHeatmapTooltips(container, clickToShow) {
             tooltip.style.top = `${e.clientY + 14}px`;
         });
         cell.addEventListener("mouseleave", () => tooltip.classList.remove("show"));
-        if (clickToShow) {
-            cell.addEventListener("click", e => {
-                e.stopPropagation();
-                opShowHeatTooltip(cell, tooltip);
-                const rect = cell.getBoundingClientRect();
-                tooltip.style.transform = "translate(-50%, -100%)";
-                tooltip.style.left = `${rect.left + rect.width / 2}px`;
-                tooltip.style.top = `${rect.top - 8}px`;
-            });
-        }
+    });
+}
+
+// Fetches the clients this officer disbursed on one specific day, by
+// calling the exact same officer-clients endpoint the "List of Client"
+// tab uses (section=disburse) with fromDate=toDate=that single day —
+// its date filter already checks each row's disburse date against
+// [fromDate, toDate], so a same-day range needs no backend change.
+async function opFetchDayClients(dateKey) {
+    const officer = opState.officer;
+    const q = opBuildQuery({ ...opState.meta, fromDate: dateKey, toDate: dateKey });
+    const url = `${API.BASE_URL}/api/creditreport/byco/officer-clients${q}` +
+        `&section=disburse` +
+        `&name=${encodeURIComponent(officer.name || "")}` +
+        `&officerId=${encodeURIComponent(officer.id || "")}`;
+
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${opToken}` } });
+    if (!res.ok) throw new Error("Could not load clients for this day. Please try again.");
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.message || "Could not load clients for this day.");
+    return data.items || [];
+}
+
+// Clicking a day cell loads and shows its client list in the
+// .op-heat-day-panel appended by opBuildDisburseHeatmapHtml, right below
+// the grid/legend/nav. Clicking the same cell again closes it; clicking
+// a different cell replaces it. stopPropagation keeps the click from
+// also bubbling up to the inline view's fullscreen-open listener (see
+// opWireChartFullscreenTriggers) — a cell's primary action is now this
+// panel, not opening fullscreen (tapping the title/legend/nav-label
+// area, or the ⛶ button, still opens fullscreen as before).
+function opWireDayClientPanel(container) {
+    const panel = container.querySelector(".op-heat-day-panel");
+    if (!panel) return;
+    let activeDate = null;
+
+    container.querySelectorAll(".op-heat-cell:not(.op-heat-pad)").forEach(cell => {
+        cell.addEventListener("click", async e => {
+            e.stopPropagation();
+            const date = cell.dataset.date;
+
+            container.querySelectorAll(".op-heat-cell.op-heat-cell-selected")
+                .forEach(c => c.classList.remove("op-heat-cell-selected"));
+
+            if (activeDate === date) {
+                activeDate = null;
+                panel.innerHTML = "";
+                return;
+            }
+            activeDate = date;
+            cell.classList.add("op-heat-cell-selected");
+
+            const [, mm, dd] = date.split("-");
+            const count = Number(cell.dataset.count) || 0;
+            const heading = `<div class="op-heat-day-panel-head">${dd}-${mm}: ${count} loan${count === 1 ? "" : "s"}</div>`;
+
+            if (count === 0) {
+                panel.innerHTML = `<div class="op-heat-day-panel-head">${dd}-${mm}: No disbursement</div>`;
+                return;
+            }
+
+            panel.innerHTML = heading + opSkeletonHtml();
+            try {
+                const rows = await opFetchDayClients(date);
+                if (activeDate !== date) return; // superseded by a later click while this was loading
+                panel.innerHTML = heading + opClientTableHtml(rows, { showDate: false });
+            } catch (err) {
+                if (activeDate !== date) return;
+                panel.innerHTML = heading + opErrorHtml(err);
+            }
+        });
     });
 }
 
@@ -656,7 +723,8 @@ function opRenderDisburseHeatmapInto(container, fullscreen) {
         : `<button type="button" class="op-chart-fullscreen-btn" aria-label="Fullscreen chart">⛶</button>`;
     container.innerHTML = btnHtml + opBuildDisburseHeatmapHtml(dates, values, counts, opState.officer, opState.meta);
 
-    opWireHeatmapTooltips(container, fullscreen);
+    opWireHeatmapTooltips(container);
+    opWireDayClientPanel(container);
     if (!fullscreen) opWireChartFullscreenTriggers(container);
     opWireDisburseNav(container, delta => opNavigateDisburseMonth(delta, container, fullscreen));
 }
@@ -688,13 +756,17 @@ async function opRenderDisburseChart(sectionKey, wrap) {
     opRenderDisburseHeatmapInto(wrap, false);
 }
 
-// Tap, click, or press-and-hold anywhere on the heatmap (or its dedicated
-// button) opens the fullscreen view. A tap/click already fires on
-// release for a long-press too in every mobile browser tested (nothing
-// here depends on drag/scroll gestures, since the inline heatmap doesn't
-// scroll), so one click listener naturally covers all three — the
-// touch-callout suppression in CSS (op-chart-wrap) stops the OS's own
-// long-press menu from intercepting the gesture first.
+// Tap, click, or press-and-hold anywhere on the heatmap OUTSIDE a day
+// cell (title, subtitle, legend, nav label, grid padding) — or its
+// dedicated button — opens the fullscreen view. Day cells stopPropagate
+// their own click for opWireDayClientPanel instead (a cell's primary
+// action is showing that day's clients, not opening fullscreen). A
+// tap/click already fires on release for a long-press too in every
+// mobile browser tested (nothing here depends on drag/scroll gestures,
+// since the inline heatmap doesn't scroll), so one click listener
+// naturally covers all three — the touch-callout suppression in CSS
+// (op-chart-wrap) stops the OS's own long-press menu from intercepting
+// the gesture first.
 function opWireChartFullscreenTriggers(wrap) {
     wrap.addEventListener("click", opOpenChartFullscreen);
 }
