@@ -43,7 +43,11 @@
 //   as a calendar heatmap (one cell per day, colored by value, loan
 //   count printed inside — see opBuildDisburseHeatmapHtml()). dates[] is
 //   full "yyyy-mm-dd" strings (labels[] is display-only "DD-MM"), used to
-//   work out which weekday each day falls on for the 7-column grid.
+//   work out which weekday each day falls on for the 7-column grid, and
+//   to ring-highlight Sat/Sun + any date in OP_KH_HOLIDAYS. The heatmap's
+//   subtitle ("Period Date: ...") is NOT derived from this endpoint —
+//   it uses the report's own fromDate/toDate filter and the officer's
+//   already-known loanDisburse.loan/.value summary figures instead.
 //
 // Both fail gracefully with a plain, honest message (see opErrorHtml)
 // on any real failure rather than fabricating placeholder client data
@@ -135,6 +139,15 @@ function opFmtDateDMY(s) {
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
     if (!m) return s;
     return `${m[3]}-${m[2]}-${m[1]}`;
+}
+// "DD/MM/YY" (slash-separated, 2-digit year) — used only by the heatmap's
+// "Period Date: ..." subtitle, whose format was specified separately from
+// the rest of the page's "DD-MM-YYYY" convention (opFmtDateDMY above).
+function opFmtDateDDMMYY(s) {
+    if (!s) return "-";
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+    if (!m) return s;
+    return `${m[3]}/${m[2]}/${m[1].slice(2)}`;
 }
 function opToDMY(yyyymmdd) {
     const [y, m, d] = yyyymmdd.split("-");
@@ -382,14 +395,23 @@ function opHeatBucket(value, maxValue) {
 
 const OP_HEAT_DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-// Builds the calendar-heatmap markup (title + 7-column day grid + legend)
-// — one cell per day of the month, colored by disbursed value, with the
-// loan count printed inside. Shared by the inline chart and the
-// fullscreen view so the two can't drift out of sync. "T00:00:00" (no Z)
-// forces LOCAL-time parsing for the weekday lookup — a bare "yyyy-mm-dd"
-// string parses as UTC midnight per spec, which can land on the wrong
-// calendar day in negative-UTC-offset timezones.
-function opBuildDisburseHeatmapHtml(dates, values, counts, officerName) {
+// Cambodian public holidays ("yyyy-mm-dd" keys) that get the same
+// highlight ring as Sat/Sun on the heatmap (see op-heat-holiday below).
+// Deliberately empty for now — official Cambodian holiday dates (several
+// are lunar-calendar-based and set by government gazette year to year)
+// aren't fabricated here. Add confirmed dates as they're provided.
+const OP_KH_HOLIDAYS = new Set([
+]);
+
+// Builds the calendar-heatmap markup (title + subtitle + 7-column day
+// grid + legend) — one cell per day of the month, colored by disbursed
+// value, with the loan count printed inside; Sat/Sun and any date in
+// OP_KH_HOLIDAYS get an extra ring highlight. Shared by the inline chart
+// and the fullscreen view so the two can't drift out of sync.
+// "T00:00:00" (no Z) forces LOCAL-time parsing for the weekday lookup —
+// a bare "yyyy-mm-dd" string parses as UTC midnight per spec, which can
+// land on the wrong calendar day in negative-UTC-offset timezones.
+function opBuildDisburseHeatmapHtml(dates, values, counts, officer, meta) {
     const maxValue = Math.max(0, ...values);
     const firstDow = new Date(dates[0] + "T00:00:00").getDay();
 
@@ -401,16 +423,32 @@ function opBuildDisburseHeatmapHtml(dates, values, counts, officerName) {
         const value = values[i] || 0;
         const count = counts[i] || 0;
         const bucket = opHeatBucket(value, maxValue);
+        const dow = new Date(dateStr + "T00:00:00").getDay();
+
+        const classes = ["op-heat-cell"];
+        if (bucket) classes.push(`op-heat-h${bucket}`);
+        if (dow === 0 || dow === 6) classes.push("op-heat-weekend");
+        if (OP_KH_HOLIDAYS.has(dateStr)) classes.push("op-heat-holiday");
+
         cells += `
-          <div class="op-heat-cell${bucket ? ` op-heat-h${bucket}` : ""}"
+          <div class="${classes.join(" ")}"
                data-date="${dateStr}" data-value="${value}" data-count="${count}">
             <span class="op-heat-day">${day}</span>
             ${count > 0 ? `<span class="op-heat-badge">${count}</span>` : ""}
           </div>`;
     });
 
+    const officerName = officer?.name || "";
+    const officerLoan = opGet(officer, "loanDisburse.loan");
+    const officerValue = opGet(officer, "loanDisburse.value");
+    const period = (meta && meta.fromDate && meta.toDate)
+        ? `${opFmtDateDDMMYY(meta.fromDate)}-${opFmtDateDDMMYY(meta.toDate)}`
+        : "-";
+    const subtitle = `Period Date: ${period} (Loan: ${opFmtNum(officerLoan)}LD,Value: USD${opFmtNum(officerValue)})`;
+
     return `
-      <div class="op-heat-title">Daily Loan Disbursement - ${opEscapeHtml(officerName || "")}</div>
+      <div class="op-heat-title">Daily Loan Disbursement - ${opEscapeHtml(officerName)}</div>
+      <div class="op-heat-subtitle">${opEscapeHtml(subtitle)}</div>
       <div class="op-heat-grid">${cells}</div>
       <div class="op-heat-legend">
         <span>Less</span>
@@ -420,6 +458,10 @@ function opBuildDisburseHeatmapHtml(dates, values, counts, officerName) {
         <span class="op-heat-sw op-heat-h3"></span>
         <span class="op-heat-sw op-heat-h4"></span>
         <span>More</span>
+      </div>
+      <div class="op-heat-legend op-heat-legend-2">
+        <span class="op-heat-sw op-heat-ring-weekend"></span><span>Weekend</span>
+        <span class="op-heat-sw op-heat-ring-holiday"></span><span>Holiday</span>
       </div>`;
 }
 
@@ -502,7 +544,7 @@ async function opRenderDisburseChart(sectionKey, wrap) {
     // for anyone who wants larger day cells than this inline view allows.
     wrap.innerHTML =
         `<button type="button" class="op-chart-fullscreen-btn" aria-label="Fullscreen chart">⛶</button>` +
-        opBuildDisburseHeatmapHtml(dates, values, counts, officer.name);
+        opBuildDisburseHeatmapHtml(dates, values, counts, officer, opState.meta);
 
     opWireHeatmapTooltips(wrap, false);
     opWireChartFullscreenTriggers(wrap);
@@ -529,7 +571,7 @@ async function opOpenChartFullscreen() {
     document.body.style.overflow = "hidden";
 
     const { dates, values, counts } = opDisburseChartData;
-    body.innerHTML = opBuildDisburseHeatmapHtml(dates, values, counts, opState.officer?.name);
+    body.innerHTML = opBuildDisburseHeatmapHtml(dates, values, counts, opState.officer, opState.meta);
     opWireHeatmapTooltips(body, true);
 
     // Progressive enhancement, not a requirement — the fixed-position CSS
