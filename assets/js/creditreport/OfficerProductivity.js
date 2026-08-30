@@ -509,9 +509,8 @@ function opBuildDisburseHeatmapHtml(dates, values, counts, officer, meta) {
         .toLocaleString("en-US", { month: "long", year: "numeric" });
 
     return `
-      <div class="op-heat-title">Daily Loan Disbursement</div>
+      <div class="op-heat-title">Daily Loan Disbursement — ${opEscapeHtml(officerName)}</div>
       <div class="op-heat-subtitle-group">
-        <div class="op-heat-subtitle-line">Officer Name: ${opEscapeHtml(officerName)}</div>
         <div class="op-heat-subtitle-line">Period Date: ${period}</div>
         <div class="op-heat-subtitle-line">Total  Disburse: ${opFmtNum(totalLoan)}LD, USD${opFmtNum(totalValue)}</div>
       </div>
