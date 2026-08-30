@@ -21,7 +21,8 @@
 // lib/creditreport-co.js):
 //
 //   GET /api/creditreport/byco/officer-clients
-//     ?section=<outstanding|disburse|parT24|nbcOverdue|writeOff>
+//     ?section=<outstanding|disburse|parT24|nbcOverdue|nbcOverdueArea|
+//               writeOff|writeOffArea>
 //     &name=<officer name>&officerId=<officer id, if known>
 //     &branch=&team=&fromDate=&toDate=&woFromDate=&woToDate=
 //   -> { ok, items: [{ name, cif, loanNumber, disburseDate, address,
@@ -30,6 +31,11 @@
 //   by the same date/branch/team filters the report is currently
 //   showing. loanSize/osUsd are OS-sheet-only figures (Loan Size USD /
 //   OS USD) — only populated for outstanding/disburse, "" elsewhere.
+//   nbcOverdueArea/writeOffArea are the "Area" (in-area, ក្នុងតំបន់)
+//   counterparts to nbcOverdue/writeOff ("Own") — same officer-clients
+//   endpoint, a different section value, backing those two cards'
+//   Own/Area tab split (see OP_CATEGORIES' clientLists below). name= is
+//   what the backend joins Area rows on, unlike Own's officerId join.
 //
 //   GET /api/creditreport/byco/officer-disburse-chart
 //     ?name=<officer name>&officerId=<officer id, if known>
@@ -107,9 +113,33 @@ const OP_CATEGORIES = [
         icon: "⚠️",
         label: "Balance Loan at Risk (NBC Overdue)",
         chart: false,
-        stats: [
-            { key: "nbcOverdue.totalOwn.value", label: "Own", money: true },
-            { key: "nbcOverdue.totalArea.value", label: "Area", money: true }
+        // Own/Area render as two stacked lines (see opCardMarkup) rather
+        // than one flat stats: [...] row — each side has its own
+        // Loan/Value/PAR, not just a single combined figure.
+        statGroups: [
+            {
+                label: "Own",
+                fields: [
+                    { key: "nbcOverdue.totalOwn.count", label: "Loan" },
+                    { key: "nbcOverdue.totalOwn.value", label: "Value", money: true },
+                    { key: "nbcOverdue.totalOwn.parPct", label: "PAR", pct: true }
+                ]
+            },
+            {
+                label: "Area",
+                fields: [
+                    { key: "nbcOverdue.totalArea.count", label: "Loan" },
+                    { key: "nbcOverdue.totalArea.value", label: "Value", money: true },
+                    { key: "nbcOverdue.totalArea.parPct", label: "PAR", pct: true }
+                ]
+            }
+        ],
+        // Two separate "List of Client" sub-tabs (Own/Area) instead of
+        // one — each hits a different officer-clients `section` (see
+        // opClientListTabs()/opBuildClientListHtml() below).
+        clientLists: [
+            { section: "nbcOverdue", label: "Own" },
+            { section: "nbcOverdueArea", label: "Area" }
         ]
     },
     {
@@ -117,9 +147,25 @@ const OP_CATEGORIES = [
         icon: "✂️",
         label: "Write Off",
         chart: false,
-        stats: [
-            { key: "writeOffOwn.wo.prn", label: "Own Prn", money: true },
-            { key: "writeOffArea.wo.prn", label: "Area Prn", money: true }
+        statGroups: [
+            {
+                label: "Own",
+                fields: [
+                    { key: "writeOffOwn.wo.count", label: "Loan" },
+                    { key: "writeOffOwn.wo.prn", label: "Prn", money: true }
+                ]
+            },
+            {
+                label: "Area",
+                fields: [
+                    { key: "writeOffArea.wo.count", label: "Loan" },
+                    { key: "writeOffArea.wo.prn", label: "Prn", money: true }
+                ]
+            }
+        ],
+        clientLists: [
+            { section: "writeOff", label: "Own" },
+            { section: "writeOffArea", label: "Area" }
         ]
     }
 ];
@@ -257,12 +303,36 @@ function opRenderHeader() {
     document.getElementById("opHeaderCard").style.display = "flex";
 }
 
+// One flat stats: [...] row (outstanding/disburse/parT24), or — for a
+// category with statGroups (NBC Overdue, Write Off) — a stacked line per
+// group (Own/Area), each led by its own bold group label.
+function opStatFieldHtml(f, officer) {
+    const v = opGet(officer, f.key);
+    const text = f.pct ? opFmtPct(v) : opFmtNum(v);
+    return `<span>${opEscapeHtml(f.label)}: <b>${text}</b></span>`;
+}
+function opCardStatsHtml(cat, officer) {
+    if (cat.statGroups) {
+        return cat.statGroups.map(g => `
+          <div class="op-card-stats">
+            <span class="op-card-stats-group-label">${opEscapeHtml(g.label)}:</span>
+            ${g.fields.map(f => opStatFieldHtml(f, officer)).join("")}
+          </div>`).join("");
+    }
+    return `<div class="op-card-stats">${cat.stats.map(s => opStatFieldHtml(s, officer)).join("")}</div>`;
+}
+
+// A category with clientLists (NBC Overdue, Write Off) gets one "List of
+// Client" tab per entry (Own/Area) instead of one — each tab's data-mode
+// is "list:<section>" so opEnsureModeLoaded knows which officer-clients
+// section to fetch. Everything else keeps the single plain "list" mode,
+// which resolves to the category's own key (unchanged behavior).
 function opCardMarkup(cat, officer) {
-    const statsHtml = cat.stats.map(s => {
-        const v = opGet(officer, s.key);
-        const text = s.pct ? opFmtPct(v) : opFmtNum(v);
-        return `<span>${opEscapeHtml(s.label)}: <b>${text}</b></span>`;
-    }).join("");
+    const listTabsHtml = cat.clientLists
+        ? cat.clientLists.map((cl, i) =>
+            `<button type="button" class="op-mode-tab${i === 0 ? " active" : ""}" data-mode="list:${cl.section}">👥 List of Client ${opEscapeHtml(cl.label)}</button>`
+          ).join("")
+        : `<button type="button" class="op-mode-tab active" data-mode="list">👥 List of Client</button>`;
 
     const chartTabHtml = cat.chart
         ? `<button type="button" class="op-mode-tab" data-mode="chart">📈 Chart</button>`
@@ -274,13 +344,13 @@ function opCardMarkup(cat, officer) {
           <div class="op-card-icon">${cat.icon}</div>
           <div class="op-card-title">
             <div class="op-card-label">${opEscapeHtml(cat.label)}</div>
-            <div class="op-card-stats">${statsHtml}</div>
+            ${opCardStatsHtml(cat, officer)}
           </div>
           <div class="op-card-caret">▾</div>
         </button>
         <div class="op-card-panel">
           <div class="op-mode-tabs">
-            <button type="button" class="op-mode-tab active" data-mode="list">👥 List of Client</button>
+            ${listTabsHtml}
             ${chartTabHtml}
           </div>
           <div class="op-mode-body" data-mode-body></div>
@@ -307,7 +377,10 @@ document.getElementById("opCards").addEventListener("click", (e) => {
         });
         card.classList.toggle("open", willOpen);
         head.setAttribute("aria-expanded", willOpen ? "true" : "false");
-        if (willOpen) opEnsureModeLoaded(card, "list");
+        if (willOpen) {
+            const activeTab = card.querySelector(".op-mode-tab.active");
+            opEnsureModeLoaded(card, activeTab ? activeTab.dataset.mode : "list");
+        }
         return;
     }
 
@@ -324,12 +397,20 @@ async function opEnsureModeLoaded(card, mode) {
     const key = card.dataset.key;
     const body = card.querySelector("[data-mode-body]");
 
-    if (mode === "list") {
-        if (card._opListHtml) { body.innerHTML = card._opListHtml; return; }
+    if (mode === "list" || mode.startsWith("list:")) {
+        // "list" (single-tab categories) resolves to the category's own
+        // key, same section officer-clients has always used for it.
+        // "list:<section>" (NBC Overdue/Write Off's Own vs Area tabs)
+        // names the section explicitly instead. Cached per-mode so
+        // switching between Own/Area doesn't refetch one you already
+        // loaded, without either tab clobbering the other's cache.
+        const section = mode.startsWith("list:") ? mode.slice(5) : card.dataset.key;
+        card._opListCache = card._opListCache || {};
+        if (card._opListCache[mode]) { body.innerHTML = card._opListCache[mode]; return; }
         body.innerHTML = opSkeletonHtml();
         try {
-            card._opListHtml = await opBuildClientListHtml(key);
-            body.innerHTML = card._opListHtml;
+            card._opListCache[mode] = await opBuildClientListHtml(section);
+            body.innerHTML = card._opListCache[mode];
         } catch (err) {
             body.innerHTML = opErrorHtml(err);
         }
