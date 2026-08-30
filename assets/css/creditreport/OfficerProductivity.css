@@ -433,6 +433,31 @@
     padding:0;
 }
 
+/* Ring marking whichever day cell's client list is currently showing in
+   .op-heat-day-panel below — outline (not box-shadow) so it layers
+   cleanly on top of the weekend/holiday inset rings and the magnitude
+   background without fighting either. */
+.op-heat-cell.op-heat-cell-selected{
+    outline:2px solid var(--cr-gold);
+    outline-offset:1px;
+}
+
+/* Empty by default (opBuildDisburseHeatmapHtml always appends this div,
+   populated only once a day cell is clicked) — :empty keeps it from
+   taking up any space/border until then. */
+.op-heat-day-panel:empty{ display:none; }
+.op-heat-day-panel{
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px solid var(--cr-border);
+}
+.op-heat-day-panel-head{
+    font-size:12px;
+    font-weight:700;
+    color:var(--cr-text);
+    margin-bottom:8px;
+}
+
 .op-heat-tooltip{
     position:fixed;
     pointer-events:none;
@@ -498,6 +523,7 @@
 .op-chart-fs-body-wrap .op-heat-grid{ gap:6px; }
 .op-chart-fs-body-wrap .op-heat-nav-label{ font-size:13px; min-width:110px; }
 .op-chart-fs-body-wrap .op-heat-nav-btn{ width:32px; height:32px; font-size:18px; }
+.op-chart-fs-body-wrap .op-heat-day-panel-head{ font-size:14px; }
 
 /* ===== Loading / empty / error states shared by both sub-views ===== */
 .op-state{
