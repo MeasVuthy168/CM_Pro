@@ -34,11 +34,12 @@
 //   GET /api/creditreport/byco/officer-disburse-chart
 //     ?name=<officer name>&officerId=<officer id, if known>
 //     &branch=&team=&fromDate=&toDate=
-//   -> { ok, labels: [...], values: [...] }
-//   A daily disbursement value series for this officer, zero-filled
-//   for every calendar day from fromDate to toDate (a continuous
-//   timeline, not just days with activity) — only used by the Loan
-//   Disburse card's Chart tab.
+//   -> { ok, labels: [...], values: [...], counts: [...] }
+//   Daily disbursement value + loan count series for this officer,
+//   zero-filled for every calendar day from fromDate to toDate (a
+//   continuous timeline, not just days with activity) — only used by
+//   the Loan Disburse card's Chart tab, rendered as two lines on
+//   separate Y axes (value and count have very different scales).
 //
 // Both fail gracefully with a plain, honest message (see opErrorHtml)
 // on any real failure rather than fabricating placeholder client data
@@ -367,6 +368,7 @@ async function opRenderDisburseChart(sectionKey, wrap) {
 
     const labels = data.labels || [];
     const values = data.values || [];
+    const counts = data.counts || [];
     if (!labels.length) {
         wrap.innerHTML = `<div class="op-state">No disbursement data for this period.</div>`;
         return;
@@ -378,32 +380,65 @@ async function opRenderDisburseChart(sectionKey, wrap) {
         return;
     }
     const isDark = document.documentElement.getAttribute("data-theme") === "dark";
-    const lineColor = isDark ? "#FFD700" : "#003B8B";
+    const valueColor = isDark ? "#FFD700" : "#003B8B";
+    const countColor = isDark ? "#4FD1C5" : "#D4380D";
     // Timeline over the full date range (backend zero-fills every day from
     // fromDate to toDate), so a line reads better than one bar per day —
-    // especially once the range spans most of a month.
+    // especially once the range spans most of a month. Value and Count
+    // share one chart on two Y axes since their scales are wildly
+    // different (value in the thousands, count usually single digits) —
+    // one axis would flatten the count line to an invisible flat line.
     new Chart(wrap.querySelector("canvas").getContext("2d"), {
         type: "line",
         data: {
             labels,
-            datasets: [{
-                label: "Disbursement Value",
-                data: values,
-                borderColor: lineColor,
-                backgroundColor: isDark ? "rgba(255,215,0,0.15)" : "rgba(0,59,139,0.12)",
-                fill: true,
-                tension: 0.25,
-                pointRadius: labels.length > 20 ? 0 : 3,
-                pointHoverRadius: 5,
-                pointBackgroundColor: lineColor
-            }]
+            datasets: [
+                {
+                    label: "Value",
+                    data: values,
+                    yAxisID: "yValue",
+                    borderColor: valueColor,
+                    backgroundColor: isDark ? "rgba(255,215,0,0.15)" : "rgba(0,59,139,0.12)",
+                    fill: true,
+                    tension: 0.25,
+                    pointRadius: labels.length > 20 ? 0 : 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: valueColor
+                },
+                {
+                    label: "Loan",
+                    data: counts,
+                    yAxisID: "yCount",
+                    borderColor: countColor,
+                    backgroundColor: countColor,
+                    fill: false,
+                    borderDash: [4, 3],
+                    tension: 0.25,
+                    pointRadius: labels.length > 20 ? 0 : 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: countColor
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: { legend: { display: true, position: "top" } },
             scales: {
-                y: { beginAtZero: true },
+                yValue: {
+                    type: "linear",
+                    position: "left",
+                    beginAtZero: true,
+                    title: { display: true, text: "Value" }
+                },
+                yCount: {
+                    type: "linear",
+                    position: "right",
+                    beginAtZero: true,
+                    ticks: { precision: 0 },
+                    grid: { drawOnChartArea: false },
+                    title: { display: true, text: "Loan" }
+                },
                 x: { ticks: { autoSkip: true, maxTicksLimit: 12 } }
             }
         }
