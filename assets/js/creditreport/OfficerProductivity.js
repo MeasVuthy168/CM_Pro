@@ -26,18 +26,20 @@
 //     &name=<officer name>&officerId=<officer id, if known>
 //     &branch=&team=&fromDate=&toDate=&woFromDate=&woToDate=
 //   -> { ok, items: [{ name, cif, loanNumber, disburseDate, address,
-//                       productType, loanSize, osUsd,
+//                       productType, class, loanSize, osUsd,
 //                       prnOS, intOS, prnDue, intDue, penalty, arreas,
 //                       day, balance, accountLoan }, ...] }
 //   One row per client/loan under that officer + category, filtered
 //   by the same date/branch/team filters the report is currently
 //   showing. loanSize/osUsd are OS-sheet-only figures (Loan Size USD /
 //   OS USD) — only populated for outstanding/disburse, "" elsewhere.
-//   prnOS..accountLoan are ArreasT24ByCO-only (arrears.js's own COL
-//   map) — only populated for parT24/parT24Area, undefined elsewhere;
-//   see opArrearsTableHtml() below, which renders them for nbcOverdue/
-//   nbcOverdueArea too (simply blank there, since the Overdue sheet
-//   backing those doesn't carry them).
+//   class is populated for parT24/parT24Area/nbcOverdue/nbcOverdueArea
+//   (each source sheet's own classification column). prnOS..accountLoan
+//   are ArreasT24ByCO-only (arrears.js's own COL map) — only populated
+//   for parT24/parT24Area, undefined elsewhere; see opArrearsTableHtml()
+//   below, which renders them for nbcOverdue/nbcOverdueArea too (simply
+//   blank there, since the Overdue sheet backing those doesn't carry
+//   them).
 //   parT24Area/nbcOverdueArea/writeOffArea are the "Area" (in-area,
 //   ក្នុងតំបន់) counterparts to parT24/nbcOverdue/writeOff ("Own") —
 //   same officer-clients endpoint, a different section value, backing
@@ -425,17 +427,29 @@ async function opEnsureModeLoaded(card, mode) {
     if (mode === "list" || mode.startsWith("list:")) {
         // "list" (single-tab categories) resolves to the category's own
         // key, same section officer-clients has always used for it.
-        // "list:<section>" (NBC Overdue/Write Off's Own vs Area tabs)
-        // names the section explicitly instead. Cached per-mode so
-        // switching between Own/Area doesn't refetch one you already
-        // loaded, without either tab clobbering the other's cache.
+        // "list:<section>" (NBC Overdue/Write Off/T24's Own vs Area tabs)
+        // names the section explicitly instead. Cached per-mode (as raw
+        // rows, not rendered HTML — opRenderClientListInto needs the
+        // live array to wire sort/export against) so switching between
+        // Own/Area doesn't refetch one you already loaded, without
+        // either tab clobbering the other's cache. A cache hit still
+        // re-renders from scratch, so sort state doesn't carry over
+        // between visits — same as reopening a spreadsheet.
         const section = mode.startsWith("list:") ? mode.slice(5) : card.dataset.key;
         card._opListCache = card._opListCache || {};
-        if (card._opListCache[mode]) { body.innerHTML = card._opListCache[mode]; return; }
+        const renderOpts = {
+            arrears: OP_ARREARS_SECTIONS.has(section),
+            filenamePrefix: `${opState.officer?.name || "officer"}_${section}`
+        };
+        if (card._opListCache[mode]) {
+            opRenderClientListInto(body, card._opListCache[mode], renderOpts);
+            return;
+        }
         body.innerHTML = opSkeletonHtml();
         try {
-            card._opListCache[mode] = await opBuildClientListHtml(section);
-            body.innerHTML = card._opListCache[mode];
+            const rows = await opFetchClientListRows(section);
+            card._opListCache[mode] = rows;
+            opRenderClientListInto(body, rows, renderOpts);
         } catch (err) {
             body.innerHTML = opErrorHtml(err);
         }
@@ -462,7 +476,7 @@ async function opEnsureModeLoaded(card, mode) {
 // see that function for why.
 const OP_ARREARS_SECTIONS = new Set(["parT24", "parT24Area", "nbcOverdue", "nbcOverdueArea"]);
 
-async function opBuildClientListHtml(sectionKey) {
+async function opFetchClientListRows(sectionKey) {
     const q = opBuildQuery(opState.meta);
     const officer = opState.officer;
     const url = `${API.BASE_URL}/api/creditreport/byco/officer-clients${q}` +
@@ -474,9 +488,53 @@ async function opBuildClientListHtml(sectionKey) {
     if (!res.ok) throw new Error("Could not load the client list. Please try again.");
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Could not load the client list.");
+    return data.items || [];
+}
 
-    const rows = data.items || [];
-    return OP_ARREARS_SECTIONS.has(sectionKey) ? opArrearsTableHtml(rows) : opClientTableHtml(rows);
+// ---- Column specs ----
+// Single source of truth per table shape — drives the <th>/<td> markup,
+// the sort type each column click-sorts by (opWireSortableTable), and
+// the Excel export column set (opExportRowsToExcel), so all three can
+// never drift out of sync with each other.
+const OP_CLIENT_TABLE_COLS = [
+    { key: "name", label: "Name", type: "text" },
+    { key: "cif", label: "CIF", type: "text" },
+    { key: "loanNumber", label: "Loan Number", type: "text" },
+    { key: "disburseDate", label: "Disburse Date", type: "date" },
+    { key: "address", label: "Address", type: "text" },
+    { key: "productType", label: "Product Type", type: "text" },
+    { key: "loanSize", label: "Loan Size", type: "number" },
+    { key: "osUsd", label: "OS USD", type: "number" }
+];
+
+const OP_ARREARS_TABLE_COLS = [
+    { key: "name", label: "Customer", type: "text" },
+    { key: "loanNumber", label: "Loan Number", type: "text" },
+    { key: "class", label: "Class", type: "text" },
+    { key: "productType", label: "Product Type", type: "text" },
+    { key: "address", label: "Location", type: "text" },
+    { key: "disburseDate", label: "DisDate", type: "date" },
+    { key: "prnOS", label: "Prn.OS", type: "number" },
+    { key: "intOS", label: "Int.OS", type: "number" },
+    { key: "prnDue", label: "Prn.Due", type: "number" },
+    { key: "intDue", label: "Int.Due", type: "number" },
+    { key: "penalty", label: "Penalty", type: "number" },
+    { key: "arreas", label: "Arreas", type: "number" },
+    { key: "day", label: "Day", type: "number" },
+    { key: "balance", label: "Balnce", type: "number" },
+    { key: "accountLoan", label: "Account Loan", type: "text" },
+    { key: "cif", label: "CIF", type: "text" }
+];
+
+function opTableThHtml(col) {
+    return `<th data-sort-key="${col.key}" data-sort-type="${col.type}">${opEscapeHtml(col.label)}</th>`;
+}
+function opTableTdHtml(col, row) {
+    const v = row[col.key];
+    if (v === "" || v == null) return "<td></td>";
+    if (col.type === "number") return `<td>${opEscapeHtml(opFmtNum(v))}</td>`;
+    if (col.type === "date") return `<td>${opEscapeHtml(opFmtDateDMY(v))}</td>`;
+    return `<td>${opEscapeHtml(v)}</td>`;
 }
 
 // Shared by the category "List of Client" tab above and the heatmap's
@@ -485,34 +543,13 @@ async function opBuildClientListHtml(sectionKey) {
 // disburse date, already shown in that panel's own header.
 function opClientTableHtml(rows, { showDate = true } = {}) {
     if (!rows.length) return `<div class="op-state">No clients found for this category.</div>`;
+    const cols = showDate ? OP_CLIENT_TABLE_COLS : OP_CLIENT_TABLE_COLS.filter(c => c.key !== "disburseDate");
 
     return `
       <div class="op-client-table-wrap">
         <table class="op-client-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>CIF</th>
-              <th>Loan Number</th>
-              ${showDate ? "<th>Disburse Date</th>" : ""}
-              <th>Address</th>
-              <th>Product Type</th>
-              <th>Loan Size</th>
-              <th>OS USD</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.map(r => `<tr>
-              <td>${opEscapeHtml(r.name)}</td>
-              <td>${opEscapeHtml(r.cif)}</td>
-              <td>${opEscapeHtml(r.loanNumber)}</td>
-              ${showDate ? `<td>${opEscapeHtml(opFmtDateDMY(r.disburseDate))}</td>` : ""}
-              <td>${opEscapeHtml(r.address)}</td>
-              <td>${opEscapeHtml(r.productType)}</td>
-              <td>${r.loanSize === "" || r.loanSize == null ? "" : opEscapeHtml(opFmtNum(r.loanSize))}</td>
-              <td>${r.osUsd === "" || r.osUsd == null ? "" : opEscapeHtml(opFmtNum(r.osUsd))}</td>
-            </tr>`).join("")}
-          </tbody>
+          <thead><tr>${cols.map(opTableThHtml).join("")}</tr></thead>
+          <tbody>${rows.map(r => `<tr>${cols.map(c => opTableTdHtml(c, r)).join("")}</tr>`).join("")}</tbody>
         </table>
       </div>`;
 }
@@ -520,63 +557,129 @@ function opClientTableHtml(rows, { showDate = true } = {}) {
 // The T24 (Balance Loan at Risk) client list, both Own and Area, backs
 // this from CM-backend's officer-clients section=parT24/parT24Area — the
 // same arrears.js-style row shape that page's own table already uses
-// (Prn.OS/Int.OS/Prn.Due/Int.Due/Penalty/Arreas/Day/Balnce/Account Loan),
-// rather than the generic outstanding/disburse/writeOff column set
-// opClientTableHtml() renders. NBC Overdue's list (Own/Area) shares this
-// same table on request, even though its rows only carry
-// name/cif/loanNumber/disburseDate/address (mapped to Customer/CIF/Loan
-// Number/DisDate/Location below) — every arrears-only field just renders
-// blank there, since the Overdue sheet backing it doesn't carry them
-// (same "blank rather than guess" convention opClientTableHtml() already
-// follows for e.g. Write Off's Loan Size/OS USD).
+// (Prn.OS/Int.OS/Prn.Due/Int.Due/Penalty/Arreas/Day/Balnce/Account Loan,
+// plus Class/Product Type), rather than the generic outstanding/
+// disburse/writeOff column set opClientTableHtml() renders. NBC
+// Overdue's list (Own/Area) shares this same table on request, even
+// though its rows don't carry the arrears-only fields — those just
+// render blank there, since the Overdue sheet backing it doesn't carry
+// them (same "blank rather than guess" convention opClientTableHtml()
+// already follows for e.g. Write Off's Loan Size/OS USD). The leading
+// "No" column is a plain row count, not a sortable field.
 function opArrearsTableHtml(rows) {
     if (!rows.length) return `<div class="op-state">No clients found for this category.</div>`;
-
-    const cell = v => (v === "" || v == null) ? "" : opEscapeHtml(opFmtNum(v));
 
     return `
       <div class="op-client-table-wrap">
         <table class="op-client-table">
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Customer</th>
-              <th>Loan Number</th>
-              <th>Location</th>
-              <th>DisDate</th>
-              <th>Prn.OS</th>
-              <th>Int.OS</th>
-              <th>Prn.Due</th>
-              <th>Int.Due</th>
-              <th>Penalty</th>
-              <th>Arreas</th>
-              <th>Day</th>
-              <th>Balnce</th>
-              <th>Account Loan</th>
-              <th>CIF</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.map((r, i) => `<tr>
-              <td>${i + 1}</td>
-              <td>${opEscapeHtml(r.name)}</td>
-              <td>${opEscapeHtml(r.loanNumber)}</td>
-              <td>${opEscapeHtml(r.address)}</td>
-              <td>${opEscapeHtml(opFmtDateDMY(r.disburseDate))}</td>
-              <td>${cell(r.prnOS)}</td>
-              <td>${cell(r.intOS)}</td>
-              <td>${cell(r.prnDue)}</td>
-              <td>${cell(r.intDue)}</td>
-              <td>${cell(r.penalty)}</td>
-              <td>${cell(r.arreas)}</td>
-              <td>${cell(r.day)}</td>
-              <td>${cell(r.balance)}</td>
-              <td>${r.accountLoan ? opEscapeHtml(r.accountLoan) : ""}</td>
-              <td>${opEscapeHtml(r.cif)}</td>
-            </tr>`).join("")}
-          </tbody>
+          <thead><tr><th>No</th>${OP_ARREARS_TABLE_COLS.map(opTableThHtml).join("")}</tr></thead>
+          <tbody>${rows.map((r, i) => `<tr><td>${i + 1}</td>${OP_ARREARS_TABLE_COLS.map(c => opTableTdHtml(c, r)).join("")}</tr>`).join("")}</tbody>
         </table>
       </div>`;
+}
+
+// Ascending-comparator for one field, by column type. Missing/blank
+// values always sort last regardless of direction (opWireSortableTable
+// flips the overall result for descending, which would otherwise also
+// flip blanks to the front — a "9999-99-99"/Infinity sentinel keeps them
+// pinned to the end either way).
+function opCompareForSort(a, b, type) {
+    const blank = v => v === "" || v == null;
+    if (type === "number") {
+        const na = blank(a) ? Infinity : Number(a);
+        const nb = blank(b) ? Infinity : Number(b);
+        return na - nb;
+    }
+    if (type === "date") {
+        const da = blank(a) ? "9999-99-99" : a; // "yyyy-mm-dd" sorts lexicographically = chronologically
+        const db = blank(b) ? "9999-99-99" : b;
+        return da < db ? -1 : da > db ? 1 : 0;
+    }
+    const sa = blank(a) ? "￿" : String(a).toLowerCase();
+    const sb = blank(b) ? "￿" : String(b).toLowerCase();
+    return sa < sb ? -1 : sa > sb ? 1 : 0;
+}
+
+// Makes every <th data-sort-key> in container's table click-to-sort:
+// ascending on first click, descending on a second click of the same
+// column, back to ascending on a third, sorting `rows` in place and
+// re-rendering just the <tbody> via buildTableHtml (the exact same
+// opClientTableHtml/opArrearsTableHtml call the initial render used) —
+// re-running the whole builder and lifting its <tbody> out is simpler
+// than maintaining a second row-only template per table shape.
+function opWireSortableTable(container, rows, buildTableHtml) {
+    const table = container.querySelector("table");
+    const thead = table && table.querySelector("thead");
+    if (!table || !thead) return;
+
+    let sortKey = null;
+    let sortDir = 1;
+
+    thead.querySelectorAll("th[data-sort-key]").forEach(th => {
+        th.addEventListener("click", () => {
+            const key = th.dataset.sortKey;
+            const type = th.dataset.sortType || "text";
+            sortDir = (sortKey === key) ? -sortDir : 1;
+            sortKey = key;
+            rows.sort((a, b) => sortDir * opCompareForSort(a[key], b[key], type));
+
+            thead.querySelectorAll("th[data-sort-key]").forEach(t => t.classList.remove("op-sort-asc", "op-sort-desc"));
+            th.classList.add(sortDir === 1 ? "op-sort-asc" : "op-sort-desc");
+
+            const tmp = document.createElement("div");
+            tmp.innerHTML = buildTableHtml(rows);
+            const newBody = tmp.querySelector("tbody");
+            const oldBody = table.querySelector("tbody");
+            if (newBody && oldBody) oldBody.innerHTML = newBody.innerHTML;
+        });
+    });
+}
+
+// Exports the CURRENT (possibly sorted) rows to an .xlsx download, using
+// the same column set/order/labels the on-screen table shows — never a
+// silent superset or subset of what's visible.
+function opExportRowsToExcel(rows, cols, filenamePrefix) {
+    if (typeof XLSX === "undefined") {
+        if (typeof showToast === "function") showToast("Excel export library failed to load.", "error");
+        return;
+    }
+    if (!rows.length) {
+        if (typeof showToast === "function") showToast("Nothing to export.", "warning");
+        return;
+    }
+    const sheetData = rows.map((r, i) => {
+        const out = { No: i + 1 };
+        cols.forEach(c => {
+            const v = r[c.key];
+            out[c.label] = c.type === "date" ? opFmtDateDMY(v) : (v === "" || v == null ? "" : v);
+        });
+        return out;
+    });
+    const ws = XLSX.utils.json_to_sheet(sheetData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Clients");
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "");
+    XLSX.writeFile(wb, `${filenamePrefix}_${stamp}.xlsx`);
+}
+
+// One-stop render for any client list in this page (category tabs below
+// and the heatmap's per-day panel) — inserts the table (or the "No
+// clients" empty state), then wires sort-by-column and the Export Excel
+// button against the exact rows/columns actually on screen.
+function opRenderClientListInto(container, rows, { arrears = false, showDate = true, filenamePrefix = "clients" } = {}) {
+    const cols = arrears ? OP_ARREARS_TABLE_COLS : (showDate ? OP_CLIENT_TABLE_COLS : OP_CLIENT_TABLE_COLS.filter(c => c.key !== "disburseDate"));
+    const buildTableHtml = arrears ? opArrearsTableHtml : (rs => opClientTableHtml(rs, { showDate }));
+
+    const exportBtnHtml = rows.length
+        ? `<div class="op-list-actions"><button type="button" class="op-list-export-btn">⬇ Export Excel</button></div>`
+        : "";
+    container.innerHTML = exportBtnHtml + buildTableHtml(rows);
+
+    if (!rows.length) return;
+    opWireSortableTable(container, rows, buildTableHtml);
+    container.querySelector(".op-list-export-btn")?.addEventListener("click", () => {
+        opExportRowsToExcel(rows, cols, filenamePrefix);
+    });
 }
 
 // Buckets a day's disbursed value into a 0-4 sequential intensity step
@@ -839,7 +942,11 @@ function opWireDayClientPanel(container) {
             try {
                 const rows = await opFetchDayClients(date);
                 if (activeDate !== date) return; // superseded by a later click while this was loading
-                panel.innerHTML = heading + opClientTableHtml(rows, { showDate: false });
+                panel.innerHTML = heading + `<div class="op-heat-day-panel-body"></div>`;
+                opRenderClientListInto(panel.querySelector(".op-heat-day-panel-body"), rows, {
+                    showDate: false,
+                    filenamePrefix: `${opState.officer?.name || "officer"}_disburse_${date}`
+                });
             } catch (err) {
                 if (activeDate !== date) return;
                 panel.innerHTML = heading + opErrorHtml(err);

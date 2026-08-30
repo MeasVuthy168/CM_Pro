@@ -329,6 +329,44 @@
 .op-client-table td{ padding:9px 10px; border-top:1px solid var(--cr-border); }
 .op-client-table tr:nth-child(even) td{ background:var(--cr-row-alt); }
 
+.op-client-table th[data-sort-key]{
+    cursor:pointer;
+    user-select:none;
+    -webkit-user-select:none;
+    padding-right:18px;
+    position:relative;
+}
+.op-client-table th[data-sort-key]:hover{ color:var(--cr-text); }
+/* Neutral ↕ hints every sortable column is clickable; a click swaps it
+   for a directional ▲/▼ on whichever column is currently sorted. */
+.op-client-table th[data-sort-key]::after{
+    content:"↕";
+    position:absolute;
+    right:6px;
+    opacity:.4;
+    font-size:10px;
+}
+.op-client-table th.op-sort-asc::after{ content:"▲"; opacity:1; color:var(--cr-navy); }
+.op-client-table th.op-sort-desc::after{ content:"▼"; opacity:1; color:var(--cr-navy); }
+[data-theme="dark"] .op-client-table th.op-sort-asc::after,
+[data-theme="dark"] .op-client-table th.op-sort-desc::after{ color:var(--cr-gold-light); }
+
+.op-list-actions{ text-align:right; margin-bottom:8px; }
+.op-list-export-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:6px 12px;
+    border-radius:8px;
+    border:1px solid var(--cr-border);
+    background:var(--cr-card-bg);
+    color:var(--cr-text);
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+}
+.op-list-export-btn:hover{ background:var(--cr-row-alt); }
+
 /* ===== Chart (calendar heatmap) ===== */
 .op-chart-wrap{
     position:relative;
