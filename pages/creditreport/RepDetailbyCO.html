@@ -211,6 +211,20 @@ href="../../assets/css/creditreport/RepDetailbyCO.css">
 <div class="cr-skel-row"></div>
 </div>
 
+<!-- Filters the already-loaded table rows client-side by name — see
+     crApplySearchFilter() in RepDetailbyCO.js. Shown/hidden alongside
+     #crTableScroll below. -->
+<div class="cr-search-wrap" id="crSearchWrap" style="display:none">
+<span class="cr-search-icon">🔍</span>
+<input
+type="text"
+class="cr-search-input"
+id="crSearchInput"
+placeholder="Search officer..."
+autocomplete="off">
+<button type="button" class="cr-search-clear" id="crSearchClear" aria-label="Clear search" hidden>✕</button>
+</div>
+
 <div class="table-scroll" id="crTableScroll" style="display:none">
 <table id="crTable">
 <thead id="crThead"></thead>

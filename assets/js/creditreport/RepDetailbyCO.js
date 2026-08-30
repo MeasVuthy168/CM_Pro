@@ -223,8 +223,11 @@ function crBuildRow(item, section, isTotal, idx) {
     const nameCell = isTotal
         ? "Total"
         : `<button type="button" class="cr-officer-link" data-idx="${idx}">${crEscapeHtml(item.name)}</button>`;
+    // data-name backs crApplySearchFilter()'s client-side name search —
+    // lowercased once here rather than re-lowercasing on every keystroke.
+    const nameAttr = isTotal ? "" : ` data-name="${crEscapeHtml((item.name || "").toLowerCase())}"`;
     return `
-      <tr${isTotal ? ' class="cr-total-row"' : ""}>
+      <tr${isTotal ? ' class="cr-total-row"' : ""}${nameAttr}>
         <td class="cr-name-col">${nameCell}</td>
         ${cells}
       </tr>`;
@@ -239,8 +242,45 @@ function crRenderSection() {
         crData.items.map((it, idx) => crBuildRow(it, section, false, idx)).join("") +
         crBuildRow(crData.total, section, true);
 
+    // Re-render (switching "Showing", or a fresh branch/team fetch)
+    // rebuilds every row from scratch, so whatever the user already
+    // typed needs re-applying rather than being silently dropped.
+    crApplySearchFilter();
     requestAnimationFrame(crSetHeaderOffsets);
 }
+
+// ========================================
+// OFFICER SEARCH
+// Client-side name filter over the already-loaded table (crData.items)
+// — no refetch, unlike Branch/Team/date filters. The Total row (no
+// data-name attribute) always stays visible regardless of the query.
+// ========================================
+function crApplySearchFilter() {
+    const input = document.getElementById("crSearchInput");
+    const clearBtn = document.getElementById("crSearchClear");
+    const q = (input?.value || "").trim().toLowerCase();
+    if (clearBtn) clearBtn.hidden = !q;
+
+    document.querySelectorAll("#crTbody tr").forEach(tr => {
+        if (!tr.dataset.name) return; // Total row — always shown
+        tr.style.display = (!q || tr.dataset.name.includes(q)) ? "" : "none";
+    });
+}
+
+document.getElementById("crSearchInput")?.addEventListener("input", crApplySearchFilter);
+document.getElementById("crSearchInput")?.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    e.target.value = "";
+    crApplySearchFilter();
+    e.target.blur();
+});
+document.getElementById("crSearchClear")?.addEventListener("click", () => {
+    const input = document.getElementById("crSearchInput");
+    if (!input) return;
+    input.value = "";
+    crApplySearchFilter();
+    input.focus();
+});
 
 // ========================================
 // OFFICER DRILL-DOWN
@@ -295,6 +335,7 @@ window.addEventListener("orientationchange", () => setTimeout(crSetHeaderOffsets
 // ========================================
 function crShowLoading(message = "Loading Report Data...") {
     document.getElementById("crSkeleton").style.display = "block";
+    document.getElementById("crSearchWrap").style.display = "none";
     document.getElementById("crTableScroll").style.display = "none";
     document.getElementById("crEmptyMsg").style.display = "none";
     document.getElementById("btnCrRun").disabled = true;
@@ -309,6 +350,7 @@ function crShowEmpty(msg) {
     const el = document.getElementById("crEmptyMsg");
     el.textContent = msg;
     el.style.display = "block";
+    document.getElementById("crSearchWrap").style.display = "none";
     document.getElementById("crTableScroll").style.display = "none";
 }
 
@@ -394,6 +436,7 @@ async function crRunReport() {
         }
 
         crData = data;
+        document.getElementById("crSearchWrap").style.display = "flex";
         document.getElementById("crTableScroll").style.display = "block";
         crRenderSection();
     } catch (e) {
@@ -436,10 +479,23 @@ function notify(message, type = "info") {
     else alert(message);
 }
 
+// Export/print always cover every officer, regardless of whatever the
+// user happened to be typing in the search box — an official report
+// export silently missing rows because a search was still active would
+// be a much worse surprise than the search box just getting cleared.
+function crClearSearchForExport() {
+    const input = document.getElementById("crSearchInput");
+    if (input && input.value) {
+        input.value = "";
+        crApplySearchFilter();
+    }
+}
+
 // ========================================
 // EXPORT EXCEL
 // ========================================
 document.getElementById("btnCrExport")?.addEventListener("click", () => {
+    crClearSearchForExport();
     if (typeof XLSX === "undefined") {
         notify("Excel export library failed to load.", "error");
         return;
@@ -480,6 +536,7 @@ function extractPrintCss() {
 
 document.getElementById("btnCrExportPdf")?.addEventListener("click", async () => {
     document.getElementById("crMenuDropdown")?.classList.remove("show");
+    crClearSearchForExport();
     if (typeof html2canvas === "undefined" || typeof window.jspdf === "undefined") {
         notify("PDF export library failed to load.", "error");
         return;
@@ -568,6 +625,7 @@ document.getElementById("btnCrExportPdf")?.addEventListener("click", async () =>
 // PRINT
 // ========================================
 document.getElementById("btnCrPrint")?.addEventListener("click", () => {
+    crClearSearchForExport();
     window.print();
     document.getElementById("crMenuDropdown")?.classList.remove("show");
 });

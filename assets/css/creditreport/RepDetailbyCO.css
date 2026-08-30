@@ -385,6 +385,51 @@
     overflow:hidden;
 }
 
+/* ===== Officer search (filters the already-loaded rows client-side —
+   see crApplySearchFilter() in RepDetailbyCO.js) ===== */
+.cr-search-wrap{
+    position:relative;
+    display:flex;
+    align-items:center;
+    margin-bottom:10px;
+}
+.cr-search-icon{
+    position:absolute;
+    left:13px;
+    font-size:13px;
+    opacity:.6;
+    pointer-events:none;
+}
+.cr-search-input{
+    width:100%;
+    box-sizing:border-box;
+    padding:9px 34px;
+    border-radius:10px;
+    border:1px solid var(--cr-border);
+    background:var(--cr-input-bg);
+    color:var(--cr-input-text);
+    font-size:13.5px;
+    font-family:inherit;
+}
+.cr-search-input::placeholder{ color:var(--cr-text-muted); }
+.cr-search-input:focus{ outline:2px solid var(--cr-gold); outline-offset:-1px; }
+.cr-search-clear{
+    position:absolute;
+    right:8px;
+    width:22px;
+    height:22px;
+    border:none;
+    border-radius:50%;
+    background:transparent;
+    color:var(--cr-text-muted);
+    font-size:12px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.cr-search-clear:hover{ background:var(--cr-row-alt); }
+
 .table-scroll{
     position:relative;
     transform:translateZ(0);
@@ -701,7 +746,8 @@ body.cr-force-landscape .landscape-bar.hidden{
     }
 
     #offlineBanner, #topbar-container, #bottomnav-container,
-    .arrears-menu-wrap, .rendered-count-note, .cr-tabs, .cr-detailed-note{
+    .arrears-menu-wrap, .rendered-count-note, .cr-tabs, .cr-detailed-note,
+    .cr-search-wrap{
         display:none !important;
     }
 
