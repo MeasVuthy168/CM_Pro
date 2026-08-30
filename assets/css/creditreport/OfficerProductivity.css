@@ -32,6 +32,10 @@
     --cr-heat-4:#003B8B;
     --cr-heat-ink-lo:#1C2333;
     --cr-heat-ink-hi:#FFFFFF;
+    /* Ring highlight for weekend cells (op-heat-weekend). Holiday cells
+       (op-heat-holiday) reuse --cr-danger — an "important date" reads
+       naturally as the theme's existing warning/danger color. */
+    --cr-heat-weekend-ring:#6B4FA0;
 }
 [data-theme="dark"]{
     --cr-page-bg:#002D6B;
@@ -56,6 +60,7 @@
     --cr-heat-4:#FFD700;
     --cr-heat-ink-lo:#F3F6FC;
     --cr-heat-ink-hi:#1C2333;
+    --cr-heat-weekend-ring:#B98BFF;
 }
 [data-theme="gold"]{
     --cr-page-bg:#FFF8E7;
@@ -79,6 +84,7 @@
     --cr-heat-4:#8A5A00;
     --cr-heat-ink-lo:#1C2333;
     --cr-heat-ink-hi:#FFFDF6;
+    --cr-heat-weekend-ring:#3A6FA8;
 }
 [data-theme="darkgray"]{
     --cr-page-bg:#2B2E33;
@@ -106,6 +112,7 @@
     --cr-heat-4:#D8DAE0;
     --cr-heat-ink-lo:#F0F1F3;
     --cr-heat-ink-hi:#1C2333;
+    --cr-heat-weekend-ring:#6FB3D9;
 }
 
 *{ box-sizing:border-box; }
@@ -304,6 +311,13 @@
     font-weight:700;
     color:var(--cr-text);
     text-align:center;
+    padding:0 32px 4px;
+}
+.op-heat-subtitle{
+    font-size:11px;
+    font-weight:500;
+    color:var(--cr-text-muted);
+    text-align:center;
     padding:0 32px 10px;
 }
 .op-heat-grid{
@@ -354,6 +368,13 @@
 .op-heat-cell.op-heat-h3 .op-heat-day, .op-heat-cell.op-heat-h3 .op-heat-badge,
 .op-heat-cell.op-heat-h4 .op-heat-day, .op-heat-cell.op-heat-h4 .op-heat-badge{ color:var(--cr-heat-ink-hi); }
 
+/* Weekend/holiday ring — an inset border rather than a background swap,
+   so it layers over any magnitude color (op-heat-h1..h4) instead of
+   fighting it. Holiday's rule comes second so it wins the box-shadow
+   when a date is both a weekend day and a holiday. */
+.op-heat-cell.op-heat-weekend{ box-shadow:inset 0 0 0 2px var(--cr-heat-weekend-ring); }
+.op-heat-cell.op-heat-holiday{ box-shadow:inset 0 0 0 2px var(--cr-danger); }
+
 .op-heat-legend{
     display:flex;
     align-items:center;
@@ -363,12 +384,15 @@
     color:var(--cr-text-muted);
     justify-content:center;
 }
+.op-heat-legend-2{ margin-top:6px; }
 .op-heat-sw{ width:13px; height:13px; border-radius:4px; }
 .op-heat-sw.op-heat-h0{ background:var(--cr-row-alt); }
 .op-heat-sw.op-heat-h1{ background:var(--cr-heat-1); }
 .op-heat-sw.op-heat-h2{ background:var(--cr-heat-2); }
 .op-heat-sw.op-heat-h3{ background:var(--cr-heat-3); }
 .op-heat-sw.op-heat-h4{ background:var(--cr-heat-4); }
+.op-heat-sw.op-heat-ring-weekend{ background:transparent; box-shadow:inset 0 0 0 2px var(--cr-heat-weekend-ring); }
+.op-heat-sw.op-heat-ring-holiday{ background:transparent; box-shadow:inset 0 0 0 2px var(--cr-danger); }
 
 .op-heat-tooltip{
     position:fixed;
@@ -429,7 +453,8 @@
 .op-chart-fs-body-wrap .op-heat-day{ font-size:12px; top:6px; left:8px; }
 .op-chart-fs-body-wrap .op-heat-badge{ font-size:14px; bottom:6px; right:8px; }
 .op-chart-fs-body-wrap .op-heat-dow{ font-size:12px; }
-.op-chart-fs-body-wrap .op-heat-title{ font-size:16px; padding:0 0 16px; }
+.op-chart-fs-body-wrap .op-heat-title{ font-size:16px; padding:0 0 4px; }
+.op-chart-fs-body-wrap .op-heat-subtitle{ font-size:13px; padding:0 0 16px; }
 .op-chart-fs-body-wrap .op-heat-grid{ gap:6px; }
 
 /* ===== Loading / empty / error states shared by both sub-views ===== */
