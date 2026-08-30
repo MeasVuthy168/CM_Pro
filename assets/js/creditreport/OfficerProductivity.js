@@ -55,12 +55,13 @@
 //
 //   GET /api/creditreport/byco/kh-holidays
 //   -> { ok, holidays: [{ date: "yyyy-mm-dd", name }, ...] }
-//   Cambodian public holidays, sourced server-side from Google's own
-//   "Holidays in Cambodia" calendar feed (see crFetchKhHolidays in
-//   CM-backend's lib/creditreport-co.js) — not hand-maintained here since
-//   several are lunar-calendar-based. Fetched once per page load via
-//   opEnsureKhHolidays() and cached in opKhHolidays; a fetch failure just
-//   leaves holiday highlighting off, it never breaks the heatmap itself.
+//   Cambodian public holidays, every year currently in CM-backend's
+//   KH_HOLIDAYS_BY_YEAR (lib/creditreport-co.js) — manually maintained
+//   there, not here, since several holidays are lunar-calendar-based and
+//   set by government gazette year to year (no reliable free API for
+//   them). Fetched once per page load via opEnsureKhHolidays() and
+//   cached in opKhHolidays; a fetch failure just leaves holiday
+//   highlighting off, it never breaks the heatmap itself.
 //
 // Both fail gracefully with a plain, honest message (see opErrorHtml)
 // on any real failure rather than fabricating placeholder client data
@@ -411,8 +412,7 @@ const OP_HEAT_DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 // Cambodian public holidays ("yyyy-mm-dd" keys) that get the same
 // highlight ring as Sat/Sun on the heatmap (see op-heat-holiday below).
 // Populated from GET /api/creditreport/byco/kh-holidays — CM-backend's
-// own source of truth (Google's official "Holidays in Cambodia" calendar
-// feed, cached server-side) rather than a hand-maintained list here,
+// manually maintained KH_HOLIDAYS_BY_YEAR list, not duplicated here,
 // since several Cambodian holidays are lunar-calendar-based and set by
 // government gazette year to year. opEnsureKhHolidays() fills this once
 // per page load; a fetch failure just leaves it empty (Sat/Sun highlight
@@ -473,14 +473,31 @@ function opBuildDisburseHeatmapHtml(dates, values, counts, officer, meta) {
     });
 
     const officerName = officer?.name || "";
-    const officerLoan = opGet(officer, "loanDisburse.loan");
-    const officerValue = opGet(officer, "loanDisburse.value");
-    const period = (meta && meta.fromDate && meta.toDate)
-        ? `${opFmtDateDDMMYY(meta.fromDate)}-${opFmtDateDDMMYY(meta.toDate)}`
-        : "-";
-    // Month/year label for the prev/next nav row below — reflects whatever
-    // month is actually being displayed (dates[0]), which after
-    // opNavigateDisburseMonth() may not be the report's own period month.
+
+    // The "Period Date"/"Total Disburse" lines describe whatever month is
+    // actually on screen, which after opNavigateDisburseMonth() may not
+    // be the report's own period month anymore. On the original month,
+    // keep showing the report's real (possibly partial-month) filter
+    // period and the officer's own loanDisburse summary — the exact
+    // figures the report itself stands behind. On any other month, there
+    // is no such report-level figure for that month, so both lines
+    // switch to the full displayed month and a sum of its own
+    // values/counts (i.e. exactly what the grid below is showing).
+    const displayedMonthKey = dates[0].slice(0, 7);
+    const isOriginalMonth = meta && meta.fromDate && displayedMonthKey === meta.fromDate.slice(0, 7);
+
+    let period, totalLoan, totalValue;
+    if (isOriginalMonth && meta.toDate) {
+        period = `${opFmtDateDDMMYY(meta.fromDate)}-${opFmtDateDDMMYY(meta.toDate)}`;
+        totalLoan = opGet(officer, "loanDisburse.loan");
+        totalValue = opGet(officer, "loanDisburse.value");
+    } else {
+        period = `${opFmtDateDDMMYY(dates[0])}-${opFmtDateDDMMYY(dates[dates.length - 1])}`;
+        totalLoan = counts.reduce((sum, c) => sum + (c || 0), 0);
+        totalValue = values.reduce((sum, v) => sum + (v || 0), 0);
+    }
+
+    // Month/year label for the prev/next nav row below.
     const monthLabel = new Date(dates[0] + "T00:00:00")
         .toLocaleString("en-US", { month: "long", year: "numeric" });
 
@@ -489,7 +506,7 @@ function opBuildDisburseHeatmapHtml(dates, values, counts, officer, meta) {
       <div class="op-heat-subtitle-group">
         <div class="op-heat-subtitle-line">Officer Name: ${opEscapeHtml(officerName)}</div>
         <div class="op-heat-subtitle-line">Period Date: ${period}</div>
-        <div class="op-heat-subtitle-line">Total  Disburse: ${opFmtNum(officerLoan)}LD, USD${opFmtNum(officerValue)}</div>
+        <div class="op-heat-subtitle-line">Total  Disburse: ${opFmtNum(totalLoan)}LD, USD${opFmtNum(totalValue)}</div>
       </div>
       <div class="op-heat-grid">${cells}</div>
       <div class="op-heat-legend">
