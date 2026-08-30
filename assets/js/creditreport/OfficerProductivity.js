@@ -36,10 +36,12 @@
 //     &branch=&team=&fromDate=&toDate=
 //   -> { ok, labels: [...], values: [...], counts: [...] }
 //   Daily disbursement value + loan count series for this officer,
-//   zero-filled for every calendar day from fromDate to toDate (a
-//   continuous timeline, not just days with activity) — only used by
-//   the Loan Disburse card's Chart tab, rendered as two lines on
-//   separate Y axes (value and count have very different scales).
+//   zero-filled for every day of the calendar month fromDate falls in
+//   (day 1 to the last day of that month — a complete beginning-to-
+//   end-of-month timeline, independent of the report's own fromDate/
+//   toDate filter) — only used by the Loan Disburse card's Chart tab,
+//   rendered as grouped bars on two Y axes (value and count have very
+//   different scales).
 //
 // Both fail gracefully with a plain, honest message (see opErrorHtml)
 // on any real failure rather than fabricating placeholder client data
@@ -374,6 +376,12 @@ async function opRenderDisburseChart(sectionKey, wrap) {
         return;
     }
 
+    // NOT horizontally scrolled, deliberately: with two Y axes (Value on
+    // the left, Loan on the right) a wide scrollable canvas means only
+    // ONE of the two axes is ever in view at a given scroll position —
+    // tried it, confirmed broken. Fits the wrap's own width instead so
+    // both axes stay visible together at all times; bars get thin at 31
+    // days but stay legible, and the tooltip still shows exact values.
     wrap.innerHTML = `<canvas></canvas>`;
     if (typeof Chart === "undefined") {
         wrap.innerHTML = `<div class="op-state op-state-error">Chart library failed to load.</div>`;
@@ -382,14 +390,14 @@ async function opRenderDisburseChart(sectionKey, wrap) {
     const isDark = document.documentElement.getAttribute("data-theme") === "dark";
     const valueColor = isDark ? "#FFD700" : "#003B8B";
     const countColor = isDark ? "#4FD1C5" : "#D4380D";
-    // Timeline over the full date range (backend zero-fills every day from
-    // fromDate to toDate), so a line reads better than one bar per day —
-    // especially once the range spans most of a month. Value and Count
-    // share one chart on two Y axes since their scales are wildly
-    // different (value in the thousands, count usually single digits) —
-    // one axis would flatten the count line to an invisible flat line.
+    // Beginning-to-end-of-month timeline (backend zero-fills every day of
+    // the calendar month, not just the report's fromDate-toDate window) as
+    // grouped bars. Value and Count share one chart on two Y axes since
+    // their scales are wildly different (value in the thousands, count
+    // usually single digits) — one axis would flatten the count bars to
+    // invisible slivers.
     new Chart(wrap.querySelector("canvas").getContext("2d"), {
-        type: "line",
+        type: "bar",
         data: {
             labels,
             datasets: [
@@ -397,26 +405,19 @@ async function opRenderDisburseChart(sectionKey, wrap) {
                     label: "Value",
                     data: values,
                     yAxisID: "yValue",
-                    borderColor: valueColor,
-                    backgroundColor: isDark ? "rgba(255,215,0,0.15)" : "rgba(0,59,139,0.12)",
-                    fill: true,
-                    tension: 0.25,
-                    pointRadius: labels.length > 20 ? 0 : 3,
-                    pointHoverRadius: 5,
-                    pointBackgroundColor: valueColor
+                    backgroundColor: valueColor,
+                    borderRadius: 3,
+                    categoryPercentage: 0.7,
+                    barPercentage: 0.85
                 },
                 {
                     label: "Loan",
                     data: counts,
                     yAxisID: "yCount",
-                    borderColor: countColor,
                     backgroundColor: countColor,
-                    fill: false,
-                    borderDash: [4, 3],
-                    tension: 0.25,
-                    pointRadius: labels.length > 20 ? 0 : 3,
-                    pointHoverRadius: 5,
-                    pointBackgroundColor: countColor
+                    borderRadius: 3,
+                    categoryPercentage: 0.7,
+                    barPercentage: 0.85
                 }
             ]
         },
@@ -439,6 +440,10 @@ async function opRenderDisburseChart(sectionKey, wrap) {
                     grid: { drawOnChartArea: false },
                     title: { display: true, text: "Loan" }
                 },
+                // All 31 bars still render even where the label is skipped
+                // — this just thins out the X-axis text so it doesn't
+                // overlap at a fixed mobile width; tapping/hovering a bar
+                // still shows its exact day via the tooltip.
                 x: { ticks: { autoSkip: true, maxTicksLimit: 12 } }
             }
         }
