@@ -39,7 +39,10 @@
 //   zero-filled for every day of the calendar month fromDate falls in
 //   (day 1 to the last day of that month — a complete beginning-to-
 //   end-of-month view, independent of the report's own fromDate/toDate
-//   filter) — only used by the Loan Disburse card's Chart tab, rendered
+//   filter). The Chart tab's prev/next month buttons (opNavigateDisburse-
+//   Month) just re-call this with a different fromDate — any date in the
+//   target month — so browsing months doesn't need its own endpoint.
+//   Only used by the Loan Disburse card's Chart tab, rendered
 //   as a calendar heatmap (one cell per day, colored by value, loan
 //   count printed inside — see opBuildDisburseHeatmapHtml()). dates[] is
 //   full "yyyy-mm-dd" strings (labels[] is display-only "DD-MM"), used to
@@ -432,11 +435,13 @@ function opEnsureKhHolidays() {
     return opKhHolidaysPromise;
 }
 
-// Builds the calendar-heatmap markup (title + subtitle + 7-column day
-// grid + legend) — one cell per day of the month, colored by disbursed
-// value, with the loan count printed inside; Sat/Sun and any date in
-// OP_KH_HOLIDAYS get an extra ring highlight. Shared by the inline chart
-// and the fullscreen view so the two can't drift out of sync.
+// Builds the calendar-heatmap markup (title + subtitle lines + 7-column
+// day grid + legend + prev/next month nav) — one cell per day of the
+// month, colored by disbursed value, with the loan count printed inside;
+// Sat/Sun and any date in opKhHolidays get an extra ring highlight.
+// Shared by the inline chart and the fullscreen view so the two can't
+// drift out of sync. The nav row's month/year label always reflects
+// dates[0], not the report's own period — see opNavigateDisburseMonth.
 // "T00:00:00" (no Z) forces LOCAL-time parsing for the weekday lookup —
 // a bare "yyyy-mm-dd" string parses as UTC midnight per spec, which can
 // land on the wrong calendar day in negative-UTC-offset timezones.
@@ -473,11 +478,19 @@ function opBuildDisburseHeatmapHtml(dates, values, counts, officer, meta) {
     const period = (meta && meta.fromDate && meta.toDate)
         ? `${opFmtDateDDMMYY(meta.fromDate)}-${opFmtDateDDMMYY(meta.toDate)}`
         : "-";
-    const subtitle = `Period Date: ${period} (Loan: ${opFmtNum(officerLoan)}LD,Value: USD${opFmtNum(officerValue)})`;
+    // Month/year label for the prev/next nav row below — reflects whatever
+    // month is actually being displayed (dates[0]), which after
+    // opNavigateDisburseMonth() may not be the report's own period month.
+    const monthLabel = new Date(dates[0] + "T00:00:00")
+        .toLocaleString("en-US", { month: "long", year: "numeric" });
 
     return `
-      <div class="op-heat-title">Daily Loan Disbursement - ${opEscapeHtml(officerName)}</div>
-      <div class="op-heat-subtitle">${opEscapeHtml(subtitle)}</div>
+      <div class="op-heat-title">Daily Loan Disbursement</div>
+      <div class="op-heat-subtitle-group">
+        <div class="op-heat-subtitle-line">Officer Name: ${opEscapeHtml(officerName)}</div>
+        <div class="op-heat-subtitle-line">Period Date: ${period}</div>
+        <div class="op-heat-subtitle-line">Total  Disburse: ${opFmtNum(officerLoan)}LD, USD${opFmtNum(officerValue)}</div>
+      </div>
       <div class="op-heat-grid">${cells}</div>
       <div class="op-heat-legend">
         <span>Less</span>
@@ -491,7 +504,34 @@ function opBuildDisburseHeatmapHtml(dates, values, counts, officer, meta) {
       <div class="op-heat-legend op-heat-legend-2">
         <span class="op-heat-sw op-heat-ring-weekend"></span><span>Weekend</span>
         <span class="op-heat-sw op-heat-ring-holiday"></span><span>Holiday</span>
+      </div>
+      <div class="op-heat-nav">
+        <button type="button" class="op-heat-nav-btn" data-dir="prev" aria-label="Previous month">‹</button>
+        <span class="op-heat-nav-label">${opEscapeHtml(monthLabel)}</span>
+        <button type="button" class="op-heat-nav-btn" data-dir="next" aria-label="Next month">›</button>
       </div>`;
+}
+
+// Wires the prev/next month buttons appended by opBuildDisburseHeatmapHtml.
+// stopPropagation keeps a nav click from also bubbling up to the inline
+// view's fullscreen-open listener (see opWireChartFullscreenTriggers).
+function opWireDisburseNav(container, onNavigate) {
+    container.querySelectorAll(".op-heat-nav-btn").forEach(btn => {
+        btn.addEventListener("click", e => {
+            e.stopPropagation();
+            onNavigate(btn.dataset.dir === "next" ? 1 : -1);
+        });
+    });
+}
+
+// "yyyy-mm-01" -> "yyyy-mm-01" shifted by `delta` whole months (can be
+// negative). Used to turn a prev/next click into the fromDate override
+// opFetchDisburseChartData sends the backend, which always renders
+// whichever full calendar month that date falls in.
+function opShiftMonthKey(anchorKey, delta) {
+    const [y, m] = anchorKey.split("-").map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
 }
 
 // One shared floating tooltip element (created once, reused by both the
@@ -546,9 +586,23 @@ function opWireHeatmapTooltips(container, clickToShow) {
     });
 }
 
-async function opRenderDisburseChart(sectionKey, wrap) {
-    const q = opBuildQuery(opState.meta);
+// Last-fetched month's calendar key ("yyyy-mm-01") — the anchor
+// opNavigateDisburseMonth shifts by ±1 to build the next fetch's
+// fromDate override. Kept alongside opDisburseChartData since both
+// describe "whatever month is currently on screen."
+let opDisburseChartAnchor = null;
+
+// Fetches one month of disbursement data and updates opDisburseChartData/
+// opDisburseChartAnchor. monthOverride ("yyyy-mm-dd", any day in the
+// target month) lets opNavigateDisburseMonth ask for a month other than
+// the report's own fromDate — the backend always renders the full
+// calendar month whichever date it's given falls in, so this is the only
+// input that needs to change. Returns the fetched {dates,values,counts},
+// or null when there's truly nothing to show (no officerId at all).
+async function opFetchDisburseChartData(monthOverride) {
     const officer = opState.officer;
+    const metaForQuery = monthOverride ? { ...opState.meta, fromDate: monthOverride } : opState.meta;
+    const q = opBuildQuery(metaForQuery);
     const url = `${API.BASE_URL}/api/creditreport/byco/officer-disburse-chart${q}` +
         `&name=${encodeURIComponent(officer.name || "")}` +
         `&officerId=${encodeURIComponent(officer.id || "")}`;
@@ -565,24 +619,56 @@ async function opRenderDisburseChart(sectionKey, wrap) {
     await holidaysReady;
 
     const dates = data.dates || [];
-    const values = data.values || [];
-    const counts = data.counts || [];
     if (!dates.length) {
         opDisburseChartData = null;
+        return null;
+    }
+    opDisburseChartData = { dates, values: data.values || [], counts: data.counts || [] };
+    opDisburseChartAnchor = `${dates[0].slice(0, 7)}-01`;
+    return opDisburseChartData;
+}
+
+// Renders opDisburseChartData (already fetched) into either the inline
+// card view or the fullscreen body — the only difference is the inline
+// view also gets the ⛶ button and the tap-anywhere-to-open-fullscreen
+// listener, neither of which make sense once already fullscreen.
+function opRenderDisburseHeatmapInto(container, fullscreen) {
+    const { dates, values, counts } = opDisburseChartData;
+    const btnHtml = fullscreen
+        ? ""
+        : `<button type="button" class="op-chart-fullscreen-btn" aria-label="Fullscreen chart">⛶</button>`;
+    container.innerHTML = btnHtml + opBuildDisburseHeatmapHtml(dates, values, counts, opState.officer, opState.meta);
+
+    opWireHeatmapTooltips(container, fullscreen);
+    if (!fullscreen) opWireChartFullscreenTriggers(container);
+    opWireDisburseNav(container, delta => opNavigateDisburseMonth(delta, container, fullscreen));
+}
+
+async function opNavigateDisburseMonth(delta, container, fullscreen) {
+    const newAnchor = opShiftMonthKey(opDisburseChartAnchor, delta);
+    container.innerHTML = opSkeletonHtml();
+    try {
+        const chartData = await opFetchDisburseChartData(newAnchor);
+        if (!chartData) {
+            container.innerHTML = `<div class="op-state">No disbursement data for this period.</div>`;
+            return;
+        }
+        opRenderDisburseHeatmapInto(container, fullscreen);
+    } catch (err) {
+        container.innerHTML = opErrorHtml(err);
+    }
+}
+
+async function opRenderDisburseChart(sectionKey, wrap) {
+    const chartData = await opFetchDisburseChartData();
+    if (!chartData) {
         wrap.innerHTML = `<div class="op-state">No disbursement data for this period.</div>`;
         return;
     }
-    opDisburseChartData = { dates, values, counts };
-
     // A fullscreen button (plus tap/long-press anywhere on the heatmap —
     // see opWireChartFullscreenTriggers) opens the same heatmap bigger,
     // for anyone who wants larger day cells than this inline view allows.
-    wrap.innerHTML =
-        `<button type="button" class="op-chart-fullscreen-btn" aria-label="Fullscreen chart">⛶</button>` +
-        opBuildDisburseHeatmapHtml(dates, values, counts, officer, opState.meta);
-
-    opWireHeatmapTooltips(wrap, false);
-    opWireChartFullscreenTriggers(wrap);
+    opRenderDisburseHeatmapInto(wrap, false);
 }
 
 // Tap, click, or press-and-hold anywhere on the heatmap (or its dedicated
@@ -605,9 +691,7 @@ async function opOpenChartFullscreen() {
     overlay.hidden = false;
     document.body.style.overflow = "hidden";
 
-    const { dates, values, counts } = opDisburseChartData;
-    body.innerHTML = opBuildDisburseHeatmapHtml(dates, values, counts, opState.officer, opState.meta);
-    opWireHeatmapTooltips(body, true);
+    opRenderDisburseHeatmapInto(body, true);
 
     // Progressive enhancement, not a requirement — the fixed-position CSS
     // overlay above already gives a full-viewport view on every

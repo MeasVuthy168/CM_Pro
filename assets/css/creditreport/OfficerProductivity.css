@@ -313,12 +313,15 @@
     text-align:center;
     padding:0 32px 4px;
 }
-.op-heat-subtitle{
+.op-heat-subtitle-group{
+    text-align:center;
+    padding:0 32px 10px;
+}
+.op-heat-subtitle-line{
     font-size:11px;
     font-weight:500;
     color:var(--cr-text-muted);
-    text-align:center;
-    padding:0 32px 10px;
+    line-height:1.5;
 }
 .op-heat-grid{
     display:grid;
@@ -394,6 +397,42 @@
 .op-heat-sw.op-heat-ring-weekend{ background:transparent; box-shadow:inset 0 0 0 2px var(--cr-heat-weekend-ring); }
 .op-heat-sw.op-heat-ring-holiday{ background:transparent; box-shadow:inset 0 0 0 2px var(--cr-danger); }
 
+/* Prev/next month nav, bottom-right of the card (justify-content:flex-end
+   puts both buttons + the label there without needing extra wrapper
+   markup). Browsing months is independent of the heat-map's own click-
+   to-fullscreen/tooltip handling — opWireDisburseNav stops propagation on
+   these buttons so a click here never also opens/affects anything else. */
+.op-heat-nav{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+    margin-top:12px;
+}
+.op-heat-nav-label{
+    font-size:11px;
+    font-weight:600;
+    color:var(--cr-text-muted);
+    min-width:88px;
+    text-align:center;
+}
+.op-heat-nav-btn{
+    width:26px;
+    height:26px;
+    border-radius:7px;
+    border:1px solid var(--cr-border);
+    background:var(--cr-card-bg);
+    color:var(--cr-text);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:15px;
+    font-weight:700;
+    line-height:1;
+    cursor:pointer;
+    padding:0;
+}
+
 .op-heat-tooltip{
     position:fixed;
     pointer-events:none;
@@ -454,8 +493,11 @@
 .op-chart-fs-body-wrap .op-heat-badge{ font-size:14px; bottom:6px; right:8px; }
 .op-chart-fs-body-wrap .op-heat-dow{ font-size:12px; }
 .op-chart-fs-body-wrap .op-heat-title{ font-size:16px; padding:0 0 4px; }
-.op-chart-fs-body-wrap .op-heat-subtitle{ font-size:13px; padding:0 0 16px; }
+.op-chart-fs-body-wrap .op-heat-subtitle-group{ padding:0 0 16px; }
+.op-chart-fs-body-wrap .op-heat-subtitle-line{ font-size:13px; }
 .op-chart-fs-body-wrap .op-heat-grid{ gap:6px; }
+.op-chart-fs-body-wrap .op-heat-nav-label{ font-size:13px; min-width:110px; }
+.op-chart-fs-body-wrap .op-heat-nav-btn{ width:32px; height:32px; font-size:18px; }
 
 /* ===== Loading / empty / error states shared by both sub-views ===== */
 .op-state{
