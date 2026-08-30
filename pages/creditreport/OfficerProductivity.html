@@ -71,6 +71,25 @@ href="../../assets/css/creditreport/OfficerProductivity.css">
 </div>
 </div>
 
+<!-- ========================= -->
+<!-- OFFICER SEARCH -->
+<!-- Switches to a different officer (same report filters) without
+     leaving the page — see opWireOfficerSearch()/opSwitchOfficer() in
+     OfficerProductivity.js. Hidden until opFinishLoad() reveals it
+     alongside the header/cards below. -->
+<!-- ========================= -->
+
+<div class="op-search-wrap" id="opSearchWrap" style="display:none">
+<span class="op-search-icon">🔍</span>
+<input
+type="text"
+class="op-search-input"
+id="opSearchInput"
+placeholder="Search officer..."
+autocomplete="off">
+<div class="op-search-dropdown" id="opSearchDropdown" hidden></div>
+</div>
+
 <!-- Skeleton while the officer's summary is being resolved -->
 <div class="op-page-skel" id="opPageSkel">
 <div class="op-skel-card"></div>

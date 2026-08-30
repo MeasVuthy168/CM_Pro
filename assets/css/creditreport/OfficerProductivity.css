@@ -171,6 +171,56 @@
     white-space:nowrap;
 }
 
+/* ===== Officer search ===== */
+.op-search-wrap{
+    position:relative;
+    margin-bottom:14px;
+}
+.op-search-icon{
+    position:absolute;
+    left:13px;
+    top:50%;
+    transform:translateY(-50%);
+    font-size:13px;
+    opacity:.6;
+    pointer-events:none;
+}
+.op-search-input{
+    width:100%;
+    box-sizing:border-box;
+    padding:10px 14px 10px 34px;
+    border-radius:12px;
+    border:1px solid var(--cr-border);
+    background:var(--cr-input-bg);
+    color:var(--cr-input-text);
+    font-size:13.5px;
+    font-family:inherit;
+}
+.op-search-input::placeholder{ color:var(--cr-text-muted); }
+.op-search-input:focus{ outline:2px solid var(--cr-gold); outline-offset:-1px; }
+.op-search-dropdown{
+    position:absolute;
+    left:0;
+    right:0;
+    top:calc(100% + 4px);
+    z-index:5;
+    max-height:280px;
+    overflow-y:auto;
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:12px;
+    box-shadow:var(--cr-shadow);
+}
+.op-search-item{
+    padding:9px 14px;
+    cursor:pointer;
+    border-bottom:1px solid var(--cr-border);
+}
+.op-search-item:last-child{ border-bottom:none; }
+.op-search-item.active, .op-search-item:hover{ background:var(--cr-row-alt); }
+.op-search-item-name{ font-size:13px; font-weight:700; color:var(--cr-text); }
+.op-search-item-meta{ font-size:11px; color:var(--cr-text-muted); margin-top:2px; }
+
 /* ===== Category cards ===== */
 .op-cards{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
 .op-card{
