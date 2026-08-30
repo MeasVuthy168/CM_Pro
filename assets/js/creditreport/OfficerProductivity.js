@@ -110,6 +110,14 @@ const opToken =
 
 let opState = { officer: null, meta: null };
 
+// Last-fetched Loan Disburse chart data, kept around so the fullscreen
+// view (opOpenChartFullscreen) can reuse it without re-fetching, plus the
+// two live Chart.js instances (small inline + fullscreen) so re-opening
+// destroys the previous instance instead of erroring on canvas reuse.
+let opDisburseChartData = null;
+let opDisburseChartSmall = null;
+let opDisburseChartFs = null;
+
 // ========================================
 // HELPERS
 // ========================================
@@ -356,47 +364,16 @@ async function opBuildClientListHtml(sectionKey) {
       </div>`;
 }
 
-async function opRenderDisburseChart(sectionKey, wrap) {
-    const q = opBuildQuery(opState.meta);
-    const officer = opState.officer;
-    const url = `${API.BASE_URL}/api/creditreport/byco/officer-disburse-chart${q}` +
-        `&name=${encodeURIComponent(officer.name || "")}` +
-        `&officerId=${encodeURIComponent(officer.id || "")}`;
-
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${opToken}` } });
-    if (!res.ok) throw new Error("Could not load the disbursement chart. Please try again.");
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.message || "Could not load the disbursement chart.");
-
-    const labels = data.labels || [];
-    const values = data.values || [];
-    const counts = data.counts || [];
-    if (!labels.length) {
-        wrap.innerHTML = `<div class="op-state">No disbursement data for this period.</div>`;
-        return;
-    }
-
-    // NOT horizontally scrolled, deliberately: with two Y axes (Value on
-    // the left, Loan on the right) a wide scrollable canvas means only
-    // ONE of the two axes is ever in view at a given scroll position —
-    // tried it, confirmed broken. Fits the wrap's own width instead so
-    // both axes stay visible together at all times; bars get thin at 31
-    // days but stay legible, and the tooltip still shows exact values.
-    wrap.innerHTML = `<canvas></canvas>`;
-    if (typeof Chart === "undefined") {
-        wrap.innerHTML = `<div class="op-state op-state-error">Chart library failed to load.</div>`;
-        return;
-    }
-    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+// Shared Chart.js config for the Loan Disburse chart — used for both the
+// small inline chart and the fullscreen one, so the two never drift out
+// of sync with each other. autoSkip adapts to whatever width the canvas
+// actually gets (thins out X-axis text on the narrow inline chart, shows
+// far more of it on the wide fullscreen/landscape canvas) — no separate
+// variant needed.
+function opBuildDisburseChartConfig(labels, values, counts, isDark) {
     const valueColor = isDark ? "#FFD700" : "#003B8B";
     const countColor = isDark ? "#4FD1C5" : "#D4380D";
-    // Beginning-to-end-of-month timeline (backend zero-fills every day of
-    // the calendar month, not just the report's fromDate-toDate window) as
-    // grouped bars. Value and Count share one chart on two Y axes since
-    // their scales are wildly different (value in the thousands, count
-    // usually single digits) — one axis would flatten the count bars to
-    // invisible slivers.
-    new Chart(wrap.querySelector("canvas").getContext("2d"), {
+    return {
         type: "bar",
         data: {
             labels,
@@ -442,13 +419,127 @@ async function opRenderDisburseChart(sectionKey, wrap) {
                 },
                 // All 31 bars still render even where the label is skipped
                 // — this just thins out the X-axis text so it doesn't
-                // overlap at a fixed mobile width; tapping/hovering a bar
-                // still shows its exact day via the tooltip.
+                // overlap; tapping/hovering a bar still shows its exact
+                // day via the tooltip.
                 x: { ticks: { autoSkip: true, maxTicksLimit: 12 } }
             }
         }
-    });
+    };
 }
+
+async function opRenderDisburseChart(sectionKey, wrap) {
+    const q = opBuildQuery(opState.meta);
+    const officer = opState.officer;
+    const url = `${API.BASE_URL}/api/creditreport/byco/officer-disburse-chart${q}` +
+        `&name=${encodeURIComponent(officer.name || "")}` +
+        `&officerId=${encodeURIComponent(officer.id || "")}`;
+
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${opToken}` } });
+    if (!res.ok) throw new Error("Could not load the disbursement chart. Please try again.");
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.message || "Could not load the disbursement chart.");
+
+    const labels = data.labels || [];
+    const values = data.values || [];
+    const counts = data.counts || [];
+    if (!labels.length) {
+        opDisburseChartData = null;
+        wrap.innerHTML = `<div class="op-state">No disbursement data for this period.</div>`;
+        return;
+    }
+    opDisburseChartData = { labels, values, counts };
+
+    // NOT horizontally scrolled, deliberately: with two Y axes (Value on
+    // the left, Loan on the right) a wide scrollable canvas means only
+    // ONE of the two axes is ever in view at a given scroll position —
+    // tried it, confirmed broken. Fits the wrap's own width instead so
+    // both axes stay visible together at all times; bars get thin at 31
+    // days but stay legible, and the tooltip still shows exact values.
+    // A fullscreen button (plus tap/long-press anywhere on the chart —
+    // see the listeners set up below) opens the same chart full-size,
+    // landscape-locked where the platform supports it, for anyone who
+    // wants the bars wider than this inline view allows.
+    wrap.innerHTML = `<button type="button" class="op-chart-fullscreen-btn" aria-label="Fullscreen chart">⛶</button><canvas></canvas>`;
+    if (typeof Chart === "undefined") {
+        wrap.innerHTML = `<div class="op-state op-state-error">Chart library failed to load.</div>`;
+        return;
+    }
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    if (opDisburseChartSmall) opDisburseChartSmall.destroy();
+    opDisburseChartSmall = new Chart(
+        wrap.querySelector("canvas").getContext("2d"),
+        opBuildDisburseChartConfig(labels, values, counts, isDark)
+    );
+
+    opWireChartFullscreenTriggers(wrap);
+}
+
+// Tap, click, or press-and-hold anywhere on the chart (or its dedicated
+// button) opens the fullscreen view. A tap/click already fires on
+// release for a long-press too in every mobile browser tested (nothing
+// here depends on drag/scroll gestures, since the inline chart doesn't
+// scroll), so one click listener naturally covers all three — the
+// touch-callout suppression in CSS (op-chart-wrap) stops the OS's own
+// long-press menu from intercepting the gesture first.
+function opWireChartFullscreenTriggers(wrap) {
+    wrap.addEventListener("click", opOpenChartFullscreen);
+}
+
+async function opOpenChartFullscreen() {
+    if (!opDisburseChartData) return;
+    const overlay = document.getElementById("opChartFsOverlay");
+    if (!overlay) return;
+
+    overlay.hidden = false;
+    document.body.style.overflow = "hidden";
+
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const { labels, values, counts } = opDisburseChartData;
+    if (opDisburseChartFs) opDisburseChartFs.destroy();
+    opDisburseChartFs = new Chart(
+        document.getElementById("opChartFsCanvas").getContext("2d"),
+        opBuildDisburseChartConfig(labels, values, counts, isDark)
+    );
+
+    // Both of these are progressive enhancement, not requirements — the
+    // fixed-position CSS overlay above already gives a full-viewport view
+    // on every platform, including iOS Safari, which has no Fullscreen
+    // API for arbitrary elements and no Screen Orientation lock at all.
+    // Where neither is available, the CSS-only rotate hint (shown while
+    // the device is still physically in portrait) is the fallback.
+    try {
+        if (overlay.requestFullscreen) await overlay.requestFullscreen();
+        else if (overlay.webkitRequestFullscreen) overlay.webkitRequestFullscreen();
+    } catch (e) { /* not supported / denied — the CSS overlay alone still works */ }
+
+    try {
+        if (screen.orientation && screen.orientation.lock) {
+            await screen.orientation.lock("landscape");
+        }
+    } catch (e) { /* unsupported/denied — user can still rotate manually */ }
+}
+
+function opCloseChartFullscreen() {
+    const overlay = document.getElementById("opChartFsOverlay");
+    if (!overlay || overlay.hidden) return;
+
+    overlay.hidden = true;
+    document.body.style.overflow = "";
+
+    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) { /* no-op */ }
+    if (document.fullscreenElement === overlay) {
+        try { document.exitFullscreen(); } catch (e) { /* no-op */ }
+    }
+}
+
+document.getElementById("opChartFsClose")?.addEventListener("click", opCloseChartFullscreen);
+
+// Covers exiting fullscreen via ESC, the Android back gesture, or any
+// other OS-level affordance that bypasses opChartFsClose entirely — keeps
+// the overlay's own hidden state in sync either way.
+document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement) opCloseChartFullscreen();
+});
 
 // ========================================
 // INIT

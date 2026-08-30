@@ -94,6 +94,19 @@ href="../../assets/css/creditreport/OfficerProductivity.css">
 
 </div>
 
+<!-- ========================= -->
+<!-- CHART FULLSCREEN OVERLAY -->
+<!-- Opened by opOpenChartFullscreen() (OfficerProductivity.js) via the
+     chart's expand button, a tap on the chart, or a long-press. Reuses
+     the same chart data — see opBuildDisburseChartConfig(). -->
+<!-- ========================= -->
+
+<div class="op-chart-fs-overlay" id="opChartFsOverlay" hidden>
+<button type="button" class="op-chart-fs-close" id="opChartFsClose" aria-label="Close fullscreen">✕</button>
+<div class="op-chart-fs-rotate-hint">🔄 Rotate your device for a better view</div>
+<div class="op-chart-fs-canvas-wrap"><canvas id="opChartFsCanvas"></canvas></div>
+</div>
+
 <div id="bottomnav-container"></div>
 
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
