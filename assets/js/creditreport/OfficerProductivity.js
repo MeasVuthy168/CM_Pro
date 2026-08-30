@@ -370,9 +370,10 @@ async function opBuildClientListHtml(sectionKey) {
 // actually gets (thins out X-axis text on the narrow inline chart, shows
 // far more of it on the wide fullscreen/landscape canvas) — no separate
 // variant needed.
-function opBuildDisburseChartConfig(labels, values, counts, isDark) {
+function opBuildDisburseChartConfig(labels, values, counts, isDark, officerName) {
     const valueColor = isDark ? "#FFD700" : "#003B8B";
     const countColor = isDark ? "#4FD1C5" : "#D4380D";
+    const titleColor = isDark ? "#fff" : "#1C2333";
     return {
         type: "bar",
         data: {
@@ -401,7 +402,16 @@ function opBuildDisburseChartConfig(labels, values, counts, isDark) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: true, position: "top" } },
+            plugins: {
+                title: {
+                    display: true,
+                    text: `Daily Loan Disbursement - ${officerName || ""}`,
+                    color: titleColor,
+                    font: { size: 14, weight: "bold" },
+                    padding: { top: 2, bottom: 10 }
+                },
+                legend: { display: true, position: "top" }
+            },
             scales: {
                 yValue: {
                     type: "linear",
@@ -468,7 +478,7 @@ async function opRenderDisburseChart(sectionKey, wrap) {
     if (opDisburseChartSmall) opDisburseChartSmall.destroy();
     opDisburseChartSmall = new Chart(
         wrap.querySelector("canvas").getContext("2d"),
-        opBuildDisburseChartConfig(labels, values, counts, isDark)
+        opBuildDisburseChartConfig(labels, values, counts, isDark, officer.name)
     );
 
     opWireChartFullscreenTriggers(wrap);
@@ -498,7 +508,7 @@ async function opOpenChartFullscreen() {
     if (opDisburseChartFs) opDisburseChartFs.destroy();
     opDisburseChartFs = new Chart(
         document.getElementById("opChartFsCanvas").getContext("2d"),
-        opBuildDisburseChartConfig(labels, values, counts, isDark)
+        opBuildDisburseChartConfig(labels, values, counts, isDark, opState.officer?.name)
     );
 
     // Both of these are progressive enhancement, not requirements — the
