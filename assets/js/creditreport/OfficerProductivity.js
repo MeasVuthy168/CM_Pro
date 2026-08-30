@@ -226,6 +226,11 @@ async function opFetchAndFindOfficer(meta, name) {
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Failed to load report.");
     const item = (data.items || []).find(it => it.name === name);
+    // This is the exact same roster opEnsureOfficerRoster() would fetch
+    // for the search box — cache it now so a search shortly after this
+    // fallback load doesn't re-fetch it.
+    opOfficerRoster = data.items || [];
+    opOfficerRosterPromise = Promise.resolve();
     return { item, data };
 }
 
@@ -817,10 +822,158 @@ document.addEventListener("fullscreenchange", () => {
 });
 
 // ========================================
+// OFFICER SEARCH
+// Predictive search box (below the header card) that switches the whole
+// page to a different officer under the SAME report filters (meta),
+// without navigating back to RepDetailbyCO — matches by substring
+// against the same roster GET /api/creditreport/byco already returns
+// (data.items), fetched once and cached here.
+// ========================================
+let opOfficerRoster = null;
+let opOfficerRosterPromise = null;
+function opEnsureOfficerRoster() {
+    if (!opOfficerRosterPromise) {
+        opOfficerRosterPromise = fetch(`${API.BASE_URL}/api/creditreport/byco${opBuildQuery(opState.meta)}`, {
+            headers: { Authorization: `Bearer ${opToken}` }
+        })
+            .then(res => res.json())
+            .then(data => {
+                opOfficerRoster = (data && data.ok && Array.isArray(data.items)) ? data.items : [];
+            })
+            .catch(err => {
+                console.error("officer roster fetch failed:", err);
+                opOfficerRoster = [];
+            });
+    }
+    return opOfficerRosterPromise;
+}
+
+const OP_SEARCH_MAX_RESULTS = 8;
+let opSearchMatches = [];
+let opSearchActiveIndex = -1;
+
+function opRenderSearchDropdown(matches) {
+    const dropdown = document.getElementById("opSearchDropdown");
+    opSearchMatches = matches;
+    opSearchActiveIndex = matches.length ? 0 : -1;
+
+    if (!matches.length) {
+        dropdown.hidden = true;
+        dropdown.innerHTML = "";
+        return;
+    }
+
+    dropdown.innerHTML = matches.map((m, i) => {
+        const metaBits = [m.branch, m.team].filter(v => v && v !== "All Branch" && v !== "All Team");
+        return `
+          <div class="op-search-item${i === 0 ? " active" : ""}" data-idx="${i}">
+            <div class="op-search-item-name">${opEscapeHtml(m.name)}</div>
+            ${metaBits.length ? `<div class="op-search-item-meta">${opEscapeHtml(metaBits.join(" · "))}</div>` : ""}
+          </div>`;
+    }).join("");
+    dropdown.hidden = false;
+}
+
+function opCloseSearchDropdown() {
+    const dropdown = document.getElementById("opSearchDropdown");
+    dropdown.hidden = true;
+    dropdown.innerHTML = "";
+    opSearchMatches = [];
+    opSearchActiveIndex = -1;
+}
+
+function opHighlightSearchItem(idx) {
+    const dropdown = document.getElementById("opSearchDropdown");
+    dropdown.querySelectorAll(".op-search-item").forEach(el => el.classList.remove("active"));
+    const el = dropdown.querySelector(`.op-search-item[data-idx="${idx}"]`);
+    if (el) { el.classList.add("active"); el.scrollIntoView({ block: "nearest" }); }
+    opSearchActiveIndex = idx;
+}
+
+async function opHandleSearchInput(e) {
+    const q = e.target.value.trim().toLowerCase();
+    if (!q) { opCloseSearchDropdown(); return; }
+
+    await opEnsureOfficerRoster();
+    const matches = (opOfficerRoster || [])
+        .filter(o => (o.name || "").toLowerCase().includes(q))
+        .slice(0, OP_SEARCH_MAX_RESULTS);
+    opRenderSearchDropdown(matches);
+}
+
+// Swaps opState.officer for the picked roster row and re-renders the
+// header/cards in place — same report filters (opState.meta) throughout,
+// only the officer changes. Keeps sessionStorage's handoff cache and the
+// URL's name= param in sync so a refresh or the back button lands on
+// whichever officer is actually being viewed, not the one originally
+// clicked from RepDetailbyCO.
+function opSwitchOfficer(item) {
+    if (!item) return;
+    opCloseSearchDropdown();
+    const input = document.getElementById("opSearchInput");
+    if (input) input.value = "";
+    if (item.name === opState.officer?.name) return;
+
+    opState.officer = item;
+    opDisburseChartData = null;
+    opDisburseChartAnchor = null;
+    opCloseChartFullscreen();
+
+    try {
+        sessionStorage.setItem("cr_officer_detail", JSON.stringify({ officer: item, meta: opState.meta }));
+    } catch (e) { /* storage unavailable/full — non-fatal, a refresh just re-fetches instead */ }
+    const url = new URL(location.href);
+    url.searchParams.set("name", item.name || "");
+    history.replaceState(null, "", url);
+
+    opRenderHeader();
+    opRenderCards();
+}
+
+function opWireOfficerSearch() {
+    const wrap = document.getElementById("opSearchWrap");
+    const input = document.getElementById("opSearchInput");
+    const dropdown = document.getElementById("opSearchDropdown");
+    if (!wrap || !input || !dropdown) return;
+
+    input.addEventListener("focus", () => opEnsureOfficerRoster());
+    input.addEventListener("input", opHandleSearchInput);
+
+    input.addEventListener("keydown", e => {
+        if (dropdown.hidden || !opSearchMatches.length) return;
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            opHighlightSearchItem((opSearchActiveIndex + 1) % opSearchMatches.length);
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            opHighlightSearchItem((opSearchActiveIndex - 1 + opSearchMatches.length) % opSearchMatches.length);
+        } else if (e.key === "Enter") {
+            e.preventDefault();
+            if (opSearchActiveIndex >= 0) opSwitchOfficer(opSearchMatches[opSearchActiveIndex]);
+        } else if (e.key === "Escape") {
+            opCloseSearchDropdown();
+        }
+    });
+
+    dropdown.addEventListener("click", e => {
+        const item = e.target.closest(".op-search-item");
+        if (!item) return;
+        const idx = Number(item.dataset.idx);
+        if (opSearchMatches[idx]) opSwitchOfficer(opSearchMatches[idx]);
+    });
+
+    document.addEventListener("click", e => {
+        if (!e.target.closest("#opSearchWrap")) opCloseSearchDropdown();
+    });
+}
+opWireOfficerSearch();
+
+// ========================================
 // INIT
 // ========================================
 function opFinishLoad() {
     document.getElementById("opPageSkel").style.display = "none";
+    document.getElementById("opSearchWrap").style.display = "block";
     opRenderHeader();
     opRenderCards();
 }
