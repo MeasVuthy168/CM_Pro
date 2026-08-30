@@ -44,10 +44,20 @@
 //   count printed inside — see opBuildDisburseHeatmapHtml()). dates[] is
 //   full "yyyy-mm-dd" strings (labels[] is display-only "DD-MM"), used to
 //   work out which weekday each day falls on for the 7-column grid, and
-//   to ring-highlight Sat/Sun + any date in OP_KH_HOLIDAYS. The heatmap's
-//   subtitle ("Period Date: ...") is NOT derived from this endpoint —
-//   it uses the report's own fromDate/toDate filter and the officer's
-//   already-known loanDisburse.loan/.value summary figures instead.
+//   to ring-highlight Sat/Sun + any date returned by kh-holidays below.
+//   The heatmap's subtitle ("Period Date: ...") is NOT derived from this
+//   endpoint — it uses the report's own fromDate/toDate filter and the
+//   officer's already-known loanDisburse.loan/.value summary figures
+//   instead.
+//
+//   GET /api/creditreport/byco/kh-holidays
+//   -> { ok, holidays: [{ date: "yyyy-mm-dd", name }, ...] }
+//   Cambodian public holidays, sourced server-side from Google's own
+//   "Holidays in Cambodia" calendar feed (see crFetchKhHolidays in
+//   CM-backend's lib/creditreport-co.js) — not hand-maintained here since
+//   several are lunar-calendar-based. Fetched once per page load via
+//   opEnsureKhHolidays() and cached in opKhHolidays; a fetch failure just
+//   leaves holiday highlighting off, it never breaks the heatmap itself.
 //
 // Both fail gracefully with a plain, honest message (see opErrorHtml)
 // on any real failure rather than fabricating placeholder client data
@@ -397,11 +407,30 @@ const OP_HEAT_DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 // Cambodian public holidays ("yyyy-mm-dd" keys) that get the same
 // highlight ring as Sat/Sun on the heatmap (see op-heat-holiday below).
-// Deliberately empty for now — official Cambodian holiday dates (several
-// are lunar-calendar-based and set by government gazette year to year)
-// aren't fabricated here. Add confirmed dates as they're provided.
-const OP_KH_HOLIDAYS = new Set([
-]);
+// Populated from GET /api/creditreport/byco/kh-holidays — CM-backend's
+// own source of truth (Google's official "Holidays in Cambodia" calendar
+// feed, cached server-side) rather than a hand-maintained list here,
+// since several Cambodian holidays are lunar-calendar-based and set by
+// government gazette year to year. opEnsureKhHolidays() fills this once
+// per page load; a fetch failure just leaves it empty (Sat/Sun highlight
+// and everything else still works — see that function).
+let opKhHolidays = new Set();
+let opKhHolidaysPromise = null;
+function opEnsureKhHolidays() {
+    if (!opKhHolidaysPromise) {
+        opKhHolidaysPromise = fetch(`${API.BASE_URL}/api/creditreport/byco/kh-holidays`, {
+            headers: { Authorization: `Bearer ${opToken}` }
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.ok && Array.isArray(data.holidays)) {
+                    opKhHolidays = new Set(data.holidays.map(h => h.date));
+                }
+            })
+            .catch(err => console.error("kh-holidays fetch failed:", err));
+    }
+    return opKhHolidaysPromise;
+}
 
 // Builds the calendar-heatmap markup (title + subtitle + 7-column day
 // grid + legend) — one cell per day of the month, colored by disbursed
@@ -428,7 +457,7 @@ function opBuildDisburseHeatmapHtml(dates, values, counts, officer, meta) {
         const classes = ["op-heat-cell"];
         if (bucket) classes.push(`op-heat-h${bucket}`);
         if (dow === 0 || dow === 6) classes.push("op-heat-weekend");
-        if (OP_KH_HOLIDAYS.has(dateStr)) classes.push("op-heat-holiday");
+        if (opKhHolidays.has(dateStr)) classes.push("op-heat-holiday");
 
         cells += `
           <div class="${classes.join(" ")}"
@@ -524,10 +553,16 @@ async function opRenderDisburseChart(sectionKey, wrap) {
         `&name=${encodeURIComponent(officer.name || "")}` +
         `&officerId=${encodeURIComponent(officer.id || "")}`;
 
+    // Fired alongside the chart data fetch (not awaited on its own) —
+    // holiday highlighting is a nice-to-have, so it shouldn't add latency
+    // to the chart itself or block on a slow/failing upstream fetch.
+    const holidaysReady = opEnsureKhHolidays();
+
     const res = await fetch(url, { headers: { Authorization: `Bearer ${opToken}` } });
     if (!res.ok) throw new Error("Could not load the disbursement chart. Please try again.");
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Could not load the disbursement chart.");
+    await holidaysReady;
 
     const dates = data.dates || [];
     const values = data.values || [];
