@@ -266,6 +266,11 @@
 }
 .op-card-stats b{ color:var(--cr-navy); font-weight:800; }
 [data-theme="dark"] .op-card-stats b{ color:var(--cr-gold-light); }
+/* Leads an Own/Area stats line (statGroups categories — NBC Overdue,
+   Write Off) — bolder than the plain "Loan:"/"Value:" labels next to it
+   since it's naming which line this is, not one more figure on it. */
+.op-card-stats-group-label{ font-weight:700; color:var(--cr-text); }
+.op-card-stats + .op-card-stats{ margin-top:2px; }
 .op-card-caret{
     flex:0 0 auto;
     font-size:14px;
