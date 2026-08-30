@@ -22,6 +22,16 @@
     --cr-input-bg:#FFFFFF;
     --cr-input-text:#1C2333;
     --cr-chip-bg:#eef1f6;
+    /* Sequential ramp for the Loan Disburse calendar heatmap (op-heat-*),
+       light->dark navy, one hue as the dataviz form for a magnitude
+       encoding calls for. -ink-lo/-hi are the text color used on top of
+       the lighter (h1/h2) vs. darker (h3/h4) steps respectively. */
+    --cr-heat-1:#CFE0F7;
+    --cr-heat-2:#8FB3E8;
+    --cr-heat-3:#4A7BC7;
+    --cr-heat-4:#003B8B;
+    --cr-heat-ink-lo:#1C2333;
+    --cr-heat-ink-hi:#FFFFFF;
 }
 [data-theme="dark"]{
     --cr-page-bg:#002D6B;
@@ -38,6 +48,14 @@
     --cr-input-bg:#0a2d63;
     --cr-input-text:#FFFFFF;
     --cr-chip-bg:rgba(255,255,255,.08);
+    /* Gold ramp — matches this theme's existing convention of using gold
+       (not navy) for the "most emphasis" accent. */
+    --cr-heat-1:#5C5330;
+    --cr-heat-2:#8C7A3A;
+    --cr-heat-3:#C7A93D;
+    --cr-heat-4:#FFD700;
+    --cr-heat-ink-lo:#F3F6FC;
+    --cr-heat-ink-hi:#1C2333;
 }
 [data-theme="gold"]{
     --cr-page-bg:#FFF8E7;
@@ -53,6 +71,14 @@
     --cr-input-bg:#FFFDF6;
     --cr-input-text:#1C2333;
     --cr-chip-bg:#FDF1D8;
+    /* Warm amber ramp matching this theme's own navy-role tokens
+       (#8A5A00 at the "most" step). */
+    --cr-heat-1:#F3DFAE;
+    --cr-heat-2:#E0BE6E;
+    --cr-heat-3:#C4952E;
+    --cr-heat-4:#8A5A00;
+    --cr-heat-ink-lo:#1C2333;
+    --cr-heat-ink-hi:#FFFDF6;
 }
 [data-theme="darkgray"]{
     --cr-page-bg:#2B2E33;
@@ -72,6 +98,14 @@
     --cr-input-bg:#363A41;
     --cr-input-text:#F0F1F3;
     --cr-chip-bg:rgba(255,255,255,.06);
+    /* Neutral gray ramp — this theme is deliberately monochrome
+       throughout (navy/gold both collapse to the same gray tokens). */
+    --cr-heat-1:#4A4F57;
+    --cr-heat-2:#636973;
+    --cr-heat-3:#8A909B;
+    --cr-heat-4:#D8DAE0;
+    --cr-heat-ink-lo:#F0F1F3;
+    --cr-heat-ink-hi:#1C2333;
 }
 
 *{ box-sizing:border-box; }
@@ -233,15 +267,14 @@
 .op-client-table td{ padding:9px 10px; border-top:1px solid var(--cr-border); }
 .op-client-table tr:nth-child(even) td{ background:var(--cr-row-alt); }
 
-/* ===== Chart ===== */
+/* ===== Chart (calendar heatmap) ===== */
 .op-chart-wrap{
     position:relative;
-    height:220px;
-    padding:6px 2px;
+    padding:6px 2px 10px;
     cursor:zoom-in;
     /* Prevent the native long-press callout (iOS "Save Image"-style menu,
        Android text-selection handles) from fighting with tap-to-expand
-       and hold-to-expand on the chart. */
+       and hold-to-expand on the heatmap. */
     -webkit-touch-callout:none;
     -webkit-user-select:none;
     user-select:none;
@@ -266,6 +299,95 @@
     padding:0;
 }
 
+.op-heat-title{
+    font-size:13px;
+    font-weight:700;
+    color:var(--cr-text);
+    text-align:center;
+    padding:0 32px 10px;
+}
+.op-heat-grid{
+    display:grid;
+    grid-template-columns:repeat(7, 1fr);
+    gap:4px;
+}
+.op-heat-dow{
+    font-size:10px;
+    font-weight:700;
+    color:var(--cr-text-muted);
+    text-align:center;
+    padding-bottom:3px;
+}
+.op-heat-cell{
+    aspect-ratio:1;
+    border-radius:6px;
+    background:var(--cr-row-alt);
+    position:relative;
+    font-variant-numeric:tabular-nums;
+}
+.op-heat-cell.op-heat-pad{ background:transparent; }
+/* Day number and loan-count badge are both corner-anchored (top-left /
+   bottom-right) rather than stacked+centered, so they never visually
+   collide regardless of how small the cell gets — tried centering both,
+   confirmed it crowds together at typical mobile cell sizes (~45-55px). */
+.op-heat-day{
+    font-size:10px;
+    font-weight:600;
+    color:var(--cr-text-muted);
+    position:absolute;
+    top:3px;
+    left:5px;
+}
+.op-heat-badge{
+    font-size:12px;
+    font-weight:800;
+    position:absolute;
+    bottom:3px;
+    right:5px;
+}
+.op-heat-cell.op-heat-h1{ background:var(--cr-heat-1); }
+.op-heat-cell.op-heat-h2{ background:var(--cr-heat-2); }
+.op-heat-cell.op-heat-h3{ background:var(--cr-heat-3); }
+.op-heat-cell.op-heat-h4{ background:var(--cr-heat-4); }
+.op-heat-cell.op-heat-h1 .op-heat-day, .op-heat-cell.op-heat-h1 .op-heat-badge,
+.op-heat-cell.op-heat-h2 .op-heat-day, .op-heat-cell.op-heat-h2 .op-heat-badge{ color:var(--cr-heat-ink-lo); }
+.op-heat-cell.op-heat-h3 .op-heat-day, .op-heat-cell.op-heat-h3 .op-heat-badge,
+.op-heat-cell.op-heat-h4 .op-heat-day, .op-heat-cell.op-heat-h4 .op-heat-badge{ color:var(--cr-heat-ink-hi); }
+
+.op-heat-legend{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-top:10px;
+    font-size:10px;
+    color:var(--cr-text-muted);
+    justify-content:center;
+}
+.op-heat-sw{ width:13px; height:13px; border-radius:4px; }
+.op-heat-sw.op-heat-h0{ background:var(--cr-row-alt); }
+.op-heat-sw.op-heat-h1{ background:var(--cr-heat-1); }
+.op-heat-sw.op-heat-h2{ background:var(--cr-heat-2); }
+.op-heat-sw.op-heat-h3{ background:var(--cr-heat-3); }
+.op-heat-sw.op-heat-h4{ background:var(--cr-heat-4); }
+
+.op-heat-tooltip{
+    position:fixed;
+    pointer-events:none;
+    background:var(--cr-text);
+    color:var(--cr-page-bg);
+    font-size:12px;
+    font-weight:600;
+    padding:7px 10px;
+    border-radius:8px;
+    box-shadow:var(--cr-shadow);
+    z-index:10000;
+    opacity:0;
+    transition:opacity .1s;
+    white-space:nowrap;
+}
+.op-heat-tooltip.show{ opacity:1; }
+.op-heat-tt-date{ opacity:.75; font-weight:500; }
+
 /* ===== Chart fullscreen overlay ===== */
 .op-chart-fs-overlay{
     position:fixed;
@@ -273,9 +395,10 @@
     z-index:9999;
     background:var(--cr-page-bg);
     display:flex;
-    align-items:center;
+    align-items:flex-start;
     justify-content:center;
-    padding:16px;
+    overflow-y:auto;
+    padding:64px 16px 24px;
 }
 .op-chart-fs-overlay[hidden]{ display:none; }
 .op-chart-fs-close{
@@ -297,34 +420,17 @@
     cursor:pointer;
     padding:0;
 }
-.op-chart-fs-canvas-wrap{
+.op-chart-fs-body-wrap{
     position:relative;
     width:100%;
-    height:100%;
-    /* Room for op-chart-fs-close so the chart's own title (which can run
-       fairly long — "Daily Loan Disbursement - <officer name>") never
-       renders underneath the button, in portrait or landscape. */
-    padding-right:48px;
-    box-sizing:border-box;
+    max-width:440px;
 }
-.op-chart-fs-rotate-hint{
-    position:absolute;
-    top:50%;
-    left:50%;
-    transform:translate(-50%,-50%);
-    color:var(--cr-text-muted);
-    font-size:14px;
-    text-align:center;
-    pointer-events:none;
-    display:none;
-    z-index:1;
-}
-/* Only relevant on a phone-sized screen still held in portrait — on a
-   tablet/desktop portrait is a perfectly normal orientation, and this
-   hint would just be noise there. */
-@media (orientation:portrait) and (max-width:600px){
-    .op-chart-fs-overlay:not([hidden]) .op-chart-fs-rotate-hint{ display:block; }
-}
+.op-chart-fs-body-wrap .op-heat-cell{ border-radius:9px; }
+.op-chart-fs-body-wrap .op-heat-day{ font-size:12px; top:6px; left:8px; }
+.op-chart-fs-body-wrap .op-heat-badge{ font-size:14px; bottom:6px; right:8px; }
+.op-chart-fs-body-wrap .op-heat-dow{ font-size:12px; }
+.op-chart-fs-body-wrap .op-heat-title{ font-size:16px; padding:0 0 16px; }
+.op-chart-fs-body-wrap .op-heat-grid{ gap:6px; }
 
 /* ===== Loading / empty / error states shared by both sub-views ===== */
 .op-state{

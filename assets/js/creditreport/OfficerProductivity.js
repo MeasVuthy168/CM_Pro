@@ -34,14 +34,16 @@
 //   GET /api/creditreport/byco/officer-disburse-chart
 //     ?name=<officer name>&officerId=<officer id, if known>
 //     &branch=&team=&fromDate=&toDate=
-//   -> { ok, labels: [...], values: [...], counts: [...] }
+//   -> { ok, labels: [...], dates: [...], values: [...], counts: [...] }
 //   Daily disbursement value + loan count series for this officer,
 //   zero-filled for every day of the calendar month fromDate falls in
 //   (day 1 to the last day of that month — a complete beginning-to-
-//   end-of-month timeline, independent of the report's own fromDate/
-//   toDate filter) — only used by the Loan Disburse card's Chart tab,
-//   rendered as grouped bars on two Y axes (value and count have very
-//   different scales).
+//   end-of-month view, independent of the report's own fromDate/toDate
+//   filter) — only used by the Loan Disburse card's Chart tab, rendered
+//   as a calendar heatmap (one cell per day, colored by value, loan
+//   count printed inside — see opBuildDisburseHeatmapHtml()). dates[] is
+//   full "yyyy-mm-dd" strings (labels[] is display-only "DD-MM"), used to
+//   work out which weekday each day falls on for the 7-column grid.
 //
 // Both fail gracefully with a plain, honest message (see opErrorHtml)
 // on any real failure rather than fabricating placeholder client data
@@ -110,13 +112,9 @@ const opToken =
 
 let opState = { officer: null, meta: null };
 
-// Last-fetched Loan Disburse chart data, kept around so the fullscreen
-// view (opOpenChartFullscreen) can reuse it without re-fetching, plus the
-// two live Chart.js instances (small inline + fullscreen) so re-opening
-// destroys the previous instance instead of erroring on canvas reuse.
+// Last-fetched Loan Disburse heatmap data, kept around so the fullscreen
+// view (opOpenChartFullscreen) can re-render it without re-fetching.
 let opDisburseChartData = null;
-let opDisburseChartSmall = null;
-let opDisburseChartFs = null;
 
 // ========================================
 // HELPERS
@@ -306,8 +304,12 @@ async function opEnsureModeLoaded(card, mode) {
         return;
     }
 
-    // Chart — a Chart.js instance can't be cached as an HTML string, so
-    // this always re-fetches/re-renders on reselect rather than caching.
+    // Chart (calendar heatmap) — always re-fetches/re-renders on reselect
+    // rather than caching like "list" above. The heatmap's own markup
+    // could be cached as a plain HTML string now that it isn't a live
+    // Chart.js canvas instance, but its tooltip/fullscreen-trigger event
+    // listeners wouldn't survive an innerHTML round-trip, so a cache hit
+    // would still need to re-wire them — no simpler than just re-fetching.
     body.innerHTML = `<div class="op-chart-wrap">${opSkeletonHtml()}</div>`;
     const chartWrap = body.querySelector(".op-chart-wrap");
     try {
@@ -364,77 +366,113 @@ async function opBuildClientListHtml(sectionKey) {
       </div>`;
 }
 
-// Shared Chart.js config for the Loan Disburse chart — used for both the
-// small inline chart and the fullscreen one, so the two never drift out
-// of sync with each other. autoSkip adapts to whatever width the canvas
-// actually gets (thins out X-axis text on the narrow inline chart, shows
-// far more of it on the wide fullscreen/landscape canvas) — no separate
-// variant needed.
-function opBuildDisburseChartConfig(labels, values, counts, isDark, officerName) {
-    const valueColor = isDark ? "#FFD700" : "#003B8B";
-    const countColor = isDark ? "#4FD1C5" : "#D4380D";
-    const titleColor = isDark ? "#fff" : "#1C2333";
-    return {
-        type: "bar",
-        data: {
-            labels,
-            datasets: [
-                {
-                    label: "Value",
-                    data: values,
-                    yAxisID: "yValue",
-                    backgroundColor: valueColor,
-                    borderRadius: 3,
-                    categoryPercentage: 0.7,
-                    barPercentage: 0.85
-                },
-                {
-                    label: "Loan",
-                    data: counts,
-                    yAxisID: "yCount",
-                    backgroundColor: countColor,
-                    borderRadius: 3,
-                    categoryPercentage: 0.7,
-                    barPercentage: 0.85
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: `Daily Loan Disbursement - ${officerName || ""}`,
-                    color: titleColor,
-                    font: { size: 14, weight: "bold" },
-                    padding: { top: 2, bottom: 10 }
-                },
-                legend: { display: true, position: "top" }
-            },
-            scales: {
-                yValue: {
-                    type: "linear",
-                    position: "left",
-                    beginAtZero: true,
-                    title: { display: true, text: "Value" }
-                },
-                yCount: {
-                    type: "linear",
-                    position: "right",
-                    beginAtZero: true,
-                    ticks: { precision: 0 },
-                    grid: { drawOnChartArea: false },
-                    title: { display: true, text: "Loan" }
-                },
-                // All 31 bars still render even where the label is skipped
-                // — this just thins out the X-axis text so it doesn't
-                // overlap; tapping/hovering a bar still shows its exact
-                // day via the tooltip.
-                x: { ticks: { autoSkip: true, maxTicksLimit: 12 } }
-            }
+// Buckets a day's disbursed value into a 0-4 sequential intensity step
+// for the heatmap, relative to the busiest day in the visible month. 0
+// means literally no disbursement that day (rendered as a distinct empty
+// cell, not just "the lightest color in the ramp") — a day with a small
+// amount still gets step 1, not folded into "no activity."
+function opHeatBucket(value, maxValue) {
+    if (!value || value <= 0 || !maxValue) return 0;
+    const pct = value / maxValue;
+    if (pct > 0.7) return 4;
+    if (pct > 0.45) return 3;
+    if (pct > 0.2) return 2;
+    return 1;
+}
+
+const OP_HEAT_DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+// Builds the calendar-heatmap markup (title + 7-column day grid + legend)
+// — one cell per day of the month, colored by disbursed value, with the
+// loan count printed inside. Shared by the inline chart and the
+// fullscreen view so the two can't drift out of sync. "T00:00:00" (no Z)
+// forces LOCAL-time parsing for the weekday lookup — a bare "yyyy-mm-dd"
+// string parses as UTC midnight per spec, which can land on the wrong
+// calendar day in negative-UTC-offset timezones.
+function opBuildDisburseHeatmapHtml(dates, values, counts, officerName) {
+    const maxValue = Math.max(0, ...values);
+    const firstDow = new Date(dates[0] + "T00:00:00").getDay();
+
+    let cells = OP_HEAT_DOW.map(d => `<div class="op-heat-dow">${d}</div>`).join("");
+    for (let i = 0; i < firstDow; i++) cells += `<div class="op-heat-cell op-heat-pad"></div>`;
+
+    dates.forEach((dateStr, i) => {
+        const day = Number(dateStr.slice(8, 10));
+        const value = values[i] || 0;
+        const count = counts[i] || 0;
+        const bucket = opHeatBucket(value, maxValue);
+        cells += `
+          <div class="op-heat-cell${bucket ? ` op-heat-h${bucket}` : ""}"
+               data-date="${dateStr}" data-value="${value}" data-count="${count}">
+            <span class="op-heat-day">${day}</span>
+            ${count > 0 ? `<span class="op-heat-badge">${count}</span>` : ""}
+          </div>`;
+    });
+
+    return `
+      <div class="op-heat-title">Daily Loan Disbursement - ${opEscapeHtml(officerName || "")}</div>
+      <div class="op-heat-grid">${cells}</div>
+      <div class="op-heat-legend">
+        <span>Less</span>
+        <span class="op-heat-sw op-heat-h0"></span>
+        <span class="op-heat-sw op-heat-h1"></span>
+        <span class="op-heat-sw op-heat-h2"></span>
+        <span class="op-heat-sw op-heat-h3"></span>
+        <span class="op-heat-sw op-heat-h4"></span>
+        <span>More</span>
+      </div>`;
+}
+
+// One shared floating tooltip element (created once, reused by both the
+// inline and fullscreen heatmap) rather than the browser's default
+// title-attribute tooltip, to match the rest of the app's styling.
+let opHeatTooltipEl = null;
+function opEnsureHeatTooltip() {
+    if (!opHeatTooltipEl) {
+        opHeatTooltipEl = document.createElement("div");
+        opHeatTooltipEl.className = "op-heat-tooltip";
+        document.body.appendChild(opHeatTooltipEl);
+    }
+    return opHeatTooltipEl;
+}
+
+function opShowHeatTooltip(cell, tooltip) {
+    const date = cell.dataset.date;
+    const value = Number(cell.dataset.value);
+    const count = Number(cell.dataset.count);
+    const [, mm, dd] = date.split("-");
+    tooltip.innerHTML = `<span class="op-heat-tt-date">${dd}-${mm}:</span> ` + (
+        value > 0 ? `${opFmtNum(value)} · ${count} loan${count > 1 ? "s" : ""}` : "No disbursement"
+    );
+    tooltip.classList.add("show");
+}
+
+// clickToShow is only enabled in the fullscreen view (see
+// opOpenChartFullscreen) — in the small inline view a cell's click needs
+// to bubble up to opOpenChartFullscreen's own listener untouched so
+// tapping anywhere on the heatmap still opens fullscreen, rather than
+// being consumed here first.
+function opWireHeatmapTooltips(container, clickToShow) {
+    const tooltip = opEnsureHeatTooltip();
+    container.querySelectorAll(".op-heat-cell:not(.op-heat-pad)").forEach(cell => {
+        cell.addEventListener("mouseenter", () => opShowHeatTooltip(cell, tooltip));
+        cell.addEventListener("mousemove", e => {
+            tooltip.style.transform = "";
+            tooltip.style.left = `${e.clientX + 14}px`;
+            tooltip.style.top = `${e.clientY + 14}px`;
+        });
+        cell.addEventListener("mouseleave", () => tooltip.classList.remove("show"));
+        if (clickToShow) {
+            cell.addEventListener("click", e => {
+                e.stopPropagation();
+                opShowHeatTooltip(cell, tooltip);
+                const rect = cell.getBoundingClientRect();
+                tooltip.style.transform = "translate(-50%, -100%)";
+                tooltip.style.left = `${rect.left + rect.width / 2}px`;
+                tooltip.style.top = `${rect.top - 8}px`;
+            });
         }
-    };
+    });
 }
 
 async function opRenderDisburseChart(sectionKey, wrap) {
@@ -449,45 +487,31 @@ async function opRenderDisburseChart(sectionKey, wrap) {
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Could not load the disbursement chart.");
 
-    const labels = data.labels || [];
+    const dates = data.dates || [];
     const values = data.values || [];
     const counts = data.counts || [];
-    if (!labels.length) {
+    if (!dates.length) {
         opDisburseChartData = null;
         wrap.innerHTML = `<div class="op-state">No disbursement data for this period.</div>`;
         return;
     }
-    opDisburseChartData = { labels, values, counts };
+    opDisburseChartData = { dates, values, counts };
 
-    // NOT horizontally scrolled, deliberately: with two Y axes (Value on
-    // the left, Loan on the right) a wide scrollable canvas means only
-    // ONE of the two axes is ever in view at a given scroll position —
-    // tried it, confirmed broken. Fits the wrap's own width instead so
-    // both axes stay visible together at all times; bars get thin at 31
-    // days but stay legible, and the tooltip still shows exact values.
-    // A fullscreen button (plus tap/long-press anywhere on the chart —
-    // see the listeners set up below) opens the same chart full-size,
-    // landscape-locked where the platform supports it, for anyone who
-    // wants the bars wider than this inline view allows.
-    wrap.innerHTML = `<button type="button" class="op-chart-fullscreen-btn" aria-label="Fullscreen chart">⛶</button><canvas></canvas>`;
-    if (typeof Chart === "undefined") {
-        wrap.innerHTML = `<div class="op-state op-state-error">Chart library failed to load.</div>`;
-        return;
-    }
-    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
-    if (opDisburseChartSmall) opDisburseChartSmall.destroy();
-    opDisburseChartSmall = new Chart(
-        wrap.querySelector("canvas").getContext("2d"),
-        opBuildDisburseChartConfig(labels, values, counts, isDark, officer.name)
-    );
+    // A fullscreen button (plus tap/long-press anywhere on the heatmap —
+    // see opWireChartFullscreenTriggers) opens the same heatmap bigger,
+    // for anyone who wants larger day cells than this inline view allows.
+    wrap.innerHTML =
+        `<button type="button" class="op-chart-fullscreen-btn" aria-label="Fullscreen chart">⛶</button>` +
+        opBuildDisburseHeatmapHtml(dates, values, counts, officer.name);
 
+    opWireHeatmapTooltips(wrap, false);
     opWireChartFullscreenTriggers(wrap);
 }
 
-// Tap, click, or press-and-hold anywhere on the chart (or its dedicated
+// Tap, click, or press-and-hold anywhere on the heatmap (or its dedicated
 // button) opens the fullscreen view. A tap/click already fires on
 // release for a long-press too in every mobile browser tested (nothing
-// here depends on drag/scroll gestures, since the inline chart doesn't
+// here depends on drag/scroll gestures, since the inline heatmap doesn't
 // scroll), so one click listener naturally covers all three — the
 // touch-callout suppression in CSS (op-chart-wrap) stops the OS's own
 // long-press menu from intercepting the gesture first.
@@ -498,35 +522,28 @@ function opWireChartFullscreenTriggers(wrap) {
 async function opOpenChartFullscreen() {
     if (!opDisburseChartData) return;
     const overlay = document.getElementById("opChartFsOverlay");
-    if (!overlay) return;
+    const body = document.getElementById("opChartFsBody");
+    if (!overlay || !body) return;
 
     overlay.hidden = false;
     document.body.style.overflow = "hidden";
 
-    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
-    const { labels, values, counts } = opDisburseChartData;
-    if (opDisburseChartFs) opDisburseChartFs.destroy();
-    opDisburseChartFs = new Chart(
-        document.getElementById("opChartFsCanvas").getContext("2d"),
-        opBuildDisburseChartConfig(labels, values, counts, isDark, opState.officer?.name)
-    );
+    const { dates, values, counts } = opDisburseChartData;
+    body.innerHTML = opBuildDisburseHeatmapHtml(dates, values, counts, opState.officer?.name);
+    opWireHeatmapTooltips(body, true);
 
-    // Both of these are progressive enhancement, not requirements — the
-    // fixed-position CSS overlay above already gives a full-viewport view
-    // on every platform, including iOS Safari, which has no Fullscreen
-    // API for arbitrary elements and no Screen Orientation lock at all.
-    // Where neither is available, the CSS-only rotate hint (shown while
-    // the device is still physically in portrait) is the fallback.
+    // Progressive enhancement, not a requirement — the fixed-position CSS
+    // overlay above already gives a full-viewport view on every
+    // platform, including iOS Safari, which has no Fullscreen API for
+    // arbitrary elements. Where it's not available this just silently
+    // no-ops and the CSS overlay alone still works. No orientation lock
+    // here (unlike the previous bar-chart version) — a calendar grid's
+    // natural aspect ratio (7 wide, several rows tall) generally reads
+    // better in portrait, not worse, so there's nothing to force.
     try {
         if (overlay.requestFullscreen) await overlay.requestFullscreen();
         else if (overlay.webkitRequestFullscreen) overlay.webkitRequestFullscreen();
     } catch (e) { /* not supported / denied — the CSS overlay alone still works */ }
-
-    try {
-        if (screen.orientation && screen.orientation.lock) {
-            await screen.orientation.lock("landscape");
-        }
-    } catch (e) { /* unsupported/denied — user can still rotate manually */ }
 }
 
 function opCloseChartFullscreen() {
@@ -536,7 +553,6 @@ function opCloseChartFullscreen() {
     overlay.hidden = true;
     document.body.style.overflow = "";
 
-    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) { /* no-op */ }
     if (document.fullscreenElement === overlay) {
         try { document.exitFullscreen(); } catch (e) { /* no-op */ }
     }
