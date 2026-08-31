@@ -151,6 +151,66 @@ function crApplyServerDates(data) {
 }
 
 // ========================================
+// URL STATE
+// Mirrors the current section/view/dates into the address bar via
+// history.replaceState (no new history entries added, so this doesn't
+// turn every dropdown/tab click into its own back-button stop) — so
+// navigating away (e.g. to Setting via the bottom nav) and back via
+// the topbar's back arrow (history.back()) lands on the exact same
+// report instead of the blank defaults.
+// ========================================
+function crReadStateFromUrl() {
+    const p = new URLSearchParams(location.search);
+
+    const section = p.get("section");
+    if (section && CR_SECTIONS[section]) {
+        document.getElementById("crSection").value = section;
+    }
+
+    const view = p.get("view");
+    if (view === "detailed" || view === "summary") {
+        crMode = view;
+        document.querySelectorAll(".cr-tab").forEach(t => {
+            t.classList.toggle("active", t.dataset.view === view);
+        });
+    }
+
+    // Dates restored from the URL take priority over the server's
+    // data-derived defaults — same reasoning as a person having typed
+    // them in by hand.
+    let hasDateParam = false;
+    const setDate = (id, param) => {
+        const v = p.get(param);
+        if (v) {
+            document.getElementById(id).value = v;
+            hasDateParam = true;
+        }
+    };
+    setDate("crFromDate", "fromDate");
+    setDate("crToDate", "toDate");
+    setDate("crWoFromDate", "woFromDate");
+    setDate("crWoToDate", "woToDate");
+    if (hasDateParam) crDatesInitialised = true;
+}
+
+function crSyncStateToUrl() {
+    const p = new URLSearchParams();
+    p.set("section", document.getElementById("crSection").value);
+    p.set("view", crMode);
+
+    const addDate = (param, id) => {
+        const v = document.getElementById(id).value;
+        if (v) p.set(param, v);
+    };
+    addDate("fromDate", "crFromDate");
+    addDate("toDate", "crToDate");
+    addDate("woFromDate", "crWoFromDate");
+    addDate("woToDate", "crWoToDate");
+
+    history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
+}
+
+// ========================================
 // META — report "as of" dates + Loan Reclass summary.
 // These come from the data, not from the filters, so they don't change
 // when the person picks different dates.
@@ -369,7 +429,10 @@ function crRenderSection() {
     if (crMode === "detailed") crRenderDetailed();
     else crRenderSummary();
 }
-document.getElementById("crSection").addEventListener("change", crRenderSection);
+document.getElementById("crSection").addEventListener("change", () => {
+    crRenderSection();
+    crSyncStateToUrl();
+});
 
 // ========================================
 // STICKY HEADER OFFSET
@@ -459,6 +522,7 @@ async function crRunReport() {
         // Server echoes back the dates it actually used — on first load
         // these are its data-derived defaults, so fill the empty inputs.
         crApplyServerDates(data);
+        crSyncStateToUrl();
         crRenderMeta(data.meta);
 
         document.getElementById("crDisbPeriod").textContent =
@@ -555,6 +619,7 @@ document.querySelectorAll(".cr-tab").forEach(tab => {
         document.querySelectorAll(".cr-tab").forEach(t => t.classList.remove("active"));
         tab.classList.add("active");
         crMode = tab.dataset.view;
+        crSyncStateToUrl();
 
         if (crMode === "detailed") {
             crEnsureDetailedLoaded();
@@ -878,4 +943,5 @@ window.addEventListener("pageshow", () => {
 // ========================================
 // INIT
 // ========================================
+crReadStateFromUrl();
 crRunReport();
