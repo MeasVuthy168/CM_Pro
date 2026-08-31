@@ -370,7 +370,7 @@ function crBuildQuery() {
     addDate("woFromDate", "crWoFromDate");
     addDate("woToDate", "crWoToDate");
 
-    parts.push(`branch=${encodeURIComponent(document.getElementById("crBranch").value)}`);
+    parts.push(`branch=${encodeURIComponent(crPendingBranch || document.getElementById("crBranch").value)}`);
     parts.push(`team=${encodeURIComponent(document.getElementById("crTeam").value)}`);
     return `?${parts.join("&")}`;
 }
@@ -387,6 +387,10 @@ function crApplyServerDates(data) {
 }
 
 let crBranchesInitialised = false;
+// Branch restored from the URL, held here until the real <option> list
+// exists (crBranch starts with only "All Branch" — the rest are appended
+// after the first fetch) — see crReadStateFromUrl()/crPopulateBranches().
+let crPendingBranch = null;
 function crPopulateBranches(list) {
     if (crBranchesInitialised || !Array.isArray(list)) return;
     const sel = document.getElementById("crBranch");
@@ -397,6 +401,77 @@ function crPopulateBranches(list) {
         sel.appendChild(opt);
     }
     crBranchesInitialised = true;
+
+    if (crPendingBranch) {
+        sel.value = crPendingBranch;
+        crPendingBranch = null;
+    }
+}
+
+// ========================================
+// URL STATE
+// Mirrors section/branch/team/dates into the address bar via
+// history.replaceState (no new history entries) — see the identical
+// mechanism on RepDetailbyBranch.js for the full rationale: it's what
+// lets the shared back arrow / bottom-nav Home tab return to the exact
+// same report instead of its blank defaults.
+// ========================================
+function crReadStateFromUrl() {
+    const p = new URLSearchParams(location.search);
+
+    const section = p.get("section");
+    if (section && CR_SECTIONS[section]) {
+        document.getElementById("crSection").value = section;
+    }
+
+    const team = p.get("team");
+    if (team) {
+        const teamSel = document.getElementById("crTeam");
+        if ([...teamSel.options].some(o => o.value === team)) {
+            teamSel.value = team;
+        }
+    }
+
+    // crBranch's real options don't exist yet (only "All Branch" until
+    // the first fetch populates them) — hold the value for
+    // crPopulateBranches() to apply, and let crBuildQuery() use it
+    // directly so the very first request is already filtered correctly.
+    const branch = p.get("branch");
+    if (branch && branch !== "All Branch") {
+        crPendingBranch = branch;
+    }
+
+    let hasDateParam = false;
+    const setDate = (id, param) => {
+        const v = p.get(param);
+        if (v) {
+            document.getElementById(id).value = v;
+            hasDateParam = true;
+        }
+    };
+    setDate("crFromDate", "fromDate");
+    setDate("crToDate", "toDate");
+    setDate("crWoFromDate", "woFromDate");
+    setDate("crWoToDate", "woToDate");
+    if (hasDateParam) crDatesInitialised = true;
+}
+
+function crSyncStateToUrl() {
+    const p = new URLSearchParams();
+    p.set("section", document.getElementById("crSection").value);
+    p.set("branch", crPendingBranch || document.getElementById("crBranch").value);
+    p.set("team", document.getElementById("crTeam").value);
+
+    const addDate = (param, id) => {
+        const v = document.getElementById(id).value;
+        if (v) p.set(param, v);
+    };
+    addDate("fromDate", "crFromDate");
+    addDate("toDate", "crToDate");
+    addDate("woFromDate", "crWoFromDate");
+    addDate("woToDate", "crWoToDate");
+
+    history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
 }
 
 async function crRunReport() {
@@ -415,6 +490,7 @@ async function crRunReport() {
 
         crApplyServerDates(data);
         crPopulateBranches(data.branches);
+        crSyncStateToUrl();
 
         // Pre-formatted server-side (dd/mm/yyyy, plus HH:MM where the
         // source cell carried a time) — no client-side reformatting.
@@ -448,7 +524,10 @@ async function crRunReport() {
 
 // Section switching is local (no refetch); branch/team are applied
 // server-side, so those do need a round trip.
-document.getElementById("crSection").addEventListener("change", crRenderSection);
+document.getElementById("crSection").addEventListener("change", () => {
+    crRenderSection();
+    crSyncStateToUrl();
+});
 document.getElementById("crBranch").addEventListener("change", crRunReport);
 document.getElementById("crTeam").addEventListener("change", crRunReport);
 
@@ -718,4 +797,5 @@ window.addEventListener("pageshow", () => {
 // ========================================
 // INIT
 // ========================================
+crReadStateFromUrl();
 crRunReport();
