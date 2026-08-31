@@ -364,13 +364,26 @@ window.loadTopbarPhoto = async function(){
     const CM_HOME_PATH =
         "/CM_Pro/index.html";
 
-    const CM_UTILITY_PATHS = [
-        CM_HOME_PATH,
-        "/CM_Pro/pages/settings/index.html",
-        "/CM_Pro/pages/notifications/index.html"
-    ];
+    const CM_SETTINGS_PREFIX =
+        "/CM_Pro/pages/settings/";
 
-    if(!CM_UTILITY_PATHS.includes(location.pathname)){
+    const CM_NOTIFICATIONS_PREFIX =
+        "/CM_Pro/pages/notifications/";
+
+    // Prefix match, not just the two index.html pages — Setting has
+    // its own sub-pages (fingerprint.html, account.html, about.html,
+    // voicecommand.html, ...) that are reached FROM Setting and are
+    // part of it, not a "work page" someone drilled into from Home.
+    // Treating them as a work page (an exact-path check would) meant
+    // opening one, detouring to Notification, coming back to Setting,
+    // then tapping Home landed back on that sub-page instead of the
+    // dashboard.
+    const onSettingOrNotification =
+
+        location.pathname.startsWith(CM_SETTINGS_PREFIX) ||
+        location.pathname.startsWith(CM_NOTIFICATIONS_PREFIX);
+
+    if(!onSettingOrNotification){
 
         sessionStorage.setItem(
             "cmLastWorkPage",
@@ -378,14 +391,6 @@ window.loadTopbarPhoto = async function(){
         );
 
     }
-
-    const onSettingOrNotification =
-
-        location.pathname ===
-            "/CM_Pro/pages/settings/index.html" ||
-
-        location.pathname ===
-            "/CM_Pro/pages/notifications/index.html";
 
     if(!onSettingOrNotification) return;
 
