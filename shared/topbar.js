@@ -343,4 +343,71 @@ window.loadTopbarPhoto = async function(){
 
 };
 
+// =========================================================
+// SMART HOME TAB (bottom nav)
+// The bottom nav's Home icon always used to open the dashboard, so a
+// Setting/Notification detour from deep inside a report cost a full
+// re-drill-down to get back — same problem the back-arrow fix above
+// solves for the back button, from the other tab.
+// A work page (anything that isn't Home/Setting/Notification, e.g. a
+// report) is remembered in sessionStorage as it loads. From Setting
+// or Notification, the FIRST tap of Home returns to that remembered
+// page instead of the dashboard; tapping Home again from there (no
+// longer on Setting/Notification) falls through to its normal href
+// and opens the actual dashboard.
+// Listens on document rather than the link itself because
+// bottomnav.html is injected asynchronously by each page's own
+// loader — sometimes after this script has already run.
+// =========================================================
+(function(){
+
+    const CM_HOME_PATH =
+        "/CM_Pro/index.html";
+
+    const CM_UTILITY_PATHS = [
+        CM_HOME_PATH,
+        "/CM_Pro/pages/settings/index.html",
+        "/CM_Pro/pages/notifications/index.html"
+    ];
+
+    if(!CM_UTILITY_PATHS.includes(location.pathname)){
+
+        sessionStorage.setItem(
+            "cmLastWorkPage",
+            location.pathname + location.search
+        );
+
+    }
+
+    const onSettingOrNotification =
+
+        location.pathname ===
+            "/CM_Pro/pages/settings/index.html" ||
+
+        location.pathname ===
+            "/CM_Pro/pages/notifications/index.html";
+
+    if(!onSettingOrNotification) return;
+
+    document.addEventListener("click", function(e){
+
+        const homeLink =
+            e.target.closest(
+                `a.bottom-nav-item[href="${CM_HOME_PATH}"]`
+            );
+
+        if(!homeLink) return;
+
+        const lastWorkPage =
+            sessionStorage.getItem("cmLastWorkPage");
+
+        if(!lastWorkPage) return;
+
+        e.preventDefault();
+        location.href = lastWorkPage;
+
+    });
+
+})();
+
 
