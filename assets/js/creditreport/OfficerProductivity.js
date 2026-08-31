@@ -91,10 +91,27 @@ const OP_CATEGORIES = [
         icon: "📊",
         label: "Loan Outstanding",
         chart: false,
-        stats: [
-            { key: "loanOutstanding.loan", label: "Loan" },
-            { key: "loanOutstanding.client", label: "Client" },
-            { key: "loanOutstanding.value", label: "Value", money: true }
+        statGroups: [
+            {
+                label: "Own",
+                fields: [
+                    { key: "loanOutstanding.loan", label: "Loan" },
+                    { key: "loanOutstanding.client", label: "Client" },
+                    { key: "loanOutstanding.value", label: "Value", money: true }
+                ]
+            },
+            {
+                label: "Area",
+                fields: [
+                    { key: "loanOutstandingArea.loan", label: "Loan" },
+                    { key: "loanOutstandingArea.client", label: "Client" },
+                    { key: "loanOutstandingArea.value", label: "Value", money: true }
+                ]
+            }
+        ],
+        clientLists: [
+            { section: "outstanding", label: "Own" },
+            { section: "outstandingArea", label: "Area" }
         ]
     },
     {
