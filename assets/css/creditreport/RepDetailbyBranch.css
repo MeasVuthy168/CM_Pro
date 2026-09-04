@@ -443,6 +443,21 @@
     color:var(--cr-navy) !important;
 }
 [data-theme="dark"] .table-card tbody td.cr-branch-col{ color:var(--cr-gold-light) !important; }
+
+/* Opens Branch Productivity for that branch — same "unstyled button,
+   chevron suffix" pattern as RepDetailbyCO.css's .cr-officer-link. */
+.cr-branch-link{
+    all:unset;
+    cursor:pointer;
+    color:inherit;
+    font:inherit;
+    font-weight:inherit;
+}
+.cr-branch-link::after{
+    content:" \203A";
+    opacity:.55;
+}
+.cr-branch-link:active{ opacity:.7; }
 .table-card tbody tr:nth-child(even) td.cr-branch-col{ background:var(--cr-row-alt); }
 .cr-total-row td.cr-branch-col{ color:var(--cr-total-text) !important; }
 

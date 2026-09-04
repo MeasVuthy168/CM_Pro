@@ -1,0 +1,37 @@
+/* ========================================
+   BRANCH PRODUCTIVITY
+   Reuses OfficerProductivity.css almost entirely (header card, cards,
+   mode tabs, client table, heatmap — all shared class names, same CSS
+   custom properties). This file only adds what Branch Productivity has
+   that Officer Productivity doesn't: the client-list "Show More"
+   pagination (a branch can carry far more clients per category than one
+   officer would — see bpRenderClientListInto() in BranchProductivity.js).
+======================================== */
+
+.op-list-count{
+    text-align:right;
+    font-size:11px;
+    color:var(--cr-text-muted, var(--cr-text));
+    opacity:.7;
+    margin:6px 0 4px;
+}
+
+.op-list-more-wrap{
+    text-align:center;
+    margin-top:8px;
+}
+
+.op-list-more-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:8px 20px;
+    border-radius:8px;
+    border:1px solid var(--cr-border);
+    background:var(--cr-card-bg);
+    color:var(--cr-text);
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+}
+.op-list-more-btn:hover{ background:var(--cr-row-alt); }

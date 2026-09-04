@@ -360,9 +360,12 @@ function crBuildRow(item, section, isTotal) {
     const cells = section.groups.map(g =>
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
+    const branchCell = isTotal
+        ? "Total"
+        : `<button type="button" class="cr-branch-link" data-branch="${crEscapeHtml(item.branch)}">${crEscapeHtml(item.branch)}</button>`;
     return `
       <tr${isTotal ? ' class="cr-total-row"' : ""}>
-        <td class="cr-branch-col">${isTotal ? "Total" : crEscapeHtml(item.branch)}</td>
+        <td class="cr-branch-col">${branchCell}</td>
         ${cells}
       </tr>`;
 }
@@ -429,6 +432,31 @@ function crRenderSection() {
     if (crMode === "detailed") crRenderDetailed();
     else crRenderSummary();
 }
+
+// ========================================
+// BRANCH DRILL-DOWN
+// Clicking a branch name opens Branch Productivity for it — same
+// pattern as RepDetailbyCO.js's officer-name drill-down, but simpler:
+// Branch Productivity always fetches its own summary (there's no
+// already-fetched CO/FSRO/Digital Loan breakdown to hand off — this
+// report only ever has each branch's combined Total), so only the
+// branch name + current date filters need to travel in the URL, no
+// sessionStorage cache.
+// ========================================
+document.getElementById("crTbody").addEventListener("click", (e) => {
+    const link = e.target.closest(".cr-branch-link");
+    if (!link) return;
+
+    const q = new URLSearchParams({
+        branch: link.dataset.branch,
+        fromDate: document.getElementById("crFromDate").value,
+        toDate: document.getElementById("crToDate").value,
+        woFromDate: document.getElementById("crWoFromDate").value,
+        woToDate: document.getElementById("crWoToDate").value
+    });
+    location.href = `BranchProductivity.html?${q.toString()}`;
+});
+
 document.getElementById("crSection").addEventListener("change", () => {
     crRenderSection();
     crSyncStateToUrl();
