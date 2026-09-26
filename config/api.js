@@ -7,12 +7,24 @@ window.API = {
     // GET TOKEN
     // =========================
 
+    isIOS(){
+        return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+            (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    },
+
+    clientHeader(){
+        return this.isIOS() ? "CM_Pro-iOS" : "CM_Pro-Web";
+    },
+
     getToken(){
+        return this.isIOS() ? localStorage.getItem("cm_ios_token") || null : null;
+    },
 
-        // JWT is now stored in an HttpOnly cookie by the backend.
-        // JavaScript must never read or persist the session token.
-        return null;
-
+    authHeaders(extra={}){
+        const headers = { "X-CM-Client": this.clientHeader(), ...extra };
+        const token = this.getToken();
+        if (token) headers.Authorization = "Bearer " + token;
+        return headers;
     },
 
     // =========================
@@ -38,7 +50,7 @@ window.API = {
                     "Content-Type":
                         "application/json",
 
-                    "X-CM-Client": "CM_Pro-Web"
+                    ...this.authHeaders({ "Content-Type": "application/json" })
 
                 },
 
@@ -67,9 +79,7 @@ window.API = {
 
             {
                 credentials: "include",
-                headers:{
-                    "X-CM-Client": "CM_Pro-Web"
-                }
+                headers: this.authHeaders()
             }
         );
 
