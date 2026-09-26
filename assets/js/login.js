@@ -44,47 +44,64 @@ function getSafeNextParam(){
 }
 
 // =========================
-// AUTO LOGIN
+// SKIP LOGIN IF ALREADY AUTHENTICATED
 // =========================
-// Trusting an existing token/next blindly here is what caused the
-// admin<->login bounce loop: an admin page redirects here with
-// ?next=<itself> whenever its own guard rejects the token (expired,
-// or a non-admin role) — if this block redirected straight back to
-// that same next without re-checking the token, the two pages would
-// just keep replacing each other forever. Decoding the JWT here
-// (same approach as assets/js/admin/admin-loader.js's cmDecodeJwt)
-// lets this block tell "stale token" apart from "valid token, wrong
-// destination" and stop the bounce instead of perpetuating it.
+// A valid session (the HttpOnly cookie, or on iOS the Bearer-token
+// fallback) can easily bring a user back to this page — a
+// back-navigation/swipe-back gesture, the PWA cold-launching on its
+// last URL, or a bfcache-restored page. Nothing used to check for
+// that here, so an already-logged-in user just saw the raw login
+// form again instead of being sent on into the app. The server is
+// authoritative (same /api/auth/me check config/auth.js uses on
+// every protected page), so ask it rather than guessing from local
+// state.
 
-function cmDecodeJwtPayload(token){
+(async function skipLoginIfAuthenticated(){
 
     try{
 
-        const payload=token.split(".")[1];
+        const response=await fetch(
 
-        const base64=payload.replace(/-/g,"+").replace(/_/g,"/");
+            `${API.BASE_URL}/api/auth/me`,
 
-        const json=decodeURIComponent(
-
-            atob(base64)
-                .split("")
-                .map(c=>"%"+c.charCodeAt(0).toString(16).padStart(2,"0"))
-                .join("")
+            {
+                credentials:"include",
+                headers:API.authHeaders()
+            }
 
         );
 
-        return JSON.parse(json);
+        if(!response.ok) return;
+
+        const data=await response.json();
+
+        if(!data.ok || !data.user) return;
+
+        const role=(data.user.role || "user").toLowerCase();
+
+        const next=getSafeNextParam();
+
+        window.location.replace(
+
+            next
+
+                ? next
+
+                : role==="admin"
+
+                    ? "/CM_Pro/pages/admin/index.html"
+
+                    : "/CM_Pro/index.html"
+
+        );
 
     }catch{
 
-        return null;
+        // Not authenticated (or offline) — stay on the login form.
 
     }
 
-}
-
-// Authentication is now held in an HttpOnly cookie.
-// JavaScript deliberately cannot read the JWT.
+})();
 
 // =========================
 // IOS DETECT
