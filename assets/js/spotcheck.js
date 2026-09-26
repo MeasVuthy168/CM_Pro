@@ -51,12 +51,9 @@ const SC_NBCOS_MAP = {
 };
 
 // ========================================
-// TOKEN — same pattern as arrears.js
+// TOKEN — auth now goes through API.authHeaders() (HttpOnly session
+// cookie, or an iOS Bearer-token fallback) — see scAuthHeaders() below.
 // ========================================
-const scToken =
-  localStorage.getItem("token") ||
-  sessionStorage.getItem("token");
-
 
 // Column order B..AI (34 values) — must match the VBA v[] array order exactly
 const SC_FIELD_ORDER = [
@@ -162,6 +159,7 @@ async function scRefreshList() {
   try {
     const res = await fetch(SC_EP.list, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json", ...scAuthHeaders() },
       body: JSON.stringify({}),
     });
@@ -298,6 +296,7 @@ async function scExportForm(cif, btn) {
 
   try {
     const res = await fetch(SC_EP.export + encodeURIComponent(cif), {
+      credentials: "include",
       headers: scAuthHeaders(),
     });
     if (!res.ok) {
@@ -550,6 +549,7 @@ async function scSaveRecord(e) {
   try {
     const res = await fetch(SC_EP.upsert, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json", ...scAuthHeaders() },
       body: JSON.stringify({ rows: [{ k: cif, v }] }),
     });
@@ -590,6 +590,7 @@ async function scConfirmDelete() {
     // same order as DeleteReportSP_RowMongo / DeleteSpotCheck in the VBA.
     const res = await fetch(SC_EP.delete, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json", ...scAuthHeaders() },
       body: JSON.stringify({ k: scDeleteTargetCIF }),
     });
@@ -669,6 +670,7 @@ async function scAutofillFromNbcos(cif) {
 
   try {
     const res = await fetch(SC_EP.nbcosByCif + encodeURIComponent(cif), {
+      credentials: "include",
       headers: scAuthHeaders(),
     });
 
@@ -827,7 +829,7 @@ function scUpdateSaveButtonMode() {
 // Helpers
 // ---------------------------------------------------------
 function scAuthHeaders() {
-  return scToken ? { Authorization: `Bearer ${scToken}` } : {};
+  return API.authHeaders();
 }
 
 function scGetCurrentUser() {

@@ -8,10 +8,6 @@
 // leads each row, matching the Excel sheet's hidden columns.
 // ========================================
 
-const crToken =
-    localStorage.getItem("token") ||
-    sessionStorage.getItem("token");
-
 const CR_PAR_ALERT = 0.04; // PAR % at or above this renders red
 
 let crData = null; // last successful /byco response
@@ -478,7 +474,8 @@ async function crRunReport() {
     crShowLoading();
     try {
         const res = await fetch(`${API.BASE_URL}/api/creditreport/byco${crBuildQuery()}`, {
-            headers: { Authorization: `Bearer ${crToken}` }
+            credentials: "include",
+            headers: API.authHeaders()
         });
         const data = await res.json();
         crHideLoading();
@@ -718,7 +715,8 @@ document.getElementById("btnCrRefreshData")?.addEventListener("click", async () 
     try {
         const res = await fetch(`${API.BASE_URL}/api/creditreport/byco/refresh`, {
             method: "POST",
-            headers: { Authorization: `Bearer ${crToken}` }
+            credentials: "include",
+            headers: API.authHeaders()
         });
         const data = await res.json();
         if (!data.ok) {

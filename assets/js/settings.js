@@ -149,15 +149,17 @@ window.addEventListener("load",()=>{
 // =========================
 // LOAD USER INFO
 // =========================
-// FIX: /assets/user-photo/:username requires a JWT (requireJwt on
-// the server), but a plain <img src="..."> has no way to send an
-// Authorization header — so a fresh (uncached) request always 401s.
+// FIX: /assets/user-photo/:username requires auth (requireJwt on the
+// server, checking the HttpOnly session cookie or an iOS Bearer
+// token — see API.authHeaders()), but a plain <img src="..."> has no
+// way to send either — so a fresh (uncached) request always 401s.
 // It only ever "worked" when the service worker already had a
 // cached 200 response for that exact URL from some earlier
-// successful load. Fetching with fetch() + the Authorization header
-// + converting the response to a blob URL is the actual fix: this
-// still goes through the same service worker (which forwards
-// event.request, headers included), so a successful fetch here also
+// successful load. Fetching with fetch() (credentials:"include" for
+// the cookie, API.authHeaders() for iOS's token fallback) + converting
+// the response to a blob URL is the actual fix: this still goes
+// through the same service worker (which forwards event.request,
+// headers/credentials included), so a successful fetch here also
 // warms the SW cache for next time, same as before — it just
 // actually succeeds now instead of depending on a cache that may
 // not exist yet.
@@ -192,11 +194,6 @@ async function loadProfilePhoto(username){
 
         try{
 
-            const token=
-
-                localStorage.getItem("token") ||
-                sessionStorage.getItem("token");
-
             const url=
 
                 isRetry ?
@@ -205,9 +202,8 @@ async function loadProfilePhoto(username){
 
             const res=await fetch(url,{
 
-                headers: token ?
-                    { Authorization:`Bearer ${token}` } :
-                    {}
+                credentials: "include",
+                headers: API.authHeaders()
 
             });
 

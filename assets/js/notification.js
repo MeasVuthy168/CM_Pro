@@ -21,54 +21,15 @@ const readAllBtn=
 document.getElementById("readAllBtn");
 
 // =========================================================
-// TOKEN
+// CURRENT USER (from the login-time cache, for optimistic-render
+// filtering only — the server remains the source of truth on every
+// real fetch/mark-read/delete call). Not authenticated is handled by
+// config/auth.js's server-validated check, already run before this
+// file loads — nothing to duplicate here.
 // =========================================================
-
-const notificationToken =
-
-localStorage.getItem("token") ||
-
-sessionStorage.getItem("token");
-
-if(!notificationToken){
-
-window.location.replace(
-"/CM_Pro/login.html"
-);
-
-}
-
-// =========================================================
-// CURRENT USER (from token, for optimistic-render filtering
-// only — the server remains the source of truth on every
-// real fetch/mark-read/delete call)
-// =========================================================
-
-function decodeJwtPayload(token){
-
-    try{
-
-        const base64 =
-            token.split(".")[1];
-
-        return JSON.parse(
-            atob(
-                base64
-                .replace(/-/g,"+")
-                .replace(/_/g,"/")
-            )
-        );
-
-    }catch(err){
-
-        return {};
-
-    }
-
-}
 
 const currentUser =
-    decodeJwtPayload(notificationToken);
+    JSON.parse(localStorage.getItem("loggedInUser") || "{}");
 
 // Tells shared/assets/js/notification-badge.js "this page already
 // polls the full list every 30s and keeps the badge in sync itself
@@ -137,10 +98,8 @@ async function loadNotifications(){
             `${API.BASE_URL}/api/notifications/my`,
 
             {
-                headers:{
-                    Authorization:
-                    `Bearer ${notificationToken}`
-                }
+                credentials: "include",
+                headers: API.authHeaders()
             }
 
         );
@@ -701,11 +660,9 @@ await fetch(
 
 {
 method:"POST",
+credentials:"include",
 
-headers:{
-"Content-Type":"application/json",
-Authorization:`Bearer ${notificationToken}`
-},
+headers: API.authHeaders({ "Content-Type":"application/json" }),
 
 body:JSON.stringify({
 notificationId:id
@@ -743,10 +700,9 @@ await fetch(
 
 {
 method:"POST",
+credentials:"include",
 
-headers:{
-Authorization:`Bearer ${notificationToken}`
-}
+headers: API.authHeaders()
 }
 
 );
@@ -892,14 +848,9 @@ async function deleteNotification(id){
             {
 
                 method:"POST",
+                credentials:"include",
 
-                headers:{
-                    "Content-Type":
-                    "application/json",
-
-                    Authorization:
-                    `Bearer ${notificationToken}`
-                },
+                headers: API.authHeaders({ "Content-Type":"application/json" }),
 
                 body:JSON.stringify({
 

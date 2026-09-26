@@ -6,14 +6,6 @@ async function loadNotificationBadge(){
 
     try{
 
-        const badgeToken =
-
-            localStorage.getItem("token") ||
-
-            sessionStorage.getItem("token");
-
-        if(!badgeToken) return;
-
         const badge =
 
             document.getElementById(
@@ -28,12 +20,8 @@ async function loadNotificationBadge(){
 
             {
 
-                headers:{
-
-                    Authorization:
-                    `Bearer ${badgeToken}`
-
-                }
+                credentials: "include",
+                headers: API.authHeaders()
 
             }
 

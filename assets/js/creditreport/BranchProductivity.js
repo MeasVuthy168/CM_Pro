@@ -186,10 +186,6 @@ const BP_CATEGORIES = [
 
 const BP_LIST_PAGE_SIZE = 100;
 
-const bpToken =
-    localStorage.getItem("token") ||
-    sessionStorage.getItem("token");
-
 let bpState = { branch: null, meta: null, data: null };
 
 // Last-fetched Loan Disburse heatmap data — kept around so the
@@ -267,7 +263,7 @@ function bpBuildQuery(meta) {
 
 async function bpFetchSummary(branch, meta) {
     const url = `${API.BASE_URL}/api/creditreport/branch-productivity-summary?branch=${encodeURIComponent(branch)}${bpBuildQuery(meta)}`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${bpToken}` } });
+    const res = await fetch(url, { credentials: "include", headers: API.authHeaders() });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Failed to load branch data.");
     return data;
@@ -419,7 +415,7 @@ async function bpFetchClientListRows(section, bucket) {
     const url = `${API.BASE_URL}/api/creditreport/branch-clients?branch=${encodeURIComponent(bpState.branch)}` +
         `&section=${encodeURIComponent(section)}&bucket=${encodeURIComponent(bucket)}${q}`;
 
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${bpToken}` } });
+    const res = await fetch(url, { credentials: "include", headers: API.authHeaders() });
     if (!res.ok) throw new Error("Could not load the client list. Please try again.");
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Could not load the client list.");
@@ -610,7 +606,8 @@ let bpKhHolidaysPromise = null;
 function bpEnsureKhHolidays() {
     if (!bpKhHolidaysPromise) {
         bpKhHolidaysPromise = fetch(`${API.BASE_URL}/api/creditreport/byco/kh-holidays`, {
-            headers: { Authorization: `Bearer ${bpToken}` }
+            credentials: "include",
+            headers: API.authHeaders()
         })
             .then(res => res.json())
             .then(data => {
@@ -755,7 +752,7 @@ async function bpFetchDayClients(dateKey) {
     const results = await Promise.all(buckets.map(async bucket => {
         const url = `${API.BASE_URL}/api/creditreport/branch-clients?branch=${encodeURIComponent(bpState.branch)}` +
             `&section=disburse&bucket=${bucket}${q}`;
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${bpToken}` } });
+        const res = await fetch(url, { credentials: "include", headers: API.authHeaders() });
         if (!res.ok) throw new Error("Could not load clients for this day. Please try again.");
         const data = await res.json();
         if (!data.ok) throw new Error(data.message || "Could not load clients for this day.");
@@ -820,7 +817,7 @@ async function bpFetchDisburseChartData(monthOverride) {
 
     const holidaysReady = bpEnsureKhHolidays();
 
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${bpToken}` } });
+    const res = await fetch(url, { credentials: "include", headers: API.authHeaders() });
     if (!res.ok) throw new Error("Could not load the disbursement chart. Please try again.");
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Could not load the disbursement chart.");

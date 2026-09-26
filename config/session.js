@@ -39,10 +39,19 @@ function autoLogout(){
         "Session expired due to inactivity"
     );
 
-    // REMOVE TOKEN ONLY
+    // Invalidate the server-side session cookie too — otherwise it
+    // stays valid (up to its 12h Max-Age) even after this device
+    // gives up on it locally. No confirm() here (unlike shared/
+    // logout.js's logout()) since this fires automatically, not from
+    // a user click.
+    fetch("https://cm-backend-new.onrender.com/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+        headers: (typeof API !== "undefined") ? API.authHeaders() : { "X-CM-Client": "CM_Pro-Web" }
+    }).catch(()=>{});
 
     localStorage.removeItem(
-        "token"
+        "cm_ios_token"
     );
 
     localStorage.removeItem(

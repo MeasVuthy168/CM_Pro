@@ -190,19 +190,15 @@ const CMToast = {
 
       }
 
-      const token = API.getToken();
-
       const response = await fetch(
 
         `${API.BASE_URL}/assets/user-photo/${encodeURIComponent(targetUsername)}`,
 
         {
 
-          headers: {
+          credentials: "include",
 
-            Authorization: `Bearer ${token}`
-
-          }
+          headers: API.authHeaders()
 
         }
 
