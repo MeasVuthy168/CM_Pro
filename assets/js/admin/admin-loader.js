@@ -1,19 +1,7 @@
-/* =====================================================
-   admin-loader.js
-   Runs FIRST (before any dashboard code) to gate the page
-   to logged-in ADMIN users only. Theme flash-prevention is
-   handled by the inline snippet + shared/theme.js per your
-   existing convention — this file only does auth.
-
-   Matches your real login.js / api.js:
-     - token lives in localStorage.token OR sessionStorage.token
-       (localStorage if "Remember Me" was checked, else sessionStorage)
-     - user role is embedded in the JWT payload (server signs it),
-       with localStorage.loggedInUser as a fallback source
-   ===================================================== */
 const CM_ADMIN_CONFIG = {
   loginPage: "/CM_Pro/login.html"
 };
+
 
 function cmGetToken() {
   try {
@@ -31,7 +19,6 @@ function cmGetStoredUser() {
   }
 }
 
-/* ---- JWT decode (no external lib — just base64url -> JSON) ---- */
 function cmDecodeJwt(token) {
   try {
     const payload = token.split(".")[1];
@@ -53,6 +40,7 @@ function cmRedirectToLogin(reason) {
   const next = encodeURIComponent(location.pathname);
   location.replace(`${CM_ADMIN_CONFIG.loginPage}?next=${next}`);
 }
+
 
 /* ---- Run the guard through the server session ---- */
 (async function guardAdmin() {
