@@ -352,12 +352,18 @@ function completeLogin(data,remember){
     }
 
     // ===== REDIRECT =====
+    // location.replace() (not .href) so login.html never stays in
+    // browser history — otherwise a back-navigation/swipe-back gesture
+    // after a successful login lands right back on the login page
+    // (most visible on iOS Safari's edge-swipe-back, but a plain
+    // .href assignment leaves the same stale history entry on every
+    // browser).
 
     const role=(userData.role || "user").toLowerCase();
 
     const next=getSafeNextParam();
 
-    window.location.href=
+    window.location.replace(
 
         next
 
@@ -367,7 +373,9 @@ function completeLogin(data,remember){
 
                 ? "/CM_Pro/pages/admin/index.html"
 
-                : "/CM_Pro/index.html";
+                : "/CM_Pro/index.html"
+
+    );
 
 }
 

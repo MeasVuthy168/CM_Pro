@@ -303,13 +303,12 @@ window.loadTopbarPhoto = async function(){
 
         if(!img) return;
 
-        const token = API.getToken();
-
         const response = await fetch(
 
             `${API.BASE_URL}/assets/user-photo/${encodeURIComponent(user.username)}`,
 
             {
+                credentials: "include",
                 headers: API.authHeaders()
             }
 

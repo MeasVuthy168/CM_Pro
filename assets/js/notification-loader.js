@@ -148,11 +148,9 @@ function initNotificationMenuActions(){
 
                         method:"POST",
 
-                        headers:{
+                        credentials:"include",
 
-                            Authorization:`Bearer ${notificationToken}`
-
-                        }
+                        headers: API.authHeaders()
 
                     }
 

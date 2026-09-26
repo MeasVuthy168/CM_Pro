@@ -11,10 +11,6 @@
 // cached in crData — switching sections just re-renders, no refetch.
 // ========================================
 
-const crToken =
-    localStorage.getItem("token") ||
-    sessionStorage.getItem("token");
-
 let crMode = "summary"; // "summary" | "detailed"
 let crSummaryData = null;  // { items, total } from /api/creditreport/summary
 let crDetailedData = null; // { groups, grand } from /api/creditreport/detailed — fetched lazily
@@ -537,7 +533,7 @@ async function crRunReport() {
 
     try {
         const url = `${API.BASE_URL}/api/creditreport/summary${crBuildDateQuery()}`;
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
+        const res = await fetch(url, { credentials: "include", headers: API.authHeaders() });
         const data = await res.json();
 
         crHideLoading();
@@ -614,7 +610,7 @@ async function crEnsureDetailedLoaded() {
 
     try {
         const url = `${API.BASE_URL}/api/creditreport/detailed${crBuildDateQuery()}`;
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
+        const res = await fetch(url, { credentials: "include", headers: API.authHeaders() });
         const data = await res.json();
 
         crHideLoading();
@@ -899,7 +895,8 @@ async function crRefreshData() {
     try {
         const res = await fetch(`${API.BASE_URL}/api/creditreport/refresh`, {
             method: "POST",
-            headers: { Authorization: `Bearer ${crToken}` }
+            credentials: "include",
+            headers: API.authHeaders()
         });
         const data = await res.json();
 

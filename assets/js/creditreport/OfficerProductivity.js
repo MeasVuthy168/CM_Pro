@@ -214,10 +214,6 @@ const OP_CATEGORIES = [
     }
 ];
 
-const opToken =
-    localStorage.getItem("token") ||
-    sessionStorage.getItem("token");
-
 let opState = { officer: null, meta: null };
 
 // Last-fetched Loan Disburse heatmap data, kept around so the fullscreen
@@ -311,7 +307,8 @@ function opBuildQuery(meta) {
 
 async function opFetchAndFindOfficer(meta, name) {
     const res = await fetch(`${API.BASE_URL}/api/creditreport/byco${opBuildQuery(meta)}`, {
-        headers: { Authorization: `Bearer ${opToken}` }
+        credentials: "include",
+        headers: API.authHeaders()
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Failed to load report.");
@@ -501,7 +498,7 @@ async function opFetchClientListRows(sectionKey) {
         `&name=${encodeURIComponent(officer.name || "")}` +
         `&officerId=${encodeURIComponent(officer.id || "")}`;
 
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${opToken}` } });
+    const res = await fetch(url, { credentials: "include", headers: API.authHeaders() });
     if (!res.ok) throw new Error("Could not load the client list. Please try again.");
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Could not load the client list.");
@@ -728,7 +725,8 @@ let opKhHolidaysPromise = null;
 function opEnsureKhHolidays() {
     if (!opKhHolidaysPromise) {
         opKhHolidaysPromise = fetch(`${API.BASE_URL}/api/creditreport/byco/kh-holidays`, {
-            headers: { Authorization: `Bearer ${opToken}` }
+            credentials: "include",
+            headers: API.authHeaders()
         })
             .then(res => res.json())
             .then(data => {
@@ -910,7 +908,7 @@ async function opFetchDayClients(dateKey) {
         `&name=${encodeURIComponent(officer.name || "")}` +
         `&officerId=${encodeURIComponent(officer.id || "")}`;
 
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${opToken}` } });
+    const res = await fetch(url, { credentials: "include", headers: API.authHeaders() });
     if (!res.ok) throw new Error("Could not load clients for this day. Please try again.");
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Could not load clients for this day.");
@@ -998,7 +996,7 @@ async function opFetchDisburseChartData(monthOverride) {
     // to the chart itself or block on a slow/failing upstream fetch.
     const holidaysReady = opEnsureKhHolidays();
 
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${opToken}` } });
+    const res = await fetch(url, { credentials: "include", headers: API.authHeaders() });
     if (!res.ok) throw new Error("Could not load the disbursement chart. Please try again.");
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Could not load the disbursement chart.");
@@ -1132,7 +1130,8 @@ let opOfficerRosterPromise = null;
 function opEnsureOfficerRoster() {
     if (!opOfficerRosterPromise) {
         opOfficerRosterPromise = fetch(`${API.BASE_URL}/api/creditreport/byco${opBuildQuery(opState.meta)}`, {
-            headers: { Authorization: `Bearer ${opToken}` }
+            credentials: "include",
+            headers: API.authHeaders()
         })
             .then(res => res.json())
             .then(data => {

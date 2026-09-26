@@ -68,10 +68,6 @@ const DIGITAL_PRODUCTS = [
 // TOKEN + ELEMENTS
 // ========================================
 
-const arrearsToken =
-    localStorage.getItem("token") ||
-    sessionStorage.getItem("token");
-
 const tbodyArrears = document.getElementById("tbodyArrears");
 const summaryLD = document.getElementById("sumLD");
 const summaryOS = document.getElementById("sumOS");
@@ -394,7 +390,7 @@ async function fetchAllArrearsRows() {
             const thisStartRow = startRow + i * limit;
             const url = `${API.BASE_URL}/api/arreast24byco/rows?startRow=${thisStartRow}&limit=${limit}&cols=41`;
             batchRequests.push(
-                fetch(url, { headers: { Authorization: `Bearer ${arrearsToken}` } })
+                fetch(url, { credentials: "include", headers: API.authHeaders() })
                     .then(res => {
                         if (!res.ok) throw new Error(`HTTP ${res.status}`);
                         return res.json();
@@ -730,7 +726,8 @@ let lastUploadAtRaw = null; // kept for the Export PDF filename — display text
 async function fetchArrearsInfo() {
     try {
         const res = await fetch(`${API.BASE_URL}/api/arreast24byco/info`, {
-            headers: { Authorization: `Bearer ${arrearsToken}` }
+            credentials: "include",
+            headers: API.authHeaders()
         });
         const data = await res.json();
         if (!data.ok) throw new Error(data.message || "Failed to load upload info.");
@@ -1053,10 +1050,8 @@ async function fetchReasonArrearData(concateValues) {
         try {
             const res = await fetch(`${API.BASE_URL}/api/reasonarrear/get`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${arrearsToken}`
-                },
+                credentials: "include",
+                headers: API.authHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({ cifs: chunk })
             });
             const data = await res.json();
@@ -1233,10 +1228,8 @@ async function submitAllPendingReasons() {
 
             const res = await fetch(`${API.BASE_URL}/api/reasonarrear/upsert`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${arrearsToken}`
-                },
+                credentials: "include",
+                headers: API.authHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({ uploadedBy, rows: chunkRows })
             });
             const data = await res.json();
@@ -1764,10 +1757,8 @@ async function loadReasonMetaOnly(concate) {
     try {
         const res = await fetch(`${API.BASE_URL}/api/reasonarrear/get`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${arrearsToken}`
-            },
+            credentials: "include",
+            headers: API.authHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({ cifs: [concate] })
         });
         const data = await res.json();
@@ -1853,10 +1844,8 @@ async function openReasonPanel(row) {
     try {
         const res = await fetch(`${API.BASE_URL}/api/reasonarrear/get`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${arrearsToken}`
-            },
+            credentials: "include",
+            headers: API.authHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({ cifs: [row.concate] })
         });
         const data = await res.json();
@@ -2735,7 +2724,8 @@ async function fetchOutAreaEditedItems(searchTerm) {
     params.set("limit", "2000"); // matches the backend's max cap — shows the full list, not just the newest 500
 
     const res = await fetch(`${API.BASE_URL}/api/wrongaddress/list?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${arrearsToken}` }
+        credentials: "include",
+        headers: API.authHeaders()
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Failed to load edited list.");
@@ -2860,10 +2850,8 @@ async function fetchOsLookupBatch(ldCifs) {
         try {
             const res = await fetch(`${API.BASE_URL}/api/grid/lookup-batch`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${arrearsToken}`
-                },
+                credentials: "include",
+                headers: API.authHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({ ldCifs: chunk })
             });
             const data = await res.json();
@@ -3032,7 +3020,8 @@ async function selectOutAreaCustomer(row) {
     // for existing entries.
     try {
         const res = await fetch(`${API.BASE_URL}/api/wrongaddress/lookup?ldCif=${encodeURIComponent(row.concate)}`, {
-            headers: { Authorization: `Bearer ${arrearsToken}` }
+            credentials: "include",
+            headers: API.authHeaders()
         });
         const data = await res.json();
 
@@ -3066,7 +3055,8 @@ async function deleteWrongAddressRecord(ldCif) {
     try {
         const res = await fetch(`${API.BASE_URL}/api/wrongaddress/${encodeURIComponent(ldCif)}`, {
             method: "DELETE",
-            headers: { Authorization: `Bearer ${arrearsToken}` }
+            credentials: "include",
+            headers: API.authHeaders()
         });
         const data = await res.json();
         if (!data.ok) throw new Error(data.message || "Delete failed.");
@@ -3166,10 +3156,8 @@ document.getElementById("btnOutAreaBulkDelete")?.addEventListener("click", async
     try {
         const res = await fetch(`${API.BASE_URL}/api/wrongaddress/bulk-delete`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${arrearsToken}`
-            },
+            credentials: "include",
+            headers: API.authHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({ ldCifs })
         });
         const data = await res.json();
@@ -3214,10 +3202,8 @@ document.getElementById("btnOutAreaSave")?.addEventListener("click", async () =>
     try {
         const res = await fetch(`${API.BASE_URL}/api/wrongaddress/upsert`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${arrearsToken}`
-            },
+            credentials: "include",
+            headers: API.authHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({
                 ldCif: outAreaSelectedRow.concate,
                 newBranch,

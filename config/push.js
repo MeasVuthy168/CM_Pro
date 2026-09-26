@@ -86,22 +86,6 @@ console.log(
 }
 
 // -------------------------
-// Token
-// -------------------------
-
-const token=
-localStorage.getItem("token")||
-sessionStorage.getItem("token");
-
-if(!token){
-
-console.error("No token");
-
-return false;
-
-}
-
-// -------------------------
 // Save to Server
 // -------------------------
 
@@ -114,13 +98,9 @@ await fetch(
 
 method:"POST",
 
-headers:{
+credentials:"include",
 
-"Content-Type":"application/json",
-
-Authorization:`Bearer ${token}`
-
-},
+headers: API.authHeaders({ "Content-Type":"application/json" }),
 
 body:JSON.stringify(subscription)
 

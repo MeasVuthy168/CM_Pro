@@ -25,14 +25,9 @@ function notify(message,type="info"){
 }
 
 // ========================================
-// TOKEN
+// TOKEN — auth now goes through API.authHeaders() (HttpOnly session
+// cookie, or an iOS Bearer-token fallback).
 // ========================================
-
-const customerSearchToken=
-
-    localStorage.getItem("token") ||
-
-    sessionStorage.getItem("token");
 
 // ========================================
 // ELEMENTS
@@ -84,14 +79,6 @@ async function runCustomerSearch(){
 
     }
 
-    if(!customerSearchToken){
-
-        notify("Session expired. Please log in again.","error");
-
-        return;
-
-    }
-
     if(typeof showAppLoading==="function"){
 
         showAppLoading("Searching customer data...");
@@ -106,11 +93,8 @@ async function runCustomerSearch(){
 
             {
 
-                headers:{
-
-                    Authorization:`Bearer ${customerSearchToken}`
-
-                }
+                credentials: "include",
+                headers: API.authHeaders()
 
             }
 
