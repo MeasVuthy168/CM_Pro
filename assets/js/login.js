@@ -83,82 +83,8 @@ function cmDecodeJwtPayload(token){
 
 }
 
-const existingToken=
-
-    localStorage.getItem("token")
-
-    ||
-
-    sessionStorage.getItem("token");
-
-if(existingToken){
-
-    const jwtPayload=cmDecodeJwtPayload(existingToken);
-
-    const tokenExpired=
-
-        !jwtPayload
-
-        ||
-
-        (jwtPayload.exp && Date.now()>=jwtPayload.exp*1000);
-
-    if(tokenExpired){
-
-        // Stale/undecodable token — clear it and fall through to the
-        // normal login form instead of bouncing straight back to
-        // whatever page sent us here.
-        localStorage.removeItem("token");
-        localStorage.removeItem("loggedInUser");
-        sessionStorage.clear();
-
-    }else{
-
-        try{
-
-            const user=JSON.parse(
-
-                localStorage.getItem("loggedInUser") || "{}"
-
-            );
-
-            const role=String(
-
-                jwtPayload.role || user.role || "user"
-
-            ).toLowerCase();
-
-            const next=getSafeNextParam();
-
-            // Only honor ?next= if this token's role can actually
-            // reach it — otherwise fall back to the role's own default
-            // page rather than re-triggering the page that rejected us.
-            const nextNeedsAdmin=
-                next && next.startsWith("/CM_Pro/pages/admin/");
-
-            const destination=
-
-                (next && (!nextNeedsAdmin || role==="admin"))
-
-                    ? next
-
-                    : role==="admin"
-
-                        ? "/CM_Pro/pages/admin/index.html"
-
-                        : "/CM_Pro/index.html";
-
-            window.location.replace(destination);
-
-        }catch{
-
-            window.location.replace("/CM_Pro/index.html");
-
-        }
-
-    }
-
-}
+// Authentication is now held in an HttpOnly cookie.
+// JavaScript deliberately cannot read the JWT.
 
 // =========================
 // IOS DETECT
@@ -374,22 +300,10 @@ function setLoading(isLoading){
 // redirect logic regardless of which credential the server accepted.
 function completeLogin(data,remember){
 
-    // ===== CLEAR TOKEN =====
-
-    localStorage.removeItem("token");
-
-    sessionStorage.removeItem("token");
-
-    // ===== SAVE TOKEN =====
-
-    if(remember){
-
-        localStorage.setItem("token",data.token);
-
-    }else{
-
-        sessionStorage.setItem("token",data.token);
-
+    if (typeof API !== "undefined" && API.isIOS() && data.token) {
+        localStorage.setItem("cm_ios_token", data.token);
+    } else if (typeof API !== "undefined" && !API.isIOS()) {
+        localStorage.removeItem("cm_ios_token");
     }
 
     // ===== USER DATA =====
@@ -486,10 +400,12 @@ form.addEventListener("submit",async(e)=>{
             {
 
                 method:"POST",
+                credentials:"include",
 
                 headers:{
 
-                    "Content-Type":"application/json"
+                    "Content-Type":"application/json",
+                    "X-CM-Client": typeof API !== "undefined" ? API.clientHeader() : "CM_Pro-Web"
 
                 },
 

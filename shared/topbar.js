@@ -310,9 +310,7 @@ window.loadTopbarPhoto = async function(){
             `${API.BASE_URL}/assets/user-photo/${encodeURIComponent(user.username)}`,
 
             {
-                headers:{
-                    Authorization:`Bearer ${token}`
-                }
+                headers: API.authHeaders()
             }
 
         );

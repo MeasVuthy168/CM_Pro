@@ -7,16 +7,24 @@ window.API = {
     // GET TOKEN
     // =========================
 
+    isIOS(){
+        return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+            (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    },
+
+    clientHeader(){
+        return this.isIOS() ? "CM_Pro-iOS" : "CM_Pro-Web";
+    },
+
     getToken(){
+        return this.isIOS() ? localStorage.getItem("cm_ios_token") || null : null;
+    },
 
-        return (
-
-            localStorage.getItem("token") ||
-
-            sessionStorage.getItem("token")
-
-        );
-
+    authHeaders(extra={}){
+        const headers = { "X-CM-Client": this.clientHeader(), ...extra };
+        const token = this.getToken();
+        if (token) headers.Authorization = "Bearer " + token;
+        return headers;
     },
 
     // =========================
@@ -35,13 +43,14 @@ window.API = {
             {
                 method:"POST",
 
+                credentials: "include",
+
                 headers:{
 
                     "Content-Type":
                         "application/json",
 
-                    Authorization:
-                        `Bearer ${token}`
+                    ...this.authHeaders({ "Content-Type": "application/json" })
 
                 },
 
@@ -69,16 +78,16 @@ window.API = {
             this.BASE_URL + endpoint,
 
             {
-                headers:{
-
-                    Authorization:
-                        `Bearer ${token}`
-
-                }
+                credentials: "include",
+                headers: this.authHeaders()
             }
         );
 
-        return response.json();
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data?.message || `HTTP ${response.status}`);
+        }
+        return data;
 
     }
 

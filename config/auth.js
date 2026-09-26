@@ -1,17 +1,31 @@
 // =========================
 // AUTH CHECK
 // =========================
+// JWT is held in an HttpOnly cookie. JavaScript deliberately cannot
+// inspect or decode it. The server is authoritative about authentication
+// and role, so validate the session through /api/auth/me.
 
-const token =
+(async function checkAuth(){
+    try {
+        const response = await fetch(
+            "https://cm-backend-new.onrender.com/api/auth/me",
+            {
+                credentials: "include",
+                headers: API.authHeaders()
+            }
+        );
 
-    localStorage.getItem("token") ||
+        if (!response.ok) {
+            window.location.replace("/CM_Pro/login.html");
+            return;
+        }
 
-    sessionStorage.getItem("token");
-
-if(!token){
-
-    window.location.replace(
-        "/CM_Pro/login.html"
-    );
-
-}
+        const data = await response.json();
+        if (!data.ok || !data.user) {
+            window.location.replace("/CM_Pro/login.html");
+        }
+    } catch (err) {
+        console.error("Auth check failed:", err);
+        window.location.replace("/CM_Pro/login.html");
+    }
+})();

@@ -87,11 +87,10 @@ function webauthnErrorMessage(err, fallback) {
 
 // ---- Registration (Settings page — already logged in) ----
 async function webauthnRegister(deviceLabel) {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-
     const optRes = await fetch(`${API.BASE_URL}/api/webauthn/register/options`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` }
+        credentials: "include",
+        headers: { "X-CM-Client": API.clientHeader() }
     });
     const optData = await optRes.json();
     if (!optData.ok) throw new Error(optData.message || "Could not start registration.");
@@ -108,9 +107,10 @@ async function webauthnRegister(deviceLabel) {
 
     const verifyRes = await fetch(`${API.BASE_URL}/api/webauthn/register/verify`, {
         method: "POST",
+        credentials: "include",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
+            "X-CM-Client": API.clientHeader()
         },
         body: JSON.stringify({
             deviceLabel: deviceLabel || "",
@@ -124,10 +124,9 @@ async function webauthnRegister(deviceLabel) {
 }
 
 async function webauthnListCredentials() {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-
     const res = await fetch(`${API.BASE_URL}/api/webauthn/credentials`, {
-        headers: { Authorization: `Bearer ${token}` }
+        credentials: "include",
+        headers: { "X-CM-Client": API.clientHeader() }
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Could not load registered devices.");
@@ -135,11 +134,10 @@ async function webauthnListCredentials() {
 }
 
 async function webauthnRemoveCredential(credentialId) {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-
     const res = await fetch(`${API.BASE_URL}/api/webauthn/credentials/${encodeURIComponent(credentialId)}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
+        credentials: "include",
+        headers: { "X-CM-Client": API.clientHeader() }
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Could not remove device.");
@@ -150,7 +148,8 @@ async function webauthnRemoveCredential(credentialId) {
 async function webauthnLogin(username) {
     const optRes = await fetch(`${API.BASE_URL}/api/webauthn/login/options`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: { "Content-Type": "application/json", "X-CM-Client": API.clientHeader() },
         body: JSON.stringify({ username })
     });
     const optData = await optRes.json();
@@ -168,7 +167,7 @@ async function webauthnLogin(username) {
 
     const verifyRes = await fetch(`${API.BASE_URL}/api/webauthn/login/verify`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: API.authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
             username,
             response: webauthnCredentialToJSON(credential, false)
