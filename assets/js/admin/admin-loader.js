@@ -3,38 +3,6 @@ const CM_ADMIN_CONFIG = {
 };
 
 
-function cmGetToken() {
-  try {
-    return localStorage.getItem("token") || sessionStorage.getItem("token");
-  } catch (e) {
-    return null;
-  }
-}
-
-function cmGetStoredUser() {
-  try {
-    return JSON.parse(localStorage.getItem("loggedInUser") || "{}");
-  } catch (e) {
-    return {};
-  }
-}
-
-function cmDecodeJwt(token) {
-  try {
-    const payload = token.split(".")[1];
-    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const json = decodeURIComponent(
-      atob(base64)
-        .split("")
-        .map((c) => "%" + c.charCodeAt(0).toString(16).padStart(2, "0"))
-        .join("")
-    );
-    return JSON.parse(json);
-  } catch (e) {
-    return null;
-  }
-}
-
 function cmRedirectToLogin(reason) {
   console.warn("Admin dashboard access denied:", reason);
   const next = encodeURIComponent(location.pathname);
