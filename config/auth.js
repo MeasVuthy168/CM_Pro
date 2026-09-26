@@ -11,7 +11,7 @@
             "https://cm-backend-new.onrender.com/api/auth/me",
             {
                 credentials: "include",
-                headers: { "X-CM-Client": "CM_Pro-Web" }
+                headers: API.authHeaders()
             }
         );
 
