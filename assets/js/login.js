@@ -300,8 +300,11 @@ function setLoading(isLoading){
 // redirect logic regardless of which credential the server accepted.
 function completeLogin(data,remember){
 
-    // JWT is set by the backend as an HttpOnly cookie.
-    // Never copy it into localStorage/sessionStorage.
+    if (typeof API !== "undefined" && API.isIOS() && data.token) {
+        localStorage.setItem("cm_ios_token", data.token);
+    } else if (typeof API !== "undefined" && !API.isIOS()) {
+        localStorage.removeItem("cm_ios_token");
+    }
 
     // ===== USER DATA =====
 
@@ -402,7 +405,7 @@ form.addEventListener("submit",async(e)=>{
                 headers:{
 
                     "Content-Type":"application/json",
-                    "X-CM-Client":"CM_Pro-Web"
+                    "X-CM-Client": typeof API !== "undefined" ? API.clientHeader() : "CM_Pro-Web"
 
                 },
 
