@@ -90,7 +90,7 @@ async function webauthnRegister(deviceLabel) {
     const optRes = await fetch(`${API.BASE_URL}/api/webauthn/register/options`, {
         method: "POST",
         credentials: "include",
-        headers: { "X-CM-Client": "CM_Pro-Web" }
+        headers: { "X-CM-Client": API.clientHeader() }
     });
     const optData = await optRes.json();
     if (!optData.ok) throw new Error(optData.message || "Could not start registration.");
@@ -110,7 +110,7 @@ async function webauthnRegister(deviceLabel) {
         credentials: "include",
         headers: {
             "Content-Type": "application/json",
-            "X-CM-Client": "CM_Pro-Web"
+            "X-CM-Client": API.clientHeader()
         },
         body: JSON.stringify({
             deviceLabel: deviceLabel || "",
@@ -126,7 +126,7 @@ async function webauthnRegister(deviceLabel) {
 async function webauthnListCredentials() {
     const res = await fetch(`${API.BASE_URL}/api/webauthn/credentials`, {
         credentials: "include",
-        headers: { "X-CM-Client": "CM_Pro-Web" }
+        headers: { "X-CM-Client": API.clientHeader() }
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Could not load registered devices.");
@@ -137,7 +137,7 @@ async function webauthnRemoveCredential(credentialId) {
     const res = await fetch(`${API.BASE_URL}/api/webauthn/credentials/${encodeURIComponent(credentialId)}`, {
         method: "DELETE",
         credentials: "include",
-        headers: { "X-CM-Client": "CM_Pro-Web" }
+        headers: { "X-CM-Client": API.clientHeader() }
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Could not remove device.");
@@ -149,7 +149,7 @@ async function webauthnLogin(username) {
     const optRes = await fetch(`${API.BASE_URL}/api/webauthn/login/options`, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json", "X-CM-Client": "CM_Pro-Web" },
+        headers: { "Content-Type": "application/json", "X-CM-Client": API.clientHeader() },
         body: JSON.stringify({ username })
     });
     const optData = await optRes.json();
@@ -167,7 +167,7 @@ async function webauthnLogin(username) {
 
     const verifyRes = await fetch(`${API.BASE_URL}/api/webauthn/login/verify`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: API.authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
             username,
             response: webauthnCredentialToJSON(credential, false)
