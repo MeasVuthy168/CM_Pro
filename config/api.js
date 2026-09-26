@@ -9,13 +9,9 @@ window.API = {
 
     getToken(){
 
-        return (
-
-            localStorage.getItem("token") ||
-
-            sessionStorage.getItem("token")
-
-        );
+        // JWT is now stored in an HttpOnly cookie by the backend.
+        // JavaScript must never read or persist the session token.
+        return null;
 
     },
 
@@ -35,13 +31,14 @@ window.API = {
             {
                 method:"POST",
 
+                credentials: "include",
+
                 headers:{
 
                     "Content-Type":
                         "application/json",
 
-                    Authorization:
-                        `Bearer ${token}`
+                    "X-CM-Client": "CM_Pro-Web"
 
                 },
 
@@ -69,16 +66,18 @@ window.API = {
             this.BASE_URL + endpoint,
 
             {
+                credentials: "include",
                 headers:{
-
-                    Authorization:
-                        `Bearer ${token}`
-
+                    "X-CM-Client": "CM_Pro-Web"
                 }
             }
         );
 
-        return response.json();
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data?.message || `HTTP ${response.status}`);
+        }
+        return data;
 
     }
 
