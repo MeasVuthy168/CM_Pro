@@ -256,20 +256,34 @@
 }
 .op-card-title{ flex:1 1 auto; min-width:0; }
 .op-card-label{ font-size:13.5px; font-weight:700; }
+/* flex-wrap:nowrap + overflow-x:auto keeps each stats line (CO/FSRO/
+   Digital Loan) to exactly one row always, regardless of how many
+   fields or how long the numbers get — it used to wrap to a second
+   line on narrow phones once a line had enough fields, turning a
+   fixed 3-line block into 4-5 lines. A line that doesn't fit scrolls
+   horizontally instead (scrollbar hidden — this is a glanceable
+   summary, not a place to expect a visible scrollbar). */
 .op-card-stats{
     margin-top:3px;
     display:flex;
-    flex-wrap:wrap;
+    flex-wrap:nowrap;
+    align-items:center;
     gap:3px 14px;
     font-size:12px;
     color:var(--cr-text-muted);
+    overflow-x:auto;
+    white-space:nowrap;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
 }
+.op-card-stats::-webkit-scrollbar{ display:none; }
+.op-card-stats > span{ flex:0 0 auto; }
 .op-card-stats b{ color:var(--cr-navy); font-weight:800; }
 [data-theme="dark"] .op-card-stats b{ color:var(--cr-gold-light); }
 /* Leads an Own/Area stats line (statGroups categories — NBC Overdue,
    Write Off) — bolder than the plain "Loan:"/"Value:" labels next to it
    since it's naming which line this is, not one more figure on it. */
-.op-card-stats-group-label{ font-weight:700; color:var(--cr-text); }
+.op-card-stats-group-label{ font-weight:700; color:var(--cr-text); flex:0 0 auto; }
 .op-card-stats + .op-card-stats{ margin-top:2px; }
 .op-card-caret{
     flex:0 0 auto;

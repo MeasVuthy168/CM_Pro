@@ -361,7 +361,7 @@ function crBuildRow(item, section, isTotal) {
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
     const branchCell = isTotal
-        ? "Total"
+        ? `<button type="button" class="cr-branch-link" data-branch="All Branch">Total</button>`
         : `<button type="button" class="cr-branch-link" data-branch="${crEscapeHtml(item.branch)}">${crEscapeHtml(item.branch)}</button>`;
     return `
       <tr${isTotal ? ' class="cr-total-row"' : ""}>
