@@ -10,6 +10,7 @@
 
   const API_BASE = (window.API && window.API.BASE_URL) || "";
   const BRANCH_ROLES = new Set(["viewer_manager_a", "viewer_manager_b", "viewer_manager_c"]);
+  const CO_ID_ROLES = new Set(["viewer_staff"]);
 
   const state = {
     users: [],
@@ -89,6 +90,7 @@
         <td><span class="adm-badge ${u.isActive ? "adm-badge-status-active" : "adm-badge-status-inactive"}">${u.isActive ? "Active" : "Inactive"}</span></td>
         <td>${escapeHtml(u.phone || "—")}</td>
         <td>${escapeHtml(u.branch || "—")}</td>
+        <td>${escapeHtml(u.coId || "—")}</td>
         <td>
           <div class="adm-row-actions">
             <button type="button" class="adm-icon-btn" title="Edit" data-action="edit">✏️</button>
@@ -225,6 +227,8 @@
     const fRole = bodyNode.querySelector("#ufRole");
     const fBranchField = bodyNode.querySelector("#ufBranchField");
     const fBranch = bodyNode.querySelector("#ufBranch");
+    const fCoIdField = bodyNode.querySelector("#ufCoIdField");
+    const fCoId = bodyNode.querySelector("#ufCoId");
     const fStatus = bodyNode.querySelector("#ufStatus");
     const fPhone = bodyNode.querySelector("#ufPhone");
     const fFooter = bodyNode.querySelector("#ufFormFooter");
@@ -237,7 +241,13 @@
       fBranchField.hidden = !needsBranch;
       if (!needsBranch) fBranch.value = "";
     }
+    function updateCoIdVisibility() {
+      const needsCoId = CO_ID_ROLES.has(fRole.value);
+      fCoIdField.hidden = !needsCoId;
+      if (!needsCoId) fCoId.value = "";
+    }
     fRole.addEventListener("change", updateBranchVisibility);
+    fRole.addEventListener("change", updateCoIdVisibility);
 
     btnSelectPhoto.addEventListener("click", () => photoInput.click());
     photoInput.addEventListener("change", () => {
@@ -261,10 +271,13 @@
       fPhone.value = existingUser.phone;
       updateBranchVisibility();
       fBranch.value = existingUser.branch || "";
+      updateCoIdVisibility();
+      fCoId.value = existingUser.coId || "";
       loadUserPhoto(bodyNode, existingUser.username);
     } else {
       fRole.value = "user";
       updateBranchVisibility();
+      updateCoIdVisibility();
     }
 
     fFooter.innerHTML = `
@@ -292,12 +305,13 @@
       const fullname = fFullname.value.trim();
       const role = fRole.value;
       const branch = BRANCH_ROLES.has(role) ? fBranch.value.trim() : "";
+      const coId = CO_ID_ROLES.has(role) ? fCoId.value.trim() : "";
 
       if (!username) return AdminUI.toast("Enter username.", "error");
       if (!fullname) return AdminUI.toast("Enter full name.", "error");
       if (BRANCH_ROLES.has(role) && !branch) return AdminUI.toast("Please select a Branch for this role.", "error");
 
-      const body = { fullname, role, phone: fPhone.value.trim(), branch };
+      const body = { fullname, role, phone: fPhone.value.trim(), branch, coId };
 
       try {
         if (isEdit) {
