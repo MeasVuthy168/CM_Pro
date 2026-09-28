@@ -406,7 +406,34 @@ function opRenderCards() {
     const wrap = document.getElementById("opCards");
     wrap.innerHTML = OP_CATEGORIES.map(cat => opCardMarkup(cat, opState.officer)).join("");
     wrap.style.display = "flex";
+    opFitStatsToWidth();
 }
+
+// ========================================
+// FIT STATS ROWS TO SCREEN WIDTH
+// Same fix as BranchProductivity.js's bpFitStatsToWidth() — these two
+// pages share the .op-card-stats markup/CSS, so they need the same
+// per-row font-size shrink to guarantee no wrap and no horizontal
+// scroll regardless of content length.
+// ========================================
+function opFitStatsToWidth() {
+    const rows = document.querySelectorAll("#opCards .op-card-stats");
+    rows.forEach(row => {
+        row.style.fontSize = "";
+        let size = parseFloat(getComputedStyle(row).fontSize);
+        const minSize = 7;
+        while (row.scrollWidth > row.clientWidth + 0.5 && size > minSize) {
+            size -= 0.5;
+            row.style.fontSize = `${size}px`;
+        }
+    });
+}
+
+let opFitResizeTimer;
+window.addEventListener("resize", () => {
+    clearTimeout(opFitResizeTimer);
+    opFitResizeTimer = setTimeout(opFitStatsToWidth, 150);
+});
 
 // ========================================
 // ACCORDION + MODE SWITCHING
