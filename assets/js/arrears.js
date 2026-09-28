@@ -72,6 +72,17 @@ const arrearsToken =
     localStorage.getItem("token") ||
     sessionStorage.getItem("token");
 
+// ========================================
+// SCOPE MODE (Viewer_Staff "All" vs "My Own")
+// Mirrors the Excel VBA Download_ArreasT24ByCO /
+// Download_ArreasT24ByCO_Own choice: "" (default) asks the backend
+// for the original column-W/fullname-scoped view, "own" asks for the
+// column-V/username-scoped view. Set once at page load (see the
+// PAGE READY IIFE at the bottom of this file) and read by every
+// arreast24byco fetch below.
+// ========================================
+let arrearsScopeMode = "";
+
 const tbodyArrears = document.getElementById("tbodyArrears");
 const summaryLD = document.getElementById("sumLD");
 const summaryOS = document.getElementById("sumOS");
@@ -334,9 +345,16 @@ const ARREARS_CACHE_KEY = "arrears_raw_rows_cache_v1";
 const ARREARS_CACHE_TTL_MS = 3 * 60 * 1000;
 const ARREARS_CACHE_MAX_BYTES = 4 * 1024 * 1024; // stay well under sessionStorage's quota
 
-function readArrearsRowsCache() {
+// Keyed per scope mode — "All" and "My Own" return different row sets
+// for the same account, so a cache hit under one mode must never be
+// served back for the other.
+function arrearsCacheKey(mode) {
+    return ARREARS_CACHE_KEY + (mode === "own" ? "_own" : "");
+}
+
+function readArrearsRowsCache(mode) {
     try {
-        const raw = sessionStorage.getItem(ARREARS_CACHE_KEY);
+        const raw = sessionStorage.getItem(arrearsCacheKey(mode));
         if (!raw) return null;
         const parsed = JSON.parse(raw);
         if (!parsed || !Array.isArray(parsed.rows)) return null;
@@ -347,14 +365,14 @@ function readArrearsRowsCache() {
     }
 }
 
-function writeArrearsRowsCache(valuesArrays) {
+function writeArrearsRowsCache(mode, valuesArrays) {
     try {
         const payload = JSON.stringify({ fetchedAt: Date.now(), rows: valuesArrays });
         if (payload.length > ARREARS_CACHE_MAX_BYTES) {
             console.warn(`[arrears cache] ${(payload.length / 1024 / 1024).toFixed(1)}MB exceeds the cache cap — skipping cache, every load will hit the network`);
             return;
         }
-        sessionStorage.setItem(ARREARS_CACHE_KEY, payload);
+        sessionStorage.setItem(arrearsCacheKey(mode), payload);
     } catch (e) {
         // Quota exceeded or storage unavailable (private browsing, etc.) —
         // caching is an optimization, not a requirement, so just skip it.
@@ -369,7 +387,7 @@ function writeArrearsRowsCache(valuesArrays) {
 // ========================================
 
 async function fetchAllArrearsRows() {
-    const cached = readArrearsRowsCache();
+    const cached = readArrearsRowsCache(arrearsScopeMode);
     if (cached) {
         console.log(`[arrears cache] using cached rows (${cached.length} rows, age < ${ARREARS_CACHE_TTL_MS / 1000}s) — skipped the network fetch`);
         return cached.map(parseRow);
@@ -380,6 +398,8 @@ async function fetchAllArrearsRows() {
     let startRow = 6; // matches the sheet's own data start row
     let all = [];
     let reachedEnd = false;
+
+    const scopeQuery = arrearsScopeMode === "own" ? "&scope=own" : "";
 
     // Previously this awaited one page at a time — for ~4000 rows
     // that's 4-5 full sequential round-trips. Since the server
@@ -392,7 +412,7 @@ async function fetchAllArrearsRows() {
         const batchRequests = [];
         for (let i = 0; i < BATCH_SIZE; i++) {
             const thisStartRow = startRow + i * limit;
-            const url = `${API.BASE_URL}/api/arreast24byco/rows?startRow=${thisStartRow}&limit=${limit}&cols=41`;
+            const url = `${API.BASE_URL}/api/arreast24byco/rows?startRow=${thisStartRow}&limit=${limit}&cols=41${scopeQuery}`;
             batchRequests.push(
                 fetch(url, { headers: { Authorization: `Bearer ${arrearsToken}` } })
                     .then(res => {
@@ -418,7 +438,7 @@ async function fetchAllArrearsRows() {
     }
 
     const valuesArrays = all.map(r => r.values || []);
-    writeArrearsRowsCache(valuesArrays);
+    writeArrearsRowsCache(arrearsScopeMode, valuesArrays);
     return valuesArrays.map(parseRow);
 }
 
@@ -729,7 +749,8 @@ let lastUploadAtRaw = null; // kept for the Export PDF filename — display text
 
 async function fetchArrearsInfo() {
     try {
-        const res = await fetch(`${API.BASE_URL}/api/arreast24byco/info`, {
+        const scopeQuery = arrearsScopeMode === "own" ? "?scope=own" : "";
+        const res = await fetch(`${API.BASE_URL}/api/arreast24byco/info${scopeQuery}`, {
             headers: { Authorization: `Bearer ${arrearsToken}` }
         });
         const data = await res.json();
@@ -3256,8 +3277,57 @@ document.getElementById("btnOutAreaSave")?.addEventListener("click", async () =>
 });
 
 // ========================================
+// ALL / MY OWN — Viewer_Staff scope choice
+// Mirrors the Excel VBA Toolbar_Action_Download prompt. Only shown to
+// Viewer_Staff accounts — for every other role the backend is either
+// unrestricted or branch-scoped regardless of this choice, so asking
+// would be a meaningless extra tap on every page visit.
+// ========================================
+function showArrearsScopeDialog() {
+    return new Promise(resolve => {
+        const dlg = document.getElementById("arrScopeDialog");
+        const btnAll = document.getElementById("btnArrScopeAll");
+        const btnOwn = document.getElementById("btnArrScopeOwn");
+        if (!dlg || !btnAll || !btnOwn) {
+            resolve(""); // markup missing — fail open to the original unrestricted view
+            return;
+        }
+
+        function choose(mode) {
+            dlg.classList.remove("show");
+            btnAll.removeEventListener("click", onAll);
+            btnOwn.removeEventListener("click", onOwn);
+            resolve(mode);
+        }
+        function onAll() { choose(""); }
+        function onOwn() { choose("own"); }
+
+        btnAll.addEventListener("click", onAll);
+        btnOwn.addEventListener("click", onOwn);
+        dlg.classList.add("show");
+    });
+}
+
+// ========================================
 // PAGE READY
 // ========================================
 
-refreshArrears();
+(async function initArrearsPage() {
+    let loggedInUser = {};
+    try {
+        loggedInUser = JSON.parse(
+            localStorage.getItem("loggedInUser") ||
+            sessionStorage.getItem("loggedInUser") ||
+            "{}"
+        );
+    } catch (e) {
+        loggedInUser = {};
+    }
+
+    if (String(loggedInUser.role || "").toLowerCase() === "viewer_staff") {
+        arrearsScopeMode = await showArrearsScopeDialog();
+    }
+
+    refreshArrears();
+})();
 console.log("Daily Arrears Ready.");

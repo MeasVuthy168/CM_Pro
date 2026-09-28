@@ -2782,3 +2782,73 @@ display:none !important;
 .columns-list-locked{
     opacity:.55;
 }
+
+/* =========================
+   SCOPE CHOICE DIALOG (All / My Own)
+   Same shape/class names as the confirm dialog in notification.css/
+   settings.css, kept as its own local copy here since this page
+   doesn't load either of those files.
+========================= */
+
+.dialog{
+    position:fixed;
+    inset:0;
+    display:none;
+    justify-content:center;
+    align-items:center;
+    background:rgba(0,0,0,.55);
+    z-index:99999;
+}
+
+.dialog.show{
+    display:flex;
+}
+
+.dialog-box{
+    width:90%;
+    max-width:380px;
+    background:var(--arr-card-bg, #fff);
+    border:1px solid var(--arr-border, #e2e6ed);
+    border-radius:18px;
+    padding:24px;
+    box-shadow:0 10px 25px rgba(0,0,0,.3);
+}
+
+.dialog-title{
+    font-size:16px;
+    color:var(--arr-text, #1c2333);
+    text-align:center;
+    line-height:1.5;
+    margin-bottom:22px;
+}
+
+.dialog-buttons{
+    display:flex;
+    gap:12px;
+}
+
+.dialog-buttons button{
+    flex:1;
+    height:48px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:15px;
+    font-weight:700;
+    font-family:'KRASAR',sans-serif;
+    transition:transform .15s;
+    color:#fff;
+}
+
+.dialog-buttons button:active{
+    transform:scale(.97);
+}
+
+#btnArrScopeAll{
+    background:var(--arr-navy, #003B8B);
+}
+
+#btnArrScopeOwn{
+    background:var(--arr-gold, #D4AF37);
+    color:#1C2333;
+}
