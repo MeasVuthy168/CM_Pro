@@ -340,7 +340,39 @@ function bpRenderCards() {
     const wrap = document.getElementById("bpCards");
     wrap.innerHTML = BP_CATEGORIES.map(cat => bpCardMarkup(cat, bpState.data)).join("");
     wrap.style.display = "flex";
+    bpFitStatsToWidth();
 }
+
+// ========================================
+// FIT STATS ROWS TO SCREEN WIDTH
+// Each CO/FSRO/Digital Loan line must always fit within the card —
+// no wrapping (fixed by CSS), and no horizontal scroll either.
+// Content length varies (long values, wide numbers), so a fixed
+// font-size can't guarantee that on its own — this measures each row
+// after render and shrinks its own font-size in small steps until it
+// stops overflowing (or hits a legibility floor). Resets to the CSS
+// default before each measurement so a resize (e.g. rotating the
+// phone, or a wider screen) can recover full size again instead of
+// staying shrunk from a previous, narrower measurement.
+// ========================================
+function bpFitStatsToWidth() {
+    const rows = document.querySelectorAll("#bpCards .op-card-stats");
+    rows.forEach(row => {
+        row.style.fontSize = "";
+        let size = parseFloat(getComputedStyle(row).fontSize);
+        const minSize = 7;
+        while (row.scrollWidth > row.clientWidth + 0.5 && size > minSize) {
+            size -= 0.5;
+            row.style.fontSize = `${size}px`;
+        }
+    });
+}
+
+let bpFitResizeTimer;
+window.addEventListener("resize", () => {
+    clearTimeout(bpFitResizeTimer);
+    bpFitResizeTimer = setTimeout(bpFitStatsToWidth, 150);
+});
 
 // ========================================
 // ACCORDION + MODE SWITCHING
