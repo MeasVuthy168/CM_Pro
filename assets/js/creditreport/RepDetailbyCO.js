@@ -50,9 +50,19 @@ const CR_SECTIONS = {
             ]
         }]
     },
+    parT24Area: {
+        groups: [{
+            label: "Balance Loan at Risk (T24)_Area",
+            fields: [
+                { key: "parT24Area.loan", label: "# Loan" },
+                { key: "parT24Area.value", label: "Value", money: true },
+                { key: "parT24Area.parPct", label: "PAR %", pct: true }
+            ]
+        }]
+    },
     parT24: {
         groups: [{
-            label: "Balance Loan at Risk (T24)",
+            label: "Balance Loan at Risk (T24)_Own",
             fields: [
                 { key: "parT24.loan", label: "# Loan" },
                 { key: "parT24.value", label: "Value", money: true },
@@ -126,6 +136,7 @@ CR_SECTIONS.all = {
     groups: [
         ...CR_SECTIONS.outstanding.groups,
         ...CR_SECTIONS.disburse.groups,
+        ...CR_SECTIONS.parT24Area.groups,
         ...CR_SECTIONS.parT24.groups,
         ...CR_SECTIONS.nbcOverdue.groups,
         ...CR_SECTIONS.writeOff.groups
