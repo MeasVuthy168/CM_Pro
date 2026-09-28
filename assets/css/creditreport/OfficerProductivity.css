@@ -234,7 +234,7 @@
     width:100%;
     display:flex;
     align-items:center;
-    gap:12px;
+    gap:18px;
     padding:14px;
     background:transparent;
     border:none;
@@ -243,8 +243,15 @@
     font-family:'KRASAR', sans-serif;
     color:var(--cr-text);
 }
+/* align-self:flex-start pins the icon to the top of the card — the
+   title block below it now runs to 4 lines (label + 3 stat rows), so
+   the row's own align-items:center (kept for the caret) would
+   otherwise center the icon across all of that instead of sitting
+   level with the title, like it used to look before stats grew to
+   3 always-one-line rows. */
 .op-card-icon{
     flex:0 0 auto;
+    align-self:flex-start;
     width:38px;
     height:38px;
     border-radius:10px;
