@@ -64,7 +64,7 @@ const BP_CATEGORIES = [
                 { key: "fsro.loanOutstanding.client", label: "Client" },
                 { key: "fsro.loanOutstanding.value", label: "Value", money: true }
             ] },
-            { label: "Digital Loan", fields: [
+            { label: "Digital", fields: [
                 { key: "digital.loanOutstanding.loan", label: "Loan" },
                 { key: "digital.loanOutstanding.client", label: "Client" },
                 { key: "digital.loanOutstanding.value", label: "Value", money: true }
@@ -90,7 +90,7 @@ const BP_CATEGORIES = [
                 { key: "fsro.loanDisburse.loan", label: "Loan" },
                 { key: "fsro.loanDisburse.value", label: "Value", money: true }
             ] },
-            { label: "Digital Loan", fields: [
+            { label: "Digital", fields: [
                 { key: "digital.loanDisburse.loan", label: "Loan" },
                 { key: "digital.loanDisburse.value", label: "Value", money: true }
             ] }
@@ -117,7 +117,7 @@ const BP_CATEGORIES = [
                 { key: "fsro.parT24.value", label: "Value", money: true },
                 { key: "fsro.parT24.parPct", label: "PAR", pct: true }
             ] },
-            { label: "Digital Loan", fields: [
+            { label: "Digital", fields: [
                 { key: "digital.parT24.loan", label: "Loan" },
                 { key: "digital.parT24.value", label: "Value", money: true },
                 { key: "digital.parT24.parPct", label: "PAR", pct: true }
@@ -145,7 +145,7 @@ const BP_CATEGORIES = [
                 { key: "fsro.nbcOverdue.total.value", label: "Value", money: true },
                 { key: "fsro.nbcOverdue.total.parPct", label: "PAR", pct: true }
             ] },
-            { label: "Digital Loan", fields: [
+            { label: "Digital", fields: [
                 { key: "digital.nbcOverdue.total.count", label: "Loan" },
                 { key: "digital.nbcOverdue.total.value", label: "Value", money: true },
                 { key: "digital.nbcOverdue.total.parPct", label: "PAR", pct: true }
@@ -171,7 +171,7 @@ const BP_CATEGORIES = [
                 { key: "fsro.writeOff.wo.count", label: "Loan" },
                 { key: "fsro.writeOff.wo.prn", label: "Prn", money: true }
             ] },
-            { label: "Digital Loan", fields: [
+            { label: "Digital", fields: [
                 { key: "digital.writeOff.wo.count", label: "Loan" },
                 { key: "digital.writeOff.wo.prn", label: "Prn", money: true }
             ] }
