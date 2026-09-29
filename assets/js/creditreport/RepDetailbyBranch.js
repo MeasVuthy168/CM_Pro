@@ -10,7 +10,8 @@
 // Branch pinned as the sticky first column. Data is fetched once and
 // cached in crData — switching sections just re-renders, no refetch.
 // Each row (and the grand Total row) can also expand inline to show its
-// CO/FSRO/Digital breakdown — see crToggleBranchExpand() below.
+// CO/FSRO/Digital breakdown — see crToggleBranchExpand() below — or all
+// at once via the caret in the Branch column header (crToggleExpandAll()).
 // ========================================
 
 const crToken =
@@ -19,10 +20,10 @@ const crToken =
 
 let crSummaryData = null;  // { items, total } from /api/creditreport/summary
 let crDetailedData = null; // { groups, grand } from /api/creditreport/detailed — fetched lazily
-// Which branch's CO/FSRO/Digital breakdown is currently expanded inline
-// under its Total-only row ("All Branch" for the grand Total row at the
-// bottom), or null if none is open.
-let crExpandedBranch = null;
+// Branch names whose CO/FSRO/Digital breakdown is currently expanded
+// inline under their Total-only row ("All Branch" for the grand Total
+// row at the bottom). Several can be open at once (e.g. via Expand All).
+let crExpandedBranches = new Set();
 // PAR % at or above this is rendered red in every PAR column.
 const CR_PAR_ALERT = 0.04;
 
@@ -329,6 +330,17 @@ function crFieldClass(field) {
     return "cr-col-num";
 }
 
+// All branch keys a full Expand All would open — every real branch plus
+// "All Branch" (the grand Total row's own key, see crBuildRow).
+function crAllBranchKeys() {
+    if (!crSummaryData) return [];
+    return ["All Branch", ...crSummaryData.items.map(it => it.branch)];
+}
+function crIsAllExpanded() {
+    const keys = crAllBranchKeys();
+    return keys.length > 0 && !!crDetailedData && keys.every(k => crExpandedBranches.has(k));
+}
+
 function crBuildThead(section) {
     const groupCells = section.groups.map(g =>
         `<th colspan="${g.fields.length}">${g.label}</th>`
@@ -338,9 +350,14 @@ function crBuildThead(section) {
         g.fields.map(f => `<th class="${crFieldClass(f)}">${f.label}</th>`).join("")
     ).join("");
 
+    const allExpanded = crIsAllExpanded();
+
     return `
       <tr class="cr-group-row">
-        <th rowspan="2" class="cr-branch-col">Branch</th>
+        <th rowspan="2" class="cr-branch-col">
+          <button type="button" id="crExpandAllBtn" class="cr-row-expand-btn cr-expand-all-btn${allExpanded ? " open" : ""}" aria-expanded="${allExpanded}" aria-label="Expand or collapse all rows">▾</button>
+          Branch
+        </th>
         ${groupCells}
       </tr>
       <tr class="cr-sub-row">
@@ -368,7 +385,7 @@ function crBuildRow(item, section, isTotal) {
     ).join("");
     const branchKey = isTotal ? "All Branch" : item.branch;
     const branchLabel = isTotal ? "Total" : item.branch;
-    const isExpanded = crExpandedBranch === branchKey;
+    const isExpanded = crExpandedBranches.has(branchKey);
     const branchCell = `
         <button type="button" class="cr-row-expand-btn${isExpanded ? " open" : ""}" data-branch="${crEscapeHtml(branchKey)}" aria-expanded="${isExpanded}" aria-label="Toggle CO/FSRO/Digital breakdown">▾</button>
         <button type="button" class="cr-branch-link" data-branch="${crEscapeHtml(branchKey)}">${crEscapeHtml(branchLabel)}</button>`;
@@ -422,23 +439,17 @@ function crRenderSummary() {
 // sessionStorage cache.
 // ========================================
 // INLINE EXPAND/COLLAPSE (CO/FSRO/Digital)
-// Toggling a row fetches /api/creditreport/detailed on first use, cached
-// in crDetailedData so a second expand — of this row or another — is
-// instant, and re-renders with that one row's CO/FSRO/Digital lines
-// inserted under it. A failed fetch leaves the already-working table
-// alone rather than replacing it with an empty state.
+// Toggling a row (or Expand All, in the Branch header) fetches
+// /api/creditreport/detailed on first use, cached in crDetailedData so
+// every expand after the first — one row or all of them — is instant.
+// A failed fetch leaves the already-working table alone rather than
+// replacing it with an empty state.
 // ========================================
-async function crToggleBranchExpand(branch) {
-    if (crExpandedBranch === branch) {
-        crExpandedBranch = null;
-        crRenderSummary();
-        return;
-    }
-    crExpandedBranch = branch;
-    if (crDetailedData) {
-        crRenderSummary();
-        return;
-    }
+// Ensures crDetailedData is populated, fetching once if needed. Returns
+// true on success (including when already cached); callers add to
+// crExpandedBranches and re-render themselves, only once this resolves.
+async function crEnsureDetailedData() {
+    if (crDetailedData) return true;
 
     if (typeof showAppLoading === "function") showAppLoading("Loading breakdown...");
     try {
@@ -449,17 +460,43 @@ async function crToggleBranchExpand(branch) {
             throw new Error(data.message || "Could not load the breakdown.");
         }
         crDetailedData = data;
-        crRenderSummary();
+        return true;
     } catch (e) {
         console.error(e);
-        crExpandedBranch = null;
         if (typeof showToast === "function") {
             showToast("Could not load the breakdown. Please try again.", "error");
         }
+        return false;
     } finally {
         if (typeof hideAppLoading === "function") hideAppLoading();
     }
 }
+
+async function crToggleBranchExpand(branch) {
+    if (crExpandedBranches.has(branch)) {
+        crExpandedBranches.delete(branch);
+        crRenderSummary();
+        return;
+    }
+    if (!(await crEnsureDetailedData())) return;
+    crExpandedBranches.add(branch);
+    crRenderSummary();
+}
+
+async function crToggleExpandAll() {
+    if (crIsAllExpanded()) {
+        crExpandedBranches.clear();
+        crRenderSummary();
+        return;
+    }
+    if (!(await crEnsureDetailedData())) return;
+    crAllBranchKeys().forEach(k => crExpandedBranches.add(k));
+    crRenderSummary();
+}
+
+document.getElementById("crThead").addEventListener("click", (e) => {
+    if (e.target.closest("#crExpandAllBtn")) crToggleExpandAll();
+});
 
 document.getElementById("crTbody").addEventListener("click", (e) => {
     const expandBtn = e.target.closest(".cr-row-expand-btn");
@@ -559,7 +596,7 @@ async function crRunReport() {
     // Dates changed — any cached Detailed data is now stale, and any
     // inline breakdown expanded under a Summary row no longer applies.
     crDetailedData = null;
-    crExpandedBranch = null;
+    crExpandedBranches.clear();
 
     try {
         const url = `${API.BASE_URL}/api/creditreport/summary${crBuildDateQuery()}`;
