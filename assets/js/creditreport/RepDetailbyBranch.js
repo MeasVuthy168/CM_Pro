@@ -409,10 +409,11 @@ function crRenderDetailed() {
     document.getElementById("crThead").innerHTML = crBuildThead(section, true);
 
     const rowsHtml = crDetailedData.groups.map(g => {
-        const [co, fsro, total] = g.rows;
+        const [co, fsro, digital, total] = g.rows;
         return (
             crBuildDetailedRow(co, section, g.branch, "CO", false, false) +
             crBuildDetailedRow(fsro, section, g.branch, "FSRO", false, false) +
+            crBuildDetailedRow(digital, section, g.branch, "Digital", false, false) +
             crBuildDetailedRow(total, section, g.branch, "Total", true, false)
         );
     }).join("");
@@ -421,6 +422,7 @@ function crRenderDetailed() {
     const grandHtml =
         crBuildDetailedRow(grand.co, section, "All", "CO", false, false) +
         crBuildDetailedRow(grand.fsro, section, "All", "FSRO", false, false) +
+        crBuildDetailedRow(grand.digital, section, "All", "Digital", false, false) +
         crBuildDetailedRow(grand.total, section, "All", "Total", false, true);
 
     document.getElementById("crTbody").innerHTML = rowsHtml + grandHtml;
