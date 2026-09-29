@@ -423,9 +423,11 @@
 .table-card tbody tr:nth-child(even) td.cr-branch-col{ background:var(--cr-row-alt); }
 .cr-total-row td.cr-branch-col{ color:var(--cr-total-text) !important; }
 
-/* Summary Report's own inline expand/collapse caret — reveals a row's
-   CO/FSRO/Digital breakdown (crBuildSummaryBreakdownRow) without
-   switching to the Detailed Report tab. */
+/* Inline expand/collapse caret — reveals a row's CO/FSRO/Digital
+   breakdown (crBuildSummaryBreakdownRow). The same class also backs the
+   "Expand All" caret in the Branch column header (#crExpandAllBtn) —
+   its color/size just inherit from whichever cr-branch-col cell it sits
+   in (th or td), light-on-navy in the header, navy-on-card in the body. */
 .cr-row-expand-btn{
     all:unset;
     cursor:pointer;
