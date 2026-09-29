@@ -452,9 +452,11 @@
     background:var(--cr-card-bg);
 }
 
-.cr-col-num{ min-width:80px; }
-.cr-col-money{ min-width:112px; }
-.cr-col-pct{ min-width:72px; }
+/* No min-width here on purpose — table-layout is auto (the default), so
+   each column already sizes to its own widest cell (header label or
+   data value, whichever is longer); a fixed floor would just pad
+   narrower columns (a short PAR% like "1.49%", a small #Loan) with
+   whitespace they don't need. */
 
 .table-card thead th{
     position:sticky;
