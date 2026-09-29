@@ -31,9 +31,19 @@ function crGroupPct(prefix, label) {
 }
 
 const CR_SECTIONS = {
+    outstandingArea: {
+        groups: [{
+            label: "Loan Outstanding_Area", labelKh: "សមតុល្យឥណទាន_Area",
+            fields: [
+                { key: "loanOutstandingArea.loan", label: "# Loan" },
+                { key: "loanOutstandingArea.client", label: "# Client" },
+                { key: "loanOutstandingArea.value", label: "Value", money: true }
+            ]
+        }]
+    },
     outstanding: {
         groups: [{
-            label: "Loan Outstanding", labelKh: "សមតុល្យឥណទាន",
+            label: "Loan Outstanding_Own", labelKh: "សមតុល្យឥណទាន_Own",
             fields: [
                 { key: "loanOutstanding.loan", label: "# Loan" },
                 { key: "loanOutstanding.client", label: "# Client" },
@@ -41,9 +51,18 @@ const CR_SECTIONS = {
             ]
         }]
     },
+    disburseArea: {
+        groups: [{
+            label: "Loan Disburse_Area",
+            fields: [
+                { key: "loanDisburseArea.loan", label: "# Loan" },
+                { key: "loanDisburseArea.value", label: "Value", money: true }
+            ]
+        }]
+    },
     disburse: {
         groups: [{
-            label: "Loan Disburse",
+            label: "Loan Disburse_Own",
             fields: [
                 { key: "loanDisburse.loan", label: "# Loan" },
                 { key: "loanDisburse.value", label: "Value", money: true }
@@ -134,7 +153,9 @@ const CR_SECTIONS = {
 };
 CR_SECTIONS.all = {
     groups: [
+        ...CR_SECTIONS.outstandingArea.groups,
         ...CR_SECTIONS.outstanding.groups,
+        ...CR_SECTIONS.disburseArea.groups,
         ...CR_SECTIONS.disburse.groups,
         ...CR_SECTIONS.parT24Area.groups,
         ...CR_SECTIONS.parT24.groups,
