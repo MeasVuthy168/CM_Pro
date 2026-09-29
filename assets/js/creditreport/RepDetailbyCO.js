@@ -230,19 +230,57 @@ function crFmtField(item, field) {
 }
 
 // ========================================
+// COLUMN SORT
+// Every column header is clickable — sorts crData.items (the Total row
+// always stays pinned at the bottom, since it's appended separately in
+// crRenderSection() rather than sorted along with the rest). The
+// officer-name click handler resolves crData.items[idx] by the idx
+// baked into each row at render time, so it stays correct regardless of
+// sort order — idx always matches the item's CURRENT position, computed
+// fresh in the same .map() pass that builds the (already-sorted) rows.
+// ========================================
+let crSortState = { key: null, dir: 1 };
+
+function crCompareForSort(a, b, type) {
+    const blank = v => v === "" || v == null;
+    if (type === "text") {
+        const sa = blank(a) ? "" : String(a).toLowerCase();
+        const sb = blank(b) ? "" : String(b).toLowerCase();
+        return sa < sb ? -1 : sa > sb ? 1 : 0;
+    }
+    const na = blank(a) ? -Infinity : Number(a);
+    const nb = blank(b) ? -Infinity : Number(b);
+    return (isNaN(na) ? -Infinity : na) - (isNaN(nb) ? -Infinity : nb);
+}
+
+function crApplySort(items) {
+    if (!crSortState.key) return;
+    const { key, dir, type } = crSortState;
+    items.sort((a, b) => dir * crCompareForSort(
+        key === "_name" ? a.name : crGetByPath(a, key),
+        key === "_name" ? b.name : crGetByPath(b, key),
+        type
+    ));
+}
+
+// ========================================
 // RENDER
 // ========================================
 function crBuildThead(section) {
+    const sortCls = key => {
+        if (crSortState.key !== key) return "";
+        return crSortState.dir === 1 ? " cr-sort-asc" : " cr-sort-desc";
+    };
     const groupCells = section.groups.map(g =>
         `<th colspan="${g.fields.length}">${g.label}</th>`
     ).join("");
     const subCells = section.groups.map(g =>
-        g.fields.map(f => `<th class="${crFieldClass(f)}">${f.label}</th>`).join("")
+        g.fields.map(f => `<th class="${crFieldClass(f)}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
     ).join("");
 
     return `
       <tr class="cr-group-row">
-        <th rowspan="2" class="cr-name-col">Name</th>
+        <th rowspan="2" class="cr-name-col${sortCls("_name")}" data-sort-key="_name" data-sort-type="text">Name</th>
         ${groupCells}
       </tr>
       <tr class="cr-sub-row">${subCells}</tr>`;
@@ -268,6 +306,8 @@ function crBuildRow(item, section, isTotal, idx) {
 function crRenderSection() {
     if (!crData) return;
     const section = CR_SECTIONS[document.getElementById("crSection").value];
+
+    crApplySort(crData.items);
 
     document.getElementById("crThead").innerHTML = crBuildThead(section);
     document.getElementById("crTbody").innerHTML =
@@ -562,6 +602,21 @@ document.getElementById("crSection").addEventListener("change", () => {
 });
 document.getElementById("crBranch").addEventListener("change", crRunReport);
 document.getElementById("crTeam").addEventListener("change", crRunReport);
+
+// Clicking a column header sorts by it — clicking the same header again
+// flips ascending/descending, clicking a different one resets to
+// ascending. The Total row is unaffected (see crApplySort()/crRenderSection()).
+document.getElementById("crThead").addEventListener("click", (e) => {
+    const th = e.target.closest("th[data-sort-key]");
+    if (!th) return;
+    const key = th.dataset.sortKey;
+    crSortState = {
+        key,
+        type: th.dataset.sortType || "text",
+        dir: (crSortState.key === key) ? -crSortState.dir : 1
+    };
+    crRenderSection();
+});
 
 // ========================================
 // DATE PANEL

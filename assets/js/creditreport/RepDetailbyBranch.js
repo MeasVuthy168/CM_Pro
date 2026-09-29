@@ -341,20 +341,58 @@ function crIsAllExpanded() {
     return keys.length > 0 && !!crDetailedData && keys.every(k => crExpandedBranches.has(k));
 }
 
+// ========================================
+// COLUMN SORT
+// Every column header is clickable — sorts crSummaryData.items (the
+// grand Total row always stays pinned at the bottom, since it's
+// appended separately in crRenderSummary() rather than sorted along
+// with the rest). Expand/collapse state (crExpandedBranches, keyed by
+// branch name) and crDetailedData's own group lookup (also by branch
+// name) are both unaffected by row order, so sorting is safe to apply
+// regardless of which rows are currently expanded.
+// ========================================
+let crSortState = { key: null, dir: 1 };
+
+function crCompareForSort(a, b, type) {
+    const blank = v => v === "" || v == null;
+    if (type === "text") {
+        const sa = blank(a) ? "" : String(a).toLowerCase();
+        const sb = blank(b) ? "" : String(b).toLowerCase();
+        return sa < sb ? -1 : sa > sb ? 1 : 0;
+    }
+    const na = blank(a) ? -Infinity : Number(a);
+    const nb = blank(b) ? -Infinity : Number(b);
+    return (isNaN(na) ? -Infinity : na) - (isNaN(nb) ? -Infinity : nb);
+}
+
+function crApplySort(items) {
+    if (!crSortState.key) return;
+    const { key, dir, type } = crSortState;
+    items.sort((a, b) => dir * crCompareForSort(
+        key === "_name" ? a.branch : crGetByPath(a, key),
+        key === "_name" ? b.branch : crGetByPath(b, key),
+        type
+    ));
+}
+
 function crBuildThead(section) {
+    const sortCls = key => {
+        if (crSortState.key !== key) return "";
+        return crSortState.dir === 1 ? " cr-sort-asc" : " cr-sort-desc";
+    };
     const groupCells = section.groups.map(g =>
         `<th colspan="${g.fields.length}">${g.label}</th>`
     ).join("");
 
     const subCells = section.groups.map(g =>
-        g.fields.map(f => `<th class="${crFieldClass(f)}">${f.label}</th>`).join("")
+        g.fields.map(f => `<th class="${crFieldClass(f)}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
     ).join("");
 
     const allExpanded = crIsAllExpanded();
 
     return `
       <tr class="cr-group-row">
-        <th rowspan="2" class="cr-branch-col">
+        <th rowspan="2" class="cr-branch-col${sortCls("_name")}" data-sort-key="_name" data-sort-type="text">
           <button type="button" id="crExpandAllBtn" class="cr-row-expand-btn cr-expand-all-btn${allExpanded ? " open" : ""}" aria-expanded="${allExpanded}" aria-label="Expand or collapse all rows">▾</button>
           Branch
         </th>
@@ -418,6 +456,8 @@ function crRenderSummary() {
     if (!crSummaryData) return;
     const sectionKey = document.getElementById("crSection").value;
     const section = CR_SECTIONS[sectionKey];
+
+    crApplySort(crSummaryData.items);
 
     document.getElementById("crThead").innerHTML = crBuildThead(section);
     document.getElementById("crTbody").innerHTML =
@@ -495,7 +535,23 @@ async function crToggleExpandAll() {
 }
 
 document.getElementById("crThead").addEventListener("click", (e) => {
-    if (e.target.closest("#crExpandAllBtn")) crToggleExpandAll();
+    if (e.target.closest("#crExpandAllBtn")) {
+        crToggleExpandAll();
+        return;
+    }
+    // Clicking a column header sorts by it — clicking the same header
+    // again flips ascending/descending, clicking a different one resets
+    // to ascending. Guarded above so a click on the Expand All caret
+    // (nested inside the Branch header cell) never also triggers a sort.
+    const th = e.target.closest("th[data-sort-key]");
+    if (!th) return;
+    const key = th.dataset.sortKey;
+    crSortState = {
+        key,
+        type: th.dataset.sortType || "text",
+        dir: (crSortState.key === key) ? -crSortState.dir : 1
+    };
+    crRenderSummary();
 });
 
 document.getElementById("crTbody").addEventListener("click", (e) => {

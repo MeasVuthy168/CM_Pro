@@ -844,6 +844,27 @@ z-index:1;
 
 }
 
+/* Sortable column headers on #arrearsTable — same "neutral ↕ hint,
+   directional ▲/▼ once active" convention as the Productivity pages'
+   client tables (see OfficerProductivity.css's .op-client-table
+   th[data-sort-key]). */
+#arrearsTable thead th[data-sort-key]{
+    cursor:pointer;
+    user-select:none;
+    -webkit-user-select:none;
+    padding-right:18px;
+    position:sticky;
+}
+#arrearsTable thead th[data-sort-key]::after{
+    content:"↕";
+    position:absolute;
+    right:6px;
+    opacity:.6;
+    font-size:10px;
+}
+#arrearsTable thead th.arrears-sort-asc::after{ content:"▲"; opacity:1; color:#fff; }
+#arrearsTable thead th.arrears-sort-desc::after{ content:"▼"; opacity:1; color:#fff; }
+
 .table-card td{
 
 padding:7px 8px;

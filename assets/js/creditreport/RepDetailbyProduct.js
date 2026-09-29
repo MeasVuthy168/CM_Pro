@@ -182,19 +182,53 @@ function crFmtField(item, field) {
 }
 
 // ========================================
+// COLUMN SORT
+// Every column header is clickable — sorts crData.items (the Total row
+// always stays pinned at the bottom, since it's appended separately in
+// crRenderSection() rather than sorted along with the rest).
+// ========================================
+let crSortState = { key: null, dir: 1 };
+
+function crCompareForSort(a, b, type) {
+    const blank = v => v === "" || v == null;
+    if (type === "text") {
+        const sa = blank(a) ? "" : String(a).toLowerCase();
+        const sb = blank(b) ? "" : String(b).toLowerCase();
+        return sa < sb ? -1 : sa > sb ? 1 : 0;
+    }
+    const na = blank(a) ? -Infinity : Number(a);
+    const nb = blank(b) ? -Infinity : Number(b);
+    return (isNaN(na) ? -Infinity : na) - (isNaN(nb) ? -Infinity : nb);
+}
+
+function crApplySort(items) {
+    if (!crSortState.key) return;
+    const { key, dir, type } = crSortState;
+    items.sort((a, b) => dir * crCompareForSort(
+        key === "_name" ? a.product : crGetByPath(a, key),
+        key === "_name" ? b.product : crGetByPath(b, key),
+        type
+    ));
+}
+
+// ========================================
 // RENDER
 // ========================================
 function crBuildThead(section) {
+    const sortCls = key => {
+        if (crSortState.key !== key) return "";
+        return crSortState.dir === 1 ? " cr-sort-asc" : " cr-sort-desc";
+    };
     const groupCells = section.groups.map(g =>
         `<th colspan="${g.fields.length}">${g.label}</th>`
     ).join("");
     const subCells = section.groups.map(g =>
-        g.fields.map(f => `<th class="${crFieldClass(f)}">${f.label}</th>`).join("")
+        g.fields.map(f => `<th class="${crFieldClass(f)}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
     ).join("");
 
     return `
       <tr class="cr-group-row">
-        <th rowspan="2" class="cr-name-col">Product</th>
+        <th rowspan="2" class="cr-name-col${sortCls("_name")}" data-sort-key="_name" data-sort-type="text">Product</th>
         ${groupCells}
       </tr>
       <tr class="cr-sub-row">${subCells}</tr>`;
@@ -204,7 +238,12 @@ function crBuildRow(item, section, isTotal) {
     const cells = section.groups.map(g =>
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
-    const nameCell = isTotal ? "Total" : crEscapeHtml(item.product);
+    // Product name opens Product Productivity for that product — same
+    // pattern as RepDetailbyBranch.js's own cr-branch-link, including the
+    // Total row (drills into the "All Product" aggregate).
+    const productKey = isTotal ? "All Product" : item.product;
+    const productLabel = isTotal ? "Total" : item.product;
+    const nameCell = `<button type="button" class="cr-product-link" data-product="${crEscapeHtml(productKey)}">${crEscapeHtml(productLabel)}</button>`;
     // data-name backs crApplySearchFilter()'s client-side name search —
     // lowercased once here rather than re-lowercasing on every keystroke.
     const nameAttr = isTotal ? "" : ` data-name="${crEscapeHtml((item.product || "").toLowerCase())}"`;
@@ -218,6 +257,8 @@ function crBuildRow(item, section, isTotal) {
 function crRenderSection() {
     if (!crData) return;
     const section = CR_SECTIONS[document.getElementById("crSection").value];
+
+    crApplySort(crData.items);
 
     document.getElementById("crThead").innerHTML = crBuildThead(section);
     document.getElementById("crTbody").innerHTML =
@@ -425,6 +466,44 @@ async function crRunReport() {
 document.getElementById("crSection").addEventListener("change", () => {
     crRenderSection();
     crSyncStateToUrl();
+});
+
+// Clicking a column header sorts by it — clicking the same header again
+// flips ascending/descending, clicking a different one resets to
+// ascending. The Total row is unaffected (see crApplySort()/crRenderSection()).
+document.getElementById("crThead").addEventListener("click", (e) => {
+    const th = e.target.closest("th[data-sort-key]");
+    if (!th) return;
+    const key = th.dataset.sortKey;
+    crSortState = {
+        key,
+        type: th.dataset.sortType || "text",
+        dir: (crSortState.key === key) ? -crSortState.dir : 1
+    };
+    crRenderSection();
+});
+
+// ========================================
+// PRODUCT DRILL-DOWN
+// Clicking a product name opens Product Productivity for it — same
+// pattern as RepDetailbyBranch.js's own branch-name drill-down: Product
+// Productivity always fetches its own summary (there's no already-fetched
+// CO/FSRO/Digital breakdown to hand off — this report only ever has each
+// product's combined Total), so only the product name + current date
+// filters need to travel in the URL, no sessionStorage cache.
+// ========================================
+document.getElementById("crTbody").addEventListener("click", (e) => {
+    const link = e.target.closest(".cr-product-link");
+    if (!link) return;
+
+    const q = new URLSearchParams({
+        product: link.dataset.product,
+        fromDate: document.getElementById("crFromDate").value,
+        toDate: document.getElementById("crToDate").value,
+        woFromDate: document.getElementById("crWoFromDate").value,
+        woToDate: document.getElementById("crWoToDate").value
+    });
+    location.href = `ProductProductivity.html?${q.toString()}`;
 });
 
 // ========================================
