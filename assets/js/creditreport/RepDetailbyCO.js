@@ -231,15 +231,23 @@ function crFmtField(item, field) {
 
 // ========================================
 // COLUMN SORT
-// Every column header is clickable — sorts crData.items (the Total row
-// always stays pinned at the bottom, since it's appended separately in
-// crRenderSection() rather than sorted along with the rest). The
-// officer-name click handler resolves crData.items[idx] by the idx
-// baked into each row at render time, so it stays correct regardless of
-// sort order — idx always matches the item's CURRENT position, computed
-// fresh in the same .map() pass that builds the (already-sorted) rows.
+// Every column header is clickable and cycles through 3 states:
+// ascending -> descending -> default (the order the server returned,
+// unsorted) -> ascending again. crData.items itself is never mutated —
+// crApplySort() returns a sorted COPY (or the original array, untouched,
+// once the cycle reaches "default") — so the original fetch order is
+// always there to go back to. The Total row always stays pinned at the
+// bottom, since it's appended separately in crRenderSection() rather
+// than sorted along with the rest.
+//
+// crRenderSection() keeps the array it actually rendered from in
+// crDisplayItems, and the officer-name click handler resolves
+// crDisplayItems[idx] (not crData.items[idx]) — idx is baked into each
+// row at render time from that same array, so it always matches the
+// item's CURRENT on-screen position regardless of sort state.
 // ========================================
 let crSortState = { key: null, dir: 1 };
+let crDisplayItems = [];
 
 function crCompareForSort(a, b, type) {
     const blank = v => v === "" || v == null;
@@ -254,9 +262,9 @@ function crCompareForSort(a, b, type) {
 }
 
 function crApplySort(items) {
-    if (!crSortState.key) return;
+    if (!crSortState.key) return items;
     const { key, dir, type } = crSortState;
-    items.sort((a, b) => dir * crCompareForSort(
+    return items.slice().sort((a, b) => dir * crCompareForSort(
         key === "_name" ? a.name : crGetByPath(a, key),
         key === "_name" ? b.name : crGetByPath(b, key),
         type
@@ -307,11 +315,11 @@ function crRenderSection() {
     if (!crData) return;
     const section = CR_SECTIONS[document.getElementById("crSection").value];
 
-    crApplySort(crData.items);
+    crDisplayItems = crApplySort(crData.items);
 
     document.getElementById("crThead").innerHTML = crBuildThead(section);
     document.getElementById("crTbody").innerHTML =
-        crData.items.map((it, idx) => crBuildRow(it, section, false, idx)).join("") +
+        crDisplayItems.map((it, idx) => crBuildRow(it, section, false, idx)).join("") +
         crBuildRow(crData.total, section, true);
 
     // Re-render (switching "Showing", or a fresh branch/team fetch)
@@ -357,15 +365,17 @@ document.getElementById("crSearchClear")?.addEventListener("click", () => {
 // ========================================
 // OFFICER DRILL-DOWN
 // Clicking an officer's name hands the row's already-fetched data
-// (crData.items[idx]) plus the report's current filters to
-// OfficerProductivity.html via sessionStorage — see that page's own
-// header comment for why (instant first paint, no refetch) and its
-// fallback path if this cache is missing/stale.
+// (crDisplayItems[idx] — the array the table was last rendered from, so
+// idx always resolves the right officer regardless of sort order) plus
+// the report's current filters to OfficerProductivity.html via
+// sessionStorage — see that page's own header comment for why (instant
+// first paint, no refetch) and its fallback path if this cache is
+// missing/stale.
 // ========================================
 document.getElementById("crTbody").addEventListener("click", (e) => {
     const link = e.target.closest(".cr-officer-link");
     if (!link || !crData) return;
-    const item = crData.items[Number(link.dataset.idx)];
+    const item = crDisplayItems[Number(link.dataset.idx)];
     if (!item) return;
 
     const meta = {
@@ -603,18 +613,22 @@ document.getElementById("crSection").addEventListener("change", () => {
 document.getElementById("crBranch").addEventListener("change", crRunReport);
 document.getElementById("crTeam").addEventListener("change", crRunReport);
 
-// Clicking a column header sorts by it — clicking the same header again
-// flips ascending/descending, clicking a different one resets to
+// Clicking a column header cycles it through ascending -> descending ->
+// default (unsorted, the order the server returned) -> ascending again.
+// Clicking a different header always starts that header fresh at
 // ascending. The Total row is unaffected (see crApplySort()/crRenderSection()).
 document.getElementById("crThead").addEventListener("click", (e) => {
     const th = e.target.closest("th[data-sort-key]");
     if (!th) return;
     const key = th.dataset.sortKey;
-    crSortState = {
-        key,
-        type: th.dataset.sortType || "text",
-        dir: (crSortState.key === key) ? -crSortState.dir : 1
-    };
+    const type = th.dataset.sortType || "text";
+    if (crSortState.key !== key) {
+        crSortState = { key, type, dir: 1 };
+    } else if (crSortState.dir === 1) {
+        crSortState = { key, type, dir: -1 };
+    } else {
+        crSortState = { key: null, type: null, dir: 1 };
+    }
     crRenderSection();
 });
 

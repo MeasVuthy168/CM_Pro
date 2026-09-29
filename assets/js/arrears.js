@@ -117,17 +117,22 @@ const reasonNavPos = document.getElementById("reasonNavPos");
 const reasonMeta = document.getElementById("reasonMeta");
 
 let allRows = [];        // every row, parsed to objects, unfiltered
-let currentRows = [];    // whatever's currently displayed (post-filter)
+let arrearsUnsortedRows = []; // post-filter order, never reordered by sort — what "default" restores
+let currentRows = [];    // whatever's currently displayed (post-filter, post-sort)
 let selectedRow = null;  // row object behind the open Reason Arrear panel
 
 // ========================================
 // COLUMN SORT
-// Sorts currentRows in place so every other consumer (record navigation,
-// surgical row updates, infinite-scroll batching) keeps working exactly
-// as it does over an unsorted result — they all already just walk
-// currentRows in whatever order it happens to hold. Re-applied after
-// every applyFilters() so the active sort survives a filter change,
-// same as it already survives across renderTable() calls.
+// Every column header cycles through 3 states: ascending -> descending
+// -> default (the filtered-but-unsorted order, i.e. allRows' own order)
+// -> ascending again. arrearsUnsortedRows is never reordered — sorting
+// always derives a fresh copy from it — so "default" has an intact
+// original order to go back to, and every other consumer (record
+// navigation, surgical row updates, infinite-scroll batching) keeps
+// working exactly as it does today: they all just walk currentRows,
+// whatever order it currently holds, and none of them mutate it in
+// place (currentRows is only ever reassigned wholesale, never pushed/
+// spliced into).
 // ========================================
 let arrearsSortState = { key: null, dir: 1 };
 
@@ -151,9 +156,9 @@ function arrearsCompareForSort(a, b, type) {
 }
 
 function applyArrearsSort(rows) {
-    if (!arrearsSortState.key) return;
+    if (!arrearsSortState.key) return rows.slice();
     const { key, dir, type } = arrearsSortState;
-    rows.sort((a, b) => dir * arrearsCompareForSort(a[key], b[key], type));
+    return rows.slice().sort((a, b) => dir * arrearsCompareForSort(a[key], b[key], type));
 }
 
 document.getElementById("arrearsHeadRow")?.addEventListener("click", (e) => {
@@ -162,18 +167,22 @@ document.getElementById("arrearsHeadRow")?.addEventListener("click", (e) => {
 
     const key = th.dataset.sortKey;
     const type = th.dataset.sortType || "text";
-    arrearsSortState = {
-        key,
-        type,
-        dir: (arrearsSortState.key === key) ? -arrearsSortState.dir : 1
-    };
+    if (arrearsSortState.key !== key) {
+        arrearsSortState = { key, type, dir: 1 };
+    } else if (arrearsSortState.dir === 1) {
+        arrearsSortState = { key, type, dir: -1 };
+    } else {
+        arrearsSortState = { key: null, type: null, dir: 1 };
+    }
 
     document.querySelectorAll("#arrearsHeadRow th[data-sort-key]").forEach(h => {
         h.classList.remove("arrears-sort-asc", "arrears-sort-desc");
     });
-    th.classList.add(arrearsSortState.dir === 1 ? "arrears-sort-asc" : "arrears-sort-desc");
+    if (arrearsSortState.key) {
+        th.classList.add(arrearsSortState.dir === 1 ? "arrears-sort-asc" : "arrears-sort-desc");
+    }
 
-    applyArrearsSort(currentRows);
+    currentRows = applyArrearsSort(arrearsUnsortedRows);
     renderTable(currentRows);
 });
 
@@ -603,7 +612,7 @@ function applyFilters() {
         promiseStatus: filterEls.promiseStatus.value.trim()
     };
 
-    currentRows = allRows.filter(row => {
+    arrearsUnsortedRows = allRows.filter(row => {
         return containsMatch(row.branch, f.branch)
             && containsMatch(row.coResponse, f.officerResponse)
             && exactMatch(row.coId, f.officerOwner)
@@ -618,7 +627,7 @@ function applyFilters() {
             && promiseStatusMatch(row, f.promiseStatus);
     });
 
-    applyArrearsSort(currentRows);
+    currentRows = applyArrearsSort(arrearsUnsortedRows);
     renderTable(currentRows);
     renderSummary(currentRows);
     updateAdvancedFilterBadge();

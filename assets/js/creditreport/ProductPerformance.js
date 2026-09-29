@@ -1,5 +1,5 @@
 // ========================================
-// PRODUCT PRODUCTIVITY — per-product drill-down from
+// PRODUCT PERFORMANCE — per-product drill-down from
 // RepDetailbyProduct.html (click a product name there to land here).
 //
 // Same CO / FSRO / Digital Loan breakdown as Branch Productivity
@@ -7,7 +7,7 @@
 // for digital-channel loans that aren't a real CO/FSRO officer) — every
 // category splits the same way, just scoped by product instead of
 // branch. CM-backend's lib/creditreport-product.js
-// computeProductProductivity() reuses the exact same column indices
+// computeProductPerformance() reuses the exact same column indices
 // already confirmed in lib/creditreport-branch.js for these 5 sheets.
 //
 // Like Branch Productivity, there's no "already-fetched" instant-paint
@@ -18,7 +18,7 @@
 // cache needed).
 //
 // BACKEND ENDPOINTS (CM-backend's lib/creditreport-product.js)
-//   GET /api/creditreport/product-productivity-summary
+//   GET /api/creditreport/product-performance-summary
 //     ?product=<name>&fromDate=&toDate=&woFromDate=&woToDate=
 //   -> { ok, product, meta, co, fsro, digital, total }
 //   Each of co/fsro/digital/total has the same shape:
@@ -290,7 +290,7 @@ function ppBuildQuery(meta) {
 }
 
 async function ppFetchSummary(product, meta) {
-    const url = `${API.BASE_URL}/api/creditreport/product-productivity-summary?product=${encodeURIComponent(product)}${ppBuildQuery(meta)}`;
+    const url = `${API.BASE_URL}/api/creditreport/product-performance-summary?product=${encodeURIComponent(product)}${ppBuildQuery(meta)}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${ppToken}` } });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || "Failed to load product data.");
@@ -591,16 +591,30 @@ function ppExportRowsToExcel(rows, cols, filenamePrefix) {
 
 // One-stop render for any client list on this page — same "Show More"
 // pagination as Branch Productivity's own bpRenderClientListInto().
+//
+// Column headers cycle through 3 states: ascending -> descending ->
+// default (the order `rows` arrived in) -> ascending again. `rows`
+// itself is never mutated — originalRows is a pristine snapshot taken
+// once up front, and every render computes a sorted VIEW from it — so
+// the "default" state always has an intact original order to return to.
 function ppRenderClientListInto(container, rows, { arrears = false, showDate = true, filenamePrefix = "clients" } = {}) {
     const cols = arrears ? PP_ARREARS_TABLE_COLS : (showDate ? PP_CLIENT_TABLE_COLS : PP_CLIENT_TABLE_COLS.filter(c => c.key !== "disburseDate"));
     const buildTableHtml = arrears ? ppArrearsTableHtml : (rs => ppClientTableHtml(rs, { showDate }));
 
+    const originalRows = rows.slice();
     let visibleCount = Math.min(PP_LIST_PAGE_SIZE, rows.length);
     let sortKey = null;
     let sortDir = 1;
+    let sortType = "text";
+
+    function getDisplayRows() {
+        if (!sortKey) return originalRows;
+        return originalRows.slice().sort((a, b) => sortDir * ppCompareForSort(a[sortKey], b[sortKey], sortType));
+    }
 
     function render() {
-        const visibleRows = rows.slice(0, visibleCount);
+        const displayRows = getDisplayRows();
+        const visibleRows = displayRows.slice(0, visibleCount);
         const exportBtnHtml = rows.length
             ? `<div class="op-list-actions"><button type="button" class="op-list-export-btn">⬇ Export Excel</button></div>`
             : "";
@@ -620,16 +634,20 @@ function ppRenderClientListInto(container, rows, { arrears = false, showDate = t
                 th.addEventListener("click", () => {
                     const key = th.dataset.sortKey;
                     const type = th.dataset.sortType || "text";
-                    sortDir = (sortKey === key) ? -sortDir : 1;
-                    sortKey = key;
-                    rows.sort((a, b) => sortDir * ppCompareForSort(a[key], b[key], type));
+                    if (sortKey !== key) {
+                        sortKey = key; sortType = type; sortDir = 1;
+                    } else if (sortDir === 1) {
+                        sortDir = -1;
+                    } else {
+                        sortKey = null; sortType = "text"; sortDir = 1;
+                    }
                     render();
                 });
             });
         }
 
         container.querySelector(".op-list-export-btn")?.addEventListener("click", () => {
-            ppExportRowsToExcel(rows, cols, filenamePrefix);
+            ppExportRowsToExcel(getDisplayRows(), cols, filenamePrefix);
         });
         container.querySelector(".op-list-more-btn")?.addEventListener("click", () => {
             visibleCount = Math.min(visibleCount + PP_LIST_PAGE_SIZE, rows.length);
