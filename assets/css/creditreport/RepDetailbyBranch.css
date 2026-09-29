@@ -26,7 +26,6 @@
     --cr-skel-shine:#f7f9fc;
     --cr-input-bg:#FFFFFF;
     --cr-input-text:#1C2333;
-    --cr-tabs-track:#eef1f6;
     --cr-note-bg:#fdf6f5;
 }
 
@@ -47,7 +46,6 @@
     --cr-skel-shine:#0d4aa8;
     --cr-input-bg:#0a2d63;
     --cr-input-text:#FFFFFF;
-    --cr-tabs-track:rgba(0,0,0,.22);
     --cr-note-bg:rgba(255,107,107,.10);
 }
 
@@ -69,7 +67,6 @@
     --cr-skel-shine:#FFF8E7;
     --cr-input-bg:#FFFDF6;
     --cr-input-text:#1C2333;
-    --cr-tabs-track:#FDF1D8;
     --cr-note-bg:#FDF6F5;
 }
 
@@ -94,7 +91,6 @@
     --cr-skel-shine:#454A52;
     --cr-input-bg:#363A41;
     --cr-input-text:#F0F1F3;
-    --cr-tabs-track:rgba(255,255,255,.08);
     --cr-note-bg:rgba(255,107,107,.10);
 }
 
@@ -202,44 +198,10 @@
     border-top:1px solid var(--cr-border);
 }
 
-.cr-tabs{
-    display:flex;
-    background:var(--cr-tabs-track);
-    border-radius:10px;
-    padding:3px;
-    margin-bottom:6px;
-}
-.cr-tab{
-    flex:1;
-    text-align:center;
-    padding:7px 6px;
-    border-radius:8px;
-    font-size:13px;
-    font-weight:700;
-    color:var(--cr-text-muted);
-    cursor:pointer;
-    user-select:none;
-}
-.cr-tab.active{
-    background:var(--cr-navy-dark);
-    color:#fff;
-}
-[data-theme="dark"] .cr-tab.active{ color:#002D6B; }
-[data-theme="darkgray"] .cr-tab.active{ color:#1C2333; }
-
 .cr-section-row{
     display:flex;
     align-items:center;
     gap:10px;
-}
-.cr-detailed-note{
-    background:rgba(179,38,30,.1);
-    color:var(--cr-danger);
-    border-radius:10px;
-    padding:10px 12px;
-    font-size:12px;
-    margin-bottom:10px;
-    display:none;
 }
 
 /* ===== Section picker ===== */
@@ -478,67 +440,13 @@
 .cr-row-expand-btn.open{ transform:rotate(180deg); }
 
 /* Nested CO/FSRO/Digital line under a Summary row — same "sub-row"
-   background as Detailed Report's own .cr-branch-total-row. */
+   background used throughout this file for a lighter, non-final total. */
 .cr-breakdown-row td{
     background:var(--cr-subtotal-bg) !important;
 }
 .cr-breakdown-row td.cr-branch-col{
     padding-left:30px;
     color:var(--cr-text) !important;
-}
-
-/* =====================================================
-   DETAILED REPORT — two-column sticky lead (Team, then Branch).
-   Team's width is fixed so Branch's sticky offset can be a known
-   constant instead of measured at runtime.
-   ===================================================== */
-.table-card .cr-detail-team-col{
-    position:sticky;
-    left:0;
-    width:56px;
-    min-width:56px;
-    z-index:3;
-    text-align:center;
-    font-weight:700;
-}
-.table-card .cr-detail-branch-col{
-    position:sticky;
-    left:56px;
-    min-width:110px;
-    z-index:3;
-    text-align:left;
-    font-weight:700;
-}
-.table-card thead th.cr-detail-team-col,
-.table-card thead th.cr-detail-branch-col{
-    z-index:6 !important;
-    background:var(--cr-navy-dark);
-    color:var(--cr-gold-light);
-}
-[data-theme="dark"] .table-card thead th.cr-detail-team-col,
-[data-theme="dark"] .table-card thead th.cr-detail-branch-col{ color:#002D6B; }
-[data-theme="darkgray"] .table-card thead th.cr-detail-team-col,
-[data-theme="darkgray"] .table-card thead th.cr-detail-branch-col{ background:#1F2226; color:#D8DAE0; }
-.table-card tbody td.cr-detail-team-col,
-.table-card tbody td.cr-detail-branch-col{
-    background:var(--cr-card-bg);
-    color:var(--cr-navy) !important;
-}
-[data-theme="dark"] .table-card tbody td.cr-detail-team-col,
-[data-theme="dark"] .table-card tbody td.cr-detail-branch-col{ color:var(--cr-gold-light) !important; }
-
-.cr-total-row td.cr-detail-team-col,
-.cr-total-row td.cr-detail-branch-col{ color:var(--cr-total-text) !important; }
-
-/* Branch-level "Total" sub-row (CO+FSRO for that one branch) — a
-   lighter highlight than the grand cr-total-row at the very bottom. */
-.cr-branch-total-row td{
-    background:var(--cr-subtotal-bg) !important;
-    font-weight:700;
-}
-.cr-branch-total-row td.cr-detail-team-col,
-.cr-branch-total-row td.cr-detail-branch-col{
-    background:var(--cr-subtotal-bg) !important;
 }
 
 .table-card tbody tr:nth-child(even){ background:var(--cr-row-alt); }
@@ -561,8 +469,7 @@
     color:var(--cr-danger);
     font-weight:800;
 }
-.cr-total-row td.cr-par-high,
-.cr-branch-total-row td.cr-par-high{
+.cr-total-row td.cr-par-high{
     color:var(--cr-danger) !important;
     font-weight:800;
 }
@@ -729,7 +636,6 @@
 ========================================== */
 body.cr-force-landscape #topbar-container,
 body.cr-force-landscape .filter-card,
-body.cr-force-landscape .cr-tabs,
 body.cr-force-landscape .summary-row.upload-meta,
 body.cr-force-landscape .rendered-count-note,
 body.cr-force-landscape #bottomnav-container,
@@ -805,7 +711,7 @@ body.cr-force-landscape .landscape-bar.hidden{
     }
 
     #offlineBanner, #topbar-container, #bottomnav-container,
-    .arrears-menu-wrap, .rendered-count-note, .cr-tabs, .cr-detailed-note{
+    .arrears-menu-wrap, .rendered-count-note{
         display:none !important;
     }
 
@@ -858,7 +764,7 @@ body.cr-force-landscape .landscape-bar.hidden{
     .table-card thead{ display:table-header-group; }
     .table-card tbody{ display:table-row-group; }
 
-    .cr-total-row td, .cr-branch-total-row td{
+    .cr-total-row td{
         background:#f2f2f2 !important;
         color:#000 !important;
         font-weight:800;
