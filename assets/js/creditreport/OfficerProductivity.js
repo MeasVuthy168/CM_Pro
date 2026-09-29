@@ -93,14 +93,6 @@ const OP_CATEGORIES = [
         chart: false,
         statGroups: [
             {
-                label: "Total",
-                fields: [
-                    { keys: ["loanOutstanding.loan", "loanOutstandingArea.loan"], label: "Loan" },
-                    { keys: ["loanOutstanding.client", "loanOutstandingArea.client"], label: "Client" },
-                    { keys: ["loanOutstanding.value", "loanOutstandingArea.value"], label: "Value", money: true }
-                ]
-            },
-            {
                 label: "Own",
                 fields: [
                     { key: "loanOutstanding.loan", label: "Loan" },
@@ -129,13 +121,6 @@ const OP_CATEGORIES = [
         chart: true,
         statGroups: [
             {
-                label: "Total",
-                fields: [
-                    { keys: ["loanDisburse.loan", "loanDisburseArea.loan"], label: "Loan" },
-                    { keys: ["loanDisburse.value", "loanDisburseArea.value"], label: "Value", money: true }
-                ]
-            },
-            {
                 label: "Own",
                 fields: [
                     { key: "loanDisburse.loan", label: "Loan" },
@@ -157,20 +142,6 @@ const OP_CATEGORIES = [
         label: "Balance Loan at Risk (T24)",
         chart: false,
         statGroups: [
-            {
-                label: "Total",
-                fields: [
-                    { keys: ["parT24.loan", "parT24Area.loan"], label: "Loan" },
-                    { keys: ["parT24.value", "parT24Area.value"], label: "Value", money: true },
-                    {
-                        ratio: {
-                            numerKeys: ["parT24.value", "parT24Area.value"],
-                            denomKeys: ["loanOutstanding.value", "loanOutstandingArea.value"]
-                        },
-                        label: "PAR", pct: true
-                    }
-                ]
-            },
             {
                 label: "Own",
                 fields: [
@@ -203,20 +174,6 @@ const OP_CATEGORIES = [
         // Loan/Value/PAR, not just a single combined figure.
         statGroups: [
             {
-                label: "Total",
-                fields: [
-                    { keys: ["nbcOverdue.totalOwn.count", "nbcOverdue.totalArea.count"], label: "Loan" },
-                    { keys: ["nbcOverdue.totalOwn.value", "nbcOverdue.totalArea.value"], label: "Value", money: true },
-                    {
-                        ratio: {
-                            numerKeys: ["nbcOverdue.totalOwn.value", "nbcOverdue.totalArea.value"],
-                            denomKeys: ["loanOutstanding.value", "loanOutstandingArea.value"]
-                        },
-                        label: "PAR", pct: true
-                    }
-                ]
-            },
-            {
                 label: "Own",
                 fields: [
                     { key: "nbcOverdue.totalOwn.count", label: "Loan" },
@@ -247,13 +204,6 @@ const OP_CATEGORIES = [
         label: "Write Off",
         chart: false,
         statGroups: [
-            {
-                label: "Total",
-                fields: [
-                    { keys: ["writeOffOwn.wo.count", "writeOffArea.wo.count"], label: "Loan" },
-                    { keys: ["writeOffOwn.wo.prn", "writeOffArea.wo.prn"], label: "Prn", money: true }
-                ]
-            },
             {
                 label: "Own",
                 fields: [
@@ -409,28 +359,11 @@ function opRenderHeader() {
     document.getElementById("opHeaderCard").style.display = "flex";
 }
 
-// A field is either a single dot-path (key), a sum of several dot-paths
-// (keys — used by each card's "Total" group to add Own+Area together),
-// or a ratio of two summed dot-paths (ratio — used for a "Total" PAR%,
-// which must be recomputed from the combined value/denominator rather
-// than summed or averaged directly).
-function opFieldValue(f, officer) {
-    if (f.ratio) {
-        const sum = keys => keys.reduce((s, k) => s + (Number(opGet(officer, k)) || 0), 0);
-        const numer = sum(f.ratio.numerKeys);
-        const denom = sum(f.ratio.denomKeys);
-        return denom ? numer / denom : 0;
-    }
-    if (f.keys) {
-        return f.keys.reduce((s, k) => s + (Number(opGet(officer, k)) || 0), 0);
-    }
-    return opGet(officer, f.key);
-}
 // One flat stats: [...] row (parT24), or — for a category with statGroups
 // (Loan Outstanding, Loan Disburse, NBC Overdue, Write Off) — a stacked
-// line per group (Total/Own/Area), each led by its own bold group label.
+// line per group (Own/Area), each led by its own bold group label.
 function opStatFieldHtml(f, officer) {
-    const v = opFieldValue(f, officer);
+    const v = opGet(officer, f.key);
     const text = f.pct ? opFmtPct(v) : opFmtNum(v);
     return `<span>${opEscapeHtml(f.label)}: <b>${text}</b></span>`;
 }
