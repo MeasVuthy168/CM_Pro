@@ -18,6 +18,13 @@ const crToken =
 let crMode = "summary"; // "summary" | "detailed"
 let crSummaryData = null;  // { items, total } from /api/creditreport/summary
 let crDetailedData = null; // { groups, grand } from /api/creditreport/detailed — fetched lazily
+// Summary Report's own inline expand/collapse: which branch's CO/FSRO/
+// Digital breakdown is currently shown under its Total-only row ("All
+// Branch" for the grand Total row at the bottom), or null if none is
+// open. Reuses crDetailedData (fetching it on first expand, same as
+// switching to the Detailed Report tab) rather than keeping a second
+// copy of the same breakdown data.
+let crExpandedBranch = null;
 // PAR % at or above this is rendered red in every PAR column.
 const CR_PAR_ALERT = 0.04;
 
@@ -356,18 +363,54 @@ function crBuildThead(section, withTeamCol) {
       </tr>`;
 }
 
+// One CO/FSRO/Digital line nested under a Summary row's own Total-only
+// figures — same column count as crBuildRow (one leading cell, then the
+// section's fields) so it fits Summary's thead, unlike crBuildDetailedRow
+// which needs a separate Team column.
+function crBuildSummaryBreakdownRow(item, section, team) {
+    const cells = section.groups.map(g =>
+        g.fields.map(f => crFmtField(item, f)).join("")
+    ).join("");
+    return `
+      <tr class="cr-breakdown-row">
+        <td class="cr-branch-col">${crEscapeHtml(team)}</td>
+        ${cells}
+      </tr>`;
+}
+
 function crBuildRow(item, section, isTotal) {
     const cells = section.groups.map(g =>
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
-    const branchCell = isTotal
-        ? `<button type="button" class="cr-branch-link" data-branch="All Branch">Total</button>`
-        : `<button type="button" class="cr-branch-link" data-branch="${crEscapeHtml(item.branch)}">${crEscapeHtml(item.branch)}</button>`;
-    return `
+    const branchKey = isTotal ? "All Branch" : item.branch;
+    const branchLabel = isTotal ? "Total" : item.branch;
+    const isExpanded = crExpandedBranch === branchKey;
+    const branchCell = `
+        <button type="button" class="cr-row-expand-btn${isExpanded ? " open" : ""}" data-branch="${crEscapeHtml(branchKey)}" aria-expanded="${isExpanded}" aria-label="Toggle CO/FSRO/Digital breakdown">▾</button>
+        <button type="button" class="cr-branch-link" data-branch="${crEscapeHtml(branchKey)}">${crEscapeHtml(branchLabel)}</button>`;
+
+    let html = `
       <tr${isTotal ? ' class="cr-total-row"' : ""}>
         <td class="cr-branch-col">${branchCell}</td>
         ${cells}
       </tr>`;
+
+    if (isExpanded && crDetailedData) {
+        let co, fsro, digital;
+        if (isTotal) {
+            ({ co, fsro, digital } = crDetailedData.grand);
+        } else {
+            const group = crDetailedData.groups.find(g => g.branch === item.branch);
+            if (group) [co, fsro, digital] = group.rows;
+        }
+        if (co) {
+            html +=
+                crBuildSummaryBreakdownRow(co, section, "CO") +
+                crBuildSummaryBreakdownRow(fsro, section, "FSRO") +
+                crBuildSummaryBreakdownRow(digital, section, "Digital");
+        }
+    }
+    return html;
 }
 
 // team: "CO" | "FSRO" | "Total". branchLabel is repeated on every row
@@ -445,7 +488,55 @@ function crRenderSection() {
 // branch name + current date filters need to travel in the URL, no
 // sessionStorage cache.
 // ========================================
+// ========================================
+// SUMMARY REPORT — inline expand/collapse
+// Toggling a row fetches /api/creditreport/detailed on first use (same
+// endpoint the Detailed Report tab uses, cached in crDetailedData so a
+// second expand — of this row or another — is instant) and re-renders
+// Summary with that one row's CO/FSRO/Digital lines inserted under it.
+// A failed fetch leaves the already-working Summary table alone rather
+// than replacing it with an empty state.
+// ========================================
+async function crToggleBranchExpand(branch) {
+    if (crExpandedBranch === branch) {
+        crExpandedBranch = null;
+        crRenderSummary();
+        return;
+    }
+    crExpandedBranch = branch;
+    if (crDetailedData) {
+        crRenderSummary();
+        return;
+    }
+
+    if (typeof showAppLoading === "function") showAppLoading("Loading breakdown...");
+    try {
+        const url = `${API.BASE_URL}/api/creditreport/detailed${crBuildDateQuery()}`;
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
+        const data = await res.json();
+        if (!data.ok || !data.groups || !data.groups.length) {
+            throw new Error(data.message || "Could not load the breakdown.");
+        }
+        crDetailedData = data;
+        crRenderSummary();
+    } catch (e) {
+        console.error(e);
+        crExpandedBranch = null;
+        if (typeof showToast === "function") {
+            showToast("Could not load the breakdown. Please try again.", "error");
+        }
+    } finally {
+        if (typeof hideAppLoading === "function") hideAppLoading();
+    }
+}
+
 document.getElementById("crTbody").addEventListener("click", (e) => {
+    const expandBtn = e.target.closest(".cr-row-expand-btn");
+    if (expandBtn) {
+        crToggleBranchExpand(expandBtn.dataset.branch);
+        return;
+    }
+
     const link = e.target.closest(".cr-branch-link");
     if (!link) return;
 
@@ -534,8 +625,10 @@ function crBuildDateQuery() {
 async function crRunReport() {
     crShowLoading();
 
-    // Dates changed — any cached Detailed data is now stale.
+    // Dates changed — any cached Detailed data is now stale, and any
+    // inline breakdown expanded under a Summary row no longer applies.
     crDetailedData = null;
+    crExpandedBranch = null;
 
     try {
         const url = `${API.BASE_URL}/api/creditreport/summary${crBuildDateQuery()}`;
