@@ -1,8 +1,8 @@
 // ========================================
 // Credit Report hub — 5 report cards.
-// Only "Daily Monitoring by Branch" is built (plain <a href> to
-// RepDetailbyBranch.html). The other 4 are placeholders that show a
-// toast instead of navigating anywhere.
+// Arrears, Officer, Branch, and Product are built (plain <a href> to
+// their own page). The remaining card (Location) is still a
+// placeholder that shows a toast instead of navigating anywhere.
 // ========================================
 
 let crHubToastTimer = null;

@@ -1,0 +1,697 @@
+// ========================================
+// Daily Monitoring by Product — web port, same style as Daily
+// Monitoring by Officer (RepDetailbyCO.js/.css) — filter card, sticky
+// first column, PAR alert colour, skeleton loading, landscape/print.
+// Reads GET /api/creditreport/byproduct (see lib/creditreport-product.js
+// for the column mapping behind each figure).
+//
+// One row per Product Type. Unlike Officer, there's no Branch/Team
+// picker (a product isn't "owned" by one branch or team the way an
+// officer's row is) and no Own/Area split (that distinction is about a
+// loan's disbursing officer vs. the client's address, which doesn't
+// apply once rows are grouped by product) — every section here is a
+// single combined figure. There's also no drill-down target (no
+// "Product Productivity" page), so the product name is plain text, not
+// a link.
+// ========================================
+
+const crToken =
+    localStorage.getItem("token") ||
+    sessionStorage.getItem("token");
+
+const CR_PAR_ALERT = 0.04; // PAR % at or above this renders red
+
+let crData = null; // last successful /byproduct response
+
+// ========================================
+// SECTIONS
+// ========================================
+function crGroupPct(prefix, label) {
+    return {
+        label,
+        fields: [
+            { key: prefix + ".count", label: "# Loan" },
+            { key: prefix + ".value", label: "Value", money: true },
+            { key: prefix + ".parPct", label: "PAR %", pct: true }
+        ]
+    };
+}
+
+const CR_SECTIONS = {
+    outstanding: {
+        groups: [{
+            label: "Loan Outstanding", labelKh: "សមតុល្យឥណទាន",
+            fields: [
+                { key: "loanOutstanding.loan", label: "# Loan" },
+                { key: "loanOutstanding.client", label: "# Client" },
+                { key: "loanOutstanding.value", label: "Value", money: true }
+            ]
+        }]
+    },
+    disburse: {
+        groups: [{
+            label: "Loan Disburse",
+            fields: [
+                { key: "loanDisburse.loan", label: "# Loan" },
+                { key: "loanDisburse.value", label: "Value", money: true }
+            ]
+        }]
+    },
+    parT24: {
+        groups: [{
+            label: "Balance Loan at Risk (T24)",
+            fields: [
+                { key: "parT24.loan", label: "# Loan" },
+                { key: "parT24.value", label: "Value", money: true },
+                { key: "parT24.parPct", label: "PAR %", pct: true }
+            ]
+        }]
+    },
+    nbcOverdue: {
+        groups: [
+            crGroupPct("nbcOverdue.minor", "Minor Default"),
+            crGroupPct("nbcOverdue.specialMention", "Special Mention"),
+            crGroupPct("nbcOverdue.subStandard", "Sub-Standard"),
+            crGroupPct("nbcOverdue.doubtful", "Doubtful"),
+            crGroupPct("nbcOverdue.loss", "Loss"),
+            crGroupPct("nbcOverdue.majorDefault", "Major Default"),
+            crGroupPct("nbcOverdue.nonPerformingLoan", "Non Performing Loan"),
+            crGroupPct("nbcOverdue.total", "Total NBC Overdue")
+        ]
+    },
+    writeOff: {
+        groups: [
+            {
+                label: "Balance WO",
+                fields: [
+                    { key: "writeOff.balanceWO.cif", label: "# (cif)" },
+                    { key: "writeOff.balanceWO.int", label: "Int", money: true },
+                    { key: "writeOff.balanceWO.prn", label: "Prn", money: true }
+                ]
+            },
+            {
+                label: "WO",
+                fields: [
+                    { key: "writeOff.wo.count", label: "#" },
+                    { key: "writeOff.wo.prn", label: "Prn", money: true }
+                ]
+            },
+            {
+                label: "WO Collected",
+                fields: [
+                    { key: "writeOff.woCollected.int", label: "Int", money: true },
+                    { key: "writeOff.woCollected.prn", label: "Prn", money: true }
+                ]
+            }
+        ]
+    }
+};
+CR_SECTIONS.all = {
+    groups: [
+        ...CR_SECTIONS.outstanding.groups,
+        ...CR_SECTIONS.disburse.groups,
+        ...CR_SECTIONS.parT24.groups,
+        ...CR_SECTIONS.nbcOverdue.groups,
+        ...CR_SECTIONS.writeOff.groups
+    ]
+};
+
+// ========================================
+// HELPERS
+// ========================================
+function crToDMY(dateStr) {
+    if (!dateStr) return "";
+    const [y, m, d] = dateStr.split("-");
+    return `${d}-${m}-${y}`;
+}
+function crFmtDateDMY(yyyymmdd) {
+    if (!yyyymmdd) return "-";
+    const [y, m, d] = yyyymmdd.split("-");
+    return `${d}-${m}-${y}`;
+}
+// table_to_sheet() reads raw DOM text (product names among it) straight
+// into cells — Excel treats a cell string starting with =, +, -, @, or a
+// tab/CR as a formula when the file is opened, so this neutralizes any
+// such string cell (a leading apostrophe forces plain text) before the
+// workbook is written. Only touches string cells (t:"s"); numeric report
+// figures are untouched.
+function crSanitizeSheetFormulas(ws) {
+    if (!ws["!ref"]) return;
+    const range = XLSX.utils.decode_range(ws["!ref"]);
+    for (let r = range.s.r; r <= range.e.r; r++) {
+        for (let c = range.s.c; c <= range.e.c; c++) {
+            const cell = ws[XLSX.utils.encode_cell({ r, c })];
+            if (cell && cell.t === "s" && /^[=+\-@\t\r]/.test(cell.v)) {
+                cell.v = `'${cell.v}`;
+                if (cell.w) cell.w = cell.v;
+            }
+        }
+    }
+}
+
+function crEscapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text == null ? "" : String(text);
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function crFmtNum(n) {
+    n = Number(n) || 0;
+    return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+function crFmtPct(n) {
+    n = Number(n) || 0;
+    return (n * 100).toFixed(2) + "%";
+}
+function crGetByPath(obj, path) {
+    return path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj);
+}
+function crFieldClass(f) {
+    if (f.pct) return "cr-col-pct";
+    if (f.money) return "cr-col-money";
+    return "cr-col-num";
+}
+function crFmtField(item, field) {
+    const v = crGetByPath(item, field.key);
+    const cls = crFieldClass(field);
+    if (field.pct) {
+        const n = Number(v) || 0;
+        const alert = n >= CR_PAR_ALERT ? " cr-par-high" : "";
+        return `<td class="${cls}${alert}">${crFmtPct(n)}</td>`;
+    }
+    return `<td class="${cls}">${crFmtNum(v)}</td>`;
+}
+
+// ========================================
+// RENDER
+// ========================================
+function crBuildThead(section) {
+    const groupCells = section.groups.map(g =>
+        `<th colspan="${g.fields.length}">${g.label}</th>`
+    ).join("");
+    const subCells = section.groups.map(g =>
+        g.fields.map(f => `<th class="${crFieldClass(f)}">${f.label}</th>`).join("")
+    ).join("");
+
+    return `
+      <tr class="cr-group-row">
+        <th rowspan="2" class="cr-name-col">Product</th>
+        ${groupCells}
+      </tr>
+      <tr class="cr-sub-row">${subCells}</tr>`;
+}
+
+function crBuildRow(item, section, isTotal) {
+    const cells = section.groups.map(g =>
+        g.fields.map(f => crFmtField(item, f)).join("")
+    ).join("");
+    const nameCell = isTotal ? "Total" : crEscapeHtml(item.product);
+    // data-name backs crApplySearchFilter()'s client-side name search —
+    // lowercased once here rather than re-lowercasing on every keystroke.
+    const nameAttr = isTotal ? "" : ` data-name="${crEscapeHtml((item.product || "").toLowerCase())}"`;
+    return `
+      <tr${isTotal ? ' class="cr-total-row"' : ""}${nameAttr}>
+        <td class="cr-name-col">${nameCell}</td>
+        ${cells}
+      </tr>`;
+}
+
+function crRenderSection() {
+    if (!crData) return;
+    const section = CR_SECTIONS[document.getElementById("crSection").value];
+
+    document.getElementById("crThead").innerHTML = crBuildThead(section);
+    document.getElementById("crTbody").innerHTML =
+        crData.items.map(it => crBuildRow(it, section, false)).join("") +
+        crBuildRow(crData.total, section, true);
+
+    // Re-render (switching "Showing") rebuilds every row from scratch,
+    // so whatever the user already typed needs re-applying rather than
+    // being silently dropped.
+    crApplySearchFilter();
+    requestAnimationFrame(crSetHeaderOffsets);
+}
+
+// ========================================
+// PRODUCT SEARCH
+// Client-side name filter over the already-loaded table (crData.items)
+// — no refetch. The Total row (no data-name attribute) always stays
+// visible regardless of the query.
+// ========================================
+function crApplySearchFilter() {
+    const input = document.getElementById("crSearchInput");
+    const clearBtn = document.getElementById("crSearchClear");
+    const q = (input?.value || "").trim().toLowerCase();
+    if (clearBtn) clearBtn.hidden = !q;
+
+    document.querySelectorAll("#crTbody tr").forEach(tr => {
+        if (!tr.dataset.name) return; // Total row — always shown
+        tr.style.display = (!q || tr.dataset.name.includes(q)) ? "" : "none";
+    });
+}
+
+document.getElementById("crSearchInput")?.addEventListener("input", crApplySearchFilter);
+document.getElementById("crSearchInput")?.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    e.target.value = "";
+    crApplySearchFilter();
+    e.target.blur();
+});
+document.getElementById("crSearchClear")?.addEventListener("click", () => {
+    const input = document.getElementById("crSearchInput");
+    if (!input) return;
+    input.value = "";
+    crApplySearchFilter();
+    input.focus();
+});
+
+// Sub-header row sticks under the group row; the group row's height
+// varies with text wrapping, so it's measured rather than hardcoded.
+function crSetHeaderOffsets() {
+    const groupRow = document.querySelector("#crTable thead tr.cr-group-row");
+    const subRow = document.querySelector("#crTable thead tr.cr-sub-row");
+    if (!groupRow || !subRow) return;
+    const h = groupRow.getBoundingClientRect().height;
+    subRow.querySelectorAll("th").forEach(th => { th.style.top = h + "px"; });
+}
+window.addEventListener("resize", crSetHeaderOffsets);
+window.addEventListener("orientationchange", () => setTimeout(crSetHeaderOffsets, 200));
+
+// ========================================
+// LOADING STATES
+// ========================================
+function crShowLoading(message = "Loading Report Data...") {
+    document.getElementById("crSkeleton").style.display = "block";
+    document.getElementById("crSearchWrap").style.display = "none";
+    document.getElementById("crTableScroll").style.display = "none";
+    document.getElementById("crEmptyMsg").style.display = "none";
+    document.getElementById("btnCrRun").disabled = true;
+    if (typeof showAppLoading === "function") showAppLoading(message);
+}
+function crHideLoading() {
+    document.getElementById("crSkeleton").style.display = "none";
+    document.getElementById("btnCrRun").disabled = false;
+    if (typeof hideAppLoading === "function") hideAppLoading();
+}
+function crShowEmpty(msg) {
+    const el = document.getElementById("crEmptyMsg");
+    el.textContent = msg;
+    el.style.display = "block";
+    document.getElementById("crSearchWrap").style.display = "none";
+    document.getElementById("crTableScroll").style.display = "none";
+}
+
+// ========================================
+// LOAD
+// ========================================
+// Dates start empty; omitting them lets the server derive its defaults
+// from the data (latest OS disbursement date) and echo back what it used.
+function crBuildQuery() {
+    const parts = [];
+    const addDate = (param, id) => {
+        const v = document.getElementById(id).value;
+        if (v) parts.push(`${param}=${crToDMY(v)}`);
+    };
+    addDate("fromDate", "crFromDate");
+    addDate("toDate", "crToDate");
+    addDate("woFromDate", "crWoFromDate");
+    addDate("woToDate", "crWoToDate");
+    return parts.length ? `?${parts.join("&")}` : "";
+}
+
+let crDatesInitialised = false;
+function crApplyServerDates(data) {
+    if (crDatesInitialised) return;
+    const set = (id, v) => { if (v) document.getElementById(id).value = v; };
+    set("crFromDate", data.fromDate);
+    set("crToDate", data.toDate);
+    set("crWoFromDate", data.woFromDate);
+    set("crWoToDate", data.woToDate);
+    crDatesInitialised = true;
+}
+
+// ========================================
+// URL STATE
+// Mirrors section/dates into the address bar via history.replaceState
+// (no new history entries) — same mechanism as RepDetailbyCO.js, minus
+// the branch/team bits this page doesn't have.
+// ========================================
+function crReadStateFromUrl() {
+    const p = new URLSearchParams(location.search);
+
+    const section = p.get("section");
+    if (section && CR_SECTIONS[section]) {
+        document.getElementById("crSection").value = section;
+    }
+
+    let hasDateParam = false;
+    const setDate = (id, param) => {
+        const v = p.get(param);
+        if (v) {
+            document.getElementById(id).value = v;
+            hasDateParam = true;
+        }
+    };
+    setDate("crFromDate", "fromDate");
+    setDate("crToDate", "toDate");
+    setDate("crWoFromDate", "woFromDate");
+    setDate("crWoToDate", "woToDate");
+    if (hasDateParam) crDatesInitialised = true;
+}
+
+function crSyncStateToUrl() {
+    const p = new URLSearchParams();
+    p.set("section", document.getElementById("crSection").value);
+
+    const addDate = (param, id) => {
+        const v = document.getElementById(id).value;
+        if (v) p.set(param, v);
+    };
+    addDate("fromDate", "crFromDate");
+    addDate("toDate", "crToDate");
+    addDate("woFromDate", "crWoFromDate");
+    addDate("woToDate", "crWoToDate");
+
+    history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
+}
+
+async function crRunReport() {
+    crShowLoading();
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/creditreport/byproduct${crBuildQuery()}`, {
+            headers: { Authorization: `Bearer ${crToken}` }
+        });
+        const data = await res.json();
+        crHideLoading();
+
+        if (!data.ok) {
+            crShowEmpty(data.message || "Failed to load report.");
+            return;
+        }
+
+        crApplyServerDates(data);
+        crSyncStateToUrl();
+
+        // Pre-formatted server-side (dd/mm/yyyy, plus HH:MM where the
+        // source cell carried a time) — no client-side reformatting.
+        const meta = data.meta || {};
+        document.getElementById("crOsGridMerge").textContent = meta.osGridMergeText || "-";
+        document.getElementById("crOverdueGridMerge").textContent = meta.overdueGridMergeText || "-";
+        document.getElementById("crArrearsPenalty").textContent = meta.arrearsPenaltyText || "-";
+
+        document.getElementById("crDisbPeriod").textContent =
+            `${crFmtDateDMY(data.fromDate)} to ${crFmtDateDMY(data.toDate)}`;
+        document.getElementById("crWoPeriod").textContent =
+            `${crFmtDateDMY(data.woFromDate)} to ${crFmtDateDMY(data.woToDate)}`;
+        document.getElementById("crProductCount").textContent =
+            `${(data.items || []).length}`;
+
+        if (!data.items || !data.items.length) {
+            crShowEmpty("No products match these filters.");
+            return;
+        }
+
+        crData = data;
+        document.getElementById("crSearchWrap").style.display = "flex";
+        document.getElementById("crTableScroll").style.display = "block";
+        crRenderSection();
+    } catch (e) {
+        console.error(e);
+        crHideLoading();
+        crShowEmpty("Network error loading report.");
+    }
+}
+
+// Section switching is local (no refetch).
+document.getElementById("crSection").addEventListener("change", () => {
+    crRenderSection();
+    crSyncStateToUrl();
+});
+
+// ========================================
+// DATE PANEL
+// ========================================
+const crDatePanel = document.getElementById("crDatePanel");
+const btnCrToggleDates = document.getElementById("btnCrToggleDates");
+
+function crSetDatePanelOpen(open) {
+    crDatePanel.classList.toggle("open", open);
+    btnCrToggleDates.classList.toggle("open", open);
+    btnCrToggleDates.setAttribute("aria-expanded", open ? "true" : "false");
+}
+btnCrToggleDates.addEventListener("click", () => {
+    crSetDatePanelOpen(!crDatePanel.classList.contains("open"));
+});
+document.getElementById("btnCrRun").addEventListener("click", () => {
+    crRunReport();
+    crSetDatePanelOpen(false);
+});
+
+// ========================================
+// MESSAGE HELPER
+// ========================================
+function notify(message, type = "info") {
+    if (typeof showToast === "function") showToast(message, type);
+    else alert(message);
+}
+
+// Export/print always cover every product, regardless of whatever the
+// user happened to be typing in the search box — an official report
+// export silently missing rows because a search was still active would
+// be a much worse surprise than the search box just getting cleared.
+function crClearSearchForExport() {
+    const input = document.getElementById("crSearchInput");
+    if (input && input.value) {
+        input.value = "";
+        crApplySearchFilter();
+    }
+}
+
+// ========================================
+// EXPORT EXCEL
+// ========================================
+document.getElementById("btnCrExport")?.addEventListener("click", () => {
+    crClearSearchForExport();
+    if (typeof XLSX === "undefined") {
+        notify("Excel export library failed to load.", "error");
+        return;
+    }
+    if (!document.getElementById("crTbody").children.length) {
+        notify("Nothing to export.", "warning");
+        return;
+    }
+    const ws = XLSX.utils.table_to_sheet(document.getElementById("crTable"));
+    crSanitizeSheetFormulas(ws);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "ByProduct");
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "");
+    XLSX.writeFile(wb, `MonitoringByProduct_${stamp}.xlsx`);
+    document.getElementById("crMenuDropdown")?.classList.remove("show");
+});
+
+// ========================================
+// EXPORT PDF
+// html2canvas only captures what's laid out at the current viewport
+// width, so every container is temporarily forced to its full natural
+// width — otherwise columns past the horizontal scroll are cropped out.
+// Page slicing cuts only at row boundaries so no row is split in half.
+// ========================================
+function extractPrintCss() {
+    let css = "";
+    for (const sheet of document.styleSheets) {
+        let rules;
+        try { rules = sheet.cssRules; } catch (e) { continue; } // cross-origin
+        for (const rule of rules) {
+            if (rule.type === CSSRule.MEDIA_RULE && rule.media.mediaText.includes("print")) {
+                for (const inner of rule.cssRules) css += inner.cssText + "\n";
+            }
+        }
+    }
+    return css;
+}
+
+document.getElementById("btnCrExportPdf")?.addEventListener("click", async () => {
+    document.getElementById("crMenuDropdown")?.classList.remove("show");
+    crClearSearchForExport();
+    if (typeof html2canvas === "undefined" || typeof window.jspdf === "undefined") {
+        notify("PDF export library failed to load.", "error");
+        return;
+    }
+    if (!document.getElementById("crTbody").children.length) {
+        notify("Nothing to export.", "warning");
+        return;
+    }
+    if (typeof showAppLoading === "function") showAppLoading("Generating PDF...");
+
+    const tempStyle = document.createElement("style");
+    tempStyle.textContent = extractPrintCss() + `
+        html, body { overflow-x: visible !important; width: max-content !important; }
+        .page-container { width: max-content !important; min-width: 100%; overflow: visible !important; }
+        .table-card { width: max-content !important; overflow: visible !important; }
+        .table-scroll { width: max-content !important; max-width: none !important; overflow: visible !important; }
+        .table-card table { width: max-content !important; }
+    `;
+    document.head.appendChild(tempStyle);
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    try {
+        const container = document.querySelector(".page-container");
+        const thead = document.querySelector(".table-card thead");
+        const rows = Array.from(document.querySelectorAll(".table-card tbody tr"));
+
+        const SCALE = 2;
+        const full = await html2canvas(container, { scale: SCALE, backgroundColor: "#ffffff" });
+        const headCanvas = thead ? await html2canvas(thead, { scale: SCALE, backgroundColor: "#ffffff" }) : null;
+
+        const pageW = 297, pageH = 210, margin = 10;
+        const usableW = pageW - margin * 2;
+        const usableH = pageH - margin * 2;
+        const sliceH = full.width * (usableH / usableW);
+
+        const cRect = container.getBoundingClientRect();
+        const bounds = rows.map(tr => (tr.getBoundingClientRect().bottom - cRect.top) * SCALE);
+        const headH = headCanvas ? headCanvas.height : 0;
+
+        const slices = [];
+        let start = 0, first = true;
+        while (start < full.height - 2) {
+            const avail = first ? sliceH : sliceH - headH;
+            let end = start + avail;
+            let cut = end;
+            for (const b of bounds) if (b > start && b <= end) cut = b;
+            if (cut <= start) cut = Math.min(end, full.height);
+            slices.push({ start, end: Math.min(cut, full.height), repeatHeader: !first });
+            start = cut;
+            first = false;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+        slices.forEach((s, i) => {
+            if (i > 0) pdf.addPage();
+            const h = s.end - s.start;
+            const canvas = document.createElement("canvas");
+            canvas.width = full.width;
+            canvas.height = h + (s.repeatHeader ? headH : 0);
+            const ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            let y = 0;
+            if (s.repeatHeader && headCanvas) { ctx.drawImage(headCanvas, 0, 0); y = headH; }
+            ctx.drawImage(full, 0, s.start, full.width, h, 0, y, full.width, h);
+
+            const imgH = usableW * (canvas.height / canvas.width);
+            pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", margin, margin, usableW, imgH);
+        });
+
+        pdf.save(`MonitoringByProduct_${new Date().toISOString().slice(0, 10).replace(/-/g, "")}.pdf`);
+    } catch (err) {
+        console.error("[export pdf] failed:", err);
+        notify("Could not generate the PDF.", "error");
+    } finally {
+        tempStyle.remove();
+        void document.body.offsetHeight;
+        if (typeof hideAppLoading === "function") hideAppLoading();
+    }
+});
+
+// ========================================
+// PRINT
+// ========================================
+document.getElementById("btnCrPrint")?.addEventListener("click", () => {
+    crClearSearchForExport();
+    window.print();
+    document.getElementById("crMenuDropdown")?.classList.remove("show");
+});
+
+// ========================================
+// REFRESH DATA — clears the server's row cache, then reloads.
+// ========================================
+document.getElementById("btnCrRefreshData")?.addEventListener("click", async () => {
+    document.getElementById("crMenuDropdown")?.classList.remove("show");
+    crShowLoading("Refreshing from database...");
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/creditreport/byproduct/refresh`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${crToken}` }
+        });
+        const data = await res.json();
+        if (!data.ok) {
+            crHideLoading();
+            crShowEmpty(data.message || "Could not refresh data.");
+            return;
+        }
+        crData = null;
+        await crRunReport();
+    } catch (e) {
+        console.error("[refresh data] failed:", e);
+        crHideLoading();
+        crShowEmpty("Network error refreshing data.");
+    }
+});
+
+// ========================================
+// "..." MENU
+// ========================================
+const crMenuToggle = document.getElementById("btnCrMenu");
+const crMenuDropdown = document.getElementById("crMenuDropdown");
+if (crMenuToggle && crMenuDropdown) {
+    crMenuToggle.addEventListener("click", e => {
+        e.stopPropagation();
+        crMenuDropdown.classList.toggle("show");
+    });
+    document.addEventListener("click", e => {
+        if (!crMenuDropdown.contains(e.target) && e.target !== crMenuToggle) {
+            crMenuDropdown.classList.remove("show");
+        }
+    });
+    document.addEventListener("keydown", e => {
+        if (e.key === "Escape") crMenuDropdown.classList.remove("show");
+    });
+}
+
+// ========================================
+// LANDSCAPE
+// ========================================
+const crLandscapeTopBar = document.getElementById("landscapeTopBar");
+const crLandscapeBottomBar = document.getElementById("landscapeBottomBar");
+let crLandscapeTimer = null;
+
+function crShowLandscapeBars() {
+    crLandscapeTopBar?.classList.remove("hidden");
+    crLandscapeBottomBar?.classList.remove("hidden");
+    clearTimeout(crLandscapeTimer);
+    crLandscapeTimer = setTimeout(() => {
+        crLandscapeTopBar?.classList.add("hidden");
+        crLandscapeBottomBar?.classList.add("hidden");
+    }, 3000);
+}
+
+document.getElementById("btnCrLandscape")?.addEventListener("click", () => {
+    document.body.classList.add("cr-force-landscape");
+    const count = document.getElementById("crTbody").children.length;
+    const el = document.getElementById("crLandscapeRowCount");
+    if (el) el.textContent = `${count.toLocaleString()} rows`;
+    crShowLandscapeBars();
+    document.getElementById("crMenuDropdown")?.classList.remove("show");
+});
+document.getElementById("btnCrExitLandscape")?.addEventListener("click", () => {
+    clearTimeout(crLandscapeTimer);
+    document.body.classList.remove("cr-force-landscape");
+});
+document.querySelector(".table-card")?.addEventListener("click", e => {
+    if (!document.body.classList.contains("cr-force-landscape")) return;
+    if (e.target.closest(".landscape-bar")) return;
+    crShowLandscapeBars();
+});
+window.addEventListener("pageshow", () => {
+    clearTimeout(crLandscapeTimer);
+    document.body.classList.remove("cr-force-landscape");
+});
+
+// ========================================
+// INIT
+// ========================================
+crReadStateFromUrl();
+crRunReport();
