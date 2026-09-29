@@ -8,6 +8,11 @@
    officer would — see bpRenderClientListInto() in BranchProductivity.js).
 ======================================== */
 
+/* CO/FSRO/Digital breakdown only shows once a card is expanded — the
+   Total row (outside this wrapper) is always visible. */
+.bp-card-stats-buckets{ display:none; }
+.op-card.open .bp-card-stats-buckets{ display:block; }
+
 .op-list-count{
     text-align:right;
     font-size:11px;

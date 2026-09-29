@@ -54,7 +54,7 @@ const BP_CATEGORIES = [
         label: "Loan Outstanding",
         chart: false,
         statGroups: [
-            { label: "Total", fields: [
+            { label: "Total", total: true, fields: [
                 { key: "total.loanOutstanding.loan", label: "Loan" },
                 { key: "total.loanOutstanding.client", label: "Client" },
                 { key: "total.loanOutstanding.value", label: "Value", money: true }
@@ -87,7 +87,7 @@ const BP_CATEGORIES = [
         label: "Loan Disburse",
         chart: true,
         statGroups: [
-            { label: "Total", fields: [
+            { label: "Total", total: true, fields: [
                 { key: "total.loanDisburse.loan", label: "Loan" },
                 { key: "total.loanDisburse.value", label: "Value", money: true }
             ] },
@@ -116,7 +116,7 @@ const BP_CATEGORIES = [
         label: "Balance Loan at Risk (T24)",
         chart: false,
         statGroups: [
-            { label: "Total", fields: [
+            { label: "Total", total: true, fields: [
                 { key: "total.parT24.loan", label: "Loan" },
                 { key: "total.parT24.value", label: "Value", money: true },
                 { key: "total.parT24.parPct", label: "PAR", pct: true }
@@ -149,7 +149,7 @@ const BP_CATEGORIES = [
         label: "Balance Loan at Risk (NBC Overdue)",
         chart: false,
         statGroups: [
-            { label: "Total", fields: [
+            { label: "Total", total: true, fields: [
                 { key: "total.nbcOverdue.total.count", label: "Loan" },
                 { key: "total.nbcOverdue.total.value", label: "Value", money: true },
                 { key: "total.nbcOverdue.total.parPct", label: "PAR", pct: true }
@@ -182,7 +182,7 @@ const BP_CATEGORIES = [
         label: "Write Off",
         chart: false,
         statGroups: [
-            { label: "Total", fields: [
+            { label: "Total", total: true, fields: [
                 { key: "total.writeOff.wo.count", label: "Loan" },
                 { key: "total.writeOff.wo.prn", label: "Prn", money: true }
             ] },
@@ -322,12 +322,19 @@ function bpStatFieldHtml(f, data) {
     const text = f.pct ? bpFmtPct(v) : bpFmtNum(v);
     return `<span>${bpEscapeHtml(f.label)}: <b>${text}</b></span>`;
 }
-function bpCardStatsHtml(cat, data) {
-    return cat.statGroups.map(g => `
+function bpStatGroupHtml(g, data) {
+    return `
       <div class="op-card-stats">
         <span class="op-card-stats-group-label">${bpEscapeHtml(g.label)}:</span>
         ${g.fields.map(f => bpStatFieldHtml(f, data)).join("")}
-      </div>`).join("");
+      </div>`;
+}
+// The Total row always shows; CO/FSRO/Digital only reveal once the card
+// is expanded (see .bp-card-stats-buckets in BranchProductivity.css).
+function bpCardStatsHtml(cat, data) {
+    const totalHtml = cat.statGroups.filter(g => g.total).map(g => bpStatGroupHtml(g, data)).join("");
+    const bucketHtml = cat.statGroups.filter(g => !g.total).map(g => bpStatGroupHtml(g, data)).join("");
+    return `${totalHtml}<div class="bp-card-stats-buckets">${bucketHtml}</div>`;
 }
 
 function bpCardMarkup(cat, data) {
@@ -410,6 +417,10 @@ document.getElementById("bpCards").addEventListener("click", (e) => {
         });
         card.classList.toggle("open", willOpen);
         head.setAttribute("aria-expanded", willOpen ? "true" : "false");
+        // CO/FSRO/Digital rows are hidden until expanded, so they were
+        // skipped by the last width-fit pass — measure them now that
+        // they're visible.
+        bpFitStatsToWidth();
         if (willOpen) {
             const activeTab = card.querySelector(".op-mode-tab.active");
             bpEnsureModeLoaded(card, activeTab ? activeTab.dataset.mode : "list");
