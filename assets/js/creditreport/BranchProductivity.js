@@ -54,6 +54,11 @@ const BP_CATEGORIES = [
         label: "Loan Outstanding",
         chart: false,
         statGroups: [
+            { label: "Total", fields: [
+                { key: "total.loanOutstanding.loan", label: "Loan" },
+                { key: "total.loanOutstanding.client", label: "Client" },
+                { key: "total.loanOutstanding.value", label: "Value", money: true }
+            ] },
             { label: "CO", fields: [
                 { key: "co.loanOutstanding.loan", label: "Loan" },
                 { key: "co.loanOutstanding.client", label: "Client" },
@@ -82,6 +87,10 @@ const BP_CATEGORIES = [
         label: "Loan Disburse",
         chart: true,
         statGroups: [
+            { label: "Total", fields: [
+                { key: "total.loanDisburse.loan", label: "Loan" },
+                { key: "total.loanDisburse.value", label: "Value", money: true }
+            ] },
             { label: "CO", fields: [
                 { key: "co.loanDisburse.loan", label: "Loan" },
                 { key: "co.loanDisburse.value", label: "Value", money: true }
@@ -107,6 +116,11 @@ const BP_CATEGORIES = [
         label: "Balance Loan at Risk (T24)",
         chart: false,
         statGroups: [
+            { label: "Total", fields: [
+                { key: "total.parT24.loan", label: "Loan" },
+                { key: "total.parT24.value", label: "Value", money: true },
+                { key: "total.parT24.parPct", label: "PAR", pct: true }
+            ] },
             { label: "CO", fields: [
                 { key: "co.parT24.loan", label: "Loan" },
                 { key: "co.parT24.value", label: "Value", money: true },
@@ -135,6 +149,11 @@ const BP_CATEGORIES = [
         label: "Balance Loan at Risk (NBC Overdue)",
         chart: false,
         statGroups: [
+            { label: "Total", fields: [
+                { key: "total.nbcOverdue.total.count", label: "Loan" },
+                { key: "total.nbcOverdue.total.value", label: "Value", money: true },
+                { key: "total.nbcOverdue.total.parPct", label: "PAR", pct: true }
+            ] },
             { label: "CO", fields: [
                 { key: "co.nbcOverdue.total.count", label: "Loan" },
                 { key: "co.nbcOverdue.total.value", label: "Value", money: true },
@@ -163,6 +182,10 @@ const BP_CATEGORIES = [
         label: "Write Off",
         chart: false,
         statGroups: [
+            { label: "Total", fields: [
+                { key: "total.writeOff.wo.count", label: "Loan" },
+                { key: "total.writeOff.wo.prn", label: "Prn", money: true }
+            ] },
             { label: "CO", fields: [
                 { key: "co.writeOff.wo.count", label: "Loan" },
                 { key: "co.writeOff.wo.prn", label: "Prn", money: true }
