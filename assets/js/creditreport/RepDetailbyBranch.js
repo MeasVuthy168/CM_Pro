@@ -9,21 +9,19 @@
 // (crSection dropdown) and only that group's columns render, with
 // Branch pinned as the sticky first column. Data is fetched once and
 // cached in crData — switching sections just re-renders, no refetch.
+// Each row (and the grand Total row) can also expand inline to show its
+// CO/FSRO/Digital breakdown — see crToggleBranchExpand() below.
 // ========================================
 
 const crToken =
     localStorage.getItem("token") ||
     sessionStorage.getItem("token");
 
-let crMode = "summary"; // "summary" | "detailed"
 let crSummaryData = null;  // { items, total } from /api/creditreport/summary
 let crDetailedData = null; // { groups, grand } from /api/creditreport/detailed — fetched lazily
-// Summary Report's own inline expand/collapse: which branch's CO/FSRO/
-// Digital breakdown is currently shown under its Total-only row ("All
-// Branch" for the grand Total row at the bottom), or null if none is
-// open. Reuses crDetailedData (fetching it on first expand, same as
-// switching to the Detailed Report tab) rather than keeping a second
-// copy of the same breakdown data.
+// Which branch's CO/FSRO/Digital breakdown is currently expanded inline
+// under its Total-only row ("All Branch" for the grand Total row at the
+// bottom), or null if none is open.
 let crExpandedBranch = null;
 // PAR % at or above this is rendered red in every PAR column.
 const CR_PAR_ALERT = 0.04;
@@ -159,9 +157,9 @@ function crApplyServerDates(data) {
 
 // ========================================
 // URL STATE
-// Mirrors the current section/view/dates into the address bar via
+// Mirrors the current section/dates into the address bar via
 // history.replaceState (no new history entries added, so this doesn't
-// turn every dropdown/tab click into its own back-button stop) — so
+// turn every dropdown click into its own back-button stop) — so
 // navigating away (e.g. to Setting via the bottom nav) and back via
 // the topbar's back arrow (history.back()) lands on the exact same
 // report instead of the blank defaults.
@@ -172,14 +170,6 @@ function crReadStateFromUrl() {
     const section = p.get("section");
     if (section && CR_SECTIONS[section]) {
         document.getElementById("crSection").value = section;
-    }
-
-    const view = p.get("view");
-    if (view === "detailed" || view === "summary") {
-        crMode = view;
-        document.querySelectorAll(".cr-tab").forEach(t => {
-            t.classList.toggle("active", t.dataset.view === view);
-        });
     }
 
     // Dates restored from the URL take priority over the server's
@@ -203,7 +193,6 @@ function crReadStateFromUrl() {
 function crSyncStateToUrl() {
     const p = new URLSearchParams();
     p.set("section", document.getElementById("crSection").value);
-    p.set("view", crMode);
 
     const addDate = (param, id) => {
         const v = document.getElementById(id).value;
@@ -340,7 +329,7 @@ function crFieldClass(field) {
     return "cr-col-num";
 }
 
-function crBuildThead(section, withTeamCol) {
+function crBuildThead(section) {
     const groupCells = section.groups.map(g =>
         `<th colspan="${g.fields.length}">${g.label}</th>`
     ).join("");
@@ -349,13 +338,9 @@ function crBuildThead(section, withTeamCol) {
         g.fields.map(f => `<th class="${crFieldClass(f)}">${f.label}</th>`).join("")
     ).join("");
 
-    const leadCol = withTeamCol
-        ? `<th rowspan="2" class="cr-detail-team-col">Team</th><th rowspan="2" class="cr-detail-branch-col">Branch</th>`
-        : `<th rowspan="2" class="cr-branch-col">Branch</th>`;
-
     return `
       <tr class="cr-group-row">
-        ${leadCol}
+        <th rowspan="2" class="cr-branch-col">Branch</th>
         ${groupCells}
       </tr>
       <tr class="cr-sub-row">
@@ -363,10 +348,9 @@ function crBuildThead(section, withTeamCol) {
       </tr>`;
 }
 
-// One CO/FSRO/Digital line nested under a Summary row's own Total-only
-// figures — same column count as crBuildRow (one leading cell, then the
-// section's fields) so it fits Summary's thead, unlike crBuildDetailedRow
-// which needs a separate Team column.
+// One CO/FSRO/Digital line nested under a row's own Total-only figures —
+// same column count as crBuildRow (one leading cell, then the section's
+// fields) so it fits the thead.
 function crBuildSummaryBreakdownRow(item, section, team) {
     const cells = section.groups.map(g =>
         g.fields.map(f => crFmtField(item, f)).join("")
@@ -413,69 +397,18 @@ function crBuildRow(item, section, isTotal) {
     return html;
 }
 
-// team: "CO" | "FSRO" | "Total". branchLabel is repeated on every row
-// (no rowspan merge) to keep the render logic simple.
-function crBuildDetailedRow(item, section, branchLabel, team, isBranchTotal, isGrandRow) {
-    const cells = section.groups.map(g =>
-        g.fields.map(f => crFmtField(item, f)).join("")
-    ).join("");
-    let rowClass = "";
-    if (isGrandRow) rowClass = ' class="cr-total-row"';
-    else if (isBranchTotal) rowClass = ' class="cr-branch-total-row"';
-    return `
-      <tr${rowClass}>
-        <td class="cr-detail-team-col">${team}</td>
-        <td class="cr-detail-branch-col">${crEscapeHtml(branchLabel)}</td>
-        ${cells}
-      </tr>`;
-}
-
 function crRenderSummary() {
     if (!crSummaryData) return;
     const sectionKey = document.getElementById("crSection").value;
     const section = CR_SECTIONS[sectionKey];
 
-    document.getElementById("crThead").innerHTML = crBuildThead(section, false);
+    document.getElementById("crThead").innerHTML = crBuildThead(section);
     document.getElementById("crTbody").innerHTML =
         crSummaryData.items.map(it => crBuildRow(it, section, false)).join("") +
         crBuildRow(crSummaryData.total, section, true);
 
     crRenderReclassNote(sectionKey);
     requestAnimationFrame(crSetHeaderOffsets);
-}
-
-function crRenderDetailed() {
-    if (!crDetailedData) return;
-    const sectionKey = document.getElementById("crSection").value;
-    const section = CR_SECTIONS[sectionKey];
-
-    document.getElementById("crThead").innerHTML = crBuildThead(section, true);
-
-    const rowsHtml = crDetailedData.groups.map(g => {
-        const [co, fsro, digital, total] = g.rows;
-        return (
-            crBuildDetailedRow(co, section, g.branch, "CO", false, false) +
-            crBuildDetailedRow(fsro, section, g.branch, "FSRO", false, false) +
-            crBuildDetailedRow(digital, section, g.branch, "Digital", false, false) +
-            crBuildDetailedRow(total, section, g.branch, "Total", true, false)
-        );
-    }).join("");
-
-    const grand = crDetailedData.grand;
-    const grandHtml =
-        crBuildDetailedRow(grand.co, section, "All", "CO", false, false) +
-        crBuildDetailedRow(grand.fsro, section, "All", "FSRO", false, false) +
-        crBuildDetailedRow(grand.digital, section, "All", "Digital", false, false) +
-        crBuildDetailedRow(grand.total, section, "All", "Total", false, true);
-
-    document.getElementById("crTbody").innerHTML = rowsHtml + grandHtml;
-    crRenderReclassNote(sectionKey);
-    requestAnimationFrame(crSetHeaderOffsets);
-}
-
-function crRenderSection() {
-    if (crMode === "detailed") crRenderDetailed();
-    else crRenderSummary();
 }
 
 // ========================================
@@ -488,14 +421,12 @@ function crRenderSection() {
 // branch name + current date filters need to travel in the URL, no
 // sessionStorage cache.
 // ========================================
-// ========================================
-// SUMMARY REPORT — inline expand/collapse
-// Toggling a row fetches /api/creditreport/detailed on first use (same
-// endpoint the Detailed Report tab uses, cached in crDetailedData so a
-// second expand — of this row or another — is instant) and re-renders
-// Summary with that one row's CO/FSRO/Digital lines inserted under it.
-// A failed fetch leaves the already-working Summary table alone rather
-// than replacing it with an empty state.
+// INLINE EXPAND/COLLAPSE (CO/FSRO/Digital)
+// Toggling a row fetches /api/creditreport/detailed on first use, cached
+// in crDetailedData so a second expand — of this row or another — is
+// instant, and re-renders with that one row's CO/FSRO/Digital lines
+// inserted under it. A failed fetch leaves the already-working table
+// alone rather than replacing it with an empty state.
 // ========================================
 async function crToggleBranchExpand(branch) {
     if (crExpandedBranch === branch) {
@@ -551,7 +482,7 @@ document.getElementById("crTbody").addEventListener("click", (e) => {
 });
 
 document.getElementById("crSection").addEventListener("change", () => {
-    crRenderSection();
+    crRenderSummary();
     crSyncStateToUrl();
 });
 
@@ -660,12 +591,7 @@ async function crRunReport() {
 
         crSummaryData = data;
         document.getElementById("crTableScroll").style.display = "block";
-
-        if (crMode === "detailed") {
-            await crEnsureDetailedLoaded();
-        } else {
-            crRenderSection();
-        }
+        crRenderSummary();
     } catch (e) {
         console.error(e);
         crHideLoading();
@@ -693,63 +619,6 @@ btnCrToggleDates.addEventListener("click", () => {
 document.getElementById("btnCrRun").addEventListener("click", () => {
     crRunReport();
     crSetDatePanelOpen(false); // collapse once applied — result is shown above
-});
-
-// ========================================
-// DETAILED REPORT — fetched lazily (only when the Detailed tab is
-// actually opened) since it's a heavier query than Summary and most
-// visits probably never need the CO/FSRO breakdown.
-// ========================================
-async function crEnsureDetailedLoaded() {
-    if (crDetailedData) {
-        crRenderSection();
-        return;
-    }
-    crShowLoading();
-
-    try {
-        const url = `${API.BASE_URL}/api/creditreport/detailed${crBuildDateQuery()}`;
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
-        const data = await res.json();
-
-        crHideLoading();
-
-        if (!data.ok) {
-            crShowEmpty(data.message || "Failed to load detailed report.");
-            return;
-        }
-        if (!data.groups || !data.groups.length) {
-            crShowEmpty("No data.");
-            return;
-        }
-
-        crDetailedData = data;
-        document.getElementById("crTableScroll").style.display = "block";
-        crRenderSection();
-    } catch (e) {
-        console.error(e);
-        crHideLoading();
-        crShowEmpty("Network error loading detailed report.");
-    }
-}
-
-// ========================================
-// VIEW TOGGLE (Summary / Detailed)
-// mirrors the VBA Worksheet_Change row show/hide logic as a tab switch
-// ========================================
-document.querySelectorAll(".cr-tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-        document.querySelectorAll(".cr-tab").forEach(t => t.classList.remove("active"));
-        tab.classList.add("active");
-        crMode = tab.dataset.view;
-        crSyncStateToUrl();
-
-        if (crMode === "detailed") {
-            crEnsureDetailedLoaded();
-        } else {
-            crRenderSection();
-        }
-    });
 });
 
 // ========================================
