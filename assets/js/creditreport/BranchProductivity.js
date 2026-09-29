@@ -602,19 +602,34 @@ function bpExportRowsToExcel(rows, cols, filenamePrefix) {
 // far more clients per category than one officer would, so only the
 // first BP_LIST_PAGE_SIZE (sorted) rows render at a time, with a "Show
 // More" button revealing the next page; Export Excel always exports the
-// FULL row set, not just what's currently visible. Re-renders the whole
-// block on every sort/Show More click (simpler than patching just the
-// tbody, and cheap at a 100-row page size).
+// FULL row set (in whatever order is currently sorted), not just what's
+// currently visible. Re-renders the whole block on every sort/Show More
+// click (simpler than patching just the tbody, and cheap at a 100-row
+// page size).
+//
+// Column headers cycle through 3 states: ascending -> descending ->
+// default (the order `rows` arrived in) -> ascending again. `rows`
+// itself is never mutated — originalRows is a pristine snapshot taken
+// once up front, and every render computes a sorted VIEW from it — so
+// the "default" state always has an intact original order to return to.
 function bpRenderClientListInto(container, rows, { arrears = false, showDate = true, filenamePrefix = "clients" } = {}) {
     const cols = arrears ? BP_ARREARS_TABLE_COLS : (showDate ? BP_CLIENT_TABLE_COLS : BP_CLIENT_TABLE_COLS.filter(c => c.key !== "disburseDate"));
     const buildTableHtml = arrears ? bpArrearsTableHtml : (rs => bpClientTableHtml(rs, { showDate }));
 
+    const originalRows = rows.slice();
     let visibleCount = Math.min(BP_LIST_PAGE_SIZE, rows.length);
     let sortKey = null;
     let sortDir = 1;
+    let sortType = "text";
+
+    function getDisplayRows() {
+        if (!sortKey) return originalRows;
+        return originalRows.slice().sort((a, b) => sortDir * bpCompareForSort(a[sortKey], b[sortKey], sortType));
+    }
 
     function render() {
-        const visibleRows = rows.slice(0, visibleCount);
+        const displayRows = getDisplayRows();
+        const visibleRows = displayRows.slice(0, visibleCount);
         const exportBtnHtml = rows.length
             ? `<div class="op-list-actions"><button type="button" class="op-list-export-btn">⬇ Export Excel</button></div>`
             : "";
@@ -634,16 +649,20 @@ function bpRenderClientListInto(container, rows, { arrears = false, showDate = t
                 th.addEventListener("click", () => {
                     const key = th.dataset.sortKey;
                     const type = th.dataset.sortType || "text";
-                    sortDir = (sortKey === key) ? -sortDir : 1;
-                    sortKey = key;
-                    rows.sort((a, b) => sortDir * bpCompareForSort(a[key], b[key], type));
+                    if (sortKey !== key) {
+                        sortKey = key; sortType = type; sortDir = 1;
+                    } else if (sortDir === 1) {
+                        sortDir = -1;
+                    } else {
+                        sortKey = null; sortType = "text"; sortDir = 1;
+                    }
                     render();
                 });
             });
         }
 
         container.querySelector(".op-list-export-btn")?.addEventListener("click", () => {
-            bpExportRowsToExcel(rows, cols, filenamePrefix);
+            bpExportRowsToExcel(getDisplayRows(), cols, filenamePrefix);
         });
         container.querySelector(".op-list-more-btn")?.addEventListener("click", () => {
             visibleCount = Math.min(visibleCount + BP_LIST_PAGE_SIZE, rows.length);

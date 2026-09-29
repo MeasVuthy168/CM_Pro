@@ -656,39 +656,58 @@ function opCompareForSort(a, b, type) {
     return sa < sb ? -1 : sa > sb ? 1 : 0;
 }
 
-// Makes every <th data-sort-key> in container's table click-to-sort:
-// ascending on first click, descending on a second click of the same
-// column, back to ascending on a third, sorting `rows` in place and
-// re-rendering just the <tbody> via buildTableHtml (the exact same
-// opClientTableHtml/opArrearsTableHtml call the initial render used) —
-// re-running the whole builder and lifting its <tbody> out is simpler
-// than maintaining a second row-only template per table shape.
+// Makes every <th data-sort-key> in container's table click-to-sort,
+// cycling through 3 states: ascending on the first click, descending on
+// a second click of the same column, back to default (the order `rows`
+// arrived in) on a third — a fourth click starts the cycle over at
+// ascending. `rows` itself is never mutated — originalRows is a pristine
+// snapshot taken once up front, and every click re-renders just the
+// <tbody> (via buildTableHtml, the exact same opClientTableHtml/
+// opArrearsTableHtml call the initial render used — re-running the whole
+// builder and lifting its <tbody> out is simpler than maintaining a
+// second row-only template per table shape) from a freshly computed
+// sorted VIEW of originalRows, so "default" always has an intact
+// original order to return to. Returns a getDisplayRows() function so
+// the caller (Export Excel) can export whatever is currently shown.
 function opWireSortableTable(container, rows, buildTableHtml) {
     const table = container.querySelector("table");
     const thead = table && table.querySelector("thead");
-    if (!table || !thead) return;
+    if (!table || !thead) return () => rows;
 
+    const originalRows = rows.slice();
     let sortKey = null;
     let sortDir = 1;
+    let sortType = "text";
+
+    function getDisplayRows() {
+        if (!sortKey) return originalRows;
+        return originalRows.slice().sort((a, b) => sortDir * opCompareForSort(a[sortKey], b[sortKey], sortType));
+    }
 
     thead.querySelectorAll("th[data-sort-key]").forEach(th => {
         th.addEventListener("click", () => {
             const key = th.dataset.sortKey;
             const type = th.dataset.sortType || "text";
-            sortDir = (sortKey === key) ? -sortDir : 1;
-            sortKey = key;
-            rows.sort((a, b) => sortDir * opCompareForSort(a[key], b[key], type));
+            if (sortKey !== key) {
+                sortKey = key; sortType = type; sortDir = 1;
+            } else if (sortDir === 1) {
+                sortDir = -1;
+            } else {
+                sortKey = null; sortType = "text"; sortDir = 1;
+            }
 
             thead.querySelectorAll("th[data-sort-key]").forEach(t => t.classList.remove("op-sort-asc", "op-sort-desc"));
-            th.classList.add(sortDir === 1 ? "op-sort-asc" : "op-sort-desc");
+            if (sortKey) th.classList.add(sortDir === 1 ? "op-sort-asc" : "op-sort-desc");
 
             const tmp = document.createElement("div");
-            tmp.innerHTML = buildTableHtml(rows);
+            tmp.innerHTML = buildTableHtml(getDisplayRows());
             const newBody = tmp.querySelector("tbody");
             const oldBody = table.querySelector("tbody");
             if (newBody && oldBody) oldBody.innerHTML = newBody.innerHTML;
         });
     });
+
+    return getDisplayRows;
 }
 
 // Exports the CURRENT (possibly sorted) rows to an .xlsx download, using
@@ -732,9 +751,9 @@ function opRenderClientListInto(container, rows, { arrears = false, showDate = t
     container.innerHTML = exportBtnHtml + buildTableHtml(rows);
 
     if (!rows.length) return;
-    opWireSortableTable(container, rows, buildTableHtml);
+    const getDisplayRows = opWireSortableTable(container, rows, buildTableHtml);
     container.querySelector(".op-list-export-btn")?.addEventListener("click", () => {
-        opExportRowsToExcel(rows, cols, filenamePrefix);
+        opExportRowsToExcel(getDisplayRows(), cols, filenamePrefix);
     });
 }
 

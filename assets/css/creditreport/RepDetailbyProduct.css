@@ -492,7 +492,7 @@
 .table-card tbody tr:nth-child(even) td.cr-name-col{ background:var(--cr-row-alt); }
 .cr-total-row td.cr-name-col{ color:var(--cr-total-text) !important; }
 
-/* Opens Product Productivity for that product — same "unstyled button,
+/* Opens Product Performance for that product — same "unstyled button,
    chevron suffix" pattern as RepDetailbyBranch.css's .cr-branch-link. */
 .cr-product-link{
     all:unset;

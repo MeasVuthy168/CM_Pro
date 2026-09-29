@@ -343,13 +343,18 @@ function crIsAllExpanded() {
 
 // ========================================
 // COLUMN SORT
-// Every column header is clickable — sorts crSummaryData.items (the
-// grand Total row always stays pinned at the bottom, since it's
-// appended separately in crRenderSummary() rather than sorted along
-// with the rest). Expand/collapse state (crExpandedBranches, keyed by
-// branch name) and crDetailedData's own group lookup (also by branch
-// name) are both unaffected by row order, so sorting is safe to apply
-// regardless of which rows are currently expanded.
+// Every column header is clickable and cycles through 3 states:
+// ascending -> descending -> default (the order the server returned,
+// unsorted) -> ascending again. crSummaryData.items itself is never
+// mutated — crApplySort() returns a sorted COPY (or the original array,
+// untouched, once the cycle reaches "default") — so the original fetch
+// order is always there to go back to. The grand Total row always stays
+// pinned at the bottom, since it's appended separately in
+// crRenderSummary() rather than sorted along with the rest.
+// Expand/collapse state (crExpandedBranches, keyed by branch name) and
+// crDetailedData's own group lookup (also by branch name) are both
+// unaffected by row order, so sorting is safe to apply regardless of
+// which rows are currently expanded.
 // ========================================
 let crSortState = { key: null, dir: 1 };
 
@@ -366,9 +371,9 @@ function crCompareForSort(a, b, type) {
 }
 
 function crApplySort(items) {
-    if (!crSortState.key) return;
+    if (!crSortState.key) return items;
     const { key, dir, type } = crSortState;
-    items.sort((a, b) => dir * crCompareForSort(
+    return items.slice().sort((a, b) => dir * crCompareForSort(
         key === "_name" ? a.branch : crGetByPath(a, key),
         key === "_name" ? b.branch : crGetByPath(b, key),
         type
@@ -457,11 +462,11 @@ function crRenderSummary() {
     const sectionKey = document.getElementById("crSection").value;
     const section = CR_SECTIONS[sectionKey];
 
-    crApplySort(crSummaryData.items);
+    const displayItems = crApplySort(crSummaryData.items);
 
     document.getElementById("crThead").innerHTML = crBuildThead(section);
     document.getElementById("crTbody").innerHTML =
-        crSummaryData.items.map(it => crBuildRow(it, section, false)).join("") +
+        displayItems.map(it => crBuildRow(it, section, false)).join("") +
         crBuildRow(crSummaryData.total, section, true);
 
     crRenderReclassNote(sectionKey);
@@ -539,18 +544,22 @@ document.getElementById("crThead").addEventListener("click", (e) => {
         crToggleExpandAll();
         return;
     }
-    // Clicking a column header sorts by it — clicking the same header
-    // again flips ascending/descending, clicking a different one resets
-    // to ascending. Guarded above so a click on the Expand All caret
+    // Clicking a column header cycles it through ascending -> descending
+    // -> default (unsorted, the order the server returned) -> ascending
+    // again. Clicking a different header always starts that header fresh
+    // at ascending. Guarded above so a click on the Expand All caret
     // (nested inside the Branch header cell) never also triggers a sort.
     const th = e.target.closest("th[data-sort-key]");
     if (!th) return;
     const key = th.dataset.sortKey;
-    crSortState = {
-        key,
-        type: th.dataset.sortType || "text",
-        dir: (crSortState.key === key) ? -crSortState.dir : 1
-    };
+    const type = th.dataset.sortType || "text";
+    if (crSortState.key !== key) {
+        crSortState = { key, type, dir: 1 };
+    } else if (crSortState.dir === 1) {
+        crSortState = { key, type, dir: -1 };
+    } else {
+        crSortState = { key: null, type: null, dir: 1 };
+    }
     crRenderSummary();
 });
 
