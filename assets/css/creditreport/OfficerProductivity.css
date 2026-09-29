@@ -127,7 +127,12 @@
     color:var(--cr-text);
 }
 
-/* ===== Officer header card ===== */
+/* ===== Officer/Branch header card =====
+   Also Branch Productivity's own header (bpHeaderCard) — that page
+   reuses this exact class rather than defining its own. Sticky below
+   the fixed topbar (78px tall, 72px under its own 480px breakpoint —
+   see topbar.css) so the officer/branch name stays visible while the
+   cards below it scroll. */
 .op-header-card{
     background:var(--cr-card-bg);
     border:1px solid var(--cr-border);
@@ -138,6 +143,12 @@
     display:flex;
     align-items:center;
     gap:12px;
+    position:sticky;
+    top:78px;
+    z-index:5;
+}
+@media(max-width:480px){
+    .op-header-card{ top:72px; }
 }
 .op-avatar{
     flex:0 0 auto;
