@@ -432,6 +432,33 @@
 .table-card thead tr.cr-group-row th{ z-index:4; }
 .table-card thead tr.cr-sub-row th{ z-index:3; }
 
+/* Sortable column headers — every header cell with a sort key is
+   clickable; a neutral ↕ hints it, a directional ▲/▼ marks whichever
+   column is currently sorted (same convention as the Productivity
+   pages' client tables — see OfficerProductivity.css's
+   .op-client-table th[data-sort-key]). No position:relative here — every
+   thead th is already position:sticky (see the base rule above), which
+   is itself a positioned element, so the ::after below anchors to it
+   the same way; setting position:relative here would fight that
+   higher-specificity sticky, breaking the header's sticky behavior. */
+.table-card thead th[data-sort-key]{
+    cursor:pointer;
+    user-select:none;
+    -webkit-user-select:none;
+    padding-right:16px;
+}
+.table-card thead th[data-sort-key]::after{
+    content:"↕";
+    position:absolute;
+    right:4px;
+    top:50%;
+    transform:translateY(-50%);
+    opacity:.55;
+    font-size:9px;
+}
+.table-card thead th.cr-sort-asc::after{ content:"▲"; opacity:1; }
+.table-card thead th.cr-sort-desc::after{ content:"▼"; opacity:1; }
+
 .table-card td{
     padding:8px 12px;
     border:1px solid var(--cr-border);
@@ -464,6 +491,21 @@
 [data-theme="dark"] .table-card tbody td.cr-name-col{ color:var(--cr-gold-light) !important; }
 .table-card tbody tr:nth-child(even) td.cr-name-col{ background:var(--cr-row-alt); }
 .cr-total-row td.cr-name-col{ color:var(--cr-total-text) !important; }
+
+/* Opens Product Productivity for that product — same "unstyled button,
+   chevron suffix" pattern as RepDetailbyBranch.css's .cr-branch-link. */
+.cr-product-link{
+    all:unset;
+    cursor:pointer;
+    color:inherit;
+    font:inherit;
+    font-weight:inherit;
+}
+.cr-product-link::after{
+    content:" \203A";
+    opacity:.55;
+}
+.cr-product-link:active{ opacity:.7; }
 
 .table-card tbody tr:nth-child(even){ background:var(--cr-row-alt); }
 

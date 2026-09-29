@@ -120,6 +120,63 @@ let allRows = [];        // every row, parsed to objects, unfiltered
 let currentRows = [];    // whatever's currently displayed (post-filter)
 let selectedRow = null;  // row object behind the open Reason Arrear panel
 
+// ========================================
+// COLUMN SORT
+// Sorts currentRows in place so every other consumer (record navigation,
+// surgical row updates, infinite-scroll batching) keeps working exactly
+// as it does over an unsorted result — they all already just walk
+// currentRows in whatever order it happens to hold. Re-applied after
+// every applyFilters() so the active sort survives a filter change,
+// same as it already survives across renderTable() calls.
+// ========================================
+let arrearsSortState = { key: null, dir: 1 };
+
+function arrearsCompareForSort(a, b, type) {
+    const blank = v => v === "" || v == null;
+    if (type === "number") {
+        const na = blank(a) ? -Infinity : parseFloat(String(a).replace(/,/g, ""));
+        const nb = blank(b) ? -Infinity : parseFloat(String(b).replace(/,/g, ""));
+        return (isNaN(na) ? -Infinity : na) - (isNaN(nb) ? -Infinity : nb);
+    }
+    if (type === "date") {
+        const da = blank(a) ? null : parseFlexibleDate(a);
+        const db = blank(b) ? null : parseFlexibleDate(b);
+        const ta = da ? da.getTime() : -Infinity;
+        const tb = db ? db.getTime() : -Infinity;
+        return ta - tb;
+    }
+    const sa = blank(a) ? "" : String(a).toLowerCase();
+    const sb = blank(b) ? "" : String(b).toLowerCase();
+    return sa < sb ? -1 : sa > sb ? 1 : 0;
+}
+
+function applyArrearsSort(rows) {
+    if (!arrearsSortState.key) return;
+    const { key, dir, type } = arrearsSortState;
+    rows.sort((a, b) => dir * arrearsCompareForSort(a[key], b[key], type));
+}
+
+document.getElementById("arrearsHeadRow")?.addEventListener("click", (e) => {
+    const th = e.target.closest("th[data-sort-key]");
+    if (!th) return;
+
+    const key = th.dataset.sortKey;
+    const type = th.dataset.sortType || "text";
+    arrearsSortState = {
+        key,
+        type,
+        dir: (arrearsSortState.key === key) ? -arrearsSortState.dir : 1
+    };
+
+    document.querySelectorAll("#arrearsHeadRow th[data-sort-key]").forEach(h => {
+        h.classList.remove("arrears-sort-asc", "arrears-sort-desc");
+    });
+    th.classList.add(arrearsSortState.dir === 1 ? "arrears-sort-asc" : "arrears-sort-desc");
+
+    applyArrearsSort(currentRows);
+    renderTable(currentRows);
+});
+
 attachSuggestions(reasonAJ, () => distinctSorted(allRows, "ajReason"));
 attachSuggestions(reasonAK, () => distinctSorted(allRows, "akSolution"));
 
@@ -561,6 +618,7 @@ function applyFilters() {
             && promiseStatusMatch(row, f.promiseStatus);
     });
 
+    applyArrearsSort(currentRows);
     renderTable(currentRows);
     renderSummary(currentRows);
     updateAdvancedFilterBadge();
