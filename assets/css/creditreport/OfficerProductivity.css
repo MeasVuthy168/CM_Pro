@@ -319,19 +319,20 @@
 
 /* "More detail about Area" — CO/FSRO/Digital breakdown, shown only once
    the card is expanded (it lives inside .op-card-panel above), unlike
-   the always-visible Own/Area lines in the card head. */
+   the always-visible Own/Area lines in the card head. No heading text:
+   a left connector rule + indent read as "this hangs off Area", and the
+   smaller/lighter row labels read as one level more granular than
+   Own/Area — not as a separate, unrelated block. */
 .op-card-team-breakdown{
-    margin-bottom:12px;
-    padding-bottom:12px;
-    border-bottom:1px solid var(--cr-border);
+    margin:2px 0 14px;
+    padding:6px 0 6px 12px;
+    border-left:2px solid var(--cr-border);
 }
-.op-card-team-breakdown-label{
-    font-size:11px;
-    font-weight:700;
-    text-transform:uppercase;
-    letter-spacing:.03em;
+.op-card-team-row{ font-size:11px; }
+.op-card-team-row-label{
+    font-weight:600;
     color:var(--cr-text-muted);
-    margin-bottom:6px;
+    flex:0 0 auto;
 }
 
 /* Segmented "List of Client" / "Chart" chooser */
