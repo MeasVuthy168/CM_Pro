@@ -317,18 +317,29 @@
 }
 .op-card.open .op-card-panel{ display:block; }
 
-/* "More detail about Area" — CO/FSRO/Digital breakdown, shown only once
-   the card is expanded (it lives inside .op-card-panel above), unlike
-   the always-visible Own/Area lines in the card head. No heading text:
-   a left connector rule + indent read as "this hangs off Area", and the
-   smaller/lighter row labels read as one level more granular than
-   Own/Area — not as a separate, unrelated block. */
-.op-card-team-breakdown{
-    margin:2px 0 14px;
-    padding:6px 0 6px 12px;
+/* "More detail about Area" — Total/FSRO/CO/Digital breakdown, shown only
+   once the card is expanded (it lives inside .op-card-panel above),
+   unlike the always-visible Own/Area lines in the card head. A small
+   "Area:" title plus a short connector tick per row reads as a tree
+   hanging off Area, not a separate, unrelated block — each row gets its
+   OWN tick (not one continuous rule down the whole list), matching how
+   Own/Area's own figures read as siblings of each other. */
+.op-card-team-breakdown{ margin:4px 0 14px; }
+.op-card-team-breakdown-title{
+    padding-left:10px;
+    margin-bottom:4px;
+    border-left:2px solid var(--cr-border);
+    font-size:12px;
+    font-weight:700;
+    color:var(--cr-text);
+}
+.op-card-team-row-wrap{
+    margin-left:4px;
+    padding-left:14px;
     border-left:2px solid var(--cr-border);
 }
-.op-card-team-row{ font-size:11px; }
+.op-card-team-row-wrap + .op-card-team-row-wrap{ margin-top:2px; }
+.op-card-team-row{ font-size:11px; margin-top:0; }
 .op-card-team-row-label{
     font-weight:600;
     color:var(--cr-text-muted);
