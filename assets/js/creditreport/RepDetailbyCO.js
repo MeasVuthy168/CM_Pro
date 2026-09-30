@@ -89,6 +89,18 @@ const CR_SECTIONS = {
             ]
         }]
     },
+    nbcOverdueArea: {
+        groups: [
+            crGroupPct("nbcOverdueArea.minor", "Minor Default"),
+            crGroupPct("nbcOverdueArea.specialMention", "Special Mention"),
+            crGroupPct("nbcOverdueArea.subStandard", "Sub-Standard"),
+            crGroupPct("nbcOverdueArea.doubtful", "Doubtful"),
+            crGroupPct("nbcOverdueArea.loss", "Loss"),
+            crGroupPct("nbcOverdueArea.majorDefault", "Major Default"),
+            crGroupPct("nbcOverdueArea.nonPerformingLoan", "Non Performing Loan"),
+            crGroupPct("nbcOverdueArea.total", "Total NBC Overdue_ក្នុងតំបន់")
+        ]
+    },
     nbcOverdue: {
         groups: [
             crGroupPct("nbcOverdue.minor", "Minor Default"),
@@ -98,8 +110,7 @@ const CR_SECTIONS = {
             crGroupPct("nbcOverdue.loss", "Loss"),
             crGroupPct("nbcOverdue.majorDefault", "Major Default"),
             crGroupPct("nbcOverdue.nonPerformingLoan", "Non Performing Loan"),
-            crGroupPct("nbcOverdue.totalOwn", "Total NBC Overdue_ផ្ទាល់ខ្លួន"),
-            crGroupPct("nbcOverdue.totalArea", "Total NBC Overdue_ក្នុងតំបន់")
+            crGroupPct("nbcOverdue.totalOwn", "Total NBC Overdue_ផ្ទាល់ខ្លួន")
         ]
     },
     writeOff: {
@@ -159,6 +170,7 @@ CR_SECTIONS.all = {
         ...CR_SECTIONS.disburse.groups,
         ...CR_SECTIONS.parT24Area.groups,
         ...CR_SECTIONS.parT24.groups,
+        ...CR_SECTIONS.nbcOverdueArea.groups,
         ...CR_SECTIONS.nbcOverdue.groups,
         ...CR_SECTIONS.writeOff.groups
     ]
