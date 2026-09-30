@@ -323,9 +323,32 @@ function crBuildRow(item, section, isTotal, idx) {
       </tr>`;
 }
 
+// Maps the NBC Overdue Loan Class filter's values to the matching group's
+// index within CR_SECTIONS.nbcOverdue/nbcOverdueArea.groups (built in this
+// same fixed order — see CR_SECTIONS above) — lets the Loan Class filter
+// collapse the wide 7-classification table down to just the one selected,
+// the same single-group shape parT24/parT24Area already render as. Every
+// classification is already present in the API response regardless of
+// this filter, so no refetch is needed — this is purely a display choice.
+const CR_NBC_CLASS_INDEX = {
+    minor: 0, specialMention: 1, subStandard: 2, doubtful: 3,
+    loss: 4, majorDefault: 5, nonPerformingLoan: 6
+};
+
+function crActiveSection() {
+    const sectionKey = document.getElementById("crSection").value;
+    const section = CR_SECTIONS[sectionKey];
+    if (sectionKey !== "nbcOverdue" && sectionKey !== "nbcOverdueArea") return section;
+
+    const nbcClass = document.getElementById("crNbcClass").value;
+    const idx = CR_NBC_CLASS_INDEX[nbcClass];
+    if (idx === undefined) return section;
+    return { groups: [section.groups[idx]] };
+}
+
 function crRenderSection() {
     if (!crData) return;
-    const section = CR_SECTIONS[document.getElementById("crSection").value];
+    const section = crActiveSection();
 
     crDisplayItems = crApplySort(crData.items);
 
@@ -472,17 +495,27 @@ function crBuildQuery() {
 
     const t24Product = document.getElementById("crProduct").value;
     if (t24Product) parts.push(`t24Product=${encodeURIComponent(t24Product)}`);
+
+    // crNbcClass is NOT sent — every classification is already in the
+    // response (see crActiveSection() above), so it's a display-only pick.
+    const nbcProduct = document.getElementById("crNbcProduct").value;
+    if (nbcProduct) parts.push(`nbcProduct=${encodeURIComponent(nbcProduct)}`);
     return `?${parts.join("&")}`;
 }
 
-// The Loan Class/Product Type filters only mean something for the Balance
-// Loan at Risk (T24) sections — hide them otherwise so they can't be
-// mistaken for applying to Loan Outstanding/NBC Overdue/Write Off too.
+// The T24 Loan Class/Product Type filters only mean something for the
+// Balance Loan at Risk (T24) sections, and the NBC Overdue Loan
+// Class/Product Type filters only for the NBC Overdue sections — hide
+// each pair otherwise so they can't be mistaken for applying to a
+// section they don't affect.
 function crUpdateClassVisibility() {
     const section = document.getElementById("crSection").value;
     const isT24 = section === "parT24" || section === "parT24Area";
+    const isNbc = section === "nbcOverdue" || section === "nbcOverdueArea";
     document.getElementById("crClassRow").style.display = isT24 ? "" : "none";
     document.getElementById("crProductRow").style.display = isT24 ? "" : "none";
+    document.getElementById("crNbcClassRow").style.display = isNbc ? "" : "none";
+    document.getElementById("crNbcProductRow").style.display = isNbc ? "" : "none";
 }
 
 let crDatesInitialised = false;
@@ -580,6 +613,22 @@ function crReadStateFromUrl() {
             productSel.value = t24Product;
         }
     }
+
+    const nbcClass = p.get("nbcClass");
+    if (nbcClass) {
+        const nbcClassSel = document.getElementById("crNbcClass");
+        if ([...nbcClassSel.options].some(o => o.value === nbcClass)) {
+            nbcClassSel.value = nbcClass;
+        }
+    }
+
+    const nbcProduct = p.get("nbcProduct");
+    if (nbcProduct) {
+        const nbcProductSel = document.getElementById("crNbcProduct");
+        if ([...nbcProductSel.options].some(o => o.value === nbcProduct)) {
+            nbcProductSel.value = nbcProduct;
+        }
+    }
 }
 
 function crSyncStateToUrl() {
@@ -602,6 +651,12 @@ function crSyncStateToUrl() {
 
     const t24Product = document.getElementById("crProduct").value;
     if (t24Product) p.set("t24Product", t24Product);
+
+    const nbcClass = document.getElementById("crNbcClass").value;
+    if (nbcClass) p.set("nbcClass", nbcClass);
+
+    const nbcProduct = document.getElementById("crNbcProduct").value;
+    if (nbcProduct) p.set("nbcProduct", nbcProduct);
 
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
 }
@@ -665,6 +720,14 @@ document.getElementById("crBranch").addEventListener("change", crRunReport);
 document.getElementById("crTeam").addEventListener("change", crRunReport);
 document.getElementById("crClass").addEventListener("change", crRunReport);
 document.getElementById("crProduct").addEventListener("change", crRunReport);
+// crNbcClass only picks which already-fetched classification to display
+// (see crActiveSection()) — local re-render, no refetch, same as
+// switching "Showing" itself.
+document.getElementById("crNbcClass").addEventListener("change", () => {
+    crRenderSection();
+    crSyncStateToUrl();
+});
+document.getElementById("crNbcProduct").addEventListener("change", crRunReport);
 
 // Clicking a column header cycles it through ascending -> descending ->
 // default (unsorted, the order the server returned) -> ascending again.
