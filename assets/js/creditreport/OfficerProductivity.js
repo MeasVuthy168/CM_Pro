@@ -113,12 +113,7 @@ const OP_CATEGORIES = [
         // into the "Area:" line itself as a tree, always visible (not
         // gated by expand/collapse) — see opAreaTreeHtml() below.
         areaTeamGroups: [
-            { label: "FSRO", fields: [
-                { key: "loanOutstandingAreaByTeam.fsro.loan", label: "Loan" },
-                { key: "loanOutstandingAreaByTeam.fsro.client", label: "Client" },
-                { key: "loanOutstandingAreaByTeam.fsro.value", label: "Value", money: true }
-            ] },
-            { label: "CO", fields: [
+            { label: "Officer", fields: [
                 { key: "loanOutstandingAreaByTeam.co.loan", label: "Loan" },
                 { key: "loanOutstandingAreaByTeam.co.client", label: "Client" },
                 { key: "loanOutstandingAreaByTeam.co.value", label: "Value", money: true }
@@ -156,11 +151,7 @@ const OP_CATEGORIES = [
             }
         ],
         areaTeamGroups: [
-            { label: "FSRO", fields: [
-                { key: "loanDisburseAreaByTeam.fsro.loan", label: "Loan" },
-                { key: "loanDisburseAreaByTeam.fsro.value", label: "Value", money: true }
-            ] },
-            { label: "CO", fields: [
+            { label: "Officer", fields: [
                 { key: "loanDisburseAreaByTeam.co.loan", label: "Loan" },
                 { key: "loanDisburseAreaByTeam.co.value", label: "Value", money: true }
             ] },
@@ -194,12 +185,7 @@ const OP_CATEGORIES = [
             }
         ],
         areaTeamGroups: [
-            { label: "FSRO", fields: [
-                { key: "parT24AreaByTeam.fsro.loan", label: "Loan" },
-                { key: "parT24AreaByTeam.fsro.value", label: "Value", money: true },
-                { key: "parT24AreaByTeam.fsro.parPct", label: "PAR", pct: true }
-            ] },
-            { label: "CO", fields: [
+            { label: "Officer", fields: [
                 { key: "parT24AreaByTeam.co.loan", label: "Loan" },
                 { key: "parT24AreaByTeam.co.value", label: "Value", money: true },
                 { key: "parT24AreaByTeam.co.parPct", label: "PAR", pct: true }
@@ -242,12 +228,7 @@ const OP_CATEGORIES = [
             }
         ],
         areaTeamGroups: [
-            { label: "FSRO", fields: [
-                { key: "nbcOverdueAreaByTeam.fsro.count", label: "Loan" },
-                { key: "nbcOverdueAreaByTeam.fsro.value", label: "Value", money: true },
-                { key: "nbcOverdueAreaByTeam.fsro.parPct", label: "PAR", pct: true }
-            ] },
-            { label: "CO", fields: [
+            { label: "Officer", fields: [
                 { key: "nbcOverdueAreaByTeam.co.count", label: "Loan" },
                 { key: "nbcOverdueAreaByTeam.co.value", label: "Value", money: true },
                 { key: "nbcOverdueAreaByTeam.co.parPct", label: "PAR", pct: true }
@@ -288,11 +269,7 @@ const OP_CATEGORIES = [
             }
         ],
         areaTeamGroups: [
-            { label: "FSRO", fields: [
-                { key: "writeOffAreaByTeam.fsro.wo.count", label: "Loan" },
-                { key: "writeOffAreaByTeam.fsro.wo.prn", label: "Prn", money: true }
-            ] },
-            { label: "CO", fields: [
+            { label: "Officer", fields: [
                 { key: "writeOffAreaByTeam.co.wo.count", label: "Loan" },
                 { key: "writeOffAreaByTeam.co.wo.prn", label: "Prn", money: true }
             ] },
