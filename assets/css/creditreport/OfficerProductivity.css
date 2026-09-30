@@ -317,18 +317,12 @@
 }
 .op-card.open .op-card-panel{ display:block; }
 
-/* "Area:" — its own figures, plus the FSRO/CO/Digital breakdown nested
-   under it as a tree — always visible in the card head next to Own:,
-   not gated by expand/collapse. Area's own line gets a short connector
-   tick, and each FSRO/CO/Digital row gets its OWN tick one level deeper
-   (not one continuous rule down the whole list), so they read as
-   children of "Area:" the same way Own/Area read as siblings of each
-   other. */
+/* "Area:" — its own figures (no connector tick, same as Own: above),
+   plus the Officer/Digital breakdown nested under it as a tree — always
+   visible in the card head, not gated by expand/collapse. Each
+   Officer/Digital row gets its OWN tick (not one continuous rule down
+   the whole list), so they read as children of "Area:". */
 .op-card-team-breakdown{ margin:4px 0 6px; }
-.op-card-team-breakdown-area{
-    padding-left:10px;
-    border-left:2px solid var(--cr-border);
-}
 .op-card-team-row-wrap{
     margin-left:4px;
     padding-left:14px;
