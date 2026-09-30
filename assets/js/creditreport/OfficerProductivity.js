@@ -461,17 +461,19 @@ function opCardStatsHtml(cat, officer) {
 }
 
 // More detail about Area: CO/FSRO/Digital breakdown of the card's Area
-// figure, same stacked-line shape as Own/Area above — but placed inside
-// .op-card-panel (only shown once the card is expanded), unlike Own/Area
-// which are always visible in the card head.
+// figure, placed inside .op-card-panel (only shown once the card is
+// expanded), unlike Own/Area which are always visible in the card head.
+// No heading text — a left connector rule + indent (picking up right
+// under where "Area:" sits above) plus smaller/lighter row labels are
+// what read as "this is Area, broken down further", not a fourth
+// unrelated section.
 function opAreaTeamGroupsHtml(cat, officer) {
     if (!cat.areaTeamGroups) return "";
     return `
       <div class="op-card-team-breakdown">
-        <div class="op-card-team-breakdown-label">Area by Team</div>
         ${cat.areaTeamGroups.map(g => `
-          <div class="op-card-stats">
-            <span class="op-card-stats-group-label">${opEscapeHtml(g.label)}:</span>
+          <div class="op-card-stats op-card-team-row">
+            <span class="op-card-team-row-label">${opEscapeHtml(g.label)}:</span>
             ${g.fields.map(f => opStatFieldHtml(f, officer)).join("")}
           </div>`).join("")}
       </div>`;
