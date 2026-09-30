@@ -109,6 +109,26 @@ const OP_CATEGORIES = [
                 ]
             }
         ],
+        // Area, broken down by each matched row's own team/channel — see
+        // opCardMarkup()'s "more detail about Area" panel below. Shown
+        // only when the card is expanded, unlike statGroups above.
+        areaTeamGroups: [
+            { label: "CO", fields: [
+                { key: "loanOutstandingAreaByTeam.co.loan", label: "Loan" },
+                { key: "loanOutstandingAreaByTeam.co.client", label: "Client" },
+                { key: "loanOutstandingAreaByTeam.co.value", label: "Value", money: true }
+            ] },
+            { label: "FSRO", fields: [
+                { key: "loanOutstandingAreaByTeam.fsro.loan", label: "Loan" },
+                { key: "loanOutstandingAreaByTeam.fsro.client", label: "Client" },
+                { key: "loanOutstandingAreaByTeam.fsro.value", label: "Value", money: true }
+            ] },
+            { label: "Digital", fields: [
+                { key: "loanOutstandingAreaByTeam.digital.loan", label: "Loan" },
+                { key: "loanOutstandingAreaByTeam.digital.client", label: "Client" },
+                { key: "loanOutstandingAreaByTeam.digital.value", label: "Value", money: true }
+            ] }
+        ],
         clientLists: [
             { section: "outstanding", label: "Own" },
             { section: "outstandingArea", label: "Area" }
@@ -134,6 +154,20 @@ const OP_CATEGORIES = [
                     { key: "loanDisburseArea.value", label: "Value", money: true }
                 ]
             }
+        ],
+        areaTeamGroups: [
+            { label: "CO", fields: [
+                { key: "loanDisburseAreaByTeam.co.loan", label: "Loan" },
+                { key: "loanDisburseAreaByTeam.co.value", label: "Value", money: true }
+            ] },
+            { label: "FSRO", fields: [
+                { key: "loanDisburseAreaByTeam.fsro.loan", label: "Loan" },
+                { key: "loanDisburseAreaByTeam.fsro.value", label: "Value", money: true }
+            ] },
+            { label: "Digital", fields: [
+                { key: "loanDisburseAreaByTeam.digital.loan", label: "Loan" },
+                { key: "loanDisburseAreaByTeam.digital.value", label: "Value", money: true }
+            ] }
         ]
     },
     {
@@ -158,6 +192,23 @@ const OP_CATEGORIES = [
                     { key: "parT24Area.parPct", label: "PAR", pct: true }
                 ]
             }
+        ],
+        areaTeamGroups: [
+            { label: "CO", fields: [
+                { key: "parT24AreaByTeam.co.loan", label: "Loan" },
+                { key: "parT24AreaByTeam.co.value", label: "Value", money: true },
+                { key: "parT24AreaByTeam.co.parPct", label: "PAR", pct: true }
+            ] },
+            { label: "FSRO", fields: [
+                { key: "parT24AreaByTeam.fsro.loan", label: "Loan" },
+                { key: "parT24AreaByTeam.fsro.value", label: "Value", money: true },
+                { key: "parT24AreaByTeam.fsro.parPct", label: "PAR", pct: true }
+            ] },
+            { label: "Digital", fields: [
+                { key: "parT24AreaByTeam.digital.loan", label: "Loan" },
+                { key: "parT24AreaByTeam.digital.value", label: "Value", money: true },
+                { key: "parT24AreaByTeam.digital.parPct", label: "PAR", pct: true }
+            ] }
         ],
         clientLists: [
             { section: "parT24", label: "Own" },
@@ -190,6 +241,23 @@ const OP_CATEGORIES = [
                 ]
             }
         ],
+        areaTeamGroups: [
+            { label: "CO", fields: [
+                { key: "nbcOverdueAreaByTeam.co.count", label: "Loan" },
+                { key: "nbcOverdueAreaByTeam.co.value", label: "Value", money: true },
+                { key: "nbcOverdueAreaByTeam.co.parPct", label: "PAR", pct: true }
+            ] },
+            { label: "FSRO", fields: [
+                { key: "nbcOverdueAreaByTeam.fsro.count", label: "Loan" },
+                { key: "nbcOverdueAreaByTeam.fsro.value", label: "Value", money: true },
+                { key: "nbcOverdueAreaByTeam.fsro.parPct", label: "PAR", pct: true }
+            ] },
+            { label: "Digital", fields: [
+                { key: "nbcOverdueAreaByTeam.digital.count", label: "Loan" },
+                { key: "nbcOverdueAreaByTeam.digital.value", label: "Value", money: true },
+                { key: "nbcOverdueAreaByTeam.digital.parPct", label: "PAR", pct: true }
+            ] }
+        ],
         // Two separate "List of Client" sub-tabs (Own/Area) instead of
         // one — each hits a different officer-clients `section` (see
         // opClientListTabs()/opBuildClientListHtml() below).
@@ -218,6 +286,20 @@ const OP_CATEGORIES = [
                     { key: "writeOffArea.wo.prn", label: "Prn", money: true }
                 ]
             }
+        ],
+        areaTeamGroups: [
+            { label: "CO", fields: [
+                { key: "writeOffAreaByTeam.co.wo.count", label: "Loan" },
+                { key: "writeOffAreaByTeam.co.wo.prn", label: "Prn", money: true }
+            ] },
+            { label: "FSRO", fields: [
+                { key: "writeOffAreaByTeam.fsro.wo.count", label: "Loan" },
+                { key: "writeOffAreaByTeam.fsro.wo.prn", label: "Prn", money: true }
+            ] },
+            { label: "Digital", fields: [
+                { key: "writeOffAreaByTeam.digital.wo.count", label: "Loan" },
+                { key: "writeOffAreaByTeam.digital.wo.prn", label: "Prn", money: true }
+            ] }
         ],
         clientLists: [
             { section: "writeOff", label: "Own" },
@@ -378,6 +460,23 @@ function opCardStatsHtml(cat, officer) {
     return `<div class="op-card-stats">${cat.stats.map(s => opStatFieldHtml(s, officer)).join("")}</div>`;
 }
 
+// More detail about Area: CO/FSRO/Digital breakdown of the card's Area
+// figure, same stacked-line shape as Own/Area above — but placed inside
+// .op-card-panel (only shown once the card is expanded), unlike Own/Area
+// which are always visible in the card head.
+function opAreaTeamGroupsHtml(cat, officer) {
+    if (!cat.areaTeamGroups) return "";
+    return `
+      <div class="op-card-team-breakdown">
+        <div class="op-card-team-breakdown-label">Area by Team</div>
+        ${cat.areaTeamGroups.map(g => `
+          <div class="op-card-stats">
+            <span class="op-card-stats-group-label">${opEscapeHtml(g.label)}:</span>
+            ${g.fields.map(f => opStatFieldHtml(f, officer)).join("")}
+          </div>`).join("")}
+      </div>`;
+}
+
 // A category with clientLists (NBC Overdue, Write Off) gets one "List of
 // Client" tab per entry (Own/Area) instead of one — each tab's data-mode
 // is "list:<section>" so opEnsureModeLoaded knows which officer-clients
@@ -405,6 +504,7 @@ function opCardMarkup(cat, officer) {
           <div class="op-card-caret">▾</div>
         </button>
         <div class="op-card-panel">
+          ${opAreaTeamGroupsHtml(cat, officer)}
           <div class="op-mode-tabs">
             ${listTabsHtml}
             ${chartTabHtml}
@@ -463,6 +563,11 @@ document.getElementById("opCards").addEventListener("click", (e) => {
         if (willOpen) {
             const activeTab = card.querySelector(".op-mode-tab.active");
             opEnsureModeLoaded(card, activeTab ? activeTab.dataset.mode : "list");
+            // The Area-by-team rows inside .op-card-panel were display:none
+            // (scrollWidth/clientWidth both 0) when opFitStatsToWidth() ran
+            // at initial render, so they never got their own shrink-to-fit
+            // pass — do it now that they're actually visible.
+            requestAnimationFrame(opFitStatsToWidth);
         }
         return;
     }
