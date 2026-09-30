@@ -205,6 +205,22 @@ function crReadStateFromUrl() {
             productSel.value = t24Product;
         }
     }
+
+    const nbcClass = p.get("nbcClass");
+    if (nbcClass) {
+        const nbcClassSel = document.getElementById("crNbcClass");
+        if ([...nbcClassSel.options].some(o => o.value === nbcClass)) {
+            nbcClassSel.value = nbcClass;
+        }
+    }
+
+    const nbcProduct = p.get("nbcProduct");
+    if (nbcProduct) {
+        const nbcProductSel = document.getElementById("crNbcProduct");
+        if ([...nbcProductSel.options].some(o => o.value === nbcProduct)) {
+            nbcProductSel.value = nbcProduct;
+        }
+    }
 }
 
 function crSyncStateToUrl() {
@@ -225,6 +241,12 @@ function crSyncStateToUrl() {
 
     const t24Product = document.getElementById("crProduct").value;
     if (t24Product) p.set("t24Product", t24Product);
+
+    const nbcClass = document.getElementById("crNbcClass").value;
+    if (nbcClass) p.set("nbcClass", nbcClass);
+
+    const nbcProduct = document.getElementById("crNbcProduct").value;
+    if (nbcProduct) p.set("nbcProduct", nbcProduct);
 
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
 }
@@ -479,10 +501,32 @@ function crBuildRow(item, section, isTotal) {
     return html;
 }
 
+// Maps the NBC Overdue Loan Class filter's values to the matching group's
+// index within CR_SECTIONS.nbcOverdue.groups (built in this same fixed
+// order — see CR_SECTIONS above) — lets the Loan Class filter collapse
+// the wide 7-classification table down to just the one selected, the
+// same single-group shape parT24 already renders as. Every classification
+// is already present in the API response regardless of this filter, so
+// no refetch is needed — this is purely a display choice.
+const CR_NBC_CLASS_INDEX = {
+    minor: 0, specialMention: 1, subStandard: 2, doubtful: 3,
+    loss: 4, majorDefault: 5, nonPerformingLoan: 6
+};
+
+function crActiveSection(sectionKey) {
+    const section = CR_SECTIONS[sectionKey];
+    if (sectionKey !== "nbcOverdue") return section;
+
+    const nbcClass = document.getElementById("crNbcClass").value;
+    const idx = CR_NBC_CLASS_INDEX[nbcClass];
+    if (idx === undefined) return section;
+    return { groups: [section.groups[idx]] };
+}
+
 function crRenderSummary() {
     if (!crSummaryData) return;
     const sectionKey = document.getElementById("crSection").value;
-    const section = CR_SECTIONS[sectionKey];
+    const section = crActiveSection(sectionKey);
 
     const displayItems = crApplySort(crSummaryData.items);
 
@@ -612,6 +656,14 @@ document.getElementById("crSection").addEventListener("change", () => {
 });
 document.getElementById("crClass").addEventListener("change", crRunReport);
 document.getElementById("crProduct").addEventListener("change", crRunReport);
+// crNbcClass only picks which already-fetched classification to display
+// (see crActiveSection()) — local re-render, no refetch, same as
+// switching "Showing" itself.
+document.getElementById("crNbcClass").addEventListener("change", () => {
+    crRenderSummary();
+    crSyncStateToUrl();
+});
+document.getElementById("crNbcProduct").addEventListener("change", crRunReport);
 
 // ========================================
 // STICKY HEADER OFFSET
@@ -680,16 +732,27 @@ function crBuildDateQuery() {
 
     const t24Product = document.getElementById("crProduct").value;
     if (t24Product) parts.push(`t24Product=${encodeURIComponent(t24Product)}`);
+
+    // crNbcClass is NOT sent — every classification is already in the
+    // response (see crActiveSection() above), so it's a display-only pick.
+    const nbcProduct = document.getElementById("crNbcProduct").value;
+    if (nbcProduct) parts.push(`nbcProduct=${encodeURIComponent(nbcProduct)}`);
     return parts.length ? `?${parts.join("&")}` : "";
 }
 
-// The Loan Class/Product Type filters only mean something for the Balance
-// Loan at Risk (T24) section — hide them otherwise so they can't be
-// mistaken for applying to Loan Outstanding/NBC Overdue/Write Off too.
+// The T24 Loan Class/Product Type filters only mean something for the
+// Balance Loan at Risk (T24) section, and the NBC Overdue Loan
+// Class/Product Type filters only for the NBC Overdue section — hide
+// each pair otherwise so they can't be mistaken for applying to a
+// section they don't affect.
 function crUpdateClassVisibility() {
-    const isT24 = document.getElementById("crSection").value === "parT24";
+    const section = document.getElementById("crSection").value;
+    const isT24 = section === "parT24";
+    const isNbc = section === "nbcOverdue";
     document.getElementById("crClassRow").style.display = isT24 ? "" : "none";
     document.getElementById("crProductRow").style.display = isT24 ? "" : "none";
+    document.getElementById("crNbcClassRow").style.display = isNbc ? "" : "none";
+    document.getElementById("crNbcProductRow").style.display = isNbc ? "" : "none";
 }
 
 // ========================================
