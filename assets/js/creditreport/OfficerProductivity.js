@@ -109,15 +109,10 @@ const OP_CATEGORIES = [
                 ]
             }
         ],
-        // Area, broken down by each matched row's own team/channel — see
-        // opCardMarkup()'s "more detail about Area" panel below. Shown
-        // only when the card is expanded, unlike statGroups above.
+        // Area, broken down by each matched row's own team/channel — merged
+        // into the "Area:" line itself as a tree, always visible (not
+        // gated by expand/collapse) — see opAreaTreeHtml() below.
         areaTeamGroups: [
-            { label: "Total", fields: [
-                { key: "loanOutstandingArea.loan", label: "Loan" },
-                { key: "loanOutstandingArea.client", label: "Client" },
-                { key: "loanOutstandingArea.value", label: "Value", money: true }
-            ] },
             { label: "FSRO", fields: [
                 { key: "loanOutstandingAreaByTeam.fsro.loan", label: "Loan" },
                 { key: "loanOutstandingAreaByTeam.fsro.client", label: "Client" },
@@ -161,10 +156,6 @@ const OP_CATEGORIES = [
             }
         ],
         areaTeamGroups: [
-            { label: "Total", fields: [
-                { key: "loanDisburseArea.loan", label: "Loan" },
-                { key: "loanDisburseArea.value", label: "Value", money: true }
-            ] },
             { label: "FSRO", fields: [
                 { key: "loanDisburseAreaByTeam.fsro.loan", label: "Loan" },
                 { key: "loanDisburseAreaByTeam.fsro.value", label: "Value", money: true }
@@ -203,11 +194,6 @@ const OP_CATEGORIES = [
             }
         ],
         areaTeamGroups: [
-            { label: "Total", fields: [
-                { key: "parT24Area.loan", label: "Loan" },
-                { key: "parT24Area.value", label: "Value", money: true },
-                { key: "parT24Area.parPct", label: "PAR", pct: true }
-            ] },
             { label: "FSRO", fields: [
                 { key: "parT24AreaByTeam.fsro.loan", label: "Loan" },
                 { key: "parT24AreaByTeam.fsro.value", label: "Value", money: true },
@@ -256,11 +242,6 @@ const OP_CATEGORIES = [
             }
         ],
         areaTeamGroups: [
-            { label: "Total", fields: [
-                { key: "nbcOverdue.totalArea.count", label: "Loan" },
-                { key: "nbcOverdue.totalArea.value", label: "Value", money: true },
-                { key: "nbcOverdue.totalArea.parPct", label: "PAR", pct: true }
-            ] },
             { label: "FSRO", fields: [
                 { key: "nbcOverdueAreaByTeam.fsro.count", label: "Loan" },
                 { key: "nbcOverdueAreaByTeam.fsro.value", label: "Value", money: true },
@@ -307,10 +288,6 @@ const OP_CATEGORIES = [
             }
         ],
         areaTeamGroups: [
-            { label: "Total", fields: [
-                { key: "writeOffArea.wo.count", label: "Loan" },
-                { key: "writeOffArea.wo.prn", label: "Prn", money: true }
-            ] },
             { label: "FSRO", fields: [
                 { key: "writeOffAreaByTeam.fsro.wo.count", label: "Loan" },
                 { key: "writeOffAreaByTeam.fsro.wo.prn", label: "Prn", money: true }
@@ -474,27 +451,35 @@ function opStatFieldHtml(f, officer) {
 }
 function opCardStatsHtml(cat, officer) {
     if (cat.statGroups) {
-        return cat.statGroups.map(g => `
-          <div class="op-card-stats">
-            <span class="op-card-stats-group-label">${opEscapeHtml(g.label)}:</span>
-            ${g.fields.map(f => opStatFieldHtml(f, officer)).join("")}
-          </div>`).join("");
+        return cat.statGroups.map(g => {
+            // Area gets its own values folded straight into the "Area:"
+            // line, with the FSRO/CO/Digital breakdown nested right below
+            // it as a tree — always visible, same as Own, not gated by
+            // expand/collapse. See opAreaTreeHtml().
+            if (g.label === "Area" && cat.areaTeamGroups) {
+                return opAreaTreeHtml(g, cat, officer);
+            }
+            return `
+              <div class="op-card-stats">
+                <span class="op-card-stats-group-label">${opEscapeHtml(g.label)}:</span>
+                ${g.fields.map(f => opStatFieldHtml(f, officer)).join("")}
+              </div>`;
+        }).join("");
     }
     return `<div class="op-card-stats">${cat.stats.map(s => opStatFieldHtml(s, officer)).join("")}</div>`;
 }
 
-// More detail about Area: CO/FSRO/Digital breakdown of the card's Area
-// figure, placed inside .op-card-panel (only shown once the card is
-// expanded), unlike Own/Area which are always visible in the card head.
-// No heading text — a left connector rule + indent (picking up right
-// under where "Area:" sits above) plus smaller/lighter row labels are
-// what read as "this is Area, broken down further", not a fourth
-// unrelated section.
-function opAreaTeamGroupsHtml(cat, officer) {
-    if (!cat.areaTeamGroups) return "";
+// "Area:" — its own combined figures right on that line (same as before),
+// plus a FSRO/CO/Digital breakdown nested under it as a tree: each row
+// gets its own short connector tick, reading as children of "Area:" the
+// same way "Own:" and "Area:" read as siblings of each other.
+function opAreaTreeHtml(areaGroup, cat, officer) {
     return `
       <div class="op-card-team-breakdown">
-        <div class="op-card-team-breakdown-title">Area:</div>
+        <div class="op-card-stats op-card-team-breakdown-area">
+          <span class="op-card-stats-group-label">${opEscapeHtml(areaGroup.label)}:</span>
+          ${areaGroup.fields.map(f => opStatFieldHtml(f, officer)).join("")}
+        </div>
         ${cat.areaTeamGroups.map(g => `
           <div class="op-card-team-row-wrap">
             <div class="op-card-stats op-card-team-row">
@@ -532,7 +517,6 @@ function opCardMarkup(cat, officer) {
           <div class="op-card-caret">▾</div>
         </button>
         <div class="op-card-panel">
-          ${opAreaTeamGroupsHtml(cat, officer)}
           <div class="op-mode-tabs">
             ${listTabsHtml}
             ${chartTabHtml}
@@ -591,11 +575,6 @@ document.getElementById("opCards").addEventListener("click", (e) => {
         if (willOpen) {
             const activeTab = card.querySelector(".op-mode-tab.active");
             opEnsureModeLoaded(card, activeTab ? activeTab.dataset.mode : "list");
-            // The Area-by-team rows inside .op-card-panel were display:none
-            // (scrollWidth/clientWidth both 0) when opFitStatsToWidth() ran
-            // at initial render, so they never got their own shrink-to-fit
-            // pass — do it now that they're actually visible.
-            requestAnimationFrame(opFitStatsToWidth);
         }
         return;
     }
