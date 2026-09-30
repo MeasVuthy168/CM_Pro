@@ -497,7 +497,7 @@ document.getElementById("crThead").addEventListener("click", (e) => {
 // Clicking a product name opens Product Performance for it — same
 // pattern as RepDetailbyBranch.js's own branch-name drill-down: Product
 // Performance always fetches its own summary (there's no already-fetched
-// CO/FSRO breakdown to hand off — this report only ever has each
+// CO/FSRO/Digital breakdown to hand off — this report only ever has each
 // product's combined Total), so only the product name + current date
 // filters need to travel in the URL, no sessionStorage cache.
 // ========================================
