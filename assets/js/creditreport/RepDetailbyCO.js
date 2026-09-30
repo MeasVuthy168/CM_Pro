@@ -454,7 +454,19 @@ function crBuildQuery() {
 
     parts.push(`branch=${encodeURIComponent(crPendingBranch || document.getElementById("crBranch").value)}`);
     parts.push(`team=${encodeURIComponent(document.getElementById("crTeam").value)}`);
+
+    const t24Class = document.getElementById("crClass").value;
+    if (t24Class) parts.push(`t24Class=${encodeURIComponent(t24Class)}`);
     return `?${parts.join("&")}`;
+}
+
+// The Loan Class filter only means something for the Balance Loan at Risk
+// (T24) sections — hide it otherwise so it can't be mistaken for applying
+// to Loan Outstanding/NBC Overdue/Write Off too.
+function crUpdateClassVisibility() {
+    const section = document.getElementById("crSection").value;
+    const isT24 = section === "parT24" || section === "parT24Area";
+    document.getElementById("crClassRow").style.display = isT24 ? "" : "none";
 }
 
 let crDatesInitialised = false;
@@ -536,6 +548,14 @@ function crReadStateFromUrl() {
     setDate("crWoFromDate", "woFromDate");
     setDate("crWoToDate", "woToDate");
     if (hasDateParam) crDatesInitialised = true;
+
+    const t24Class = p.get("t24Class");
+    if (t24Class) {
+        const classSel = document.getElementById("crClass");
+        if ([...classSel.options].some(o => o.value === t24Class)) {
+            classSel.value = t24Class;
+        }
+    }
 }
 
 function crSyncStateToUrl() {
@@ -552,6 +572,9 @@ function crSyncStateToUrl() {
     addDate("toDate", "crToDate");
     addDate("woFromDate", "crWoFromDate");
     addDate("woToDate", "crWoToDate");
+
+    const t24Class = document.getElementById("crClass").value;
+    if (t24Class) p.set("t24Class", t24Class);
 
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
 }
@@ -607,11 +630,13 @@ async function crRunReport() {
 // Section switching is local (no refetch); branch/team are applied
 // server-side, so those do need a round trip.
 document.getElementById("crSection").addEventListener("change", () => {
+    crUpdateClassVisibility();
     crRenderSection();
     crSyncStateToUrl();
 });
 document.getElementById("crBranch").addEventListener("change", crRunReport);
 document.getElementById("crTeam").addEventListener("change", crRunReport);
+document.getElementById("crClass").addEventListener("change", crRunReport);
 
 // Clicking a column header cycles it through ascending -> descending ->
 // default (unsorted, the order the server returned) -> ascending again.
@@ -899,4 +924,5 @@ window.addEventListener("pageshow", () => {
 // INIT
 // ========================================
 crReadStateFromUrl();
+crUpdateClassVisibility();
 crRunReport();

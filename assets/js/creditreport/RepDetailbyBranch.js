@@ -189,6 +189,14 @@ function crReadStateFromUrl() {
     setDate("crWoFromDate", "woFromDate");
     setDate("crWoToDate", "woToDate");
     if (hasDateParam) crDatesInitialised = true;
+
+    const t24Class = p.get("t24Class");
+    if (t24Class) {
+        const classSel = document.getElementById("crClass");
+        if ([...classSel.options].some(o => o.value === t24Class)) {
+            classSel.value = t24Class;
+        }
+    }
 }
 
 function crSyncStateToUrl() {
@@ -203,6 +211,9 @@ function crSyncStateToUrl() {
     addDate("toDate", "crToDate");
     addDate("woFromDate", "crWoFromDate");
     addDate("woToDate", "crWoToDate");
+
+    const t24Class = document.getElementById("crClass").value;
+    if (t24Class) p.set("t24Class", t24Class);
 
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
 }
@@ -584,9 +595,11 @@ document.getElementById("crTbody").addEventListener("click", (e) => {
 });
 
 document.getElementById("crSection").addEventListener("change", () => {
+    crUpdateClassVisibility();
     crRenderSummary();
     crSyncStateToUrl();
 });
+document.getElementById("crClass").addEventListener("change", crRunReport);
 
 // ========================================
 // STICKY HEADER OFFSET
@@ -649,7 +662,18 @@ function crBuildDateQuery() {
     add("toDate", "crToDate");
     add("woFromDate", "crWoFromDate");
     add("woToDate", "crWoToDate");
+
+    const t24Class = document.getElementById("crClass").value;
+    if (t24Class) parts.push(`t24Class=${encodeURIComponent(t24Class)}`);
     return parts.length ? `?${parts.join("&")}` : "";
+}
+
+// The Loan Class filter only means something for the Balance Loan at Risk
+// (T24) section — hide it otherwise so it can't be mistaken for applying
+// to Loan Outstanding/NBC Overdue/Write Off too.
+function crUpdateClassVisibility() {
+    document.getElementById("crClassRow").style.display =
+        document.getElementById("crSection").value === "parT24" ? "" : "none";
 }
 
 // ========================================
@@ -1038,4 +1062,5 @@ window.addEventListener("pageshow", () => {
 // INIT
 // ========================================
 crReadStateFromUrl();
+crUpdateClassVisibility();
 crRunReport();
