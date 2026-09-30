@@ -113,15 +113,20 @@ const OP_CATEGORIES = [
         // opCardMarkup()'s "more detail about Area" panel below. Shown
         // only when the card is expanded, unlike statGroups above.
         areaTeamGroups: [
-            { label: "CO", fields: [
-                { key: "loanOutstandingAreaByTeam.co.loan", label: "Loan" },
-                { key: "loanOutstandingAreaByTeam.co.client", label: "Client" },
-                { key: "loanOutstandingAreaByTeam.co.value", label: "Value", money: true }
+            { label: "Total", fields: [
+                { key: "loanOutstandingArea.loan", label: "Loan" },
+                { key: "loanOutstandingArea.client", label: "Client" },
+                { key: "loanOutstandingArea.value", label: "Value", money: true }
             ] },
             { label: "FSRO", fields: [
                 { key: "loanOutstandingAreaByTeam.fsro.loan", label: "Loan" },
                 { key: "loanOutstandingAreaByTeam.fsro.client", label: "Client" },
                 { key: "loanOutstandingAreaByTeam.fsro.value", label: "Value", money: true }
+            ] },
+            { label: "CO", fields: [
+                { key: "loanOutstandingAreaByTeam.co.loan", label: "Loan" },
+                { key: "loanOutstandingAreaByTeam.co.client", label: "Client" },
+                { key: "loanOutstandingAreaByTeam.co.value", label: "Value", money: true }
             ] },
             { label: "Digital", fields: [
                 { key: "loanOutstandingAreaByTeam.digital.loan", label: "Loan" },
@@ -156,13 +161,17 @@ const OP_CATEGORIES = [
             }
         ],
         areaTeamGroups: [
-            { label: "CO", fields: [
-                { key: "loanDisburseAreaByTeam.co.loan", label: "Loan" },
-                { key: "loanDisburseAreaByTeam.co.value", label: "Value", money: true }
+            { label: "Total", fields: [
+                { key: "loanDisburseArea.loan", label: "Loan" },
+                { key: "loanDisburseArea.value", label: "Value", money: true }
             ] },
             { label: "FSRO", fields: [
                 { key: "loanDisburseAreaByTeam.fsro.loan", label: "Loan" },
                 { key: "loanDisburseAreaByTeam.fsro.value", label: "Value", money: true }
+            ] },
+            { label: "CO", fields: [
+                { key: "loanDisburseAreaByTeam.co.loan", label: "Loan" },
+                { key: "loanDisburseAreaByTeam.co.value", label: "Value", money: true }
             ] },
             { label: "Digital", fields: [
                 { key: "loanDisburseAreaByTeam.digital.loan", label: "Loan" },
@@ -194,15 +203,20 @@ const OP_CATEGORIES = [
             }
         ],
         areaTeamGroups: [
-            { label: "CO", fields: [
-                { key: "parT24AreaByTeam.co.loan", label: "Loan" },
-                { key: "parT24AreaByTeam.co.value", label: "Value", money: true },
-                { key: "parT24AreaByTeam.co.parPct", label: "PAR", pct: true }
+            { label: "Total", fields: [
+                { key: "parT24Area.loan", label: "Loan" },
+                { key: "parT24Area.value", label: "Value", money: true },
+                { key: "parT24Area.parPct", label: "PAR", pct: true }
             ] },
             { label: "FSRO", fields: [
                 { key: "parT24AreaByTeam.fsro.loan", label: "Loan" },
                 { key: "parT24AreaByTeam.fsro.value", label: "Value", money: true },
                 { key: "parT24AreaByTeam.fsro.parPct", label: "PAR", pct: true }
+            ] },
+            { label: "CO", fields: [
+                { key: "parT24AreaByTeam.co.loan", label: "Loan" },
+                { key: "parT24AreaByTeam.co.value", label: "Value", money: true },
+                { key: "parT24AreaByTeam.co.parPct", label: "PAR", pct: true }
             ] },
             { label: "Digital", fields: [
                 { key: "parT24AreaByTeam.digital.loan", label: "Loan" },
@@ -242,15 +256,20 @@ const OP_CATEGORIES = [
             }
         ],
         areaTeamGroups: [
-            { label: "CO", fields: [
-                { key: "nbcOverdueAreaByTeam.co.count", label: "Loan" },
-                { key: "nbcOverdueAreaByTeam.co.value", label: "Value", money: true },
-                { key: "nbcOverdueAreaByTeam.co.parPct", label: "PAR", pct: true }
+            { label: "Total", fields: [
+                { key: "nbcOverdue.totalArea.count", label: "Loan" },
+                { key: "nbcOverdue.totalArea.value", label: "Value", money: true },
+                { key: "nbcOverdue.totalArea.parPct", label: "PAR", pct: true }
             ] },
             { label: "FSRO", fields: [
                 { key: "nbcOverdueAreaByTeam.fsro.count", label: "Loan" },
                 { key: "nbcOverdueAreaByTeam.fsro.value", label: "Value", money: true },
                 { key: "nbcOverdueAreaByTeam.fsro.parPct", label: "PAR", pct: true }
+            ] },
+            { label: "CO", fields: [
+                { key: "nbcOverdueAreaByTeam.co.count", label: "Loan" },
+                { key: "nbcOverdueAreaByTeam.co.value", label: "Value", money: true },
+                { key: "nbcOverdueAreaByTeam.co.parPct", label: "PAR", pct: true }
             ] },
             { label: "Digital", fields: [
                 { key: "nbcOverdueAreaByTeam.digital.count", label: "Loan" },
@@ -288,13 +307,17 @@ const OP_CATEGORIES = [
             }
         ],
         areaTeamGroups: [
-            { label: "CO", fields: [
-                { key: "writeOffAreaByTeam.co.wo.count", label: "Loan" },
-                { key: "writeOffAreaByTeam.co.wo.prn", label: "Prn", money: true }
+            { label: "Total", fields: [
+                { key: "writeOffArea.wo.count", label: "Loan" },
+                { key: "writeOffArea.wo.prn", label: "Prn", money: true }
             ] },
             { label: "FSRO", fields: [
                 { key: "writeOffAreaByTeam.fsro.wo.count", label: "Loan" },
                 { key: "writeOffAreaByTeam.fsro.wo.prn", label: "Prn", money: true }
+            ] },
+            { label: "CO", fields: [
+                { key: "writeOffAreaByTeam.co.wo.count", label: "Loan" },
+                { key: "writeOffAreaByTeam.co.wo.prn", label: "Prn", money: true }
             ] },
             { label: "Digital", fields: [
                 { key: "writeOffAreaByTeam.digital.wo.count", label: "Loan" },
@@ -471,10 +494,13 @@ function opAreaTeamGroupsHtml(cat, officer) {
     if (!cat.areaTeamGroups) return "";
     return `
       <div class="op-card-team-breakdown">
+        <div class="op-card-team-breakdown-title">Area:</div>
         ${cat.areaTeamGroups.map(g => `
-          <div class="op-card-stats op-card-team-row">
-            <span class="op-card-team-row-label">${opEscapeHtml(g.label)}:</span>
-            ${g.fields.map(f => opStatFieldHtml(f, officer)).join("")}
+          <div class="op-card-team-row-wrap">
+            <div class="op-card-stats op-card-team-row">
+              <span class="op-card-team-row-label">${opEscapeHtml(g.label)}:</span>
+              ${g.fields.map(f => opStatFieldHtml(f, officer)).join("")}
+            </div>
           </div>`).join("")}
       </div>`;
 }
