@@ -457,16 +457,20 @@ function crBuildQuery() {
 
     const t24Class = document.getElementById("crClass").value;
     if (t24Class) parts.push(`t24Class=${encodeURIComponent(t24Class)}`);
+
+    const t24Product = document.getElementById("crProduct").value;
+    if (t24Product) parts.push(`t24Product=${encodeURIComponent(t24Product)}`);
     return `?${parts.join("&")}`;
 }
 
-// The Loan Class filter only means something for the Balance Loan at Risk
-// (T24) sections — hide it otherwise so it can't be mistaken for applying
-// to Loan Outstanding/NBC Overdue/Write Off too.
+// The Loan Class/Product Type filters only mean something for the Balance
+// Loan at Risk (T24) sections — hide them otherwise so they can't be
+// mistaken for applying to Loan Outstanding/NBC Overdue/Write Off too.
 function crUpdateClassVisibility() {
     const section = document.getElementById("crSection").value;
     const isT24 = section === "parT24" || section === "parT24Area";
     document.getElementById("crClassRow").style.display = isT24 ? "" : "none";
+    document.getElementById("crProductRow").style.display = isT24 ? "" : "none";
 }
 
 let crDatesInitialised = false;
@@ -556,6 +560,14 @@ function crReadStateFromUrl() {
             classSel.value = t24Class;
         }
     }
+
+    const t24Product = p.get("t24Product");
+    if (t24Product) {
+        const productSel = document.getElementById("crProduct");
+        if ([...productSel.options].some(o => o.value === t24Product)) {
+            productSel.value = t24Product;
+        }
+    }
 }
 
 function crSyncStateToUrl() {
@@ -575,6 +587,9 @@ function crSyncStateToUrl() {
 
     const t24Class = document.getElementById("crClass").value;
     if (t24Class) p.set("t24Class", t24Class);
+
+    const t24Product = document.getElementById("crProduct").value;
+    if (t24Product) p.set("t24Product", t24Product);
 
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
 }
@@ -637,6 +652,7 @@ document.getElementById("crSection").addEventListener("change", () => {
 document.getElementById("crBranch").addEventListener("change", crRunReport);
 document.getElementById("crTeam").addEventListener("change", crRunReport);
 document.getElementById("crClass").addEventListener("change", crRunReport);
+document.getElementById("crProduct").addEventListener("change", crRunReport);
 
 // Clicking a column header cycles it through ascending -> descending ->
 // default (unsorted, the order the server returned) -> ascending again.
