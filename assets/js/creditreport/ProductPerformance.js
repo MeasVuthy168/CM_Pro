@@ -2,33 +2,39 @@
 // PRODUCT PERFORMANCE — per-product drill-down from
 // RepDetailbyProduct.html (click a product name there to land here).
 //
-// CO / FSRO breakdown — every category splits the same way, just scoped
-// by product instead of branch. No Digital Loan bucket here (removed
-// 2026-09-29 per explicit request): unlike Branch Productivity, which
-// keeps its own 3-way CO/FSRO/Digital split, every row that isn't FSRO
-// counts as CO. CM-backend's lib/creditreport-product.js
+// CO / FSRO / Digital breakdown — every category splits the same way,
+// just scoped by product instead of branch. Digital here is NOT the
+// officer-ID-based concept Branch Productivity uses for its own page —
+// it's product-driven (reintroduced 2026-09-29 per explicit request):
+// Advance Salary Loan, Loan againts Term Deposit, Payroll Loan, and By
+// Now Pay Later aren't real CO/FSRO officer productivity at all, so
+// EVERY row of one of those 4 products counts as Digital regardless of
+// its own team field (see DIGITAL_PRODUCTS in
+// CM-backend's lib/creditreport-product.js). A page for one of those 4
+// products is therefore entirely Digital (CO/FSRO both zero); every
+// other product page has zero Digital. CM-backend's
 // computeProductPerformance() reuses the exact same column indices
 // already confirmed in lib/creditreport-branch.js for these 5 sheets.
 //
 // Like Branch Productivity, there's no "already-fetched" instant-paint
 // handoff: RepDetailbyProduct.js's own report only ever holds each
-// product's combined Total, never the CO/FSRO breakdown, so this page
-// always fetches its own summary on load (URL query string only —
+// product's combined Total, never the CO/FSRO/Digital breakdown, so this
+// page always fetches its own summary on load (URL query string only —
 // product name + the report's current date filters — no sessionStorage
 // cache needed).
 //
 // BACKEND ENDPOINTS (CM-backend's lib/creditreport-product.js)
 //   GET /api/creditreport/product-performance-summary
 //     ?product=<name>&fromDate=&toDate=&woFromDate=&woToDate=
-//   -> { ok, product, meta, co, fsro, total }
-//   Each of co/fsro/total has the same shape:
+//   -> { ok, product, meta, co, fsro, digital, total }
+//   Each of co/fsro/digital/total has the same shape:
 //     { loanOutstanding:{loan,client,value}, loanDisburse:{loan,value},
 //       parT24:{loan,value,parPct}, nbcOverdue:{...8 keys...},
 //       writeOff:{balanceWO,wo,woCollected} }
 //
 //   GET /api/creditreport/product-clients
 //     ?product=<name>&section=<outstanding|disburse|parT24|nbcOverdue|
-//               writeOff>&bucket=<co|fsro>
+//               writeOff>&bucket=<co|fsro|digital>
 //     &fromDate=&toDate=&woFromDate=&woToDate=
 //   -> { ok, items: [...] } — same row shape as Branch Productivity's
 //      branch-clients (see that file's own header comment for the full
@@ -37,8 +43,8 @@
 //   GET /api/creditreport/product-disburse-chart
 //     ?product=<name>&fromDate=
 //   -> { ok, labels, dates, values, counts }
-//   Product-wide daily disbursement (CO+FSRO combined — one chart, not
-//   two), same mechanism as branch-disburse-chart.
+//   Product-wide daily disbursement (CO+FSRO+Digital combined — one
+//   chart, not three), same mechanism as branch-disburse-chart.
 //
 //   GET /api/creditreport/byco/kh-holidays — reused as-is (not
 //   product-specific), same as Branch/Officer Productivity.
@@ -69,11 +75,17 @@ const PP_CATEGORIES = [
                 { key: "fsro.loanOutstanding.loan", label: "Loan" },
                 { key: "fsro.loanOutstanding.client", label: "Client" },
                 { key: "fsro.loanOutstanding.value", label: "Value", money: true }
+            ] },
+            { label: "Digital", fields: [
+                { key: "digital.loanOutstanding.loan", label: "Loan" },
+                { key: "digital.loanOutstanding.client", label: "Client" },
+                { key: "digital.loanOutstanding.value", label: "Value", money: true }
             ] }
         ],
         clientLists: [
             { bucket: "co", label: "CO" },
-            { bucket: "fsro", label: "FSRO" }
+            { bucket: "fsro", label: "FSRO" },
+            { bucket: "digital", label: "Digital" }
         ]
     },
     {
@@ -93,11 +105,16 @@ const PP_CATEGORIES = [
             { label: "FSRO", fields: [
                 { key: "fsro.loanDisburse.loan", label: "Loan" },
                 { key: "fsro.loanDisburse.value", label: "Value", money: true }
+            ] },
+            { label: "Digital", fields: [
+                { key: "digital.loanDisburse.loan", label: "Loan" },
+                { key: "digital.loanDisburse.value", label: "Value", money: true }
             ] }
         ],
         clientLists: [
             { bucket: "co", label: "CO" },
-            { bucket: "fsro", label: "FSRO" }
+            { bucket: "fsro", label: "FSRO" },
+            { bucket: "digital", label: "Digital" }
         ]
     },
     {
@@ -120,11 +137,17 @@ const PP_CATEGORIES = [
                 { key: "fsro.parT24.loan", label: "Loan" },
                 { key: "fsro.parT24.value", label: "Value", money: true },
                 { key: "fsro.parT24.parPct", label: "PAR", pct: true }
+            ] },
+            { label: "Digital", fields: [
+                { key: "digital.parT24.loan", label: "Loan" },
+                { key: "digital.parT24.value", label: "Value", money: true },
+                { key: "digital.parT24.parPct", label: "PAR", pct: true }
             ] }
         ],
         clientLists: [
             { bucket: "co", label: "CO" },
-            { bucket: "fsro", label: "FSRO" }
+            { bucket: "fsro", label: "FSRO" },
+            { bucket: "digital", label: "Digital" }
         ]
     },
     {
@@ -147,11 +170,17 @@ const PP_CATEGORIES = [
                 { key: "fsro.nbcOverdue.total.count", label: "Loan" },
                 { key: "fsro.nbcOverdue.total.value", label: "Value", money: true },
                 { key: "fsro.nbcOverdue.total.parPct", label: "PAR", pct: true }
+            ] },
+            { label: "Digital", fields: [
+                { key: "digital.nbcOverdue.total.count", label: "Loan" },
+                { key: "digital.nbcOverdue.total.value", label: "Value", money: true },
+                { key: "digital.nbcOverdue.total.parPct", label: "PAR", pct: true }
             ] }
         ],
         clientLists: [
             { bucket: "co", label: "CO" },
-            { bucket: "fsro", label: "FSRO" }
+            { bucket: "fsro", label: "FSRO" },
+            { bucket: "digital", label: "Digital" }
         ]
     },
     {
@@ -171,11 +200,16 @@ const PP_CATEGORIES = [
             { label: "FSRO", fields: [
                 { key: "fsro.writeOff.wo.count", label: "Loan" },
                 { key: "fsro.writeOff.wo.prn", label: "Prn", money: true }
+            ] },
+            { label: "Digital", fields: [
+                { key: "digital.writeOff.wo.count", label: "Loan" },
+                { key: "digital.writeOff.wo.prn", label: "Prn", money: true }
             ] }
         ],
         clientLists: [
             { bucket: "co", label: "CO" },
-            { bucket: "fsro", label: "FSRO" }
+            { bucket: "fsro", label: "FSRO" },
+            { bucket: "digital", label: "Digital" }
         ]
     }
 ];
@@ -302,9 +336,9 @@ function ppStatGroupHtml(g, data) {
         ${g.fields.map(f => ppStatFieldHtml(f, data)).join("")}
       </div>`;
 }
-// The Total row always shows; CO/FSRO only reveal once the card is
-// expanded (see .bp-card-stats-buckets in BranchProductivity.css, reused
-// here as-is).
+// The Total row always shows; CO/FSRO/Digital only reveal once the card
+// is expanded (see .bp-card-stats-buckets in BranchProductivity.css,
+// reused here as-is).
 function ppCardStatsHtml(cat, data) {
     const totalHtml = cat.statGroups.filter(g => g.total).map(g => ppStatGroupHtml(g, data)).join("");
     const bucketHtml = cat.statGroups.filter(g => !g.total).map(g => ppStatGroupHtml(g, data)).join("");
@@ -383,9 +417,9 @@ document.getElementById("ppCards").addEventListener("click", (e) => {
         });
         card.classList.toggle("open", willOpen);
         head.setAttribute("aria-expanded", willOpen ? "true" : "false");
-        // CO/FSRO rows are hidden until expanded, so they were skipped by
-        // the last width-fit pass — measure them now that they're
-        // visible.
+        // CO/FSRO/Digital rows are hidden until expanded, so they were
+        // skipped by the last width-fit pass — measure them now that
+        // they're visible.
         ppFitStatsToWidth();
         if (willOpen) {
             const activeTab = card.querySelector(".op-mode-tab.active");
@@ -633,8 +667,8 @@ function ppRenderClientListInto(container, rows, { arrears = false, showDate = t
 // ========================================
 // LOAN DISBURSE — CALENDAR HEATMAP
 // Same mechanism as Branch Productivity's own (bpBuildDisburseHeatmapHtml
-// etc.) — product-wide (CO+FSRO combined into one chart, not split in
-// two), reused function-for-function under the pp prefix.
+// etc.) — product-wide (CO+FSRO+Digital combined into one chart, not
+// split into three), reused function-for-function under the pp prefix.
 // ========================================
 function ppHeatBucket(value, maxValue) {
     if (!value || value <= 0 || !maxValue) return 0;
@@ -787,13 +821,13 @@ function ppWireHeatmapTooltips(container) {
 }
 
 // Unlike Officer Productivity's per-day panel (one officer, one bucket
-// implicitly), a product day's disbursements can span CO/FSRO — the
-// heatmap itself is combined, so the day-click panel fetches both
-// buckets in parallel and merges them, rather than adding a bucket-less
-// "all" mode to the product-clients endpoint just for this.
+// implicitly), a product day's disbursements can span CO/FSRO/Digital —
+// the heatmap itself is combined, so the day-click panel fetches all
+// three buckets in parallel and merges them, rather than adding a
+// bucket-less "all" mode to the product-clients endpoint just for this.
 async function ppFetchDayClients(dateKey) {
     const q = ppBuildQuery({ ...ppState.meta, fromDate: dateKey, toDate: dateKey });
-    const buckets = ["co", "fsro"];
+    const buckets = ["co", "fsro", "digital"];
     const results = await Promise.all(buckets.map(async bucket => {
         const url = `${API.BASE_URL}/api/creditreport/product-clients?product=${encodeURIComponent(ppState.product)}` +
             `&section=disburse&bucket=${bucket}${q}`;
