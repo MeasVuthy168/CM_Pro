@@ -31,6 +31,21 @@ let crLoanReclass = null;  // { value, count } — rendered in the note under th
 let crBalancePD = null;    // { value, count } — the other half of that note
 
 // ========================================
+// DAILY HISTORY — "current" (today's live report, unchanged default
+// behaviour) vs "history" (a Date column added to this same table, one
+// row per branch per day across a date range), per explicit request
+// 2026-10-01. Backed by CM-backend's /api/creditreport/summary/history,
+// which snapshots this exact table once a day — see
+// lib/creditreport-branch.js's runBranchDailySnapshotNow().
+// ========================================
+let crMode = "current"; // "current" | "history"
+let crHistoryData = null; // { days: [{ date, items, total }, ...] }
+const crLoggedInUser = JSON.parse(
+    localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}"
+);
+const crIsAdmin = String(crLoggedInUser.role || "").toLowerCase() === "admin";
+
+// ========================================
 // SECTION DEFINITIONS
 // Each field's `key` is a dot-path into a branch item (or `total`).
 // money:true -> thousands-formatted number. pct:true -> XX.XX%.
@@ -540,6 +555,125 @@ function crRenderSummary() {
 }
 
 // ========================================
+// HISTORY MODE — same section/field definitions as the live table
+// (crActiveSection, crFmtField, crFieldClass all reused as-is), just
+// with an extra Date column and one row per (branch, date) instead of
+// one row per branch. No CO/FSRO/Digital inline expand here — every
+// history row is already the branch's combined Total, same as the live
+// table's default (collapsed) state.
+// ========================================
+function crBuildHistoryThead(section) {
+    const groupCells = section.groups.map(g =>
+        `<th colspan="${g.fields.length}">${g.label}</th>`
+    ).join("");
+    const subCells = section.groups.map(g =>
+        g.fields.map(f => `<th class="${crFieldClass(f)}">${f.label}</th>`).join("")
+    ).join("");
+    return `
+      <tr class="cr-group-row">
+        <th rowspan="2" class="cr-branch-col">Branch</th>
+        <th rowspan="2" class="cr-date-col">Date</th>
+        ${groupCells}
+      </tr>
+      <tr class="cr-sub-row">
+        ${subCells}
+      </tr>`;
+}
+
+function crBuildHistoryRow(dateKey, item, section, isTotal) {
+    const cells = section.groups.map(g =>
+        g.fields.map(f => crFmtField(item, f)).join("")
+    ).join("");
+    const branchLabel = isTotal ? "Total" : item.branch;
+    return `
+      <tr${isTotal ? ' class="cr-total-row"' : ""}>
+        <td class="cr-branch-col">${crEscapeHtml(branchLabel)}</td>
+        <td class="cr-date-col">${crFmtDateDMY(dateKey)}</td>
+        ${cells}
+      </tr>`;
+}
+
+function crRenderHistory() {
+    if (!crHistoryData) return;
+    const sectionKey = document.getElementById("crSection").value;
+    const section = crActiveSection(sectionKey);
+
+    document.getElementById("crThead").innerHTML = crBuildHistoryThead(section);
+
+    if (!crHistoryData.days.length) {
+        document.getElementById("crTbody").innerHTML = "";
+        crShowEmpty("គ្មានទិន្នន័យសម្រាប់ចន្លោះកាលបរិច្ឆេទនេះទេ / No history saved for this date range yet.");
+        return;
+    }
+
+    // Grouped by branch (each branch's day-by-day run together), in the
+    // same branch order the first day's items came back in — then one
+    // "Total" block, both in chronological date order within each block.
+    const branchOrder = crHistoryData.days[0].items.map(it => it.branch);
+    let rowsHtml = "";
+    for (const branch of branchOrder) {
+        for (const day of crHistoryData.days) {
+            const item = day.items.find(it => it.branch === branch);
+            if (item) rowsHtml += crBuildHistoryRow(day.date, item, section, false);
+        }
+    }
+    for (const day of crHistoryData.days) {
+        rowsHtml += crBuildHistoryRow(day.date, day.total, section, true);
+    }
+
+    document.getElementById("crTbody").innerHTML = rowsHtml;
+    document.getElementById("crTableScroll").style.display = "block";
+    document.getElementById("crEmptyMsg").style.display = "none";
+    requestAnimationFrame(crSetHeaderOffsets);
+}
+
+async function crFetchHistory() {
+    const dateFrom = document.getElementById("crHistFromDate").value;
+    const dateTo = document.getElementById("crHistToDate").value;
+    if (!dateFrom || !dateTo) return;
+
+    crShowLoading();
+    try {
+        const url = `${API.BASE_URL}/api/creditreport/summary/history?dateFrom=${dateFrom}&dateTo=${dateTo}`;
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
+        const data = await res.json();
+        crHideLoading();
+
+        if (!data.ok) {
+            crShowEmpty(data.message || "Failed to load history.");
+            return;
+        }
+        crHistoryData = data;
+        crRenderHistory();
+    } catch (e) {
+        console.error(e);
+        crHideLoading();
+        crShowEmpty("Network error loading history.");
+    }
+}
+
+function crSetMode(mode) {
+    crMode = mode;
+    document.getElementById("crModeCurrentBtn").classList.toggle("active", mode === "current");
+    document.getElementById("crModeHistoryBtn").classList.toggle("active", mode === "history");
+    document.getElementById("crHistoryPanel").style.display = mode === "history" ? "block" : "none";
+    crUpdateClassVisibility();
+
+    if (mode === "current") {
+        if (crSummaryData) {
+            document.getElementById("crTableScroll").style.display = "block";
+            document.getElementById("crEmptyMsg").style.display = "none";
+            crRenderSummary();
+        }
+    } else if (crHistoryData) {
+        crRenderHistory();
+    } else {
+        document.getElementById("crTableScroll").style.display = "none";
+        crShowEmpty("ជ្រើសរើសចន្លោះកាលបរិច្ឆេទ រួចចុច \"មើលប្រវត្តិ\" / Pick a date range, then click \"View History\".");
+    }
+}
+
+// ========================================
 // BRANCH DRILL-DOWN
 // Clicking a branch name opens Branch Productivity for it — same
 // pattern as RepDetailbyCO.js's officer-name drill-down, but simpler:
@@ -651,7 +785,7 @@ document.getElementById("crTbody").addEventListener("click", (e) => {
 
 document.getElementById("crSection").addEventListener("change", () => {
     crUpdateClassVisibility();
-    crRenderSummary();
+    if (crMode === "history") crRenderHistory(); else crRenderSummary();
     crSyncStateToUrl();
 });
 document.getElementById("crClass").addEventListener("change", crRunReport);
@@ -660,7 +794,7 @@ document.getElementById("crProduct").addEventListener("change", crRunReport);
 // (see crActiveSection()) — local re-render, no refetch, same as
 // switching "Showing" itself.
 document.getElementById("crNbcClass").addEventListener("change", () => {
-    crRenderSummary();
+    if (crMode === "history") crRenderHistory(); else crRenderSummary();
     crSyncStateToUrl();
 });
 document.getElementById("crNbcProduct").addEventListener("change", crRunReport);
@@ -749,10 +883,17 @@ function crUpdateClassVisibility() {
     const section = document.getElementById("crSection").value;
     const isT24 = section === "parT24";
     const isNbc = section === "nbcOverdue";
-    document.getElementById("crClassRow").style.display = isT24 ? "" : "none";
-    document.getElementById("crProductRow").style.display = isT24 ? "" : "none";
+    // History rows are precomputed daily snapshots with every
+    // classification/product already in them (see crActiveSection()) —
+    // the T24/NBC Product Type filters need a server-side recompute this
+    // view doesn't do, so they're hidden in History mode. The NBC Loan
+    // Class picker stays: it's a local display pick among the
+    // already-fetched classifications, same as in Current mode.
+    const isHistory = crMode === "history";
+    document.getElementById("crClassRow").style.display = (isT24 && !isHistory) ? "" : "none";
+    document.getElementById("crProductRow").style.display = (isT24 && !isHistory) ? "" : "none";
     document.getElementById("crNbcClassRow").style.display = isNbc ? "" : "none";
-    document.getElementById("crNbcProductRow").style.display = isNbc ? "" : "none";
+    document.getElementById("crNbcProductRow").style.display = (isNbc && !isHistory) ? "" : "none";
 }
 
 // ========================================
@@ -1136,6 +1277,50 @@ window.addEventListener("pageshow", () => {
     clearTimeout(crLandscapeHideTimer);
     document.body.classList.remove("cr-force-landscape");
 });
+
+// ========================================
+// HISTORY MODE — UI wiring
+// ========================================
+document.getElementById("crModeCurrentBtn").addEventListener("click", () => crSetMode("current"));
+document.getElementById("crModeHistoryBtn").addEventListener("click", () => crSetMode("history"));
+document.getElementById("btnCrHistRun").addEventListener("click", crFetchHistory);
+
+if (crIsAdmin) {
+    document.getElementById("btnCrHistSnapshot").style.display = "";
+    document.getElementById("btnCrHistSnapshot").addEventListener("click", async () => {
+        const btn = document.getElementById("btnCrHistSnapshot");
+        btn.disabled = true;
+        try {
+            const res = await fetch(`${API.BASE_URL}/api/creditreport/summary/snapshot/run`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${crToken}`, "Content-Type": "application/json" },
+                body: "{}"
+            });
+            const data = await res.json();
+            if (data.ok) {
+                notify(`Snapshot saved for ${data.date}`, "success");
+            } else {
+                notify(data.message || "Snapshot failed", "error");
+            }
+        } catch (e) {
+            console.error(e);
+            notify("Snapshot failed", "error");
+        } finally {
+            btn.disabled = false;
+        }
+    });
+}
+
+// Default history range: the 1st of the current month through today —
+// matches the "01/10/2026...31/10/2026" example from the request.
+(function crSeedHistoryDates() {
+    const now = new Date();
+    const p = n => String(n).padStart(2, "0");
+    const monthStart = `${now.getFullYear()}-${p(now.getMonth() + 1)}-01`;
+    const today = `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
+    document.getElementById("crHistFromDate").value = monthStart;
+    document.getElementById("crHistToDate").value = today;
+})();
 
 // ========================================
 // INIT
