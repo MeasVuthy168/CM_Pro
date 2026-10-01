@@ -611,23 +611,23 @@ function crBuildHistoryRow(dateKey, item, section, isTotal) {
 
     if (isExpanded && item.breakdown) {
         html +=
-            crBuildHistoryBreakdownRow(item.breakdown.co, section, "CO") +
-            crBuildHistoryBreakdownRow(item.breakdown.fsro, section, "FSRO") +
-            crBuildHistoryBreakdownRow(item.breakdown.digital, section, "Digital");
+            crBuildHistoryBreakdownRow(dateKey, item.breakdown.co, section, "CO") +
+            crBuildHistoryBreakdownRow(dateKey, item.breakdown.fsro, section, "FSRO") +
+            crBuildHistoryBreakdownRow(dateKey, item.breakdown.digital, section, "Digital");
     }
     return html;
 }
 
 // Same shape as crBuildSummaryBreakdownRow (the live table's own), with
-// an extra blank Date cell so columns stay aligned.
-function crBuildHistoryBreakdownRow(item, section, team) {
+// the same Date as its parent row so every row still carries a date.
+function crBuildHistoryBreakdownRow(dateKey, item, section, team) {
     const cells = section.groups.map(g =>
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
     return `
       <tr class="cr-breakdown-row">
         <td class="cr-branch-col">${crEscapeHtml(team)}</td>
-        <td class="cr-date-col"></td>
+        <td class="cr-date-col">${crFmtDateDMY(dateKey)}</td>
         ${cells}
       </tr>`;
 }
