@@ -6,12 +6,17 @@
 // lib/creditreport-location.js for the column mapping behind each
 // figure).
 //
-// One row per Location — grouped by each sheet's own raw Address value,
+// One row per Location — grouped by each sheet's own raw location value,
 // not a parsed village/commune/district (per explicit request). Like
-// Product, there's no Branch/Team picker and no Own/Area split — every
-// section here is a single combined figure. Unlike Product, a location
-// name is plain text, not a link — there's no Location Performance
-// drill-down page.
+// Product, there's no Own/Area split — every section here is a single
+// combined figure. Unlike Product, a location name is plain text, not a
+// link — there's no Location Performance drill-down page.
+//
+// Branch/Officer/District/Commune (added 2026-10-01) are server-side
+// filters — narrowing the rows before they're grouped by location — not a
+// different "Showing" view, so changing any of them triggers a full
+// crRunReport() refetch, same as the T24/NBC Loan Class/Product Type
+// filters already do.
 // ========================================
 
 const crToken =
@@ -392,6 +397,25 @@ function crBuildQuery() {
     // response (see crActiveSection() above), so it's a display-only pick.
     const nbcProduct = document.getElementById("crNbcProduct").value;
     if (nbcProduct) parts.push(`nbcProduct=${encodeURIComponent(nbcProduct)}`);
+
+    // Branch/Officer/District/Commune: before crPopulateFilters() has run
+    // (i.e. on the very first request of a page load), these selects have
+    // no options yet to carry a restored URL value — fall back to the raw
+    // value read straight off the URL at crReadStateFromUrl() time. Once
+    // populated, the select itself is always the source of truth (see
+    // crPopulateFilters()), so the pending value is never consulted again.
+    const branch = crFiltersInitialised ? document.getElementById("crBranch").value : crPendingBranch;
+    if (branch) parts.push(`branch=${encodeURIComponent(branch)}`);
+
+    const officerId = crFiltersInitialised ? document.getElementById("crOfficer").value : crPendingOfficerId;
+    if (officerId) parts.push(`officerId=${encodeURIComponent(officerId)}`);
+
+    const district = crFiltersInitialised ? document.getElementById("crDistrict").value : crPendingDistrict;
+    if (district) parts.push(`district=${encodeURIComponent(district)}`);
+
+    const commune = crFiltersInitialised ? document.getElementById("crCommune").value : crPendingCommune;
+    if (commune) parts.push(`commune=${encodeURIComponent(commune)}`);
+
     return parts.length ? `?${parts.join("&")}` : "";
 }
 
@@ -419,6 +443,48 @@ function crApplyServerDates(data) {
     set("crWoFromDate", data.woFromDate);
     set("crWoToDate", data.woToDate);
     crDatesInitialised = true;
+}
+
+// ========================================
+// BRANCH / OFFICER / DISTRICT / COMMUNE FILTERS
+// Options come from the API response itself (data.branches/officers/
+// districts/communes) rather than being hardcoded, since Officer and
+// District/Commune in particular depend on live data (the CreditOfficer
+// roster and the Address lookup sheet) this page has no other access to.
+// Populated once; a URL-restored value (read early by crReadStateFromUrl()
+// into the crPending* variables, before these selects have any options to
+// hold it) is applied here, the only place it's ever consulted again.
+// ========================================
+let crFiltersInitialised = false;
+let crPendingBranch = "", crPendingOfficerId = "", crPendingDistrict = "", crPendingCommune = "";
+
+function crPopulateSelectOptions(selectEl, items) {
+    const optionsHtml = items.map(it => {
+        const value = typeof it === "string" ? it : it.id;
+        const label = typeof it === "string" ? it : it.name;
+        return `<option value="${crEscapeHtml(value)}">${crEscapeHtml(label)}</option>`;
+    }).join("");
+    selectEl.insertAdjacentHTML("beforeend", optionsHtml);
+}
+
+function crPopulateFilters(data) {
+    if (crFiltersInitialised) return;
+
+    crPopulateSelectOptions(document.getElementById("crBranch"), data.branches || []);
+    crPopulateSelectOptions(document.getElementById("crOfficer"), data.officers || []);
+    crPopulateSelectOptions(document.getElementById("crDistrict"), data.districts || []);
+    crPopulateSelectOptions(document.getElementById("crCommune"), data.communes || []);
+
+    const restore = (id, pending) => {
+        const sel = document.getElementById(id);
+        if (pending && [...sel.options].some(o => o.value === pending)) sel.value = pending;
+    };
+    restore("crBranch", crPendingBranch);
+    restore("crOfficer", crPendingOfficerId);
+    restore("crDistrict", crPendingDistrict);
+    restore("crCommune", crPendingCommune);
+
+    crFiltersInitialised = true;
 }
 
 // ========================================
@@ -480,6 +546,15 @@ function crReadStateFromUrl() {
             nbcProductSel.value = nbcProduct;
         }
     }
+
+    // Branch/Officer/District/Commune selects have no options yet at this
+    // point (they're populated from the first API response) — stash the
+    // raw URL value for crBuildQuery()'s first request and crPopulateFilters()
+    // to restore once the options exist.
+    crPendingBranch = p.get("branch") || "";
+    crPendingOfficerId = p.get("officerId") || "";
+    crPendingDistrict = p.get("district") || "";
+    crPendingCommune = p.get("commune") || "";
 }
 
 function crSyncStateToUrl() {
@@ -507,6 +582,20 @@ function crSyncStateToUrl() {
     const nbcProduct = document.getElementById("crNbcProduct").value;
     if (nbcProduct) p.set("nbcProduct", nbcProduct);
 
+    // Only reached after crPopulateFilters() has already run (see
+    // crRunReport()), so these selects always hold the live, restored value.
+    const branch = document.getElementById("crBranch").value;
+    if (branch) p.set("branch", branch);
+
+    const officerId = document.getElementById("crOfficer").value;
+    if (officerId) p.set("officerId", officerId);
+
+    const district = document.getElementById("crDistrict").value;
+    if (district) p.set("district", district);
+
+    const commune = document.getElementById("crCommune").value;
+    if (commune) p.set("commune", commune);
+
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
 }
 
@@ -525,6 +614,7 @@ async function crRunReport() {
         }
 
         crApplyServerDates(data);
+        crPopulateFilters(data);
         crSyncStateToUrl();
 
         // Pre-formatted server-side (dd/mm/yyyy, plus HH:MM where the
@@ -573,6 +663,13 @@ document.getElementById("crNbcClass").addEventListener("change", () => {
     crSyncStateToUrl();
 });
 document.getElementById("crNbcProduct").addEventListener("change", crRunReport);
+
+// Branch/Officer/District/Commune are server-side filters, same as the
+// T24/NBC Loan Class/Product Type filters above — any change refetches.
+document.getElementById("crBranch").addEventListener("change", crRunReport);
+document.getElementById("crOfficer").addEventListener("change", crRunReport);
+document.getElementById("crDistrict").addEventListener("change", crRunReport);
+document.getElementById("crCommune").addEventListener("change", crRunReport);
 
 // Clicking a column header cycles it through ascending -> descending ->
 // default (unsorted, the order the server returned) -> ascending again.

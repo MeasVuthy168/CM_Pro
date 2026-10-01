@@ -199,6 +199,27 @@
     border-top:1px solid var(--cr-border);
 }
 
+/* Branch/Officer/District/Commune — a 2-column grid above "Showing":
+   District/Commune on the left, Branch/Officer on the right. Narrower
+   label column than .cr-select-label's default 76px since each column
+   here is already half-width. */
+.cr-geo-filter-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0 14px;
+    margin-bottom:10px;
+    padding-bottom:10px;
+    border-bottom:1px solid var(--cr-border);
+}
+.cr-geo-filter-col{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-width:0;
+}
+.cr-geo-filter-col .cr-select-row{ margin-bottom:0; }
+.cr-geo-filter-col .cr-select-label{ flex:0 0 58px; }
+
 /* Showing row. A fixed label column keeps it lined up with the same
    layout Daily Monitoring by Officer uses, even though this page only
    has the one select (no Branch/Team — a location isn't scoped to
