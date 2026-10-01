@@ -9,8 +9,11 @@
 // One row per Location — grouped by each sheet's own raw location value,
 // not a parsed village/commune/district (per explicit request). Like
 // Product, there's no Own/Area split — every section here is a single
-// combined figure. Unlike Product, a location name is plain text, not a
-// link — there's no Location Performance drill-down page.
+// combined figure. Clicking a location name (or the Total row) opens the
+// Location Performance drill-down page for it (added 2026-10-01) — see
+// LocationPerformance.js. "Other Address" (added 2026-10-01) has no such
+// link — it's a synthetic bucket of unrecognized addresses, not a real
+// location to drill into.
 //
 // Branch/Officer/District/Commune (added 2026-10-01) are server-side
 // filters — narrowing the rows before they're grouped by location — not a
@@ -258,10 +261,6 @@ function crBuildRow(item, section, isTotal, opts = {}) {
     const cells = section.groups.map(g =>
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
-    // Location is plain text, not a link — there's no Location
-    // Performance drill-down page (unlike RepDetailbyProduct.js's own
-    // cr-product-link) — except "Other Address", which toggles its own
-    // breakdown open/closed instead.
     const locationLabel = isTotal ? "Total" : item.location;
     // data-name backs crApplySearchFilter()'s client-side name search —
     // lowercased once here rather than re-lowercasing on every keystroke.
@@ -271,9 +270,22 @@ function crBuildRow(item, section, isTotal, opts = {}) {
     const nameAttr = isTotal
         ? ""
         : ` data-name="${crEscapeHtml(isDetail ? "other address" : (item.location || "").toLowerCase())}"`;
-    const nameCellContent = isOtherAddress
-        ? `<button type="button" class="cr-other-toggle" aria-expanded="${crOtherAddressExpanded}"><span class="cr-other-toggle-icon">${crOtherAddressExpanded ? "▾" : "▸"}</span>${crEscapeHtml(locationLabel)}</button>`
-        : crEscapeHtml(locationLabel);
+
+    let nameCellContent;
+    if (isOtherAddress) {
+        nameCellContent = `<button type="button" class="cr-other-toggle" aria-expanded="${crOtherAddressExpanded}"><span class="cr-other-toggle-icon">${crOtherAddressExpanded ? "▾" : "▸"}</span>${crEscapeHtml(locationLabel)}</button>`;
+    } else if (isDetail) {
+        // A raw address bucketed under "Other Address" isn't a recognized
+        // location — no Location Performance page to drill into.
+        nameCellContent = crEscapeHtml(locationLabel);
+    } else {
+        // Opens Location Performance for that location — same pattern as
+        // RepDetailbyProduct.js's own cr-product-link. The Total row
+        // drills into the "All Location" aggregate.
+        const locationKey = isTotal ? "All Location" : item.location;
+        nameCellContent = `<button type="button" class="cr-location-link" data-location="${crEscapeHtml(locationKey)}">${crEscapeHtml(locationLabel)}</button>`;
+    }
+
     const rowClass = isTotal ? ' class="cr-total-row"' : isOtherAddress ? ' class="cr-other-row"' : isDetail ? ' class="cr-other-detail-row"' : "";
     return `
       <tr${rowClass}${nameAttr}>
@@ -339,6 +351,31 @@ document.getElementById("crTbody").addEventListener("click", (e) => {
     if (!toggle) return;
     crOtherAddressExpanded = !crOtherAddressExpanded;
     crRenderSection();
+});
+
+// ========================================
+// LOCATION DRILL-DOWN
+// Clicking a location name (or the Total row) opens Location Performance
+// for it — same pattern as RepDetailbyBranch.js's own branch-name
+// drill-down: Location Performance always fetches its own summary
+// (there's no already-fetched CO/FSRO/Digital breakdown to hand off —
+// this report only ever has each location's combined Total), so only the
+// location name + current date filters need to travel in the URL, no
+// sessionStorage cache. "Other Address" and its detail rows have no link
+// (see crBuildRow()) so this never fires for them.
+// ========================================
+document.getElementById("crTbody").addEventListener("click", (e) => {
+    const link = e.target.closest(".cr-location-link");
+    if (!link) return;
+
+    const q = new URLSearchParams({
+        location: link.dataset.location,
+        fromDate: document.getElementById("crFromDate").value,
+        toDate: document.getElementById("crToDate").value,
+        woFromDate: document.getElementById("crWoFromDate").value,
+        woToDate: document.getElementById("crWoToDate").value
+    });
+    location.href = `LocationPerformance.html?${q.toString()}`;
 });
 
 // ========================================
