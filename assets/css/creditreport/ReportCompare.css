@@ -1,0 +1,128 @@
+/* ========================================
+   REPORT COMPARISON
+   Reuses OfficerProductivity.css's --cr-* theme tokens, .op-card,
+   .op-mode-tabs/.op-mode-tab, .op-client-table, .op-empty and
+   .op-page-skel — this file only adds what's unique to this page: the
+   date-picker toolbar and the summary delta tiles grid.
+======================================== */
+
+.rc-toolbar{
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:14px;
+    box-shadow:var(--cr-shadow);
+    padding:14px;
+    display:flex;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:14px;
+}
+.rc-date-field{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    flex:1 1 140px;
+    min-width:140px;
+}
+.rc-date-field label{
+    font-size:11.5px;
+    font-weight:700;
+    color:var(--cr-text-muted);
+}
+.rc-date-field select{
+    padding:9px 10px;
+    border-radius:8px;
+    border:1px solid var(--cr-border);
+    background:var(--cr-input-bg);
+    color:var(--cr-input-text);
+    font-size:13px;
+}
+.rc-arrow{
+    font-size:18px;
+    color:var(--cr-text-muted);
+    padding-bottom:9px;
+}
+.rc-compare-btn,
+.rc-snapshot-btn{
+    padding:10px 18px;
+    border-radius:8px;
+    border:none;
+    background:var(--cr-navy-dark);
+    color:#fff;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+}
+[data-theme="dark"] .rc-compare-btn,
+[data-theme="dark"] .rc-snapshot-btn{ color:#002D6B; background:var(--cr-gold-light); }
+.rc-snapshot-btn{ background:var(--cr-chip-bg); color:var(--cr-text); border:1px solid var(--cr-border); }
+
+.rc-summary-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:10px;
+    margin-bottom:14px;
+}
+.rc-tile{
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:12px;
+    box-shadow:var(--cr-shadow);
+    padding:12px 14px;
+}
+.rc-tile-label{
+    font-size:11.5px;
+    font-weight:700;
+    color:var(--cr-text-muted);
+    margin-bottom:6px;
+}
+.rc-tile-values{
+    font-size:12.5px;
+    color:var(--cr-text);
+    display:flex;
+    align-items:baseline;
+    gap:6px;
+    flex-wrap:wrap;
+}
+.rc-tile-values .rc-arrow-sep{ color:var(--cr-text-muted); font-size:11px; }
+.rc-tile-diff{
+    font-size:12.5px;
+    font-weight:800;
+    margin-top:4px;
+}
+.rc-tile-diff.positive{ color:#1a9850; }
+.rc-tile-diff.negative{ color:var(--cr-danger); }
+.rc-tile-diff.zero{ color:var(--cr-text-muted); }
+
+/* ===== Transition tables ===== */
+.rc-badge{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:700;
+}
+.rc-badge.entered{ background:rgba(26,150,80,.15); color:#1a9850; }
+.rc-badge.exited{ background:rgba(179,38,30,.12); color:var(--cr-danger); }
+.rc-badge.downgrade{ background:rgba(179,38,30,.12); color:var(--cr-danger); }
+.rc-badge.upgrade{ background:rgba(26,150,80,.15); color:#1a9850; }
+
+.rc-sub-tabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:10px;
+    flex-wrap:wrap;
+}
+.rc-sub-tab{
+    padding:6px 12px;
+    border-radius:999px;
+    border:1px solid var(--cr-border);
+    background:var(--cr-chip-bg);
+    color:var(--cr-text-muted);
+    font-size:11.5px;
+    font-weight:700;
+    cursor:pointer;
+}
+.rc-sub-tab.active{ background:var(--cr-navy-dark); color:#fff; }
+[data-theme="dark"] .rc-sub-tab.active{ color:#002D6B; }

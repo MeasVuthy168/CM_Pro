@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>Report Comparison</title>
+
+<meta
+name="theme-color"
+content="#032d73">
+
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("cm_theme") || "light"
+  );
+</script>
+
+<link
+rel="stylesheet"
+href="../../assets/css/main.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/creditreport/OfficerProductivity.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/creditreport/ReportCompare.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
+
+</head>
+
+<body>
+
+<div id="offlineBanner">
+⚠️ No Internet Connection
+</div>
+
+<script src="../../config/api.js"></script>
+<script src="/CM_Pro/shared/touch-polish.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+
+<div id="topbar-container"></div>
+
+<div class="page-container">
+
+<!-- ========================= -->
+<!-- DATE PICKER TOOLBAR -->
+<!-- ========================= -->
+<div class="rc-toolbar" id="rcToolbar">
+  <div class="rc-date-field">
+    <label for="rcDateA">ថ្ងៃទី១ / Date A</label>
+    <select id="rcDateA"></select>
+  </div>
+  <div class="rc-arrow">→</div>
+  <div class="rc-date-field">
+    <label for="rcDateB">ថ្ងៃទី២ / Date B</label>
+    <select id="rcDateB"></select>
+  </div>
+  <button type="button" class="rc-compare-btn" id="rcCompareBtn">ប្រៀបធៀប / Compare</button>
+  <button type="button" class="rc-snapshot-btn" id="rcSnapshotBtn" style="display:none">📸 Snapshot Now</button>
+</div>
+
+<div class="op-empty" id="rcEmpty" style="display:none"></div>
+
+<!-- Skeleton while a comparison is loading -->
+<div class="op-page-skel" id="rcPageSkel" style="display:none">
+<div class="op-skel-card"></div>
+<div class="op-skel-card"></div>
+<div class="op-skel-card"></div>
+</div>
+
+<!-- ========================= -->
+<!-- SUMMARY DELTA TILES -->
+<!-- ========================= -->
+<div class="rc-summary-grid" id="rcSummaryGrid" style="display:none"></div>
+
+<!-- ========================= -->
+<!-- TRANSITION TABS -->
+<!-- ========================= -->
+<div class="op-card" id="rcTransitionsCard" style="display:none">
+  <div class="op-mode-tabs" id="rcTabs">
+    <button type="button" class="op-mode-tab active" data-tab="wo">✍️ Write Off</button>
+    <button type="button" class="op-mode-tab" data-tab="overdue">📉 NBC Classification</button>
+    <button type="button" class="op-mode-tab" data-tab="t24">⏱ PAR T24</button>
+  </div>
+  <div class="op-mode-body" id="rcTabBody"></div>
+</div>
+
+</div>
+
+<div id="bottomnav-container"></div>
+
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<script src="../../assets/js/creditreport/ReportCompare.js"></script>
+<script src="../../assets/js/creditreport/ReportCompare-loader.js"></script>
+
+</body>
+
+</html>
