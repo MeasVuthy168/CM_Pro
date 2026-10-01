@@ -22,7 +22,16 @@
 // filters already do. Commune narrows to the selected District's own
 // communes, and Officer narrows to the selected Branch's own officers —
 // both a local option-list rebuild (crRebuildCommuneOptions()/
-// crRebuildOfficerOptions()), not a refetch by themselves.
+// crRebuildOfficerOptions()), not a refetch by themselves. Selecting an
+// Officer shows the addresses assigned to them in the Address sheet
+// (their coverage), not just addresses where they personally disbursed a
+// loan — see lib/creditreport-location.js's own comment for why.
+//
+// # Family / Segmentation% (added 2026-10-01) are two always-visible
+// columns right after Location — the Address sheet's own per-location
+// household count, and # Client / # Family. Shown regardless of
+// "Showing", same as Location itself; both read 0 for "Other Address"
+// and its detail rows (no Address match to read a family count from).
 //
 // "Other Address" is a synthetic row the server folds every unrecognized
 // location into (see lib/creditreport-location.js) — it expands in place
@@ -249,6 +258,8 @@ function crBuildThead(section) {
     return `
       <tr class="cr-group-row">
         <th rowspan="2" class="cr-name-col${sortCls("_name")}" data-sort-key="_name" data-sort-type="text">Location</th>
+        <th rowspan="2" class="cr-col-num${sortCls("families")}" data-sort-key="families" data-sort-type="number"># Family</th>
+        <th rowspan="2" class="cr-col-pct${sortCls("segmentationPct")}" data-sort-key="segmentationPct" data-sort-type="number">Segmentation%</th>
         ${groupCells}
       </tr>
       <tr class="cr-sub-row">${subCells}</tr>`;
@@ -286,10 +297,20 @@ function crBuildRow(item, section, isTotal, opts = {}) {
         nameCellContent = `<button type="button" class="cr-location-link" data-location="${crEscapeHtml(locationKey)}">${crEscapeHtml(locationLabel)}</button>`;
     }
 
+    // # Family (the Address sheet's own per-location headcount) and
+    // Segmentation% (# Client / # Family) — always shown regardless of
+    // "Showing", same as Location itself. The server attaches both to
+    // every item uniformly (including Total and "Other Address"'s own
+    // detail rows), reading 0/0 wherever there's no Address match.
+    const familyCells = `
+        <td class="cr-col-num">${crFmtNum(item.families)}</td>
+        <td class="cr-col-pct">${crFmtPct(item.segmentationPct)}</td>`;
+
     const rowClass = isTotal ? ' class="cr-total-row"' : isOtherAddress ? ' class="cr-other-row"' : isDetail ? ' class="cr-other-detail-row"' : "";
     return `
       <tr${rowClass}${nameAttr}>
         <td class="cr-name-col${isDetail ? " cr-other-detail-name" : ""}">${nameCellContent}</td>
+        ${familyCells}
         ${cells}
       </tr>`;
 }
