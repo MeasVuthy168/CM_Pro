@@ -16,7 +16,15 @@
 // filters — narrowing the rows before they're grouped by location — not a
 // different "Showing" view, so changing any of them triggers a full
 // crRunReport() refetch, same as the T24/NBC Loan Class/Product Type
-// filters already do.
+// filters already do. Commune narrows to the selected District's own
+// communes, and Officer narrows to the selected Branch's own officers —
+// both a local option-list rebuild (crRebuildCommuneOptions()/
+// crRebuildOfficerOptions()), not a refetch by themselves.
+//
+// "Other Address" is a synthetic row the server folds every unrecognized
+// location into (see lib/creditreport-location.js) — it expands in place
+// to show the individual raw addresses behind it (crData.otherAddressDetail),
+// toggled by crOtherAddressExpanded.
 // ========================================
 
 const crToken =
@@ -243,20 +251,33 @@ function crBuildThead(section) {
       <tr class="cr-sub-row">${subCells}</tr>`;
 }
 
-function crBuildRow(item, section, isTotal) {
+let crOtherAddressExpanded = false;
+
+function crBuildRow(item, section, isTotal, opts = {}) {
+    const { isOtherAddress = false, isDetail = false } = opts;
     const cells = section.groups.map(g =>
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
     // Location is plain text, not a link — there's no Location
     // Performance drill-down page (unlike RepDetailbyProduct.js's own
-    // cr-product-link).
+    // cr-product-link) — except "Other Address", which toggles its own
+    // breakdown open/closed instead.
     const locationLabel = isTotal ? "Total" : item.location;
     // data-name backs crApplySearchFilter()'s client-side name search —
     // lowercased once here rather than re-lowercasing on every keystroke.
-    const nameAttr = isTotal ? "" : ` data-name="${crEscapeHtml((item.location || "").toLowerCase())}"`;
+    // Detail rows share "Other Address"'s own search key, so they always
+    // show/hide together with the row they expand from rather than being
+    // independently searchable by their own raw address text.
+    const nameAttr = isTotal
+        ? ""
+        : ` data-name="${crEscapeHtml(isDetail ? "other address" : (item.location || "").toLowerCase())}"`;
+    const nameCellContent = isOtherAddress
+        ? `<button type="button" class="cr-other-toggle" aria-expanded="${crOtherAddressExpanded}"><span class="cr-other-toggle-icon">${crOtherAddressExpanded ? "▾" : "▸"}</span>${crEscapeHtml(locationLabel)}</button>`
+        : crEscapeHtml(locationLabel);
+    const rowClass = isTotal ? ' class="cr-total-row"' : isOtherAddress ? ' class="cr-other-row"' : isDetail ? ' class="cr-other-detail-row"' : "";
     return `
-      <tr${isTotal ? ' class="cr-total-row"' : ""}${nameAttr}>
-        <td class="cr-name-col">${crEscapeHtml(locationLabel)}</td>
+      <tr${rowClass}${nameAttr}>
+        <td class="cr-name-col${isDetail ? " cr-other-detail-name" : ""}">${nameCellContent}</td>
         ${cells}
       </tr>`;
 }
@@ -291,9 +312,18 @@ function crRenderSection() {
     const displayItems = crApplySort(crData.items);
 
     document.getElementById("crThead").innerHTML = crBuildThead(section);
-    document.getElementById("crTbody").innerHTML =
-        displayItems.map(it => crBuildRow(it, section, false)).join("") +
-        crBuildRow(crData.total, section, true);
+
+    const bodyHtml = displayItems.map(it => {
+        const isOtherAddress = it.location === "Other Address";
+        const rowHtml = crBuildRow(it, section, false, { isOtherAddress });
+        if (!isOtherAddress || !crOtherAddressExpanded) return rowHtml;
+        const detailHtml = (crData.otherAddressDetail || [])
+            .map(d => crBuildRow(d, section, false, { isDetail: true }))
+            .join("");
+        return rowHtml + detailHtml;
+    }).join("");
+
+    document.getElementById("crTbody").innerHTML = bodyHtml + crBuildRow(crData.total, section, true);
 
     // Re-render (switching "Showing") rebuilds every row from scratch,
     // so whatever the user already typed needs re-applying rather than
@@ -301,6 +331,15 @@ function crRenderSection() {
     crApplySearchFilter();
     requestAnimationFrame(crSetHeaderOffsets);
 }
+
+// Expands/collapses "Other Address"'s own breakdown — see the file header
+// comment. Delegated on the tbody since the row is rebuilt on every render.
+document.getElementById("crTbody").addEventListener("click", (e) => {
+    const toggle = e.target.closest(".cr-other-toggle");
+    if (!toggle) return;
+    crOtherAddressExpanded = !crOtherAddressExpanded;
+    crRenderSection();
+});
 
 // ========================================
 // LOCATION SEARCH
@@ -448,15 +487,26 @@ function crApplyServerDates(data) {
 // ========================================
 // BRANCH / OFFICER / DISTRICT / COMMUNE FILTERS
 // Options come from the API response itself (data.branches/officers/
-// districts/communes) rather than being hardcoded, since Officer and
-// District/Commune in particular depend on live data (the CreditOfficer
-// roster and the Address lookup sheet) this page has no other access to.
-// Populated once; a URL-restored value (read early by crReadStateFromUrl()
-// into the crPending* variables, before these selects have any options to
-// hold it) is applied here, the only place it's ever consulted again.
+// districts/communes/districtCommunes) rather than being hardcoded, since
+// Officer and District/Commune in particular depend on live data (the
+// CreditOfficer roster and the Address lookup sheet) this page has no
+// other access to. Populated once; a URL-restored value (read early by
+// crReadStateFromUrl() into the crPending* variables, before these selects
+// have any options to hold it) is applied here, the only place it's ever
+// consulted again.
+//
+// Commune cascades to the selected District, and Officer cascades to the
+// selected Branch — both a local rebuild of that one select's options
+// (crRebuildCommuneOptions()/crRebuildOfficerOptions()) off data already
+// in hand, not a second fetch. crCommunesList/crOfficerRoster/
+// crDistrictCommunes hold the full, unfiltered option data those rebuilds
+// read from.
 // ========================================
 let crFiltersInitialised = false;
 let crPendingBranch = "", crPendingOfficerId = "", crPendingDistrict = "", crPendingCommune = "";
+let crCommunesList = [];
+let crOfficerRoster = [];
+let crDistrictCommunes = {};
 
 function crPopulateSelectOptions(selectEl, items) {
     const optionsHtml = items.map(it => {
@@ -467,22 +517,58 @@ function crPopulateSelectOptions(selectEl, items) {
     selectEl.insertAdjacentHTML("beforeend", optionsHtml);
 }
 
+// Rebuilds #crCommune's options to just the selected District's own
+// communes (every commune when no District is selected), preserving the
+// current selection only if it's still valid under the new list.
+function crRebuildCommuneOptions() {
+    const district = document.getElementById("crDistrict").value;
+    const communeSel = document.getElementById("crCommune");
+    const currentValue = communeSel.value;
+    const allowed = district ? (crDistrictCommunes[district] || []) : crCommunesList;
+
+    communeSel.innerHTML = '<option value="">All</option>' +
+        allowed.map(c => `<option value="${crEscapeHtml(c)}">${crEscapeHtml(c)}</option>`).join("");
+    if (allowed.includes(currentValue)) communeSel.value = currentValue;
+}
+
+// Rebuilds #crOfficer's options to just the selected Branch's own
+// officers (every officer when no Branch is selected), preserving the
+// current selection only if it's still valid under the new list.
+function crRebuildOfficerOptions() {
+    const branch = document.getElementById("crBranch").value;
+    const officerSel = document.getElementById("crOfficer");
+    const currentValue = officerSel.value;
+    const allowed = branch ? crOfficerRoster.filter(o => o.branch === branch) : crOfficerRoster;
+
+    officerSel.innerHTML = '<option value="">All</option>' +
+        allowed.map(o => `<option value="${crEscapeHtml(o.id)}">${crEscapeHtml(o.name)}</option>`).join("");
+    if (allowed.some(o => o.id === currentValue)) officerSel.value = currentValue;
+}
+
 function crPopulateFilters(data) {
     if (crFiltersInitialised) return;
 
+    crCommunesList = data.communes || [];
+    crOfficerRoster = data.officers || [];
+    crDistrictCommunes = data.districtCommunes || {};
+
     crPopulateSelectOptions(document.getElementById("crBranch"), data.branches || []);
-    crPopulateSelectOptions(document.getElementById("crOfficer"), data.officers || []);
     crPopulateSelectOptions(document.getElementById("crDistrict"), data.districts || []);
-    crPopulateSelectOptions(document.getElementById("crCommune"), data.communes || []);
 
     const restore = (id, pending) => {
         const sel = document.getElementById(id);
         if (pending && [...sel.options].some(o => o.value === pending)) sel.value = pending;
     };
+    // Branch/District first — Officer/Commune cascade off whichever value
+    // ends up restored here.
     restore("crBranch", crPendingBranch);
-    restore("crOfficer", crPendingOfficerId);
     restore("crDistrict", crPendingDistrict);
+
+    crRebuildCommuneOptions();
     restore("crCommune", crPendingCommune);
+
+    crRebuildOfficerOptions();
+    restore("crOfficer", crPendingOfficerId);
 
     crFiltersInitialised = true;
 }
@@ -666,9 +752,17 @@ document.getElementById("crNbcProduct").addEventListener("change", crRunReport);
 
 // Branch/Officer/District/Commune are server-side filters, same as the
 // T24/NBC Loan Class/Product Type filters above — any change refetches.
-document.getElementById("crBranch").addEventListener("change", crRunReport);
+// Branch/District additionally cascade Officer/Commune's own option list
+// first (see crRebuildOfficerOptions()/crRebuildCommuneOptions()).
+document.getElementById("crBranch").addEventListener("change", () => {
+    crRebuildOfficerOptions();
+    crRunReport();
+});
 document.getElementById("crOfficer").addEventListener("change", crRunReport);
-document.getElementById("crDistrict").addEventListener("change", crRunReport);
+document.getElementById("crDistrict").addEventListener("change", () => {
+    crRebuildCommuneOptions();
+    crRunReport();
+});
 document.getElementById("crCommune").addEventListener("change", crRunReport);
 
 // Clicking a column header cycles it through ascending -> descending ->

@@ -523,6 +523,34 @@
     font-weight:800;
 }
 
+/* "Other Address" — expands in place to show the raw, unrecognized
+   addresses folded into it (see RepDetailbyLocation.js's own header
+   comment). The toggle button fills the name cell, same "unstyled
+   button" pattern as RepDetailbyProduct.css's own .cr-product-link. */
+.cr-other-toggle{
+    all:unset;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    color:inherit;
+    font:inherit;
+    font-weight:inherit;
+}
+.cr-other-toggle-icon{
+    font-size:9px;
+    opacity:.7;
+    flex:0 0 auto;
+}
+.cr-other-detail-row td{
+    background:var(--cr-row-alt);
+}
+.cr-other-detail-row td.cr-other-detail-name{
+    padding-left:28px;
+    font-weight:400;
+    opacity:.85;
+}
+
 /* PAR alert colour.
    Needs `.table-card td` prefix: the base `.table-card td{color:...}` rule
    has higher specificity than a bare `.cr-par-high`, so without this the
