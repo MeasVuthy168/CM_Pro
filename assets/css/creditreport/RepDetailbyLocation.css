@@ -523,10 +523,27 @@
     font-weight:800;
 }
 
+/* Opens Location Performance for that location (or the Total row's own
+   "All Location" aggregate) — same "unstyled button, chevron suffix"
+   pattern as RepDetailbyProduct.css's own .cr-product-link. */
+.cr-location-link{
+    all:unset;
+    cursor:pointer;
+    color:inherit;
+    font:inherit;
+    font-weight:inherit;
+}
+.cr-location-link::after{
+    content:" \203A";
+    opacity:.55;
+}
+.cr-location-link:active{ opacity:.7; }
+
 /* "Other Address" — expands in place to show the raw, unrecognized
    addresses folded into it (see RepDetailbyLocation.js's own header
    comment). The toggle button fills the name cell, same "unstyled
-   button" pattern as RepDetailbyProduct.css's own .cr-product-link. */
+   button" pattern as .cr-location-link above, minus the chevron suffix
+   (it has its own expand/collapse arrow instead). */
 .cr-other-toggle{
     all:unset;
     cursor:pointer;
