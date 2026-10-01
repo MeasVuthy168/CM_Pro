@@ -162,6 +162,26 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
      settings rather than in a card of its own. -->
 <div class="cr-view-controls">
 
+<div class="cr-mode-row">
+<button type="button" id="crModeCurrentBtn" class="cr-mode-btn active">ថ្ងៃនេះ / Current</button>
+<button type="button" id="crModeHistoryBtn" class="cr-mode-btn">ប្រវត្តិប្រចាំថ្ងៃ / Daily History</button>
+</div>
+
+<div class="cr-date-panel" id="crHistoryPanel" style="display:none">
+<div class="filter-grid">
+<div class="filter-group">
+<label for="crHistFromDate">ពីថ្ងៃ / From</label>
+<input type="date" id="crHistFromDate">
+</div>
+<div class="filter-group">
+<label for="crHistToDate">ដល់ថ្ងៃ / To</label>
+<input type="date" id="crHistToDate">
+</div>
+</div>
+<button id="btnCrHistRun" class="cr-run-btn">មើលប្រវត្តិ / View History</button>
+<button id="btnCrHistSnapshot" class="cr-run-btn cr-snapshot-btn" style="display:none">📸 Snapshot Now</button>
+</div>
+
 <div class="cr-section-row">
 <label for="crSection" class="cr-section-label">Showing</label>
 <select id="crSection" class="cr-section-select">
