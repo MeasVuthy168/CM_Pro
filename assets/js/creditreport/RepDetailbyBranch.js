@@ -40,6 +40,7 @@ let crBalancePD = null;    // { value, count } — the other half of that note
 // ========================================
 let crMode = "current"; // "current" | "history"
 let crHistoryData = null; // { days: [{ date, items, total }, ...] }
+let crHistDatesSeeded = false;
 const crLoggedInUser = JSON.parse(
     localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}"
 );
@@ -945,6 +946,22 @@ function crUpdateClassVisibility() {
     document.getElementById("crNbcProductRow").style.display = (isNbc && !isHistory) ? "" : "none";
 }
 
+// Default Daily History range: the 1st of the month through the NBC
+// Loan Outstanding Grid Merge date itself (data.fromDate/toDate, already
+// anchored to that date by the server — see lib/creditreport-branch.js's
+// crComputeMeta()), NOT the calendar month we happen to be in today — per
+// explicit request 2026-10-01: the Grid Merge date can lag behind today
+// (e.g. still 30/09 a couple of days into October), so seeding from
+// today's calendar month would default to a range with no data in it.
+// Seeded once, from whichever report load resolves first, so it never
+// overwrites a range the person has since picked by hand.
+function crSeedHistoryDates(data) {
+    if (crHistDatesSeeded) return;
+    crHistDatesSeeded = true;
+    document.getElementById("crHistFromDate").value = data.fromDate;
+    document.getElementById("crHistToDate").value = data.toDate;
+}
+
 // ========================================
 // LOAD REPORT
 // ========================================
@@ -985,6 +1002,7 @@ async function crRunReport() {
         }
 
         crSummaryData = data;
+        crSeedHistoryDates(data);
         document.getElementById("crTableScroll").style.display = "block";
         crRenderSummary();
     } catch (e) {
@@ -1359,17 +1377,6 @@ if (crIsAdmin) {
         }
     });
 }
-
-// Default history range: the 1st of the current month through today —
-// matches the "01/10/2026...31/10/2026" example from the request.
-(function crSeedHistoryDates() {
-    const now = new Date();
-    const p = n => String(n).padStart(2, "0");
-    const monthStart = `${now.getFullYear()}-${p(now.getMonth() + 1)}-01`;
-    const today = `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
-    document.getElementById("crHistFromDate").value = monthStart;
-    document.getElementById("crHistToDate").value = today;
-})();
 
 // ========================================
 // INIT
