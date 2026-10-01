@@ -558,10 +558,20 @@ function crRenderSummary() {
 // HISTORY MODE — same section/field definitions as the live table
 // (crActiveSection, crFmtField, crFieldClass all reused as-is), just
 // with an extra Date column and one row per (branch, date) instead of
-// one row per branch. No CO/FSRO/Digital inline expand here — every
-// history row is already the branch's combined Total, same as the live
-// table's default (collapsed) state.
+// one row per branch. Each row can also expand inline to its own
+// CO/FSRO/Digital breakdown — same idea as crToggleBranchExpand() for
+// the live table, but the data is already on the item (item.breakdown,
+// saved by the daily snapshot itself) so no extra fetch is needed.
 // ========================================
+// (branch|date) keys of history rows currently expanded — separate from
+// crExpandedBranches, which is keyed by branch name alone and belongs to
+// the live table's own expand/collapse state.
+let crHistoryExpandedRows = new Set();
+
+function crHistoryRowKey(branchKey, dateKey) {
+    return `${branchKey}|${dateKey}`;
+}
+
 function crBuildHistoryThead(section) {
     const groupCells = section.groups.map(g =>
         `<th colspan="${g.fields.length}">${g.label}</th>`
@@ -584,11 +594,40 @@ function crBuildHistoryRow(dateKey, item, section, isTotal) {
     const cells = section.groups.map(g =>
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
+    const branchKey = isTotal ? "All Branch" : item.branch;
     const branchLabel = isTotal ? "Total" : item.branch;
-    return `
+    const rowKey = crHistoryRowKey(branchKey, dateKey);
+    const isExpanded = crHistoryExpandedRows.has(rowKey);
+    const branchCell = item.breakdown
+        ? `<button type="button" class="cr-row-expand-btn${isExpanded ? " open" : ""}" data-hist-key="${crEscapeHtml(rowKey)}" aria-expanded="${isExpanded}" aria-label="Toggle CO/FSRO/Digital breakdown">▾</button>${crEscapeHtml(branchLabel)}`
+        : crEscapeHtml(branchLabel);
+
+    let html = `
       <tr${isTotal ? ' class="cr-total-row"' : ""}>
-        <td class="cr-branch-col">${crEscapeHtml(branchLabel)}</td>
+        <td class="cr-branch-col">${branchCell}</td>
         <td class="cr-date-col">${crFmtDateDMY(dateKey)}</td>
+        ${cells}
+      </tr>`;
+
+    if (isExpanded && item.breakdown) {
+        html +=
+            crBuildHistoryBreakdownRow(item.breakdown.co, section, "CO") +
+            crBuildHistoryBreakdownRow(item.breakdown.fsro, section, "FSRO") +
+            crBuildHistoryBreakdownRow(item.breakdown.digital, section, "Digital");
+    }
+    return html;
+}
+
+// Same shape as crBuildSummaryBreakdownRow (the live table's own), with
+// an extra blank Date cell so columns stay aligned.
+function crBuildHistoryBreakdownRow(item, section, team) {
+    const cells = section.groups.map(g =>
+        g.fields.map(f => crFmtField(item, f)).join("")
+    ).join("");
+    return `
+      <tr class="cr-breakdown-row">
+        <td class="cr-branch-col">${crEscapeHtml(team)}</td>
+        <td class="cr-date-col"></td>
         ${cells}
       </tr>`;
 }
@@ -765,6 +804,16 @@ document.getElementById("crThead").addEventListener("click", (e) => {
 
 document.getElementById("crTbody").addEventListener("click", (e) => {
     const expandBtn = e.target.closest(".cr-row-expand-btn");
+    if (expandBtn && expandBtn.dataset.histKey) {
+        // History rows already carry their own CO/FSRO/Digital breakdown
+        // (saved by the daily snapshot itself) — no fetch needed, just
+        // toggle and re-render.
+        const key = expandBtn.dataset.histKey;
+        if (crHistoryExpandedRows.has(key)) crHistoryExpandedRows.delete(key);
+        else crHistoryExpandedRows.add(key);
+        crRenderHistory();
+        return;
+    }
     if (expandBtn) {
         crToggleBranchExpand(expandBtn.dataset.branch);
         return;
