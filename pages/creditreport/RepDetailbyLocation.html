@@ -141,7 +141,27 @@ href="../../assets/css/creditreport/RepDetailbyLocation.css">
      fetched section is displayed (no refetch). -->
 <div class="cr-view-controls">
 
-<div class="cr-geo-filter-grid">
+<div class="cr-mode-row">
+<button type="button" id="crModeCurrentBtn" class="cr-mode-btn active">ថ្ងៃនេះ / Current</button>
+<button type="button" id="crModeHistoryBtn" class="cr-mode-btn">ប្រវត្តិប្រចាំថ្ងៃ / Daily History</button>
+</div>
+
+<div class="cr-date-panel" id="crHistoryPanel" style="display:none">
+<div class="filter-grid">
+<div class="filter-group">
+<label for="crHistFromDate">ពីថ្ងៃ / From</label>
+<input type="date" id="crHistFromDate">
+</div>
+<div class="filter-group">
+<label for="crHistToDate">ដល់ថ្ងៃ / To</label>
+<input type="date" id="crHistToDate">
+</div>
+</div>
+<button id="btnCrHistRun" class="cr-run-btn">មើលប្រវត្តិ / View History</button>
+<button id="btnCrHistSnapshot" class="cr-run-btn cr-snapshot-btn" style="display:none">📸 Snapshot Now</button>
+</div>
+
+<div class="cr-geo-filter-grid" id="crGeoFilterGrid">
 
 <div class="cr-geo-filter-col">
 <div class="cr-select-row">

@@ -199,6 +199,49 @@
     border-top:1px solid var(--cr-border);
 }
 
+/* ===== Current / Daily History mode toggle ===== */
+.cr-mode-row{
+    display:flex;
+    gap:8px;
+    margin-bottom:10px;
+}
+.cr-mode-btn{
+    flex:1;
+    padding:9px 8px;
+    border-radius:10px;
+    border:1px solid var(--cr-border);
+    background:var(--cr-input-bg);
+    color:var(--cr-text-muted);
+    font-weight:700;
+    font-size:12.5px;
+    cursor:pointer;
+}
+.cr-mode-btn.active{
+    background:linear-gradient(135deg,var(--cr-navy-dark),var(--cr-navy));
+    color:#fff;
+    border-color:transparent;
+}
+.cr-snapshot-btn{
+    margin-top:8px;
+    background:var(--cr-input-bg) !important;
+    color:var(--cr-text) !important;
+    border:1px solid var(--cr-border);
+}
+
+/* ===== History table's extra Date column (non-sticky) ===== */
+.cr-date-col{
+    min-width:84px;
+    text-align:left;
+    white-space:nowrap;
+}
+.table-card thead th.cr-date-col{
+    background:var(--cr-navy-dark);
+    color:var(--cr-gold-light);
+}
+[data-theme="dark"] .table-card thead th.cr-date-col{ color:#002D6B; }
+.table-card tbody td.cr-date-col{ color:var(--cr-text-muted); }
+.cr-total-row td.cr-date-col{ color:var(--cr-total-text) !important; }
+
 /* Branch/Officer/District/Commune — a 2-column grid above "Showing":
    District/Commune on the left, Branch/Officer on the right. Narrower
    label column than .cr-select-label's default 76px since each column
