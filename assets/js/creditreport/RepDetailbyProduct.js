@@ -24,6 +24,23 @@ const CR_PAR_ALERT = 0.04; // PAR % at or above this renders red
 let crData = null; // last successful /byproduct response
 
 // ========================================
+// DAILY HISTORY — "current" (today's live report, unchanged default
+// behaviour) vs "history" (a Date column added to this same table, one
+// row per product per day across a date range), same mechanism as
+// RepDetailbyBranch.js's own Daily History — backed by CM-backend's
+// /api/creditreport/byproduct/history, which snapshots this exact table
+// once a day. No CO/FSRO/Digital breakdown here (the live table has none
+// either — see the header note above).
+// ========================================
+let crMode = "current"; // "current" | "history"
+let crHistoryData = null; // { days: [{ date, items, total }, ...] }
+let crHistDatesSeeded = false;
+const crLoggedInUser = JSON.parse(
+    localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}"
+);
+const crIsAdmin = String(crLoggedInUser.role || "").toLowerCase() === "admin";
+
+// ========================================
 // SECTIONS
 // ========================================
 function crGroupPct(prefix, label) {
@@ -301,6 +318,124 @@ function crRenderSection() {
 }
 
 // ========================================
+// HISTORY MODE — same section/field definitions as the live table
+// (crActiveSection, crFmtField, crFieldClass all reused as-is), just
+// with an extra Date column and one row per (product, date). Product
+// names stay plain text here (no Product Performance drill-down link)
+// since that page only ever shows live data, not a specific historical
+// day.
+// ========================================
+function crBuildHistoryThead(section) {
+    const groupCells = section.groups.map(g =>
+        `<th colspan="${g.fields.length}">${g.label}</th>`
+    ).join("");
+    const subCells = section.groups.map(g =>
+        g.fields.map(f => `<th class="${crFieldClass(f)}">${f.label}</th>`).join("")
+    ).join("");
+    return `
+      <tr class="cr-group-row">
+        <th rowspan="2" class="cr-name-col">Product</th>
+        <th rowspan="2" class="cr-date-col">Date</th>
+        ${groupCells}
+      </tr>
+      <tr class="cr-sub-row">${subCells}</tr>`;
+}
+
+function crBuildHistoryRow(dateKey, item, section, isTotal) {
+    const cells = section.groups.map(g =>
+        g.fields.map(f => crFmtField(item, f)).join("")
+    ).join("");
+    const nameLabel = isTotal ? "Total" : item.product;
+    return `
+      <tr${isTotal ? ' class="cr-total-row"' : ""}>
+        <td class="cr-name-col">${crEscapeHtml(nameLabel)}</td>
+        <td class="cr-date-col">${crFmtDateDMY(dateKey)}</td>
+        ${cells}
+      </tr>`;
+}
+
+function crRenderHistory() {
+    if (!crHistoryData) return;
+    const section = crActiveSection();
+
+    document.getElementById("crThead").innerHTML = crBuildHistoryThead(section);
+
+    if (!crHistoryData.days.length) {
+        document.getElementById("crTbody").innerHTML = "";
+        crShowEmpty("គ្មានទិន្នន័យសម្រាប់ចន្លោះកាលបរិច្ឆេទនេះទេ / No history saved for this date range yet.");
+        return;
+    }
+
+    // Grouped by product (each product's day-by-day run together), in
+    // the same product order the first day's items came back in — then
+    // one "Total" block, both in chronological date order within each
+    // block.
+    const productOrder = crHistoryData.days[0].items.map(it => it.product);
+    let rowsHtml = "";
+    for (const product of productOrder) {
+        for (const day of crHistoryData.days) {
+            const item = day.items.find(it => it.product === product);
+            if (item) rowsHtml += crBuildHistoryRow(day.date, item, section, false);
+        }
+    }
+    for (const day of crHistoryData.days) {
+        rowsHtml += crBuildHistoryRow(day.date, day.total, section, true);
+    }
+
+    document.getElementById("crTbody").innerHTML = rowsHtml;
+    document.getElementById("crTableScroll").style.display = "block";
+    document.getElementById("crEmptyMsg").style.display = "none";
+    requestAnimationFrame(crSetHeaderOffsets);
+}
+
+async function crFetchHistory() {
+    const dateFrom = document.getElementById("crHistFromDate").value;
+    const dateTo = document.getElementById("crHistToDate").value;
+    if (!dateFrom || !dateTo) return;
+
+    crShowLoading();
+    try {
+        const url = `${API.BASE_URL}/api/creditreport/byproduct/history?dateFrom=${dateFrom}&dateTo=${dateTo}`;
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
+        const data = await res.json();
+        crHideLoading();
+
+        if (!data.ok) {
+            crShowEmpty(data.message || "Failed to load history.");
+            return;
+        }
+        crHistoryData = data;
+        crRenderHistory();
+    } catch (e) {
+        console.error(e);
+        crHideLoading();
+        crShowEmpty("Network error loading history.");
+    }
+}
+
+function crSetMode(mode) {
+    crMode = mode;
+    document.getElementById("crModeCurrentBtn").classList.toggle("active", mode === "current");
+    document.getElementById("crModeHistoryBtn").classList.toggle("active", mode === "history");
+    document.getElementById("crHistoryPanel").style.display = mode === "history" ? "block" : "none";
+    document.getElementById("crSearchWrap").style.display = mode === "current" && crData ? "flex" : "none";
+    crUpdateClassVisibility();
+
+    if (mode === "current") {
+        if (crData) {
+            document.getElementById("crTableScroll").style.display = "block";
+            document.getElementById("crEmptyMsg").style.display = "none";
+            crRenderSection();
+        }
+    } else if (crHistoryData) {
+        crRenderHistory();
+    } else {
+        document.getElementById("crTableScroll").style.display = "none";
+        crShowEmpty("ជ្រើសរើសចន្លោះកាលបរិច្ឆេទ រួចចុច \"មើលប្រវត្តិ\" / Pick a date range, then click \"View History\".");
+    }
+}
+
+// ========================================
 // PRODUCT SEARCH
 // Client-side name filter over the already-loaded table (crData.items)
 // — no refetch. The Total row (no data-name attribute) always stays
@@ -407,10 +542,17 @@ function crUpdateClassVisibility() {
     const section = document.getElementById("crSection").value;
     const isT24 = section === "parT24";
     const isNbc = section === "nbcOverdue";
-    document.getElementById("crClassRow").style.display = isT24 ? "" : "none";
-    document.getElementById("crProductRow").style.display = isT24 ? "" : "none";
+    // History rows are precomputed daily snapshots with every
+    // classification/product already in them (see crActiveSection()) —
+    // the T24/NBC Product Type filters need a server-side recompute this
+    // view doesn't do, so they're hidden in History mode. The NBC Loan
+    // Class picker stays: it's a local display pick among the
+    // already-fetched classifications, same as in Current mode.
+    const isHistory = crMode === "history";
+    document.getElementById("crClassRow").style.display = (isT24 && !isHistory) ? "" : "none";
+    document.getElementById("crProductRow").style.display = (isT24 && !isHistory) ? "" : "none";
     document.getElementById("crNbcClassRow").style.display = isNbc ? "" : "none";
-    document.getElementById("crNbcProductRow").style.display = isNbc ? "" : "none";
+    document.getElementById("crNbcProductRow").style.display = (isNbc && !isHistory) ? "" : "none";
 }
 
 let crDatesInitialised = false;
@@ -513,6 +655,19 @@ function crSyncStateToUrl() {
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
 }
 
+// Default Daily History range: the 1st of the month through the NBC
+// Loan Outstanding Grid Merge date itself (data.fromDate/toDate, already
+// anchored to that date by the server), NOT the calendar month we
+// happen to be in today — the Grid Merge date can lag behind today, so
+// seeding from today's calendar month would default to a range with no
+// data in it. Seeded once, from whichever report load resolves first.
+function crSeedHistoryDates(data) {
+    if (crHistDatesSeeded) return;
+    crHistDatesSeeded = true;
+    document.getElementById("crHistFromDate").value = data.fromDate;
+    document.getElementById("crHistToDate").value = data.toDate;
+}
+
 async function crRunReport() {
     crShowLoading();
     try {
@@ -550,6 +705,7 @@ async function crRunReport() {
         }
 
         crData = data;
+        crSeedHistoryDates(data);
         document.getElementById("crSearchWrap").style.display = "flex";
         document.getElementById("crTableScroll").style.display = "block";
         crRenderSection();
@@ -563,7 +719,7 @@ async function crRunReport() {
 // Section switching is local (no refetch).
 document.getElementById("crSection").addEventListener("change", () => {
     crUpdateClassVisibility();
-    crRenderSection();
+    if (crMode === "history") crRenderHistory(); else crRenderSection();
     crSyncStateToUrl();
 });
 document.getElementById("crClass").addEventListener("change", crRunReport);
@@ -572,7 +728,7 @@ document.getElementById("crProduct").addEventListener("change", crRunReport);
 // (see crActiveSection()) — local re-render, no refetch, same as
 // switching "Showing" itself.
 document.getElementById("crNbcClass").addEventListener("change", () => {
-    crRenderSection();
+    if (crMode === "history") crRenderHistory(); else crRenderSection();
     crSyncStateToUrl();
 });
 document.getElementById("crNbcProduct").addEventListener("change", crRunReport);
@@ -881,6 +1037,39 @@ window.addEventListener("pageshow", () => {
     clearTimeout(crLandscapeTimer);
     document.body.classList.remove("cr-force-landscape");
 });
+
+// ========================================
+// HISTORY MODE — UI wiring
+// ========================================
+document.getElementById("crModeCurrentBtn").addEventListener("click", () => crSetMode("current"));
+document.getElementById("crModeHistoryBtn").addEventListener("click", () => crSetMode("history"));
+document.getElementById("btnCrHistRun").addEventListener("click", crFetchHistory);
+
+if (crIsAdmin) {
+    document.getElementById("btnCrHistSnapshot").style.display = "";
+    document.getElementById("btnCrHistSnapshot").addEventListener("click", async () => {
+        const btn = document.getElementById("btnCrHistSnapshot");
+        btn.disabled = true;
+        try {
+            const res = await fetch(`${API.BASE_URL}/api/creditreport/byproduct/snapshot/run`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${crToken}`, "Content-Type": "application/json" },
+                body: "{}"
+            });
+            const data = await res.json();
+            if (data.ok) {
+                notify(`Snapshot saved for ${data.date}`, "success");
+            } else {
+                notify(data.message || "Snapshot failed", "error");
+            }
+        } catch (e) {
+            console.error(e);
+            notify("Snapshot failed", "error");
+        } finally {
+            btn.disabled = false;
+        }
+    });
+}
 
 // ========================================
 // INIT
