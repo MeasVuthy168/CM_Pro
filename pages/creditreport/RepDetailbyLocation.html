@@ -136,10 +136,44 @@ href="../../assets/css/creditreport/RepDetailbyLocation.css">
 
 </div>
 
-<!-- Section picker — no Branch/Team here: a location isn't scoped to
-     either the way an officer row is (see RepDetailbyLocation.js's own
-     header comment). -->
+<!-- Branch/Officer/District/Commune narrow the server-side rows before
+     grouping by location; "Showing" below only switches which already-
+     fetched section is displayed (no refetch). -->
 <div class="cr-view-controls">
+
+<div class="cr-geo-filter-grid">
+
+<div class="cr-geo-filter-col">
+<div class="cr-select-row">
+<label for="crDistrict" class="cr-select-label">District</label>
+<select id="crDistrict" class="cr-select">
+<option value="">All</option>
+</select>
+</div>
+<div class="cr-select-row">
+<label for="crCommune" class="cr-select-label">Commune</label>
+<select id="crCommune" class="cr-select">
+<option value="">All</option>
+</select>
+</div>
+</div>
+
+<div class="cr-geo-filter-col">
+<div class="cr-select-row">
+<label for="crBranch" class="cr-select-label">Branch</label>
+<select id="crBranch" class="cr-select">
+<option value="">All</option>
+</select>
+</div>
+<div class="cr-select-row">
+<label for="crOfficer" class="cr-select-label">Officer</label>
+<select id="crOfficer" class="cr-select">
+<option value="">All</option>
+</select>
+</div>
+</div>
+
+</div>
 
 <div class="cr-select-row">
 <label for="crSection" class="cr-select-label">Showing</label>
