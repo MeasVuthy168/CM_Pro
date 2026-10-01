@@ -183,6 +183,9 @@ const PP_CATEGORIES = [
             { bucket: "digital", label: "Digital" }
         ]
     },
+    // Shows Balance WO (the outstanding written-off balance, # cif/Int/Prn)
+    // rather than the WO period figures, per explicit request 2026-10-01 —
+    // same change made to Location Performance/Branch/Officer Productivity.
     {
         key: "writeOff",
         icon: "✂️",
@@ -190,20 +193,24 @@ const PP_CATEGORIES = [
         chart: false,
         statGroups: [
             { label: "Total", total: true, fields: [
-                { key: "total.writeOff.wo.count", label: "Loan" },
-                { key: "total.writeOff.wo.prn", label: "Prn", money: true }
+                { key: "total.writeOff.balanceWO.cif", label: "# (cif)" },
+                { key: "total.writeOff.balanceWO.int", label: "Int", money: true },
+                { key: "total.writeOff.balanceWO.prn", label: "Prn", money: true }
             ] },
             { label: "CO", fields: [
-                { key: "co.writeOff.wo.count", label: "Loan" },
-                { key: "co.writeOff.wo.prn", label: "Prn", money: true }
+                { key: "co.writeOff.balanceWO.cif", label: "# (cif)" },
+                { key: "co.writeOff.balanceWO.int", label: "Int", money: true },
+                { key: "co.writeOff.balanceWO.prn", label: "Prn", money: true }
             ] },
             { label: "FSRO", fields: [
-                { key: "fsro.writeOff.wo.count", label: "Loan" },
-                { key: "fsro.writeOff.wo.prn", label: "Prn", money: true }
+                { key: "fsro.writeOff.balanceWO.cif", label: "# (cif)" },
+                { key: "fsro.writeOff.balanceWO.int", label: "Int", money: true },
+                { key: "fsro.writeOff.balanceWO.prn", label: "Prn", money: true }
             ] },
             { label: "Digital", fields: [
-                { key: "digital.writeOff.wo.count", label: "Loan" },
-                { key: "digital.writeOff.wo.prn", label: "Prn", money: true }
+                { key: "digital.writeOff.balanceWO.cif", label: "# (cif)" },
+                { key: "digital.writeOff.balanceWO.int", label: "Int", money: true },
+                { key: "digital.writeOff.balanceWO.prn", label: "Prn", money: true }
             ] }
         ],
         clientLists: [

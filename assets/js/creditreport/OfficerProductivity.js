@@ -247,6 +247,11 @@ const OP_CATEGORIES = [
             { section: "nbcOverdueArea", label: "Area" }
         ]
     },
+    // Shows Balance WO (the outstanding written-off balance, # cif/Int/Prn —
+    // "count" here, unlike balanceWO.cif elsewhere, since that's this
+    // file's own field name for the same figure) rather than the WO period
+    // figures, per explicit request 2026-10-01 — same change made to
+    // Location/Product Performance/Branch Productivity.
     {
         key: "writeOff",
         icon: "✂️",
@@ -256,26 +261,30 @@ const OP_CATEGORIES = [
             {
                 label: "Own",
                 fields: [
-                    { key: "writeOffOwn.wo.count", label: "Loan" },
-                    { key: "writeOffOwn.wo.prn", label: "Prn", money: true }
+                    { key: "writeOffOwn.balanceWO.count", label: "# (cif)" },
+                    { key: "writeOffOwn.balanceWO.int", label: "Int", money: true },
+                    { key: "writeOffOwn.balanceWO.prn", label: "Prn", money: true }
                 ]
             },
             {
                 label: "Area",
                 fields: [
-                    { key: "writeOffArea.wo.count", label: "Loan" },
-                    { key: "writeOffArea.wo.prn", label: "Prn", money: true }
+                    { key: "writeOffArea.balanceWO.count", label: "# (cif)" },
+                    { key: "writeOffArea.balanceWO.int", label: "Int", money: true },
+                    { key: "writeOffArea.balanceWO.prn", label: "Prn", money: true }
                 ]
             }
         ],
         areaTeamGroups: [
             { label: "Officer", fields: [
-                { key: "writeOffAreaByTeam.co.wo.count", label: "Loan" },
-                { key: "writeOffAreaByTeam.co.wo.prn", label: "Prn", money: true }
+                { key: "writeOffAreaByTeam.co.balanceWO.count", label: "# (cif)" },
+                { key: "writeOffAreaByTeam.co.balanceWO.int", label: "Int", money: true },
+                { key: "writeOffAreaByTeam.co.balanceWO.prn", label: "Prn", money: true }
             ] },
             { label: "Digital", fields: [
-                { key: "writeOffAreaByTeam.digital.wo.count", label: "Loan" },
-                { key: "writeOffAreaByTeam.digital.wo.prn", label: "Prn", money: true }
+                { key: "writeOffAreaByTeam.digital.balanceWO.count", label: "# (cif)" },
+                { key: "writeOffAreaByTeam.digital.balanceWO.int", label: "Int", money: true },
+                { key: "writeOffAreaByTeam.digital.balanceWO.prn", label: "Prn", money: true }
             ] }
         ],
         clientLists: [
