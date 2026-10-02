@@ -161,11 +161,6 @@ CR_SECTIONS.all = {
 // ========================================
 // HELPERS
 // ========================================
-function crToDMY(dateStr) {
-    if (!dateStr) return "";
-    const [y, m, d] = dateStr.split("-");
-    return `${d}-${m}-${y}`;
-}
 function crFmtDateDMY(yyyymmdd) {
     if (!yyyymmdd) return "-";
     const [y, m, d] = yyyymmdd.split("-");
@@ -578,10 +573,10 @@ document.getElementById("crTbody").addEventListener("click", (e) => {
 
     const q = new URLSearchParams({
         location: link.dataset.location,
-        fromDate: document.getElementById("crFromDate").value,
-        toDate: document.getElementById("crToDate").value,
-        woFromDate: document.getElementById("crWoFromDate").value,
-        woToDate: document.getElementById("crWoToDate").value
+        fromDate: crData?.fromDate || "",
+        toDate: crData?.toDate || "",
+        woFromDate: crData?.woFromDate || "",
+        woToDate: crData?.woToDate || ""
     });
     location.href = `LocationPerformance.html?${q.toString()}`;
 });
@@ -639,12 +634,10 @@ function crShowLoading(message = "Loading Report Data...") {
     document.getElementById("crSearchWrap").style.display = "none";
     document.getElementById("crTableScroll").style.display = "none";
     document.getElementById("crEmptyMsg").style.display = "none";
-    document.getElementById("btnCrRun").disabled = true;
     if (typeof showAppLoading === "function") showAppLoading(message);
 }
 function crHideLoading() {
     document.getElementById("crSkeleton").style.display = "none";
-    document.getElementById("btnCrRun").disabled = false;
     if (typeof hideAppLoading === "function") hideAppLoading();
 }
 function crShowEmpty(msg) {
@@ -658,18 +651,12 @@ function crShowEmpty(msg) {
 // ========================================
 // LOAD
 // ========================================
-// Dates start empty; omitting them lets the server derive its defaults
-// from the data (latest OS disbursement date) and echo back what it used.
+// The report's own date range is no longer user-settable (the "Set
+// Report Date" picker was removed 2026-10-02 per explicit request), so
+// no date params are ever sent; the server always uses its own
+// data-derived default.
 function crBuildQuery() {
     const parts = [];
-    const addDate = (param, id) => {
-        const v = document.getElementById(id).value;
-        if (v) parts.push(`${param}=${crToDMY(v)}`);
-    };
-    addDate("fromDate", "crFromDate");
-    addDate("toDate", "crToDate");
-    addDate("woFromDate", "crWoFromDate");
-    addDate("woToDate", "crWoToDate");
 
     const t24Class = document.getElementById("crClass").value;
     if (t24Class) parts.push(`t24Class=${encodeURIComponent(t24Class)}`);
@@ -723,17 +710,6 @@ function crUpdateClassVisibility() {
     document.getElementById("crProductRow").style.display = (isT24 && !isHistory) ? "" : "none";
     document.getElementById("crNbcClassRow").style.display = isNbc ? "" : "none";
     document.getElementById("crNbcProductRow").style.display = (isNbc && !isHistory) ? "" : "none";
-}
-
-let crDatesInitialised = false;
-function crApplyServerDates(data) {
-    if (crDatesInitialised) return;
-    const set = (id, v) => { if (v) document.getElementById(id).value = v; };
-    set("crFromDate", data.fromDate);
-    set("crToDate", data.toDate);
-    set("crWoFromDate", data.woFromDate);
-    set("crWoToDate", data.woToDate);
-    crDatesInitialised = true;
 }
 
 // ========================================
@@ -839,20 +815,6 @@ function crReadStateFromUrl() {
         document.getElementById("crSection").value = section;
     }
 
-    let hasDateParam = false;
-    const setDate = (id, param) => {
-        const v = p.get(param);
-        if (v) {
-            document.getElementById(id).value = v;
-            hasDateParam = true;
-        }
-    };
-    setDate("crFromDate", "fromDate");
-    setDate("crToDate", "toDate");
-    setDate("crWoFromDate", "woFromDate");
-    setDate("crWoToDate", "woToDate");
-    if (hasDateParam) crDatesInitialised = true;
-
     const t24Class = p.get("t24Class");
     if (t24Class) {
         const classSel = document.getElementById("crClass");
@@ -898,15 +860,6 @@ function crReadStateFromUrl() {
 function crSyncStateToUrl() {
     const p = new URLSearchParams();
     p.set("section", document.getElementById("crSection").value);
-
-    const addDate = (param, id) => {
-        const v = document.getElementById(id).value;
-        if (v) p.set(param, v);
-    };
-    addDate("fromDate", "crFromDate");
-    addDate("toDate", "crToDate");
-    addDate("woFromDate", "crWoFromDate");
-    addDate("woToDate", "crWoToDate");
 
     const t24Class = document.getElementById("crClass").value;
     if (t24Class) p.set("t24Class", t24Class);
@@ -964,7 +917,6 @@ async function crRunReport() {
             return;
         }
 
-        crApplyServerDates(data);
         crPopulateFilters(data);
         crSyncStateToUrl();
 
@@ -1048,25 +1000,6 @@ document.getElementById("crThead").addEventListener("click", (e) => {
         crSortState = { key: null, type: null, dir: 1 };
     }
     crRenderSection();
-});
-
-// ========================================
-// DATE PANEL
-// ========================================
-const crDatePanel = document.getElementById("crDatePanel");
-const btnCrToggleDates = document.getElementById("btnCrToggleDates");
-
-function crSetDatePanelOpen(open) {
-    crDatePanel.classList.toggle("open", open);
-    btnCrToggleDates.classList.toggle("open", open);
-    btnCrToggleDates.setAttribute("aria-expanded", open ? "true" : "false");
-}
-btnCrToggleDates.addEventListener("click", () => {
-    crSetDatePanelOpen(!crDatePanel.classList.contains("open"));
-});
-document.getElementById("btnCrRun").addEventListener("click", () => {
-    crRunReport();
-    crSetDatePanelOpen(false);
 });
 
 // ========================================
