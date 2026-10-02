@@ -668,17 +668,23 @@ async function crFetchHistory() {
 }
 
 // "View History" stays disabled until the person has deliberately
-// picked a specific Branch AND a specific Team — not just left both at
-// their "All" default — per explicit request 2026-10-02. This only
-// gates the initial fetch trigger; once crHistoryData is loaded, Branch/
-// Team (including switching back to "All Branch"/"All Team") still
-// filter it client-side exactly as before, no re-fetch needed.
+// narrowed at least 2 of the 3 filters (Branch, Team, Showing) away
+// from their "All"/"All Sections" default — any 2 of the 3, not
+// specifically Branch+Team — per explicit follow-up request
+// 2026-10-02 (the original Branch+Team-only rule felt like it needed
+// all 3 picked to get a focused result). This only gates the initial
+// fetch trigger; once crHistoryData is loaded, Branch/Team/Showing
+// (including switching back to any "All" default) still filter it
+// client-side exactly as before, no re-fetch needed.
 function crUpdateHistRunButtonState() {
     const btn = document.getElementById("btnCrHistRun");
     if (!btn) return;
     const branchFilter = document.getElementById("crHistBranch").value;
     const teamFilter = document.getElementById("crHistTeam").value;
-    btn.disabled = !(branchFilter && teamFilter);
+    const sectionFilter = document.getElementById("crSection").value;
+    const specificCount = [!!branchFilter, !!teamFilter, sectionFilter !== "all"]
+        .filter(Boolean).length;
+    btn.disabled = specificCount < 2;
 }
 
 function crSetMode(mode) {
@@ -702,7 +708,7 @@ function crSetMode(mode) {
         crRenderHistory();
     } else {
         document.getElementById("crTableScroll").style.display = "none";
-        crShowEmpty("Pick a Branch and a Team, then click \"View History\".");
+        crShowEmpty("Pick at least 2 of Branch, Team and Showing, then click \"View History\".");
     }
 }
 
@@ -828,7 +834,12 @@ document.getElementById("crTbody").addEventListener("click", (e) => {
 
 document.getElementById("crSection").addEventListener("change", () => {
     crUpdateClassVisibility();
-    if (crMode === "history") crRenderHistory(); else crRenderSummary();
+    if (crMode === "history") {
+        crUpdateHistRunButtonState();
+        crRenderHistory();
+    } else {
+        crRenderSummary();
+    }
     crSyncStateToUrl();
 });
 document.getElementById("crClass").addEventListener("change", crRunReport);

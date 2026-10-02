@@ -125,14 +125,17 @@ href="../../assets/css/creditreport/RepDetailbyCO.css">
 </div>
 
 <!-- Daily History only — narrows the already-fetched table down to
-     exactly one officer, found via this search box (backed by a
-     datalist of the live roster, "Name — Branch" to disambiguate
-     officers sharing a name across branches). Same data already on
-     each row, no refetch. -->
+     exactly one officer, found via this search box. Suggestions are a
+     custom dropdown built in JS (crAttachOfficerSuggestions), not a
+     native <datalist> — iOS/WebView browsers never render datalist
+     suggestions, so typing showed nothing there; see explicit bug
+     report 2026-10-02. Matches against the live roster as "Name —
+     Branch" to disambiguate officers sharing a name across branches. -->
 <div class="cr-select-row" id="crHistOfficerRow" style="display:none;">
 <label for="crHistOfficerSearch" class="cr-select-label">Officer</label>
-<input type="text" id="crHistOfficerSearch" class="cr-select" list="crHistOfficerList" placeholder="Search officer..." autocomplete="off">
-<datalist id="crHistOfficerList"></datalist>
+<div class="cr-officer-search-wrap">
+<input type="text" id="crHistOfficerSearch" class="cr-select" placeholder="Search officer..." autocomplete="off">
+</div>
 </div>
 
 <div class="cr-select-row" id="crBranchRow">
