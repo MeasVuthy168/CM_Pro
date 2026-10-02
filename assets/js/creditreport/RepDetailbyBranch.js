@@ -667,6 +667,20 @@ async function crFetchHistory() {
     }
 }
 
+// "View History" stays disabled until the person has deliberately
+// picked a specific Branch AND a specific Team — not just left both at
+// their "All" default — per explicit request 2026-10-02. This only
+// gates the initial fetch trigger; once crHistoryData is loaded, Branch/
+// Team (including switching back to "All Branch"/"All Team") still
+// filter it client-side exactly as before, no re-fetch needed.
+function crUpdateHistRunButtonState() {
+    const btn = document.getElementById("btnCrHistRun");
+    if (!btn) return;
+    const branchFilter = document.getElementById("crHistBranch").value;
+    const teamFilter = document.getElementById("crHistTeam").value;
+    btn.disabled = !(branchFilter && teamFilter);
+}
+
 function crSetMode(mode) {
     crMode = mode;
     document.getElementById("crModeCurrentBtn").classList.toggle("active", mode === "current");
@@ -676,6 +690,7 @@ function crSetMode(mode) {
     document.getElementById("crHistTeamRow").style.display = mode === "history" ? "" : "none";
     crUpdateClassVisibility();
     crUpdateChartButtonVisibility();
+    if (mode === "history") crUpdateHistRunButtonState();
 
     if (mode === "current") {
         if (crSummaryData) {
@@ -687,7 +702,7 @@ function crSetMode(mode) {
         crRenderHistory();
     } else {
         document.getElementById("crTableScroll").style.display = "none";
-        crShowEmpty("Pick a date range, then click \"View History\".");
+        crShowEmpty("Pick a Branch and a Team, then click \"View History\".");
     }
 }
 
@@ -1492,9 +1507,11 @@ document.getElementById("crModeCurrentBtn").addEventListener("click", () => crSe
 document.getElementById("crModeHistoryBtn").addEventListener("click", () => crSetMode("history"));
 document.getElementById("btnCrHistRun").addEventListener("click", crFetchHistory);
 document.getElementById("crHistBranch").addEventListener("change", () => {
+    crUpdateHistRunButtonState();
     crRenderHistory();
 });
 document.getElementById("crHistTeam").addEventListener("change", () => {
+    crUpdateHistRunButtonState();
     crRenderHistory();
 });
 
