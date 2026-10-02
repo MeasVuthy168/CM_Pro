@@ -410,8 +410,18 @@ function crBuildHistoryThead(section) {
       <tr class="cr-sub-row">${subCells}</tr>`;
 }
 
+// Balance Loan at Risk (T24) is never date-filtered (see
+// computeLocationRows in creditreport-location.js) — it always reflects
+// whatever is live in the ArreasT24ByCO feed at snapshot time, which can
+// carry its own "as of" moment (t24AsOfText) different from this row's
+// own Date (the NBC OS Grid Merge date), same as Branch's own History —
+// per explicit follow-up request 2026-10-02.
+function crSectionHasT24(section) {
+    return section.groups.some(g => g.label === "Balance Loan at Risk (T24)");
+}
+
 function crBuildHistoryRow(dateKey, item, section, opts = {}) {
-    const { isTotal = false, isOtherAddress = false, isDetail = false } = opts;
+    const { isTotal = false, isOtherAddress = false, isDetail = false, t24AsOfText = "" } = opts;
     const cells = section.groups.map(g =>
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
@@ -429,11 +439,15 @@ function crBuildHistoryRow(dateKey, item, section, opts = {}) {
         <td class="cr-col-num">${crFmtNum(item.families)}</td>
         <td class="cr-col-pct">${crFmtPct(item.segmentationPct)}</td>`;
 
+    const t24Note = (crSectionHasT24(section) && t24AsOfText)
+        ? `<div class="cr-t24-asof" title="Balance Loan at Risk (T24) is as of its own ArreasT24ByCO feed, not this row's Date">T24: ${crEscapeHtml(t24AsOfText)}</div>`
+        : "";
+
     const rowClass = isTotal ? ' class="cr-total-row"' : isOtherAddress ? ' class="cr-other-row"' : isDetail ? ' class="cr-other-detail-row"' : "";
     return `
       <tr${rowClass}>
         <td class="cr-name-col${isDetail ? " cr-other-detail-name" : ""}">${nameCellContent}</td>
-        <td class="cr-date-col">${crFmtDateDMY(dateKey)}</td>
+        <td class="cr-date-col"><div class="cr-date-main">${crFmtDateDMY(dateKey)}</div>${t24Note}</td>
         ${familyCells}
         ${cells}
       </tr>`;
@@ -464,16 +478,16 @@ function crRenderHistory() {
         for (const day of crHistoryData.days) {
             const item = day.items.find(it => it.location === location);
             if (!item) continue;
-            rowsHtml += crBuildHistoryRow(day.date, item, section, { isOtherAddress });
+            rowsHtml += crBuildHistoryRow(day.date, item, section, { isOtherAddress, t24AsOfText: day.t24AsOfText });
             if (isOtherAddress && crHistOtherAddressExpanded.has(day.date)) {
                 rowsHtml += (day.otherAddressDetail || [])
-                    .map(d => crBuildHistoryRow(day.date, d, section, { isDetail: true }))
+                    .map(d => crBuildHistoryRow(day.date, d, section, { isDetail: true, t24AsOfText: day.t24AsOfText }))
                     .join("");
             }
         }
     }
     for (const day of crHistoryData.days) {
-        rowsHtml += crBuildHistoryRow(day.date, day.total, section, { isTotal: true });
+        rowsHtml += crBuildHistoryRow(day.date, day.total, section, { isTotal: true, t24AsOfText: day.t24AsOfText });
     }
 
     document.getElementById("crTbody").innerHTML = rowsHtml;

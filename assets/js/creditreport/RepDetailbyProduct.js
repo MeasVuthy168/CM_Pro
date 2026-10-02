@@ -341,15 +341,28 @@ function crBuildHistoryThead(section) {
       <tr class="cr-sub-row">${subCells}</tr>`;
 }
 
-function crBuildHistoryRow(dateKey, item, section, isTotal) {
+// Balance Loan at Risk (T24) is never date-filtered (see
+// computeProductRows in creditreport-product.js) — it always reflects
+// whatever is live in the ArreasT24ByCO feed at snapshot time, which can
+// carry its own "as of" moment (t24AsOfText) different from this row's
+// own Date (the NBC OS Grid Merge date), same as Branch's own History —
+// per explicit follow-up request 2026-10-02.
+function crSectionHasT24(section) {
+    return section.groups.some(g => g.label === "Balance Loan at Risk (T24)");
+}
+
+function crBuildHistoryRow(dateKey, item, section, isTotal, t24AsOfText) {
     const cells = section.groups.map(g =>
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
     const nameLabel = isTotal ? "Total" : item.product;
+    const t24Note = (crSectionHasT24(section) && t24AsOfText)
+        ? `<div class="cr-t24-asof" title="Balance Loan at Risk (T24) is as of its own ArreasT24ByCO feed, not this row's Date">T24: ${crEscapeHtml(t24AsOfText)}</div>`
+        : "";
     return `
       <tr${isTotal ? ' class="cr-total-row"' : ""}>
         <td class="cr-name-col">${crEscapeHtml(nameLabel)}</td>
-        <td class="cr-date-col">${crFmtDateDMY(dateKey)}</td>
+        <td class="cr-date-col"><div class="cr-date-main">${crFmtDateDMY(dateKey)}</div>${t24Note}</td>
         ${cells}
       </tr>`;
 }
@@ -375,11 +388,11 @@ function crRenderHistory() {
     for (const product of productOrder) {
         for (const day of crHistoryData.days) {
             const item = day.items.find(it => it.product === product);
-            if (item) rowsHtml += crBuildHistoryRow(day.date, item, section, false);
+            if (item) rowsHtml += crBuildHistoryRow(day.date, item, section, false, day.t24AsOfText);
         }
     }
     for (const day of crHistoryData.days) {
-        rowsHtml += crBuildHistoryRow(day.date, day.total, section, true);
+        rowsHtml += crBuildHistoryRow(day.date, day.total, section, true, day.t24AsOfText);
     }
 
     document.getElementById("crTbody").innerHTML = rowsHtml;
