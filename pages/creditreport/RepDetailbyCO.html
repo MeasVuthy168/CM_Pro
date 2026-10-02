@@ -112,16 +112,27 @@ href="../../assets/css/creditreport/RepDetailbyCO.css">
 <div class="cr-date-panel" id="crHistoryPanel" style="display:none">
 <div class="filter-grid">
 <div class="filter-group">
-<label for="crHistFromDate">ពីថ្ងៃ / From</label>
+<label for="crHistFromDate">From</label>
 <input type="date" id="crHistFromDate">
 </div>
 <div class="filter-group">
-<label for="crHistToDate">ដល់ថ្ងៃ / To</label>
+<label for="crHistToDate">To</label>
 <input type="date" id="crHistToDate">
 </div>
 </div>
-<button id="btnCrHistRun" class="cr-run-btn">មើលប្រវត្តិ / View History</button>
+<button id="btnCrHistRun" class="cr-run-btn" disabled>View History</button>
 <button id="btnCrHistSnapshot" class="cr-run-btn cr-snapshot-btn" style="display:none">📸 Snapshot Now</button>
+</div>
+
+<!-- Daily History only — narrows the already-fetched table down to
+     exactly one officer, found via this search box (backed by a
+     datalist of the live roster, "Name — Branch" to disambiguate
+     officers sharing a name across branches). Same data already on
+     each row, no refetch. -->
+<div class="cr-select-row" id="crHistOfficerRow" style="display:none;">
+<label for="crHistOfficerSearch" class="cr-select-label">Officer</label>
+<input type="text" id="crHistOfficerSearch" class="cr-select" list="crHistOfficerList" placeholder="Search officer..." autocomplete="off">
+<datalist id="crHistOfficerList"></datalist>
 </div>
 
 <div class="cr-select-row" id="crBranchRow">
@@ -144,8 +155,8 @@ href="../../assets/css/creditreport/RepDetailbyCO.css">
 <label for="crSection" class="cr-select-label">Showing</label>
 <select id="crSection" class="cr-select">
 <option value="all">All Sections</option>
-<option value="outstandingArea">Loan Outstanding — សមតុល្យឥណទាន_Area</option>
-<option value="outstanding">Loan Outstanding — សមតុល្យឥណទាន_Own</option>
+<option value="outstandingArea">Loan Outstanding_Area</option>
+<option value="outstanding">Loan Outstanding_Own</option>
 <option value="disburseArea">Loan Disburse_Area</option>
 <option value="disburse">Loan Disburse_Own</option>
 <option value="parT24Area">Balance Loan at Risk (T24)_Area</option>
@@ -155,6 +166,8 @@ href="../../assets/css/creditreport/RepDetailbyCO.css">
 <option value="writeOff">Write Off</option>
 </select>
 </div>
+
+<button type="button" id="btnCrHistChart" class="cr-run-btn cr-chart-btn" style="display:none">📊 Chart</button>
 
 <div class="cr-select-row" id="crClassRow" style="display:none;">
 <label for="crClass" class="cr-select-label">Loan Class</label>
@@ -273,6 +286,25 @@ autocomplete="off">
 
 </div>
 
+<!-- ========================= -->
+<!-- DAILY HISTORY CHART -->
+<!-- Opened by the "📊 Chart" button — a line chart of the searched
+     officer, for whichever fields the active "Showing" section
+     carries, over the fetched Daily History date range. -->
+<!-- ========================= -->
+<div class="cr-chart-overlay" id="crChartOverlay" hidden>
+<div class="cr-chart-panel">
+<div class="cr-chart-header">
+<h3 class="cr-chart-title" id="crChartTitle">Chart</h3>
+<button type="button" id="btnCrChartClose" class="cr-chart-close" aria-label="Close chart">✕</button>
+</div>
+<div class="cr-chart-metric-row" id="crChartMetricRow"></div>
+<div class="cr-chart-canvas-wrap">
+<canvas id="crChartCanvas"></canvas>
+</div>
+</div>
+</div>
+
 <div id="bottomnav-container"></div>
 
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
@@ -280,6 +312,8 @@ autocomplete="off">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 
 <script src="../../assets/js/creditreport/RepDetailbyCO.js"></script>
 <script src="../../assets/js/creditreport/RepDetailbyCO-loader.js"></script>
