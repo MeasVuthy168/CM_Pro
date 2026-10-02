@@ -341,40 +341,13 @@
 }
 [data-theme="dark"] .cr-info-value{ color:var(--cr-gold-light); }
 
-/* ===== "Set Report Date" toggle ===== */
-.cr-setdate-btn{
-    width:100%;
-    margin-top:10px;
-    background:transparent;
-    color:var(--cr-navy);
-    border:1.5px solid var(--cr-border);
-    border-radius:12px;
-    padding:9px;
-    font-family:'KRASAR',sans-serif;
-    font-weight:700;
-    font-size:13.5px;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
-}
-[data-theme="dark"] .cr-setdate-btn{ color:var(--cr-gold-light); }
-.cr-setdate-btn:active{ opacity:.8; }
-.cr-setdate-caret{
-    font-size:11px;
-    transition:transform .2s ease;
-}
-.cr-setdate-btn.open .cr-setdate-caret{ transform:rotate(180deg); }
-
-/* ===== Collapsible date panel ===== */
+/* ===== Date panel (Daily History's own — the "Set Report Date" picker
+   for the live report was removed 2026-10-02 per explicit request) ===== */
 .cr-date-panel{
-    display:none;
     margin-top:10px;
     padding-top:10px;
     border-top:1px solid var(--cr-border);
 }
-.cr-date-panel.open{ display:block; }
 
 .rendered-count-note{
     font-size:11.5px;
@@ -785,7 +758,7 @@ body.cr-force-landscape .landscape-bar.hidden{
         display:none !important;
     }
 
-    .cr-run-btn, .cr-setdate-btn{ display:none !important; }
+    .cr-run-btn{ display:none !important; }
 
     .page-container{
         padding:0;

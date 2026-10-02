@@ -84,11 +84,11 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 <div class="print-only-title">របាយការណ៍ឥណទានតាមសាខាប្រចាំថ្ងៃ</div>
 
 <!-- ========================= -->
-<!-- REPORT INFO + DATE FILTER -->
+<!-- REPORT INFO -->
 <!-- The card leads with the report's current state (periods, "as of"
-     dates, Loan Reclass, branch count). The date pickers stay collapsed
-     behind "Set Report Date" since most visits just read the defaults
-     rather than changing them. -->
+     dates, Loan Reclass, branch count). The report always uses the
+     server's own data-derived date defaults — the "Set Report Date"
+     picker was removed 2026-10-02 per explicit request (never used). -->
 <!-- ========================= -->
 
 <div class="filter-card">
@@ -122,49 +122,14 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 
 </div>
 
-<button id="btnCrToggleDates" class="cr-setdate-btn" aria-expanded="false">
-<span>Set Report Date</span>
-<span class="cr-setdate-caret">▾</span>
-</button>
-
-<div class="cr-date-panel" id="crDatePanel">
-
-<div class="filter-grid">
-
-<div class="filter-group">
-<label for="crFromDate">ចាប់ផ្តើមផ្តល់ឥណទាន</label>
-<input type="date" id="crFromDate">
-</div>
-
-<div class="filter-group">
-<label for="crToDate">ដល់</label>
-<input type="date" id="crToDate">
-</div>
-
-<div class="filter-group">
-<label for="crWoFromDate">ចាប់ផ្តើម (Write Off)</label>
-<input type="date" id="crWoFromDate">
-</div>
-
-<div class="filter-group">
-<label for="crWoToDate">ដល់</label>
-<input type="date" id="crWoToDate">
-</div>
-
-</div>
-
-<button id="btnCrRun" class="cr-run-btn">View Report</button>
-
-</div>
-
 <!-- View controls live in this same card: the section picker is
      "what am I looking at", so it belongs with the report's other
      settings rather than in a card of its own. -->
 <div class="cr-view-controls">
 
 <div class="cr-mode-row">
-<button type="button" id="crModeCurrentBtn" class="cr-mode-btn active">ថ្ងៃនេះ / Current</button>
-<button type="button" id="crModeHistoryBtn" class="cr-mode-btn">ប្រវត្តិប្រចាំថ្ងៃ / Daily History</button>
+<button type="button" id="crModeCurrentBtn" class="cr-mode-btn active">Current</button>
+<button type="button" id="crModeHistoryBtn" class="cr-mode-btn">Daily History</button>
 </div>
 
 <div class="cr-date-panel" id="crHistoryPanel" style="display:none">
