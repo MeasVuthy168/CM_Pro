@@ -628,23 +628,28 @@ function crBuildHistoryRow(dateKey, item, section, isTotal, t24AsOfText) {
 
     if (isExpanded && item.breakdown) {
         html +=
-            crBuildHistoryBreakdownRow(dateKey, item.breakdown.co, section, "CO") +
-            crBuildHistoryBreakdownRow(dateKey, item.breakdown.fsro, section, "FSRO") +
-            crBuildHistoryBreakdownRow(dateKey, item.breakdown.digital, section, "Digital");
+            crBuildHistoryBreakdownRow(dateKey, item.breakdown.co, section, "CO", t24AsOfText) +
+            crBuildHistoryBreakdownRow(dateKey, item.breakdown.fsro, section, "FSRO", t24AsOfText) +
+            crBuildHistoryBreakdownRow(dateKey, item.breakdown.digital, section, "Digital", t24AsOfText);
     }
     return html;
 }
 
 // Same shape as crBuildSummaryBreakdownRow (the live table's own), with
-// the same Date as its parent row so every row still carries a date.
-function crBuildHistoryBreakdownRow(dateKey, item, section, team) {
+// the same Date (and the same T24-as-of note, per explicit request
+// 2026-10-02 — CO/FSRO/Digital all share their parent branch's single
+// ArreasT24ByCO snapshot moment) as its parent row.
+function crBuildHistoryBreakdownRow(dateKey, item, section, team, t24AsOfText) {
     const cells = section.groups.map(g =>
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
+    const t24Note = (crSectionHasT24(section) && t24AsOfText)
+        ? `<div class="cr-t24-asof" title="Balance Loan at Risk (T24) is as of its own ArreasT24ByCO feed, not this row's Date">T24: ${crEscapeHtml(t24AsOfText)}</div>`
+        : "";
     return `
       <tr class="cr-breakdown-row">
         <td class="cr-branch-col">${crEscapeHtml(team)}</td>
-        <td class="cr-date-col">${crFmtDateDMY(dateKey)}</td>
+        <td class="cr-date-col"><div class="cr-date-main">${crFmtDateDMY(dateKey)}</div>${t24Note}</td>
         ${cells}
       </tr>`;
 }
