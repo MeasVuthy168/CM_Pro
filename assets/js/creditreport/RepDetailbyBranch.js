@@ -591,7 +591,19 @@ function crBuildHistoryThead(section) {
       </tr>`;
 }
 
-function crBuildHistoryRow(dateKey, item, section, isTotal) {
+// Balance Loan at Risk (T24) is never date-filtered (see
+// computeBranchData in creditreport-branch.js) — it always reflects
+// whatever is live in the ArreasT24ByCO feed at snapshot time, which can
+// carry its own "as of" moment (t24AsOfText) different from this row's
+// own Date (the NBC OS Grid Merge date), same as the live table's own
+// info card already shows two separate values. Shown as a small label
+// under the Date cell, only while a T24 column is actually part of the
+// active section, per explicit request 2026-10-02.
+function crSectionHasT24(section) {
+    return section.groups.some(g => g.label === "Balance Loan at Risk (T24)");
+}
+
+function crBuildHistoryRow(dateKey, item, section, isTotal, t24AsOfText) {
     const cells = section.groups.map(g =>
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
@@ -603,10 +615,14 @@ function crBuildHistoryRow(dateKey, item, section, isTotal) {
         ? `<button type="button" class="cr-row-expand-btn${isExpanded ? " open" : ""}" data-hist-key="${crEscapeHtml(rowKey)}" aria-expanded="${isExpanded}" aria-label="Toggle CO/FSRO/Digital breakdown">▾</button>${crEscapeHtml(branchLabel)}`
         : crEscapeHtml(branchLabel);
 
+    const t24Note = (crSectionHasT24(section) && t24AsOfText)
+        ? `<div class="cr-t24-asof" title="Balance Loan at Risk (T24) is as of its own ArreasT24ByCO feed, not this row's Date">T24: ${crEscapeHtml(t24AsOfText)}</div>`
+        : "";
+
     let html = `
       <tr${isTotal ? ' class="cr-total-row"' : ""}>
         <td class="cr-branch-col">${branchCell}</td>
-        <td class="cr-date-col">${crFmtDateDMY(dateKey)}</td>
+        <td class="cr-date-col"><div class="cr-date-main">${crFmtDateDMY(dateKey)}</div>${t24Note}</td>
         ${cells}
       </tr>`;
 
@@ -654,11 +670,11 @@ function crRenderHistory() {
     for (const branch of branchOrder) {
         for (const day of crHistoryData.days) {
             const item = day.items.find(it => it.branch === branch);
-            if (item) rowsHtml += crBuildHistoryRow(day.date, item, section, false);
+            if (item) rowsHtml += crBuildHistoryRow(day.date, item, section, false, day.t24AsOfText);
         }
     }
     for (const day of crHistoryData.days) {
-        rowsHtml += crBuildHistoryRow(day.date, day.total, section, true);
+        rowsHtml += crBuildHistoryRow(day.date, day.total, section, true, day.t24AsOfText);
     }
 
     document.getElementById("crTbody").innerHTML = rowsHtml;
