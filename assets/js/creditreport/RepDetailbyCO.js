@@ -937,7 +937,12 @@ async function crRunReport() {
 // server-side, so those do need a round trip.
 document.getElementById("crSection").addEventListener("change", () => {
     crUpdateClassVisibility();
-    if (crMode === "history") crRenderHistory(); else crRenderSection();
+    if (crMode === "history") {
+        crUpdateChartButtonVisibility();
+        crRenderHistory();
+    } else {
+        crRenderSection();
+    }
     crSyncStateToUrl();
 });
 document.getElementById("crBranch").addEventListener("change", crRunReport);
@@ -1222,10 +1227,23 @@ window.addEventListener("pageshow", () => {
 document.getElementById("crModeCurrentBtn").addEventListener("click", () => crSetMode("current"));
 document.getElementById("crModeHistoryBtn").addEventListener("click", () => crSetMode("history"));
 document.getElementById("btnCrHistRun").addEventListener("click", crFetchHistory);
-document.getElementById("crHistOfficerSearch").addEventListener("input", () => {
+document.getElementById("crHistOfficerSearch").addEventListener("input", (e) => {
+    document.getElementById("crHistOfficerClear").hidden = !e.target.value;
     crUpdateHistRunButtonState();
     crUpdateChartButtonVisibility();
     if (crHistoryData) crRenderHistory();
+});
+document.getElementById("crHistOfficerSearch").addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    e.target.value = "";
+    e.target.dispatchEvent(new Event("input", { bubbles: true }));
+    e.target.blur();
+});
+document.getElementById("crHistOfficerClear").addEventListener("click", () => {
+    const input = document.getElementById("crHistOfficerSearch");
+    input.value = "";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.focus();
 });
 crAttachOfficerSuggestions(
     document.getElementById("crHistOfficerSearch"),
@@ -1268,12 +1286,15 @@ if (crIsAdmin) {
 let crChartInstance = null;
 let crChartMetricLabel = null; // persists across re-opens until a Showing/metric change resets it
 
-// Visible only once a real officer is matched — with the search box
-// empty or unresolved there's no single entity left to plot a line for.
+// Visible only once BOTH boxes are set — a real officer matched AND a
+// specific "Showing" section picked (not left at "All Sections") — per
+// explicit follow-up request 2026-10-02. With Showing still at "All
+// Sections" there's no single focused metric left to plot a line for.
 function crUpdateChartButtonVisibility() {
     const btn = document.getElementById("btnCrHistChart");
     if (!btn) return;
-    btn.style.display = (crMode === "history" && crResolveSelectedOfficer()) ? "" : "none";
+    const sectionFilter = document.getElementById("crSection").value;
+    btn.style.display = (crMode === "history" && crResolveSelectedOfficer() && sectionFilter !== "all") ? "" : "none";
 }
 
 function crChartSeriesColors() {
