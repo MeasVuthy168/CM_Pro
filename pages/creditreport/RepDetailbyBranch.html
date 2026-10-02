@@ -159,14 +159,15 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 </select>
 </div>
 
-<!-- Daily History only — narrows the already-fetched table to one
-     branch and/or one team (CO/FSRO/Digital), same data already on
-     each row (no refetch). The Chart button appears once either is
-     narrowed down from "All". -->
+<!-- Daily History only — narrows the already-fetched table down to
+     exactly one row-stream: one specific branch, or "Total" (the
+     cross-branch aggregate) — never a list of every branch at once —
+     optionally further narrowed to one team (CO/FSRO/Digital), same
+     data already on each row (no refetch). -->
 <div class="cr-section-row" id="crHistBranchRow" style="display:none;">
 <label for="crHistBranch" class="cr-section-label">Branch</label>
 <select id="crHistBranch" class="cr-section-select">
-<option value="">All Branch</option>
+<option value="">Total</option>
 </select>
 </div>
 

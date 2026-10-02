@@ -622,31 +622,17 @@ function crRenderHistory() {
     const branchFilter = document.getElementById("crHistBranch").value;
     const teamFilter = document.getElementById("crHistTeam").value;
 
-    // Grouped by branch (each branch's day-by-day run together), in the
-    // same branch order the first day's items came back in — then one
-    // "Total" block, both in chronological date order within each
-    // block. The Branch filter narrows branchOrder to just that one
-    // branch; the Team filter swaps each row's figures for that team's
-    // own breakdown instead of the branch's combined total.
-    const branchOrder = branchFilter
-        ? [branchFilter]
-        : crHistoryData.days[0].items.map(it => it.branch);
+    // Always exactly one row-stream, in chronological date order — a
+    // specific branch's own figures, or "Total" (the cross-branch
+    // aggregate) when no branch is picked — never a list of every
+    // branch at once. The Team filter additionally swaps each row's
+    // figures for that team's own breakdown instead of the combined
+    // total (already on the item, saved by the daily snapshot itself).
     let rowsHtml = "";
-    for (const branch of branchOrder) {
-        for (const day of crHistoryData.days) {
-            const item = crResolveHistoryItem(day.items.find(it => it.branch === branch), teamFilter);
-            if (item) rowsHtml += crBuildHistoryRow(day.date, item, section, false, day.t24AsOfText);
-        }
-    }
-    // Skipped when filtered to one branch — it would just repeat that
-    // branch's own row. Otherwise shown as the cross-branch total,
-    // substituting the Team's own combined total when a Team is
-    // selected (day.total.breakdown.co/.fsro/.digital).
-    if (!branchFilter) {
-        for (const day of crHistoryData.days) {
-            const item = crResolveHistoryItem(day.total, teamFilter);
-            if (item) rowsHtml += crBuildHistoryRow(day.date, item, section, true, day.t24AsOfText);
-        }
+    for (const day of crHistoryData.days) {
+        const rawItem = branchFilter ? day.items.find(it => it.branch === branchFilter) : day.total;
+        const item = crResolveHistoryItem(rawItem, teamFilter);
+        if (item) rowsHtml += crBuildHistoryRow(day.date, item, section, !branchFilter, day.t24AsOfText);
     }
 
     document.getElementById("crTbody").innerHTML = rowsHtml;
@@ -1330,12 +1316,13 @@ window.addEventListener("pageshow", () => {
 let crChartInstance = null;
 let crChartMetricLabel = null; // persists across re-opens until a Showing/metric change resets it
 
+// Branch now always resolves to exactly one row-stream — a specific
+// branch, or "Total" — so there's always a definite single entity to
+// chart; the button just follows the mode itself.
 function crUpdateChartButtonVisibility() {
     const btn = document.getElementById("btnCrHistChart");
     if (!btn) return;
-    const branchFilter = document.getElementById("crHistBranch").value;
-    const teamFilter = document.getElementById("crHistTeam").value;
-    btn.style.display = (crMode === "history" && (branchFilter || teamFilter)) ? "" : "none";
+    btn.style.display = crMode === "history" ? "" : "none";
 }
 
 function crChartSeriesColors() {
@@ -1360,8 +1347,8 @@ function crChartMetricOptions(section) {
 function crChartTitle() {
     const branchFilter = document.getElementById("crHistBranch").value;
     const teamFilter = document.getElementById("crHistTeam").value;
-    const teamLabel = { co: "CO", fsro: "FSRO", digital: "Digital" }[teamFilter] || "Total";
-    return `${branchFilter || "All Branch"} — ${teamLabel}`;
+    const teamLabel = { co: "CO", fsro: "FSRO", digital: "Digital" }[teamFilter] || "All Team";
+    return `${branchFilter || "Total"} — ${teamLabel}`;
 }
 
 function crRenderChartMetricTabs(section, metricOptions) {
