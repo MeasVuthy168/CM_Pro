@@ -615,7 +615,7 @@ function crRenderHistory() {
 
     if (!crHistoryData.days.length) {
         document.getElementById("crTbody").innerHTML = "";
-        crShowEmpty("គ្មានទិន្នន័យសម្រាប់ចន្លោះកាលបរិច្ឆេទនេះទេ / No history saved for this date range yet.");
+        crShowEmpty("No history saved for this date range yet.");
         return;
     }
 
@@ -687,7 +687,7 @@ function crSetMode(mode) {
         crRenderHistory();
     } else {
         document.getElementById("crTableScroll").style.display = "none";
-        crShowEmpty("ជ្រើសរើសចន្លោះកាលបរិច្ឆេទ រួចចុច \"មើលប្រវត្តិ\" / Pick a date range, then click \"View History\".");
+        crShowEmpty("Pick a date range, then click \"View History\".");
     }
 }
 
