@@ -28,6 +28,14 @@ let crData = null; // last successful /byco response
 let crMode = "current"; // "current" | "history"
 let crHistoryData = null; // { days: [{ date, items, total }, ...] }
 let crHistDatesSeeded = false;
+
+// Daily History always narrows to exactly one officer, found via the
+// search box below the date range — there's no "all officers" or Total
+// row the way Branch's "All Branch" resolves to a combined row. The
+// roster backs that search box's <datalist> and the exact-match check
+// that gates "View History" — see crPopulateHistoryOfficerRoster() /
+// crResolveSelectedOfficer().
+let crOfficerRoster = []; // [{ name, branch }, ...] from the last /byco fetch
 const crLoggedInUser = JSON.parse(
     localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}"
 );
@@ -50,7 +58,7 @@ function crGroupPct(prefix, label) {
 const CR_SECTIONS = {
     outstandingArea: {
         groups: [{
-            label: "Loan Outstanding_Area", labelKh: "សមតុល្យឥណទាន_Area",
+            label: "Loan Outstanding_Area",
             fields: [
                 { key: "loanOutstandingArea.loan", label: "# Loan" },
                 { key: "loanOutstandingArea.client", label: "# Client" },
@@ -60,7 +68,7 @@ const CR_SECTIONS = {
     },
     outstanding: {
         groups: [{
-            label: "Loan Outstanding_Own", labelKh: "សមតុល្យឥណទាន_Own",
+            label: "Loan Outstanding_Own",
             fields: [
                 { key: "loanOutstanding.loan", label: "# Loan" },
                 { key: "loanOutstanding.client", label: "# Client" },
@@ -115,7 +123,7 @@ const CR_SECTIONS = {
             crGroupPct("nbcOverdueArea.loss", "Loss"),
             crGroupPct("nbcOverdueArea.majorDefault", "Major Default"),
             crGroupPct("nbcOverdueArea.nonPerformingLoan", "Non Performing Loan"),
-            crGroupPct("nbcOverdueArea.total", "Total NBC Overdue_ក្នុងតំបន់")
+            crGroupPct("nbcOverdueArea.total", "Total NBC Overdue_Area")
         ]
     },
     nbcOverdue: {
@@ -127,13 +135,13 @@ const CR_SECTIONS = {
             crGroupPct("nbcOverdue.loss", "Loss"),
             crGroupPct("nbcOverdue.majorDefault", "Major Default"),
             crGroupPct("nbcOverdue.nonPerformingLoan", "Non Performing Loan"),
-            crGroupPct("nbcOverdue.totalOwn", "Total NBC Overdue_ផ្ទាល់ខ្លួន")
+            crGroupPct("nbcOverdue.totalOwn", "Total NBC Overdue_Own")
         ]
     },
     writeOff: {
         groups: [
             {
-                label: "Balance WO_ផ្ទាល់ខ្លួន",
+                label: "Balance WO_Own",
                 fields: [
                     { key: "writeOffOwn.balanceWO.count", label: "#" },
                     { key: "writeOffOwn.balanceWO.int", label: "Int", money: true },
@@ -141,21 +149,21 @@ const CR_SECTIONS = {
                 ]
             },
             {
-                label: "WO_ផ្ទាល់ខ្លួន",
+                label: "WO_Own",
                 fields: [
                     { key: "writeOffOwn.wo.count", label: "#" },
                     { key: "writeOffOwn.wo.prn", label: "Prn", money: true }
                 ]
             },
             {
-                label: "WO Collected_ផ្ទាល់ខ្លួន",
+                label: "WO Collected_Own",
                 fields: [
                     { key: "writeOffOwn.woCollected.int", label: "Int", money: true },
                     { key: "writeOffOwn.woCollected.prn", label: "Prn", money: true }
                 ]
             },
             {
-                label: "Balance WO_ក្នុងតំបន់",
+                label: "Balance WO_Area",
                 fields: [
                     { key: "writeOffArea.balanceWO.count", label: "#" },
                     { key: "writeOffArea.balanceWO.int", label: "Int", money: true },
@@ -163,14 +171,14 @@ const CR_SECTIONS = {
                 ]
             },
             {
-                label: "WO_ក្នុងតំបន់",
+                label: "WO_Area",
                 fields: [
                     { key: "writeOffArea.wo.count", label: "#" },
                     { key: "writeOffArea.wo.prn", label: "Prn", money: true }
                 ]
             },
             {
-                label: "WO Collected_ក្នុងតំបន់",
+                label: "WO Collected_Area",
                 fields: [
                     { key: "writeOffArea.woCollected.int", label: "Int", money: true },
                     { key: "writeOffArea.woCollected.prn", label: "Prn", money: true }
@@ -436,24 +444,25 @@ function crRenderHistory() {
 
     if (!crHistoryData.days.length) {
         document.getElementById("crTbody").innerHTML = "";
-        crShowEmpty("គ្មានទិន្នន័យសម្រាប់ចន្លោះកាលបរិច្ឆេទនេះទេ / No history saved for this date range yet.");
+        crShowEmpty("No history saved for this date range yet.");
         return;
     }
 
-    // Grouped by officer (each officer's day-by-day run together), in
-    // the same officer order the first day's items came back in — then
-    // one "Total" block, both in chronological date order within each
-    // block.
-    const nameOrder = crHistoryData.days[0].items.map(it => it.name);
-    let rowsHtml = "";
-    for (const name of nameOrder) {
-        for (const day of crHistoryData.days) {
-            const item = day.items.find(it => it.name === name);
-            if (item) rowsHtml += crBuildHistoryRow(day.date, item, section, false, day.t24AsOfText);
-        }
+    // Always exactly one officer — matched via the search box above
+    // (see crResolveSelectedOfficer()) — in chronological date order, no
+    // "every officer" list and no Total row (there's only ever the one
+    // officer being plotted).
+    const officer = crResolveSelectedOfficer();
+    if (!officer) {
+        document.getElementById("crTbody").innerHTML = "";
+        crShowEmpty("Search and select an officer, then click \"View History\".");
+        return;
     }
+
+    let rowsHtml = "";
     for (const day of crHistoryData.days) {
-        rowsHtml += crBuildHistoryRow(day.date, day.total, section, true, day.t24AsOfText);
+        const item = day.items.find(it => it.name === officer.name && it.branch === officer.branch);
+        if (item) rowsHtml += crBuildHistoryRow(day.date, item, section, false, day.t24AsOfText);
     }
 
     document.getElementById("crTbody").innerHTML = rowsHtml;
@@ -492,6 +501,7 @@ function crSetMode(mode) {
     document.getElementById("crModeCurrentBtn").classList.toggle("active", mode === "current");
     document.getElementById("crModeHistoryBtn").classList.toggle("active", mode === "history");
     document.getElementById("crHistoryPanel").style.display = mode === "history" ? "block" : "none";
+    document.getElementById("crHistOfficerRow").style.display = mode === "history" ? "" : "none";
     document.getElementById("crSearchWrap").style.display = mode === "current" && crData ? "flex" : "none";
     crUpdateClassVisibility();
 
@@ -501,11 +511,15 @@ function crSetMode(mode) {
             document.getElementById("crEmptyMsg").style.display = "none";
             crRenderSection();
         }
-    } else if (crHistoryData) {
-        crRenderHistory();
     } else {
-        document.getElementById("crTableScroll").style.display = "none";
-        crShowEmpty("ជ្រើសរើសចន្លោះកាលបរិច្ឆេទ រួចចុច \"មើលប្រវត្តិ\" / Pick a date range, then click \"View History\".");
+        crUpdateHistRunButtonState();
+        crUpdateChartButtonVisibility();
+        if (crHistoryData) {
+            crRenderHistory();
+        } else {
+            document.getElementById("crTableScroll").style.display = "none";
+            crShowEmpty("Search and select an officer, then click \"View History\".");
+        }
     }
 }
 
@@ -687,6 +701,44 @@ function crPopulateBranches(list) {
     }
 }
 
+// "Name — Branch" disambiguates officers who share a name across
+// different branches — plain names alone wouldn't resolve to a single
+// real officer.
+function crOfficerRosterLabel(officer) {
+    return `${officer.name} — ${officer.branch}`;
+}
+
+// Rebuilt on every /byco fetch (not just once, unlike crPopulateBranches)
+// since which officers exist depends on whatever Branch/Team filter is
+// currently applied in Current mode.
+function crPopulateHistoryOfficerRoster(items) {
+    crOfficerRoster = (items || []).map(it => ({ name: it.name, branch: it.branch }));
+    const datalist = document.getElementById("crHistOfficerList");
+    datalist.innerHTML = crOfficerRoster
+        .map(o => `<option value="${crEscapeHtml(crOfficerRosterLabel(o))}"></option>`)
+        .join("");
+}
+
+// The datalist itself doesn't stop free text — only an exact match
+// against "Name — Branch" counts as a real, resolvable officer, same
+// "always resolve to exactly one entity" rule Branch's Daily History
+// redesign already established for its own Branch/Team filters.
+function crResolveSelectedOfficer() {
+    const typed = document.getElementById("crHistOfficerSearch").value.trim();
+    if (!typed) return null;
+    return crOfficerRoster.find(o => crOfficerRosterLabel(o) === typed) || null;
+}
+
+// "View History" stays disabled until the typed text exactly matches one
+// roster officer — not just any non-empty text — per explicit request
+// 2026-10-02. Only gates the initial fetch; once crHistoryData is
+// loaded, re-searching re-filters client-side without re-fetching.
+function crUpdateHistRunButtonState() {
+    const btn = document.getElementById("btnCrHistRun");
+    if (!btn) return;
+    btn.disabled = !crResolveSelectedOfficer();
+}
+
 // ========================================
 // URL STATE
 // Mirrors section/branch/team/dates into the address bar via
@@ -824,6 +876,7 @@ async function crRunReport() {
         }
 
         crData = data;
+        crPopulateHistoryOfficerRoster(data.items);
         crSeedHistoryDates(data);
         document.getElementById("crSearchWrap").style.display = "flex";
         document.getElementById("crTableScroll").style.display = "block";
@@ -1124,6 +1177,11 @@ window.addEventListener("pageshow", () => {
 document.getElementById("crModeCurrentBtn").addEventListener("click", () => crSetMode("current"));
 document.getElementById("crModeHistoryBtn").addEventListener("click", () => crSetMode("history"));
 document.getElementById("btnCrHistRun").addEventListener("click", crFetchHistory);
+document.getElementById("crHistOfficerSearch").addEventListener("input", () => {
+    crUpdateHistRunButtonState();
+    crUpdateChartButtonVisibility();
+    if (crHistoryData) crRenderHistory();
+});
 
 if (crIsAdmin) {
     document.getElementById("btnCrHistSnapshot").style.display = "";
@@ -1150,6 +1208,176 @@ if (crIsAdmin) {
         }
     });
 }
+
+// ========================================
+// DAILY HISTORY CHART — a line chart of the one matched officer (see
+// crResolveSelectedOfficer()), over the fetched date range, for
+// whichever fields the active "Showing" section carries. Reuses Chart.js
+// the same way RepDetailbyBranch.js's own Daily History chart does (same
+// CDN build, same instance-reuse pattern, same --cr-series-N palette).
+// ========================================
+let crChartInstance = null;
+let crChartMetricLabel = null; // persists across re-opens until a Showing/metric change resets it
+
+// Visible only once a real officer is matched — with the search box
+// empty or unresolved there's no single entity left to plot a line for.
+function crUpdateChartButtonVisibility() {
+    const btn = document.getElementById("btnCrHistChart");
+    if (!btn) return;
+    btn.style.display = (crMode === "history" && crResolveSelectedOfficer()) ? "" : "none";
+}
+
+function crChartSeriesColors() {
+    const cs = getComputedStyle(document.documentElement);
+    const slot = n => cs.getPropertyValue(`--cr-series-${n}`).trim();
+    return [1, 2, 3, 4, 5, 6, 7, 8].map(slot);
+}
+
+// Dedupes the active section's fields by label ("# Loan", "Value",
+// "PAR %"...) — switching between them is how one chart stays on a
+// single axis/unit instead of mixing counts, money, and percentages.
+function crChartMetricOptions(section) {
+    const seen = new Map();
+    for (const g of section.groups) {
+        for (const f of g.fields) {
+            if (!seen.has(f.label)) seen.set(f.label, f);
+        }
+    }
+    return [...seen.values()];
+}
+
+function crRenderChartMetricTabs(section, metricOptions) {
+    const row = document.getElementById("crChartMetricRow");
+    // A single metric needs no tab row to switch between — same "no
+    // legend for one series" idea, one level up.
+    if (metricOptions.length < 2) {
+        row.innerHTML = "";
+        return;
+    }
+    row.innerHTML = metricOptions.map(f =>
+        `<button type="button" class="cr-chart-metric-btn${f.label === crChartMetricLabel ? " active" : ""}" data-metric="${crEscapeHtml(f.label)}">${crEscapeHtml(f.label)}</button>`
+    ).join("");
+}
+
+function crRenderChart(section) {
+    const officer = crResolveSelectedOfficer();
+    if (!officer) return;
+    const metricOptions = crChartMetricOptions(section);
+    if (!metricOptions.length) return;
+    if (!metricOptions.some(f => f.label === crChartMetricLabel)) {
+        // Prefer the first money field (the usual headline figure) when
+        // (re)picking a default — e.g. switching "Showing" resets it.
+        crChartMetricLabel = (metricOptions.find(f => f.money) || metricOptions[0]).label;
+    }
+    crRenderChartMetricTabs(section, metricOptions);
+
+    const days = crHistoryData.days;
+    const labels = days.map(d => crFmtDateDMY(d.date));
+    const colors = crChartSeriesColors();
+    const activeField = metricOptions.find(f => f.label === crChartMetricLabel);
+
+    const datasets = [];
+    section.groups.forEach((g, idx) => {
+        const field = g.fields.find(f => f.label === crChartMetricLabel);
+        if (!field) return;
+        const data = days.map(day => {
+            const item = day.items.find(it => it.name === officer.name && it.branch === officer.branch);
+            const v = item ? crGetByPath(item, field.key) : null;
+            return v == null ? null : Number(v) || 0;
+        });
+        const color = colors[idx % colors.length];
+        datasets.push({
+            label: g.label,
+            data,
+            borderColor: color,
+            backgroundColor: color,
+            pointBackgroundColor: color,
+            pointBorderColor: getComputedStyle(document.documentElement).getPropertyValue("--cr-chart-surface").trim(),
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            borderWidth: 2,
+            tension: 0
+        });
+    });
+
+    document.getElementById("crChartTitle").textContent =
+        `${crOfficerRosterLabel(officer)} — ${section.groups.length === 1 ? section.groups[0].label : "Showing"}`;
+
+    const isPct = !!activeField?.pct;
+    const ctx = document.getElementById("crChartCanvas").getContext("2d");
+    const textMuted = getComputedStyle(document.documentElement).getPropertyValue("--cr-text-muted").trim();
+    const grid = getComputedStyle(document.documentElement).getPropertyValue("--cr-chart-grid").trim();
+
+    const config = {
+        type: "line",
+        data: { labels, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: {
+                legend: { display: datasets.length > 1, labels: { color: textMuted, boxWidth: 12 } },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx2) => `${ctx2.dataset.label}: ${isPct ? crFmtPct(ctx2.parsed.y) : crFmtNum(ctx2.parsed.y)}`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: textMuted,
+                        callback: (v) => isPct ? crFmtPct(v) : crFmtNum(v)
+                    },
+                    grid: { color: grid }
+                },
+                x: {
+                    ticks: { color: textMuted },
+                    grid: { display: false }
+                }
+            }
+        }
+    };
+
+    if (crChartInstance) crChartInstance.destroy();
+    crChartInstance = new Chart(ctx, config);
+}
+
+function crOpenChart() {
+    if (!crHistoryData || !crHistoryData.days.length) return;
+    if (!crResolveSelectedOfficer()) return;
+    if (typeof Chart === "undefined") {
+        notify("Chart library failed to load — check your connection and refresh.", "error");
+        return;
+    }
+    const section = crActiveSection();
+    document.getElementById("crChartOverlay").hidden = false;
+    document.body.style.overflow = "hidden";
+    crRenderChart(section);
+}
+
+function crCloseChart() {
+    document.getElementById("crChartOverlay").hidden = true;
+    document.body.style.overflow = "";
+    if (crChartInstance) {
+        crChartInstance.destroy();
+        crChartInstance = null;
+    }
+}
+
+document.getElementById("crChartMetricRow").addEventListener("click", (e) => {
+    const btn = e.target.closest(".cr-chart-metric-btn");
+    if (!btn) return;
+    crChartMetricLabel = btn.dataset.metric;
+    crRenderChart(crActiveSection());
+});
+
+document.getElementById("btnCrHistChart").addEventListener("click", crOpenChart);
+document.getElementById("btnCrChartClose").addEventListener("click", crCloseChart);
+document.getElementById("crChartOverlay").addEventListener("click", (e) => {
+    if (e.target.id === "crChartOverlay") crCloseChart();
+});
 
 // ========================================
 // INIT
