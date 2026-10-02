@@ -551,7 +551,7 @@ function crBuildHistoryRow(dateKey, item, section, isTotal, t24AsOfText) {
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
     const branchKey = isTotal ? "All Branch" : item.branch;
-    const branchLabel = isTotal ? "Total" : item.branch;
+    const branchLabel = isTotal ? "Total SVG" : item.branch;
     const rowKey = crHistoryRowKey(branchKey, dateKey);
     const isExpanded = crHistoryExpandedRows.has(rowKey);
     const branchCell = item.breakdown
@@ -623,7 +623,7 @@ function crRenderHistory() {
     const teamFilter = document.getElementById("crHistTeam").value;
 
     // Always exactly one row-stream, in chronological date order — a
-    // specific branch's own figures, or "Total" (the cross-branch
+    // specific branch's own figures, or "Total SVG" (the cross-branch
     // aggregate) when no branch is picked — never a list of every
     // branch at once. The Team filter additionally swaps each row's
     // figures for that team's own breakdown instead of the combined
@@ -1317,8 +1317,8 @@ let crChartInstance = null;
 let crChartMetricLabel = null; // persists across re-opens until a Showing/metric change resets it
 
 // Branch now always resolves to exactly one row-stream — a specific
-// branch, or "Total" — so there's always a definite single entity to
-// chart; the button just follows the mode itself.
+// branch, or "Total SVG" — so there's always a definite single entity
+// to chart; the button just follows the mode itself.
 function crUpdateChartButtonVisibility() {
     const btn = document.getElementById("btnCrHistChart");
     if (!btn) return;
@@ -1348,7 +1348,7 @@ function crChartTitle() {
     const branchFilter = document.getElementById("crHistBranch").value;
     const teamFilter = document.getElementById("crHistTeam").value;
     const teamLabel = { co: "CO", fsro: "FSRO", digital: "Digital" }[teamFilter] || "All Team";
-    return `${branchFilter || "Total"} — ${teamLabel}`;
+    return `${branchFilter || "Total SVG"} — ${teamLabel}`;
 }
 
 function crRenderChartMetricTabs(section, metricOptions) {
