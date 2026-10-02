@@ -414,6 +414,50 @@
     margin-bottom:6px;
 }
 .cr-select-row:last-child{ margin-bottom:0; }
+
+/* Officer search box (Daily History) — wraps just the input so the
+   custom suggestion dropdown below can anchor to it precisely, without
+   stretching across the row's label too. */
+.cr-officer-search-wrap{
+    position:relative;
+    flex:1 1 auto;
+    min-width:0;
+}
+
+/* Custom suggestion dropdown for the officer search box — not a native
+   <datalist>, which iOS/WebView browsers never render visibly (see
+   crAttachOfficerSuggestions() in RepDetailbyCO.js). Same look/pattern
+   as arrears.js's own .suggestion-list for its AJ/AK fields. */
+.suggestion-list{
+    display:none;
+    position:absolute;
+    left:0;
+    right:0;
+    top:100%;
+    margin-top:4px;
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:8px;
+    max-height:180px;
+    overflow-y:auto;
+    z-index:10;
+    box-shadow:var(--cr-shadow);
+    list-style:none;
+    padding:4px 0;
+}
+.suggestion-list.show{ display:block; }
+.suggestion-list li{
+    padding:8px 12px;
+    color:var(--cr-text);
+    font-size:13px;
+    cursor:pointer;
+    word-break:break-word;
+}
+.suggestion-list li:hover,
+.suggestion-list li:active{
+    background:rgba(212,175,55,.25);
+}
+
 .cr-detailed-note{
     background:rgba(179,38,30,.1);
     color:var(--cr-danger);

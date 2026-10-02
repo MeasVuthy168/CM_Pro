@@ -32,8 +32,9 @@ let crHistDatesSeeded = false;
 // Daily History always narrows to exactly one officer, found via the
 // search box below the date range — there's no "all officers" or Total
 // row the way Branch's "All Branch" resolves to a combined row. The
-// roster backs that search box's <datalist> and the exact-match check
-// that gates "View History" — see crPopulateHistoryOfficerRoster() /
+// roster backs that search box's custom suggestion dropdown and the
+// exact-match check that gates "View History" — see
+// crPopulateHistoryOfficerRoster() / crAttachOfficerSuggestions() /
 // crResolveSelectedOfficer().
 let crOfficerRoster = []; // [{ name, branch }, ...] from the last /byco fetch
 const crLoggedInUser = JSON.parse(
@@ -713,13 +714,57 @@ function crOfficerRosterLabel(officer) {
 // currently applied in Current mode.
 function crPopulateHistoryOfficerRoster(items) {
     crOfficerRoster = (items || []).map(it => ({ name: it.name, branch: it.branch }));
-    const datalist = document.getElementById("crHistOfficerList");
-    datalist.innerHTML = crOfficerRoster
-        .map(o => `<option value="${crEscapeHtml(crOfficerRosterLabel(o))}"></option>`)
-        .join("");
 }
 
-// The datalist itself doesn't stop free text — only an exact match
+// Custom dropdown rather than a native <datalist> — iOS/WebView browsers
+// never render datalist suggestions as the user types (the attribute
+// exists in the DOM but nothing visibly pops up), so the search box
+// looked broken there even though the roster was populated. Same
+// pattern as arrears.js's own attachSuggestions() for its AJ/AK fields.
+function crAttachOfficerSuggestions(fieldEl, wrapEl) {
+    const list = document.createElement("ul");
+    list.className = "suggestion-list";
+    wrapEl.appendChild(list);
+
+    function hide() {
+        list.classList.remove("show");
+        list.innerHTML = "";
+    }
+
+    function showSuggestionsFor(query) {
+        const q = query.trim().toLowerCase();
+        if (!q) { hide(); return; }
+
+        const matches = crOfficerRoster
+            .map(crOfficerRosterLabel)
+            .filter(label => label.toLowerCase().includes(q) && label.toLowerCase() !== q)
+            .slice(0, 8);
+
+        if (!matches.length) { hide(); return; }
+
+        list.innerHTML = "";
+        matches.forEach(label => {
+            const li = document.createElement("li");
+            li.textContent = label;
+            li.addEventListener("mousedown", (e) => {
+                // mousedown (not click) so this fires before the field's
+                // own blur event closes the dropdown first
+                e.preventDefault();
+                fieldEl.value = label;
+                hide();
+                fieldEl.dispatchEvent(new Event("input", { bubbles: true }));
+            });
+            list.appendChild(li);
+        });
+        list.classList.add("show");
+    }
+
+    fieldEl.addEventListener("input", () => showSuggestionsFor(fieldEl.value));
+    fieldEl.addEventListener("focus", () => showSuggestionsFor(fieldEl.value));
+    fieldEl.addEventListener("blur", hide);
+}
+
+// Free text never stops at the dropdown alone — only an exact match
 // against "Name — Branch" counts as a real, resolvable officer, same
 // "always resolve to exactly one entity" rule Branch's Daily History
 // redesign already established for its own Branch/Team filters.
@@ -1182,6 +1227,10 @@ document.getElementById("crHistOfficerSearch").addEventListener("input", () => {
     crUpdateChartButtonVisibility();
     if (crHistoryData) crRenderHistory();
 });
+crAttachOfficerSuggestions(
+    document.getElementById("crHistOfficerSearch"),
+    document.querySelector("#crHistOfficerRow .cr-officer-search-wrap")
+);
 
 if (crIsAdmin) {
     document.getElementById("btnCrHistSnapshot").style.display = "";
