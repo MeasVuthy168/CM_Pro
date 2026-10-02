@@ -597,6 +597,15 @@ function crBuildHistoryBreakdownRow(dateKey, item, section, team, t24AsOfText) {
       </tr>`;
 }
 
+// Pulls the figures to display for one history row: the branch's own
+// combined total, or — when a Team is selected — that branch's own
+// CO/FSRO/Digital breakdown (already on the item, saved by the daily
+// snapshot itself; no extra fetch).
+function crResolveHistoryItem(rawItem, team) {
+    if (!rawItem) return null;
+    return team ? (rawItem.breakdown ? rawItem.breakdown[team] : null) : rawItem;
+}
+
 function crRenderHistory() {
     if (!crHistoryData) return;
     const sectionKey = document.getElementById("crSection").value;
@@ -610,25 +619,41 @@ function crRenderHistory() {
         return;
     }
 
+    const branchFilter = document.getElementById("crHistBranch").value;
+    const teamFilter = document.getElementById("crHistTeam").value;
+
     // Grouped by branch (each branch's day-by-day run together), in the
     // same branch order the first day's items came back in — then one
-    // "Total" block, both in chronological date order within each block.
-    const branchOrder = crHistoryData.days[0].items.map(it => it.branch);
+    // "Total" block, both in chronological date order within each
+    // block. The Branch filter narrows branchOrder to just that one
+    // branch; the Team filter swaps each row's figures for that team's
+    // own breakdown instead of the branch's combined total.
+    const branchOrder = branchFilter
+        ? [branchFilter]
+        : crHistoryData.days[0].items.map(it => it.branch);
     let rowsHtml = "";
     for (const branch of branchOrder) {
         for (const day of crHistoryData.days) {
-            const item = day.items.find(it => it.branch === branch);
+            const item = crResolveHistoryItem(day.items.find(it => it.branch === branch), teamFilter);
             if (item) rowsHtml += crBuildHistoryRow(day.date, item, section, false, day.t24AsOfText);
         }
     }
-    for (const day of crHistoryData.days) {
-        rowsHtml += crBuildHistoryRow(day.date, day.total, section, true, day.t24AsOfText);
+    // Skipped when filtered to one branch — it would just repeat that
+    // branch's own row. Otherwise shown as the cross-branch total,
+    // substituting the Team's own combined total when a Team is
+    // selected (day.total.breakdown.co/.fsro/.digital).
+    if (!branchFilter) {
+        for (const day of crHistoryData.days) {
+            const item = crResolveHistoryItem(day.total, teamFilter);
+            if (item) rowsHtml += crBuildHistoryRow(day.date, item, section, true, day.t24AsOfText);
+        }
     }
 
     document.getElementById("crTbody").innerHTML = rowsHtml;
     document.getElementById("crTableScroll").style.display = "block";
     document.getElementById("crEmptyMsg").style.display = "none";
     requestAnimationFrame(crSetHeaderOffsets);
+    crUpdateChartButtonVisibility();
 }
 
 async function crFetchHistory() {
@@ -661,7 +686,10 @@ function crSetMode(mode) {
     document.getElementById("crModeCurrentBtn").classList.toggle("active", mode === "current");
     document.getElementById("crModeHistoryBtn").classList.toggle("active", mode === "history");
     document.getElementById("crHistoryPanel").style.display = mode === "history" ? "block" : "none";
+    document.getElementById("crHistBranchRow").style.display = mode === "history" ? "" : "none";
+    document.getElementById("crHistTeamRow").style.display = mode === "history" ? "" : "none";
     crUpdateClassVisibility();
+    crUpdateChartButtonVisibility();
 
     if (mode === "current") {
         if (crSummaryData) {
@@ -918,6 +946,20 @@ function crSeedHistoryDates(data) {
     document.getElementById("crHistToDate").value = data.toDate;
 }
 
+// Daily History's own Branch filter — populated from whichever branches
+// this user's own report actually carries (a branch manager's /summary
+// response already only ever has their one branch, via resolveBranchScope
+// server-side), rather than a hardcoded list that could drift from it.
+let crHistBranchFilterPopulated = false;
+function crPopulateHistoryBranchFilter(data) {
+    if (crHistBranchFilterPopulated) return;
+    crHistBranchFilterPopulated = true;
+    const sel = document.getElementById("crHistBranch");
+    const branches = (data.items || []).map(it => it.branch);
+    sel.insertAdjacentHTML("beforeend",
+        branches.map(b => `<option value="${crEscapeHtml(b)}">${crEscapeHtml(b)}</option>`).join(""));
+}
+
 // ========================================
 // LOAD REPORT
 // ========================================
@@ -956,6 +998,7 @@ async function crRunReport() {
 
         crSummaryData = data;
         crSeedHistoryDates(data);
+        crPopulateHistoryBranchFilter(data);
         document.getElementById("crTableScroll").style.display = "block";
         crRenderSummary();
     } catch (e) {
@@ -1276,11 +1319,197 @@ window.addEventListener("pageshow", () => {
 });
 
 // ========================================
+// DAILY HISTORY CHART — a line chart of the currently filtered
+// Branch/Team (see crResolveHistoryItem()), over the fetched date
+// range, for whichever fields the active "Showing" section carries.
+// Visible only once Branch or Team narrows down from "All" — with
+// both left at "All" there's no single entity left to plot a line for.
+// Reuses Chart.js the same way assets/js/admin/admin.js already does
+// elsewhere in this app (same CDN build, same instance-reuse pattern).
+// ========================================
+let crChartInstance = null;
+let crChartMetricLabel = null; // persists across re-opens until a Showing/metric change resets it
+
+function crUpdateChartButtonVisibility() {
+    const btn = document.getElementById("btnCrHistChart");
+    if (!btn) return;
+    const branchFilter = document.getElementById("crHistBranch").value;
+    const teamFilter = document.getElementById("crHistTeam").value;
+    btn.style.display = (crMode === "history" && (branchFilter || teamFilter)) ? "" : "none";
+}
+
+function crChartSeriesColors() {
+    const cs = getComputedStyle(document.documentElement);
+    const slot = n => cs.getPropertyValue(`--cr-series-${n}`).trim();
+    return [1, 2, 3, 4, 5, 6, 7, 8].map(slot);
+}
+
+// Dedupes the active section's fields by label ("# Loan", "Value",
+// "PAR %"...) — switching between them is how one chart stays on a
+// single axis/unit instead of mixing counts, money, and percentages.
+function crChartMetricOptions(section) {
+    const seen = new Map();
+    for (const g of section.groups) {
+        for (const f of g.fields) {
+            if (!seen.has(f.label)) seen.set(f.label, f);
+        }
+    }
+    return [...seen.values()];
+}
+
+function crChartTitle() {
+    const branchFilter = document.getElementById("crHistBranch").value;
+    const teamFilter = document.getElementById("crHistTeam").value;
+    const teamLabel = { co: "CO", fsro: "FSRO", digital: "Digital" }[teamFilter] || "Total";
+    return `${branchFilter || "All Branch"} — ${teamLabel}`;
+}
+
+function crRenderChartMetricTabs(section, metricOptions) {
+    const row = document.getElementById("crChartMetricRow");
+    // A single metric needs no tab row to switch between — same "no
+    // legend for one series" idea, one level up.
+    if (metricOptions.length < 2) {
+        row.innerHTML = "";
+        return;
+    }
+    row.innerHTML = metricOptions.map(f =>
+        `<button type="button" class="cr-chart-metric-btn${f.label === crChartMetricLabel ? " active" : ""}" data-metric="${crEscapeHtml(f.label)}">${crEscapeHtml(f.label)}</button>`
+    ).join("");
+}
+
+function crRenderChart(section) {
+    const metricOptions = crChartMetricOptions(section);
+    if (!metricOptions.length) return;
+    if (!metricOptions.some(f => f.label === crChartMetricLabel)) {
+        // Prefer the first money field (the usual headline figure) when
+        // (re)picking a default — e.g. switching "Showing" resets it.
+        crChartMetricLabel = (metricOptions.find(f => f.money) || metricOptions[0]).label;
+    }
+    crRenderChartMetricTabs(section, metricOptions);
+
+    const branchFilter = document.getElementById("crHistBranch").value;
+    const teamFilter = document.getElementById("crHistTeam").value;
+    const days = crHistoryData.days;
+    const labels = days.map(d => crFmtDateDMY(d.date));
+    const colors = crChartSeriesColors();
+    const activeField = metricOptions.find(f => f.label === crChartMetricLabel);
+
+    const datasets = [];
+    section.groups.forEach((g, idx) => {
+        const field = g.fields.find(f => f.label === crChartMetricLabel);
+        if (!field) return;
+        const data = days.map(day => {
+            const raw = branchFilter ? day.items.find(it => it.branch === branchFilter) : day.total;
+            const item = crResolveHistoryItem(raw, teamFilter);
+            const v = item ? crGetByPath(item, field.key) : null;
+            return v == null ? null : Number(v) || 0;
+        });
+        const color = colors[idx % colors.length];
+        datasets.push({
+            label: g.label,
+            data,
+            borderColor: color,
+            backgroundColor: color,
+            pointBackgroundColor: color,
+            pointBorderColor: getComputedStyle(document.documentElement).getPropertyValue("--cr-chart-surface").trim(),
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            borderWidth: 2,
+            tension: 0
+        });
+    });
+
+    document.getElementById("crChartTitle").textContent = `${crChartTitle()} — ${section.groups.length === 1 ? section.groups[0].label : "Showing"}`;
+
+    const isPct = !!activeField?.pct;
+    const ctx = document.getElementById("crChartCanvas").getContext("2d");
+    const textMuted = getComputedStyle(document.documentElement).getPropertyValue("--cr-text-muted").trim();
+    const grid = getComputedStyle(document.documentElement).getPropertyValue("--cr-chart-grid").trim();
+
+    const config = {
+        type: "line",
+        data: { labels, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: {
+                legend: { display: datasets.length > 1, labels: { color: textMuted, boxWidth: 12 } },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx2) => `${ctx2.dataset.label}: ${isPct ? crFmtPct(ctx2.parsed.y) : crFmtNum(ctx2.parsed.y)}`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: textMuted,
+                        callback: (v) => isPct ? crFmtPct(v) : crFmtNum(v)
+                    },
+                    grid: { color: grid }
+                },
+                x: {
+                    ticks: { color: textMuted },
+                    grid: { display: false }
+                }
+            }
+        }
+    };
+
+    if (crChartInstance) crChartInstance.destroy();
+    crChartInstance = new Chart(ctx, config);
+}
+
+function crOpenChart() {
+    if (!crHistoryData || !crHistoryData.days.length) return;
+    if (typeof Chart === "undefined") {
+        notify("Chart library failed to load — check your connection and refresh.", "error");
+        return;
+    }
+    const sectionKey = document.getElementById("crSection").value;
+    const section = crActiveSection(sectionKey);
+    document.getElementById("crChartOverlay").hidden = false;
+    document.body.style.overflow = "hidden";
+    crRenderChart(section);
+}
+
+function crCloseChart() {
+    document.getElementById("crChartOverlay").hidden = true;
+    document.body.style.overflow = "";
+    if (crChartInstance) {
+        crChartInstance.destroy();
+        crChartInstance = null;
+    }
+}
+
+document.getElementById("crChartMetricRow").addEventListener("click", (e) => {
+    const btn = e.target.closest(".cr-chart-metric-btn");
+    if (!btn) return;
+    crChartMetricLabel = btn.dataset.metric;
+    const sectionKey = document.getElementById("crSection").value;
+    crRenderChart(crActiveSection(sectionKey));
+});
+
+document.getElementById("btnCrHistChart").addEventListener("click", crOpenChart);
+document.getElementById("btnCrChartClose").addEventListener("click", crCloseChart);
+document.getElementById("crChartOverlay").addEventListener("click", (e) => {
+    if (e.target.id === "crChartOverlay") crCloseChart();
+});
+
+// ========================================
 // HISTORY MODE — UI wiring
 // ========================================
 document.getElementById("crModeCurrentBtn").addEventListener("click", () => crSetMode("current"));
 document.getElementById("crModeHistoryBtn").addEventListener("click", () => crSetMode("history"));
 document.getElementById("btnCrHistRun").addEventListener("click", crFetchHistory);
+document.getElementById("crHistBranch").addEventListener("change", () => {
+    crRenderHistory();
+});
+document.getElementById("crHistTeam").addEventListener("change", () => {
+    crRenderHistory();
+});
 
 if (crIsAdmin) {
     document.getElementById("btnCrHistSnapshot").style.display = "";

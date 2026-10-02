@@ -159,6 +159,29 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 </select>
 </div>
 
+<!-- Daily History only — narrows the already-fetched table to one
+     branch and/or one team (CO/FSRO/Digital), same data already on
+     each row (no refetch). The Chart button appears once either is
+     narrowed down from "All". -->
+<div class="cr-section-row" id="crHistBranchRow" style="display:none;">
+<label for="crHistBranch" class="cr-section-label">Branch</label>
+<select id="crHistBranch" class="cr-section-select">
+<option value="">All Branch</option>
+</select>
+</div>
+
+<div class="cr-section-row" id="crHistTeamRow" style="display:none;">
+<label for="crHistTeam" class="cr-section-label">Team</label>
+<select id="crHistTeam" class="cr-section-select">
+<option value="">All Team</option>
+<option value="co">CO</option>
+<option value="fsro">FSRO</option>
+<option value="digital">Digital</option>
+</select>
+</div>
+
+<button type="button" id="btnCrHistChart" class="cr-run-btn cr-chart-btn" style="display:none">📊 Chart</button>
+
 <div class="cr-section-row" id="crClassRow" style="display:none;">
 <label for="crClass" class="cr-section-label">Loan Class</label>
 <select id="crClass" class="cr-section-select">
@@ -272,6 +295,25 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
      forced min-height:100vh gap. -->
 
 <!-- ========================= -->
+<!-- DAILY HISTORY CHART -->
+<!-- Opened by the "📊 Chart" button — a line chart of the currently
+     filtered Branch/Team, for whichever fields the active "Showing"
+     section carries, over the fetched Daily History date range. -->
+<!-- ========================= -->
+<div class="cr-chart-overlay" id="crChartOverlay" hidden>
+<div class="cr-chart-panel">
+<div class="cr-chart-header">
+<h3 class="cr-chart-title" id="crChartTitle">Chart</h3>
+<button type="button" id="btnCrChartClose" class="cr-chart-close" aria-label="Close chart">✕</button>
+</div>
+<div class="cr-chart-metric-row" id="crChartMetricRow"></div>
+<div class="cr-chart-canvas-wrap">
+<canvas id="crChartCanvas"></canvas>
+</div>
+</div>
+</div>
+
+<!-- ========================= -->
 <!-- BOTTOM -->
 <!-- ========================= -->
 
@@ -286,6 +328,9 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 <!-- PDF EXPORT -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- DAILY HISTORY CHART -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 
 <!-- CREDIT REPORT LOGIC -->
 <script src="../../assets/js/creditreport/RepDetailbyBranch.js"></script>

@@ -27,6 +27,18 @@
     --cr-input-bg:#FFFFFF;
     --cr-input-text:#1C2333;
     --cr-note-bg:#fdf6f5;
+    /* Daily History chart — fixed categorical order (never cycled/
+       reassigned), validated for CVD-safe adjacent pairs. */
+    --cr-series-1:#2a78d6;
+    --cr-series-2:#eb6834;
+    --cr-series-3:#1baf7a;
+    --cr-series-4:#eda100;
+    --cr-series-5:#e87ba4;
+    --cr-series-6:#008300;
+    --cr-series-7:#4a3aa7;
+    --cr-series-8:#e34948;
+    --cr-chart-surface:#fcfcfb;
+    --cr-chart-grid:rgba(0,45,107,.10);
 }
 
 [data-theme="dark"]{
@@ -47,6 +59,16 @@
     --cr-input-bg:#0a2d63;
     --cr-input-text:#FFFFFF;
     --cr-note-bg:rgba(255,107,107,.10);
+    --cr-series-1:#3987e5;
+    --cr-series-2:#d95926;
+    --cr-series-3:#199e70;
+    --cr-series-4:#c98500;
+    --cr-series-5:#d55181;
+    --cr-series-6:#008300;
+    --cr-series-7:#9085e9;
+    --cr-series-8:#e66767;
+    --cr-chart-surface:#1a1a19;
+    --cr-chart-grid:rgba(255,255,255,.10);
 }
 
 /* GOLD THEME — its own warm page/card background, not just a
@@ -232,6 +254,102 @@
     background:var(--cr-input-bg) !important;
     color:var(--cr-text) !important;
     border:1px solid var(--cr-border);
+}
+
+/* ===== Daily History Branch/Team filter -> Chart button ===== */
+.cr-chart-btn{
+    margin-top:8px;
+    margin-bottom:6px;
+    background:var(--cr-input-bg) !important;
+    color:var(--cr-text) !important;
+    border:1px solid var(--cr-border);
+}
+
+/* ===== Daily History chart overlay ===== */
+.cr-chart-overlay{
+    position:fixed;
+    inset:0;
+    z-index:1200;
+    background:rgba(0,0,0,.55);
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+}
+.cr-chart-overlay[hidden]{ display:none; }
+.cr-chart-panel{
+    width:100%;
+    max-width:680px;
+    max-height:88vh;
+    overflow-y:auto;
+    background:var(--cr-card-bg);
+    border-radius:18px 18px 0 0;
+    padding:16px 16px calc(16px + env(safe-area-inset-bottom));
+    box-shadow:0 -4px 24px rgba(0,0,0,.25);
+}
+@media (min-width:720px){
+    .cr-chart-overlay{ align-items:center; }
+    .cr-chart-panel{ border-radius:18px; max-height:80vh; }
+}
+.cr-chart-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:10px;
+}
+.cr-chart-title{
+    margin:0;
+    font-family:'KRASAR',sans-serif;
+    font-size:15px;
+    font-weight:700;
+    color:var(--cr-text);
+    line-height:1.3;
+}
+.cr-chart-close{
+    flex:0 0 auto;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    border:1px solid var(--cr-border);
+    background:var(--cr-input-bg);
+    color:var(--cr-text);
+    font-size:15px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.cr-chart-metric-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-bottom:12px;
+}
+.cr-chart-metric-btn{
+    padding:6px 12px;
+    border-radius:999px;
+    border:1px solid var(--cr-border);
+    background:var(--cr-input-bg);
+    color:var(--cr-text-muted);
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+}
+.cr-chart-metric-btn.active{
+    background:linear-gradient(135deg,var(--cr-navy-dark),var(--cr-navy));
+    color:#fff;
+    border-color:transparent;
+}
+[data-theme="dark"] .cr-chart-metric-btn.active{
+    background:linear-gradient(135deg,#D4AF37,#FFD700);
+    color:#002D6B;
+}
+.cr-chart-canvas-wrap{
+    position:relative;
+    height:280px;
+    background:var(--cr-chart-surface);
+    border-radius:12px;
+    padding:12px 8px;
 }
 
 /* ===== History table's extra Date column (non-sticky, sits right
