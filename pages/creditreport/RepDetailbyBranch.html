@@ -147,18 +147,6 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 <button id="btnCrHistSnapshot" class="cr-run-btn cr-snapshot-btn" style="display:none">📸 Snapshot Now</button>
 </div>
 
-<div class="cr-section-row">
-<label for="crSection" class="cr-section-label">Showing</label>
-<select id="crSection" class="cr-section-select">
-<option value="all">All Sections</option>
-<option value="outstanding">Loan Outstanding — សមតុល្យឥណទាន</option>
-<option value="disburse">Loan Disburse</option>
-<option value="parT24">Balance Loan at Risk (T24)</option>
-<option value="nbcOverdue">Balance Loan at Risk (NBC Overdue)</option>
-<option value="writeOff">Write Off</option>
-</select>
-</div>
-
 <!-- Daily History only — narrows the already-fetched table down to
      exactly one row-stream: one specific branch, or "Total" (the
      cross-branch aggregate) — never a list of every branch at once —
@@ -178,6 +166,18 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 <option value="co">CO</option>
 <option value="fsro">FSRO</option>
 <option value="digital">Digital</option>
+</select>
+</div>
+
+<div class="cr-section-row">
+<label for="crSection" class="cr-section-label">Showing</label>
+<select id="crSection" class="cr-section-select">
+<option value="all">All Sections</option>
+<option value="outstanding">Loan Outstanding — សមតុល្យឥណទាន</option>
+<option value="disburse">Loan Disburse</option>
+<option value="parT24">Balance Loan at Risk (T24)</option>
+<option value="nbcOverdue">Balance Loan at Risk (NBC Overdue)</option>
+<option value="writeOff">Write Off</option>
 </select>
 </div>
 
