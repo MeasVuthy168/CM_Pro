@@ -423,6 +423,28 @@
     flex:1 1 auto;
     min-width:0;
 }
+.cr-officer-search-wrap .cr-select{
+    padding-right:30px;
+}
+/* Same look as the Current-mode officer filter's own .cr-search-clear. */
+.cr-officer-clear{
+    position:absolute;
+    right:6px;
+    top:50%;
+    transform:translateY(-50%);
+    width:22px;
+    height:22px;
+    border:none;
+    border-radius:50%;
+    background:transparent;
+    color:var(--cr-text-muted);
+    font-size:12px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.cr-officer-clear:hover{ background:var(--cr-row-alt); }
 
 /* Custom suggestion dropdown for the officer search box — not a native
    <datalist>, which iOS/WebView browsers never render visibly (see
