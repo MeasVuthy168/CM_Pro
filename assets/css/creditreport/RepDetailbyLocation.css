@@ -232,8 +232,8 @@
 .cr-date-col{
     min-width:84px;
     text-align:left;
-    white-space:nowrap;
 }
+.cr-date-col .cr-date-main{ white-space:nowrap; }
 .table-card thead th.cr-date-col{
     background:var(--cr-navy-dark);
     color:var(--cr-gold-light);
@@ -241,6 +241,21 @@
 [data-theme="dark"] .table-card thead th.cr-date-col{ color:#002D6B; }
 .table-card tbody td.cr-date-col{ color:var(--cr-text-muted); }
 .cr-total-row td.cr-date-col{ color:var(--cr-total-text) !important; }
+
+/* Balance Loan at Risk (T24) is never date-filtered — this small label
+   surfaces its own, possibly-different "as of" timestamp per history
+   row instead of implying it shares the row's own Date. */
+.cr-t24-asof{
+    margin-top:2px;
+    font-size:10px;
+    line-height:1.3;
+    font-weight:600;
+    font-style:italic;
+    white-space:nowrap;
+    color:var(--cr-text-muted);
+    cursor:help;
+}
+.cr-total-row .cr-t24-asof{ color:var(--cr-total-text) !important; opacity:.8; }
 
 /* Branch/Officer/District/Commune — a 2-column grid above "Showing":
    District/Commune on the left, Branch/Officer on the right. Narrower
