@@ -445,6 +445,9 @@
     justify-content:center;
 }
 .cr-officer-clear:hover{ background:var(--cr-row-alt); }
+/* Specificity needs to beat the base rule's own display:flex above for
+   the [hidden] attribute to actually hide this button when empty. */
+.cr-officer-clear[hidden]{ display:none; }
 
 /* Custom suggestion dropdown for the officer search box — not a native
    <datalist>, which iOS/WebView browsers never render visibly (see
@@ -644,6 +647,11 @@
     justify-content:center;
 }
 .cr-search-clear:hover{ background:var(--cr-row-alt); }
+/* The base rule's own display:flex otherwise outranks the [hidden]
+   attribute's default display:none (equal specificity, author origin
+   wins over the UA stylesheet either way) — found while fixing the same
+   bug in .cr-officer-clear just above. */
+.cr-search-clear[hidden]{ display:none; }
 
 .table-scroll{
     position:relative;
