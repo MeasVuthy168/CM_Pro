@@ -377,17 +377,16 @@ const CR_T24_CLASS_INDEX = {
 // that "All" is gone — it still just shows the flat parT24/parT24Area
 // group unchanged (see crActiveSection() below), not a bucket.
 //
-// The 7 classification buckets only ever show Value/PAR% — # Loan is
-// deliberately left out for them, per explicit request 2026-10-05 (only
-// the flat parT24.loan/parT24Area.loan total, shown for "Total T24
-// Overdue", is a meaningful loan count here). Note this is a DIFFERENT
-// field than crGroupPct()'s own ".count" (that's nbcOverdue/
-// nbcOverdueArea's own convention) — parT24ByClass/parT24AreaByClass use
-// ".loan", matching parT24/parT24Area themselves.
+// Each of the 7 classification buckets gets its own # Loan/Value/PAR%,
+// same shape as the flat parT24/parT24Area group. Note this reads
+// ".loan", a DIFFERENT field than crGroupPct()'s own ".count" (that's
+// nbcOverdue/nbcOverdueArea's own convention) — parT24ByClass/
+// parT24AreaByClass use ".loan", matching parT24/parT24Area themselves.
 function crT24ClassGroup(prefix, label) {
     return {
         label,
         fields: [
+            { key: prefix + ".loan", label: "# Loan" },
             { key: prefix + ".value", label: "Value", money: true },
             { key: prefix + ".parPct", label: "PAR %", pct: true }
         ]
