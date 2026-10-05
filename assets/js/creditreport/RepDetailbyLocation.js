@@ -60,6 +60,17 @@ let crMode = "current"; // "current" | "history"
 let crHistoryData = null; // { days: [{ date, items, otherAddressDetail, total }, ...] }
 let crHistDatesSeeded = false;
 let crHistOtherAddressExpanded = new Set(); // dateKey(s) whose "Other Address" row is expanded
+
+// Daily History always narrows to exactly one location, found via the
+// search box below the date range — there's no "every location + Total"
+// list the way the old default view worked. "Other Address" is a
+// regular, selectable entry (its own per-day expand toggle still works
+// once it's the one matched location — see crHistOtherAddressExpanded
+// above). The roster backs the search box's custom suggestion dropdown
+// and the exact-match check that gates "View History" — see
+// crPopulateHistoryLocationRoster() / crAttachSuggestions() /
+// crResolveSelectedLocation().
+let crHistLocationRoster = []; // [locationName, ...] from the last /bylocation fetch
 const crLoggedInUser = JSON.parse(
     localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}"
 );
@@ -456,33 +467,33 @@ function crRenderHistory() {
 
     if (!crHistoryData.days.length) {
         document.getElementById("crTbody").innerHTML = "";
-        crShowEmpty("គ្មានទិន្នន័យសម្រាប់ចន្លោះកាលបរិច្ឆេទនេះទេ / No history saved for this date range yet.");
+        crShowEmpty("No history saved for this date range yet.");
         return;
     }
 
-    // Grouped by location (each location's day-by-day run together), in
-    // the same location order the first day's items came back in — then
-    // one "Total" block, both in chronological date order within each
-    // block. "Other Address" expands in place per-date (its own
-    // otherAddressDetail for that day), same idea as the live table's
-    // own toggle.
-    const locationOrder = crHistoryData.days[0].items.map(it => it.location);
-    let rowsHtml = "";
-    for (const location of locationOrder) {
-        const isOtherAddress = location === "Other Address";
-        for (const day of crHistoryData.days) {
-            const item = day.items.find(it => it.location === location);
-            if (!item) continue;
-            rowsHtml += crBuildHistoryRow(day.date, item, section, { isOtherAddress, t24AsOfText: day.t24AsOfText });
-            if (isOtherAddress && crHistOtherAddressExpanded.has(day.date)) {
-                rowsHtml += (day.otherAddressDetail || [])
-                    .map(d => crBuildHistoryRow(day.date, d, section, { isDetail: true, t24AsOfText: day.t24AsOfText }))
-                    .join("");
-            }
-        }
+    // Always exactly one location — matched via the search box above
+    // (see crResolveSelectedLocation()) — in chronological date order, no
+    // "every location" list and no Total row. "Other Address" still
+    // expands in place per-date (its own otherAddressDetail for that
+    // day) when it's the one matched location, same toggle as before.
+    const location = crResolveSelectedLocation();
+    if (!location) {
+        document.getElementById("crTbody").innerHTML = "";
+        crShowEmpty("Search and select a location, then click \"View History\".");
+        return;
     }
+    const isOtherAddress = location === "Other Address";
+
+    let rowsHtml = "";
     for (const day of crHistoryData.days) {
-        rowsHtml += crBuildHistoryRow(day.date, day.total, section, { isTotal: true, t24AsOfText: day.t24AsOfText });
+        const item = day.items.find(it => it.location === location);
+        if (!item) continue;
+        rowsHtml += crBuildHistoryRow(day.date, item, section, { isOtherAddress, t24AsOfText: day.t24AsOfText });
+        if (isOtherAddress && crHistOtherAddressExpanded.has(day.date)) {
+            rowsHtml += (day.otherAddressDetail || [])
+                .map(d => crBuildHistoryRow(day.date, d, section, { isDetail: true, t24AsOfText: day.t24AsOfText }))
+                .join("");
+        }
     }
 
     document.getElementById("crTbody").innerHTML = rowsHtml;
@@ -522,6 +533,7 @@ function crSetMode(mode) {
     document.getElementById("crModeHistoryBtn").classList.toggle("active", mode === "history");
     document.getElementById("crHistoryPanel").style.display = mode === "history" ? "block" : "none";
     document.getElementById("crGeoFilterGrid").style.display = mode === "history" ? "none" : "";
+    document.getElementById("crHistLocationRow").style.display = mode === "history" ? "" : "none";
     document.getElementById("crSearchWrap").style.display = mode === "current" && crData ? "flex" : "none";
     crUpdateClassVisibility();
 
@@ -531,11 +543,15 @@ function crSetMode(mode) {
             document.getElementById("crEmptyMsg").style.display = "none";
             crRenderSection();
         }
-    } else if (crHistoryData) {
-        crRenderHistory();
     } else {
-        document.getElementById("crTableScroll").style.display = "none";
-        crShowEmpty("ជ្រើសរើសចន្លោះកាលបរិច្ឆេទ រួចចុច \"មើលប្រវត្តិ\" / Pick a date range, then click \"View History\".");
+        crUpdateHistRunButtonState();
+        crUpdateChartButtonVisibility();
+        if (crHistoryData) {
+            crRenderHistory();
+        } else {
+            document.getElementById("crTableScroll").style.display = "none";
+            crShowEmpty("Search and select a location, then click \"View History\".");
+        }
     }
 }
 
@@ -580,6 +596,82 @@ document.getElementById("crTbody").addEventListener("click", (e) => {
     });
     location.href = `LocationPerformance.html?${q.toString()}`;
 });
+
+// ========================================
+// DAILY HISTORY LOCATION SEARCH — resolves the search box to exactly one
+// location (locations don't repeat the way an officer's name can across
+// branches, so the roster is just a plain name list, no disambiguation
+// needed). "Other Address" is a regular roster entry like any other.
+// ========================================
+function crPopulateHistoryLocationRoster(items) {
+    crHistLocationRoster = (items || []).map(it => it.location);
+}
+
+// Custom dropdown rather than a native <datalist> — iOS/WebView browsers
+// never render datalist suggestions as the user types (the attribute
+// exists in the DOM but nothing visibly pops up). Same pattern as
+// arrears.js's own attachSuggestions() for its AJ/AK fields.
+function crAttachSuggestions(fieldEl, wrapEl, getRoster) {
+    const list = document.createElement("ul");
+    list.className = "suggestion-list";
+    wrapEl.appendChild(list);
+
+    function hide() {
+        list.classList.remove("show");
+        list.innerHTML = "";
+    }
+
+    function showSuggestionsFor(query) {
+        const q = query.trim().toLowerCase();
+        if (!q) { hide(); return; }
+
+        const matches = getRoster()
+            .filter(label => label.toLowerCase().includes(q) && label.toLowerCase() !== q)
+            .slice(0, 8);
+
+        if (!matches.length) { hide(); return; }
+
+        list.innerHTML = "";
+        matches.forEach(label => {
+            const li = document.createElement("li");
+            li.textContent = label;
+            li.addEventListener("mousedown", (e) => {
+                // mousedown (not click) so this fires before the field's
+                // own blur event closes the dropdown first
+                e.preventDefault();
+                fieldEl.value = label;
+                hide();
+                fieldEl.dispatchEvent(new Event("input", { bubbles: true }));
+            });
+            list.appendChild(li);
+        });
+        list.classList.add("show");
+    }
+
+    fieldEl.addEventListener("input", () => showSuggestionsFor(fieldEl.value));
+    fieldEl.addEventListener("focus", () => showSuggestionsFor(fieldEl.value));
+    fieldEl.addEventListener("blur", hide);
+}
+
+// Free text never stops at the dropdown alone — only an exact match
+// against a roster location counts as a real, resolvable location, same
+// "always resolve to exactly one entity" rule Branch's/Officer's own
+// Daily History redesigns already established.
+function crResolveSelectedLocation() {
+    const typed = document.getElementById("crHistLocationSearch").value.trim();
+    if (!typed) return null;
+    return crHistLocationRoster.find(l => l === typed) || null;
+}
+
+// "View History" stays disabled until the typed text exactly matches one
+// roster location — not just any non-empty text. Only gates the initial
+// fetch; once crHistoryData is loaded, re-searching re-filters
+// client-side without re-fetching.
+function crUpdateHistRunButtonState() {
+    const btn = document.getElementById("btnCrHistRun");
+    if (!btn) return;
+    btn.disabled = !crResolveSelectedLocation();
+}
 
 // ========================================
 // LOCATION SEARCH
@@ -940,6 +1032,7 @@ async function crRunReport() {
         }
 
         crData = data;
+        crPopulateHistoryLocationRoster(data.items);
         crSeedHistoryDates(data);
         document.getElementById("crSearchWrap").style.display = "flex";
         document.getElementById("crTableScroll").style.display = "block";
@@ -954,7 +1047,12 @@ async function crRunReport() {
 // Section switching is local (no refetch).
 document.getElementById("crSection").addEventListener("change", () => {
     crUpdateClassVisibility();
-    if (crMode === "history") crRenderHistory(); else crRenderSection();
+    if (crMode === "history") {
+        crUpdateChartButtonVisibility();
+        crRenderHistory();
+    } else {
+        crRenderSection();
+    }
     crSyncStateToUrl();
 });
 document.getElementById("crClass").addEventListener("change", crRunReport);
@@ -1252,6 +1350,29 @@ window.addEventListener("pageshow", () => {
 document.getElementById("crModeCurrentBtn").addEventListener("click", () => crSetMode("current"));
 document.getElementById("crModeHistoryBtn").addEventListener("click", () => crSetMode("history"));
 document.getElementById("btnCrHistRun").addEventListener("click", crFetchHistory);
+document.getElementById("crHistLocationSearch").addEventListener("input", (e) => {
+    document.getElementById("crHistLocationClear").hidden = !e.target.value;
+    crUpdateHistRunButtonState();
+    crUpdateChartButtonVisibility();
+    if (crHistoryData) crRenderHistory();
+});
+document.getElementById("crHistLocationSearch").addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    e.target.value = "";
+    e.target.dispatchEvent(new Event("input", { bubbles: true }));
+    e.target.blur();
+});
+document.getElementById("crHistLocationClear").addEventListener("click", () => {
+    const input = document.getElementById("crHistLocationSearch");
+    input.value = "";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.focus();
+});
+crAttachSuggestions(
+    document.getElementById("crHistLocationSearch"),
+    document.querySelector("#crHistLocationRow .cr-hist-search-wrap"),
+    () => crHistLocationRoster
+);
 
 if (crIsAdmin) {
     document.getElementById("btnCrHistSnapshot").style.display = "";
@@ -1278,6 +1399,177 @@ if (crIsAdmin) {
         }
     });
 }
+
+// ========================================
+// DAILY HISTORY CHART — a line chart of the one matched location (see
+// crResolveSelectedLocation()), over the fetched date range, for
+// whichever fields the active "Showing" section carries. Reuses Chart.js
+// the same way RepDetailbyCO.js's own Daily History chart does (same
+// CDN build, same instance-reuse pattern, same --cr-series-N palette).
+// ========================================
+let crChartInstance = null;
+let crChartMetricLabel = null; // persists across re-opens until a Showing/metric change resets it
+
+// Visible only once BOTH boxes are set — a real location matched AND a
+// specific "Showing" section picked (not left at "All Sections").
+function crUpdateChartButtonVisibility() {
+    const btn = document.getElementById("btnCrHistChart");
+    if (!btn) return;
+    const sectionFilter = document.getElementById("crSection").value;
+    btn.style.display = (crMode === "history" && crResolveSelectedLocation() && sectionFilter !== "all") ? "" : "none";
+}
+
+function crChartSeriesColors() {
+    const cs = getComputedStyle(document.documentElement);
+    const slot = n => cs.getPropertyValue(`--cr-series-${n}`).trim();
+    return [1, 2, 3, 4, 5, 6, 7, 8].map(slot);
+}
+
+// Dedupes the active section's fields by label ("# Loan", "Value",
+// "PAR %"...) — switching between them is how one chart stays on a
+// single axis/unit instead of mixing counts, money, and percentages.
+function crChartMetricOptions(section) {
+    const seen = new Map();
+    for (const g of section.groups) {
+        for (const f of g.fields) {
+            if (!seen.has(f.label)) seen.set(f.label, f);
+        }
+    }
+    return [...seen.values()];
+}
+
+function crRenderChartMetricTabs(section, metricOptions) {
+    const row = document.getElementById("crChartMetricRow");
+    // A single metric needs no tab row to switch between — same "no
+    // legend for one series" idea, one level up.
+    if (metricOptions.length < 2) {
+        row.innerHTML = "";
+        return;
+    }
+    row.innerHTML = metricOptions.map(f =>
+        `<button type="button" class="cr-chart-metric-btn${f.label === crChartMetricLabel ? " active" : ""}" data-metric="${crEscapeHtml(f.label)}">${crEscapeHtml(f.label)}</button>`
+    ).join("");
+}
+
+function crRenderChart(section) {
+    const matchedLocation = crResolveSelectedLocation();
+    if (!matchedLocation) return;
+    const metricOptions = crChartMetricOptions(section);
+    if (!metricOptions.length) return;
+    if (!metricOptions.some(f => f.label === crChartMetricLabel)) {
+        // Prefer the first money field (the usual headline figure) when
+        // (re)picking a default — e.g. switching "Showing" resets it.
+        crChartMetricLabel = (metricOptions.find(f => f.money) || metricOptions[0]).label;
+    }
+    crRenderChartMetricTabs(section, metricOptions);
+
+    const days = crHistoryData.days;
+    const labels = days.map(d => crFmtDateDMY(d.date));
+    const colors = crChartSeriesColors();
+    const activeField = metricOptions.find(f => f.label === crChartMetricLabel);
+
+    const datasets = [];
+    section.groups.forEach((g, idx) => {
+        const field = g.fields.find(f => f.label === crChartMetricLabel);
+        if (!field) return;
+        const data = days.map(day => {
+            const item = day.items.find(it => it.location === matchedLocation);
+            const v = item ? crGetByPath(item, field.key) : null;
+            return v == null ? null : Number(v) || 0;
+        });
+        const color = colors[idx % colors.length];
+        datasets.push({
+            label: g.label,
+            data,
+            borderColor: color,
+            backgroundColor: color,
+            pointBackgroundColor: color,
+            pointBorderColor: getComputedStyle(document.documentElement).getPropertyValue("--cr-chart-surface").trim(),
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            borderWidth: 2,
+            tension: 0
+        });
+    });
+
+    document.getElementById("crChartTitle").textContent =
+        `${matchedLocation} — ${section.groups.length === 1 ? section.groups[0].label : "Showing"}`;
+
+    const isPct = !!activeField?.pct;
+    const ctx = document.getElementById("crChartCanvas").getContext("2d");
+    const textMuted = getComputedStyle(document.documentElement).getPropertyValue("--cr-text-muted").trim();
+    const grid = getComputedStyle(document.documentElement).getPropertyValue("--cr-chart-grid").trim();
+
+    const config = {
+        type: "line",
+        data: { labels, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: {
+                legend: { display: datasets.length > 1, labels: { color: textMuted, boxWidth: 12 } },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx2) => `${ctx2.dataset.label}: ${isPct ? crFmtPct(ctx2.parsed.y) : crFmtNum(ctx2.parsed.y)}`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: textMuted,
+                        callback: (v) => isPct ? crFmtPct(v) : crFmtNum(v)
+                    },
+                    grid: { color: grid }
+                },
+                x: {
+                    ticks: { color: textMuted },
+                    grid: { display: false }
+                }
+            }
+        }
+    };
+
+    if (crChartInstance) crChartInstance.destroy();
+    crChartInstance = new Chart(ctx, config);
+}
+
+function crOpenChart() {
+    if (!crHistoryData || !crHistoryData.days.length) return;
+    if (!crResolveSelectedLocation()) return;
+    if (typeof Chart === "undefined") {
+        notify("Chart library failed to load — check your connection and refresh.", "error");
+        return;
+    }
+    const section = crActiveSection();
+    document.getElementById("crChartOverlay").hidden = false;
+    document.body.style.overflow = "hidden";
+    crRenderChart(section);
+}
+
+function crCloseChart() {
+    document.getElementById("crChartOverlay").hidden = true;
+    document.body.style.overflow = "";
+    if (crChartInstance) {
+        crChartInstance.destroy();
+        crChartInstance = null;
+    }
+}
+
+document.getElementById("crChartMetricRow").addEventListener("click", (e) => {
+    const btn = e.target.closest(".cr-chart-metric-btn");
+    if (!btn) return;
+    crChartMetricLabel = btn.dataset.metric;
+    crRenderChart(crActiveSection());
+});
+
+document.getElementById("btnCrHistChart").addEventListener("click", crOpenChart);
+document.getElementById("btnCrChartClose").addEventListener("click", crCloseChart);
+document.getElementById("crChartOverlay").addEventListener("click", (e) => {
+    if (e.target.id === "crChartOverlay") crCloseChart();
+});
 
 // ========================================
 // INIT
