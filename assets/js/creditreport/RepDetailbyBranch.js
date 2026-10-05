@@ -1488,7 +1488,14 @@ function crRenderChart(section) {
     const branchFilter = document.getElementById("crHistBranch").value;
     const teamFilter = document.getElementById("crHistTeam").value;
     const days = crHistoryData.days;
-    const labels = days.map(d => crFmtDateDMY(d.date));
+    // Balance Loan at Risk (T24) is never date-filtered — it always
+    // reflects whichever ArreasT24ByCO data was live at snapshot time,
+    // which can carry its own "as of" moment different from each row's
+    // own Date (same reason crBuildHistoryRow shows a separate "T24: ..."
+    // note under Date for this section). The chart's own X axis follows
+    // that same T24 "as of" moment instead of the row Date whenever
+    // Showing is T24, per explicit request 2026-10-05.
+    const labels = days.map(d => crSectionHasT24(section) && d.t24AsOfText ? d.t24AsOfText : crFmtDateDMY(d.date));
     const colors = crChartSeriesColors();
     const activeField = metricOptions.find(f => f.label === crChartMetricLabel);
 
