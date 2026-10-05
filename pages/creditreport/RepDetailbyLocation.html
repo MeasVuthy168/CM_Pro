@@ -59,6 +59,13 @@ href="../../assets/css/creditreport/RepDetailbyLocation.css">
 
 <div class="page-container">
 
+<!-- Admin-only — moved here from inside the Daily History panel per
+     explicit request 2026-10-05, so it's reachable without switching
+     modes first. -->
+<div class="cr-admin-toolbar" id="crAdminToolbar" style="display:none">
+<button id="btnCrHistSnapshot" class="cr-run-btn cr-snapshot-btn">📸 Snapshot Now</button>
+</div>
+
 <div class="print-only-title">របាយការណ៍ត្រួតពិនិត្យប្រចាំថ្ងៃតាមទីតាំង</div>
 
 <!-- ========================= -->
@@ -122,7 +129,6 @@ href="../../assets/css/creditreport/RepDetailbyLocation.css">
 <input type="date" id="crHistToDate">
 </div>
 </div>
-<button id="btnCrHistSnapshot" class="cr-run-btn cr-snapshot-btn" style="display:none">📸 Snapshot Now</button>
 </div>
 
 <!-- Daily History only — narrows the already-fetched table down to
