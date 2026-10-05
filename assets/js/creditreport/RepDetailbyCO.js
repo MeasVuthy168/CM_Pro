@@ -139,30 +139,8 @@ const CR_SECTIONS = {
             crGroupPct("nbcOverdue.totalOwn", "Total NBC Overdue_Own")
         ]
     },
-    writeOff: {
+    writeOffArea: {
         groups: [
-            {
-                label: "Balance WO_Own",
-                fields: [
-                    { key: "writeOffOwn.balanceWO.count", label: "#" },
-                    { key: "writeOffOwn.balanceWO.int", label: "Int", money: true },
-                    { key: "writeOffOwn.balanceWO.prn", label: "Prn", money: true }
-                ]
-            },
-            {
-                label: "WO_Own",
-                fields: [
-                    { key: "writeOffOwn.wo.count", label: "#" },
-                    { key: "writeOffOwn.wo.prn", label: "Prn", money: true }
-                ]
-            },
-            {
-                label: "WO Collected_Own",
-                fields: [
-                    { key: "writeOffOwn.woCollected.int", label: "Int", money: true },
-                    { key: "writeOffOwn.woCollected.prn", label: "Prn", money: true }
-                ]
-            },
             {
                 label: "Balance WO_Area",
                 fields: [
@@ -186,6 +164,32 @@ const CR_SECTIONS = {
                 ]
             }
         ]
+    },
+    writeOff: {
+        groups: [
+            {
+                label: "Balance WO_Own",
+                fields: [
+                    { key: "writeOffOwn.balanceWO.count", label: "#" },
+                    { key: "writeOffOwn.balanceWO.int", label: "Int", money: true },
+                    { key: "writeOffOwn.balanceWO.prn", label: "Prn", money: true }
+                ]
+            },
+            {
+                label: "WO_Own",
+                fields: [
+                    { key: "writeOffOwn.wo.count", label: "#" },
+                    { key: "writeOffOwn.wo.prn", label: "Prn", money: true }
+                ]
+            },
+            {
+                label: "WO Collected_Own",
+                fields: [
+                    { key: "writeOffOwn.woCollected.int", label: "Int", money: true },
+                    { key: "writeOffOwn.woCollected.prn", label: "Prn", money: true }
+                ]
+            }
+        ]
     }
 };
 CR_SECTIONS.all = {
@@ -198,6 +202,7 @@ CR_SECTIONS.all = {
         ...CR_SECTIONS.parT24.groups,
         ...CR_SECTIONS.nbcOverdueArea.groups,
         ...CR_SECTIONS.nbcOverdue.groups,
+        ...CR_SECTIONS.writeOffArea.groups,
         ...CR_SECTIONS.writeOff.groups
     ]
 };
