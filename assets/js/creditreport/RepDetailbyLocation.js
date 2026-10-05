@@ -536,6 +536,8 @@ function crSetMode(mode) {
     document.getElementById("crHistLocationRow").style.display = mode === "history" ? "" : "none";
     document.getElementById("crSearchWrap").style.display = mode === "current" && crData ? "flex" : "none";
     crUpdateClassVisibility();
+    crUpdateHistRunButtonState();
+    crUpdateChartButtonVisibility();
 
     if (mode === "current") {
         if (crData) {
@@ -544,8 +546,6 @@ function crSetMode(mode) {
             crRenderSection();
         }
     } else {
-        crUpdateHistRunButtonState();
-        crUpdateChartButtonVisibility();
         if (crHistoryData) {
             crRenderHistory();
         } else {
@@ -670,6 +670,10 @@ function crResolveSelectedLocation() {
 function crUpdateHistRunButtonState() {
     const btn = document.getElementById("btnCrHistRun");
     if (!btn) return;
+    // Visible only in Daily History mode — per explicit follow-up
+    // request 2026-10-05 (moving it next to Chart, which is also
+    // History-only, left it with no mode-based visibility of its own).
+    btn.style.display = crMode === "history" ? "" : "none";
     btn.disabled = !crResolveSelectedLocation();
 }
 

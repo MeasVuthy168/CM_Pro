@@ -679,6 +679,10 @@ async function crFetchHistory() {
 function crUpdateHistRunButtonState() {
     const btn = document.getElementById("btnCrHistRun");
     if (!btn) return;
+    // Visible only in Daily History mode — per explicit follow-up
+    // request 2026-10-05 (moving it next to Chart, which is also
+    // History-only, left it with no mode-based visibility of its own).
+    btn.style.display = crMode === "history" ? "" : "none";
     const branchFilter = document.getElementById("crHistBranch").value;
     const teamFilter = document.getElementById("crHistTeam").value;
     const sectionFilter = document.getElementById("crSection").value;
@@ -696,7 +700,7 @@ function crSetMode(mode) {
     document.getElementById("crHistTeamRow").style.display = mode === "history" ? "" : "none";
     crUpdateClassVisibility();
     crUpdateChartButtonVisibility();
-    if (mode === "history") crUpdateHistRunButtonState();
+    crUpdateHistRunButtonState();
 
     if (mode === "current") {
         if (crSummaryData) {
