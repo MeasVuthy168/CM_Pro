@@ -373,6 +373,27 @@ const CR_T24_CLASS_INDEX = {
     Loss: "loss"
 };
 
+// "Total T24 Overdue" ("total") is the only non-bucket value left now
+// that "All" is gone — it still just shows the flat parT24/parT24Area
+// group unchanged (see crActiveSection() below), not a bucket.
+//
+// The 7 classification buckets only ever show Value/PAR% — # Loan is
+// deliberately left out for them, per explicit request 2026-10-05 (only
+// the flat parT24.loan/parT24Area.loan total, shown for "Total T24
+// Overdue", is a meaningful loan count here). Note this is a DIFFERENT
+// field than crGroupPct()'s own ".count" (that's nbcOverdue/
+// nbcOverdueArea's own convention) — parT24ByClass/parT24AreaByClass use
+// ".loan", matching parT24/parT24Area themselves.
+function crT24ClassGroup(prefix, label) {
+    return {
+        label,
+        fields: [
+            { key: prefix + ".value", label: "Value", money: true },
+            { key: prefix + ".parPct", label: "PAR %", pct: true }
+        ]
+    };
+}
+
 function crActiveSection() {
     const sectionKey = document.getElementById("crSection").value;
     const section = CR_SECTIONS[sectionKey];
@@ -395,7 +416,7 @@ function crActiveSection() {
         if (!bucketKey) return section;
         const prefix = sectionKey === "parT24" ? "parT24ByClass" : "parT24AreaByClass";
         const label = section.groups[0].label;
-        return { groups: [crGroupPct(`${prefix}.${bucketKey}`, label)] };
+        return { groups: [crT24ClassGroup(`${prefix}.${bucketKey}`, label)] };
     }
 
     return section;
@@ -1348,16 +1369,17 @@ let crChartMetricLabel = null; // persists across re-opens until a Showing/metri
 // own Loan Class left at "All" — plotting all 7 classifications at once
 // isn't a focused chart either, hidden until a specific classification
 // (or the "Total NBC Overdue" option) is picked — per explicit
-// follow-up request 2026-10-05.
+// follow-up request 2026-10-05. T24's own Loan Class filter has no "All"
+// value any more (removed the same day — "Total T24 Overdue" already
+// covers that unfiltered view), so unlike NBC there's nothing left to
+// hide Chart on there.
 function crUpdateChartButtonVisibility() {
     const btn = document.getElementById("btnCrHistChart");
     if (!btn) return;
     const sectionFilter = document.getElementById("crSection").value;
     const isNbc = sectionFilter === "nbcOverdue" || sectionFilter === "nbcOverdueArea";
     const nbcClassAll = isNbc && !document.getElementById("crNbcClass").value;
-    const isT24 = sectionFilter === "parT24" || sectionFilter === "parT24Area";
-    const t24ClassAll = isT24 && !document.getElementById("crClass").value;
-    btn.style.display = (crMode === "history" && crResolveSelectedOfficer() && sectionFilter !== "all" && !nbcClassAll && !t24ClassAll) ? "" : "none";
+    btn.style.display = (crMode === "history" && crResolveSelectedOfficer() && sectionFilter !== "all" && !nbcClassAll) ? "" : "none";
 }
 
 function crChartSeriesColors() {
