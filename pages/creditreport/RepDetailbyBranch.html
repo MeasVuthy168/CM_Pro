@@ -81,6 +81,13 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 
 <div class="page-container">
 
+<!-- Admin-only — moved here from inside the Daily History panel per
+     explicit request 2026-10-05, so it's reachable without switching
+     modes first. -->
+<div class="cr-admin-toolbar" id="crAdminToolbar" style="display:none">
+<button id="btnCrHistSnapshot" class="cr-run-btn cr-snapshot-btn">📸 Snapshot Now</button>
+</div>
+
 <div class="print-only-title">របាយការណ៍ឥណទានតាមសាខាប្រចាំថ្ងៃ</div>
 
 <!-- ========================= -->
@@ -143,7 +150,6 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 <input type="date" id="crHistToDate">
 </div>
 </div>
-<button id="btnCrHistSnapshot" class="cr-run-btn cr-snapshot-btn" style="display:none">📸 Snapshot Now</button>
 </div>
 
 <!-- Daily History only — narrows the already-fetched table down to

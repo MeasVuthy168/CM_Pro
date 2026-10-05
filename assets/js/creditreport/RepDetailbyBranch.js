@@ -1612,7 +1612,7 @@ document.getElementById("crHistTeam").addEventListener("change", () => {
 });
 
 if (crIsAdmin) {
-    document.getElementById("btnCrHistSnapshot").style.display = "";
+    document.getElementById("crAdminToolbar").style.display = "";
     document.getElementById("btnCrHistSnapshot").addEventListener("click", async () => {
         const btn = document.getElementById("btnCrHistSnapshot");
         btn.disabled = true;
