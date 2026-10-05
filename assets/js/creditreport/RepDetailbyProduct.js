@@ -307,6 +307,26 @@ const CR_T24_CLASS_INDEX = {
     Loss: "loss"
 };
 
+// "Total T24 Overdue" ("total") is the only non-bucket value left now
+// that "All" is gone — it still just shows the flat parT24 group
+// unchanged (see crActiveSection() below), not a bucket.
+//
+// The 7 classification buckets only ever show Value/PAR% — # Loan is
+// deliberately left out for them, per explicit request 2026-10-05 (only
+// the flat parT24.loan total, shown for "Total T24 Overdue", is a
+// meaningful loan count here). Note this is a DIFFERENT field than
+// crGroupPct()'s own ".count" (that's nbcOverdue's own convention) —
+// parT24ByClass uses ".loan", matching parT24 itself.
+function crT24ClassGroup(prefix, label) {
+    return {
+        label,
+        fields: [
+            { key: prefix + ".value", label: "Value", money: true },
+            { key: prefix + ".parPct", label: "PAR %", pct: true }
+        ]
+    };
+}
+
 function crActiveSection() {
     const sectionKey = document.getElementById("crSection").value;
     const section = CR_SECTIONS[sectionKey];
@@ -327,7 +347,7 @@ function crActiveSection() {
         const t24Class = document.getElementById("crClass").value;
         const bucketKey = CR_T24_CLASS_INDEX[t24Class];
         if (!bucketKey) return section;
-        return { groups: [crGroupPct(`parT24ByClass.${bucketKey}`, section.groups[0].label)] };
+        return { groups: [crT24ClassGroup(`parT24ByClass.${bucketKey}`, section.groups[0].label)] };
     }
 
     return section;
@@ -1204,13 +1224,16 @@ let crChartMetricLabel = null; // persists across re-opens until a Showing/metri
 // focused chart either, hidden until a specific classification (or the
 // "Total NBC Overdue" option) is picked — per explicit follow-up
 // request 2026-10-05.
+// T24's own Loan Class filter has no "All" value any more (removed per
+// explicit request 2026-10-05 — "Total T24 Overdue" already covers that
+// unfiltered view), so unlike NBC Overdue there's nothing left to hide
+// Chart on there: it's always visible once Showing is parT24.
 function crUpdateChartButtonVisibility() {
     const btn = document.getElementById("btnCrHistChart");
     if (!btn) return;
     const sectionFilter = document.getElementById("crSection").value;
     const nbcClassAll = sectionFilter === "nbcOverdue" && !document.getElementById("crNbcClass").value;
-    const t24ClassAll = sectionFilter === "parT24" && !document.getElementById("crClass").value;
-    btn.style.display = (crMode === "history" && crResolveSelectedProduct() && sectionFilter !== "all" && !nbcClassAll && !t24ClassAll) ? "" : "none";
+    btn.style.display = (crMode === "history" && crResolveSelectedProduct() && sectionFilter !== "all" && !nbcClassAll) ? "" : "none";
 }
 
 function crChartSeriesColors() {
