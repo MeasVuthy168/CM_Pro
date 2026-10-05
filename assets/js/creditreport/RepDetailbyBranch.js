@@ -718,15 +718,20 @@ async function crFetchHistory() {
     }
 }
 
-// "View History" stays disabled until the person has deliberately
-// narrowed at least 2 of the 3 filters (Branch, Team, Showing) away
-// from their "All"/"All Sections" default — any 2 of the 3, not
-// specifically Branch+Team — per explicit follow-up request
-// 2026-10-02 (the original Branch+Team-only rule felt like it needed
-// all 3 picked to get a focused result). This only gates the initial
-// fetch trigger; once crHistoryData is loaded, Branch/Team/Showing
-// (including switching back to any "All" default) still filter it
-// client-side exactly as before, no re-fetch needed.
+// "View History" stays disabled until Showing is narrowed to a specific
+// section (away from "All Sections") — Branch/Team no longer need to be
+// narrowed too, per explicit follow-up request 2026-10-05 (the earlier
+// "pick any 2 of Branch/Team/Showing" rule required more than just
+// picking a focused Showing). Shared with crUpdateChartButtonVisibility
+// below so Chart's own visibility always matches this button's enabled
+// state, not a separately-maintained condition. This only gates the
+// initial fetch trigger; once crHistoryData is loaded, Branch/Team/
+// Showing (including switching back to any "All" default) still filter
+// it client-side exactly as before, no re-fetch needed.
+function crHistoryFocused() {
+    return document.getElementById("crSection").value !== "all";
+}
+
 function crUpdateHistRunButtonState() {
     const btn = document.getElementById("btnCrHistRun");
     if (!btn) return;
@@ -734,12 +739,7 @@ function crUpdateHistRunButtonState() {
     // request 2026-10-05 (moving it next to Chart, which is also
     // History-only, left it with no mode-based visibility of its own).
     btn.style.display = crMode === "history" ? "" : "none";
-    const branchFilter = document.getElementById("crHistBranch").value;
-    const teamFilter = document.getElementById("crHistTeam").value;
-    const sectionFilter = document.getElementById("crSection").value;
-    const specificCount = [!!branchFilter, !!teamFilter, sectionFilter !== "all"]
-        .filter(Boolean).length;
-    btn.disabled = specificCount < 2;
+    btn.disabled = !crHistoryFocused();
 }
 
 function crSetMode(mode) {
@@ -763,7 +763,7 @@ function crSetMode(mode) {
         crRenderHistory();
     } else {
         document.getElementById("crTableScroll").style.display = "none";
-        crShowEmpty("Pick at least 2 of Branch, Team and Showing, then click \"View History\".");
+        crShowEmpty("Pick a Showing section, then click \"View History\".");
     }
 }
 
@@ -1414,24 +1414,26 @@ window.addEventListener("pageshow", () => {
 let crChartInstance = null;
 let crChartMetricLabel = null; // persists across re-opens until a Showing/metric change resets it
 
-// Branch now always resolves to exactly one row-stream — a specific
-// branch, or "All Branch" — so there's always a definite single entity
-// to chart; the button just follows the mode itself. The one exception:
-// "Showing: Balance Loan at Risk (NBC Overdue)" with its own Loan Class
-// left at "All" plots all 7 classifications at once, which isn't a
-// focused-enough chart — hidden until a specific classification (or the
-// new "Total NBC Overdue") is picked — per explicit follow-up request
-// 2026-10-05.
-// T24's own Loan Class filter has no "All" value any more (removed per
-// explicit request 2026-10-05 — "Total T24 Overdue" already covers that
-// unfiltered view), so unlike NBC Overdue there's nothing left to hide
-// Chart on there: it's always visible once Showing is parT24.
+// Chart is visible only when "View History" is also enabled — same
+// crHistoryFocused() condition (Showing narrowed away from "All
+// Sections") — per explicit follow-up request 2026-10-05. Branch/Team no
+// longer gate it either way: Branch always resolves to exactly one
+// row-stream (a specific branch, or "All Branch"), so there's always a
+// definite single entity to chart once Showing itself is focused. The
+// one further exception: "Showing: Balance Loan at Risk (NBC Overdue)"
+// with its own Loan Class left at "All" plots all 7 classifications at
+// once, which isn't a focused-enough chart either — hidden until a
+// specific classification (or "Total NBC Overdue") is picked — per
+// explicit follow-up request 2026-10-05. T24's own Loan Class filter has
+// no "All" value any more (same date — "Total T24 Overdue" already
+// covers that unfiltered view), so unlike NBC Overdue there's nothing
+// left to hide Chart on there beyond crHistoryFocused() itself.
 function crUpdateChartButtonVisibility() {
     const btn = document.getElementById("btnCrHistChart");
     if (!btn) return;
     const sectionFilter = document.getElementById("crSection").value;
     const nbcClassAll = sectionFilter === "nbcOverdue" && !document.getElementById("crNbcClass").value;
-    btn.style.display = (crMode === "history" && !nbcClassAll) ? "" : "none";
+    btn.style.display = (crMode === "history" && crHistoryFocused() && !nbcClassAll) ? "" : "none";
 }
 
 function crChartSeriesColors() {
