@@ -469,7 +469,7 @@ function crBuildRow(item, section, isTotal) {
 // no refetch is needed — this is purely a display choice.
 const CR_NBC_CLASS_INDEX = {
     minor: 0, specialMention: 1, subStandard: 2, doubtful: 3,
-    loss: 4, majorDefault: 5, nonPerformingLoan: 6
+    loss: 4, majorDefault: 5, nonPerformingLoan: 6, total: 7
 };
 
 function crActiveSection(sectionKey) {
@@ -838,6 +838,7 @@ document.getElementById("crTbody").addEventListener("click", (e) => {
 
 document.getElementById("crSection").addEventListener("change", () => {
     crUpdateClassVisibility();
+    crUpdateChartButtonVisibility();
     if (crMode === "history") {
         crUpdateHistRunButtonState();
         crRenderHistory();
@@ -852,6 +853,7 @@ document.getElementById("crProduct").addEventListener("change", crRunReport);
 // (see crActiveSection()) — local re-render, no refetch, same as
 // switching "Showing" itself.
 document.getElementById("crNbcClass").addEventListener("change", () => {
+    crUpdateChartButtonVisibility();
     if (crMode === "history") crRenderHistory(); else crRenderSummary();
     crSyncStateToUrl();
 });
@@ -1348,11 +1350,18 @@ let crChartMetricLabel = null; // persists across re-opens until a Showing/metri
 
 // Branch now always resolves to exactly one row-stream — a specific
 // branch, or "All Branch" — so there's always a definite single entity
-// to chart; the button just follows the mode itself.
+// to chart; the button just follows the mode itself. The one exception:
+// "Showing: Balance Loan at Risk (NBC Overdue)" with its own Loan Class
+// left at "All" plots all 7 classifications at once, which isn't a
+// focused-enough chart — hidden until a specific classification (or the
+// new "Total NBC Overdue") is picked — per explicit follow-up request
+// 2026-10-05.
 function crUpdateChartButtonVisibility() {
     const btn = document.getElementById("btnCrHistChart");
     if (!btn) return;
-    btn.style.display = crMode === "history" ? "" : "none";
+    const sectionFilter = document.getElementById("crSection").value;
+    const nbcClassAll = sectionFilter === "nbcOverdue" && !document.getElementById("crNbcClass").value;
+    btn.style.display = (crMode === "history" && !nbcClassAll) ? "" : "none";
 }
 
 function crChartSeriesColors() {

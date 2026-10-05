@@ -348,7 +348,7 @@ function crBuildRow(item, section, isTotal, opts = {}) {
 // no refetch is needed — this is purely a display choice.
 const CR_NBC_CLASS_INDEX = {
     minor: 0, specialMention: 1, subStandard: 2, doubtful: 3,
-    loss: 4, majorDefault: 5, nonPerformingLoan: 6
+    loss: 4, majorDefault: 5, nonPerformingLoan: 6, total: 7
 };
 
 function crActiveSection() {
@@ -1065,6 +1065,7 @@ document.getElementById("crProduct").addEventListener("change", crRunReport);
 // (see crActiveSection()) — local re-render, no refetch, same as
 // switching "Showing" itself.
 document.getElementById("crNbcClass").addEventListener("change", () => {
+    crUpdateChartButtonVisibility();
     if (crMode === "history") crRenderHistory(); else crRenderSection();
     crSyncStateToUrl();
 });
@@ -1415,12 +1416,18 @@ let crChartInstance = null;
 let crChartMetricLabel = null; // persists across re-opens until a Showing/metric change resets it
 
 // Visible only once BOTH boxes are set — a real location matched AND a
-// specific "Showing" section picked (not left at "All Sections").
+// specific "Showing" section picked (not left at "All Sections"). Same
+// idea for "Balance Loan at Risk (NBC Overdue)" with its own Loan Class
+// left at "All" — plotting all 7 classifications at once isn't a
+// focused chart either, hidden until a specific classification (or the
+// "Total NBC Overdue" option) is picked — per explicit follow-up
+// request 2026-10-05.
 function crUpdateChartButtonVisibility() {
     const btn = document.getElementById("btnCrHistChart");
     if (!btn) return;
     const sectionFilter = document.getElementById("crSection").value;
-    btn.style.display = (crMode === "history" && crResolveSelectedLocation() && sectionFilter !== "all") ? "" : "none";
+    const nbcClassAll = sectionFilter === "nbcOverdue" && !document.getElementById("crNbcClass").value;
+    btn.style.display = (crMode === "history" && crResolveSelectedLocation() && sectionFilter !== "all" && !nbcClassAll) ? "" : "none";
 }
 
 function crChartSeriesColors() {
