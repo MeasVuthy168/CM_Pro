@@ -472,14 +472,45 @@ const CR_NBC_CLASS_INDEX = {
     loss: 4, majorDefault: 5, nonPerformingLoan: 6, total: 7
 };
 
+// Maps the T24 Loan Class filter's values to their matching bucket key
+// within parT24ByClass (added to the backend so Daily History can slice
+// by class without a refetch — see lib/creditreport-branch.js's own
+// T24_CLASS_FILTER_VALUES). "" (All) and "total" (Total T24 Overdue) are
+// deliberately absent — both just show the flat parT24 group unchanged
+// (see crActiveSection() below), not a bucket.
+const CR_T24_CLASS_INDEX = {
+    Normal_to_SpecialMention: "normalToSpecialMention",
+    SubStandard_to_Loss: "subStandardToLoss",
+    Normal: "normal",
+    "Special Mention": "specialMention",
+    "Sub Standard": "subStandard",
+    Doubtful: "doubtful",
+    Loss: "loss"
+};
+
 function crActiveSection(sectionKey) {
     const section = CR_SECTIONS[sectionKey];
-    if (sectionKey !== "nbcOverdue") return section;
 
-    const nbcClass = document.getElementById("crNbcClass").value;
-    const idx = CR_NBC_CLASS_INDEX[nbcClass];
-    if (idx === undefined) return section;
-    return { groups: [section.groups[idx]] };
+    if (sectionKey === "nbcOverdue") {
+        const nbcClass = document.getElementById("crNbcClass").value;
+        const idx = CR_NBC_CLASS_INDEX[nbcClass];
+        if (idx === undefined) return section;
+        return { groups: [section.groups[idx]] };
+    }
+
+    // Current mode already narrows parT24 server-side (see
+    // crBuildDateQuery's own t24Class) — the flat group already shows
+    // the filtered figures, so no swap is needed there. Only History
+    // mode (no refetch) needs to pick a different field source for the
+    // same single group.
+    if (sectionKey === "parT24" && crMode === "history") {
+        const t24Class = document.getElementById("crClass").value;
+        const bucketKey = CR_T24_CLASS_INDEX[t24Class];
+        if (!bucketKey) return section;
+        return { groups: [crGroupPct(`parT24ByClass.${bucketKey}`, section.groups[0].label)] };
+    }
+
+    return section;
 }
 
 function crRenderSummary() {
@@ -847,7 +878,19 @@ document.getElementById("crSection").addEventListener("change", () => {
     }
     crSyncStateToUrl();
 });
-document.getElementById("crClass").addEventListener("change", crRunReport);
+// In History mode, the T24 Loan Class filter is a local display pick
+// among the already-fetched parT24ByClass buckets (see
+// crActiveSection()) — no refetch, same as crNbcClass below. In Current
+// mode it still narrows the data server-side, so it keeps refetching.
+document.getElementById("crClass").addEventListener("change", () => {
+    if (crMode === "history") {
+        crUpdateChartButtonVisibility();
+        crRenderHistory();
+        crSyncStateToUrl();
+    } else {
+        crRunReport();
+    }
+});
 document.getElementById("crProduct").addEventListener("change", crRunReport);
 // crNbcClass only picks which already-fetched classification to display
 // (see crActiveSection()) — local re-render, no refetch, same as
@@ -913,8 +956,10 @@ function crShowEmpty(msg) {
 function crBuildDateQuery() {
     const parts = [];
 
+    // "total" (Total T24 Overdue) isn't a server-side filter value — it
+    // just means unfiltered, same as "" (All), so it's never sent.
     const t24Class = document.getElementById("crClass").value;
-    if (t24Class) parts.push(`t24Class=${encodeURIComponent(t24Class)}`);
+    if (t24Class && t24Class !== "total") parts.push(`t24Class=${encodeURIComponent(t24Class)}`);
 
     const t24Product = document.getElementById("crProduct").value;
     if (t24Product) parts.push(`t24Product=${encodeURIComponent(t24Product)}`);
@@ -938,11 +983,12 @@ function crUpdateClassVisibility() {
     // History rows are precomputed daily snapshots with every
     // classification/product already in them (see crActiveSection()) —
     // the T24/NBC Product Type filters need a server-side recompute this
-    // view doesn't do, so they're hidden in History mode. The NBC Loan
-    // Class picker stays: it's a local display pick among the
-    // already-fetched classifications, same as in Current mode.
+    // view doesn't do, so they're hidden in History mode. The T24/NBC
+    // Loan Class pickers stay: both are now a local display pick among
+    // the already-fetched classifications (parT24ByClass), same as in
+    // Current mode.
     const isHistory = crMode === "history";
-    document.getElementById("crClassRow").style.display = (isT24 && !isHistory) ? "" : "none";
+    document.getElementById("crClassRow").style.display = isT24 ? "" : "none";
     document.getElementById("crProductRow").style.display = (isT24 && !isHistory) ? "" : "none";
     document.getElementById("crNbcClassRow").style.display = isNbc ? "" : "none";
     document.getElementById("crNbcProductRow").style.display = (isNbc && !isHistory) ? "" : "none";
@@ -1361,7 +1407,8 @@ function crUpdateChartButtonVisibility() {
     if (!btn) return;
     const sectionFilter = document.getElementById("crSection").value;
     const nbcClassAll = sectionFilter === "nbcOverdue" && !document.getElementById("crNbcClass").value;
-    btn.style.display = (crMode === "history" && !nbcClassAll) ? "" : "none";
+    const t24ClassAll = sectionFilter === "parT24" && !document.getElementById("crClass").value;
+    btn.style.display = (crMode === "history" && !nbcClassAll && !t24ClassAll) ? "" : "none";
 }
 
 function crChartSeriesColors() {
