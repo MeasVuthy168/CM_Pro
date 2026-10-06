@@ -382,6 +382,21 @@
 }
 .cr-total-row .cr-t24-asof{ color:var(--cr-total-text) !important; opacity:.8; }
 
+/* Admin-only delete button next to each Daily History row's date. */
+.cr-row-delete-btn{
+    margin-left:6px;
+    border:none;
+    background:none;
+    padding:0;
+    font-size:11px;
+    line-height:1;
+    cursor:pointer;
+    opacity:.55;
+    vertical-align:middle;
+}
+.cr-row-delete-btn:hover{ opacity:1; }
+.cr-row-delete-btn:disabled{ opacity:.25; cursor:default; }
+
 /* Showing row. A fixed label column keeps it lined up with the same
    layout Daily Monitoring by Officer uses, even though this page only
    has the one select (no Branch/Team — a product isn't scoped to

@@ -499,11 +499,20 @@ function crBuildHistoryRow(dateKey, item, section, opts = {}) {
         ? `<div class="cr-t24-asof" title="Balance Loan at Risk (T24) is as of its own ArreasT24ByCO feed, not this row's Date">T24: ${crEscapeHtml(t24AsOfText)}</div>`
         : "";
 
+    // Admin-only — lets an admin remove a single day's saved snapshot
+    // (e.g. one filed under an unexpected date — see crGridMergeDateKey's
+    // own comment in the backend). Never on the "Other Address" detail
+    // sub-rows — they share the same saved snapshot document as their
+    // parent date's main row.
+    const delBtn = (crIsAdmin && !isDetail)
+        ? `<button type="button" class="cr-row-delete-btn" data-hist-del="${crEscapeHtml(dateKey)}" title="Delete this day's snapshot">🗑</button>`
+        : "";
+
     const rowClass = isTotal ? ' class="cr-total-row"' : isOtherAddress ? ' class="cr-other-row"' : isDetail ? ' class="cr-other-detail-row"' : "";
     return `
       <tr${rowClass}>
         <td class="cr-name-col${isDetail ? " cr-other-detail-name" : ""}">${nameCellContent}</td>
-        <td class="cr-date-col"><div class="cr-date-main">${crFmtDateDMY(dateKey)}</div>${t24Note}</td>
+        <td class="cr-date-col"><div class="cr-date-main">${crFmtDateDMY(dateKey)}${delBtn}</div>${t24Note}</td>
         ${familyCells}
         ${cells}
       </tr>`;
@@ -1465,6 +1474,39 @@ if (crIsAdmin) {
             console.error(e);
             notify("Snapshot failed", "error");
         } finally {
+            btn.disabled = false;
+        }
+    });
+
+    // Delegated — rows are rebuilt wholesale on every crRenderHistory()
+    // call, so a listener bound to individual buttons would be lost each
+    // time; binding to the table body once survives re-renders.
+    document.getElementById("crTbody").addEventListener("click", async (e) => {
+        const btn = e.target.closest(".cr-row-delete-btn");
+        if (!btn) return;
+        const dateKey = btn.getAttribute("data-hist-del");
+        if (!dateKey) return;
+        if (!confirm(`Delete the saved snapshot for ${crFmtDateDMY(dateKey)}? This cannot be undone.`)) return;
+
+        btn.disabled = true;
+        try {
+            const res = await fetch(`${API.BASE_URL}/api/creditreport/bylocation/snapshot/delete`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${crToken}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ date: dateKey })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                crHistoryData.days = crHistoryData.days.filter(d => d.date !== dateKey);
+                crRenderHistory();
+                notify(`Snapshot deleted for ${crFmtDateDMY(dateKey)}`, "success");
+            } else {
+                notify(data.message || "Delete failed", "error");
+                btn.disabled = false;
+            }
+        } catch (err) {
+            console.error(err);
+            notify("Delete failed", "error");
             btn.disabled = false;
         }
     });
