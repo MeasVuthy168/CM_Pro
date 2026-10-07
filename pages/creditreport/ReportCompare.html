@@ -90,19 +90,37 @@ href="../../assets/css/creditreport/ReportCompare.css">
 </div>
 
 <!-- ========================= -->
-<!-- SUMMARY DELTA TILES -->
+<!-- SUMMARY DELTA TILES — overall totals, always visible regardless of
+     the dimension picker below. -->
 <!-- ========================= -->
 <div class="rc-summary-grid" id="rcSummaryGrid" style="display:none"></div>
 
 <!-- ========================= -->
-<!-- TRANSITION TABS -->
+<!-- SECTION TABS + DIMENSION PICKER -->
 <!-- ========================= -->
 <div class="op-card" id="rcTransitionsCard" style="display:none">
-  <div class="op-mode-tabs" id="rcTabs">
-    <button type="button" class="op-mode-tab active" data-tab="wo">✍️ Write Off</button>
-    <button type="button" class="op-mode-tab" data-tab="overdue">📉 NBC Classification</button>
-    <button type="button" class="op-mode-tab" data-tab="t24">⏱ PAR T24</button>
+
+  <div class="rc-main-tabs" id="rcTabs">
+    <button type="button" class="rc-main-tab active" data-tab="os">💰 Outstanding</button>
+    <button type="button" class="rc-main-tab" data-tab="disburse">🏦 Disburse</button>
+    <button type="button" class="rc-main-tab" data-tab="t24">⏱ T24</button>
+    <button type="button" class="rc-main-tab" data-tab="overdue">📉 NBC Overdue</button>
+    <button type="button" class="rc-main-tab" data-tab="wo">✍️ Write Off</button>
   </div>
+
+  <!-- "filter or tap of Officer/Branch/Product/Location" — picks which
+       dimension the active tab's breakdown/client-list is sliced by. -->
+  <div class="rc-dim-row">
+    <div class="rc-dim-chips" id="rcDimChips">
+      <button type="button" class="rc-dim-chip active" data-dim="">គ្រប់ទាំងអស់ / Overall</button>
+      <button type="button" class="rc-dim-chip" data-dim="officerId">មន្ត្រី / Officer</button>
+      <button type="button" class="rc-dim-chip" data-dim="branch">សាខា / Branch</button>
+      <button type="button" class="rc-dim-chip" data-dim="product">ផលិតផល / Product</button>
+      <button type="button" class="rc-dim-chip" data-dim="location">ទីតាំង / Location</button>
+    </div>
+    <select class="rc-dim-value-select" id="rcDimValueSelect" style="display:none"></select>
+  </div>
+
   <div class="op-mode-body" id="rcTabBody"></div>
 </div>
 

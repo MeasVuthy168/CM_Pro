@@ -1,21 +1,29 @@
 // ========================================
 // REPORT COMPARISON — pick any two backed-up dates and see what changed,
-// per explicit request 2026-10-01: daily backup of every Credit Report
-// source, compared against today (or any other day).
+// per explicit request 2026-10-01, extended 2026-10-07 into a 5-section
+// dashboard (Loan Outstanding / Loan Disburse / Balance Loan at Risk
+// (T24) / Balance Loan at Risk (NBC Overdue) / Write Off) sliceable by
+// Officer/Branch/Product/Location.
 //
 // BACKEND ENDPOINTS (CM-backend's lib/creditreport-compare.js)
 //   GET  /api/creditreport/snapshot/dates -> { ok, dates:[...], today }
 //   POST /api/creditreport/snapshot/run   (admin only) -> { ok, date, counts }
 //   GET  /api/creditreport/compare?dateA=&dateB=
-//     -> { ok, dateA, dateB, diff:{ os, wo, overdue, t24 } }
-//     os:      { countA,countB,countDiff, loanSizeSumA/B/Diff, osUsdSumA/B/Diff }
+//     -> { ok, dateA, dateB, diff:{ os, disburse, wo, overdue, t24 } }
+//     os/disburse: { total:{countA,countB,countDiff,...valueA/B/Diff},
+//                    branch:[{key,countA,countB,countDiff,...valueA/B/Diff}],
+//                    officerId:[...], product:[...], location:[...] }
+//       (pre-aggregated across the whole loan book — no client-level list;
+//        os's value fields are loanSizeSum/osUsdSum, disburse's is valueSum)
 //     wo:      { summary:{countA,countB,countDiff,intA/B/Diff,prnA/B/Diff},
-//                entered:[{cif,khName,branch,officerId,int,prn}], exited:[...] }
+//                entered:[{cif,khName,branch,officerId,location,int,prn}], exited:[...] }
+//                (no `product` field — WO has no Product Type column)
 //     overdue: { summary:{byClassA,byClassB,byClassDiff},
-//                changed:[{cif,loanNumber,name,branch,officerId,fromClass,
-//                          toClass,direction}], entered:[...], exited:[...] }
+//                changed:[{cif,loanNumber,name,branch,officerId,product,location,
+//                          fromClass,toClass,direction}], entered:[...], exited:[...] }
 //     t24:     { summary:{countA,countB,countDiff,valA/B/Diff},
-//                entered:[{cif,loanNumber,name,branch,officerId,val}], exited:[...] }
+//                changed:[...same shape as overdue.changed...],
+//                entered:[{cif,loanNumber,name,branch,officerId,product,location,val}], exited:[...] }
 // ========================================
 
 const rcToken =
@@ -29,8 +37,22 @@ const rcIsAdmin = String(rcUser.role || "").toLowerCase() === "admin";
 
 let rcDates = [];
 let rcDiff = null;
-let rcActiveTab = "wo";
+let rcActiveTab = "os";
 let rcSubTab = { wo: "entered", overdue: "changed", t24: "entered" };
+let rcDim = "";
+let rcDimValue = "";
+
+const RC_DIMENSIONS = { officerId: "Officer", branch: "Branch", product: "Product", location: "Location" };
+const RC_SECTION_TITLES = {
+    os: "Loan Outstanding / សមតុល្យឥណទាន",
+    disburse: "Loan Disburse / ឥណទានផ្ដល់ឱ្យថ្មី",
+    t24: "Balance Loan at Risk (T24)",
+    overdue: "Balance Loan at Risk (NBC Overdue)",
+    wo: "Write Off / ឥណទានលុបចោល"
+};
+// WO has no Product Type column in its source sheet — the Product
+// dimension chip is disabled whenever this tab is active.
+const RC_DIM_UNAVAILABLE = { wo: new Set(["product"]) };
 
 function rcEscapeHtml(s) {
     return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -44,6 +66,12 @@ function rcFmtDiff(n) {
     const cls = n > 0 ? "positive" : n < 0 ? "negative" : "zero";
     const sign = n > 0 ? "+" : "";
     return `<div class="rc-tile-diff ${cls}">${sign}${rcFmtNum(n)}</div>`;
+}
+function rcFmtDiffCell(n) {
+    n = Number(n) || 0;
+    const cls = n > 0 ? "positive" : n < 0 ? "negative" : "zero";
+    const sign = n > 0 ? "+" : "";
+    return `<span class="rc-bd-diff ${cls}">${sign}${rcFmtNum(n)}</span>`;
 }
 function rcNotify(message, type) {
     if (typeof CMToast !== "undefined" && CMToast.show) {
@@ -107,7 +135,8 @@ async function rcLoadDates() {
 }
 
 // ========================================
-// SUMMARY TILES
+// SUMMARY TILES — overall totals across all 5 sections, always visible
+// regardless of which tab/dimension is picked below.
 // ========================================
 const NBC_CLASS_ORDER = ["Normal", "Special Mention", "Sub-Standard", "Doubtful", "Loss"];
 
@@ -122,8 +151,10 @@ function rcTileHtml(label, a, b, diff) {
 
 function rcRenderSummary(diff) {
     const tiles = [];
-    tiles.push(rcTileHtml("Total Loan (#)", diff.os.countA, diff.os.countB, diff.os.countDiff));
-    tiles.push(rcTileHtml("Total OS (USD)", diff.os.osUsdSumA, diff.os.osUsdSumB, diff.os.osUsdSumDiff));
+    tiles.push(rcTileHtml("Total Loan (#)", diff.os.total.countA, diff.os.total.countB, diff.os.total.countDiff));
+    tiles.push(rcTileHtml("Total OS (USD)", diff.os.total.osUsdSumA, diff.os.total.osUsdSumB, diff.os.total.osUsdSumDiff));
+    tiles.push(rcTileHtml("Loan Disburse (#)", diff.disburse.total.countA, diff.disburse.total.countB, diff.disburse.total.countDiff));
+    tiles.push(rcTileHtml("Loan Disburse (USD)", diff.disburse.total.valueSumA, diff.disburse.total.valueSumB, diff.disburse.total.valueSumDiff));
     tiles.push(rcTileHtml("Write Off (# cif)", diff.wo.summary.countA, diff.wo.summary.countB, diff.wo.summary.countDiff));
     tiles.push(rcTileHtml("Write Off (Prn)", diff.wo.summary.prnA, diff.wo.summary.prnB, diff.wo.summary.prnDiff));
     tiles.push(rcTileHtml("PAR T24 (# loan)", diff.t24.summary.countA, diff.t24.summary.countB, diff.t24.summary.countDiff));
@@ -136,7 +167,146 @@ function rcRenderSummary(diff) {
 }
 
 // ========================================
-// TRANSITION TABLES
+// DIMENSION PICKER — "filter or tap of Officer/Branch/Product/Location".
+// Picks which dimension the active tab's breakdown/client-list is
+// sliced by; an optional specific value (rcDimValueSelect) narrows it
+// further to one Officer/Branch/Product/Location.
+// ========================================
+function rcUpdateDimChipsAvailability() {
+    const unavailable = RC_DIM_UNAVAILABLE[rcActiveTab] || new Set();
+    document.querySelectorAll("#rcDimChips .rc-dim-chip").forEach(chip => {
+        const dim = chip.dataset.dim;
+        const isUnavailable = dim && unavailable.has(dim);
+        chip.disabled = isUnavailable;
+        chip.title = isUnavailable ? "Not tracked for Write Off" : "";
+    });
+    if (rcDim && unavailable.has(rcDim)) {
+        rcDim = "";
+        rcDimValue = "";
+        document.querySelectorAll("#rcDimChips .rc-dim-chip").forEach(c => c.classList.toggle("active", c.dataset.dim === ""));
+    }
+}
+
+// Rows carrying officerId/branch/product/location this tab's client
+// lists are built from — used both to group-count by dimension and to
+// populate the specific-value dropdown. Outstanding/Disburse aren't
+// here — they're pre-aggregated server-side (rcDiff[tab][dim] directly).
+function rcClientRowArrays(tab) {
+    const d = rcDiff[tab];
+    if (tab === "wo") return { entered: d.entered, exited: d.exited };
+    if (tab === "t24" || tab === "overdue") return { entered: d.entered, exited: d.exited, changed: d.changed };
+    return {};
+}
+
+function rcDimValuesForClientTab(tab, dim) {
+    const arrays = rcClientRowArrays(tab);
+    const set = new Set();
+    for (const rows of Object.values(arrays)) {
+        for (const r of rows) { const v = r[dim]; if (v) set.add(v); }
+    }
+    return [...set].sort((a, b) => a.localeCompare(b));
+}
+
+function rcPopulateDimValueSelect() {
+    const sel = document.getElementById("rcDimValueSelect");
+    if (!rcDim) { sel.style.display = "none"; sel.innerHTML = ""; return; }
+
+    const values = (rcActiveTab === "os" || rcActiveTab === "disburse")
+        ? (rcDiff[rcActiveTab][rcDim] || []).map(r => r.key)
+        : rcDimValuesForClientTab(rcActiveTab, rcDim);
+
+    if (rcDimValue && !values.includes(rcDimValue)) rcDimValue = "";
+
+    const label = RC_DIMENSIONS[rcDim];
+    sel.innerHTML = `<option value="">គ្រប់ទាំងអស់ / All ${rcEscapeHtml(label)}s</option>` +
+        values.map(v => `<option value="${rcEscapeHtml(v)}"${v === rcDimValue ? " selected" : ""}>${rcEscapeHtml(v)}</option>`).join("");
+    sel.style.display = "";
+}
+
+function rcApplyDimFilter(rows) {
+    if (!rcDim || !rcDimValue) return rows;
+    return rows.filter(r => r[rcDim] === rcDimValue);
+}
+
+// ========================================
+// LOAN OUTSTANDING / LOAN DISBURSE — dimension breakdown table, straight
+// from the backend's already-aggregated, already-sorted per-dimension
+// array (no client-level list for these two — see the backend's own
+// comment on why: full daily OS rows would be too large to store).
+// ========================================
+function rcRenderOsDisburseBreakdown(valueLabel, valueField) {
+    const rows = rcDiff[rcActiveTab][rcDim] || [];
+    const filtered = rcDimValue ? rows.filter(r => r.key === rcDimValue) : rows;
+    if (!filtered.length) return `<div class="op-empty">គ្មានទិន្នន័យ / No rows.</div>`;
+    return `
+      <div class="rc-breakdown-table-wrap">
+        <table class="rc-breakdown-table">
+          <thead><tr><th>${rcEscapeHtml(RC_DIMENSIONS[rcDim])}</th><th># Loan</th><th>${rcEscapeHtml(valueLabel)}</th></tr></thead>
+          <tbody>
+            ${filtered.map(r => `
+              <tr>
+                <td>${rcEscapeHtml(r.key)}</td>
+                <td>${rcFmtNum(r.countA)} → ${rcFmtNum(r.countB)} ${rcFmtDiffCell(r.countDiff)}</td>
+                <td>${rcFmtNum(r[`${valueField}A`])} → ${rcFmtNum(r[`${valueField}B`])} ${rcFmtDiffCell(r[`${valueField}Diff`])}</td>
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>`;
+}
+
+// ========================================
+// WRITE OFF / T24 / NBC OVERDUE — dimension breakdown, grouped client-
+// side from the entered/exited(/changed) arrays (count per dimension
+// value) — shown when a dimension is picked but no specific value yet.
+// ========================================
+function rcGroupCounts(rows, dim) {
+    const m = new Map();
+    for (const r of rows) {
+        const key = r[dim];
+        if (!key) continue;
+        m.set(key, (m.get(key) || 0) + 1);
+    }
+    return m;
+}
+
+function rcRenderClientDimBreakdown() {
+    const arrays = rcClientRowArrays(rcActiveTab);
+    const enteredBy = rcGroupCounts(arrays.entered || [], rcDim);
+    const exitedBy = rcGroupCounts(arrays.exited || [], rcDim);
+    const hasChanged = !!arrays.changed;
+    const upgradeBy = hasChanged ? rcGroupCounts(arrays.changed.filter(r => r.direction === "upgrade"), rcDim) : null;
+    const downgradeBy = hasChanged ? rcGroupCounts(arrays.changed.filter(r => r.direction === "downgrade"), rcDim) : null;
+
+    const keys = new Set([...enteredBy.keys(), ...exitedBy.keys(), ...(hasChanged ? arrays.changed.map(r => r[rcDim]).filter(Boolean) : [])]);
+    if (!keys.size) return `<div class="op-empty">គ្មានទិន្នន័យ / No rows.</div>`;
+
+    const score = k => (enteredBy.get(k) || 0) + (exitedBy.get(k) || 0) + (hasChanged ? (upgradeBy.get(k) || 0) + (downgradeBy.get(k) || 0) : 0);
+    const rows = [...keys].sort((a, b) => score(b) - score(a));
+
+    return `
+      <div class="rc-breakdown-table-wrap">
+        <table class="rc-breakdown-table">
+          <thead><tr>
+            <th>${rcEscapeHtml(RC_DIMENSIONS[rcDim])}</th>
+            <th>✅ Entered</th>
+            <th>↩️ Exited</th>
+            ${hasChanged ? `<th>⬆ Upgrade</th><th>⬇ Downgrade</th>` : ""}
+          </tr></thead>
+          <tbody>
+            ${rows.map(k => `
+              <tr>
+                <td>${rcEscapeHtml(k)}</td>
+                <td>${enteredBy.get(k) || 0}</td>
+                <td>${exitedBy.get(k) || 0}</td>
+                ${hasChanged ? `<td>${upgradeBy.get(k) || 0}</td><td>${downgradeBy.get(k) || 0}</td>` : ""}
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>`;
+}
+
+// ========================================
+// CLIENT LIST TABLES (List Client) — WO / T24 / NBC Overdue only.
 // ========================================
 function rcClientTableHtml(rows, cols) {
     if (!rows.length) {
@@ -163,7 +333,7 @@ function rcWoCols() {
         { key: "prn", label: "Prn", render: r => rcFmtNum(r.prn) }
     ];
 }
-function rcOverdueChangedCols() {
+function rcChangedCols() {
     return [
         { key: "cif", label: "CIF" },
         { key: "loanNumber", label: "Loan #" },
@@ -174,7 +344,7 @@ function rcOverdueChangedCols() {
         { key: "direction", label: "", render: r => `<span class="rc-badge ${r.direction}">${r.direction === "downgrade" ? "⬇ Downgrade" : "⬆ Upgrade"}</span>` }
     ];
 }
-function rcOverdueEnterExitCols() {
+function rcEnterExitCols() {
     return [
         { key: "cif", label: "CIF" },
         { key: "loanNumber", label: "Loan #" },
@@ -184,7 +354,7 @@ function rcOverdueEnterExitCols() {
         { key: "cls", label: "ចំណាត់ថ្នាក់ / Class" }
     ];
 }
-function rcT24Cols() {
+function rcT24EnterExitCols() {
     return [
         { key: "cif", label: "CIF" },
         { key: "loanNumber", label: "Loan #" },
@@ -195,33 +365,49 @@ function rcT24Cols() {
     ];
 }
 
+// ========================================
+// TAB BODY
+// ========================================
 function rcRenderTabBody() {
     const diff = rcDiff;
-    let html = "";
+    let html = `<div class="rc-section-title">${rcEscapeHtml(RC_SECTION_TITLES[rcActiveTab])}</div>`;
 
-    if (rcActiveTab === "wo") {
+    if (rcActiveTab === "os" || rcActiveTab === "disburse") {
+        if (!rcDim) {
+            html += `<div class="op-empty">ជ្រើសរើស មន្ត្រី/សាខា/ផលិតផល/ទីតាំង ដើម្បីមើលការបែងចែក។<br>Pick Officer/Branch/Product/Location above to see a breakdown.</div>`;
+        } else {
+            const valueField = rcActiveTab === "os" ? "osUsdSum" : "valueSum";
+            const valueLabel = rcActiveTab === "os" ? "OS (USD)" : "Disbursed (USD)";
+            html += rcRenderOsDisburseBreakdown(valueLabel, valueField);
+        }
+    } else if (rcActiveTab === "wo") {
+        if (rcDim && !rcDimValue) html += rcRenderClientDimBreakdown();
         html += `
           <div class="rc-sub-tabs">
-            <button type="button" class="rc-sub-tab${rcSubTab.wo === "entered" ? " active" : ""}" data-sub="entered">✅ ចូលថ្មី / Entered (${diff.wo.entered.length})</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.wo === "exited" ? " active" : ""}" data-sub="exited">↩️ ចេញ / Exited (${diff.wo.exited.length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.wo === "entered" ? " active" : ""}" data-sub="entered">✅ ចូលថ្មី / Entered (${rcApplyDimFilter(diff.wo.entered).length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.wo === "exited" ? " active" : ""}" data-sub="exited">↩️ ចេញ / Exited (${rcApplyDimFilter(diff.wo.exited).length})</button>
           </div>`;
-        html += rcClientTableHtml(diff.wo[rcSubTab.wo], rcWoCols());
+        html += rcClientTableHtml(rcApplyDimFilter(diff.wo[rcSubTab.wo]), rcWoCols());
     } else if (rcActiveTab === "overdue") {
+        if (rcDim && !rcDimValue) html += rcRenderClientDimBreakdown();
         html += `
           <div class="rc-sub-tabs">
-            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "changed" ? " active" : ""}" data-sub="changed">🔀 ប្ដូរថ្នាក់ / Changed (${diff.overdue.changed.length})</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "entered" ? " active" : ""}" data-sub="entered">✅ ចូលថ្មី / New Overdue (${diff.overdue.entered.length})</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "exited" ? " active" : ""}" data-sub="exited">↩️ ដោះស្រាយ / Resolved (${diff.overdue.exited.length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "changed" ? " active" : ""}" data-sub="changed">🔀 ប្ដូរថ្នាក់ / Changed (${rcApplyDimFilter(diff.overdue.changed).length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "entered" ? " active" : ""}" data-sub="entered">✅ ចូលថ្មី / New Overdue (${rcApplyDimFilter(diff.overdue.entered).length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "exited" ? " active" : ""}" data-sub="exited">↩️ ដោះស្រាយ / Resolved (${rcApplyDimFilter(diff.overdue.exited).length})</button>
           </div>`;
-        if (rcSubTab.overdue === "changed") html += rcClientTableHtml(diff.overdue.changed, rcOverdueChangedCols());
-        else html += rcClientTableHtml(diff.overdue[rcSubTab.overdue], rcOverdueEnterExitCols());
+        if (rcSubTab.overdue === "changed") html += rcClientTableHtml(rcApplyDimFilter(diff.overdue.changed), rcChangedCols());
+        else html += rcClientTableHtml(rcApplyDimFilter(diff.overdue[rcSubTab.overdue]), rcEnterExitCols());
     } else if (rcActiveTab === "t24") {
+        if (rcDim && !rcDimValue) html += rcRenderClientDimBreakdown();
         html += `
           <div class="rc-sub-tabs">
-            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "entered" ? " active" : ""}" data-sub="entered">✅ ចូលថ្មី / Entered (${diff.t24.entered.length})</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "exited" ? " active" : ""}" data-sub="exited">↩️ ចេញ / Exited (${diff.t24.exited.length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "changed" ? " active" : ""}" data-sub="changed">🔀 ប្ដូរថ្នាក់ / Changed (${rcApplyDimFilter(diff.t24.changed).length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "entered" ? " active" : ""}" data-sub="entered">✅ ចូលថ្មី / Entered (${rcApplyDimFilter(diff.t24.entered).length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "exited" ? " active" : ""}" data-sub="exited">↩️ ចេញ / Exited (${rcApplyDimFilter(diff.t24.exited).length})</button>
           </div>`;
-        html += rcClientTableHtml(diff.t24[rcSubTab.t24], rcT24Cols());
+        if (rcSubTab.t24 === "changed") html += rcClientTableHtml(rcApplyDimFilter(diff.t24.changed), rcChangedCols());
+        else html += rcClientTableHtml(rcApplyDimFilter(diff.t24[rcSubTab.t24]), rcT24EnterExitCols());
     }
 
     document.getElementById("rcTabBody").innerHTML = html;
@@ -248,6 +434,8 @@ async function rcRunCompare() {
         rcDiff = data.diff;
         rcRenderSummary(rcDiff);
         document.getElementById("rcTransitionsCard").style.display = "block";
+        rcUpdateDimChipsAvailability();
+        rcPopulateDimValueSelect();
         rcRenderTabBody();
     } catch (e) {
         console.error(e);
@@ -260,11 +448,23 @@ async function rcRunCompare() {
 // EVENTS
 // ========================================
 document.addEventListener("click", (e) => {
-    const tab = e.target.closest("#rcTabs .op-mode-tab");
-    if (tab) {
-        document.querySelectorAll("#rcTabs .op-mode-tab").forEach(t => t.classList.remove("active"));
-        tab.classList.add("active");
-        rcActiveTab = tab.dataset.tab;
+    const mainTab = e.target.closest("#rcTabs .rc-main-tab");
+    if (mainTab) {
+        document.querySelectorAll("#rcTabs .rc-main-tab").forEach(t => t.classList.remove("active"));
+        mainTab.classList.add("active");
+        rcActiveTab = mainTab.dataset.tab;
+        rcUpdateDimChipsAvailability();
+        rcPopulateDimValueSelect();
+        rcRenderTabBody();
+        return;
+    }
+    const dimChip = e.target.closest("#rcDimChips .rc-dim-chip");
+    if (dimChip && !dimChip.disabled) {
+        document.querySelectorAll("#rcDimChips .rc-dim-chip").forEach(c => c.classList.remove("active"));
+        dimChip.classList.add("active");
+        rcDim = dimChip.dataset.dim;
+        rcDimValue = "";
+        rcPopulateDimValueSelect();
         rcRenderTabBody();
         return;
     }
@@ -274,6 +474,11 @@ document.addEventListener("click", (e) => {
         rcRenderTabBody();
         return;
     }
+});
+
+document.getElementById("rcDimValueSelect").addEventListener("change", (e) => {
+    rcDimValue = e.target.value;
+    rcRenderTabBody();
 });
 
 function rcInit() {
