@@ -132,13 +132,6 @@
 }
 .print-only-title{ display:none; }
 
-/* ===== Admin-only Snapshot toolbar (below the top bar) ===== */
-.cr-admin-toolbar{
-    padding:0 16px;
-    margin-bottom:14px;
-}
-.cr-admin-toolbar .cr-run-btn{ margin-top:0; }
-
 /* ===== Filter card ===== */
 .filter-card{
     width:100%;
@@ -249,12 +242,6 @@
     background:linear-gradient(135deg,var(--cr-navy-dark),var(--cr-navy));
     color:#fff;
     border-color:transparent;
-}
-.cr-snapshot-btn{
-    margin-top:8px;
-    background:var(--cr-input-bg) !important;
-    color:var(--cr-text) !important;
-    border:1px solid var(--cr-border);
 }
 
 /* ===== Daily History Location search -> Chart button ===== */

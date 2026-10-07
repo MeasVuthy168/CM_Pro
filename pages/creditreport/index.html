@@ -59,6 +59,15 @@ href="../../assets/css/creditreport/creditreport.css">
 
 <div class="page-container">
 
+<!-- Admin-only — single "Snapshot All" control replacing the 4 separate
+     per-report "Snapshot Now" buttons (removed 2026-10-07, consolidated
+     here per explicit request). Runs all 4 reports' existing
+     /snapshot/run endpoints in parallel and shows a combined result. -->
+<div class="cr-hub-admin-toolbar" id="crHubAdminToolbar" style="display:none">
+<button type="button" id="btnCrSnapshotAll" class="cr-hub-snapshot-btn">📸 Snapshot All</button>
+<div class="cr-hub-snapshot-results" id="crHubSnapshotResults"></div>
+</div>
+
 <div class="cr-hub-list">
 
 <a class="cr-hub-card cr-hub-link" href="../arrears/index.html?from=creditreport">
@@ -124,6 +133,8 @@ href="../../assets/css/creditreport/creditreport.css">
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
 
 <script src="../../assets/js/creditreport/creditreport-loader.js"></script>
+
+<script src="../../assets/js/creditreport/creditreport-hub.js"></script>
 
 </body>
 

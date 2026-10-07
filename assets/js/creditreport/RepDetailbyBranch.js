@@ -1628,30 +1628,6 @@ document.getElementById("crHistTeam").addEventListener("change", () => {
 });
 
 if (crIsAdmin) {
-    document.getElementById("crAdminToolbar").style.display = "";
-    document.getElementById("btnCrHistSnapshot").addEventListener("click", async () => {
-        const btn = document.getElementById("btnCrHistSnapshot");
-        btn.disabled = true;
-        try {
-            const res = await fetch(`${API.BASE_URL}/api/creditreport/summary/snapshot/run`, {
-                method: "POST",
-                headers: { Authorization: `Bearer ${crToken}`, "Content-Type": "application/json" },
-                body: "{}"
-            });
-            const data = await res.json();
-            if (data.ok) {
-                notify(`Snapshot saved for ${data.date}`, "success");
-            } else {
-                notify(data.message || "Snapshot failed", "error");
-            }
-        } catch (e) {
-            console.error(e);
-            notify("Snapshot failed", "error");
-        } finally {
-            btn.disabled = false;
-        }
-    });
-
     // Delegated — rows are rebuilt wholesale on every crRenderHistory()
     // call, so a listener bound to individual buttons would be lost each
     // time; binding to the table body once survives re-renders.
