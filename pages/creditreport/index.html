@@ -64,8 +64,19 @@ href="../../assets/css/creditreport/creditreport.css">
      here per explicit request). Runs all 4 reports' existing
      /snapshot/run endpoints in parallel and shows a combined result. -->
 <div class="cr-hub-admin-toolbar" id="crHubAdminToolbar" style="display:none">
-<button type="button" id="btnCrSnapshotAll" class="cr-hub-snapshot-btn">📸 Snapshot All</button>
-<div class="cr-hub-snapshot-results" id="crHubSnapshotResults"></div>
+<div class="cr-hub-snapshot-card">
+<button type="button" id="btnCrSnapshotAll" class="cr-hub-snapshot-btn">
+<span class="cr-hub-snapshot-btn-icon">📸</span>
+<span id="crHubSnapshotBtnLabel">Snapshot All</span>
+</button>
+<div class="cr-hub-snapshot-results" id="crHubSnapshotResults">
+<div class="cr-hub-snapshot-results-head">
+<span id="crHubSnapshotSummary"></span>
+<button type="button" class="cr-hub-snapshot-close" id="btnCrSnapshotResultsClose" aria-label="Dismiss">✕</button>
+</div>
+<div id="crHubSnapshotRows"></div>
+</div>
+</div>
 </div>
 
 <div class="cr-hub-list">

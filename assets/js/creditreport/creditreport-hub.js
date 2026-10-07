@@ -29,6 +29,12 @@ function crHubEscapeHtml(text) {
     return div.innerHTML;
 }
 
+function crHubFmtDateDMY(yyyymmdd) {
+    if (!yyyymmdd) return "-";
+    const [y, m, d] = yyyymmdd.split("-");
+    return `${d}-${m}-${y}`;
+}
+
 async function crHubRunOneSnapshot(target) {
     try {
         const res = await fetch(`${API.BASE_URL}${target.url}`, {
@@ -48,22 +54,31 @@ async function crHubRunOneSnapshot(target) {
 }
 
 function crHubRenderResults(results) {
-    const el = document.getElementById("crHubSnapshotResults");
-    el.innerHTML = results.map(r =>
+    const okCount = results.filter(r => r.ok).length;
+    document.getElementById("crHubSnapshotSummary").textContent =
+        `${okCount}/${results.length} saved`;
+    document.getElementById("crHubSnapshotRows").innerHTML = results.map(r =>
         `<div class="cr-hub-snapshot-row${r.ok ? " ok" : " fail"}">` +
-            `${r.ok ? "✅" : "❌"} ${crHubEscapeHtml(r.label)}: ` +
-            `${r.ok ? `Saved for ${crHubEscapeHtml(r.date)}` : crHubEscapeHtml(r.message)}` +
+            `<span class="cr-hub-snapshot-dot"></span>` +
+            `<span class="cr-hub-snapshot-label">${crHubEscapeHtml(r.label)}</span>` +
+            `<span class="cr-hub-snapshot-detail">${r.ok ? crHubFmtDateDMY(r.date) : crHubEscapeHtml(r.message)}</span>` +
         `</div>`
     ).join("");
-    el.style.display = "block";
+    document.getElementById("crHubSnapshotResults").style.display = "block";
 }
 
 if (crHubIsAdmin) {
     document.getElementById("crHubAdminToolbar").style.display = "";
 
+    document.getElementById("btnCrSnapshotResultsClose").addEventListener("click", () => {
+        document.getElementById("crHubSnapshotResults").style.display = "none";
+    });
+
     document.getElementById("btnCrSnapshotAll").addEventListener("click", async () => {
         const btn = document.getElementById("btnCrSnapshotAll");
+        const label = document.getElementById("crHubSnapshotBtnLabel");
         btn.disabled = true;
+        label.textContent = "Running...";
         document.getElementById("crHubSnapshotResults").style.display = "none";
         try {
             const results = await Promise.all(CR_HUB_SNAPSHOT_TARGETS.map(crHubRunOneSnapshot));
@@ -77,6 +92,7 @@ if (crHubIsAdmin) {
             }
         } finally {
             btn.disabled = false;
+            label.textContent = "Snapshot All";
         }
     });
 }
