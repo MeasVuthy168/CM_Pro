@@ -112,3 +112,43 @@
 [data-theme="dark"] .cr-hub-arrow{ color:var(--cr-gold-light); }
 
 .cr-hub-link:active{ opacity:.85; transform:scale(.99); }
+
+/* ===== Admin-only "Snapshot All" toolbar ===== */
+.cr-hub-admin-toolbar{
+    margin-bottom:12px;
+}
+.cr-hub-snapshot-btn{
+    width:100%;
+    background:linear-gradient(135deg,var(--cr-navy-dark),var(--cr-navy));
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    padding:13px;
+    font-family:'KRASAR',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+}
+[data-theme="dark"] .cr-hub-snapshot-btn,
+[data-theme="darkgray"] .cr-hub-snapshot-btn{
+    background:linear-gradient(135deg,var(--cr-navy),var(--cr-navy-dark));
+    color:var(--cr-text);
+}
+.cr-hub-snapshot-btn:active{ opacity:.85; }
+.cr-hub-snapshot-btn:disabled{ opacity:.6; cursor:default; }
+
+.cr-hub-snapshot-results{
+    display:none;
+    margin-top:10px;
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:12px;
+    padding:10px 14px;
+    font-size:12.5px;
+}
+.cr-hub-snapshot-row{ padding:3px 0; }
+.cr-hub-snapshot-row.fail{ color:#C0392B; }
