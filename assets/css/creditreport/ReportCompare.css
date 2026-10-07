@@ -126,3 +126,100 @@
 }
 .rc-sub-tab.active{ background:var(--cr-navy-dark); color:#fff; }
 [data-theme="dark"] .rc-sub-tab.active{ color:#002D6B; }
+
+/* ===== Main section tabs (5: Outstanding/Disburse/T24/NBC Overdue/
+   Write Off) — horizontally scrollable instead of op-mode-tabs' equal-
+   width flex, since 5 labels don't fit a phone width evenly. ===== */
+.rc-main-tabs{
+    display:flex;
+    gap:6px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:2px;
+    margin-bottom:12px;
+}
+.rc-main-tabs::-webkit-scrollbar{ display:none; }
+.rc-main-tab{
+    flex:0 0 auto;
+    padding:9px 14px;
+    border-radius:999px;
+    border:1px solid var(--cr-border);
+    background:var(--cr-chip-bg);
+    color:var(--cr-text-muted);
+    font-size:12.5px;
+    font-weight:700;
+    cursor:pointer;
+    font-family:'KRASAR', sans-serif;
+    white-space:nowrap;
+}
+.rc-main-tab.active{ background:var(--cr-navy-dark); color:#fff; border-color:transparent; }
+[data-theme="dark"] .rc-main-tab.active{ color:#002D6B; }
+[data-theme="darkgray"] .rc-main-tab.active{ color:#1C2333; }
+
+/* ===== Dimension picker ("filter or tap of Officer/Branch/Product/
+   Location") ===== */
+.rc-dim-row{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom:12px;
+}
+.rc-dim-chips{
+    display:flex;
+    gap:6px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+}
+.rc-dim-chips::-webkit-scrollbar{ display:none; }
+.rc-dim-chip{
+    flex:0 0 auto;
+    padding:6px 12px;
+    border-radius:999px;
+    border:1px solid var(--cr-border);
+    background:none;
+    color:var(--cr-text-muted);
+    font-size:11.5px;
+    font-weight:700;
+    cursor:pointer;
+    font-family:'KRASAR', sans-serif;
+    white-space:nowrap;
+}
+.rc-dim-chip.active{ background:var(--cr-navy); color:#fff; border-color:transparent; }
+[data-theme="dark"] .rc-dim-chip.active{ background:var(--cr-gold-light); color:#002D6B; }
+.rc-dim-chip:disabled{ opacity:.35; cursor:default; }
+.rc-dim-value-select{
+    padding:9px 10px;
+    border-radius:8px;
+    border:1px solid var(--cr-border);
+    background:var(--cr-input-bg);
+    color:var(--cr-input-text);
+    font-size:12.5px;
+}
+
+/* ===== Dimension breakdown table (Outstanding/Disburse's own "List
+   Client" substitute, and the entered/exited/changed group-by for WO/
+   T24/NBC Overdue) ===== */
+.rc-breakdown-table-wrap{ overflow-x:auto; border-radius:10px; border:1px solid var(--cr-border); margin-bottom:12px; }
+.rc-breakdown-table{ width:100%; border-collapse:collapse; font-size:12.5px; white-space:nowrap; }
+.rc-breakdown-table th{
+    text-align:left;
+    padding:9px 10px;
+    background:var(--cr-chip-bg);
+    color:var(--cr-text-muted);
+    font-weight:700;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.02em;
+}
+.rc-breakdown-table td{ padding:9px 10px; border-top:1px solid var(--cr-border); }
+.rc-breakdown-table tr:nth-child(even) td{ background:var(--cr-row-alt); }
+.rc-breakdown-table .rc-bd-diff.positive{ color:#1a9850; font-weight:700; }
+.rc-breakdown-table .rc-bd-diff.negative{ color:var(--cr-danger); font-weight:700; }
+.rc-breakdown-table .rc-bd-diff.zero{ color:var(--cr-text-muted); }
+
+.rc-section-title{
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--cr-text);
+    margin:2px 0 10px;
+}
