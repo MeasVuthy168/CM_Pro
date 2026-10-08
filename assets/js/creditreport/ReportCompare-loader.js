@@ -20,7 +20,11 @@ async function loadComponent(id, file) {
                 title: "Credit Portfolio Trends",
                 showBack: true,
                 showLogo: false,
-                showProfile: false
+                showProfile: false,
+                // "⋮" -> Delete Snapshot, admin only — rcIsAdmin/rcToggleMenu
+                // come from ReportCompare.js, loaded before this file.
+                actionText: (typeof rcIsAdmin !== "undefined" && rcIsAdmin) ? "⋮" : "",
+                actionHandler: typeof rcToggleMenu === "function" ? rcToggleMenu : null
             });
         }
     } catch (error) {

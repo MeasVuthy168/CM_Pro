@@ -10,6 +10,10 @@
    page only ever shows numbers relevant to the tab currently open.
 ======================================== */
 
+/* Stacked layout (dates row, then Compare on its own full-width row)
+   instead of letting Compare wrap in as an odd-width leftover chip —
+   guarantees it always fits the screen, on any phone width, per
+   explicit request 2026-10-08. */
 .rc-toolbar{
     background:var(--cr-card-bg);
     border:1px solid var(--cr-border);
@@ -17,10 +21,15 @@
     box-shadow:var(--cr-shadow);
     padding:14px;
     display:flex;
+    flex-direction:column;
+    gap:12px;
+    margin-bottom:14px;
+}
+.rc-toolbar-dates{
+    display:flex;
     align-items:flex-end;
     flex-wrap:wrap;
     gap:12px;
-    margin-bottom:14px;
 }
 .rc-date-field{
     display:flex;
@@ -35,6 +44,8 @@
     color:var(--cr-text-muted);
 }
 .rc-date-field select{
+    width:100%;
+    box-sizing:border-box;
     padding:9px 10px;
     border-radius:8px;
     border:1px solid var(--cr-border);
@@ -48,6 +59,8 @@
     padding-bottom:9px;
 }
 .rc-compare-btn{
+    width:100%;
+    box-sizing:border-box;
     padding:10px 18px;
     border-radius:8px;
     border:none;
@@ -72,6 +85,10 @@
 .rc-badge.downgrade{ background:rgba(179,38,30,.12); color:var(--cr-danger); }
 .rc-badge.upgrade{ background:rgba(26,150,80,.15); color:#1a9850; }
 
+/* flex:1 1 auto + min-width:0 lets each pill shrink/share the row and
+   wrap onto a second line as a group rather than any single one (e.g.
+   "✅ New Overdue (116)") ever pushing past the screen edge, per
+   explicit request 2026-10-08. */
 .rc-sub-tabs{
     display:flex;
     gap:6px;
@@ -79,7 +96,11 @@
     flex-wrap:wrap;
 }
 .rc-sub-tab{
-    padding:6px 12px;
+    flex:1 1 auto;
+    min-width:0;
+    max-width:100%;
+    box-sizing:border-box;
+    padding:6px 10px;
     border-radius:999px;
     border:1px solid var(--cr-border);
     background:var(--cr-chip-bg);
@@ -87,6 +108,10 @@
     font-size:11.5px;
     font-weight:700;
     cursor:pointer;
+    text-align:center;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
 }
 .rc-sub-tab.active{ background:var(--cr-navy-dark); color:#fff; }
 [data-theme="dark"] .rc-sub-tab.active{ color:#002D6B; }
@@ -94,29 +119,32 @@
 .rc-shell{ padding-top:14px; }
 
 /* ===== Main section tabs (5: Outstanding/Disburse/T24/NBC Overdue/
-   Write Off) — horizontally scrollable instead of op-mode-tabs' equal-
-   width flex, since 5 labels don't fit a phone width evenly. ===== */
+   Write Off) — a 5-column equal-width grid, so all 5 always fit the
+   screen at once (no horizontal scroll/clipped-off tab) and every tab
+   is the same width, per explicit request 2026-10-08. Labels are
+   already short (OS/Disb/T24 OV/NBC OV/WO); the tight padding/font-size
+   and allowed wrap keep the two-word ones from clipping on a narrow
+   phone. ===== */
 .rc-main-tabs{
-    display:flex;
-    gap:6px;
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-    padding-bottom:2px;
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    gap:5px;
     margin-bottom:14px;
 }
-.rc-main-tabs::-webkit-scrollbar{ display:none; }
 .rc-main-tab{
-    flex:0 0 auto;
-    padding:9px 14px;
-    border-radius:999px;
+    min-width:0;
+    padding:8px 2px;
+    border-radius:12px;
     border:1px solid var(--cr-border);
     background:var(--cr-chip-bg);
     color:var(--cr-text-muted);
-    font-size:12.5px;
+    font-size:11px;
     font-weight:700;
     cursor:pointer;
     font-family:'KRASAR', sans-serif;
-    white-space:nowrap;
+    white-space:normal;
+    line-height:1.25;
+    text-align:center;
 }
 .rc-main-tab.active{ background:var(--cr-navy-dark); color:#fff; border-color:transparent; }
 [data-theme="dark"] .rc-main-tab.active{ color:#002D6B; }
@@ -241,16 +269,17 @@
     gap:8px;
     margin-bottom:12px;
 }
+/* 4-column equal-width grid (Officer/Branch/Product/Location) — same
+   "always fits, same width" treatment as the main section tabs above,
+   per explicit request 2026-10-08. */
 .rc-dim-chips{
-    display:flex;
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
     gap:6px;
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
 }
-.rc-dim-chips::-webkit-scrollbar{ display:none; }
 .rc-dim-chip{
-    flex:0 0 auto;
-    padding:6px 12px;
+    min-width:0;
+    padding:6px 4px;
     border-radius:999px;
     border:1px solid var(--cr-border);
     background:none;
@@ -260,6 +289,9 @@
     cursor:pointer;
     font-family:'KRASAR', sans-serif;
     white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    text-align:center;
 }
 .rc-dim-chip.active{ background:var(--rc-accent, var(--cr-navy)); color:#fff; border-color:transparent; }
 .rc-dim-chip:disabled{ opacity:.35; cursor:default; }
@@ -318,3 +350,145 @@
 .rc-breakdown-table th.op-sort-desc::after{ content:"▼"; opacity:1; color:var(--cr-navy); }
 [data-theme="dark"] .rc-breakdown-table th.op-sort-asc::after,
 [data-theme="dark"] .rc-breakdown-table th.op-sort-desc::after{ color:var(--cr-gold-light); }
+
+/* ===== Topbar "⋮" menu — same shape/behavior as the Notifications
+   page's own #notificationMenu (notification.css), kept as a local
+   copy here (this page doesn't load notification.css) so admin gets
+   one consistent dropdown pattern app-wide. Per explicit request
+   2026-10-08. ===== */
+.rc-menu{
+    position:fixed;
+    top:80px;
+    right:15px;
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 6px 20px rgba(0,0,0,.2);
+    z-index:99999;
+    display:none;
+}
+.rc-menu-item{
+    width:100%;
+    border:none;
+    background:transparent;
+    color:var(--cr-text);
+    padding:14px 18px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    text-align:left;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+}
+.rc-menu-item:hover,
+.rc-menu-item:active{ background:var(--cr-row-alt); }
+
+/* ===== Confirm dialog — same shape/class names as the Notifications
+   page's own Delete All confirm (notification.css), kept as a local
+   copy for the same reason as .rc-menu above. Used both by the
+   calendar's day-pick confirmation and as the calendar's own
+   full-screen host (#rcDeleteCalDialog). ===== */
+.dialog{
+    position:fixed;
+    inset:0;
+    display:none;
+    justify-content:center;
+    align-items:center;
+    background:rgba(0,0,0,.55);
+    z-index:99999;
+    padding:16px;
+    box-sizing:border-box;
+}
+.dialog.show{ display:flex; }
+.dialog-box{
+    width:100%;
+    max-width:420px;
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:18px;
+    padding:22px;
+    box-shadow:0 10px 25px rgba(0,0,0,.3);
+    box-sizing:border-box;
+    max-height:90vh;
+    overflow-y:auto;
+}
+.dialog-title{
+    font-size:15px;
+    color:var(--cr-text);
+    text-align:center;
+    line-height:1.5;
+    margin-bottom:20px;
+}
+.dialog-buttons{ display:flex; gap:12px; }
+.dialog-buttons button{
+    flex:1;
+    height:46px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:14px;
+    font-weight:700;
+}
+.rc-del-no{ background:var(--cr-chip-bg); color:var(--cr-text); }
+.rc-del-yes{ background:var(--cr-danger); color:#fff; }
+
+/* ===== Delete Snapshot calendar — reuses OfficerProductivity.css's
+   .op-heat-* calendar (the exact grid/nav Branch Productivity's own
+   Daily Loan Disbursement heatmap uses), per explicit request
+   2026-10-08 to match that page's calendar UI. Snapshot presence is
+   binary here (not a 5-level magnitude), so cells get one highlight
+   class instead of the op-heat-h1..h4 ramp. ===== */
+.rc-del-cal-box{ max-width:380px; text-align:left; }
+.rc-del-cal-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:2px;
+}
+.rc-del-cal-title{ margin-bottom:0; text-align:left; font-weight:800; }
+.rc-del-cal-close{
+    border:none;
+    background:var(--cr-chip-bg);
+    color:var(--cr-text-muted);
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    font-size:13px;
+    cursor:pointer;
+    flex:0 0 auto;
+}
+.rc-del-cal-sub{
+    font-size:11.5px;
+    color:var(--cr-text-muted);
+    margin-bottom:14px;
+}
+.op-heat-cell.rc-snap-has{
+    cursor:pointer;
+    background:var(--cr-navy-dark);
+}
+.op-heat-cell.rc-snap-has .op-heat-day{ color:#fff; font-weight:800; }
+[data-theme="dark"] .op-heat-cell.rc-snap-has,
+[data-theme="darkgray"] .op-heat-cell.rc-snap-has{ background:var(--cr-gold-light); }
+[data-theme="dark"] .op-heat-cell.rc-snap-has .op-heat-day,
+[data-theme="darkgray"] .op-heat-cell.rc-snap-has .op-heat-day{ color:#002D6B; }
+.op-heat-cell:not(.rc-snap-has):not(.op-heat-pad){ cursor:default; opacity:.55; }
+.rc-del-cal-legend{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-top:10px;
+    font-size:11px;
+    color:var(--cr-text-muted);
+}
+.rc-del-cal-legend .op-heat-sw{ background:var(--cr-navy-dark); }
+[data-theme="dark"] .rc-del-cal-legend .op-heat-sw,
+[data-theme="darkgray"] .rc-del-cal-legend .op-heat-sw{ background:var(--cr-gold-light); }
+.rc-del-cal-empty{
+    text-align:center;
+    color:var(--cr-text-muted);
+    font-size:12.5px;
+    padding:20px 0;
+}
