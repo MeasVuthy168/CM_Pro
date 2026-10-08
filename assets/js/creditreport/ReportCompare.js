@@ -43,12 +43,12 @@ let rcDim = "";
 let rcDimValue = "";
 
 const RC_DIMENSIONS = { officerId: "Officer", branch: "Branch", product: "Product", location: "Location" };
-const RC_SECTION_TITLES = {
-    os: "Loan Outstanding / សមតុល្យឥណទាន",
-    disburse: "Loan Disburse / ឥណទានផ្ដល់ឱ្យថ្មី",
-    t24: "Balance Loan at Risk (T24)",
-    overdue: "Balance Loan at Risk (NBC Overdue)",
-    wo: "Write Off / ឥណទានលុបចោល"
+const RC_SECTION_META = {
+    os: { icon: "💰", titleEn: "Loan Outstanding", titleKh: "សមតុល្យឥណទាន" },
+    disburse: { icon: "🏦", titleEn: "Loan Disburse", titleKh: "ឥណទានផ្ដល់ឱ្យថ្មី" },
+    t24: { icon: "⏱", titleEn: "Balance Loan at Risk (T24)", titleKh: "ហានិភ័យឥណទាន T24" },
+    overdue: { icon: "📉", titleEn: "Balance Loan at Risk (NBC Overdue)", titleKh: "ហានិភ័យឥណទាន NBC" },
+    wo: { icon: "✍️", titleEn: "Write Off", titleKh: "ឥណទានលុបចោល" }
 };
 // WO has no Product Type column in its source sheet — the Product
 // dimension chip is disabled whenever this tab is active.
@@ -61,11 +61,9 @@ function rcFmtNum(n) {
     n = Number(n) || 0;
     return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
-function rcFmtDiff(n) {
+function rcFmtPct(n) {
     n = Number(n) || 0;
-    const cls = n > 0 ? "positive" : n < 0 ? "negative" : "zero";
-    const sign = n > 0 ? "+" : "";
-    return `<div class="rc-tile-diff ${cls}">${sign}${rcFmtNum(n)}</div>`;
+    return (n * 100).toFixed(2) + "%";
 }
 function rcFmtDiffCell(n) {
     n = Number(n) || 0;
@@ -84,7 +82,6 @@ function rcShowEmpty(msg) {
     const el = document.getElementById("rcEmpty");
     el.textContent = msg;
     el.style.display = "block";
-    document.getElementById("rcSummaryGrid").style.display = "none";
     document.getElementById("rcTransitionsCard").style.display = "none";
 }
 function rcHideEmpty() {
@@ -135,35 +132,112 @@ async function rcLoadDates() {
 }
 
 // ========================================
-// SUMMARY TILES — overall totals across all 5 sections, always visible
-// regardless of which tab/dimension is picked below.
+// SECTION HEAD — icon + bilingual title naming the active tab, and the
+// data-tab attribute the CSS reads for that section's growth/risk accent.
 // ========================================
-const NBC_CLASS_ORDER = ["Normal", "Special Mention", "Sub-Standard", "Doubtful", "Loss"];
-
-function rcTileHtml(label, a, b, diff) {
-    return `
-      <div class="rc-tile">
-        <div class="rc-tile-label">${rcEscapeHtml(label)}</div>
-        <div class="rc-tile-values">${rcFmtNum(a)}<span class="rc-arrow-sep">→</span>${rcFmtNum(b)}</div>
-        ${rcFmtDiff(diff)}
+function rcRenderSectionHead() {
+    const meta = RC_SECTION_META[rcActiveTab];
+    document.getElementById("rcTransitionsCard").dataset.tab = rcActiveTab;
+    document.getElementById("rcSectionHead").innerHTML = `
+      <span class="rc-section-icon">${meta.icon}</span>
+      <div class="rc-section-head-text">
+        <div class="rc-section-title">${rcEscapeHtml(meta.titleEn)}</div>
+        <div class="rc-section-subtitle">${rcEscapeHtml(meta.titleKh)}</div>
       </div>`;
 }
 
-function rcRenderSummary(diff) {
-    const tiles = [];
-    tiles.push(rcTileHtml("Total Loan (#)", diff.os.total.countA, diff.os.total.countB, diff.os.total.countDiff));
-    tiles.push(rcTileHtml("Total OS (USD)", diff.os.total.osUsdSumA, diff.os.total.osUsdSumB, diff.os.total.osUsdSumDiff));
-    tiles.push(rcTileHtml("Loan Disburse (#)", diff.disburse.total.countA, diff.disburse.total.countB, diff.disburse.total.countDiff));
-    tiles.push(rcTileHtml("Loan Disburse (USD)", diff.disburse.total.valueSumA, diff.disburse.total.valueSumB, diff.disburse.total.valueSumDiff));
-    tiles.push(rcTileHtml("Write Off (# cif)", diff.wo.summary.countA, diff.wo.summary.countB, diff.wo.summary.countDiff));
-    tiles.push(rcTileHtml("Write Off (Prn)", diff.wo.summary.prnA, diff.wo.summary.prnB, diff.wo.summary.prnDiff));
-    tiles.push(rcTileHtml("PAR T24 (# loan)", diff.t24.summary.countA, diff.t24.summary.countB, diff.t24.summary.countDiff));
-    tiles.push(rcTileHtml("PAR T24 (Value)", diff.t24.summary.valA, diff.t24.summary.valB, diff.t24.summary.valDiff));
-    for (const cls of NBC_CLASS_ORDER) {
-        tiles.push(rcTileHtml(`NBC: ${cls}`, diff.overdue.summary.byClassA[cls], diff.overdue.summary.byClassB[cls], diff.overdue.summary.byClassDiff[cls]));
+// ========================================
+// KPI CARD — per explicit request 2026-10-08:
+//   Outstanding: #Loan, #Client, Value   Disburse: #Loan, Value
+//   T24 / NBC Overdue: #Loan, #Client, PAR   Write Off: #(cif), Int, Prn
+// `polarity` colors the delta badge: "growth" (more is good, green-up)
+// for Outstanding/Disburse, "risk" (more is bad, red-up) for the other
+// three — a write-off or PAR increase is never good news.
+// ========================================
+function rcKpiCell(label, valueB, diff, fmt, polarity) {
+    fmt = fmt || rcFmtNum;
+    const d = Number(diff) || 0;
+    const valueA = valueB - d;
+    const good = polarity === "risk" ? d < 0 : d > 0;
+    const cls = d === 0 ? "zero" : good ? "positive" : "negative";
+    const arrow = d > 0 ? "▲" : d < 0 ? "▼" : "•";
+    const sign = d > 0 ? "+" : "";
+    return `
+      <div class="rc-kpi-cell">
+        <div class="rc-kpi-label">${rcEscapeHtml(label)}</div>
+        <div class="rc-kpi-value">${fmt(valueB)}</div>
+        <div class="rc-kpi-sub">was ${fmt(valueA)}</div>
+        <div class="rc-kpi-delta ${cls}">${arrow} ${sign}${fmt(Math.abs(d))}</div>
+      </div>`;
+}
+function rcKpiCellPct(label, valueB, diff) {
+    const d = Number(diff) || 0;
+    const valueA = valueB - d;
+    // Risk metric (PAR) — an increase is bad, so the usual polarity flips.
+    const cls = d === 0 ? "zero" : d < 0 ? "positive" : "negative";
+    const arrow = d > 0 ? "▲" : d < 0 ? "▼" : "•";
+    const sign = d > 0 ? "+" : "";
+    return `
+      <div class="rc-kpi-cell">
+        <div class="rc-kpi-label">${rcEscapeHtml(label)}</div>
+        <div class="rc-kpi-value">${rcFmtPct(valueB)}</div>
+        <div class="rc-kpi-sub">was ${rcFmtPct(valueA)}</div>
+        <div class="rc-kpi-delta ${cls}">${arrow} ${sign}${(Math.abs(d) * 100).toFixed(2)}pp</div>
+      </div>`;
+}
+
+// PAR% = that section's risk value / total Outstanding value on the same
+// date — same "balance at risk over total book" definition the live
+// Daily Monitoring reports already use for parPct.
+function rcParPct(riskValue, osValue) {
+    return osValue ? riskValue / osValue : 0;
+}
+
+function rcRenderKpiCard() {
+    const diff = rcDiff;
+    let html;
+
+    if (rcActiveTab === "os") {
+        const row = (rcDim && rcDimValue) ? diff.os[rcDim].find(r => r.key === rcDimValue) : null;
+        const d = row || diff.os.total;
+        html = `<div class="rc-kpi-card">` +
+            rcKpiCell("# Loan", d.countB, d.countDiff, rcFmtNum, "growth") +
+            rcKpiCell("# Client", d.clientCountB, d.clientCountDiff, rcFmtNum, "growth") +
+            rcKpiCell("Value (USD)", d.osUsdSumB, d.osUsdSumDiff, rcFmtNum, "growth") +
+            `</div>`;
+    } else if (rcActiveTab === "disburse") {
+        const row = (rcDim && rcDimValue) ? diff.disburse[rcDim].find(r => r.key === rcDimValue) : null;
+        const d = row || diff.disburse.total;
+        html = `<div class="rc-kpi-card">` +
+            rcKpiCell("# Loan", d.countB, d.countDiff, rcFmtNum, "growth") +
+            rcKpiCell("Value (USD)", d.valueSumB, d.valueSumDiff, rcFmtNum, "growth") +
+            `</div>`;
+    } else if (rcActiveTab === "t24") {
+        const s = diff.t24.summary;
+        const parA = rcParPct(s.valA, diff.os.total.osUsdSumA), parB = rcParPct(s.valB, diff.os.total.osUsdSumB);
+        html = `<div class="rc-kpi-card">` +
+            rcKpiCell("# Loan", s.countB, s.countDiff, rcFmtNum, "risk") +
+            rcKpiCell("# Client", s.clientCountB, s.clientCountDiff, rcFmtNum, "risk") +
+            rcKpiCellPct("PAR", parB, parB - parA) +
+            `</div>`;
+    } else if (rcActiveTab === "overdue") {
+        const s = diff.overdue.summary;
+        const parA = rcParPct(s.valA, diff.os.total.osUsdSumA), parB = rcParPct(s.valB, diff.os.total.osUsdSumB);
+        html = `<div class="rc-kpi-card">` +
+            rcKpiCell("# Loan", s.countB, s.countDiff, rcFmtNum, "risk") +
+            rcKpiCell("# Client", s.clientCountB, s.clientCountDiff, rcFmtNum, "risk") +
+            rcKpiCellPct("PAR", parB, parB - parA) +
+            `</div>`;
+    } else if (rcActiveTab === "wo") {
+        const s = diff.wo.summary;
+        html = `<div class="rc-kpi-card">` +
+            rcKpiCell("# (CIF)", s.countB, s.countDiff, rcFmtNum, "risk") +
+            rcKpiCell("Int", s.intB, s.intDiff, rcFmtNum, "risk") +
+            rcKpiCell("Prn", s.prnB, s.prnDiff, rcFmtNum, "risk") +
+            `</div>`;
     }
-    document.getElementById("rcSummaryGrid").innerHTML = tiles.join("");
-    document.getElementById("rcSummaryGrid").style.display = "grid";
+
+    document.getElementById("rcKpiCard").innerHTML = html;
 }
 
 // ========================================
@@ -370,7 +444,7 @@ function rcT24EnterExitCols() {
 // ========================================
 function rcRenderTabBody() {
     const diff = rcDiff;
-    let html = `<div class="rc-section-title">${rcEscapeHtml(RC_SECTION_TITLES[rcActiveTab])}</div>`;
+    let html = "";
 
     if (rcActiveTab === "os" || rcActiveTab === "disburse") {
         if (!rcDim) {
@@ -413,6 +487,12 @@ function rcRenderTabBody() {
     document.getElementById("rcTabBody").innerHTML = html;
 }
 
+function rcRenderAll() {
+    rcRenderSectionHead();
+    rcRenderKpiCard();
+    rcRenderTabBody();
+}
+
 // ========================================
 // COMPARE
 // ========================================
@@ -422,7 +502,6 @@ async function rcRunCompare() {
     if (!dateA || !dateB) return;
 
     rcHideEmpty();
-    document.getElementById("rcSummaryGrid").style.display = "none";
     document.getElementById("rcTransitionsCard").style.display = "none";
     document.getElementById("rcPageSkel").style.display = "flex";
 
@@ -432,11 +511,10 @@ async function rcRunCompare() {
         if (!data.ok) { rcShowEmpty(data.message || "Failed to compare."); return; }
 
         rcDiff = data.diff;
-        rcRenderSummary(rcDiff);
         document.getElementById("rcTransitionsCard").style.display = "block";
         rcUpdateDimChipsAvailability();
         rcPopulateDimValueSelect();
-        rcRenderTabBody();
+        rcRenderAll();
     } catch (e) {
         console.error(e);
         document.getElementById("rcPageSkel").style.display = "none";
@@ -455,7 +533,7 @@ document.addEventListener("click", (e) => {
         rcActiveTab = mainTab.dataset.tab;
         rcUpdateDimChipsAvailability();
         rcPopulateDimValueSelect();
-        rcRenderTabBody();
+        rcRenderAll();
         return;
     }
     const dimChip = e.target.closest("#rcDimChips .rc-dim-chip");
@@ -465,7 +543,7 @@ document.addEventListener("click", (e) => {
         rcDim = dimChip.dataset.dim;
         rcDimValue = "";
         rcPopulateDimValueSelect();
-        rcRenderTabBody();
+        rcRenderAll();
         return;
     }
     const subTab = e.target.closest(".rc-sub-tab");
@@ -478,7 +556,7 @@ document.addEventListener("click", (e) => {
 
 document.getElementById("rcDimValueSelect").addEventListener("change", (e) => {
     rcDimValue = e.target.value;
-    rcRenderTabBody();
+    rcRenderAll();
 });
 
 function rcInit() {

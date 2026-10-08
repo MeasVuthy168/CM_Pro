@@ -90,15 +90,9 @@ href="../../assets/css/creditreport/ReportCompare.css">
 </div>
 
 <!-- ========================= -->
-<!-- SUMMARY DELTA TILES — overall totals, always visible regardless of
-     the dimension picker below. -->
+<!-- SECTION TABS + KPI CARD + DIMENSION PICKER -->
 <!-- ========================= -->
-<div class="rc-summary-grid" id="rcSummaryGrid" style="display:none"></div>
-
-<!-- ========================= -->
-<!-- SECTION TABS + DIMENSION PICKER -->
-<!-- ========================= -->
-<div class="op-card" id="rcTransitionsCard" style="display:none">
+<div class="op-card rc-shell" id="rcTransitionsCard" style="display:none">
 
   <div class="rc-main-tabs" id="rcTabs">
     <button type="button" class="rc-main-tab active" data-tab="os">💰 Outstanding</button>
@@ -107,6 +101,17 @@ href="../../assets/css/creditreport/ReportCompare.css">
     <button type="button" class="rc-main-tab" data-tab="overdue">📉 NBC Overdue</button>
     <button type="button" class="rc-main-tab" data-tab="wo">✍️ Write Off</button>
   </div>
+
+  <div class="rc-section-head" id="rcSectionHead"></div>
+
+  <!-- Per-section KPI card — #Loan/#Client/Value (Outstanding), #Loan/
+       Value (Disburse), #Loan/#Client/PAR (T24, NBC Overdue), #(cif)/Int/
+       Prn (Write Off). Reflects the picked dimension value for
+       Outstanding/Disburse (the two sections with a true per-dimension
+       A/B total); stays the overall figure for Write Off/T24/NBC Overdue,
+       which only have entered/exited deltas per dimension, not a stored
+       per-dimension A/B total — see the breakdown table below instead. -->
+  <div id="rcKpiCard"></div>
 
   <!-- "filter or tap of Officer/Branch/Product/Location" — picks which
        dimension the active tab's breakdown/client-list is sliced by. -->
