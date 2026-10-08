@@ -61,20 +61,60 @@ href="../../assets/css/creditreport/ReportCompare.css">
 
 <div id="topbar-container"></div>
 
+<!-- ========================= -->
+<!-- TOPBAR "⋮" MENU — admin only; shown/wired by ReportCompare.js.
+     Same toggle/outside-click pattern as the Notifications page's own
+     menu (#notificationMenu in notification.js). -->
+<!-- ========================= -->
+<div class="rc-menu" id="rcMenu">
+  <button type="button" class="rc-menu-item" id="rcMenuDeleteSnapshot">
+    🗑️ Delete Snapshot
+  </button>
+</div>
+
+<!-- ========================= -->
+<!-- DELETE SNAPSHOT — calendar picker (op-heat-* classes shared with
+     Branch Productivity's own disburse heatmap), per explicit request
+     2026-10-08. Highlighted days are the ones with a saved snapshot;
+     picking one asks for confirmation before deleting. -->
+<!-- ========================= -->
+<div class="dialog" id="rcDeleteCalDialog">
+  <div class="dialog-box rc-del-cal-box">
+    <div class="rc-del-cal-head">
+      <div class="dialog-title rc-del-cal-title">Delete Snapshot</div>
+      <button type="button" class="rc-del-cal-close" id="rcDeleteCalClose" aria-label="Close">✕</button>
+    </div>
+    <div class="rc-del-cal-sub">Pick a highlighted date to delete its saved snapshot.</div>
+    <div id="rcDeleteCalBody"></div>
+  </div>
+</div>
+
+<div class="dialog" id="rcDeleteConfirmDialog">
+  <div class="dialog-box">
+    <div class="dialog-title" id="rcDeleteConfirmText"></div>
+    <div class="dialog-buttons">
+      <button type="button" class="rc-del-no" id="rcDeleteConfirmNo">Cancel</button>
+      <button type="button" class="rc-del-yes" id="rcDeleteConfirmYes">Delete</button>
+    </div>
+  </div>
+</div>
+
 <div class="page-container">
 
 <!-- ========================= -->
 <!-- DATE PICKER TOOLBAR -->
 <!-- ========================= -->
 <div class="rc-toolbar" id="rcToolbar">
-  <div class="rc-date-field">
-    <label for="rcDateA">Date A</label>
-    <select id="rcDateA"></select>
-  </div>
-  <div class="rc-arrow">→</div>
-  <div class="rc-date-field">
-    <label for="rcDateB">Date B</label>
-    <select id="rcDateB"></select>
+  <div class="rc-toolbar-dates">
+    <div class="rc-date-field">
+      <label for="rcDateA">From Date</label>
+      <select id="rcDateA"></select>
+    </div>
+    <div class="rc-arrow">→</div>
+    <div class="rc-date-field">
+      <label for="rcDateB">To Date</label>
+      <select id="rcDateB"></select>
+    </div>
   </div>
   <button type="button" class="rc-compare-btn" id="rcCompareBtn">Compare</button>
 </div>

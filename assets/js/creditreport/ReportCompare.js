@@ -597,9 +597,203 @@ async function rcRunCompare() {
 }
 
 // ========================================
+// DELETE SNAPSHOT — "⋮" menu + calendar picker (admin only), per
+// explicit request 2026-10-08. The calendar reuses OfficerProductivity
+// .css's .op-heat-* grid/nav, the same one Branch Productivity's own
+// Daily Loan Disbursement heatmap is built from — snapshot presence is
+// binary here, so cells get one highlight class (rc-snap-has) instead
+// of that heatmap's 5-level magnitude ramp. Highlighted dates come
+// straight from rcDates (already fetched for the Date A/B selects),
+// so opening the calendar needs no extra request.
+// ========================================
+const RC_CAL_DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+let rcCalMonthKey = ""; // "YYYY-MM-01" — the month currently shown
+let rcCalPendingDelete = "";
+
+function rcFmtDateDMY(dateKey) {
+    if (!dateKey) return "";
+    const [y, m, d] = dateKey.split("-");
+    return `${d}-${m}-${y}`;
+}
+
+function rcToggleMenu() {
+    const menu = document.getElementById("rcMenu");
+    if (!menu) return;
+    menu.style.display = menu.style.display === "block" ? "none" : "block";
+}
+
+// Capture phase (not bubble) — same rationale as the Notifications
+// page's own #notificationMenu outside-click handler: closes the menu
+// on a tap anywhere outside it no matter what that element's own click
+// handler does (e.g. stopPropagation()).
+document.addEventListener("click", (e) => {
+    const menu = document.getElementById("rcMenu");
+    if (!menu || menu.style.display !== "block") return;
+    if (e.target.closest("#rcMenu") || e.target.closest("#topbarActionBtn")) return;
+    menu.style.display = "none";
+}, true);
+
+function rcCalShiftMonth(anchorKey, delta) {
+    const [y, m] = anchorKey.split("-").map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+}
+
+function rcBuildDeleteCalHtml(monthKey) {
+    if (!rcDates.length) {
+        return `<div class="rc-del-cal-empty">No snapshots saved yet.</div>`;
+    }
+    const snapSet = new Set(rcDates);
+    const [y, m] = monthKey.split("-").map(Number);
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const firstDow = new Date(y, m - 1, 1).getDay();
+
+    let cells = RC_CAL_DOW.map(d => `<div class="op-heat-dow">${d}</div>`).join("");
+    for (let i = 0; i < firstDow; i++) cells += `<div class="op-heat-cell op-heat-pad"></div>`;
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateKey = `${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const hasSnap = snapSet.has(dateKey);
+        cells += `
+          <div class="op-heat-cell${hasSnap ? " rc-snap-has" : ""}" data-date="${dateKey}">
+            <span class="op-heat-day">${day}</span>
+          </div>`;
+    }
+
+    const monthLabel = new Date(y, m - 1, 1).toLocaleString("en-US", { month: "long", year: "numeric" });
+
+    return `
+      <div class="op-heat-grid">${cells}</div>
+      <div class="rc-del-cal-legend"><span class="op-heat-sw"></span><span>Has saved snapshot — tap to delete</span></div>
+      <div class="op-heat-nav">
+        <button type="button" class="op-heat-nav-btn" data-dir="prev" aria-label="Previous month">‹</button>
+        <span class="op-heat-nav-label">${rcEscapeHtml(monthLabel)}</span>
+        <button type="button" class="op-heat-nav-btn" data-dir="next" aria-label="Next month">›</button>
+      </div>`;
+}
+
+function rcRenderDeleteCal() {
+    document.getElementById("rcDeleteCalBody").innerHTML = rcBuildDeleteCalHtml(rcCalMonthKey);
+}
+
+function rcOpenDeleteCal() {
+    rcCalMonthKey = rcDates.length ? rcDates[0].slice(0, 7) + "-01" : rcCalMonthKey || rcMonthStartKeyFallback();
+    rcRenderDeleteCal();
+    document.getElementById("rcDeleteCalDialog").classList.add("show");
+}
+// Only reached when rcDates is already empty (no month to anchor to) —
+// falls back to this calendar month so the dialog still has something
+// sane to render nav labels from if dates ever arrive later in-session.
+function rcMonthStartKeyFallback() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+}
+
+// Re-fetches the snapshot date list after a delete and keeps the Date
+// A/B selects' CURRENT selection where still valid, instead of
+// rcLoadDates()'s own reset-to-most-recent-two default — deleting some
+// unrelated old date shouldn't silently change what's on screen.
+async function rcRefreshDatesAfterDelete() {
+    const data = await rcApiGet("/api/creditreport/snapshot/dates");
+    if (!data.ok) return;
+    rcDates = data.dates || [];
+
+    const selA = document.getElementById("rcDateA");
+    const selB = document.getElementById("rcDateB");
+    const prevA = selA.value, prevB = selB.value;
+
+    if (!rcDates.length) {
+        selA.innerHTML = "";
+        selB.innerHTML = "";
+        rcShowEmpty(
+            rcIsAdmin
+                ? "No backup yet — use Snapshot All on the Credit Report hub to start."
+                : "No backup yet — ask an admin to run Snapshot All on the Credit Report hub."
+        );
+        return;
+    }
+
+    const optsHtml = rcDates.map(d => `<option value="${d}">${d}</option>`).join("");
+    selA.innerHTML = optsHtml;
+    selB.innerHTML = optsHtml;
+    selA.value = rcDates.includes(prevA) ? prevA : (rcDates[1] || rcDates[0]);
+    selB.value = rcDates.includes(prevB) ? prevB : rcDates[0];
+
+    const wasHidden = document.getElementById("rcTransitionsCard").style.display === "none";
+    if (wasHidden || prevA !== selA.value || prevB !== selB.value) {
+        rcRunCompare();
+    }
+}
+
+function rcAskDeleteSnapshot(dateKey) {
+    rcCalPendingDelete = dateKey;
+    document.getElementById("rcDeleteConfirmText").textContent =
+        `Delete the saved snapshot for ${rcFmtDateDMY(dateKey)}? This cannot be undone.`;
+    document.getElementById("rcDeleteConfirmDialog").classList.add("show");
+}
+
+async function rcConfirmDeleteSnapshot() {
+    const dateKey = rcCalPendingDelete;
+    rcCalPendingDelete = "";
+    document.getElementById("rcDeleteConfirmDialog").classList.remove("show");
+    if (!dateKey) return;
+
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/creditreport/snapshot/delete`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${rcToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ date: dateKey })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            rcNotify(`Snapshot deleted for ${rcFmtDateDMY(dateKey)}`, "success");
+            await rcRefreshDatesAfterDelete();
+            rcRenderDeleteCal();
+        } else {
+            rcNotify(data.message || "Delete failed", "error");
+        }
+    } catch (e) {
+        console.error(e);
+        rcNotify("Delete failed", "error");
+    }
+}
+
+// ========================================
 // EVENTS
 // ========================================
 document.addEventListener("click", (e) => {
+    const menuDeleteBtn = e.target.closest("#rcMenuDeleteSnapshot");
+    if (menuDeleteBtn) {
+        document.getElementById("rcMenu").style.display = "none";
+        rcOpenDeleteCal();
+        return;
+    }
+    const calClose = e.target.closest("#rcDeleteCalClose");
+    if (calClose) {
+        document.getElementById("rcDeleteCalDialog").classList.remove("show");
+        return;
+    }
+    const calNavBtn = e.target.closest("#rcDeleteCalBody .op-heat-nav-btn");
+    if (calNavBtn) {
+        rcCalMonthKey = rcCalShiftMonth(rcCalMonthKey, calNavBtn.dataset.dir === "next" ? 1 : -1);
+        rcRenderDeleteCal();
+        return;
+    }
+    const calCell = e.target.closest("#rcDeleteCalBody .op-heat-cell.rc-snap-has");
+    if (calCell) {
+        rcAskDeleteSnapshot(calCell.dataset.date);
+        return;
+    }
+    const delNo = e.target.closest("#rcDeleteConfirmNo");
+    if (delNo) {
+        rcCalPendingDelete = "";
+        document.getElementById("rcDeleteConfirmDialog").classList.remove("show");
+        return;
+    }
+    const delYes = e.target.closest("#rcDeleteConfirmYes");
+    if (delYes) {
+        rcConfirmDeleteSnapshot();
+        return;
+    }
     const mainTab = e.target.closest("#rcTabs .rc-main-tab");
     if (mainTab) {
         document.querySelectorAll("#rcTabs .rc-main-tab").forEach(t => t.classList.remove("active"));
