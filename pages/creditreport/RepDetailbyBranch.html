@@ -241,6 +241,10 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 <div id="crMenuWrap" class="arrears-menu-wrap">
 <button id="btnCrMenu" class="arrears-menu-toggle" aria-label="More actions">⋮</button>
 <div id="crMenuDropdown" class="arrears-menu-dropdown">
+<!-- Admin only — shown via JS (crIsAdmin), per explicit request
+     2026-10-08, mirroring the Credit Report hub's own "Snapshot All"
+     and Credit Portfolio Trends' own "📸 Snapshot" menu item. -->
+<button id="btnCrSnapshot" style="display:none"><span class="menu-icon" aria-hidden="true">📸</span><span>Snapshot</span></button>
 <button id="btnCrExport"><img src="/CM_Pro/assets/icons/arrear/export_excel.png" alt="" class="menu-icon"><span>Export Excel</span></button>
 <button id="btnCrExportPdf"><img src="/CM_Pro/assets/icons/arrear/export_pdf.png" alt="" class="menu-icon"><span>Export PDF</span></button>
 <button id="btnCrPrint"><img src="/CM_Pro/assets/icons/arrear/print.png" alt="" class="menu-icon"><span>Print</span></button>

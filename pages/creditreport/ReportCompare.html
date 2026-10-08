@@ -34,6 +34,8 @@ href="../../assets/css/creditreport/OfficerProductivity.css">
 rel="stylesheet"
 href="../../assets/css/creditreport/ReportCompare.css">
 
+<link rel="stylesheet" href="/CM_Pro/assets/css/topbar-menu.css">
+
 <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
 
 <link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
@@ -54,6 +56,7 @@ href="../../assets/css/creditreport/ReportCompare.css">
 <script src="../../config/session.js"></script>
 
 <script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/topbar-menu.js"></script>
 <script src="/CM_Pro/shared/theme.js"></script>
 <script src="/CM_Pro/shared/loading.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
@@ -62,12 +65,14 @@ href="../../assets/css/creditreport/ReportCompare.css">
 <div id="topbar-container"></div>
 
 <!-- ========================= -->
-<!-- TOPBAR "⋮" MENU — admin only; shown/wired by ReportCompare.js.
-     Same toggle/outside-click pattern as the Notifications page's own
-     menu (#notificationMenu in notification.js). -->
+<!-- TOPBAR "⋮" MENU — admin only; toggled by shared/topbar-menu.js,
+     items wired by ReportCompare.js. -->
 <!-- ========================= -->
-<div class="rc-menu" id="rcMenu">
-  <button type="button" class="rc-menu-item" id="rcMenuDeleteSnapshot">
+<div class="topbar-menu" id="topbarMenu">
+  <button type="button" class="topbar-menu-item" id="rcMenuSnapshot">
+    📸 Snapshot
+  </button>
+  <button type="button" class="topbar-menu-item" id="rcMenuDeleteSnapshot">
     🗑️ Delete Snapshot
   </button>
 </div>

@@ -351,44 +351,14 @@
 [data-theme="dark"] .rc-breakdown-table th.op-sort-asc::after,
 [data-theme="dark"] .rc-breakdown-table th.op-sort-desc::after{ color:var(--cr-gold-light); }
 
-/* ===== Topbar "⋮" menu — same shape/behavior as the Notifications
-   page's own #notificationMenu (notification.css), kept as a local
-   copy here (this page doesn't load notification.css) so admin gets
-   one consistent dropdown pattern app-wide. Per explicit request
-   2026-10-08. ===== */
-.rc-menu{
-    position:fixed;
-    top:80px;
-    right:15px;
-    background:var(--cr-card-bg);
-    border:1px solid var(--cr-border);
-    border-radius:14px;
-    overflow:hidden;
-    box-shadow:0 6px 20px rgba(0,0,0,.2);
-    z-index:99999;
-    display:none;
-}
-.rc-menu-item{
-    width:100%;
-    border:none;
-    background:transparent;
-    color:var(--cr-text);
-    padding:14px 18px;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    text-align:left;
-    font-size:14px;
-    font-weight:600;
-    cursor:pointer;
-    white-space:nowrap;
-}
-.rc-menu-item:hover,
-.rc-menu-item:active{ background:var(--cr-row-alt); }
+/* The topbar "⋮" menu itself now lives in the shared
+   assets/css/topbar-menu.css (.topbar-menu/.topbar-menu-item) —
+   reused as-is here, see that file. */
 
 /* ===== Confirm dialog — same shape/class names as the Notifications
    page's own Delete All confirm (notification.css), kept as a local
-   copy for the same reason as .rc-menu above. Used both by the
+   copy for the same reason .topbar-menu was pulled out shared instead:
+   this page doesn't load notification.css. Used both by the
    calendar's day-pick confirmation and as the calendar's own
    full-screen host (#rcDeleteCalDialog). ===== */
 .dialog{

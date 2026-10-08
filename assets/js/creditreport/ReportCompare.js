@@ -568,6 +568,11 @@ function rcRenderAll() {
 // ========================================
 // COMPARE
 // ========================================
+// Covers both "open the page" (rcInit runs this once dates are loaded)
+// and a manual Compare click — one place, per explicit request
+// 2026-10-08 — using the app-wide loading overlay (shared/loading.js),
+// same convention/message as the 4 Daily Monitoring reports' own
+// crShowLoading("Loading Report Data...").
 async function rcRunCompare() {
     const dateA = document.getElementById("rcDateA").value;
     const dateB = document.getElementById("rcDateB").value;
@@ -576,6 +581,7 @@ async function rcRunCompare() {
     rcHideEmpty();
     document.getElementById("rcTransitionsCard").style.display = "none";
     document.getElementById("rcPageSkel").style.display = "flex";
+    if (typeof showAppLoading === "function") showAppLoading("Loading Report Data...");
 
     try {
         const data = await rcApiGet(`/api/creditreport/compare?dateA=${encodeURIComponent(dateA)}&dateB=${encodeURIComponent(dateB)}`);
@@ -593,6 +599,8 @@ async function rcRunCompare() {
         console.error(e);
         document.getElementById("rcPageSkel").style.display = "none";
         rcShowEmpty("Server error while comparing.");
+    } finally {
+        if (typeof hideAppLoading === "function") hideAppLoading();
     }
 }
 
@@ -616,22 +624,8 @@ function rcFmtDateDMY(dateKey) {
     return `${d}-${m}-${y}`;
 }
 
-function rcToggleMenu() {
-    const menu = document.getElementById("rcMenu");
-    if (!menu) return;
-    menu.style.display = menu.style.display === "block" ? "none" : "block";
-}
-
-// Capture phase (not bubble) — same rationale as the Notifications
-// page's own #notificationMenu outside-click handler: closes the menu
-// on a tap anywhere outside it no matter what that element's own click
-// handler does (e.g. stopPropagation()).
-document.addEventListener("click", (e) => {
-    const menu = document.getElementById("rcMenu");
-    if (!menu || menu.style.display !== "block") return;
-    if (e.target.closest("#rcMenu") || e.target.closest("#topbarActionBtn")) return;
-    menu.style.display = "none";
-}, true);
+// Menu open/close itself (toggleTopbarMenu + outside-click) now lives
+// in the shared shared/topbar-menu.js, reused as-is here.
 
 function rcCalShiftMonth(anchorKey, delta) {
     const [y, m] = anchorKey.split("-").map(Number);
@@ -688,14 +682,19 @@ function rcMonthStartKeyFallback() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
 }
 
-// Re-fetches the snapshot date list after a delete and keeps the Date
-// A/B selects' CURRENT selection where still valid, instead of
-// rcLoadDates()'s own reset-to-most-recent-two default — deleting some
-// unrelated old date shouldn't silently change what's on screen.
-async function rcRefreshDatesAfterDelete() {
-    const data = await rcApiGet("/api/creditreport/snapshot/dates");
-    if (!data.ok) return;
-    rcDates = data.dates || [];
+// Applies a new snapshot-dates array everywhere it's reflected — the
+// calendar's highlighted cells, the Date A/B selects (keeping each
+// side's CURRENT selection where it's still valid, instead of
+// rcLoadDates()'s own reset-to-most-recent-two default, since deleting
+// some unrelated old date shouldn't silently change what's on screen)
+// — and re-renders. Used both as an immediate, optimistic update right
+// after a successful delete/snapshot response (so the UI never waits
+// on — or depends on — a second round trip to reflect what the server
+// just confirmed) and again when that follow-up /snapshot/dates fetch
+// resolves, to reconcile with the server's own canonical list.
+function rcApplyDatesUpdate(dates) {
+    rcDates = dates;
+    rcRenderDeleteCal();
 
     const selA = document.getElementById("rcDateA");
     const selB = document.getElementById("rcDateB");
@@ -724,6 +723,15 @@ async function rcRefreshDatesAfterDelete() {
     }
 }
 
+// Re-fetches the canonical snapshot date list in the background and
+// reconciles the UI with it — a failure here is logged but never
+// undoes whatever optimistic update already ran.
+function rcReconcileDates() {
+    rcApiGet("/api/creditreport/snapshot/dates")
+        .then(data => { if (data.ok) rcApplyDatesUpdate(data.dates || []); })
+        .catch(e => console.error(e));
+}
+
 function rcAskDeleteSnapshot(dateKey) {
     rcCalPendingDelete = dateKey;
     document.getElementById("rcDeleteConfirmText").textContent =
@@ -746,8 +754,12 @@ async function rcConfirmDeleteSnapshot() {
         const data = await res.json();
         if (data.ok) {
             rcNotify(`Snapshot deleted for ${rcFmtDateDMY(dateKey)}`, "success");
-            await rcRefreshDatesAfterDelete();
-            rcRenderDeleteCal();
+            // Immediate: the backend just confirmed this date is gone —
+            // the calendar highlight and Date A/B selects must never
+            // lag behind a successful delete waiting on a second
+            // round trip.
+            rcApplyDatesUpdate(rcDates.filter(d => d !== dateKey));
+            rcReconcileDates();
         } else {
             rcNotify(data.message || "Delete failed", "error");
         }
@@ -757,13 +769,47 @@ async function rcConfirmDeleteSnapshot() {
     }
 }
 
+// "📸 Snapshot" menu item — the page's own single-report snapshot
+// (formerly the standalone "Snapshot Now" button, absorbed into the
+// hub's "Snapshot All" 2026-10-08, now also offered back here for
+// convenience per explicit request). Same endpoint as Snapshot All's
+// own "Compare" target.
+async function rcRunSnapshotNow() {
+    document.getElementById("topbarMenu").style.display = "none";
+    if (typeof showAppLoading === "function") showAppLoading("Saving snapshot...");
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/creditreport/snapshot/run`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${rcToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (data.ok) {
+            rcNotify(`Snapshot saved for ${data.date}`, "success");
+            rcReconcileDates();
+        } else {
+            rcNotify(data.message || "Snapshot failed", "error");
+        }
+    } catch (e) {
+        console.error(e);
+        rcNotify("Snapshot failed", "error");
+    } finally {
+        if (typeof hideAppLoading === "function") hideAppLoading();
+    }
+}
+
 // ========================================
 // EVENTS
 // ========================================
 document.addEventListener("click", (e) => {
+    const menuSnapshotBtn = e.target.closest("#rcMenuSnapshot");
+    if (menuSnapshotBtn) {
+        rcRunSnapshotNow();
+        return;
+    }
     const menuDeleteBtn = e.target.closest("#rcMenuDeleteSnapshot");
     if (menuDeleteBtn) {
-        document.getElementById("rcMenu").style.display = "none";
+        document.getElementById("topbarMenu").style.display = "none";
         rcOpenDeleteCal();
         return;
     }
