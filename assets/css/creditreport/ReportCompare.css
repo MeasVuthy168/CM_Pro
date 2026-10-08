@@ -2,8 +2,12 @@
    REPORT COMPARISON
    Reuses OfficerProductivity.css's --cr-* theme tokens, .op-card,
    .op-mode-tabs/.op-mode-tab, .op-client-table, .op-empty and
-   .op-page-skel — this file only adds what's unique to this page: the
-   date-picker toolbar and the summary delta tiles grid.
+   .op-page-skel — this file only adds what's unique to this page.
+
+   Redesigned 2026-10-08 per explicit request for a "professional" look:
+   a focused per-section KPI card (colored by that section's own risk/
+   growth accent) replaces the old always-visible 12-tile wall, so the
+   page only ever shows numbers relevant to the tab currently open.
 ======================================== */
 
 .rc-toolbar{
@@ -58,43 +62,6 @@
 [data-theme="dark"] .rc-snapshot-btn{ color:#002D6B; background:var(--cr-gold-light); }
 .rc-snapshot-btn{ background:var(--cr-chip-bg); color:var(--cr-text); border:1px solid var(--cr-border); }
 
-.rc-summary-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-    gap:10px;
-    margin-bottom:14px;
-}
-.rc-tile{
-    background:var(--cr-card-bg);
-    border:1px solid var(--cr-border);
-    border-radius:12px;
-    box-shadow:var(--cr-shadow);
-    padding:12px 14px;
-}
-.rc-tile-label{
-    font-size:11.5px;
-    font-weight:700;
-    color:var(--cr-text-muted);
-    margin-bottom:6px;
-}
-.rc-tile-values{
-    font-size:12.5px;
-    color:var(--cr-text);
-    display:flex;
-    align-items:baseline;
-    gap:6px;
-    flex-wrap:wrap;
-}
-.rc-tile-values .rc-arrow-sep{ color:var(--cr-text-muted); font-size:11px; }
-.rc-tile-diff{
-    font-size:12.5px;
-    font-weight:800;
-    margin-top:4px;
-}
-.rc-tile-diff.positive{ color:#1a9850; }
-.rc-tile-diff.negative{ color:var(--cr-danger); }
-.rc-tile-diff.zero{ color:var(--cr-text-muted); }
-
 /* ===== Transition tables ===== */
 .rc-badge{
     display:inline-block;
@@ -127,6 +94,8 @@
 .rc-sub-tab.active{ background:var(--cr-navy-dark); color:#fff; }
 [data-theme="dark"] .rc-sub-tab.active{ color:#002D6B; }
 
+.rc-shell{ padding-top:14px; }
+
 /* ===== Main section tabs (5: Outstanding/Disburse/T24/NBC Overdue/
    Write Off) — horizontally scrollable instead of op-mode-tabs' equal-
    width flex, since 5 labels don't fit a phone width evenly. ===== */
@@ -136,7 +105,7 @@
     overflow-x:auto;
     -webkit-overflow-scrolling:touch;
     padding-bottom:2px;
-    margin-bottom:12px;
+    margin-bottom:14px;
 }
 .rc-main-tabs::-webkit-scrollbar{ display:none; }
 .rc-main-tab{
@@ -155,6 +124,103 @@
 .rc-main-tab.active{ background:var(--cr-navy-dark); color:#fff; border-color:transparent; }
 [data-theme="dark"] .rc-main-tab.active{ color:#002D6B; }
 [data-theme="darkgray"] .rc-main-tab.active{ color:#1C2333; }
+
+/* ===== Section head — icon + bilingual title above the KPI card,
+   naming exactly which of the 5 sections is on screen. ===== */
+.rc-section-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:12px;
+}
+.rc-section-icon{
+    flex:0 0 auto;
+    width:34px;
+    height:34px;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:17px;
+    background:var(--rc-accent-bg, rgba(0,59,139,.12));
+}
+.rc-section-head-text{ min-width:0; }
+.rc-section-title{
+    font-size:14px;
+    font-weight:800;
+    color:var(--cr-text);
+    line-height:1.2;
+}
+.rc-section-subtitle{
+    font-size:11px;
+    color:var(--cr-text-muted);
+    margin-top:1px;
+}
+
+/* ===== KPI card — the (#Loan,#Client,Value) / (#Loan,Value) / (#Loan,
+   #Client,PAR) / (#(cif),Int,Prn) summary per section, per explicit
+   request 2026-10-08. A colored top bar + icon chip tint (--rc-accent)
+   mark each section's own risk/growth identity; set per data-tab below. ===== */
+.rc-kpi-card{
+    display:flex;
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-top:4px solid var(--rc-accent, var(--cr-navy));
+    border-radius:14px;
+    box-shadow:var(--cr-shadow);
+    overflow:hidden;
+    margin-bottom:14px;
+}
+.rc-kpi-cell{
+    flex:1;
+    min-width:0;
+    padding:13px 8px;
+    text-align:center;
+    border-right:1px solid var(--cr-border);
+}
+.rc-kpi-cell:last-child{ border-right:none; }
+.rc-kpi-label{
+    font-size:10px;
+    font-weight:700;
+    color:var(--cr-text-muted);
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.rc-kpi-value{
+    font-size:18px;
+    font-weight:800;
+    color:var(--cr-text);
+    line-height:1.2;
+    margin-top:3px;
+}
+.rc-kpi-sub{
+    font-size:10px;
+    color:var(--cr-text-muted);
+    margin-top:1px;
+}
+.rc-kpi-delta{
+    display:inline-block;
+    margin-top:5px;
+    padding:2px 7px;
+    border-radius:999px;
+    font-size:10.5px;
+    font-weight:800;
+}
+.rc-kpi-delta.positive{ background:rgba(26,150,80,.14); color:#1a9850; }
+.rc-kpi-delta.negative{ background:rgba(179,38,30,.12); color:var(--cr-danger); }
+.rc-kpi-delta.zero{ background:var(--cr-chip-bg); color:var(--cr-text-muted); }
+
+/* Section accent — growth sections (Outstanding/Disburse) in blue/teal,
+   risk sections (T24/NBC Overdue/Write Off) in amber/red/slate, so the
+   same card shape still reads as "growth" vs "risk" at a glance. */
+.rc-shell[data-tab="os"]{ --rc-accent:#2E7D32; --rc-accent-bg:rgba(46,125,50,.14); }
+.rc-shell[data-tab="disburse"]{ --rc-accent:#0277BD; --rc-accent-bg:rgba(2,119,189,.14); }
+.rc-shell[data-tab="t24"]{ --rc-accent:#EF6C00; --rc-accent-bg:rgba(239,108,0,.14); }
+.rc-shell[data-tab="overdue"]{ --rc-accent:#C62828; --rc-accent-bg:rgba(198,40,40,.14); }
+.rc-shell[data-tab="wo"]{ --rc-accent:#616161; --rc-accent-bg:rgba(97,97,97,.14); }
 
 /* ===== Dimension picker ("filter or tap of Officer/Branch/Product/
    Location") ===== */
@@ -184,8 +250,7 @@
     font-family:'KRASAR', sans-serif;
     white-space:nowrap;
 }
-.rc-dim-chip.active{ background:var(--cr-navy); color:#fff; border-color:transparent; }
-[data-theme="dark"] .rc-dim-chip.active{ background:var(--cr-gold-light); color:#002D6B; }
+.rc-dim-chip.active{ background:var(--rc-accent, var(--cr-navy)); color:#fff; border-color:transparent; }
 .rc-dim-chip:disabled{ opacity:.35; cursor:default; }
 .rc-dim-value-select{
     padding:9px 10px;
@@ -216,10 +281,3 @@
 .rc-breakdown-table .rc-bd-diff.positive{ color:#1a9850; font-weight:700; }
 .rc-breakdown-table .rc-bd-diff.negative{ color:var(--cr-danger); font-weight:700; }
 .rc-breakdown-table .rc-bd-diff.zero{ color:var(--cr-text-muted); }
-
-.rc-section-title{
-    font-size:12.5px;
-    font-weight:700;
-    color:var(--cr-text);
-    margin:2px 0 10px;
-}
