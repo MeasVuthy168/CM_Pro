@@ -21,10 +21,11 @@ async function loadComponent(id, file) {
                 showBack: true,
                 showLogo: false,
                 showProfile: false,
-                // "⋮" -> Delete Snapshot, admin only — rcIsAdmin/rcToggleMenu
-                // come from ReportCompare.js, loaded before this file.
+                // "⋮" -> Snapshot / Delete Snapshot, admin only — rcIsAdmin
+                // comes from ReportCompare.js, toggleTopbarMenu from the
+                // shared shared/topbar-menu.js, both loaded before this file.
                 actionText: (typeof rcIsAdmin !== "undefined" && rcIsAdmin) ? "⋮" : "",
-                actionHandler: typeof rcToggleMenu === "function" ? rcToggleMenu : null
+                actionHandler: typeof toggleTopbarMenu === "function" ? toggleTopbarMenu : null
             });
         }
     } catch (error) {

@@ -1291,6 +1291,38 @@ document.getElementById("btnCrPrint")?.addEventListener("click", () => {
 });
 
 // ========================================
+// SNAPSHOT — admin only, per explicit request 2026-10-08. Same
+// endpoint the Credit Report hub's own "Snapshot All" button already
+// calls for Branch; offered here too as a page-local shortcut.
+// ========================================
+if (crIsAdmin) {
+    const snapBtn = document.getElementById("btnCrSnapshot");
+    if (snapBtn) snapBtn.style.display = "";
+}
+async function crRunSnapshotNow() {
+    if (typeof showAppLoading === "function") showAppLoading("Saving snapshot...");
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/creditreport/summary/snapshot/run`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${crToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (data.ok) {
+            notify(`Snapshot saved for ${data.date}`, "success");
+        } else {
+            notify(data.message || "Snapshot failed", "error");
+        }
+    } catch (e) {
+        console.error(e);
+        notify("Snapshot failed", "error");
+    } finally {
+        if (typeof hideAppLoading === "function") hideAppLoading();
+    }
+}
+document.getElementById("btnCrSnapshot")?.addEventListener("click", crRunSnapshotNow);
+
+// ========================================
 // "..." MENU — closes on: picking an action, clicking outside, Escape.
 // ========================================
 const crMenuToggle = document.getElementById("btnCrMenu");

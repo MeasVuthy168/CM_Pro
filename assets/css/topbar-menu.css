@@ -1,0 +1,42 @@
+/* =========================
+   TOPBAR "⋮" DROPDOWN MENU
+   Generic single dropdown anchored under the topbar's own action
+   button (#topbarActionBtn, showing "⋮"). Any page can opt in: render
+   a <div class="topbar-menu" id="topbarMenu"> with one or more
+   <button class="topbar-menu-item"> inside, pass
+   actionText:"⋮", actionHandler:toggleTopbarMenu to initTopbar(), and
+   wire each item's own click handler. Shared across Credit Portfolio
+   Trends and the 4 Daily Monitoring report pages, per explicit
+   request 2026-10-08 — same shape/behavior as the Notifications
+   page's own #notificationMenu, just reusable instead of a one-off
+   per-page copy.
+========================= */
+.topbar-menu{
+    position:fixed;
+    top:80px;
+    right:15px;
+    background:var(--cr-card-bg, #fff);
+    border:1px solid var(--cr-border, #e2e2e2);
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 6px 20px rgba(0,0,0,.2);
+    z-index:99999;
+    display:none;
+}
+.topbar-menu-item{
+    width:100%;
+    border:none;
+    background:transparent;
+    color:var(--cr-text, #1a1a1a);
+    padding:14px 18px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    text-align:left;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+}
+.topbar-menu-item:hover,
+.topbar-menu-item:active{ background:var(--cr-row-alt, #f5f5f5); }
