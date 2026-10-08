@@ -37,6 +37,11 @@ const rcIsAdmin = String(rcUser.role || "").toLowerCase() === "admin";
 
 let rcDates = [];
 let rcDiff = null;
+// The two dates the current rcDiff actually compares — echoed back by
+// the compare endpoint rather than read from the selects, so the label
+// always matches what's on screen even if the selects change afterward.
+let rcDiffDateA = "";
+let rcDiffDateB = "";
 let rcActiveTab = "os";
 let rcSubTab = { wo: "entered", overdue: "changed", t24: "entered" };
 // Officer is the default dimension — there's no neutral "Overall" option
@@ -58,6 +63,58 @@ const RC_SECTION_META = {
 // WO has no Product Type column in its source sheet — the Product
 // dimension chip is disabled whenever this tab is active.
 const RC_DIM_UNAVAILABLE = { wo: new Set(["product"]) };
+
+// ========================================
+// TABLE SORTING — click a header to sort by that column, per explicit
+// request 2026-10-08, scoped to the T24/NBC Overdue/Write Off tables
+// (their breakdown table and entered/exited/changed client lists).
+// State is keyed per table ("<tab>:dimbreak", "<tab>:<subtab>") so
+// switching tabs/sub-tabs/dimension never mixes up one table's sort
+// with another's, and a 3rd click of the same column returns to that
+// table's own default order rather than getting stuck toggling asc/desc.
+// ========================================
+const rcSortState = {};
+
+function rcCycleSort(stateKey, col, type) {
+    const s = rcSortState[stateKey];
+    if (!s || s.col !== col) {
+        rcSortState[stateKey] = { col, type, dir: 1 };
+    } else if (s.dir === 1) {
+        s.dir = -1;
+    } else {
+        delete rcSortState[stateKey];
+    }
+}
+
+// Ascending-comparator for one field, by column type. Missing/blank
+// values always sort last regardless of direction.
+function rcCompareForSort(a, b, type) {
+    const blank = v => v === "" || v == null;
+    if (type === "number") {
+        const na = blank(a) ? Infinity : Number(a);
+        const nb = blank(b) ? Infinity : Number(b);
+        return na - nb;
+    }
+    const sa = blank(a) ? "￿" : String(a).toLowerCase();
+    const sb = blank(b) ? "￿" : String(b).toLowerCase();
+    return sa < sb ? -1 : sa > sb ? 1 : 0;
+}
+
+function rcApplySort(rows, stateKey) {
+    const s = rcSortState[stateKey];
+    if (!s) return rows;
+    return rows.slice().sort((a, b) => s.dir * rcCompareForSort(a[s.col], b[s.col], s.type));
+}
+
+// `col.sortable === false` opts a column out (e.g. an icon-only column
+// with no meaningful header label to click).
+function rcTableThHtml(col, stateKey) {
+    if (col.sortable === false) return `<th>${rcEscapeHtml(col.label)}</th>`;
+    const s = rcSortState[stateKey];
+    const active = s && s.col === col.key;
+    const cls = active ? ` class="${s.dir === 1 ? "op-sort-asc" : "op-sort-desc"}"` : "";
+    return `<th data-sort-key="${rcEscapeHtml(col.key)}" data-sort-type="${col.type || "text"}" data-sort-table="${rcEscapeHtml(stateKey)}"${cls}>${rcEscapeHtml(col.label)}</th>`;
+}
 
 function rcEscapeHtml(s) {
     return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -97,14 +154,6 @@ async function rcApiGet(path) {
     const res = await fetch(`${API.BASE_URL}${path}`, { headers: { Authorization: `Bearer ${rcToken}` } });
     return res.json();
 }
-async function rcApiPost(path, body) {
-    const res = await fetch(`${API.BASE_URL}${path}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${rcToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify(body || {})
-    });
-    return res.json();
-}
 
 // ========================================
 // DATE PICKERS
@@ -117,10 +166,15 @@ async function rcLoadDates() {
     const selA = document.getElementById("rcDateA");
     const selB = document.getElementById("rcDateB");
     if (!rcDates.length) {
-        rcShowEmpty("No backup yet — click Snapshot Now to start.");
+        // The page's own "Snapshot Now" button was absorbed into the
+        // Credit Report hub's single "Snapshot All" control 2026-10-08.
+        rcShowEmpty(
+            rcIsAdmin
+                ? "No backup yet — use Snapshot All on the Credit Report hub to start."
+                : "No backup yet — ask an admin to run Snapshot All on the Credit Report hub."
+        );
         selA.innerHTML = "";
         selB.innerHTML = "";
-        if (rcIsAdmin) document.getElementById("rcSnapshotBtn").style.display = "inline-flex";
         return;
     }
 
@@ -132,8 +186,6 @@ async function rcLoadDates() {
     // freely changeable to any backed-up date.
     selB.value = rcDates[0];
     selA.value = rcDates[1] || rcDates[0];
-
-    if (rcIsAdmin) document.getElementById("rcSnapshotBtn").style.display = "inline-flex";
 }
 
 // ========================================
@@ -143,12 +195,16 @@ async function rcLoadDates() {
 function rcRenderSectionHead() {
     const meta = RC_SECTION_META[rcActiveTab];
     document.getElementById("rcTransitionsCard").dataset.tab = rcActiveTab;
+    const dates = (rcDiffDateA && rcDiffDateB)
+        ? `<span class="rc-section-dates">${rcEscapeHtml(rcDiffDateA)} → ${rcEscapeHtml(rcDiffDateB)}</span>`
+        : "";
     document.getElementById("rcSectionHead").innerHTML = `
       <span class="rc-section-icon">${meta.icon}</span>
       <div class="rc-section-head-text">
         <div class="rc-section-title">${rcEscapeHtml(meta.title)}</div>
         <div class="rc-section-subtitle">${rcEscapeHtml(meta.full)}</div>
-      </div>`;
+      </div>
+      ${dates}`;
 }
 
 // ========================================
@@ -360,24 +416,38 @@ function rcRenderClientDimBreakdown() {
     if (!keys.size) return `<div class="op-empty">No rows.</div>`;
 
     const score = k => (enteredBy.get(k) || 0) + (exitedBy.get(k) || 0) + (hasChanged ? (upgradeBy.get(k) || 0) + (downgradeBy.get(k) || 0) : 0);
-    const rows = [...keys].sort((a, b) => score(b) - score(a));
+    // Default order (no column sort picked yet): busiest dimension value first.
+    const rows = [...keys].sort((a, b) => score(b) - score(a)).map(k => ({
+        key: k,
+        entered: enteredBy.get(k) || 0,
+        exited: exitedBy.get(k) || 0,
+        upgrade: hasChanged ? (upgradeBy.get(k) || 0) : 0,
+        downgrade: hasChanged ? (downgradeBy.get(k) || 0) : 0
+    }));
+
+    const stateKey = `${rcActiveTab}:dimbreak`;
+    const cols = [
+        { key: "key", label: RC_DIMENSIONS[rcDim], type: "text" },
+        { key: "entered", label: "✅ Entered", type: "number" },
+        { key: "exited", label: "↩️ Exited", type: "number" },
+        ...(hasChanged ? [
+            { key: "upgrade", label: "⬆ Upgrade", type: "number" },
+            { key: "downgrade", label: "⬇ Downgrade", type: "number" }
+        ] : [])
+    ];
+    const sorted = rcApplySort(rows, stateKey);
 
     return `
       <div class="rc-breakdown-table-wrap">
         <table class="rc-breakdown-table">
-          <thead><tr>
-            <th>${rcEscapeHtml(RC_DIMENSIONS[rcDim])}</th>
-            <th>✅ Entered</th>
-            <th>↩️ Exited</th>
-            ${hasChanged ? `<th>⬆ Upgrade</th><th>⬇ Downgrade</th>` : ""}
-          </tr></thead>
+          <thead><tr>${cols.map(c => rcTableThHtml(c, stateKey)).join("")}</tr></thead>
           <tbody>
-            ${rows.map(k => `
+            ${sorted.map(r => `
               <tr>
-                <td>${rcEscapeHtml(k)}</td>
-                <td>${enteredBy.get(k) || 0}</td>
-                <td>${exitedBy.get(k) || 0}</td>
-                ${hasChanged ? `<td>${upgradeBy.get(k) || 0}</td><td>${downgradeBy.get(k) || 0}</td>` : ""}
+                <td>${rcEscapeHtml(r.key)}</td>
+                <td>${r.entered}</td>
+                <td>${r.exited}</td>
+                ${hasChanged ? `<td>${r.upgrade}</td><td>${r.downgrade}</td>` : ""}
               </tr>`).join("")}
           </tbody>
         </table>
@@ -387,16 +457,17 @@ function rcRenderClientDimBreakdown() {
 // ========================================
 // CLIENT LIST TABLES (List Client) — WO / T24 / NBC Overdue only.
 // ========================================
-function rcClientTableHtml(rows, cols) {
+function rcClientTableHtml(rows, cols, stateKey) {
     if (!rows.length) {
         return `<div class="op-empty">No rows in this category.</div>`;
     }
+    const sorted = stateKey ? rcApplySort(rows, stateKey) : rows;
     return `
       <div class="op-client-table-wrap">
         <table class="op-client-table">
-          <thead><tr>${cols.map(c => `<th>${rcEscapeHtml(c.label)}</th>`).join("")}</tr></thead>
+          <thead><tr>${cols.map(c => rcTableThHtml(c, stateKey)).join("")}</tr></thead>
           <tbody>
-            ${rows.map(r => `<tr>${cols.map(c => `<td>${c.render ? c.render(r) : rcEscapeHtml(r[c.key])}</td>`).join("")}</tr>`).join("")}
+            ${sorted.map(r => `<tr>${cols.map(c => `<td>${c.render ? c.render(r) : rcEscapeHtml(r[c.key])}</td>`).join("")}</tr>`).join("")}
           </tbody>
         </table>
       </div>`;
@@ -404,43 +475,43 @@ function rcClientTableHtml(rows, cols) {
 
 function rcWoCols() {
     return [
-        { key: "cif", label: "CIF" },
-        { key: "khName", label: "Name" },
-        { key: "branch", label: "Branch" },
-        { key: "officerId", label: "Officer" },
-        { key: "int", label: "Int", render: r => rcFmtNum(r.int) },
-        { key: "prn", label: "Prn", render: r => rcFmtNum(r.prn) }
+        { key: "cif", label: "CIF", type: "text" },
+        { key: "khName", label: "Name", type: "text" },
+        { key: "branch", label: "Branch", type: "text" },
+        { key: "officerId", label: "Officer", type: "text" },
+        { key: "int", label: "Int", type: "number", render: r => rcFmtNum(r.int) },
+        { key: "prn", label: "Prn", type: "number", render: r => rcFmtNum(r.prn) }
     ];
 }
 function rcChangedCols() {
     return [
-        { key: "cif", label: "CIF" },
-        { key: "loanNumber", label: "Loan #" },
-        { key: "name", label: "Name" },
-        { key: "branch", label: "Branch" },
-        { key: "officerId", label: "Officer" },
-        { key: "change", label: "Class", render: r => `${rcEscapeHtml(r.fromClass)} → ${rcEscapeHtml(r.toClass)}` },
-        { key: "direction", label: "", render: r => `<span class="rc-badge ${r.direction}">${r.direction === "downgrade" ? "⬇ Downgrade" : "⬆ Upgrade"}</span>` }
+        { key: "cif", label: "CIF", type: "text" },
+        { key: "loanNumber", label: "Loan #", type: "text" },
+        { key: "name", label: "Name", type: "text" },
+        { key: "branch", label: "Branch", type: "text" },
+        { key: "officerId", label: "Officer", type: "text" },
+        { key: "toClass", label: "Class", type: "text", render: r => `${rcEscapeHtml(r.fromClass)} → ${rcEscapeHtml(r.toClass)}` },
+        { key: "direction", label: "", sortable: false, render: r => `<span class="rc-badge ${r.direction}">${r.direction === "downgrade" ? "⬇ Downgrade" : "⬆ Upgrade"}</span>` }
     ];
 }
 function rcEnterExitCols() {
     return [
-        { key: "cif", label: "CIF" },
-        { key: "loanNumber", label: "Loan #" },
-        { key: "name", label: "Name" },
-        { key: "branch", label: "Branch" },
-        { key: "officerId", label: "Officer" },
-        { key: "cls", label: "Class" }
+        { key: "cif", label: "CIF", type: "text" },
+        { key: "loanNumber", label: "Loan #", type: "text" },
+        { key: "name", label: "Name", type: "text" },
+        { key: "branch", label: "Branch", type: "text" },
+        { key: "officerId", label: "Officer", type: "text" },
+        { key: "cls", label: "Class", type: "text" }
     ];
 }
 function rcT24EnterExitCols() {
     return [
-        { key: "cif", label: "CIF" },
-        { key: "loanNumber", label: "Loan #" },
-        { key: "name", label: "Name" },
-        { key: "branch", label: "Branch" },
-        { key: "officerId", label: "Officer" },
-        { key: "val", label: "Value", render: r => rcFmtNum(r.val) }
+        { key: "cif", label: "CIF", type: "text" },
+        { key: "loanNumber", label: "Loan #", type: "text" },
+        { key: "name", label: "Name", type: "text" },
+        { key: "branch", label: "Branch", type: "text" },
+        { key: "officerId", label: "Officer", type: "text" },
+        { key: "val", label: "Value", type: "number", render: r => rcFmtNum(r.val) }
     ];
 }
 
@@ -462,7 +533,7 @@ function rcRenderTabBody() {
             <button type="button" class="rc-sub-tab${rcSubTab.wo === "entered" ? " active" : ""}" data-sub="entered">✅ Entered (${rcApplyDimFilter(diff.wo.entered).length})</button>
             <button type="button" class="rc-sub-tab${rcSubTab.wo === "exited" ? " active" : ""}" data-sub="exited">↩️ Exited (${rcApplyDimFilter(diff.wo.exited).length})</button>
           </div>`;
-        html += rcClientTableHtml(rcApplyDimFilter(diff.wo[rcSubTab.wo]), rcWoCols());
+        html += rcClientTableHtml(rcApplyDimFilter(diff.wo[rcSubTab.wo]), rcWoCols(), `wo:${rcSubTab.wo}`);
     } else if (rcActiveTab === "overdue") {
         if (!rcDimValue) html += rcRenderClientDimBreakdown();
         html += `
@@ -471,8 +542,8 @@ function rcRenderTabBody() {
             <button type="button" class="rc-sub-tab${rcSubTab.overdue === "entered" ? " active" : ""}" data-sub="entered">✅ New Overdue (${rcApplyDimFilter(diff.overdue.entered).length})</button>
             <button type="button" class="rc-sub-tab${rcSubTab.overdue === "exited" ? " active" : ""}" data-sub="exited">↩️ Resolved (${rcApplyDimFilter(diff.overdue.exited).length})</button>
           </div>`;
-        if (rcSubTab.overdue === "changed") html += rcClientTableHtml(rcApplyDimFilter(diff.overdue.changed), rcChangedCols());
-        else html += rcClientTableHtml(rcApplyDimFilter(diff.overdue[rcSubTab.overdue]), rcEnterExitCols());
+        if (rcSubTab.overdue === "changed") html += rcClientTableHtml(rcApplyDimFilter(diff.overdue.changed), rcChangedCols(), "overdue:changed");
+        else html += rcClientTableHtml(rcApplyDimFilter(diff.overdue[rcSubTab.overdue]), rcEnterExitCols(), `overdue:${rcSubTab.overdue}`);
     } else if (rcActiveTab === "t24") {
         if (!rcDimValue) html += rcRenderClientDimBreakdown();
         html += `
@@ -481,8 +552,8 @@ function rcRenderTabBody() {
             <button type="button" class="rc-sub-tab${rcSubTab.t24 === "entered" ? " active" : ""}" data-sub="entered">✅ Entered (${rcApplyDimFilter(diff.t24.entered).length})</button>
             <button type="button" class="rc-sub-tab${rcSubTab.t24 === "exited" ? " active" : ""}" data-sub="exited">↩️ Exited (${rcApplyDimFilter(diff.t24.exited).length})</button>
           </div>`;
-        if (rcSubTab.t24 === "changed") html += rcClientTableHtml(rcApplyDimFilter(diff.t24.changed), rcChangedCols());
-        else html += rcClientTableHtml(rcApplyDimFilter(diff.t24[rcSubTab.t24]), rcT24EnterExitCols());
+        if (rcSubTab.t24 === "changed") html += rcClientTableHtml(rcApplyDimFilter(diff.t24.changed), rcChangedCols(), "t24:changed");
+        else html += rcClientTableHtml(rcApplyDimFilter(diff.t24[rcSubTab.t24]), rcT24EnterExitCols(), `t24:${rcSubTab.t24}`);
     }
 
     document.getElementById("rcTabBody").innerHTML = html;
@@ -512,6 +583,8 @@ async function rcRunCompare() {
         if (!data.ok) { rcShowEmpty(data.message || "Failed to compare."); return; }
 
         rcDiff = data.diff;
+        rcDiffDateA = data.dateA || dateA;
+        rcDiffDateB = data.dateB || dateB;
         document.getElementById("rcTransitionsCard").style.display = "block";
         rcUpdateDimChipsAvailability();
         rcPopulateDimValueSelect();
@@ -553,6 +626,12 @@ document.addEventListener("click", (e) => {
         rcRenderTabBody();
         return;
     }
+    const sortTh = e.target.closest("#rcTabBody th[data-sort-key]");
+    if (sortTh) {
+        rcCycleSort(sortTh.dataset.sortTable, sortTh.dataset.sortKey, sortTh.dataset.sortType);
+        rcRenderTabBody();
+        return;
+    }
 });
 
 document.getElementById("rcDimValueSelect").addEventListener("change", (e) => {
@@ -562,26 +641,6 @@ document.getElementById("rcDimValueSelect").addEventListener("change", (e) => {
 
 function rcInit() {
     document.getElementById("rcCompareBtn").addEventListener("click", rcRunCompare);
-    document.getElementById("rcSnapshotBtn").addEventListener("click", async () => {
-        const btn = document.getElementById("rcSnapshotBtn");
-        btn.disabled = true;
-        try {
-            const data = await rcApiPost("/api/creditreport/snapshot/run", {});
-            if (data.ok) {
-                rcNotify(`Snapshot saved for ${data.date}`, "success");
-                // A failure here (date list refresh) shouldn't be reported
-                // as the snapshot itself having failed — it already saved.
-                try { await rcLoadDates(); } catch (e) { console.error(e); }
-            } else {
-                rcNotify(data.message || "Snapshot failed", "error");
-            }
-        } catch (e) {
-            console.error(e);
-            rcNotify("Snapshot failed", "error");
-        } finally {
-            btn.disabled = false;
-        }
-    });
 
     rcLoadDates().then(() => {
         if (rcDates.length) rcRunCompare();

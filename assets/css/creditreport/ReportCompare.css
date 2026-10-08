@@ -47,8 +47,7 @@
     color:var(--cr-text-muted);
     padding-bottom:9px;
 }
-.rc-compare-btn,
-.rc-snapshot-btn{
+.rc-compare-btn{
     padding:10px 18px;
     border-radius:8px;
     border:none;
@@ -58,9 +57,7 @@
     font-weight:700;
     cursor:pointer;
 }
-[data-theme="dark"] .rc-compare-btn,
-[data-theme="dark"] .rc-snapshot-btn{ color:#002D6B; background:var(--cr-gold-light); }
-.rc-snapshot-btn{ background:var(--cr-chip-bg); color:var(--cr-text); border:1px solid var(--cr-border); }
+[data-theme="dark"] .rc-compare-btn{ color:#002D6B; background:var(--cr-gold-light); }
 
 /* ===== Transition tables ===== */
 .rc-badge{
@@ -132,6 +129,20 @@
     align-items:center;
     gap:10px;
     margin-bottom:12px;
+}
+/* Which two snapshot dates the KPI card/tables below actually compare —
+   on the same line as the section's own icon+title, per explicit
+   request 2026-10-08, so it's never ambiguous which run is on screen. */
+.rc-section-dates{
+    margin-left:auto;
+    flex:0 0 auto;
+    padding:4px 10px;
+    border-radius:999px;
+    background:var(--cr-chip-bg);
+    color:var(--cr-text-muted);
+    font-size:11px;
+    font-weight:700;
+    white-space:nowrap;
 }
 .rc-section-icon{
     flex:0 0 auto;
@@ -281,3 +292,29 @@
 .rc-breakdown-table .rc-bd-diff.positive{ color:#1a9850; font-weight:700; }
 .rc-breakdown-table .rc-bd-diff.negative{ color:var(--cr-danger); font-weight:700; }
 .rc-breakdown-table .rc-bd-diff.zero{ color:var(--cr-text-muted); }
+
+/* ===== Sortable table headers — click to cycle ascending/descending/
+   default, per explicit request 2026-10-08. Scoped to the T24/NBC
+   Overdue/Write Off tables (both this breakdown table and
+   .op-client-table's own entered/exited/changed lists, which already
+   carry this exact convention from OfficerProductivity.css). ===== */
+.rc-breakdown-table th[data-sort-key],
+.op-client-table th[data-sort-key]{
+    cursor:pointer;
+    user-select:none;
+    -webkit-user-select:none;
+    padding-right:18px;
+    position:relative;
+}
+.rc-breakdown-table th[data-sort-key]:hover{ color:var(--cr-text); }
+.rc-breakdown-table th[data-sort-key]::after{
+    content:"↕";
+    position:absolute;
+    right:6px;
+    opacity:.4;
+    font-size:10px;
+}
+.rc-breakdown-table th.op-sort-asc::after{ content:"▲"; opacity:1; color:var(--cr-navy); }
+.rc-breakdown-table th.op-sort-desc::after{ content:"▼"; opacity:1; color:var(--cr-navy); }
+[data-theme="dark"] .rc-breakdown-table th.op-sort-asc::after,
+[data-theme="dark"] .rc-breakdown-table th.op-sort-desc::after{ color:var(--cr-gold-light); }
