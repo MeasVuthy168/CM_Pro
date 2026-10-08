@@ -618,6 +618,16 @@ const RC_CAL_DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 let rcCalMonthKey = ""; // "YYYY-MM-01" — the month currently shown
 let rcCalPendingDelete = "";
 
+// Dates this session has deleted and gotten a confirmed { ok:true }
+// response for. A reconcile fetch (rcReconcileDates) that still comes
+// back with one of these — e.g. a read-after-write lag on the backend
+// right after the delete — must never be allowed to make it reappear:
+// the server already told us, authoritatively, that it's gone. Without
+// this, a stale reconcile flashes the just-deleted date right back onto
+// the calendar/selects a moment after the "Snapshot deleted" toast,
+// which reads as "the delete didn't actually work".
+const rcConfirmedDeletedDates = new Set();
+
 function rcFmtDateDMY(dateKey) {
     if (!dateKey) return "";
     const [y, m, d] = dateKey.split("-");
@@ -693,7 +703,9 @@ function rcMonthStartKeyFallback() {
 // just confirmed) and again when that follow-up /snapshot/dates fetch
 // resolves, to reconcile with the server's own canonical list.
 function rcApplyDatesUpdate(dates) {
-    rcDates = dates;
+    rcDates = rcConfirmedDeletedDates.size
+        ? dates.filter(d => !rcConfirmedDeletedDates.has(d))
+        : dates;
     rcRenderDeleteCal();
 
     const selA = document.getElementById("rcDateA");
@@ -754,10 +766,13 @@ async function rcConfirmDeleteSnapshot() {
         const data = await res.json();
         if (data.ok) {
             rcNotify(`Snapshot deleted for ${rcFmtDateDMY(dateKey)}`, "success");
+            rcConfirmedDeletedDates.add(dateKey);
             // Immediate: the backend just confirmed this date is gone —
             // the calendar highlight and Date A/B selects must never
             // lag behind a successful delete waiting on a second
-            // round trip.
+            // round trip. rcApplyDatesUpdate also strips anything in
+            // rcConfirmedDeletedDates, so the reconcile below can't
+            // bring this date back even on a stale read.
             rcApplyDatesUpdate(rcDates.filter(d => d !== dateKey));
             rcReconcileDates();
         } else {
@@ -786,6 +801,15 @@ async function rcRunSnapshotNow() {
         const data = await res.json();
         if (data.ok) {
             rcNotify(`Snapshot saved for ${data.date}`, "success");
+            // A date this session just deleted can get re-created by a
+            // fresh snapshot — drop any leftover tombstone for it so
+            // the dates list (and the reconcile below) can show it again.
+            rcConfirmedDeletedDates.delete(data.date);
+            // Immediate, same reasoning as the delete flow above — don't
+            // make the new date wait on a second round trip to appear.
+            if (!rcDates.includes(data.date)) {
+                rcApplyDatesUpdate([data.date, ...rcDates].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0)));
+            }
             rcReconcileDates();
         } else {
             rcNotify(data.message || "Snapshot failed", "error");
