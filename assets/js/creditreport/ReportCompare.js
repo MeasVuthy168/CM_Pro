@@ -39,16 +39,21 @@ let rcDates = [];
 let rcDiff = null;
 let rcActiveTab = "os";
 let rcSubTab = { wo: "entered", overdue: "changed", t24: "entered" };
-let rcDim = "";
+// Officer is the default dimension — there's no neutral "Overall" option
+// (removed per explicit request 2026-10-08), so a dimension is always active.
+let rcDim = "officerId";
 let rcDimValue = "";
 
 const RC_DIMENSIONS = { officerId: "Officer", branch: "Branch", product: "Product", location: "Location" };
+// `title` is the short label shown on the tab chip and as the section
+// head's own headline (per explicit request 2026-10-08); `full` is the
+// plain-English name shown as a small subtitle under it.
 const RC_SECTION_META = {
-    os: { icon: "💰", titleEn: "Loan Outstanding", titleKh: "សមតុល្យឥណទាន" },
-    disburse: { icon: "🏦", titleEn: "Loan Disburse", titleKh: "ឥណទានផ្ដល់ឱ្យថ្មី" },
-    t24: { icon: "⏱", titleEn: "Balance Loan at Risk (T24)", titleKh: "ហានិភ័យឥណទាន T24" },
-    overdue: { icon: "📉", titleEn: "Balance Loan at Risk (NBC Overdue)", titleKh: "ហានិភ័យឥណទាន NBC" },
-    wo: { icon: "✍️", titleEn: "Write Off", titleKh: "ឥណទានលុបចោល" }
+    os: { icon: "💰", title: "OS", full: "Loan Outstanding" },
+    disburse: { icon: "🏦", title: "Disb", full: "Loan Disburse" },
+    t24: { icon: "⏱", title: "T24 OV", full: "Balance Loan at Risk (T24)" },
+    overdue: { icon: "📉", title: "NBC OV", full: "Balance Loan at Risk (NBC Overdue)" },
+    wo: { icon: "✍️", title: "WO", full: "Write Off" }
 };
 // WO has no Product Type column in its source sheet — the Product
 // dimension chip is disabled whenever this tab is active.
@@ -112,7 +117,7 @@ async function rcLoadDates() {
     const selA = document.getElementById("rcDateA");
     const selB = document.getElementById("rcDateB");
     if (!rcDates.length) {
-        rcShowEmpty("មិនទាន់មានទិន្នន័យបម្រុងទុកទេ — សូមចុច Snapshot Now ដើម្បីចាប់ផ្ដើម។ / No backup yet — click Snapshot Now to start.");
+        rcShowEmpty("No backup yet — click Snapshot Now to start.");
         selA.innerHTML = "";
         selB.innerHTML = "";
         if (rcIsAdmin) document.getElementById("rcSnapshotBtn").style.display = "inline-flex";
@@ -141,8 +146,8 @@ function rcRenderSectionHead() {
     document.getElementById("rcSectionHead").innerHTML = `
       <span class="rc-section-icon">${meta.icon}</span>
       <div class="rc-section-head-text">
-        <div class="rc-section-title">${rcEscapeHtml(meta.titleEn)}</div>
-        <div class="rc-section-subtitle">${rcEscapeHtml(meta.titleKh)}</div>
+        <div class="rc-section-title">${rcEscapeHtml(meta.title)}</div>
+        <div class="rc-section-subtitle">${rcEscapeHtml(meta.full)}</div>
       </div>`;
 }
 
@@ -249,15 +254,17 @@ function rcRenderKpiCard() {
 function rcUpdateDimChipsAvailability() {
     const unavailable = RC_DIM_UNAVAILABLE[rcActiveTab] || new Set();
     document.querySelectorAll("#rcDimChips .rc-dim-chip").forEach(chip => {
-        const dim = chip.dataset.dim;
-        const isUnavailable = dim && unavailable.has(dim);
+        const isUnavailable = unavailable.has(chip.dataset.dim);
         chip.disabled = isUnavailable;
         chip.title = isUnavailable ? "Not tracked for Write Off" : "";
     });
-    if (rcDim && unavailable.has(rcDim)) {
-        rcDim = "";
+    // Fall back to the first available dimension (Officer) rather than
+    // leaving the now-unavailable one selected — there's no neutral
+    // "Overall" state to fall back to any more.
+    if (unavailable.has(rcDim)) {
+        rcDim = "officerId";
         rcDimValue = "";
-        document.querySelectorAll("#rcDimChips .rc-dim-chip").forEach(c => c.classList.toggle("active", c.dataset.dim === ""));
+        document.querySelectorAll("#rcDimChips .rc-dim-chip").forEach(c => c.classList.toggle("active", c.dataset.dim === rcDim));
     }
 }
 
@@ -283,8 +290,6 @@ function rcDimValuesForClientTab(tab, dim) {
 
 function rcPopulateDimValueSelect() {
     const sel = document.getElementById("rcDimValueSelect");
-    if (!rcDim) { sel.style.display = "none"; sel.innerHTML = ""; return; }
-
     const values = (rcActiveTab === "os" || rcActiveTab === "disburse")
         ? (rcDiff[rcActiveTab][rcDim] || []).map(r => r.key)
         : rcDimValuesForClientTab(rcActiveTab, rcDim);
@@ -292,7 +297,7 @@ function rcPopulateDimValueSelect() {
     if (rcDimValue && !values.includes(rcDimValue)) rcDimValue = "";
 
     const label = RC_DIMENSIONS[rcDim];
-    sel.innerHTML = `<option value="">គ្រប់ទាំងអស់ / All ${rcEscapeHtml(label)}s</option>` +
+    sel.innerHTML = `<option value="">All ${rcEscapeHtml(label)}s</option>` +
         values.map(v => `<option value="${rcEscapeHtml(v)}"${v === rcDimValue ? " selected" : ""}>${rcEscapeHtml(v)}</option>`).join("");
     sel.style.display = "";
 }
@@ -311,7 +316,7 @@ function rcApplyDimFilter(rows) {
 function rcRenderOsDisburseBreakdown(valueLabel, valueField) {
     const rows = rcDiff[rcActiveTab][rcDim] || [];
     const filtered = rcDimValue ? rows.filter(r => r.key === rcDimValue) : rows;
-    if (!filtered.length) return `<div class="op-empty">គ្មានទិន្នន័យ / No rows.</div>`;
+    if (!filtered.length) return `<div class="op-empty">No rows.</div>`;
     return `
       <div class="rc-breakdown-table-wrap">
         <table class="rc-breakdown-table">
@@ -352,7 +357,7 @@ function rcRenderClientDimBreakdown() {
     const downgradeBy = hasChanged ? rcGroupCounts(arrays.changed.filter(r => r.direction === "downgrade"), rcDim) : null;
 
     const keys = new Set([...enteredBy.keys(), ...exitedBy.keys(), ...(hasChanged ? arrays.changed.map(r => r[rcDim]).filter(Boolean) : [])]);
-    if (!keys.size) return `<div class="op-empty">គ្មានទិន្នន័យ / No rows.</div>`;
+    if (!keys.size) return `<div class="op-empty">No rows.</div>`;
 
     const score = k => (enteredBy.get(k) || 0) + (exitedBy.get(k) || 0) + (hasChanged ? (upgradeBy.get(k) || 0) + (downgradeBy.get(k) || 0) : 0);
     const rows = [...keys].sort((a, b) => score(b) - score(a));
@@ -384,7 +389,7 @@ function rcRenderClientDimBreakdown() {
 // ========================================
 function rcClientTableHtml(rows, cols) {
     if (!rows.length) {
-        return `<div class="op-empty">គ្មានទិន្នន័យ / No rows in this category.</div>`;
+        return `<div class="op-empty">No rows in this category.</div>`;
     }
     return `
       <div class="op-client-table-wrap">
@@ -400,9 +405,9 @@ function rcClientTableHtml(rows, cols) {
 function rcWoCols() {
     return [
         { key: "cif", label: "CIF" },
-        { key: "khName", label: "ឈ្មោះ / Name" },
-        { key: "branch", label: "សាខា / Branch" },
-        { key: "officerId", label: "មន្ត្រី / Officer" },
+        { key: "khName", label: "Name" },
+        { key: "branch", label: "Branch" },
+        { key: "officerId", label: "Officer" },
         { key: "int", label: "Int", render: r => rcFmtNum(r.int) },
         { key: "prn", label: "Prn", render: r => rcFmtNum(r.prn) }
     ];
@@ -411,10 +416,10 @@ function rcChangedCols() {
     return [
         { key: "cif", label: "CIF" },
         { key: "loanNumber", label: "Loan #" },
-        { key: "name", label: "ឈ្មោះ / Name" },
-        { key: "branch", label: "សាខា / Branch" },
-        { key: "officerId", label: "មន្ត្រី / Officer" },
-        { key: "change", label: "ចំណាត់ថ្នាក់ / Class", render: r => `${rcEscapeHtml(r.fromClass)} → ${rcEscapeHtml(r.toClass)}` },
+        { key: "name", label: "Name" },
+        { key: "branch", label: "Branch" },
+        { key: "officerId", label: "Officer" },
+        { key: "change", label: "Class", render: r => `${rcEscapeHtml(r.fromClass)} → ${rcEscapeHtml(r.toClass)}` },
         { key: "direction", label: "", render: r => `<span class="rc-badge ${r.direction}">${r.direction === "downgrade" ? "⬇ Downgrade" : "⬆ Upgrade"}</span>` }
     ];
 }
@@ -422,19 +427,19 @@ function rcEnterExitCols() {
     return [
         { key: "cif", label: "CIF" },
         { key: "loanNumber", label: "Loan #" },
-        { key: "name", label: "ឈ្មោះ / Name" },
-        { key: "branch", label: "សាខា / Branch" },
-        { key: "officerId", label: "មន្ត្រី / Officer" },
-        { key: "cls", label: "ចំណាត់ថ្នាក់ / Class" }
+        { key: "name", label: "Name" },
+        { key: "branch", label: "Branch" },
+        { key: "officerId", label: "Officer" },
+        { key: "cls", label: "Class" }
     ];
 }
 function rcT24EnterExitCols() {
     return [
         { key: "cif", label: "CIF" },
         { key: "loanNumber", label: "Loan #" },
-        { key: "name", label: "ឈ្មោះ / Name" },
-        { key: "branch", label: "សាខា / Branch" },
-        { key: "officerId", label: "មន្ត្រី / Officer" },
+        { key: "name", label: "Name" },
+        { key: "branch", label: "Branch" },
+        { key: "officerId", label: "Officer" },
         { key: "val", label: "Value", render: r => rcFmtNum(r.val) }
     ];
 }
@@ -447,38 +452,34 @@ function rcRenderTabBody() {
     let html = "";
 
     if (rcActiveTab === "os" || rcActiveTab === "disburse") {
-        if (!rcDim) {
-            html += `<div class="op-empty">ជ្រើសរើស មន្ត្រី/សាខា/ផលិតផល/ទីតាំង ដើម្បីមើលការបែងចែក។<br>Pick Officer/Branch/Product/Location above to see a breakdown.</div>`;
-        } else {
-            const valueField = rcActiveTab === "os" ? "osUsdSum" : "valueSum";
-            const valueLabel = rcActiveTab === "os" ? "OS (USD)" : "Disbursed (USD)";
-            html += rcRenderOsDisburseBreakdown(valueLabel, valueField);
-        }
+        const valueField = rcActiveTab === "os" ? "osUsdSum" : "valueSum";
+        const valueLabel = rcActiveTab === "os" ? "OS (USD)" : "Disbursed (USD)";
+        html += rcRenderOsDisburseBreakdown(valueLabel, valueField);
     } else if (rcActiveTab === "wo") {
-        if (rcDim && !rcDimValue) html += rcRenderClientDimBreakdown();
+        if (!rcDimValue) html += rcRenderClientDimBreakdown();
         html += `
           <div class="rc-sub-tabs">
-            <button type="button" class="rc-sub-tab${rcSubTab.wo === "entered" ? " active" : ""}" data-sub="entered">✅ ចូលថ្មី / Entered (${rcApplyDimFilter(diff.wo.entered).length})</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.wo === "exited" ? " active" : ""}" data-sub="exited">↩️ ចេញ / Exited (${rcApplyDimFilter(diff.wo.exited).length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.wo === "entered" ? " active" : ""}" data-sub="entered">✅ Entered (${rcApplyDimFilter(diff.wo.entered).length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.wo === "exited" ? " active" : ""}" data-sub="exited">↩️ Exited (${rcApplyDimFilter(diff.wo.exited).length})</button>
           </div>`;
         html += rcClientTableHtml(rcApplyDimFilter(diff.wo[rcSubTab.wo]), rcWoCols());
     } else if (rcActiveTab === "overdue") {
-        if (rcDim && !rcDimValue) html += rcRenderClientDimBreakdown();
+        if (!rcDimValue) html += rcRenderClientDimBreakdown();
         html += `
           <div class="rc-sub-tabs">
-            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "changed" ? " active" : ""}" data-sub="changed">🔀 ប្ដូរថ្នាក់ / Changed (${rcApplyDimFilter(diff.overdue.changed).length})</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "entered" ? " active" : ""}" data-sub="entered">✅ ចូលថ្មី / New Overdue (${rcApplyDimFilter(diff.overdue.entered).length})</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "exited" ? " active" : ""}" data-sub="exited">↩️ ដោះស្រាយ / Resolved (${rcApplyDimFilter(diff.overdue.exited).length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "changed" ? " active" : ""}" data-sub="changed">🔀 Changed (${rcApplyDimFilter(diff.overdue.changed).length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "entered" ? " active" : ""}" data-sub="entered">✅ New Overdue (${rcApplyDimFilter(diff.overdue.entered).length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "exited" ? " active" : ""}" data-sub="exited">↩️ Resolved (${rcApplyDimFilter(diff.overdue.exited).length})</button>
           </div>`;
         if (rcSubTab.overdue === "changed") html += rcClientTableHtml(rcApplyDimFilter(diff.overdue.changed), rcChangedCols());
         else html += rcClientTableHtml(rcApplyDimFilter(diff.overdue[rcSubTab.overdue]), rcEnterExitCols());
     } else if (rcActiveTab === "t24") {
-        if (rcDim && !rcDimValue) html += rcRenderClientDimBreakdown();
+        if (!rcDimValue) html += rcRenderClientDimBreakdown();
         html += `
           <div class="rc-sub-tabs">
-            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "changed" ? " active" : ""}" data-sub="changed">🔀 ប្ដូរថ្នាក់ / Changed (${rcApplyDimFilter(diff.t24.changed).length})</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "entered" ? " active" : ""}" data-sub="entered">✅ ចូលថ្មី / Entered (${rcApplyDimFilter(diff.t24.entered).length})</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "exited" ? " active" : ""}" data-sub="exited">↩️ ចេញ / Exited (${rcApplyDimFilter(diff.t24.exited).length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "changed" ? " active" : ""}" data-sub="changed">🔀 Changed (${rcApplyDimFilter(diff.t24.changed).length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "entered" ? " active" : ""}" data-sub="entered">✅ Entered (${rcApplyDimFilter(diff.t24.entered).length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "exited" ? " active" : ""}" data-sub="exited">↩️ Exited (${rcApplyDimFilter(diff.t24.exited).length})</button>
           </div>`;
         if (rcSubTab.t24 === "changed") html += rcClientTableHtml(rcApplyDimFilter(diff.t24.changed), rcChangedCols());
         else html += rcClientTableHtml(rcApplyDimFilter(diff.t24[rcSubTab.t24]), rcT24EnterExitCols());

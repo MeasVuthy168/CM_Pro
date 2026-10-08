@@ -68,16 +68,16 @@ href="../../assets/css/creditreport/ReportCompare.css">
 <!-- ========================= -->
 <div class="rc-toolbar" id="rcToolbar">
   <div class="rc-date-field">
-    <label for="rcDateA">ថ្ងៃទី១ / Date A</label>
+    <label for="rcDateA">Date A</label>
     <select id="rcDateA"></select>
   </div>
   <div class="rc-arrow">→</div>
   <div class="rc-date-field">
-    <label for="rcDateB">ថ្ងៃទី២ / Date B</label>
+    <label for="rcDateB">Date B</label>
     <select id="rcDateB"></select>
   </div>
-  <button type="button" class="rc-compare-btn" id="rcCompareBtn">ប្រៀបធៀប / Compare</button>
-  <button type="button" class="rc-snapshot-btn" id="rcSnapshotBtn" style="display:none">📸 Snapshot Now</button>
+  <button type="button" class="rc-compare-btn" id="rcCompareBtn">Compare</button>
+  <button type="button" class="rc-snapshot-btn" id="rcSnapshotBtn" style="display:none" title="Save today's raw data so it can be compared later">📸 Snapshot Now</button>
 </div>
 
 <div class="op-empty" id="rcEmpty" style="display:none"></div>
@@ -95,11 +95,11 @@ href="../../assets/css/creditreport/ReportCompare.css">
 <div class="op-card rc-shell" id="rcTransitionsCard" style="display:none">
 
   <div class="rc-main-tabs" id="rcTabs">
-    <button type="button" class="rc-main-tab active" data-tab="os">💰 Outstanding</button>
-    <button type="button" class="rc-main-tab" data-tab="disburse">🏦 Disburse</button>
-    <button type="button" class="rc-main-tab" data-tab="t24">⏱ T24</button>
-    <button type="button" class="rc-main-tab" data-tab="overdue">📉 NBC Overdue</button>
-    <button type="button" class="rc-main-tab" data-tab="wo">✍️ Write Off</button>
+    <button type="button" class="rc-main-tab active" data-tab="os">💰 OS</button>
+    <button type="button" class="rc-main-tab" data-tab="disburse">🏦 Disb</button>
+    <button type="button" class="rc-main-tab" data-tab="t24">⏱ T24 OV</button>
+    <button type="button" class="rc-main-tab" data-tab="overdue">📉 NBC OV</button>
+    <button type="button" class="rc-main-tab" data-tab="wo">✍️ WO</button>
   </div>
 
   <div class="rc-section-head" id="rcSectionHead"></div>
@@ -113,15 +113,15 @@ href="../../assets/css/creditreport/ReportCompare.css">
        per-dimension A/B total — see the breakdown table below instead. -->
   <div id="rcKpiCard"></div>
 
-  <!-- "filter or tap of Officer/Branch/Product/Location" — picks which
-       dimension the active tab's breakdown/client-list is sliced by. -->
+  <!-- Picks which dimension the active tab's breakdown/client-list is
+       sliced by — Officer is the default (no neutral "Overall" option,
+       per explicit request 2026-10-08). -->
   <div class="rc-dim-row">
     <div class="rc-dim-chips" id="rcDimChips">
-      <button type="button" class="rc-dim-chip active" data-dim="">គ្រប់ទាំងអស់ / Overall</button>
-      <button type="button" class="rc-dim-chip" data-dim="officerId">មន្ត្រី / Officer</button>
-      <button type="button" class="rc-dim-chip" data-dim="branch">សាខា / Branch</button>
-      <button type="button" class="rc-dim-chip" data-dim="product">ផលិតផល / Product</button>
-      <button type="button" class="rc-dim-chip" data-dim="location">ទីតាំង / Location</button>
+      <button type="button" class="rc-dim-chip active" data-dim="officerId">Officer</button>
+      <button type="button" class="rc-dim-chip" data-dim="branch">Branch</button>
+      <button type="button" class="rc-dim-chip" data-dim="product">Product</button>
+      <button type="button" class="rc-dim-chip" data-dim="location">Location</button>
     </div>
     <select class="rc-dim-value-select" id="rcDimValueSelect" style="display:none"></select>
   </div>
