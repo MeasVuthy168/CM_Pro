@@ -23,14 +23,22 @@
 html,
 body{
 
-    background:#002D6B;
+    background:#F5F7FA;
 
-    /* Without this, scrolling past the top/bottom edge on iOS
-       rubber-bands the whole document, briefly revealing this
-       hardcoded (non-theme-aware) background behind the fixed
-       topbar/page content — visible as the topbar's blue appearing
-       to stretch down over the page. Blocks that bounce without
-       blocking normal scrolling. */
+    /* Scrolling past the top/bottom edge on iOS rubber-bands the
+       whole document, briefly revealing this background behind the
+       fixed topbar/page content. overscroll-behavior-y cuts down how
+       often/how far that bounce happens without blocking normal
+       scrolling; the [data-theme="dark"] override right below makes
+       sure that whenever it IS revealed, it's the right color for
+       the theme the user picked instead of a hardcoded one. */
     overscroll-behavior-y:none;
+
+}
+
+[data-theme="dark"],
+[data-theme="dark"] body{
+
+    background:#0B1220;
 
 }
