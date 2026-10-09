@@ -49,6 +49,10 @@ href="/CM_Pro/assets/images/icon-192.png"
 
 <script src="./config/api.js"></script>
 <script src="/CM_Pro/shared/touch-polish.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
 
 <!-- ========================= -->
 <!-- STYLES -->
@@ -70,16 +74,16 @@ href="/CM_Pro/assets/images/icon-192.png"
 
 <div id="iosInstallBanner">
 
-<div class="ios-title">
+<div class="ios-title" data-i18n="login.installTitle">
 📲 Install CM_Pro
 </div>
 
-<div class="ios-text">
+<div class="ios-text" data-i18n-html="login.installText">
 Tap <b>Share</b> then
 <b>Add to Home Screen</b>
 </div>
 
-<button id="closeIOSBanner">
+<button id="closeIOSBanner" data-i18n="login.installOk">
 OK
 </button>
 
@@ -96,11 +100,11 @@ src="./assets/images/icon-192-maskable.png"
 class="logo"
 >
 
-<div class="title">
+<div class="title" data-i18n="login.title">
 ត្រួតពិនិត្យ​ឥណទានស្វាយរៀង​
 </div>
 
-<div class="subtitle">
+<div class="subtitle" data-i18n="login.subtitle">
 SVG Credit Monitoring System
 </div>
 
@@ -111,6 +115,7 @@ type="text"
 id="username"
 class="input-box"
 placeholder="Username"
+data-i18n-placeholder="login.usernamePlaceholder"
 autocomplete="username"
 required
 >
@@ -122,6 +127,7 @@ type="password"
 id="password"
 class="input-box"
 placeholder="Password"
+data-i18n-placeholder="login.passwordPlaceholder"
 autocomplete="current-password"
 required
 >
@@ -129,6 +135,7 @@ required
 <span
 class="show-password"
 id="togglePassword"
+data-i18n="login.show"
 >
 Show
 </span>
@@ -142,7 +149,7 @@ type="checkbox"
 id="rememberMe"
 >
 
-<label for="rememberMe">
+<label for="rememberMe" data-i18n="login.rememberMe">
 Remember Me
 </label>
 
@@ -152,6 +159,7 @@ Remember Me
 type="submit"
 class="login-btn"
 id="loginBtn"
+data-i18n="login.submit"
 >
 ចូលប្រើប្រាស់
 </button>
@@ -161,6 +169,7 @@ type="button"
 class="fingerprint-login-btn"
 id="fingerprintLoginBtn"
 hidden
+data-i18n="login.fingerprint"
 >
 👆 ចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខ
 </button>

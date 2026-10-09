@@ -289,7 +289,8 @@ CM_Pro
 
 <div
 id="appVersion"
-class="version">
+class="version"
+data-i18n="common.loading">
 
 Loading...
 
@@ -303,13 +304,13 @@ Loading...
 
 <div class="section">
 
-<div class="sectionTitle">
+<div class="sectionTitle" data-i18n="settings.about.sectionAbout">
 
 អំពីកម្មវិធី
 
 </div>
 
-<div class="sectionBody">
+<div class="sectionBody" data-i18n="settings.about.sectionAboutBody">
 
 CM_Pro គឺជាប្រព័ន្ធតាមដានឥណទាន (Credit Monitoring System) ដែលត្រូវបានបង្កើតឡើងសម្រាប់បុគ្គលិកឥណទានរបស់ ACLEDA Bank ដើម្បីស្វែងរកព័ត៌មានអតិថិជន តាមដានបំណុលយឺត ពិនិត្យ Average Turnover, Spot Check និងព័ត៌មានឥណទានផ្សេងៗបានគ្រប់ពេលវេលា និងគ្រប់ទីកន្លែង។
 
@@ -319,13 +320,13 @@ CM_Pro គឺជាប្រព័ន្ធតាមដានឥណទាន (Cr
 
 <div class="section">
 
-<div class="sectionTitle">
+<div class="sectionTitle" data-i18n="settings.about.sectionTerms">
 
 លក្ខខណ្ឌប្រើប្រាស់
 
 </div>
 
-<div class="sectionBody">
+<div class="sectionBody" data-i18n="settings.about.sectionTermsBody">
 
 CM_Pro ប្រើប្រាស់ព័ត៌មានអ្នកប្រើប្រាស់ ដូចជា ឈ្មោះ អត្តលេខ និងសិទ្ធិប្រើប្រាស់ សម្រាប់ការផ្ទៀងផ្ទាត់អត្តសញ្ញាណ ការកំណត់សិទ្ធិប្រើប្រាស់ និងការពារសុវត្ថិភាពប្រព័ន្ធ។ ព័ត៌មានទាំងអស់ត្រូវបានរក្សាទុក និងបញ្ជូនដោយសុវត្ថិភាព។
 
@@ -335,7 +336,7 @@ CM_Pro ប្រើប្រាស់ព័ត៌មានអ្នកប្រ�
 
 <div class="section">
 
-<div class="sectionTitle">
+<div class="sectionTitle" data-i18n="settings.about.sectionVersion">
 
 ប្រវត្តិកំណែ
 
@@ -343,7 +344,8 @@ CM_Pro ប្រើប្រាស់ព័ត៌មានអ្នកប្រ�
 
 <div
 id="versionHistory"
-class="sectionBody">
+class="sectionBody"
+data-i18n="common.loading">
 
 Loading...
 
@@ -353,7 +355,8 @@ Loading...
 
 <button
 class="backBtn"
-onclick="history.back()">
+onclick="history.back()"
+data-i18n="common.close">
 
 បិទ
 
@@ -368,6 +371,11 @@ onclick="history.back()">
 <script src="/CM_Pro/config/auth.js"></script>
 <script src="/CM_Pro/config/session.js"></script>
 <script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/settings.js"></script>
 
 <script>
 
@@ -376,6 +384,8 @@ onclick="history.back()">
 // ========================================
 
 async function loadVersion(){
+
+const t = (key) => window.CMI18n ? CMI18n.t(key) : key;
 
 try{
 
@@ -388,14 +398,14 @@ if(!data.ok||!data.hasVersion){
 
 document.getElementById(
 "appVersion"
-).innerText="Version -";
+).innerText=t("settings.about.versionPrefix")+" -";
 
 document.getElementById(
 "versionHistory"
 ).innerHTML=
 
 `
-មិនទាន់មានព័ត៌មានអំពីកំណែ
+${t("settings.about.noVersionInfo")}
 `;
 
 return;
@@ -406,19 +416,19 @@ document.getElementById(
 "appVersion"
 ).innerText=
 
-"Version "+data.latestVersion;
+t("settings.about.versionPrefix")+" "+data.latestVersion;
 
 document.getElementById(
 "versionHistory"
 ).innerHTML=
 
 `
-<b>Version ${data.latestVersion}</b>
+<b>${t("settings.about.versionPrefix")} ${data.latestVersion}</b>
 <br><br>
 
 ${data.notes||
 
-"សូមធ្វើបច្ចុប្បន្នភាពទៅកំណែចុងក្រោយ ដើម្បីទទួលបានមុខងារថ្មីៗ ការកែលម្អប្រសិទ្ធភាព និងការជួសជុលបញ្ហាផ្សេងៗ។"}
+t("settings.about.defaultReleaseNotes")}
 
 `;
 
@@ -430,14 +440,14 @@ document.getElementById(
 "appVersion"
 ).innerText=
 
-"Version -";
+t("settings.about.versionPrefix")+" -";
 
 document.getElementById(
 "versionHistory"
 ).innerHTML=
 
 `
-មិនអាចទាញយកព័ត៌មាន Version បាន។
+${t("settings.about.versionLoadFailed")}
 `;
 
 }

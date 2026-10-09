@@ -28,9 +28,8 @@ const VOICE_COMMANDS = [
     { keywords: ["home"], action: () => location.href = "/CM_Pro/index.html", label: "Home" },
 
     { keywords: ["light mode", "classic mode"], action: () => CMTheme.set("light"), label: "Light Mode" },
-    { keywords: ["dark gray mode", "gray mode", "grey mode"], action: () => CMTheme.set("darkgray"), label: "Dark Gray Mode" },
     { keywords: ["dark mode"], action: () => CMTheme.set("dark"), label: "Dark Mode" },
-    { keywords: ["gold mode"], action: () => CMTheme.set("gold"), label: "Gold Mode" },
+    { keywords: ["auto mode", "system mode"], action: () => CMTheme.set("auto"), label: "Auto Mode" },
 ];
 
 const VOICE_HELP_URL = "/CM_Pro/pages/settings/voicecommand.html";
@@ -97,10 +96,12 @@ function initVoiceCommand() {
     let cancelledByUser = false;
     let snackbarTimer = null;
 
+    const t = (key, vars) => window.CMI18n ? CMI18n.t(key, vars) : key;
+
     function openModal() {
         const name = getVoiceUserFirstName();
-        greetingEl.textContent = name ? `Hi ${name},` : "Hi,";
-        statusEl.textContent = "What can I do for you?";
+        greetingEl.textContent = name ? t("voice.greeting", { name }) : t("voice.greetingNoName");
+        statusEl.textContent = t("voice.prompt");
         btnWrap.classList.add("listening");
         modal.classList.add("show");
     }
@@ -220,11 +221,11 @@ function initVoiceCommand() {
 
             hadError = true;
             if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-                statusEl.textContent = "Microphone access blocked";
+                statusEl.textContent = t("voice.micBlocked");
             } else if (event.error === "no-speech") {
-                statusEl.textContent = "Didn't hear anything";
+                statusEl.textContent = t("voice.noSpeech");
             } else {
-                statusEl.textContent = "Something went wrong";
+                statusEl.textContent = t("voice.genericError");
             }
         };
 
@@ -278,7 +279,7 @@ function initVoiceCommand() {
             // a rapid double-tap is the only realistic cause here. Don't
             // leave the sheet stuck showing "listening" forever.
             console.warn("[voice-command] start failed:", err);
-            statusEl.textContent = "Couldn't start listening";
+            statusEl.textContent = t("voice.startFailed");
             setTimeout(closeModal, 1200);
         }
     });

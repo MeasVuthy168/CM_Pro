@@ -29,9 +29,9 @@
   // except "auto" which has no CSS of its own — it just resolves to
   // whichever of light/dark the OS currently prefers.
   const CM_THEME_LIST = [
-    { id: "auto", label: "Auto" },
-    { id: "light", label: "Light" },
-    { id: "dark", label: "Dark" }
+    { id: "auto", label: "Auto", labelKey: "settings.theme.auto" },
+    { id: "light", label: "Light", labelKey: "settings.theme.light" },
+    { id: "dark", label: "Dark", labelKey: "settings.theme.dark" }
   ];
   const VALID_THEME_IDS = CM_THEME_LIST.map(t => t.id);
 

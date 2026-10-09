@@ -303,7 +303,8 @@ src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%2
 
 <div
 id="fullname"
-class="name">
+class="name"
+data-i18n="common.loading">
 
 Loading...
 
@@ -313,7 +314,7 @@ Loading...
 
 <div class="row">
 
-<div class="label">
+<div class="label" data-i18n="settings.account.employeeId">
 
 អត្តលេខៈ
 
@@ -331,7 +332,7 @@ class="value">
 
 <div class="row">
 
-<div class="label">
+<div class="label" data-i18n="settings.account.role">
 
 តួនាទី:
 
@@ -349,7 +350,7 @@ class="value">
 
 <div class="row">
 
-<div class="label">
+<div class="label" data-i18n="settings.account.branch">
 
 សាខា:
 
@@ -367,7 +368,7 @@ class="value">
 
 <div class="row">
 
-<div class="label">
+<div class="label" data-i18n="settings.account.phone">
 
 លេខទូរស័ព្ទ:
 
@@ -385,7 +386,8 @@ class="value">
 
 <button
 class="backBtn"
-onclick="history.back()">
+onclick="history.back()"
+data-i18n="common.close">
 
 បិទ
 
@@ -400,6 +402,11 @@ onclick="history.back()">
 <script src="../../config/auth.js"></script>
 <script src="../../config/session.js"></script>
 <script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/settings.js"></script>
 
 <script>
 
@@ -413,13 +420,15 @@ onclick="history.back()">
 
 function renderAccount(user){
 
+    const t = (key) => window.CMI18n ? CMI18n.t(key) : key;
+
     document.getElementById("fullname").innerText =
 
         user.fullname ||
         user.fullName ||
         user.name ||
         user.username ||
-        "Unknown";
+        t("settings.account.unknown");
 
     document.getElementById("employeeId").innerText =
 
@@ -433,7 +442,7 @@ function renderAccount(user){
     document.getElementById("role").innerText =
 
         user.role ||
-        "User";
+        t("dashboard.defaultUser");
 
     document.getElementById("branch").innerText =
 
@@ -648,7 +657,7 @@ try{
         // If this was the very first load with nothing cached,
         // at least stop it sitting on "Loading..." forever.
         if(!Object.keys(cachedUser).length){
-            document.getElementById("fullname").innerText = "Unknown";
+            document.getElementById("fullname").innerText = window.CMI18n ? CMI18n.t("settings.account.unknown") : "Unknown";
         }
 
     }

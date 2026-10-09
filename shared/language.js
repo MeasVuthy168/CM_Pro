@@ -30,6 +30,9 @@
   function setLanguage(language) {
     if (!VALID_LANGUAGE_IDS.includes(language)) return;
     localStorage.setItem(STORAGE_KEY, language);
+    // Lets shared/i18n.js (and anything else) re-translate the
+    // current page immediately, without a reload.
+    window.dispatchEvent(new CustomEvent("cm-language-changed", { detail: { language } }));
   }
 
   window.CM_LANGUAGE_LIST = CM_LANGUAGE_LIST;

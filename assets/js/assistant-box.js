@@ -21,8 +21,8 @@ function escapeHtml(text) {
 
 function getGreeting(fullname) {
     const h = new Date().getHours();
-    const period = h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening';
-    return `Good ${period} ${fullname}`;
+    const key = h < 12 ? 'dashboard.greeting.morning' : h < 17 ? 'dashboard.greeting.afternoon' : 'dashboard.greeting.evening';
+    return window.CMI18n ? CMI18n.t(key, { name: fullname }) : `${key} ${fullname}`;
 }
 
 /**
@@ -68,26 +68,28 @@ function renderUpdateBox(box, textEl, notification) {
     box.dataset.mode = 'update';
     const version = notification.extra?.version || '';
 
+    const t = (key, vars) => window.CMI18n ? CMI18n.t(key, vars) : key;
+
     if (!box.querySelector('.assistant-new-badge')) {
         const badge = document.createElement('span');
         badge.className = 'assistant-new-badge';
-        badge.textContent = 'NEW';
+        badge.textContent = t('dashboard.update.badge');
         box.prepend(badge);
     }
 
     if (!box.querySelector('.assistant-dismiss')) {
         const dismiss = document.createElement('button');
         dismiss.className = 'assistant-dismiss';
-        dismiss.setAttribute('aria-label', 'Dismiss update notice');
+        dismiss.setAttribute('aria-label', t('dashboard.update.dismissAria'));
         dismiss.textContent = '×';
         dismiss.onclick = () => dismissUpdate(notification._id, box, textEl);
         box.appendChild(dismiss);
     }
 
     textEl.innerHTML = `
-        <span class="update-version">កំណែថ្មី Version ${escapeHtml(version)} មកដល់ហើយ!</span>
-        <span class="update-highlights">សូមចូលទៅ Download កំណែថ្មីក្នុងកម្មវិធី Excel ឈ្មោះ SVG Credit Monitoring</span>
-        <button class="assistant-cta" onclick="location.href='${ASSISTANT_ABOUT_URL}'">ចុចមើលព៌តមានកំណែថ្មី</button>
+        <span class="update-version">${escapeHtml(t('dashboard.update.version', { v: version }))}</span>
+        <span class="update-highlights">${escapeHtml(t('dashboard.update.highlights'))}</span>
+        <button class="assistant-cta" onclick="location.href='${ASSISTANT_ABOUT_URL}'">${escapeHtml(t('dashboard.update.cta'))}</button>
     `;
 }
 
@@ -124,7 +126,7 @@ async function initAssistantBox({ userName } = {}) {
     const textEl = document.getElementById('assistantText');
     if (!box || !textEl) return;
 
-    const fullname = userName || getStoredFullname() || 'អ្នកប្រើប្រាស់';
+    const fullname = userName || getStoredFullname() || (window.CMI18n ? CMI18n.t('dashboard.defaultUser') : 'User');
     window.currentUserFullname = fullname;
 
     // Show the greeting immediately so the box isn't empty while we fetch.

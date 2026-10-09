@@ -36,7 +36,7 @@ async function loadComponent(id, file) {
         if (id === "topbar-container") {
 
             initTopbar({
-                title: "Fingerprint Login",
+                titleKey: "settings.fingerprint.title",
                 showBack: true,
                 showLogo: false,
                 showProfile: false
@@ -110,10 +110,14 @@ function fpFormatDate(iso) {
     }
 }
 
+function t(key, vars) {
+    return window.CMI18n ? CMI18n.t(key, vars) : key;
+}
+
 function fpRenderDevices(devices) {
 
     if (!devices.length) {
-        fpDeviceList.innerHTML = `<div class="fp-empty">មិនទាន់មានឧបករណ៍ត្រូវបានចុះឈ្មោះទេ</div>`;
+        fpDeviceList.innerHTML = `<div class="fp-empty">${t("settings.fingerprint.noDevices")}</div>`;
         return;
     }
 
@@ -122,9 +126,9 @@ function fpRenderDevices(devices) {
             <div class="fp-device-icon">${fpDeviceIconFor(d.deviceLabel)}</div>
             <div class="fp-device-info">
                 <div class="fp-device-name">${escapeHtml(d.deviceLabel)}</div>
-                <div class="fp-device-date">បន្ថែមនៅ ${escapeHtml(fpFormatDate(d.createdAt))}</div>
+                <div class="fp-device-date">${escapeHtml(t("settings.fingerprint.addedOn", { date: fpFormatDate(d.createdAt) }))}</div>
             </div>
-            <button type="button" class="fp-device-remove" data-id="${escapeHtml(d.id)}" title="លុប">🗑️</button>
+            <button type="button" class="fp-device-remove" data-id="${escapeHtml(d.id)}" title="${t("common.delete")}">🗑️</button>
         </div>
     `).join("");
 
@@ -145,26 +149,26 @@ async function fpRefreshDevices() {
         fpRenderDevices(devices);
     } catch (err) {
         console.error("[fingerprint] list failed:", err);
-        fpDeviceList.innerHTML = `<div class="fp-empty">មិនអាចផ្ទុកបញ្ជីឧបករណ៍បានទេ</div>`;
+        fpDeviceList.innerHTML = `<div class="fp-empty">${t("settings.fingerprint.loadFailed")}</div>`;
     }
 }
 
 async function fpRemoveDevice(id) {
-    if (!confirm("តើអ្នកពិតជាចង់លុបឧបករណ៍នេះមែនទេ?")) return;
+    if (!confirm(t("settings.fingerprint.confirmRemove"))) return;
 
     try {
         await webauthnRemoveCredential(id);
-        notify("បានលុបដោយជោគជ័យ", "success");
+        notify(t("settings.fingerprint.removeSuccess"), "success");
         fpRefreshDevices();
     } catch (err) {
         console.error("[fingerprint] remove failed:", err);
-        notify(err.message || "លុបបរាជ័យ", "error");
+        notify(err.message || t("settings.fingerprint.removeFailed"), "error");
     }
 }
 
 function notify(message, type) {
     if (typeof CMToast !== "undefined" && CMToast.show) {
-        CMToast.show({ type: type === "error" ? "error" : "backup", title: type === "error" ? "Error" : "Success", message });
+        CMToast.show({ type: type === "error" ? "error" : "backup", title: type === "error" ? t("common.error") : t("common.success"), message });
     } else {
         alert(message);
     }
@@ -173,7 +177,7 @@ function notify(message, type) {
 fpAddBtn?.addEventListener("click", async () => {
 
     fpAddBtn.disabled = true;
-    fpAddBtn.textContent = "កំពុងចុះឈ្មោះ...";
+    fpAddBtn.textContent = t("settings.fingerprint.registering");
 
     try {
 
@@ -181,23 +185,23 @@ fpAddBtn?.addEventListener("click", async () => {
         // fingerprint/Face ID UI — device label is just this app's
         // record of which device it was, not something the OS reports,
         // so ask for a short one rather than guessing from the user agent.
-        const label = (prompt("ដាក់ឈ្មោះឧបករណ៍នេះ (ឧ. iPhone របស់ខ្ញុំ)", "") || "").trim().slice(0, 60);
+        const label = (prompt(t("settings.fingerprint.namePrompt"), "") || "").trim().slice(0, 60);
 
         await webauthnRegister(label);
 
-        notify("បានចុះឈ្មោះស្នាមម្រាមដៃ ឬ ផ្ទៃមុខដោយជោគជ័យ", "success");
+        notify(t("settings.fingerprint.registerSuccess"), "success");
 
         fpRefreshDevices();
 
     } catch (err) {
 
         console.error("[fingerprint] register failed:", err);
-        notify(err.message || "ចុះឈ្មោះបរាជ័យ", "error");
+        notify(err.message || t("settings.fingerprint.registerFailed"), "error");
 
     } finally {
 
         fpAddBtn.disabled = false;
-        fpAddBtn.innerHTML = `<span>➕</span> បន្ថែមឧបករណ៍នេះ`;
+        fpAddBtn.innerHTML = `<span>➕</span> ${t("settings.fingerprint.addBtn")}`;
 
     }
 
