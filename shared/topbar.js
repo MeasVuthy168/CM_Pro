@@ -205,6 +205,16 @@ window.initTopbar = function(config={}){
             actionBtn.style.display =
                 "block";
 
+            // #topbarActionBtn starts tagged data-i18n="topbar.action"
+            // (its default "Action" label) — drop it now that this
+            // call owns its content, so a later CMI18n.apply() pass
+            // (fired by the i18n MutationObserver on any other DOM
+            // change, e.g. bottomnav loading in) can't stomp a custom
+            // actionText like "⋮" back to the translated default.
+            actionBtn.removeAttribute(
+                "data-i18n"
+            );
+
             actionBtn.innerText =
                 actionText;
 
