@@ -546,6 +546,70 @@ input:checked + .slider:before{
 }
 
 /* ===========================
+   LANGUAGE PICKER
+   Same row/right-aligned placement as .theme-picker above, but pill-
+   shaped text chips (ខ្មែរ/English) instead of color swatches — a
+   language choice has no color to preview.
+=========================== */
+
+.lang-picker{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    flex-wrap:wrap;
+
+    justify-content:flex-end;
+
+}
+
+.lang-chip{
+
+    padding:6px 14px;
+
+    border-radius:999px;
+
+    border:1px solid var(--set-border);
+
+    background:transparent;
+
+    color:var(--set-text);
+
+    font-size:13px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:transform .15s;
+
+}
+
+.lang-chip:active{
+
+    transform:scale(.95);
+
+}
+
+.lang-chip.active{
+
+    background:var(--set-gold);
+
+    border-color:var(--set-gold);
+
+    /* Fixed dark ink, not var(--set-navy-dark) — darkgray theme sets
+       --set-navy-dark to the SAME light gray as --set-gold, which would
+       make this text invisible (same color as its own background). Every
+       theme's --set-gold is a light/mid tone, so a fixed dark color
+       reads fine against all of them. */
+    color:#1C2333;
+
+}
+
+/* ===========================
    LOGOUT DIALOG
 =========================== */
 

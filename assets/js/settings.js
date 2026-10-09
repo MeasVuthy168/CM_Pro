@@ -419,6 +419,45 @@ function initThemeSwitch(){
 }
 
 // =========================
+// LANGUAGE PICKER
+// =========================
+// window.CMLanguage / window.CM_LANGUAGE_LIST come from
+// shared/language.js. Same render/wire shape as initThemeSwitch()
+// above, just pill-shaped text chips (ខ្មែរ/English) instead of color
+// swatches — there's no color to preview for a language choice.
+
+function initLanguageSwitch(){
+
+    const picker=document.getElementById("languagePicker");
+
+    if(!picker || !window.CMLanguage || !window.CM_LANGUAGE_LIST) return;
+
+    function render(){
+
+        const current=CMLanguage.get();
+
+        picker.innerHTML = CM_LANGUAGE_LIST.map(l => `
+            <button
+                type="button"
+                class="lang-chip${l.id===current ? " active" : ""}"
+                data-language-id="${l.id}"
+            >${l.label}</button>
+        `).join("");
+
+        picker.querySelectorAll(".lang-chip").forEach(btn => {
+            btn.addEventListener("click", () => {
+                CMLanguage.set(btn.dataset.languageId);
+                render();
+            });
+        });
+
+    }
+
+    render();
+
+}
+
+// =========================
 // LOGOUT DIALOG
 // =========================
 
@@ -477,6 +516,8 @@ window.addEventListener("load",()=>{
     initNotificationSwitch();
 
     initThemeSwitch();
+
+    initLanguageSwitch();
 
     initLogoutDialog();
 
