@@ -16,17 +16,17 @@
 }
 
 [data-theme="dark"]{
-    --arr-page-bg:#002D6B;
-    --arr-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
-    --arr-border:#D4AF37;
-    --arr-text:#fff;
-    --arr-text-muted:#cdd9ef;
-    --arr-text-muted2:#8fa0bd;
-    --arr-shadow:0 4px 14px rgba(0,0,0,.25);
-    --arr-shadow-modal:0 8px 28px rgba(0,0,0,.45);
+    --arr-page-bg:#0B1220;
+    --arr-card-bg:#131C2E;
+    --arr-border:#223055;
+    --arr-text:#EAF0FF;
+    --arr-text-muted:#8FA0C7;
+    --arr-text-muted2:#8FA0C7;
+    --arr-shadow:0 2px 14px rgba(0,0,0,.4);
+    --arr-shadow-modal:0 8px 28px rgba(0,0,0,.5);
     --arr-navy-dark:#FFD700;
     --arr-outline-btn-border:#D4AF37;
-    --arr-outline-btn-text:#fff;
+    --arr-outline-btn-text:#EAF0FF;
 }
 
 /* ==========================================
@@ -351,7 +351,7 @@ box-shadow:0 0 0 3px rgba(255,215,0,.18);
 [data-theme="dark"] #btnCancelAllPending,
 [data-theme="dark"] #btnReasonCancel{
 
-background:#00265c;
+background:#16223F;
 
 }
 

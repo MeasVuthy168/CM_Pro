@@ -11,12 +11,12 @@
 }
 
 [data-theme="dark"]{
-    --lc-page-bg:#002D6B;
-    --lc-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
-    --lc-border:#D4AF37;
-    --lc-text:#fff;
-    --lc-text-muted:#cdd9ef;
-    --lc-shadow:0 4px 14px rgba(0,0,0,.25);
+    --lc-page-bg:#0B1220;
+    --lc-card-bg:#131C2E;
+    --lc-border:#223055;
+    --lc-text:#EAF0FF;
+    --lc-text-muted:#8FA0C7;
+    --lc-shadow:0 2px 14px rgba(0,0,0,.4);
     --lc-select-arrow:%23FFD700;
 }
 
@@ -111,7 +111,7 @@ min-height:100vh;
 }
 [data-theme="dark"] .form-group input,
 [data-theme="dark"] .form-group select{
-    background-color:#00265c;
+    background-color:#16223F;
 }
 .form-group select{
     appearance:none;
@@ -172,7 +172,7 @@ min-height:100vh;
     justify-content:center;
 }
 [data-theme="dark"] .export-buttons button{
-    background-color:#00265c;
+    background-color:#16223F;
 }
 .export-buttons button:active{
     transform:scale(.95);

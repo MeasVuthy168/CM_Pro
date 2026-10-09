@@ -6,10 +6,10 @@
 }
 
 [data-theme="dark"]{
-    --card-bg:linear-gradient(180deg,#003B8B,#002D6B);
-    --card-border:#D4AF37;
-    --card-text:#fff;
-    --card-shadow:0 4px 12px rgba(0,0,0,.25);
+    --card-bg:#131C2E;
+    --card-border:#223055;
+    --card-text:#EAF0FF;
+    --card-shadow:0 2px 14px rgba(0,0,0,.4);
 }
 
 /* GOLD THEME — its own warm card background, not just a border swap. */
