@@ -117,7 +117,7 @@
 .assistant-text{
     flex:1;
     line-height:1.6;
-    font-size:13px;
+    font-size:16px;
     font-weight:700;
     color:var(--asst-text);
     background:
