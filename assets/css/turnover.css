@@ -13,15 +13,15 @@
 }
 
 [data-theme="dark"]{
-    --tvr-page-bg:#002D6B;
-    --tvr-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
-    --tvr-border:#D4AF37;
-    --tvr-text:#fff;
-    --tvr-text-muted:#cdd9ef;
-    --tvr-shadow:0 4px 14px rgba(0,0,0,.25);
-    --tvr-readonly-bg:#001c48;
+    --tvr-page-bg:#0B1220;
+    --tvr-card-bg:#131C2E;
+    --tvr-border:#223055;
+    --tvr-text:#EAF0FF;
+    --tvr-text-muted:#8FA0C7;
+    --tvr-shadow:0 2px 14px rgba(0,0,0,.4);
+    --tvr-readonly-bg:#0F1830;
     --tvr-outline-btn-border:#D4AF37;
-    --tvr-outline-btn-text:#fff;
+    --tvr-outline-btn-text:#EAF0FF;
 }
 
 /* GOLD THEME — its own warm page/card background, not just a
@@ -135,7 +135,7 @@ color:var(--tvr-text);
 
 [data-theme="dark"] .form-group input{
 
-background:#00265c;
+background:#16223F;
 
 }
 
@@ -211,7 +211,7 @@ transition:.2s;
 
 [data-theme="dark"] .button-row button{
 
-background:#00265c;
+background:#16223F;
 
 }
 

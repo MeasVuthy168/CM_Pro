@@ -15,15 +15,15 @@
 }
 
 [data-theme="dark"]{
-    --set-page-bg:#002D6B;
-    --set-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
-    --set-border:#D4AF37;
-    --set-text:#fff;
-    --set-text-muted:#cdd9ef;
-    --set-divider:rgba(212,175,55,.25);
-    --set-switch-off:#00265c;
-    --set-switch-border:#3c5068;
-    --set-shadow:0 4px 14px rgba(0,0,0,.25);
+    --set-page-bg:#0B1220;
+    --set-card-bg:#131C2E;
+    --set-border:#223055;
+    --set-text:#EAF0FF;
+    --set-text-muted:#8FA0C7;
+    --set-divider:rgba(255,255,255,.08);
+    --set-switch-off:#16223F;
+    --set-switch-border:#2A3B5C;
+    --set-shadow:0 2px 14px rgba(0,0,0,.4);
 }
 
 /* ==========================================
@@ -726,10 +726,10 @@ input:checked + .slider:before{
 
 [data-theme="dark"] #btnLogoutNo{
 
-    background:#00265c;
+    background:#16223F;
 
     border:1px solid var(--set-gold);
 
-    color:#fff;
+    color:#EAF0FF;
 
 }
