@@ -18,7 +18,7 @@ content="#032d73">
 <script>
   document.documentElement.setAttribute(
     "data-theme",
-    localStorage.getItem("cm_theme") || "light"
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
   );
 </script>
 

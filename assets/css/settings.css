@@ -447,112 +447,15 @@ input:checked + .slider:before{
 
 }
 
-/* =========================
-   Theme Picker
-   One round swatch button per theme (colored via inline style from
-   CM_THEME_LIST, not a CSS class per theme, since the list itself
-   lives in shared/theme.js). The active swatch gets a ring + a
-   checkmark; light/white swatches need their own border since white-
-   on-white would otherwise be invisible against the card background.
-========================= */
-
-.theme-picker{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:8px;
-
-    flex-wrap:wrap;
-
-    justify-content:flex-end;
-
-}
-
-.theme-swatch{
-
-    position:relative;
-
-    width:28px;
-
-    height:28px;
-
-    border-radius:50%;
-
-    border:1px solid var(--set-border);
-
-    cursor:pointer;
-
-    padding:0;
-
-    flex-shrink:0;
-
-    transition:transform .15s;
-
-}
-
-.theme-swatch:active{
-
-    transform:scale(.9);
-
-}
-
-.theme-swatch-check{
-
-    position:absolute;
-
-    inset:0;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    color:#fff;
-
-    font-size:13px;
-
-    font-weight:bold;
-
-    text-shadow:0 1px 2px rgba(0,0,0,.5);
-
-    opacity:0;
-
-}
-
-.theme-swatch.active{
-
-    box-shadow:0 0 0 2px var(--set-card-bg), 0 0 0 4px var(--set-gold);
-
-}
-
-.theme-swatch.active .theme-swatch-check{
-
-    opacity:1;
-
-}
-
-/* The light/white swatch's checkmark needs a dark shadow to read
-   against a white circle instead of the default white-on-white glow
-   tuned for the other, darker swatch colors. */
-.theme-swatch[data-theme-id="light"] .theme-swatch-check{
-
-    color:var(--set-navy-dark);
-
-    text-shadow:none;
-
-}
-
 /* ===========================
-   LANGUAGE PICKER
-   An accordion: #languageToggle is a normal .setting-item row (icon +
-   title/subtitle + a "›" arrow, rotated 90° while open) that expands
-   #languageOptions below it — one flag + radio row per language.
-   The checked ring/dot uses var(--set-gold), the same accent already
-   proven legible on the card background in every theme (.setting-arrow,
-   the active theme swatch ring, the checked switch track).
+   ACCORDION PICKER (Theme + Language)
+   #themeToggle / #languageToggle are normal .setting-item rows (icon
+   + title/subtitle + a "›" arrow, rotated 90° while open) that expand
+   #themeOptions / #languageOptions below them — one radio row per
+   entry (Language rows also get a flag). The checked ring/dot uses
+   var(--set-gold), the same accent already proven legible on the
+   card background in every theme (.setting-arrow, the checked switch
+   track).
 =========================== */
 
 .setting-text{
@@ -587,19 +490,19 @@ input:checked + .slider:before{
 
 }
 
-.lang-chevron{
+.acc-chevron{
 
     transition:transform .2s ease;
 
 }
 
-.lang-chevron.open{
+.acc-chevron.open{
 
     transform:rotate(90deg);
 
 }
 
-.lang-options{
+.acc-options{
 
     max-height:0;
 
@@ -611,7 +514,7 @@ input:checked + .slider:before{
 
 }
 
-.lang-options.open{
+.acc-options.open{
 
     max-height:200px;
 
@@ -619,7 +522,7 @@ input:checked + .slider:before{
 
 }
 
-.lang-option{
+.acc-option{
 
     display:flex;
 
@@ -633,7 +536,7 @@ input:checked + .slider:before{
 
 }
 
-.lang-option-radio{
+.acc-option-radio{
 
     display:flex;
 
@@ -655,13 +558,13 @@ input:checked + .slider:before{
 
 }
 
-.lang-option-radio.checked{
+.acc-option-radio.checked{
 
     border-color:var(--set-gold);
 
 }
 
-.lang-option-radio-dot{
+.acc-option-radio-dot{
 
     width:10px;
 
@@ -677,13 +580,13 @@ input:checked + .slider:before{
 
 }
 
-.lang-option-radio.checked .lang-option-radio-dot{
+.acc-option-radio.checked .acc-option-radio-dot{
 
     opacity:1;
 
 }
 
-.lang-option-flag{
+.acc-option-flag{
 
     font-size:22px;
 
@@ -693,7 +596,7 @@ input:checked + .slider:before{
 
 }
 
-.lang-option-label{
+.acc-option-label{
 
     font-size:15px;
 
