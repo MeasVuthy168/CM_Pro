@@ -126,6 +126,13 @@ async function initAssistantBox({ userName } = {}) {
     const textEl = document.getElementById('assistantText');
     if (!box || !textEl) return;
 
+    // textEl starts tagged data-i18n="common.loading" (shown before this
+    // runs) — remove it now that JS owns this element's content, so a
+    // later CMI18n.apply() pass (e.g. triggered by topbar/bottomnav
+    // loading in elsewhere on the page) doesn't stomp the greeting back
+    // to "Loading...".
+    textEl.removeAttribute('data-i18n');
+
     const fullname = userName || getStoredFullname() || (window.CMI18n ? CMI18n.t('dashboard.defaultUser') : 'User');
     window.currentUserFullname = fullname;
 

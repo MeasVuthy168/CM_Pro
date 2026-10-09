@@ -604,7 +604,12 @@
   // ---------- init ----------
   async function init() {
     if (el.userLabel) {
-      el.userLabel.textContent = window.CMAdmin.fullname || window.CMAdmin.username || "Admin";
+      // Starts tagged data-i18n="admin.common.adminFallback" — drop it
+      // now that JS owns this element's content, so a later
+      // CMI18n.apply() pass can't stomp a real admin name back to the
+      // fallback label.
+      el.userLabel.removeAttribute("data-i18n");
+      el.userLabel.textContent = window.CMAdmin.fullname || window.CMAdmin.username || (window.CMI18n ? CMI18n.t("admin.common.adminFallback") : "Admin");
     }
     await loadDisabledRoutes(); // must resolve first so renderTable() shows correct toggle state
     await loadRouteAllowedRoles(); // same — must resolve before first renderTable() call
@@ -655,7 +660,13 @@
         loadingEl.hidden = true;
         bodyEl.hidden = true;
         setupEl.hidden = false;
-        setupEl.textContent = data.message || setupEl.textContent;
+        if (data.message) {
+          // A server-provided message overrides the translated
+          // placeholder — drop data-i18n so a later CMI18n.apply()
+          // pass can't stomp it back.
+          setupEl.removeAttribute("data-i18n");
+          setupEl.textContent = data.message;
+        }
         return;
       }
 

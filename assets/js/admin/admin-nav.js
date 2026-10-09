@@ -78,6 +78,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const userLabelEl = document.getElementById("admUserLabel");
   if (userLabelEl && window.CMAdmin) {
+    // Starts tagged data-i18n="admin.common.adminFallback" — drop it now
+    // that JS owns this element's content, so a later CMI18n.apply()
+    // pass can't stomp a real admin name back to the fallback label.
+    userLabelEl.removeAttribute("data-i18n");
     userLabelEl.textContent = window.CMAdmin.fullname || window.CMAdmin.username || t("admin.common.adminFallback");
   }
 });
