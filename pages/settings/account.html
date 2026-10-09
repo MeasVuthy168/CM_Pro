@@ -422,7 +422,14 @@ function renderAccount(user){
 
     const t = (key) => window.CMI18n ? CMI18n.t(key) : key;
 
-    document.getElementById("fullname").innerText =
+    const fullnameEl = document.getElementById("fullname");
+
+    // Starts tagged data-i18n="common.loading" — drop it now that JS
+    // owns this element's content, so a later CMI18n.apply() pass can't
+    // stomp the name back to "Loading...".
+    fullnameEl.removeAttribute("data-i18n");
+
+    fullnameEl.innerText =
 
         user.fullname ||
         user.fullName ||
@@ -657,7 +664,9 @@ try{
         // If this was the very first load with nothing cached,
         // at least stop it sitting on "Loading..." forever.
         if(!Object.keys(cachedUser).length){
-            document.getElementById("fullname").innerText = window.CMI18n ? CMI18n.t("settings.account.unknown") : "Unknown";
+            const fullnameEl = document.getElementById("fullname");
+            fullnameEl.removeAttribute("data-i18n");
+            fullnameEl.innerText = window.CMI18n ? CMI18n.t("settings.account.unknown") : "Unknown";
         }
 
     }

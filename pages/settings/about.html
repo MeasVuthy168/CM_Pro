@@ -387,6 +387,12 @@ async function loadVersion(){
 
 const t = (key) => window.CMI18n ? CMI18n.t(key) : key;
 
+// Both start tagged data-i18n="common.loading" — drop it now that JS
+// owns their content (every branch below writes to them directly), so
+// a later CMI18n.apply() pass can't stomp them back to "Loading...".
+document.getElementById("appVersion").removeAttribute("data-i18n");
+document.getElementById("versionHistory").removeAttribute("data-i18n");
+
 try{
 
 const data =

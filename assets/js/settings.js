@@ -270,7 +270,15 @@ async function loadUserProfile(){
 
         const user=JSON.parse(localStorage.getItem("loggedInUser") || "{}");
 
-        document.getElementById("settingFullname").innerText=
+        const fullnameEl=document.getElementById("settingFullname");
+
+        // Starts tagged data-i18n="common.loading" — drop it now that JS
+        // owns this element's content, so a later CMI18n.apply() pass
+        // (e.g. triggered by topbar/bottomnav loading in) can't stomp
+        // this name back to "Loading...".
+        fullnameEl.removeAttribute("data-i18n");
+
+        fullnameEl.innerText=
 
             user.fullname || user.username || "Unknown";
 
