@@ -25,4 +25,12 @@ body{
 
     background:#002D6B;
 
+    /* Without this, scrolling past the top/bottom edge on iOS
+       rubber-bands the whole document, briefly revealing this
+       hardcoded (non-theme-aware) background behind the fixed
+       topbar/page content — visible as the topbar's blue appearing
+       to stretch down over the page. Blocks that bounce without
+       blocking normal scrolling. */
+    overscroll-behavior-y:none;
+
 }
