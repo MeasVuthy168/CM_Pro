@@ -26,8 +26,19 @@
 
     top:0;
     left:0;
+    right:0;
 
     z-index:100;
+
+    /* Without its own GPU layer, iOS WebKit can fail to recomposite
+       a position:fixed element correctly during momentum scrolling —
+       it stays visually put while the page content underneath shifts,
+       opening a gap (filled by the page's own background) between
+       the topbar and whatever's right below it. Promoting it to its
+       own layer makes WebKit keep it correctly pinned every frame. */
+    transform:translateZ(0);
+    -webkit-transform:translateZ(0);
+    will-change:transform;
 
 }
 
