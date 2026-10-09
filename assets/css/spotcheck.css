@@ -21,11 +21,11 @@
 }
 
 [data-theme="dark"] {
-  --sc-bg: #002D6B;
-  --sc-card-bg: linear-gradient(180deg, #003B8B, #002D6B);
-  --sc-border: #D4AF37;
-  --sc-text: #fff;
-  --sc-text-muted: #cdd9ef;
+  --sc-bg: #0B1220;
+  --sc-card-bg: #131C2E;
+  --sc-border: #223055;
+  --sc-text: #EAF0FF;
+  --sc-text-muted: #8FA0C7;
   --sc-badge-text: #FFD700;
   --sc-danger: #FF6B6B;
 }
@@ -68,12 +68,12 @@
 [data-theme="dark"] .sc-field textarea,
 [data-theme="dark"] .sc-search input,
 [data-theme="dark"] .sc-select-filter {
-  background: #00265c;
-  color: #fff;
+  background: #16223F;
+  color: #EAF0FF;
 }
 
 [data-theme="dark"] .sc-panel {
-  background: var(--sc-navy-dark);
+  background: #16223F;
 }
 
 .sc-main {

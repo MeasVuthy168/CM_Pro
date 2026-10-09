@@ -19,15 +19,15 @@ only holds styles specific to the notifications page.
 }
 
 [data-theme="dark"]{
-    --notif-page-bg:#002D6B;
-    --notif-card-bg:linear-gradient(180deg,#003B8B,#002D6B);
-    --notif-border:#D4AF37;
-    --notif-text:#fff;
-    --notif-text-body:#cdd9ef;
-    --notif-text-muted:#cdd9ef;
-    --notif-text-muted2:#8fa0bd;
-    --notif-shadow:0 4px 14px rgba(0,0,0,.25);
-    --notif-avatar-bg:#00265c;
+    --notif-page-bg:#0B1220;
+    --notif-card-bg:#131C2E;
+    --notif-border:#223055;
+    --notif-text:#EAF0FF;
+    --notif-text-body:#8FA0C7;
+    --notif-text-muted:#8FA0C7;
+    --notif-text-muted2:#8FA0C7;
+    --notif-shadow:0 2px 14px rgba(0,0,0,.4);
+    --notif-avatar-bg:#16223F;
 }
 
 /* GOLD THEME — its own warm page/card background, not just a
