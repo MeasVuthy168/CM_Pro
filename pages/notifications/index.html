@@ -54,7 +54,7 @@ href="/CM_Pro/assets/css/global-splash.css"
 
 <!-- OFFLINE -->
 
-<div id="offlineBanner">
+<div id="offlineBanner" data-i18n="common.offline">
 
 ⚠️ No Internet Connection
 
@@ -85,6 +85,14 @@ href="/CM_Pro/assets/css/global-splash.css"
 
 <script src="/CM_Pro/shared/theme.js"></script>
 
+<!-- LANGUAGE / I18N -->
+
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/features.js"></script>
+
 <!-- SPLASH -->
 
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
@@ -109,7 +117,7 @@ href="/CM_Pro/assets/css/global-splash.css"
         class="notification-menu-item"
     >
         <img src="/CM_Pro/assets/icons/notification/reading.png" class="menu-icon">
-        Read All
+        <span data-i18n="notifications.readAll">Read All</span>
     </button>
 
     <button
@@ -117,7 +125,7 @@ href="/CM_Pro/assets/css/global-splash.css"
         class="notification-menu-item"
     >
         <img src="/CM_Pro/assets/icons/notification/trash.png" class="menu-icon">
-        Delete All
+        <span data-i18n="notifications.deleteAll">Delete All</span>
     </button>
 
 </div>
@@ -131,6 +139,7 @@ href="/CM_Pro/assets/css/global-splash.css"
     <button
         id="readAllBtn"
         style="display:none;"
+        data-i18n="notifications.readAll"
     >
         Read All
     </button>
@@ -141,7 +150,7 @@ href="/CM_Pro/assets/css/global-splash.css"
 
         <div class="summary-card">
 
-            <div class="summary-label">
+            <div class="summary-label" data-i18n="notifications.unread">
 
                 Unread
 
@@ -160,7 +169,7 @@ href="/CM_Pro/assets/css/global-splash.css"
 
         <div class="summary-card">
 
-            <div class="summary-label">
+            <div class="summary-label" data-i18n="common.total">
 
                 Total
 
@@ -190,11 +199,11 @@ href="/CM_Pro/assets/css/global-splash.css"
 
     <div class="notify-filter-tabs" id="notifyFilterTabs">
 
-        <button type="button" class="notify-filter-tab active" data-filter="all">
+        <button type="button" class="notify-filter-tab active" data-filter="all" data-i18n="notifications.all">
             ទាំងអស់
         </button>
 
-        <button type="button" class="notify-filter-tab" data-filter="unread">
+        <button type="button" class="notify-filter-tab" data-filter="unread" data-i18n="notifications.unread">
             មិនទាន់អាន
         </button>
 
@@ -220,13 +229,13 @@ href="/CM_Pro/assets/css/global-splash.css"
             class="empty-img"
         ></div>
 
-        <div class="empty-title" id="emptyTitle">
+        <div class="empty-title" id="emptyTitle" data-i18n="notifications.emptyTitle">
 
             No Notifications
 
         </div>
 
-        <div class="empty-subtitle" id="emptySubtitle">
+        <div class="empty-subtitle" id="emptySubtitle" data-i18n="notifications.emptySubtitle">
 
             Everything is up to date 🎉
 
@@ -245,19 +254,19 @@ href="/CM_Pro/assets/css/global-splash.css"
 
         <div class="error-icon">⚠️</div>
 
-        <div class="empty-title">
+        <div class="empty-title" data-i18n="notifications.errorTitle">
 
             មិនអាចផ្ទុកបានទេ
 
         </div>
 
-        <div class="empty-subtitle">
+        <div class="empty-subtitle" data-i18n="notifications.errorSubtitle">
 
             សូមពិនិត្យការតភ្ជាប់អ៊ីនធឺណិត ហើយសាកល្បងម្តងទៀត
 
         </div>
 
-        <button type="button" class="refresh-btn" id="errorRetryBtn">
+        <button type="button" class="refresh-btn" id="errorRetryBtn" data-i18n="common.retry">
             ព្យាយាមម្តងទៀត
         </button>
 
@@ -283,7 +292,7 @@ href="/CM_Pro/assets/css/global-splash.css"
 
     <div class="dialog-box">
 
-        <div class="dialog-title">
+        <div class="dialog-title" data-i18n="notifications.deleteAllConfirm">
 
             តើអ្នកពិតជាចង់លុបការជូនដំណឹងទាំងអស់មែនទេ?
 
@@ -291,9 +300,9 @@ href="/CM_Pro/assets/css/global-splash.css"
 
         <div class="dialog-buttons">
 
-            <button id="btnDeleteAllYes">លុប</button>
+            <button id="btnDeleteAllYes" data-i18n="common.delete">លុប</button>
 
-            <button id="btnDeleteAllNo">បោះបង់</button>
+            <button id="btnDeleteAllNo" data-i18n="common.cancel">បោះបង់</button>
 
         </div>
 

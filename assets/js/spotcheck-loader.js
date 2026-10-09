@@ -18,7 +18,7 @@ async function loadComponent(id,file){
         }
         if(id==="topbar-container"){
             initTopbar({
-                title:"Spot Check",
+                titleKey:"dashboard.spotCheck",
                 showBack:true,
                 showLogo:false,
                 showProfile:false

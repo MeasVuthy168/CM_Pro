@@ -46,7 +46,7 @@ href="/CM_Pro/assets/css/global-splash.css">
 <!-- OFFLINE -->
 <!-- ========================= -->
 
-<div id="offlineBanner">
+<div id="offlineBanner" data-i18n="common.offline">
 
 ⚠️ No Internet Connection
 
@@ -71,6 +71,16 @@ href="/CM_Pro/assets/css/global-splash.css">
 
 <script src="/CM_Pro/shared/theme.js"></script>
 
+<script src="/CM_Pro/shared/language.js"></script>
+
+<script src="/CM_Pro/shared/i18n.js"></script>
+
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+
+<script src="/CM_Pro/shared/i18n/features.js"></script>
+
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 
 <script src="/CM_Pro/assets/js/toast.js"></script>
@@ -91,7 +101,7 @@ href="/CM_Pro/assets/css/global-splash.css">
 
 <div class="form-group">
 
-<label>
+<label data-i18n="turnover.preparedDateLabel">
 
 Prepared Date
 
@@ -123,6 +133,8 @@ id="inputCIF"
 
 placeholder="Input CIF"
 
+data-i18n-placeholder="turnover.inputCifPlaceholder"
+
 autocomplete="off"
 
 >
@@ -131,7 +143,7 @@ autocomplete="off"
 
 <div class="form-group">
 
-<label>
+<label data-i18n="turnover.customerNameLabel">
 
 Customer Name
 
@@ -151,19 +163,19 @@ readonly
 
 <div class="button-row">
 
-<button id="btnSearch">
+<button id="btnSearch" data-i18n="common.search">
 
 Search
 
 </button>
 
-<button id="btnExcel">
+<button id="btnExcel" data-i18n="turnover.excelBtn">
 
 Excel
 
 </button>
 
-<button id="btnPDF">
+<button id="btnPDF" data-i18n="turnover.pdfBtn">
 
 PDF
 
@@ -185,7 +197,7 @@ PDF
 
 <tr>
 
-<th>Month</th>
+<th data-i18n="turnover.colMonth">Month</th>
 <th>AMT_IN</th>
 <th>CURRENT_OD</th>
 <th>TURNOVER</th>
@@ -199,7 +211,7 @@ PDF
 
 <tr>
 
-<td colspan="5">
+<td colspan="5" data-i18n="turnover.pleaseSearch">
 
 Please Search
 
@@ -213,7 +225,7 @@ Please Search
 
 <tr>
 
-<td>
+<td data-i18n="turnover.averageLabel">
 
 Average
 

@@ -26,6 +26,8 @@
 //                entered:[{cif,loanNumber,name,branch,officerId,product,location,val}], exited:[...] }
 // ========================================
 
+const t = (key, vars) => window.CMI18n ? CMI18n.t(key, vars) : key;
+
 const rcToken =
     localStorage.getItem("token") ||
     sessionStorage.getItem("token");
@@ -49,17 +51,29 @@ let rcSubTab = { wo: "entered", overdue: "changed", t24: "entered" };
 let rcDim = "officerId";
 let rcDimValue = "";
 
-const RC_DIMENSIONS = { officerId: "Officer", branch: "Branch", product: "Product", location: "Location" };
+// Computed via functions (not frozen at module load) so a label picks up
+// the current language whenever it's next read, rather than being baked
+// in at page-load time.
+function rcDimensions() {
+    return {
+        officerId: t("creditreport.compare.dimOfficer"),
+        branch: t("creditreport.compare.dimBranch"),
+        product: t("creditreport.compare.dimProduct"),
+        location: t("creditreport.compare.dimLocation")
+    };
+}
 // `title` is the short label shown on the tab chip and as the section
 // head's own headline (per explicit request 2026-10-08); `full` is the
 // plain-English name shown as a small subtitle under it.
-const RC_SECTION_META = {
-    os: { icon: "💰", title: "OS", full: "Loan Outstanding" },
-    disburse: { icon: "🏦", title: "Disb", full: "Loan Disburse" },
-    t24: { icon: "⏱", title: "T24 OV", full: "Balance Loan at Risk (T24)" },
-    overdue: { icon: "📉", title: "NBC OV", full: "Balance Loan at Risk (NBC Overdue)" },
-    wo: { icon: "✍️", title: "WO", full: "Write Off" }
-};
+function rcSectionMeta() {
+    return {
+        os: { icon: "💰", title: t("creditreport.compare.tabOs"), full: t("creditreport.compare.sectionOsFull") },
+        disburse: { icon: "🏦", title: t("creditreport.compare.tabDisburse"), full: t("creditreport.compare.sectionDisburseFull") },
+        t24: { icon: "⏱", title: t("creditreport.compare.tabT24"), full: t("creditreport.compare.sectionT24Full") },
+        overdue: { icon: "📉", title: t("creditreport.compare.tabOverdue"), full: t("creditreport.compare.sectionOverdueFull") },
+        wo: { icon: "✍️", title: t("creditreport.compare.tabWo"), full: t("creditreport.compare.sectionWoFull") }
+    };
+}
 // WO has no Product Type column in its source sheet — the Product
 // dimension chip is disabled whenever this tab is active.
 const RC_DIM_UNAVAILABLE = { wo: new Set(["product"]) };
@@ -135,7 +149,7 @@ function rcFmtDiffCell(n) {
 }
 function rcNotify(message, type) {
     if (typeof CMToast !== "undefined" && CMToast.show) {
-        CMToast.show({ type: type === "error" ? "error" : "backup", title: type === "error" ? "Error" : "Success", message });
+        CMToast.show({ type: type === "error" ? "error" : "backup", title: type === "error" ? t("common.error") : t("common.success"), message });
     } else {
         alert(message);
     }
@@ -160,7 +174,7 @@ async function rcApiGet(path) {
 // ========================================
 async function rcLoadDates() {
     const data = await rcApiGet("/api/creditreport/snapshot/dates");
-    if (!data.ok) { rcShowEmpty(data.message || "Failed to load snapshot dates."); return; }
+    if (!data.ok) { rcShowEmpty(data.message || t("creditreport.compare.failedLoadDates")); return; }
     rcDates = data.dates || [];
 
     const selA = document.getElementById("rcDateA");
@@ -170,8 +184,8 @@ async function rcLoadDates() {
         // Credit Report hub's single "Snapshot All" control 2026-10-08.
         rcShowEmpty(
             rcIsAdmin
-                ? "No backup yet — use Snapshot All on the Credit Report hub to start."
-                : "No backup yet — ask an admin to run Snapshot All on the Credit Report hub."
+                ? t("creditreport.compare.noBackupAdmin")
+                : t("creditreport.compare.noBackupNonAdmin")
         );
         selA.innerHTML = "";
         selB.innerHTML = "";
@@ -193,7 +207,7 @@ async function rcLoadDates() {
 // data-tab attribute the CSS reads for that section's growth/risk accent.
 // ========================================
 function rcRenderSectionHead() {
-    const meta = RC_SECTION_META[rcActiveTab];
+    const meta = rcSectionMeta()[rcActiveTab];
     document.getElementById("rcTransitionsCard").dataset.tab = rcActiveTab;
     const dates = (rcDiffDateA && rcDiffDateB)
         ? `<span class="rc-section-dates">${rcEscapeHtml(rcDiffDateA)} → ${rcEscapeHtml(rcDiffDateB)}</span>`
@@ -227,7 +241,7 @@ function rcKpiCell(label, valueB, diff, fmt, polarity) {
       <div class="rc-kpi-cell">
         <div class="rc-kpi-label">${rcEscapeHtml(label)}</div>
         <div class="rc-kpi-value">${fmt(valueB)}</div>
-        <div class="rc-kpi-sub">was ${fmt(valueA)}</div>
+        <div class="rc-kpi-sub">${t("creditreport.compare.was", { value: fmt(valueA) })}</div>
         <div class="rc-kpi-delta ${cls}">${arrow} ${sign}${fmt(Math.abs(d))}</div>
       </div>`;
 }
@@ -242,7 +256,7 @@ function rcKpiCellPct(label, valueB, diff) {
       <div class="rc-kpi-cell">
         <div class="rc-kpi-label">${rcEscapeHtml(label)}</div>
         <div class="rc-kpi-value">${rcFmtPct(valueB)}</div>
-        <div class="rc-kpi-sub">was ${rcFmtPct(valueA)}</div>
+        <div class="rc-kpi-sub">${t("creditreport.compare.was", { value: rcFmtPct(valueA) })}</div>
         <div class="rc-kpi-delta ${cls}">${arrow} ${sign}${(Math.abs(d) * 100).toFixed(2)}pp</div>
       </div>`;
 }
@@ -262,39 +276,39 @@ function rcRenderKpiCard() {
         const row = (rcDim && rcDimValue) ? diff.os[rcDim].find(r => r.key === rcDimValue) : null;
         const d = row || diff.os.total;
         html = `<div class="rc-kpi-card">` +
-            rcKpiCell("# Loan", d.countB, d.countDiff, rcFmtNum, "growth") +
-            rcKpiCell("# Client", d.clientCountB, d.clientCountDiff, rcFmtNum, "growth") +
-            rcKpiCell("Value (USD)", d.osUsdSumB, d.osUsdSumDiff, rcFmtNum, "growth") +
+            rcKpiCell(t("creditreport.compare.kpiLoan"), d.countB, d.countDiff, rcFmtNum, "growth") +
+            rcKpiCell(t("creditreport.compare.kpiClient"), d.clientCountB, d.clientCountDiff, rcFmtNum, "growth") +
+            rcKpiCell(t("creditreport.compare.kpiValueUsd"), d.osUsdSumB, d.osUsdSumDiff, rcFmtNum, "growth") +
             `</div>`;
     } else if (rcActiveTab === "disburse") {
         const row = (rcDim && rcDimValue) ? diff.disburse[rcDim].find(r => r.key === rcDimValue) : null;
         const d = row || diff.disburse.total;
         html = `<div class="rc-kpi-card">` +
-            rcKpiCell("# Loan", d.countB, d.countDiff, rcFmtNum, "growth") +
-            rcKpiCell("Value (USD)", d.valueSumB, d.valueSumDiff, rcFmtNum, "growth") +
+            rcKpiCell(t("creditreport.compare.kpiLoan"), d.countB, d.countDiff, rcFmtNum, "growth") +
+            rcKpiCell(t("creditreport.compare.kpiValueUsd"), d.valueSumB, d.valueSumDiff, rcFmtNum, "growth") +
             `</div>`;
     } else if (rcActiveTab === "t24") {
         const s = diff.t24.summary;
         const parA = rcParPct(s.valA, diff.os.total.osUsdSumA), parB = rcParPct(s.valB, diff.os.total.osUsdSumB);
         html = `<div class="rc-kpi-card">` +
-            rcKpiCell("# Loan", s.countB, s.countDiff, rcFmtNum, "risk") +
-            rcKpiCell("# Client", s.clientCountB, s.clientCountDiff, rcFmtNum, "risk") +
-            rcKpiCellPct("PAR", parB, parB - parA) +
+            rcKpiCell(t("creditreport.compare.kpiLoan"), s.countB, s.countDiff, rcFmtNum, "risk") +
+            rcKpiCell(t("creditreport.compare.kpiClient"), s.clientCountB, s.clientCountDiff, rcFmtNum, "risk") +
+            rcKpiCellPct(t("creditreport.compare.kpiPar"), parB, parB - parA) +
             `</div>`;
     } else if (rcActiveTab === "overdue") {
         const s = diff.overdue.summary;
         const parA = rcParPct(s.valA, diff.os.total.osUsdSumA), parB = rcParPct(s.valB, diff.os.total.osUsdSumB);
         html = `<div class="rc-kpi-card">` +
-            rcKpiCell("# Loan", s.countB, s.countDiff, rcFmtNum, "risk") +
-            rcKpiCell("# Client", s.clientCountB, s.clientCountDiff, rcFmtNum, "risk") +
-            rcKpiCellPct("PAR", parB, parB - parA) +
+            rcKpiCell(t("creditreport.compare.kpiLoan"), s.countB, s.countDiff, rcFmtNum, "risk") +
+            rcKpiCell(t("creditreport.compare.kpiClient"), s.clientCountB, s.clientCountDiff, rcFmtNum, "risk") +
+            rcKpiCellPct(t("creditreport.compare.kpiPar"), parB, parB - parA) +
             `</div>`;
     } else if (rcActiveTab === "wo") {
         const s = diff.wo.summary;
         html = `<div class="rc-kpi-card">` +
-            rcKpiCell("# (CIF)", s.countB, s.countDiff, rcFmtNum, "risk") +
-            rcKpiCell("Int", s.intB, s.intDiff, rcFmtNum, "risk") +
-            rcKpiCell("Prn", s.prnB, s.prnDiff, rcFmtNum, "risk") +
+            rcKpiCell(t("creditreport.compare.kpiCif"), s.countB, s.countDiff, rcFmtNum, "risk") +
+            rcKpiCell(t("creditreport.compare.kpiInt"), s.intB, s.intDiff, rcFmtNum, "risk") +
+            rcKpiCell(t("creditreport.compare.kpiPrn"), s.prnB, s.prnDiff, rcFmtNum, "risk") +
             `</div>`;
     }
 
@@ -312,7 +326,7 @@ function rcUpdateDimChipsAvailability() {
     document.querySelectorAll("#rcDimChips .rc-dim-chip").forEach(chip => {
         const isUnavailable = unavailable.has(chip.dataset.dim);
         chip.disabled = isUnavailable;
-        chip.title = isUnavailable ? "Not tracked for Write Off" : "";
+        chip.title = isUnavailable ? t("creditreport.compare.notTrackedForWo") : "";
     });
     // Fall back to the first available dimension (Officer) rather than
     // leaving the now-unavailable one selected — there's no neutral
@@ -352,8 +366,8 @@ function rcPopulateDimValueSelect() {
 
     if (rcDimValue && !values.includes(rcDimValue)) rcDimValue = "";
 
-    const label = RC_DIMENSIONS[rcDim];
-    sel.innerHTML = `<option value="">All ${rcEscapeHtml(label)}s</option>` +
+    const label = rcDimensions()[rcDim];
+    sel.innerHTML = `<option value="">${rcEscapeHtml(t("creditreport.compare.allOfDim", { dim: label }))}</option>` +
         values.map(v => `<option value="${rcEscapeHtml(v)}"${v === rcDimValue ? " selected" : ""}>${rcEscapeHtml(v)}</option>`).join("");
     sel.style.display = "";
 }
@@ -372,11 +386,11 @@ function rcApplyDimFilter(rows) {
 function rcRenderOsDisburseBreakdown(valueLabel, valueField) {
     const rows = rcDiff[rcActiveTab][rcDim] || [];
     const filtered = rcDimValue ? rows.filter(r => r.key === rcDimValue) : rows;
-    if (!filtered.length) return `<div class="op-empty">No rows.</div>`;
+    if (!filtered.length) return `<div class="op-empty">${t("creditreport.compare.noRows")}</div>`;
     return `
       <div class="rc-breakdown-table-wrap">
         <table class="rc-breakdown-table">
-          <thead><tr><th>${rcEscapeHtml(RC_DIMENSIONS[rcDim])}</th><th># Loan</th><th>${rcEscapeHtml(valueLabel)}</th></tr></thead>
+          <thead><tr><th>${rcEscapeHtml(rcDimensions()[rcDim])}</th><th>${t("creditreport.compare.colLoan")}</th><th>${rcEscapeHtml(valueLabel)}</th></tr></thead>
           <tbody>
             ${filtered.map(r => `
               <tr>
@@ -413,7 +427,7 @@ function rcRenderClientDimBreakdown() {
     const downgradeBy = hasChanged ? rcGroupCounts(arrays.changed.filter(r => r.direction === "downgrade"), rcDim) : null;
 
     const keys = new Set([...enteredBy.keys(), ...exitedBy.keys(), ...(hasChanged ? arrays.changed.map(r => r[rcDim]).filter(Boolean) : [])]);
-    if (!keys.size) return `<div class="op-empty">No rows.</div>`;
+    if (!keys.size) return `<div class="op-empty">${t("creditreport.compare.noRows")}</div>`;
 
     const score = k => (enteredBy.get(k) || 0) + (exitedBy.get(k) || 0) + (hasChanged ? (upgradeBy.get(k) || 0) + (downgradeBy.get(k) || 0) : 0);
     // Default order (no column sort picked yet): busiest dimension value first.
@@ -427,12 +441,12 @@ function rcRenderClientDimBreakdown() {
 
     const stateKey = `${rcActiveTab}:dimbreak`;
     const cols = [
-        { key: "key", label: RC_DIMENSIONS[rcDim], type: "text" },
-        { key: "entered", label: "✅ Entered", type: "number" },
-        { key: "exited", label: "↩️ Exited", type: "number" },
+        { key: "key", label: rcDimensions()[rcDim], type: "text" },
+        { key: "entered", label: `✅ ${t("creditreport.compare.colEntered")}`, type: "number" },
+        { key: "exited", label: `↩️ ${t("creditreport.compare.colExited")}`, type: "number" },
         ...(hasChanged ? [
-            { key: "upgrade", label: "⬆ Upgrade", type: "number" },
-            { key: "downgrade", label: "⬇ Downgrade", type: "number" }
+            { key: "upgrade", label: `⬆ ${t("creditreport.compare.colUpgrade")}`, type: "number" },
+            { key: "downgrade", label: `⬇ ${t("creditreport.compare.colDowngrade")}`, type: "number" }
         ] : [])
     ];
     const sorted = rcApplySort(rows, stateKey);
@@ -459,7 +473,7 @@ function rcRenderClientDimBreakdown() {
 // ========================================
 function rcClientTableHtml(rows, cols, stateKey) {
     if (!rows.length) {
-        return `<div class="op-empty">No rows in this category.</div>`;
+        return `<div class="op-empty">${t("creditreport.compare.noRowsCategory")}</div>`;
     }
     const sorted = stateKey ? rcApplySort(rows, stateKey) : rows;
     return `
@@ -475,43 +489,43 @@ function rcClientTableHtml(rows, cols, stateKey) {
 
 function rcWoCols() {
     return [
-        { key: "cif", label: "CIF", type: "text" },
-        { key: "khName", label: "Name", type: "text" },
-        { key: "branch", label: "Branch", type: "text" },
-        { key: "officerId", label: "Officer", type: "text" },
-        { key: "int", label: "Int", type: "number", render: r => rcFmtNum(r.int) },
-        { key: "prn", label: "Prn", type: "number", render: r => rcFmtNum(r.prn) }
+        { key: "cif", label: t("creditreport.compare.colCif"), type: "text" },
+        { key: "khName", label: t("creditreport.compare.colName"), type: "text" },
+        { key: "branch", label: t("creditreport.compare.colBranch"), type: "text" },
+        { key: "officerId", label: t("creditreport.compare.colOfficer"), type: "text" },
+        { key: "int", label: t("creditreport.compare.colInt"), type: "number", render: r => rcFmtNum(r.int) },
+        { key: "prn", label: t("creditreport.compare.colPrn"), type: "number", render: r => rcFmtNum(r.prn) }
     ];
 }
 function rcChangedCols() {
     return [
-        { key: "cif", label: "CIF", type: "text" },
-        { key: "loanNumber", label: "Loan #", type: "text" },
-        { key: "name", label: "Name", type: "text" },
-        { key: "branch", label: "Branch", type: "text" },
-        { key: "officerId", label: "Officer", type: "text" },
-        { key: "toClass", label: "Class", type: "text", render: r => `${rcEscapeHtml(r.fromClass)} → ${rcEscapeHtml(r.toClass)}` },
-        { key: "direction", label: "", sortable: false, render: r => `<span class="rc-badge ${r.direction}">${r.direction === "downgrade" ? "⬇ Downgrade" : "⬆ Upgrade"}</span>` }
+        { key: "cif", label: t("creditreport.compare.colCif"), type: "text" },
+        { key: "loanNumber", label: t("creditreport.compare.colLoanNo"), type: "text" },
+        { key: "name", label: t("creditreport.compare.colName"), type: "text" },
+        { key: "branch", label: t("creditreport.compare.colBranch"), type: "text" },
+        { key: "officerId", label: t("creditreport.compare.colOfficer"), type: "text" },
+        { key: "toClass", label: t("creditreport.compare.colClass"), type: "text", render: r => `${rcEscapeHtml(r.fromClass)} → ${rcEscapeHtml(r.toClass)}` },
+        { key: "direction", label: "", sortable: false, render: r => `<span class="rc-badge ${r.direction}">${r.direction === "downgrade" ? `⬇ ${t("creditreport.compare.colDowngrade")}` : `⬆ ${t("creditreport.compare.colUpgrade")}`}</span>` }
     ];
 }
 function rcEnterExitCols() {
     return [
-        { key: "cif", label: "CIF", type: "text" },
-        { key: "loanNumber", label: "Loan #", type: "text" },
-        { key: "name", label: "Name", type: "text" },
-        { key: "branch", label: "Branch", type: "text" },
-        { key: "officerId", label: "Officer", type: "text" },
-        { key: "cls", label: "Class", type: "text" }
+        { key: "cif", label: t("creditreport.compare.colCif"), type: "text" },
+        { key: "loanNumber", label: t("creditreport.compare.colLoanNo"), type: "text" },
+        { key: "name", label: t("creditreport.compare.colName"), type: "text" },
+        { key: "branch", label: t("creditreport.compare.colBranch"), type: "text" },
+        { key: "officerId", label: t("creditreport.compare.colOfficer"), type: "text" },
+        { key: "cls", label: t("creditreport.compare.colClass"), type: "text" }
     ];
 }
 function rcT24EnterExitCols() {
     return [
-        { key: "cif", label: "CIF", type: "text" },
-        { key: "loanNumber", label: "Loan #", type: "text" },
-        { key: "name", label: "Name", type: "text" },
-        { key: "branch", label: "Branch", type: "text" },
-        { key: "officerId", label: "Officer", type: "text" },
-        { key: "val", label: "Value", type: "number", render: r => rcFmtNum(r.val) }
+        { key: "cif", label: t("creditreport.compare.colCif"), type: "text" },
+        { key: "loanNumber", label: t("creditreport.compare.colLoanNo"), type: "text" },
+        { key: "name", label: t("creditreport.compare.colName"), type: "text" },
+        { key: "branch", label: t("creditreport.compare.colBranch"), type: "text" },
+        { key: "officerId", label: t("creditreport.compare.colOfficer"), type: "text" },
+        { key: "val", label: t("creditreport.compare.colValue"), type: "number", render: r => rcFmtNum(r.val) }
     ];
 }
 
@@ -524,23 +538,23 @@ function rcRenderTabBody() {
 
     if (rcActiveTab === "os" || rcActiveTab === "disburse") {
         const valueField = rcActiveTab === "os" ? "osUsdSum" : "valueSum";
-        const valueLabel = rcActiveTab === "os" ? "OS (USD)" : "Disbursed (USD)";
+        const valueLabel = rcActiveTab === "os" ? t("creditreport.compare.valueLabelOs") : t("creditreport.compare.valueLabelDisburse");
         html += rcRenderOsDisburseBreakdown(valueLabel, valueField);
     } else if (rcActiveTab === "wo") {
         if (!rcDimValue) html += rcRenderClientDimBreakdown();
         html += `
           <div class="rc-sub-tabs">
-            <button type="button" class="rc-sub-tab${rcSubTab.wo === "entered" ? " active" : ""}" data-sub="entered">✅ Entered (${rcApplyDimFilter(diff.wo.entered).length})</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.wo === "exited" ? " active" : ""}" data-sub="exited">↩️ Exited (${rcApplyDimFilter(diff.wo.exited).length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.wo === "entered" ? " active" : ""}" data-sub="entered">✅ ${t("creditreport.compare.subEntered", { count: rcApplyDimFilter(diff.wo.entered).length })}</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.wo === "exited" ? " active" : ""}" data-sub="exited">↩️ ${t("creditreport.compare.subExited", { count: rcApplyDimFilter(diff.wo.exited).length })}</button>
           </div>`;
         html += rcClientTableHtml(rcApplyDimFilter(diff.wo[rcSubTab.wo]), rcWoCols(), `wo:${rcSubTab.wo}`);
     } else if (rcActiveTab === "overdue") {
         if (!rcDimValue) html += rcRenderClientDimBreakdown();
         html += `
           <div class="rc-sub-tabs">
-            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "changed" ? " active" : ""}" data-sub="changed">🔀 Changed (${rcApplyDimFilter(diff.overdue.changed).length})</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "entered" ? " active" : ""}" data-sub="entered">✅ New Overdue (${rcApplyDimFilter(diff.overdue.entered).length})</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "exited" ? " active" : ""}" data-sub="exited">↩️ Resolved (${rcApplyDimFilter(diff.overdue.exited).length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "changed" ? " active" : ""}" data-sub="changed">🔀 ${t("creditreport.compare.subChanged", { count: rcApplyDimFilter(diff.overdue.changed).length })}</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "entered" ? " active" : ""}" data-sub="entered">✅ ${t("creditreport.compare.subNewOverdue", { count: rcApplyDimFilter(diff.overdue.entered).length })}</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "exited" ? " active" : ""}" data-sub="exited">↩️ ${t("creditreport.compare.subResolved", { count: rcApplyDimFilter(diff.overdue.exited).length })}</button>
           </div>`;
         if (rcSubTab.overdue === "changed") html += rcClientTableHtml(rcApplyDimFilter(diff.overdue.changed), rcChangedCols(), "overdue:changed");
         else html += rcClientTableHtml(rcApplyDimFilter(diff.overdue[rcSubTab.overdue]), rcEnterExitCols(), `overdue:${rcSubTab.overdue}`);
@@ -548,9 +562,9 @@ function rcRenderTabBody() {
         if (!rcDimValue) html += rcRenderClientDimBreakdown();
         html += `
           <div class="rc-sub-tabs">
-            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "changed" ? " active" : ""}" data-sub="changed">🔀 Changed (${rcApplyDimFilter(diff.t24.changed).length})</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "entered" ? " active" : ""}" data-sub="entered">✅ Entered (${rcApplyDimFilter(diff.t24.entered).length})</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "exited" ? " active" : ""}" data-sub="exited">↩️ Exited (${rcApplyDimFilter(diff.t24.exited).length})</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "changed" ? " active" : ""}" data-sub="changed">🔀 ${t("creditreport.compare.subChanged", { count: rcApplyDimFilter(diff.t24.changed).length })}</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "entered" ? " active" : ""}" data-sub="entered">✅ ${t("creditreport.compare.subEntered", { count: rcApplyDimFilter(diff.t24.entered).length })}</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "exited" ? " active" : ""}" data-sub="exited">↩️ ${t("creditreport.compare.subExited", { count: rcApplyDimFilter(diff.t24.exited).length })}</button>
           </div>`;
         if (rcSubTab.t24 === "changed") html += rcClientTableHtml(rcApplyDimFilter(diff.t24.changed), rcChangedCols(), "t24:changed");
         else html += rcClientTableHtml(rcApplyDimFilter(diff.t24[rcSubTab.t24]), rcT24EnterExitCols(), `t24:${rcSubTab.t24}`);
@@ -581,12 +595,12 @@ async function rcRunCompare() {
     rcHideEmpty();
     document.getElementById("rcTransitionsCard").style.display = "none";
     document.getElementById("rcPageSkel").style.display = "flex";
-    if (typeof showAppLoading === "function") showAppLoading("Loading Report Data...");
+    if (typeof showAppLoading === "function") showAppLoading(t("creditreport.loadingReportData"));
 
     try {
         const data = await rcApiGet(`/api/creditreport/compare?dateA=${encodeURIComponent(dateA)}&dateB=${encodeURIComponent(dateB)}`);
         document.getElementById("rcPageSkel").style.display = "none";
-        if (!data.ok) { rcShowEmpty(data.message || "Failed to compare."); return; }
+        if (!data.ok) { rcShowEmpty(data.message || t("creditreport.compare.failedCompare")); return; }
 
         rcDiff = data.diff;
         rcDiffDateA = data.dateA || dateA;
@@ -598,7 +612,7 @@ async function rcRunCompare() {
     } catch (e) {
         console.error(e);
         document.getElementById("rcPageSkel").style.display = "none";
-        rcShowEmpty("Server error while comparing.");
+        rcShowEmpty(t("creditreport.compare.serverErrorCompare"));
     } finally {
         if (typeof hideAppLoading === "function") hideAppLoading();
     }
@@ -614,7 +628,13 @@ async function rcRunCompare() {
 // straight from rcDates (already fetched for the Date A/B selects),
 // so opening the calendar needs no extra request.
 // ========================================
-const RC_CAL_DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+function rcCalDow() {
+    return [
+        t("creditreport.compare.dowSun"), t("creditreport.compare.dowMon"), t("creditreport.compare.dowTue"),
+        t("creditreport.compare.dowWed"), t("creditreport.compare.dowThu"), t("creditreport.compare.dowFri"),
+        t("creditreport.compare.dowSat")
+    ];
+}
 let rcCalMonthKey = ""; // "YYYY-MM-01" — the month currently shown
 let rcCalPendingDelete = "";
 
@@ -645,14 +665,14 @@ function rcCalShiftMonth(anchorKey, delta) {
 
 function rcBuildDeleteCalHtml(monthKey) {
     if (!rcDates.length) {
-        return `<div class="rc-del-cal-empty">No snapshots saved yet.</div>`;
+        return `<div class="rc-del-cal-empty">${t("creditreport.compare.noSnapshotsYet")}</div>`;
     }
     const snapSet = new Set(rcDates);
     const [y, m] = monthKey.split("-").map(Number);
     const daysInMonth = new Date(y, m, 0).getDate();
     const firstDow = new Date(y, m - 1, 1).getDay();
 
-    let cells = RC_CAL_DOW.map(d => `<div class="op-heat-dow">${d}</div>`).join("");
+    let cells = rcCalDow().map(d => `<div class="op-heat-dow">${d}</div>`).join("");
     for (let i = 0; i < firstDow; i++) cells += `<div class="op-heat-cell op-heat-pad"></div>`;
     for (let day = 1; day <= daysInMonth; day++) {
         const dateKey = `${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -667,11 +687,11 @@ function rcBuildDeleteCalHtml(monthKey) {
 
     return `
       <div class="op-heat-grid">${cells}</div>
-      <div class="rc-del-cal-legend"><span class="op-heat-sw"></span><span>Has saved snapshot — tap to delete</span></div>
+      <div class="rc-del-cal-legend"><span class="op-heat-sw"></span><span>${t("creditreport.compare.legendHasSnapshot")}</span></div>
       <div class="op-heat-nav">
-        <button type="button" class="op-heat-nav-btn" data-dir="prev" aria-label="Previous month">‹</button>
+        <button type="button" class="op-heat-nav-btn" data-dir="prev" aria-label="${t("creditreport.compare.prevMonth")}">‹</button>
         <span class="op-heat-nav-label">${rcEscapeHtml(monthLabel)}</span>
-        <button type="button" class="op-heat-nav-btn" data-dir="next" aria-label="Next month">›</button>
+        <button type="button" class="op-heat-nav-btn" data-dir="next" aria-label="${t("creditreport.compare.nextMonth")}">›</button>
       </div>`;
 }
 
@@ -717,8 +737,8 @@ function rcApplyDatesUpdate(dates) {
         selB.innerHTML = "";
         rcShowEmpty(
             rcIsAdmin
-                ? "No backup yet — use Snapshot All on the Credit Report hub to start."
-                : "No backup yet — ask an admin to run Snapshot All on the Credit Report hub."
+                ? t("creditreport.compare.noBackupAdmin")
+                : t("creditreport.compare.noBackupNonAdmin")
         );
         return;
     }
@@ -747,7 +767,7 @@ function rcReconcileDates() {
 function rcAskDeleteSnapshot(dateKey) {
     rcCalPendingDelete = dateKey;
     document.getElementById("rcDeleteConfirmText").textContent =
-        `Delete the saved snapshot for ${rcFmtDateDMY(dateKey)}? This cannot be undone.`;
+        t("creditreport.compare.confirmDeleteSnapshot", { date: rcFmtDateDMY(dateKey) });
     document.getElementById("rcDeleteConfirmDialog").classList.add("show");
 }
 
@@ -765,7 +785,7 @@ async function rcConfirmDeleteSnapshot() {
         });
         const data = await res.json();
         if (data.ok) {
-            rcNotify(`Snapshot deleted for ${rcFmtDateDMY(dateKey)}`, "success");
+            rcNotify(t("creditreport.compare.snapshotDeletedFor", { date: rcFmtDateDMY(dateKey) }), "success");
             rcConfirmedDeletedDates.add(dateKey);
             // Immediate: the backend just confirmed this date is gone —
             // the calendar highlight and Date A/B selects must never
@@ -776,11 +796,11 @@ async function rcConfirmDeleteSnapshot() {
             rcApplyDatesUpdate(rcDates.filter(d => d !== dateKey));
             rcReconcileDates();
         } else {
-            rcNotify(data.message || "Delete failed", "error");
+            rcNotify(data.message || t("creditreport.compare.deleteFailed"), "error");
         }
     } catch (e) {
         console.error(e);
-        rcNotify("Delete failed", "error");
+        rcNotify(t("creditreport.compare.deleteFailed"), "error");
     }
 }
 
@@ -791,7 +811,7 @@ async function rcConfirmDeleteSnapshot() {
 // own "Compare" target.
 async function rcRunSnapshotNow() {
     document.getElementById("topbarMenu").style.display = "none";
-    if (typeof showAppLoading === "function") showAppLoading("Saving snapshot...");
+    if (typeof showAppLoading === "function") showAppLoading(t("creditreport.compare.savingSnapshot"));
     try {
         const res = await fetch(`${API.BASE_URL}/api/creditreport/snapshot/run`, {
             method: "POST",
@@ -800,7 +820,7 @@ async function rcRunSnapshotNow() {
         });
         const data = await res.json();
         if (data.ok) {
-            rcNotify(`Snapshot saved for ${data.date}`, "success");
+            rcNotify(t("creditreport.compare.snapshotSavedFor", { date: data.date }), "success");
             // A date this session just deleted can get re-created by a
             // fresh snapshot — drop any leftover tombstone for it so
             // the dates list (and the reconcile below) can show it again.
@@ -812,11 +832,11 @@ async function rcRunSnapshotNow() {
             }
             rcReconcileDates();
         } else {
-            rcNotify(data.message || "Snapshot failed", "error");
+            rcNotify(data.message || t("creditreport.compare.snapshotFailed"), "error");
         }
     } catch (e) {
         console.error(e);
-        rcNotify("Snapshot failed", "error");
+        rcNotify(t("creditreport.compare.snapshotFailed"), "error");
     } finally {
         if (typeof hideAppLoading === "function") hideAppLoading();
     }

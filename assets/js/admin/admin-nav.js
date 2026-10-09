@@ -9,33 +9,39 @@
    page's sidebar updates automatically, no per-page edits.
    ===================================================== */
 const CM_ADMIN_TOOLS = [
-  { key: "hub",       label: "Overview",        icon: "🏠", href: "/CM_Pro/pages/admin/index.html",      status: "live" },
-  { key: "bandwidth", label: "Bandwidth Stats",  icon: "📶", href: "/CM_Pro/pages/admin/bandwidth.html",  status: "live" },
-  { key: "users",     label: "User Management",  icon: "👥", href: "/CM_Pro/pages/admin/users.html",       status: "live" },
-  { key: "logs",      label: "Activity Logs",    icon: "🧾", href: "/CM_Pro/pages/admin/activitylogs.html",status: "live" },
-  { key: "notifications", label: "Notifications", icon: "🔔", href: "/CM_Pro/pages/admin/notifications.html", status: "live" },
-  { key: "wallpaper", label: "Wallpaper",        icon: "🖼️", href: "/CM_Pro/pages/admin/wallpaper.html",   status: "live" },
-  { key: "versions",  label: "App Versions",     icon: "📦", href: "/CM_Pro/pages/admin/appversions.html", status: "live" }
+  { key: "hub",       label: "Overview",        labelKey: "admin.nav.hub",           icon: "🏠", href: "/CM_Pro/pages/admin/index.html",      status: "live" },
+  { key: "bandwidth", label: "Bandwidth Stats",  labelKey: "admin.nav.bandwidth",     icon: "📶", href: "/CM_Pro/pages/admin/bandwidth.html",  status: "live" },
+  { key: "users",     label: "User Management",  labelKey: "admin.nav.users",        icon: "👥", href: "/CM_Pro/pages/admin/users.html",       status: "live" },
+  { key: "logs",      label: "Activity Logs",    labelKey: "admin.nav.logs",         icon: "🧾", href: "/CM_Pro/pages/admin/activitylogs.html",status: "live" },
+  { key: "notifications", label: "Notifications", labelKey: "admin.nav.notifications", icon: "🔔", href: "/CM_Pro/pages/admin/notifications.html", status: "live" },
+  { key: "wallpaper", label: "Wallpaper",        labelKey: "admin.nav.wallpaper",     icon: "🖼️", href: "/CM_Pro/pages/admin/wallpaper.html",   status: "live" },
+  { key: "versions",  label: "App Versions",     labelKey: "admin.nav.versions",     icon: "📦", href: "/CM_Pro/pages/admin/appversions.html", status: "live" }
 ];
+
+// t(): small helper so this file's hardcoded UI strings go through the
+// i18n dictionary (shared/i18n/admin.js) when it's loaded, and fall
+// back to the key itself (or the English literal passed as 2nd arg)
+// if i18n hasn't loaded yet.
+const t = (key, vars) => (window.CMI18n ? CMI18n.t(key, vars) : key);
 
 function cmRenderAdminNav(activeKey) {
   const container = document.getElementById("admSidebar");
   if (!container) return;
 
-  container.innerHTML = CM_ADMIN_TOOLS.map((t) => {
-    const isActive = t.key === activeKey;
-    const isSoon = t.status === "soon";
+  container.innerHTML = CM_ADMIN_TOOLS.map((tool) => {
+    const isActive = tool.key === activeKey;
+    const isSoon = tool.status === "soon";
     const classes = ["adm-nav-link"];
     if (isActive) classes.push("adm-nav-active");
     if (isSoon) classes.push("adm-nav-disabled");
 
     const tag = isSoon ? "div" : "a";
-    const hrefAttr = isSoon ? "" : `href="${t.href}"`;
+    const hrefAttr = isSoon ? "" : `href="${tool.href}"`;
 
     return `<${tag} ${hrefAttr} class="${classes.join(" ")}">
-      <span class="adm-nav-icon">${t.icon}</span>
-      <span class="adm-nav-text">${t.label}</span>
-      ${isSoon ? '<span class="adm-nav-badge">Soon</span>' : ""}
+      <span class="adm-nav-icon">${tool.icon}</span>
+      <span class="adm-nav-text" data-i18n="${tool.labelKey}">${t(tool.labelKey)}</span>
+      ${isSoon ? `<span class="adm-nav-badge" data-i18n="admin.nav.soonBadge">${t("admin.nav.soonBadge")}</span>` : ""}
     </${tag}>`;
   }).join("");
 }
@@ -44,18 +50,18 @@ function cmRenderToolCards(containerId, excludeKey) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  const items = CM_ADMIN_TOOLS.filter((t) => t.key !== excludeKey);
+  const items = CM_ADMIN_TOOLS.filter((tool) => tool.key !== excludeKey);
 
-  container.innerHTML = items.map((t) => {
-    const isSoon = t.status === "soon";
+  container.innerHTML = items.map((tool) => {
+    const isSoon = tool.status === "soon";
     const tag = isSoon ? "div" : "a";
-    const hrefAttr = isSoon ? "" : `href="${t.href}"`;
+    const hrefAttr = isSoon ? "" : `href="${tool.href}"`;
 
     return `<${tag} ${hrefAttr} class="adm-tool-card${isSoon ? " adm-tool-soon" : ""}">
-      <div class="adm-tool-icon">${t.icon}</div>
-      <div class="adm-tool-label">${t.label}</div>
+      <div class="adm-tool-icon">${tool.icon}</div>
+      <div class="adm-tool-label" data-i18n="${tool.labelKey}">${t(tool.labelKey)}</div>
       ${isSoon
-        ? '<span class="adm-nav-badge">Coming soon</span>'
+        ? `<span class="adm-nav-badge" data-i18n="admin.nav.comingSoonBadge">${t("admin.nav.comingSoonBadge")}</span>`
         : '<span class="adm-tool-arrow">→</span>'}
     </${tag}>`;
   }).join("");
@@ -72,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const userLabelEl = document.getElementById("admUserLabel");
   if (userLabelEl && window.CMAdmin) {
-    userLabelEl.textContent = window.CMAdmin.fullname || window.CMAdmin.username || "Admin";
+    userLabelEl.textContent = window.CMAdmin.fullname || window.CMAdmin.username || t("admin.common.adminFallback");
   }
 });
 
@@ -81,11 +87,11 @@ function renderTopbarActions() {
   if (!container) return;
 
   container.innerHTML = `
-    <a href="/CM_Pro/index.html" class="adm-btn adm-topbar-btn" title="Back to App">
-      <span>⬅️</span><span class="adm-topbar-btn-text">Back to App</span>
+    <a href="/CM_Pro/index.html" class="adm-btn adm-topbar-btn" title="${t("admin.nav.backToApp")}" data-i18n-title="admin.nav.backToApp">
+      <span>⬅️</span><span class="adm-topbar-btn-text" data-i18n="admin.nav.backToApp">${t("admin.nav.backToApp")}</span>
     </a>
-    <button type="button" class="adm-btn adm-topbar-btn adm-topbar-logout" id="admLogoutBtn" title="Logout">
-      <span>🚪</span><span class="adm-topbar-btn-text">Logout</span>
+    <button type="button" class="adm-btn adm-topbar-btn adm-topbar-logout" id="admLogoutBtn" title="${t("admin.nav.logout")}" data-i18n-title="admin.nav.logout">
+      <span>🚪</span><span class="adm-topbar-btn-text" data-i18n="admin.nav.logout">${t("admin.nav.logout")}</span>
     </button>
   `;
 
@@ -95,7 +101,7 @@ function renderTopbarActions() {
       logout(); // shared/logout.js — handles confirm + clear storage + redirect
     } else {
       // shared/logout.js wasn't loaded on this page — fall back inline
-      if (confirm("Logout CM_Pro ?")) {
+      if (confirm(t("admin.nav.logoutConfirm"))) {
         localStorage.removeItem("token");
         localStorage.removeItem("loggedInUser");
         sessionStorage.clear();

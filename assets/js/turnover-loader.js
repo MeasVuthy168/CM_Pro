@@ -36,7 +36,7 @@ async function loadComponent(id,file){
 
             initTopbar({
 
-                title:"Average Turnover",
+                titleKey:"dashboard.averageTurnover",
 
                 showBack:true,
 

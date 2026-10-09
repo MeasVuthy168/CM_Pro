@@ -11,6 +11,7 @@
 
   const API_BASE = (window.API && window.API.BASE_URL) || "";
   const APP_NAME = "SVG_CreditMonitoring";
+  const t = (key, vars) => (window.CMI18n ? CMI18n.t(key, vars) : key);
 
   const state = { versions: [], latestVersion: "" };
 
@@ -62,7 +63,7 @@
       const res = await fetch(url, { headers: authHeaders() });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        return AdminUI.toast(data.message || "Download failed.", "error");
+        return AdminUI.toast(data.message || t("admin.appversions.downloadFailed"), "error");
       }
 
       const blob = await res.blob();
@@ -77,7 +78,7 @@
       URL.revokeObjectURL(objectUrl);
     } catch (e) {
       console.error("downloadWithAuth failed:", e);
-      AdminUI.toast("Download failed — could not reach the server.", "error");
+      AdminUI.toast(t("admin.appversions.downloadFailedServer"), "error");
     }
   }
 
@@ -85,10 +86,10 @@
     if (!iso) return "—";
     const d = new Date(iso);
     const diff = Math.floor((Date.now() - d.getTime()) / 1000);
-    if (diff < 60) return "Just now";
-    if (diff < 3600) return Math.floor(diff / 60) + " min ago";
-    if (diff < 86400) return Math.floor(diff / 3600) + " hr ago";
-    if (diff < 604800) return Math.floor(diff / 86400) + " day(s) ago";
+    if (diff < 60) return t("admin.common.timeJustNow");
+    if (diff < 3600) return t("admin.common.timeMinAgo", { n: Math.floor(diff / 60) });
+    if (diff < 86400) return t("admin.common.timeHrAgo", { n: Math.floor(diff / 3600) });
+    if (diff < 604800) return t("admin.common.timeDaysAgo", { n: Math.floor(diff / 86400) });
     return d.toLocaleDateString();
   }
 
@@ -112,17 +113,17 @@
 
       el.heroVersion.textContent = `v${data.latestVersion}`;
       state.latestVersion = data.latestVersion;
-      el.heroMandatory.textContent = data.mandatory ? "Mandatory" : "Optional";
+      el.heroMandatory.textContent = data.mandatory ? t("admin.appversions.mandatory") : t("admin.appversions.optional");
       el.heroMandatory.className = `adm-badge ${data.mandatory ? "adm-badge-status-failed" : "adm-badge-status-active"}`;
       el.heroFilename.textContent = data.filename || "—";
       el.heroSize.textContent = fmtBytes(data.size);
       el.heroReleased.textContent = timeAgo(data.releasedAt);
-      el.heroNotes.textContent = data.notes || "No release notes provided.";
+      el.heroNotes.textContent = data.notes || t("admin.appversions.noReleaseNotes");
     } catch (e) {
       console.error("loadCurrentVersion failed:", e);
       el.heroLoading.hidden = true;
       el.heroEmpty.hidden = false;
-      el.heroEmpty.textContent = "Could not load current version.";
+      el.heroEmpty.textContent = t("admin.appversions.couldNotLoadVersion");
     }
   }
 
@@ -143,7 +144,7 @@
       renderTable();
     } catch (e) {
       console.error("loadHistory failed:", e);
-      AdminUI.toast("Could not load version history.", "error");
+      AdminUI.toast(t("admin.appversions.couldNotLoadHistory"), "error");
     }
   }
 
@@ -163,14 +164,14 @@
       tr.innerHTML = `
         <td><strong>v${escapeHtml(v.version)}</strong></td>
         <td>${fmtBytes(v.size)}</td>
-        <td><span class="adm-badge ${v.mandatory ? "adm-badge-status-failed" : "adm-badge-status-inactive"}">${v.mandatory ? "Mandatory" : "Optional"}</span></td>
+        <td><span class="adm-badge ${v.mandatory ? "adm-badge-status-failed" : "adm-badge-status-inactive"}">${v.mandatory ? t("admin.appversions.mandatory") : t("admin.appversions.optional")}</span></td>
         <td>${escapeHtml(notesPreview || "—")}</td>
         <td title="${escapeHtml(v.releasedAt)}">${timeAgo(v.releasedAt)}</td>
         <td>
           <div class="adm-row-actions">
-            <button type="button" class="adm-icon-btn" title="Download" data-action="download">⬇️</button>
-            <button type="button" class="adm-icon-btn" title="Edit" data-action="edit">✏️</button>
-            <button type="button" class="adm-icon-btn adm-icon-btn-danger" title="Delete" data-action="delete">🗑️</button>
+            <button type="button" class="adm-icon-btn" title="${t("admin.appversions.download")}" data-action="download">⬇️</button>
+            <button type="button" class="adm-icon-btn" title="${t("admin.appversions.edit")}" data-action="edit">✏️</button>
+            <button type="button" class="adm-icon-btn adm-icon-btn-danger" title="${t("admin.appversions.delete")}" data-action="delete">🗑️</button>
           </div>
         </td>
       `;
@@ -197,14 +198,14 @@
   function viewDetail(v) {
     const body = document.createElement("div");
     const rows = [
-      ["Version", `v${v.version}`],
-      ["Filename", v.filename || "—"],
-      ["Size", fmtBytes(v.size)],
-      ["Type", v.mandatory ? "Mandatory" : "Optional"],
-      ["Released", new Date(v.releasedAt).toLocaleString()],
-      ["Notes", v.notes || "—"],
-      ["SHA-256", v.sha256 || "—"],
-      ["GitHub Release", v.releaseUrl || "—"]
+      [t("admin.appversions.fieldVersion"), `v${v.version}`],
+      [t("admin.appversions.detailFilename"), v.filename || "—"],
+      [t("admin.appversions.detailSize"), fmtBytes(v.size)],
+      [t("admin.appversions.detailType"), v.mandatory ? t("admin.appversions.mandatory") : t("admin.appversions.optional")],
+      [t("admin.appversions.detailReleased"), new Date(v.releasedAt).toLocaleString()],
+      [t("admin.appversions.detailNotes"), v.notes || "—"],
+      [t("admin.appversions.detailSha"), v.sha256 || "—"],
+      [t("admin.appversions.detailReleaseUrl"), v.releaseUrl || "—"]
     ];
     body.innerHTML = rows.map(([label, value]) => `
       <div class="adm-logs-detail-row">
@@ -212,7 +213,7 @@
         <span>${escapeHtml(value)}</span>
       </div>
     `).join("");
-    AdminUI.openModal({ title: `Version v${escapeHtml(v.version)}`, bodyNode: body, wide: true });
+    AdminUI.openModal({ title: t("admin.appversions.versionDetailTitle", { version: escapeHtml(v.version) }), bodyNode: body, wide: true });
   }
 
   // ---------- edit version (notes/mandatory only) ----------
@@ -227,7 +228,7 @@
     fMandatory.value = v.mandatory ? "true" : "false";
     fNotes.value = v.notes || "";
 
-    AdminUI.openModal({ title: `Edit v${v.version}`, bodyNode, wide: true });
+    AdminUI.openModal({ title: t("admin.appversions.editTitle", { version: v.version }), bodyNode, wide: true });
 
     bodyNode.querySelector("#avEditCancel").addEventListener("click", () => AdminUI.closeModal());
 
@@ -238,7 +239,7 @@
       const url = `${API_BASE}/api/app/versions/${encodeURIComponent(v.version)}?app=${encodeURIComponent(APP_NAME)}`;
 
       submitBtn.disabled = true;
-      submitBtn.textContent = file ? "Uploading…" : "Saving…";
+      submitBtn.textContent = file ? t("admin.appversions.uploading") : t("admin.appversions.saving");
 
       try {
         let res;
@@ -262,20 +263,20 @@
 
         const data = await res.json();
         if (!res.ok || !data.ok) {
-          AdminUI.toast(data.message || "Update failed.", "error");
+          AdminUI.toast(data.message || t("admin.appversions.updateFailed"), "error");
           submitBtn.disabled = false;
-          submitBtn.textContent = "Save Changes";
+          submitBtn.textContent = t("admin.appversions.saveChanges");
           return;
         }
 
         AdminUI.closeModal();
         await Promise.all([loadCurrentVersion(), loadHistory()]);
-        AdminUI.toast(data.fileReplaced ? "Version updated — file replaced." : "Version updated.", "success");
+        AdminUI.toast(data.fileReplaced ? t("admin.appversions.updatedFileReplaced") : t("admin.appversions.updated"), "success");
       } catch (err) {
         console.error("edit version failed:", err);
-        AdminUI.toast("Could not reach the server.", "error");
+        AdminUI.toast(t("admin.appversions.couldNotReachServer"), "error");
         submitBtn.disabled = false;
-        submitBtn.textContent = "Save Changes";
+        submitBtn.textContent = t("admin.appversions.saveChanges");
       }
     });
   }
@@ -283,9 +284,9 @@
   // ---------- delete a single version ----------
   async function deleteVersion(v) {
     const ok = await AdminUI.confirm({
-      title: `Delete v${escapeHtml(v.version)}?`,
-      message: `This removes v${escapeHtml(v.version)} from CM_Pro's version tracking. It does <strong>not</strong> delete the underlying GitHub Release — only the record here.`,
-      confirmLabel: "Delete",
+      title: t("admin.appversions.deleteVersionTitle", { version: escapeHtml(v.version) }),
+      message: t("admin.appversions.deleteVersionMessage", { version: escapeHtml(v.version) }),
+      confirmLabel: t("admin.appversions.delete"),
       danger: true
     });
     if (!ok) return;
@@ -296,13 +297,13 @@
         headers: authHeaders()
       });
       const data = await res.json();
-      if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Delete failed.", "error");
+      if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.appversions.deleteFailed"), "error");
 
       await Promise.all([loadCurrentVersion(), loadHistory()]);
-      AdminUI.toast(`v${v.version} deleted.`, "success");
+      AdminUI.toast(t("admin.appversions.versionDeleted", { version: v.version }), "success");
     } catch (e) {
       console.error("delete version failed:", e);
-      AdminUI.toast("Delete failed — could not reach the server.", "error");
+      AdminUI.toast(t("admin.appversions.deleteFailedServer"), "error");
     }
   }
 
@@ -317,7 +318,7 @@
     const statusEl = bodyNode.querySelector("#avUploadStatus");
     const submitBtn = bodyNode.querySelector("#avFormSubmit");
 
-    AdminUI.openModal({ title: "Upload New Version", bodyNode, wide: true });
+    AdminUI.openModal({ title: t("admin.appversions.uploadModalTitle"), bodyNode, wide: true });
 
     bodyNode.querySelector("#avFormCancel").addEventListener("click", () => AdminUI.closeModal());
 
@@ -327,8 +328,8 @@
       const version = fVersion.value.trim();
       const file = fFile.files?.[0];
 
-      if (!version) return AdminUI.toast("Enter a version number.", "error");
-      if (!file) return AdminUI.toast("Select a workbook file.", "error");
+      if (!version) return AdminUI.toast(t("admin.appversions.enterVersionNumber"), "error");
+      if (!file) return AdminUI.toast(t("admin.appversions.selectWorkbookFile"), "error");
 
       const fd = new FormData();
       fd.append("app", APP_NAME);
@@ -338,9 +339,9 @@
       fd.append("file", file);
 
       submitBtn.disabled = true;
-      submitBtn.textContent = "Uploading…";
+      submitBtn.textContent = t("admin.appversions.uploading");
       statusEl.hidden = false;
-      statusEl.textContent = "Uploading to GitHub Releases — this can take a little while for large files. Don't close this window.";
+      statusEl.textContent = t("admin.appversions.uploadingNotice");
 
       try {
         const res = await fetch(`${API_BASE}/api/app/upload`, {
@@ -351,20 +352,20 @@
         const data = await res.json();
 
         if (!res.ok || !data.ok) {
-          statusEl.textContent = data.message || "Upload failed.";
+          statusEl.textContent = data.message || t("admin.appversions.uploadFailed");
           submitBtn.disabled = false;
-          submitBtn.textContent = "Upload";
+          submitBtn.textContent = t("admin.appversions.upload");
           return;
         }
 
         AdminUI.closeModal();
         await Promise.all([loadCurrentVersion(), loadHistory()]);
-        AdminUI.toast(`Version v${version} published — all users notified.`, "success");
+        AdminUI.toast(t("admin.appversions.publishedNotified", { version }), "success");
       } catch (err) {
         console.error("upload failed:", err);
-        statusEl.textContent = "Upload failed — could not reach the server.";
+        statusEl.textContent = t("admin.appversions.uploadFailedServer");
         submitBtn.disabled = false;
-        submitBtn.textContent = "Upload";
+        submitBtn.textContent = t("admin.appversions.upload");
       }
     });
   }
@@ -375,22 +376,18 @@
   function openCleanupModal() {
     const body = document.createElement("div");
     body.innerHTML = `
-      <p class="adm-modal-message">
-        Keeps only the most recent versions below and removes older ones from CM_Pro's
-        version tracking. <strong>Note:</strong> this does not delete the underlying
-        GitHub Releases themselves — only the tracking record here.
-      </p>
+      <p class="adm-modal-message">${t("admin.appversions.cleanupExplain")}</p>
       <label class="adm-cleanup-field">
-        <span>Keep the most recent (versions)</span>
+        <span>${t("admin.appversions.keepRecentVersions")}</span>
         <input type="number" id="avKeepCount" value="3" min="1">
       </label>
       <div class="adm-modal-footer">
-        <button type="button" class="adm-btn" id="avCleanupCancel">Cancel</button>
-        <button type="button" class="adm-btn adm-btn-danger" id="avCleanupConfirm">Clean Up</button>
+        <button type="button" class="adm-btn" id="avCleanupCancel">${t("admin.appversions.cancel")}</button>
+        <button type="button" class="adm-btn adm-btn-danger" id="avCleanupConfirm">${t("admin.appversions.cleanupConfirm")}</button>
       </div>
     `;
 
-    const { body: mountedBody } = AdminUI.openModal({ title: "Clean Up Old Versions", bodyNode: body });
+    const { body: mountedBody } = AdminUI.openModal({ title: t("admin.appversions.cleanupModalTitle"), bodyNode: body });
 
     mountedBody.querySelector("#avCleanupCancel").addEventListener("click", () => AdminUI.closeModal());
     mountedBody.querySelector("#avCleanupConfirm").addEventListener("click", async () => {
@@ -403,14 +400,14 @@
           body: JSON.stringify({ app: APP_NAME, keep })
         });
         const data = await res.json();
-        if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Cleanup failed.", "error");
+        if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.appversions.cleanupFailed"), "error");
 
         AdminUI.closeModal();
-        AdminUI.toast(`Removed ${data.deletedVersions} old version record(s).`, "success");
+        AdminUI.toast(t("admin.appversions.removedOldVersions", { count: data.deletedVersions }), "success");
         loadHistory();
       } catch (e) {
         console.error("cleanup failed:", e);
-        AdminUI.toast("Cleanup failed — could not reach the server.", "error");
+        AdminUI.toast(t("admin.appversions.cleanupFailedServer"), "error");
       }
     });
   }
@@ -433,7 +430,7 @@
   function setToggleUI(enabled) {
     el.downloadsToggle.setAttribute("aria-checked", String(enabled));
     el.downloadsToggle.classList.toggle("adm-toggle-on", enabled);
-    el.downloadsToggleLabel.textContent = enabled ? "On" : "Off";
+    el.downloadsToggleLabel.textContent = enabled ? t("admin.appversions.toggleOn") : t("admin.appversions.toggleOff");
   }
 
   el.downloadsToggle.addEventListener("click", async () => {
@@ -442,9 +439,9 @@
 
     if (turningOff) {
       const ok = await AdminUI.confirm({
-        title: "Turn off downloads?",
-        message: "This immediately blocks every user from downloading any app version (latest or historical) to save bandwidth. They'll see a message telling them it's temporarily disabled. Turn it back on any time.",
-        confirmLabel: "Turn Off",
+        title: t("admin.appversions.turnOffDownloadsTitle"),
+        message: t("admin.appversions.turnOffDownloadsMessage"),
+        confirmLabel: t("admin.appversions.turnOff"),
         danger: true
       });
       if (!ok) return;
@@ -459,13 +456,13 @@
         body: JSON.stringify({ enabled: newValue })
       });
       const data = await res.json();
-      if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Failed to update.", "error");
+      if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.appversions.downloadsFailedUpdate"), "error");
 
       setToggleUI(data.enabled);
-      AdminUI.toast(data.enabled ? "Downloads turned on." : "Downloads turned off.", "success");
+      AdminUI.toast(data.enabled ? t("admin.appversions.downloadsTurnedOn") : t("admin.appversions.downloadsTurnedOff"), "success");
     } catch (e) {
       console.error("toggle downloads failed:", e);
-      AdminUI.toast("Could not reach the server.", "error");
+      AdminUI.toast(t("admin.appversions.couldNotReachServer"), "error");
     }
   });
 

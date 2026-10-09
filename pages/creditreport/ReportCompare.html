@@ -46,7 +46,7 @@ href="../../assets/css/creditreport/ReportCompare.css">
 
 <body>
 
-<div id="offlineBanner">
+<div id="offlineBanner" data-i18n="common.offline">
 ⚠️ No Internet Connection
 </div>
 
@@ -58,6 +58,11 @@ href="../../assets/css/creditreport/ReportCompare.css">
 <script src="/CM_Pro/shared/topbar.js"></script>
 <script src="/CM_Pro/shared/topbar-menu.js"></script>
 <script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/creditreport.js"></script>
 <script src="/CM_Pro/shared/loading.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 <script src="/CM_Pro/assets/js/toast.js"></script>
@@ -70,10 +75,10 @@ href="../../assets/css/creditreport/ReportCompare.css">
 <!-- ========================= -->
 <div class="topbar-menu" id="topbarMenu">
   <button type="button" class="topbar-menu-item" id="rcMenuSnapshot">
-    📸 Snapshot
+    📸 <span data-i18n="creditreport.menu.snapshot">Snapshot</span>
   </button>
   <button type="button" class="topbar-menu-item" id="rcMenuDeleteSnapshot">
-    🗑️ Delete Snapshot
+    🗑️ <span data-i18n="creditreport.menu.deleteSnapshot">Delete Snapshot</span>
   </button>
 </div>
 
@@ -86,10 +91,10 @@ href="../../assets/css/creditreport/ReportCompare.css">
 <div class="dialog" id="rcDeleteCalDialog">
   <div class="dialog-box rc-del-cal-box">
     <div class="rc-del-cal-head">
-      <div class="dialog-title rc-del-cal-title">Delete Snapshot</div>
-      <button type="button" class="rc-del-cal-close" id="rcDeleteCalClose" aria-label="Close">✕</button>
+      <div class="dialog-title rc-del-cal-title" data-i18n="creditreport.menu.deleteSnapshot">Delete Snapshot</div>
+      <button type="button" class="rc-del-cal-close" id="rcDeleteCalClose" aria-label="Close" data-i18n-aria-label="common.close">✕</button>
     </div>
-    <div class="rc-del-cal-sub">Pick a highlighted date to delete its saved snapshot.</div>
+    <div class="rc-del-cal-sub" data-i18n="creditreport.compare.deleteCalHint">Pick a highlighted date to delete its saved snapshot.</div>
     <div id="rcDeleteCalBody"></div>
   </div>
 </div>
@@ -98,8 +103,8 @@ href="../../assets/css/creditreport/ReportCompare.css">
   <div class="dialog-box">
     <div class="dialog-title" id="rcDeleteConfirmText"></div>
     <div class="dialog-buttons">
-      <button type="button" class="rc-del-no" id="rcDeleteConfirmNo">Cancel</button>
-      <button type="button" class="rc-del-yes" id="rcDeleteConfirmYes">Delete</button>
+      <button type="button" class="rc-del-no" id="rcDeleteConfirmNo" data-i18n="common.cancel">Cancel</button>
+      <button type="button" class="rc-del-yes" id="rcDeleteConfirmYes" data-i18n="common.delete">Delete</button>
     </div>
   </div>
 </div>
@@ -112,16 +117,16 @@ href="../../assets/css/creditreport/ReportCompare.css">
 <div class="rc-toolbar" id="rcToolbar">
   <div class="rc-toolbar-dates">
     <div class="rc-date-field">
-      <label for="rcDateA">From Date</label>
+      <label for="rcDateA" data-i18n="creditreport.compare.fromDate">From Date</label>
       <select id="rcDateA"></select>
     </div>
     <div class="rc-arrow">→</div>
     <div class="rc-date-field">
-      <label for="rcDateB">To Date</label>
+      <label for="rcDateB" data-i18n="creditreport.compare.toDate">To Date</label>
       <select id="rcDateB"></select>
     </div>
   </div>
-  <button type="button" class="rc-compare-btn" id="rcCompareBtn">Compare</button>
+  <button type="button" class="rc-compare-btn" id="rcCompareBtn" data-i18n="creditreport.compare.compareBtn">Compare</button>
 </div>
 
 <div class="op-empty" id="rcEmpty" style="display:none"></div>
@@ -139,11 +144,11 @@ href="../../assets/css/creditreport/ReportCompare.css">
 <div class="op-card rc-shell" id="rcTransitionsCard" style="display:none">
 
   <div class="rc-main-tabs" id="rcTabs">
-    <button type="button" class="rc-main-tab active" data-tab="os">💰 OS</button>
-    <button type="button" class="rc-main-tab" data-tab="disburse">🏦 Disb</button>
-    <button type="button" class="rc-main-tab" data-tab="t24">⏱ T24 OV</button>
-    <button type="button" class="rc-main-tab" data-tab="overdue">📉 NBC OV</button>
-    <button type="button" class="rc-main-tab" data-tab="wo">✍️ WO</button>
+    <button type="button" class="rc-main-tab active" data-tab="os">💰 <span data-i18n="creditreport.compare.tabOs">OS</span></button>
+    <button type="button" class="rc-main-tab" data-tab="disburse">🏦 <span data-i18n="creditreport.compare.tabDisburse">Disb</span></button>
+    <button type="button" class="rc-main-tab" data-tab="t24">⏱ <span data-i18n="creditreport.compare.tabT24">T24 OV</span></button>
+    <button type="button" class="rc-main-tab" data-tab="overdue">📉 <span data-i18n="creditreport.compare.tabOverdue">NBC OV</span></button>
+    <button type="button" class="rc-main-tab" data-tab="wo">✍️ <span data-i18n="creditreport.compare.tabWo">WO</span></button>
   </div>
 
   <div class="rc-section-head" id="rcSectionHead"></div>
@@ -162,10 +167,10 @@ href="../../assets/css/creditreport/ReportCompare.css">
        per explicit request 2026-10-08). -->
   <div class="rc-dim-row">
     <div class="rc-dim-chips" id="rcDimChips">
-      <button type="button" class="rc-dim-chip active" data-dim="officerId">Officer</button>
-      <button type="button" class="rc-dim-chip" data-dim="branch">Branch</button>
-      <button type="button" class="rc-dim-chip" data-dim="product">Product</button>
-      <button type="button" class="rc-dim-chip" data-dim="location">Location</button>
+      <button type="button" class="rc-dim-chip active" data-dim="officerId" data-i18n="creditreport.compare.dimOfficer">Officer</button>
+      <button type="button" class="rc-dim-chip" data-dim="branch" data-i18n="creditreport.compare.dimBranch">Branch</button>
+      <button type="button" class="rc-dim-chip" data-dim="product" data-i18n="creditreport.compare.dimProduct">Product</button>
+      <button type="button" class="rc-dim-chip" data-dim="location" data-i18n="creditreport.compare.dimLocation">Location</button>
     </div>
     <select class="rc-dim-value-select" id="rcDimValueSelect" style="display:none"></select>
   </div>

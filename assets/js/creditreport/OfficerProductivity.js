@@ -85,27 +85,34 @@
 // actively misleading, not just an empty state.
 // ========================================
 
-const OP_CATEGORIES = [
+const t = (key, vars) => window.CMI18n ? CMI18n.t(key, vars) : key;
+
+// Built by a function (not a frozen module-level const) so every label
+// picks up the current language whenever a card is (re)rendered, rather
+// than being baked in once at page-load time.
+function opCategories() {
+    return [
     {
         key: "outstanding",
         icon: "📊",
-        label: "Loan Outstanding",
+        label: t("creditreport.detail.sectionOutstanding"),
         chart: false,
         statGroups: [
             {
-                label: "Own",
+                label: t("creditreport.detail.own"),
                 fields: [
-                    { key: "loanOutstanding.loan", label: "Loan" },
-                    { key: "loanOutstanding.client", label: "Client" },
-                    { key: "loanOutstanding.value", label: "Value", money: true }
+                    { key: "loanOutstanding.loan", label: t("creditreport.productivity.colLoan") },
+                    { key: "loanOutstanding.client", label: t("creditreport.productivity.colClient") },
+                    { key: "loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
                 ]
             },
             {
-                label: "Area",
+                isArea: true,
+                label: t("creditreport.detail.area"),
                 fields: [
-                    { key: "loanOutstandingArea.loan", label: "Loan" },
-                    { key: "loanOutstandingArea.client", label: "Client" },
-                    { key: "loanOutstandingArea.value", label: "Value", money: true }
+                    { key: "loanOutstandingArea.loan", label: t("creditreport.productivity.colLoan") },
+                    { key: "loanOutstandingArea.client", label: t("creditreport.productivity.colClient") },
+                    { key: "loanOutstandingArea.value", label: t("creditreport.detail.colValue"), money: true }
                 ]
             }
         ],
@@ -113,138 +120,141 @@ const OP_CATEGORIES = [
         // into the "Area:" line itself as a tree, always visible (not
         // gated by expand/collapse) — see opAreaTreeHtml() below.
         areaTeamGroups: [
-            { label: "Officer", fields: [
-                { key: "loanOutstandingAreaByTeam.co.loan", label: "Loan" },
-                { key: "loanOutstandingAreaByTeam.co.client", label: "Client" },
-                { key: "loanOutstandingAreaByTeam.co.value", label: "Value", money: true }
+            { label: t("creditreport.compare.dimOfficer"), fields: [
+                { key: "loanOutstandingAreaByTeam.co.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "loanOutstandingAreaByTeam.co.client", label: t("creditreport.productivity.colClient") },
+                { key: "loanOutstandingAreaByTeam.co.value", label: t("creditreport.detail.colValue"), money: true }
             ] },
-            { label: "Digital", fields: [
-                { key: "loanOutstandingAreaByTeam.digital.loan", label: "Loan" },
-                { key: "loanOutstandingAreaByTeam.digital.client", label: "Client" },
-                { key: "loanOutstandingAreaByTeam.digital.value", label: "Value", money: true }
+            { label: t("creditreport.byBranch.teamDigital"), fields: [
+                { key: "loanOutstandingAreaByTeam.digital.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "loanOutstandingAreaByTeam.digital.client", label: t("creditreport.productivity.colClient") },
+                { key: "loanOutstandingAreaByTeam.digital.value", label: t("creditreport.detail.colValue"), money: true }
             ] }
         ],
         clientLists: [
-            { section: "outstanding", label: "Own" },
-            { section: "outstandingArea", label: "Area" }
+            { section: "outstanding", label: t("creditreport.detail.own") },
+            { section: "outstandingArea", label: t("creditreport.detail.area") }
         ]
     },
     {
         key: "disburse",
         icon: "💵",
-        label: "Loan Disburse",
+        label: t("creditreport.detail.sectionDisburse"),
         chart: true,
         statGroups: [
             {
-                label: "Own",
+                label: t("creditreport.detail.own"),
                 fields: [
-                    { key: "loanDisburse.loan", label: "Loan" },
-                    { key: "loanDisburse.value", label: "Value", money: true }
+                    { key: "loanDisburse.loan", label: t("creditreport.productivity.colLoan") },
+                    { key: "loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
                 ]
             },
             {
-                label: "Area",
+                isArea: true,
+                label: t("creditreport.detail.area"),
                 fields: [
-                    { key: "loanDisburseArea.loan", label: "Loan" },
-                    { key: "loanDisburseArea.value", label: "Value", money: true }
+                    { key: "loanDisburseArea.loan", label: t("creditreport.productivity.colLoan") },
+                    { key: "loanDisburseArea.value", label: t("creditreport.detail.colValue"), money: true }
                 ]
             }
         ],
         areaTeamGroups: [
-            { label: "Officer", fields: [
-                { key: "loanDisburseAreaByTeam.co.loan", label: "Loan" },
-                { key: "loanDisburseAreaByTeam.co.value", label: "Value", money: true }
+            { label: t("creditreport.compare.dimOfficer"), fields: [
+                { key: "loanDisburseAreaByTeam.co.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "loanDisburseAreaByTeam.co.value", label: t("creditreport.detail.colValue"), money: true }
             ] },
-            { label: "Digital", fields: [
-                { key: "loanDisburseAreaByTeam.digital.loan", label: "Loan" },
-                { key: "loanDisburseAreaByTeam.digital.value", label: "Value", money: true }
+            { label: t("creditreport.byBranch.teamDigital"), fields: [
+                { key: "loanDisburseAreaByTeam.digital.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "loanDisburseAreaByTeam.digital.value", label: t("creditreport.detail.colValue"), money: true }
             ] }
         ]
     },
     {
         key: "parT24",
         icon: "📈",
-        label: "Balance Loan at Risk (T24)",
+        label: t("creditreport.detail.sectionT24"),
         chart: false,
         statGroups: [
             {
-                label: "Own",
+                label: t("creditreport.detail.own"),
                 fields: [
-                    { key: "parT24.loan", label: "Loan" },
-                    { key: "parT24.value", label: "Value", money: true },
-                    { key: "parT24.parPct", label: "PAR", pct: true }
+                    { key: "parT24.loan", label: t("creditreport.productivity.colLoan") },
+                    { key: "parT24.value", label: t("creditreport.detail.colValue"), money: true },
+                    { key: "parT24.parPct", label: t("creditreport.productivity.colPar"), pct: true }
                 ]
             },
             {
-                label: "Area",
+                isArea: true,
+                label: t("creditreport.detail.area"),
                 fields: [
-                    { key: "parT24Area.loan", label: "Loan" },
-                    { key: "parT24Area.value", label: "Value", money: true },
-                    { key: "parT24Area.parPct", label: "PAR", pct: true }
+                    { key: "parT24Area.loan", label: t("creditreport.productivity.colLoan") },
+                    { key: "parT24Area.value", label: t("creditreport.detail.colValue"), money: true },
+                    { key: "parT24Area.parPct", label: t("creditreport.productivity.colPar"), pct: true }
                 ]
             }
         ],
         areaTeamGroups: [
-            { label: "Officer", fields: [
-                { key: "parT24AreaByTeam.co.loan", label: "Loan" },
-                { key: "parT24AreaByTeam.co.value", label: "Value", money: true },
-                { key: "parT24AreaByTeam.co.parPct", label: "PAR", pct: true }
+            { label: t("creditreport.compare.dimOfficer"), fields: [
+                { key: "parT24AreaByTeam.co.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "parT24AreaByTeam.co.value", label: t("creditreport.detail.colValue"), money: true },
+                { key: "parT24AreaByTeam.co.parPct", label: t("creditreport.productivity.colPar"), pct: true }
             ] },
-            { label: "Digital", fields: [
-                { key: "parT24AreaByTeam.digital.loan", label: "Loan" },
-                { key: "parT24AreaByTeam.digital.value", label: "Value", money: true },
-                { key: "parT24AreaByTeam.digital.parPct", label: "PAR", pct: true }
+            { label: t("creditreport.byBranch.teamDigital"), fields: [
+                { key: "parT24AreaByTeam.digital.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "parT24AreaByTeam.digital.value", label: t("creditreport.detail.colValue"), money: true },
+                { key: "parT24AreaByTeam.digital.parPct", label: t("creditreport.productivity.colPar"), pct: true }
             ] }
         ],
         clientLists: [
-            { section: "parT24", label: "Own" },
-            { section: "parT24Area", label: "Area" }
+            { section: "parT24", label: t("creditreport.detail.own") },
+            { section: "parT24Area", label: t("creditreport.detail.area") }
         ]
     },
     {
         key: "nbcOverdue",
         icon: "⚠️",
-        label: "Balance Loan at Risk (NBC Overdue)",
+        label: t("creditreport.detail.sectionNbcOverdue"),
         chart: false,
         // Own/Area render as two stacked lines (see opCardMarkup) rather
         // than one flat stats: [...] row — each side has its own
         // Loan/Value/PAR, not just a single combined figure.
         statGroups: [
             {
-                label: "Own",
+                label: t("creditreport.detail.own"),
                 fields: [
-                    { key: "nbcOverdue.totalOwn.count", label: "Loan" },
-                    { key: "nbcOverdue.totalOwn.value", label: "Value", money: true },
-                    { key: "nbcOverdue.totalOwn.parPct", label: "PAR", pct: true }
+                    { key: "nbcOverdue.totalOwn.count", label: t("creditreport.productivity.colLoan") },
+                    { key: "nbcOverdue.totalOwn.value", label: t("creditreport.detail.colValue"), money: true },
+                    { key: "nbcOverdue.totalOwn.parPct", label: t("creditreport.productivity.colPar"), pct: true }
                 ]
             },
             {
-                label: "Area",
+                isArea: true,
+                label: t("creditreport.detail.area"),
                 fields: [
-                    { key: "nbcOverdue.totalArea.count", label: "Loan" },
-                    { key: "nbcOverdue.totalArea.value", label: "Value", money: true },
-                    { key: "nbcOverdue.totalArea.parPct", label: "PAR", pct: true }
+                    { key: "nbcOverdue.totalArea.count", label: t("creditreport.productivity.colLoan") },
+                    { key: "nbcOverdue.totalArea.value", label: t("creditreport.detail.colValue"), money: true },
+                    { key: "nbcOverdue.totalArea.parPct", label: t("creditreport.productivity.colPar"), pct: true }
                 ]
             }
         ],
         areaTeamGroups: [
-            { label: "Officer", fields: [
-                { key: "nbcOverdueAreaByTeam.co.count", label: "Loan" },
-                { key: "nbcOverdueAreaByTeam.co.value", label: "Value", money: true },
-                { key: "nbcOverdueAreaByTeam.co.parPct", label: "PAR", pct: true }
+            { label: t("creditreport.compare.dimOfficer"), fields: [
+                { key: "nbcOverdueAreaByTeam.co.count", label: t("creditreport.productivity.colLoan") },
+                { key: "nbcOverdueAreaByTeam.co.value", label: t("creditreport.detail.colValue"), money: true },
+                { key: "nbcOverdueAreaByTeam.co.parPct", label: t("creditreport.productivity.colPar"), pct: true }
             ] },
-            { label: "Digital", fields: [
-                { key: "nbcOverdueAreaByTeam.digital.count", label: "Loan" },
-                { key: "nbcOverdueAreaByTeam.digital.value", label: "Value", money: true },
-                { key: "nbcOverdueAreaByTeam.digital.parPct", label: "PAR", pct: true }
+            { label: t("creditreport.byBranch.teamDigital"), fields: [
+                { key: "nbcOverdueAreaByTeam.digital.count", label: t("creditreport.productivity.colLoan") },
+                { key: "nbcOverdueAreaByTeam.digital.value", label: t("creditreport.detail.colValue"), money: true },
+                { key: "nbcOverdueAreaByTeam.digital.parPct", label: t("creditreport.productivity.colPar"), pct: true }
             ] }
         ],
         // Two separate "List of Client" sub-tabs (Own/Area) instead of
         // one — each hits a different officer-clients `section` (see
         // opClientListTabs()/opBuildClientListHtml() below).
         clientLists: [
-            { section: "nbcOverdue", label: "Own" },
-            { section: "nbcOverdueArea", label: "Area" }
+            { section: "nbcOverdue", label: t("creditreport.detail.own") },
+            { section: "nbcOverdueArea", label: t("creditreport.detail.area") }
         ]
     },
     // Shows Balance WO (the outstanding written-off balance, # cif/Int/Prn —
@@ -255,44 +265,46 @@ const OP_CATEGORIES = [
     {
         key: "writeOff",
         icon: "✂️",
-        label: "Write Off",
+        label: t("creditreport.detail.sectionWriteOff"),
         chart: false,
         statGroups: [
             {
-                label: "Own",
+                label: t("creditreport.detail.own"),
                 fields: [
-                    { key: "writeOffOwn.balanceWO.count", label: "# (cif)" },
-                    { key: "writeOffOwn.balanceWO.int", label: "Int", money: true },
-                    { key: "writeOffOwn.balanceWO.prn", label: "Prn", money: true }
+                    { key: "writeOffOwn.balanceWO.count", label: t("creditreport.detail.colCifHash") },
+                    { key: "writeOffOwn.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
+                    { key: "writeOffOwn.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
                 ]
             },
             {
-                label: "Area",
+                isArea: true,
+                label: t("creditreport.detail.area"),
                 fields: [
-                    { key: "writeOffArea.balanceWO.count", label: "# (cif)" },
-                    { key: "writeOffArea.balanceWO.int", label: "Int", money: true },
-                    { key: "writeOffArea.balanceWO.prn", label: "Prn", money: true }
+                    { key: "writeOffArea.balanceWO.count", label: t("creditreport.detail.colCifHash") },
+                    { key: "writeOffArea.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
+                    { key: "writeOffArea.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
                 ]
             }
         ],
         areaTeamGroups: [
-            { label: "Officer", fields: [
-                { key: "writeOffAreaByTeam.co.balanceWO.count", label: "# (cif)" },
-                { key: "writeOffAreaByTeam.co.balanceWO.int", label: "Int", money: true },
-                { key: "writeOffAreaByTeam.co.balanceWO.prn", label: "Prn", money: true }
+            { label: t("creditreport.compare.dimOfficer"), fields: [
+                { key: "writeOffAreaByTeam.co.balanceWO.count", label: t("creditreport.detail.colCifHash") },
+                { key: "writeOffAreaByTeam.co.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
+                { key: "writeOffAreaByTeam.co.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
             ] },
-            { label: "Digital", fields: [
-                { key: "writeOffAreaByTeam.digital.balanceWO.count", label: "# (cif)" },
-                { key: "writeOffAreaByTeam.digital.balanceWO.int", label: "Int", money: true },
-                { key: "writeOffAreaByTeam.digital.balanceWO.prn", label: "Prn", money: true }
+            { label: t("creditreport.byBranch.teamDigital"), fields: [
+                { key: "writeOffAreaByTeam.digital.balanceWO.count", label: t("creditreport.detail.colCifHash") },
+                { key: "writeOffAreaByTeam.digital.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
+                { key: "writeOffAreaByTeam.digital.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
             ] }
         ],
         clientLists: [
-            { section: "writeOff", label: "Own" },
-            { section: "writeOffArea", label: "Area" }
+            { section: "writeOff", label: t("creditreport.detail.own") },
+            { section: "writeOffArea", label: t("creditreport.detail.area") }
         ]
     }
-];
+    ];
+}
 
 const opToken =
     localStorage.getItem("token") ||
@@ -348,7 +360,7 @@ function opSkeletonHtml() {
              <div class="op-skel-line" style="width:82%"></div>`;
 }
 function opErrorHtml(err) {
-    return `<div class="op-state op-state-error">${opEscapeHtml((err && err.message) || "Something went wrong.")}</div>`;
+    return `<div class="op-state op-state-error">${opEscapeHtml((err && err.message) || t("voice.genericError"))}</div>`;
 }
 
 // ========================================
@@ -394,7 +406,7 @@ async function opFetchAndFindOfficer(meta, name) {
         headers: { Authorization: `Bearer ${opToken}` }
     });
     const data = await res.json();
-    if (!data.ok) throw new Error(data.message || "Failed to load report.");
+    if (!data.ok) throw new Error(data.message || t("creditreport.detail.failedLoadReport"));
     const item = (data.items || []).find(it => it.name === name);
     // This is the exact same roster opEnsureOfficerRoster() would fetch
     // for the search box — cache it now so a search shortly after this
@@ -442,7 +454,7 @@ function opCardStatsHtml(cat, officer) {
             // line, with the FSRO/CO/Digital breakdown nested right below
             // it as a tree — always visible, same as Own, not gated by
             // expand/collapse. See opAreaTreeHtml().
-            if (g.label === "Area" && cat.areaTeamGroups) {
+            if (g.isArea && cat.areaTeamGroups) {
                 return opAreaTreeHtml(g, cat, officer);
             }
             return `
@@ -484,12 +496,12 @@ function opAreaTreeHtml(areaGroup, cat, officer) {
 function opCardMarkup(cat, officer) {
     const listTabsHtml = cat.clientLists
         ? cat.clientLists.map((cl, i) =>
-            `<button type="button" class="op-mode-tab${i === 0 ? " active" : ""}" data-mode="list:${cl.section}">👥 List of Client ${opEscapeHtml(cl.label)}</button>`
+            `<button type="button" class="op-mode-tab${i === 0 ? " active" : ""}" data-mode="list:${cl.section}">👥 ${t("creditreport.productivity.listOfClient")} ${opEscapeHtml(cl.label)}</button>`
           ).join("")
-        : `<button type="button" class="op-mode-tab active" data-mode="list">👥 List of Client</button>`;
+        : `<button type="button" class="op-mode-tab active" data-mode="list">👥 ${t("creditreport.productivity.listOfClient")}</button>`;
 
     const chartTabHtml = cat.chart
-        ? `<button type="button" class="op-mode-tab" data-mode="chart">📈 Chart</button>`
+        ? `<button type="button" class="op-mode-tab" data-mode="chart">📈 ${t("creditreport.detail.chart")}</button>`
         : "";
 
     return `
@@ -514,7 +526,7 @@ function opCardMarkup(cat, officer) {
 
 function opRenderCards() {
     const wrap = document.getElementById("opCards");
-    wrap.innerHTML = OP_CATEGORIES.map(cat => opCardMarkup(cat, opState.officer)).join("");
+    wrap.innerHTML = opCategories().map(cat => opCardMarkup(cat, opState.officer)).join("");
     wrap.style.display = "flex";
     opFitStatsToWidth();
 }
@@ -639,9 +651,9 @@ async function opFetchClientListRows(sectionKey) {
         `&officerId=${encodeURIComponent(officer.id || "")}`;
 
     const res = await fetch(url, { headers: { Authorization: `Bearer ${opToken}` } });
-    if (!res.ok) throw new Error("Could not load the client list. Please try again.");
+    if (!res.ok) throw new Error(t("creditreport.productivity.clientListLoadFailedRetry"));
     const data = await res.json();
-    if (!data.ok) throw new Error(data.message || "Could not load the client list.");
+    if (!data.ok) throw new Error(data.message || t("creditreport.productivity.clientListLoadFailed"));
     return data.items || [];
 }
 
@@ -650,35 +662,40 @@ async function opFetchClientListRows(sectionKey) {
 // the sort type each column click-sorts by (opWireSortableTable), and
 // the Excel export column set (opExportRowsToExcel), so all three can
 // never drift out of sync with each other.
-const OP_CLIENT_TABLE_COLS = [
-    { key: "name", label: "Name", type: "text" },
-    { key: "cif", label: "CIF", type: "text" },
-    { key: "loanNumber", label: "Loan Number", type: "text" },
-    { key: "disburseDate", label: "Disburse Date", type: "date" },
-    { key: "address", label: "Address", type: "text" },
-    { key: "productType", label: "Product Type", type: "text" },
-    { key: "loanSize", label: "Loan Size", type: "number" },
-    { key: "osUsd", label: "OS USD", type: "number" }
-];
+// Functions (not frozen consts) so labels pick up the current language.
+function opClientTableCols() {
+    return [
+        { key: "name", label: t("creditreport.compare.colName"), type: "text" },
+        { key: "cif", label: t("creditreport.compare.colCif"), type: "text" },
+        { key: "loanNumber", label: t("creditreport.productivity.colLoanNumber"), type: "text" },
+        { key: "disburseDate", label: t("creditreport.productivity.colDisburseDate"), type: "date" },
+        { key: "address", label: t("creditreport.productivity.colAddress"), type: "text" },
+        { key: "productType", label: t("creditreport.detail.productType"), type: "text" },
+        { key: "loanSize", label: t("creditreport.productivity.colLoanSize"), type: "number" },
+        { key: "osUsd", label: t("creditreport.productivity.colOsUsd"), type: "number" }
+    ];
+}
 
-const OP_ARREARS_TABLE_COLS = [
-    { key: "name", label: "Customer", type: "text" },
-    { key: "loanNumber", label: "Loan Number", type: "text" },
-    { key: "class", label: "Class", type: "text" },
-    { key: "productType", label: "Product Type", type: "text" },
-    { key: "address", label: "Location", type: "text" },
-    { key: "disburseDate", label: "DisDate", type: "date" },
-    { key: "prnOS", label: "Prn.OS", type: "number" },
-    { key: "intOS", label: "Int.OS", type: "number" },
-    { key: "prnDue", label: "Prn.Due", type: "number" },
-    { key: "intDue", label: "Int.Due", type: "number" },
-    { key: "penalty", label: "Penalty", type: "number" },
-    { key: "arreas", label: "Arreas", type: "number" },
-    { key: "day", label: "Day", type: "number" },
-    { key: "balance", label: "Balnce", type: "number" },
-    { key: "accountLoan", label: "Account Loan", type: "text" },
-    { key: "cif", label: "CIF", type: "text" }
-];
+function opArrearsTableCols() {
+    return [
+        { key: "name", label: t("creditreport.productivity.colCustomer"), type: "text" },
+        { key: "loanNumber", label: t("creditreport.productivity.colLoanNumber"), type: "text" },
+        { key: "class", label: t("creditreport.compare.colClass"), type: "text" },
+        { key: "productType", label: t("creditreport.detail.productType"), type: "text" },
+        { key: "address", label: t("creditreport.compare.dimLocation"), type: "text" },
+        { key: "disburseDate", label: t("creditreport.productivity.colDisDate"), type: "date" },
+        { key: "prnOS", label: t("creditreport.productivity.colPrnOs"), type: "number" },
+        { key: "intOS", label: t("creditreport.productivity.colIntOs"), type: "number" },
+        { key: "prnDue", label: t("creditreport.productivity.colPrnDue"), type: "number" },
+        { key: "intDue", label: t("creditreport.productivity.colIntDue"), type: "number" },
+        { key: "penalty", label: t("creditreport.productivity.colPenalty"), type: "number" },
+        { key: "arreas", label: t("creditreport.productivity.colArreas"), type: "number" },
+        { key: "day", label: t("creditreport.productivity.colDay"), type: "number" },
+        { key: "balance", label: t("creditreport.productivity.colBalnce"), type: "number" },
+        { key: "accountLoan", label: t("creditreport.productivity.colAccountLoan"), type: "text" },
+        { key: "cif", label: t("creditreport.compare.colCif"), type: "text" }
+    ];
+}
 
 function opTableThHtml(col) {
     return `<th data-sort-key="${col.key}" data-sort-type="${col.type}">${opEscapeHtml(col.label)}</th>`;
@@ -696,8 +713,9 @@ function opTableTdHtml(col, row) {
 // for the latter since every row on a single day shares the same
 // disburse date, already shown in that panel's own header.
 function opClientTableHtml(rows, { showDate = true } = {}) {
-    if (!rows.length) return `<div class="op-state">No clients found for this category.</div>`;
-    const cols = showDate ? OP_CLIENT_TABLE_COLS : OP_CLIENT_TABLE_COLS.filter(c => c.key !== "disburseDate");
+    if (!rows.length) return `<div class="op-state">${t("creditreport.productivity.noClientsFound")}</div>`;
+    const allCols = opClientTableCols();
+    const cols = showDate ? allCols : allCols.filter(c => c.key !== "disburseDate");
 
     return `
       <div class="op-client-table-wrap">
@@ -721,13 +739,14 @@ function opClientTableHtml(rows, { showDate = true } = {}) {
 // already follows for e.g. Write Off's Loan Size/OS USD). The leading
 // "No" column is a plain row count, not a sortable field.
 function opArrearsTableHtml(rows) {
-    if (!rows.length) return `<div class="op-state">No clients found for this category.</div>`;
+    if (!rows.length) return `<div class="op-state">${t("creditreport.productivity.noClientsFound")}</div>`;
+    const cols = opArrearsTableCols();
 
     return `
       <div class="op-client-table-wrap">
         <table class="op-client-table">
-          <thead><tr><th>No</th>${OP_ARREARS_TABLE_COLS.map(opTableThHtml).join("")}</tr></thead>
-          <tbody>${rows.map((r, i) => `<tr><td>${i + 1}</td>${OP_ARREARS_TABLE_COLS.map(c => opTableTdHtml(c, r)).join("")}</tr>`).join("")}</tbody>
+          <thead><tr><th>${t("creditreport.productivity.colNo")}</th>${cols.map(opTableThHtml).join("")}</tr></thead>
+          <tbody>${rows.map((r, i) => `<tr><td>${i + 1}</td>${cols.map(c => opTableTdHtml(c, r)).join("")}</tr>`).join("")}</tbody>
         </table>
       </div>`;
 }
@@ -813,15 +832,15 @@ function opWireSortableTable(container, rows, buildTableHtml) {
 // silent superset or subset of what's visible.
 function opExportRowsToExcel(rows, cols, filenamePrefix) {
     if (typeof XLSX === "undefined") {
-        if (typeof showToast === "function") showToast("Excel export library failed to load.", "error");
+        if (typeof showToast === "function") showToast(t("creditreport.detail.excelLibFailed"), "error");
         return;
     }
     if (!rows.length) {
-        if (typeof showToast === "function") showToast("Nothing to export.", "warning");
+        if (typeof showToast === "function") showToast(t("creditreport.detail.nothingToExport"), "warning");
         return;
     }
     const sheetData = rows.map((r, i) => {
-        const out = { No: i + 1 };
+        const out = { [t("creditreport.productivity.colNo")]: i + 1 };
         cols.forEach(c => {
             const v = r[c.key];
             out[c.label] = c.type === "date" ? opFmtDateDMY(v) : (v === "" || v == null ? "" : v);
@@ -840,11 +859,12 @@ function opExportRowsToExcel(rows, cols, filenamePrefix) {
 // clients" empty state), then wires sort-by-column and the Export Excel
 // button against the exact rows/columns actually on screen.
 function opRenderClientListInto(container, rows, { arrears = false, showDate = true, filenamePrefix = "clients" } = {}) {
-    const cols = arrears ? OP_ARREARS_TABLE_COLS : (showDate ? OP_CLIENT_TABLE_COLS : OP_CLIENT_TABLE_COLS.filter(c => c.key !== "disburseDate"));
+    const allCols = opClientTableCols();
+    const cols = arrears ? opArrearsTableCols() : (showDate ? allCols : allCols.filter(c => c.key !== "disburseDate"));
     const buildTableHtml = arrears ? opArrearsTableHtml : (rs => opClientTableHtml(rs, { showDate }));
 
     const exportBtnHtml = rows.length
-        ? `<div class="op-list-actions"><button type="button" class="op-list-export-btn">⬇ Export Excel</button></div>`
+        ? `<div class="op-list-actions"><button type="button" class="op-list-export-btn">⬇ ${t("creditreport.menu.exportExcel")}</button></div>`
         : "";
     container.innerHTML = exportBtnHtml + buildTableHtml(rows);
 
@@ -869,7 +889,13 @@ function opHeatBucket(value, maxValue) {
     return 1;
 }
 
-const OP_HEAT_DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+function opHeatDow() {
+    return [
+        t("creditreport.compare.dowSun"), t("creditreport.compare.dowMon"), t("creditreport.compare.dowTue"),
+        t("creditreport.compare.dowWed"), t("creditreport.compare.dowThu"), t("creditreport.compare.dowFri"),
+        t("creditreport.compare.dowSat")
+    ];
+}
 
 // Cambodian public holidays ("yyyy-mm-dd" keys) that get the same
 // highlight ring as Sat/Sun on the heatmap (see op-heat-holiday below).
@@ -911,7 +937,7 @@ function opBuildDisburseHeatmapHtml(dates, values, counts, officer, meta) {
     const maxValue = Math.max(0, ...values);
     const firstDow = new Date(dates[0] + "T00:00:00").getDay();
 
-    let cells = OP_HEAT_DOW.map(d => `<div class="op-heat-dow">${d}</div>`).join("");
+    let cells = opHeatDow().map(d => `<div class="op-heat-dow">${d}</div>`).join("");
     for (let i = 0; i < firstDow; i++) cells += `<div class="op-heat-cell op-heat-pad"></div>`;
 
     dates.forEach((dateStr, i) => {
@@ -964,29 +990,29 @@ function opBuildDisburseHeatmapHtml(dates, values, counts, officer, meta) {
         .toLocaleString("en-US", { month: "long", year: "numeric" });
 
     return `
-      <div class="op-heat-title">Daily Loan Disbursement — ${opEscapeHtml(officerName)}</div>
+      <div class="op-heat-title">${t("creditreport.productivity.dailyLoanDisbursement")} — ${opEscapeHtml(officerName)}</div>
       <div class="op-heat-subtitle-group">
-        <div class="op-heat-subtitle-line">Period Date: ${period}</div>
-        <div class="op-heat-subtitle-line">Total  Disburse: ${opFmtNum(totalLoan)}LD, USD${opFmtNum(totalValue)}</div>
+        <div class="op-heat-subtitle-line">${t("creditreport.productivity.periodDate")}: ${period}</div>
+        <div class="op-heat-subtitle-line">${t("creditreport.productivity.totalDisburse")}: ${opFmtNum(totalLoan)}LD, USD${opFmtNum(totalValue)}</div>
       </div>
       <div class="op-heat-grid">${cells}</div>
       <div class="op-heat-legend">
-        <span>Less</span>
+        <span>${t("creditreport.productivity.less")}</span>
         <span class="op-heat-sw op-heat-h0"></span>
         <span class="op-heat-sw op-heat-h1"></span>
         <span class="op-heat-sw op-heat-h2"></span>
         <span class="op-heat-sw op-heat-h3"></span>
         <span class="op-heat-sw op-heat-h4"></span>
-        <span>More</span>
+        <span>${t("creditreport.productivity.more")}</span>
       </div>
       <div class="op-heat-legend op-heat-legend-2">
-        <span class="op-heat-sw op-heat-ring-weekend"></span><span>Weekend</span>
-        <span class="op-heat-sw op-heat-ring-holiday"></span><span>Holiday</span>
+        <span class="op-heat-sw op-heat-ring-weekend"></span><span>${t("creditreport.productivity.weekend")}</span>
+        <span class="op-heat-sw op-heat-ring-holiday"></span><span>${t("creditreport.productivity.holiday")}</span>
       </div>
       <div class="op-heat-nav">
-        <button type="button" class="op-heat-nav-btn" data-dir="prev" aria-label="Previous month">‹</button>
+        <button type="button" class="op-heat-nav-btn" data-dir="prev" aria-label="${t("creditreport.compare.prevMonth")}">‹</button>
         <span class="op-heat-nav-label">${opEscapeHtml(monthLabel)}</span>
-        <button type="button" class="op-heat-nav-btn" data-dir="next" aria-label="Next month">›</button>
+        <button type="button" class="op-heat-nav-btn" data-dir="next" aria-label="${t("creditreport.compare.nextMonth")}">›</button>
       </div>
       <div class="op-heat-day-panel"></div>`;
 }
@@ -1032,7 +1058,7 @@ function opShowHeatTooltip(cell, tooltip) {
     const count = Number(cell.dataset.count);
     const [, mm, dd] = date.split("-");
     tooltip.innerHTML = `<span class="op-heat-tt-date">${dd}-${mm}:</span> ` + (
-        value > 0 ? `${opFmtNum(value)} · ${count} loan${count > 1 ? "s" : ""}` : "No disbursement"
+        value > 0 ? `${opFmtNum(value)} · ${t("creditreport.productivity.loanCount", { count })}` : t("creditreport.productivity.noDisbursement")
     );
     tooltip.classList.add("show");
 }
@@ -1067,9 +1093,9 @@ async function opFetchDayClients(dateKey) {
         `&officerId=${encodeURIComponent(officer.id || "")}`;
 
     const res = await fetch(url, { headers: { Authorization: `Bearer ${opToken}` } });
-    if (!res.ok) throw new Error("Could not load clients for this day. Please try again.");
+    if (!res.ok) throw new Error(t("creditreport.productivity.dayClientsLoadFailedRetry"));
     const data = await res.json();
-    if (!data.ok) throw new Error(data.message || "Could not load clients for this day.");
+    if (!data.ok) throw new Error(data.message || t("creditreport.productivity.dayClientsLoadFailed"));
     return data.items || [];
 }
 
@@ -1155,9 +1181,9 @@ async function opFetchDisburseChartData(monthOverride) {
     const holidaysReady = opEnsureKhHolidays();
 
     const res = await fetch(url, { headers: { Authorization: `Bearer ${opToken}` } });
-    if (!res.ok) throw new Error("Could not load the disbursement chart. Please try again.");
+    if (!res.ok) throw new Error(t("creditreport.productivity.chartLoadFailedRetry"));
     const data = await res.json();
-    if (!data.ok) throw new Error(data.message || "Could not load the disbursement chart.");
+    if (!data.ok) throw new Error(data.message || t("creditreport.productivity.chartLoadFailed"));
     await holidaysReady;
 
     const dates = data.dates || [];
@@ -1178,7 +1204,7 @@ function opRenderDisburseHeatmapInto(container, fullscreen) {
     const { dates, values, counts } = opDisburseChartData;
     const btnHtml = fullscreen
         ? ""
-        : `<button type="button" class="op-chart-fullscreen-btn" aria-label="Fullscreen chart">⛶</button>`;
+        : `<button type="button" class="op-chart-fullscreen-btn" aria-label="${t("creditreport.productivity.fullscreenChartAria")}">⛶</button>`;
     container.innerHTML = btnHtml + opBuildDisburseHeatmapHtml(dates, values, counts, opState.officer, opState.meta);
 
     opWireHeatmapTooltips(container);
@@ -1450,21 +1476,21 @@ async function opInit() {
     }
 
     if (!handoff.name) {
-        opShowEmpty("No officer was specified. Go back and select an officer from the report.");
+        opShowEmpty(t("creditreport.productivity.noOfficerSpecified"));
         return;
     }
 
     try {
         const { item } = await opFetchAndFindOfficer(handoff.meta, handoff.name);
         if (!item) {
-            opShowEmpty(`Could not find "${handoff.name}" under the current report filters.`);
+            opShowEmpty(t("creditreport.productivity.couldNotFindOfficer", { name: handoff.name }));
             return;
         }
         opState.officer = item;
         opFinishLoad();
     } catch (err) {
         console.error(err);
-        opShowEmpty("Network error loading officer data.");
+        opShowEmpty(t("creditreport.productivity.networkErrorOfficerData"));
     }
 }
 

@@ -18,7 +18,7 @@ async function loadComponent(id,file){
         }
         if(id==="topbar-container"){
             initTopbar({
-                title:"Daily Arrears",
+                titleKey:"dashboard.dailyArrears",
                 showBack:true,
                 showLogo:false,
                 showProfile:false

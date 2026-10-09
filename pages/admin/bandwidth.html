@@ -43,7 +43,7 @@
     <!-- SIDEBAR (auto-rendered by admin-nav.js) -->
     <!-- ========================= -->
     <aside class="adm-sidebar">
-      <div class="adm-sidebar-brand">CM_Pro Admin</div>
+      <div class="adm-sidebar-brand" data-i18n="admin.common.brand">CM_Pro Admin</div>
       <nav id="admSidebar"></nav>
     </aside>
 
@@ -59,22 +59,22 @@
         <div class="adm-title-block adm-bw-title-block">
           <span class="adm-bw-title-icon" aria-hidden="true">📶</span>
           <div>
-            <h1>Bandwidth Dashboard <span class="adm-bw-title-km">· ផ្ទាំងត្រួតពិនិត្យបញ្ជូនទិន្នន័យ</span></h1>
-            <p>Realtime HTTP response bandwidth, by route — CM-backend (Render)</p>
+            <h1 data-i18n="admin.bandwidth.title">Bandwidth Dashboard</h1>
+            <p data-i18n="admin.bandwidth.subtitle">Realtime HTTP response bandwidth, by route — CM-backend (Render)</p>
           </div>
         </div>
 
         <div class="adm-header-right">
-          <span class="adm-user-chip" id="admUserLabel">Admin</span>
+          <span class="adm-user-chip" id="admUserLabel" data-i18n="admin.common.adminFallback">Admin</span>
 
           <div class="adm-range-group">
-            <button class="adm-range-btn adm-active" data-range="1">Today</button>
-            <button class="adm-range-btn" data-range="7">7 Days</button>
-            <button class="adm-range-btn" data-range="30">30 Days</button>
+            <button class="adm-range-btn adm-active" data-range="1" data-i18n="admin.bandwidth.rangeToday">Today</button>
+            <button class="adm-range-btn" data-range="7" data-i18n="admin.bandwidth.range7Days">7 Days</button>
+            <button class="adm-range-btn" data-range="30" data-i18n="admin.bandwidth.range30Days">30 Days</button>
           </div>
 
           <span class="adm-bw-updated" id="admLastUpdated">—</span>
-          <button class="adm-btn adm-btn-primary adm-bw-refresh" id="admRefreshBtn"><span class="adm-bw-refresh-icon">↻</span> Refresh</button>
+          <button class="adm-btn adm-btn-primary adm-bw-refresh" id="admRefreshBtn"><span class="adm-bw-refresh-icon">↻</span> <span data-i18n="admin.bandwidth.refresh">Refresh</span></button>
           <div class="adm-topbar-actions" id="admTopbarActions"></div>
         </div>
       </div>
@@ -88,12 +88,12 @@
         <div class="adm-render-card-top">
           <div class="adm-card-label adm-render-card-label">
             <span class="adm-render-card-icon" aria-hidden="true">☁️</span>
-            Render Account Usage · This Billing Month
+            <span data-i18n="admin.bandwidth.renderUsageTitle">Render Account Usage · This Billing Month</span>
           </div>
-          <span class="adm-render-live-chip"><span class="adm-pulse-dot adm-render-live-dot"></span>Live from Render API</span>
+          <span class="adm-render-live-chip"><span class="adm-pulse-dot adm-render-live-dot"></span><span data-i18n="admin.bandwidth.liveFromRenderApi">Live from Render API</span></span>
         </div>
 
-        <div class="adm-render-loading" id="admRenderLoading">Loading Render usage…</div>
+        <div class="adm-render-loading" id="admRenderLoading" data-i18n="admin.bandwidth.loadingRenderUsage">Loading Render usage…</div>
 
         <div id="admRenderUsageBody" class="adm-render-body" hidden>
           <div class="adm-render-body-main">
@@ -103,19 +103,19 @@
             <div class="adm-render-overage" id="admRenderOverage">
               <span class="adm-render-overage-icon" aria-hidden="true">💳</span>
               <span id="admRenderOverageText">—</span>
-              <span class="adm-info-asterisk" title="Estimated using Render's real Outgoing Bandwidth overage rate ($0.15/GB, confirmed off the account's own Billing page — Render's API has no billing/invoice endpoint to read this from directly). Still an estimate, not the actual invoice line: it's computed from the Metrics API, which can run a few minutes to tens of minutes behind Render's own billing engine, so this figure may read slightly LOWER than the real Billing page until the metrics catch up.">*</span>
+              <span class="adm-info-asterisk" title="Estimated using Render's real Outgoing Bandwidth overage rate ($0.15/GB, confirmed off the account's own Billing page — Render's API has no billing/invoice endpoint to read this from directly). Still an estimate, not the actual invoice line: it's computed from the Metrics API, which can run a few minutes to tens of minutes behind Render's own billing engine, so this figure may read slightly LOWER than the real Billing page until the metrics catch up." data-i18n-title="admin.bandwidth.overageTooltip">*</span>
             </div>
           </div>
           <div class="adm-render-sources" id="admRenderSources"></div>
         </div>
 
-        <div class="adm-render-setup" id="admRenderSetup" hidden>
+        <div class="adm-render-setup" id="admRenderSetup" hidden data-i18n-html="admin.bandwidth.renderNotConnected">
           Render usage isn't connected yet. Add <code>RENDER_API_KEY</code> and
           <code>RENDER_SERVICE_ID</code> environment variables on Render to show your real
           account-wide bandwidth here (matches Render's own dashboard exactly).
         </div>
 
-        <button type="button" class="adm-btn adm-render-debug-btn" id="admRenderDebugBtn">Show raw response (debug)</button>
+        <button type="button" class="adm-btn adm-render-debug-btn" id="admRenderDebugBtn" data-i18n="admin.bandwidth.showRawResponse">Show raw response (debug)</button>
         <textarea id="admRenderDebugOutput" class="adm-render-debug-output" readonly hidden></textarea>
       </div>
 
@@ -126,7 +126,7 @@
 
         <div class="adm-card adm-kpi-card" data-accent="navy">
           <span class="adm-kpi-icon" aria-hidden="true">📊</span>
-          <div class="adm-card-label">Today's Usage <span class="adm-info-asterisk" title="Tracked HTTP routes (request-body + response bytes) + outbound calls + approximate DB-read bytes on bulk row endpoints — see note below">*</span></div>
+          <div class="adm-card-label"><span data-i18n="admin.bandwidth.todaysUsage">Today's Usage</span> <span class="adm-info-asterisk" title="Tracked HTTP routes (request-body + response bytes) + outbound calls + approximate DB-read bytes on bulk row endpoints — see note below" data-i18n-title="admin.bandwidth.trackedNote">*</span></div>
           <div class="adm-card-value" id="admKpiTodayGb">— GB</div>
           <div class="adm-bar-track"><div class="adm-bar-fill" id="admKpiTodayBar"></div></div>
           <div class="adm-card-sub" id="admKpiTodayPct">—</div>
@@ -134,21 +134,21 @@
 
         <div class="adm-card adm-kpi-card" data-accent="green">
           <span class="adm-kpi-icon" aria-hidden="true">⚡</span>
-          <div class="adm-card-label"><span class="adm-pulse-dot" id="admKpiLivePulse"></span>Live Rate</div>
+          <div class="adm-card-label"><span class="adm-pulse-dot" id="admKpiLivePulse"></span><span data-i18n="admin.bandwidth.liveRate">Live Rate</span></div>
           <div class="adm-card-value" id="admKpiLiveRate">—</div>
-          <div class="adm-card-sub">Server-measured, last ~2 min window</div>
+          <div class="adm-card-sub" data-i18n="admin.bandwidth.liveRateSub">Server-measured, last ~2 min window</div>
         </div>
 
         <div class="adm-card adm-kpi-card" data-accent="gold">
           <span class="adm-kpi-icon" aria-hidden="true">Σ</span>
-          <div class="adm-card-label">Range Total <span class="adm-info-asterisk" title="Tracked HTTP routes (request-body + response bytes) + outbound calls + approximate DB-read bytes on bulk row endpoints — see note below">*</span></div>
+          <div class="adm-card-label"><span data-i18n="admin.bandwidth.rangeTotal">Range Total</span> <span class="adm-info-asterisk" title="Tracked HTTP routes (request-body + response bytes) + outbound calls + approximate DB-read bytes on bulk row endpoints — see note below" data-i18n-title="admin.bandwidth.trackedNote">*</span></div>
           <div class="adm-card-value" id="admKpiRangeTotal">—</div>
-          <div class="adm-card-sub">Sum of tracked HTTP (in + out) + outbound-call + approx. DB-read bytes, selected range</div>
+          <div class="adm-card-sub" data-i18n="admin.bandwidth.rangeTotalSub">Sum of tracked HTTP (in + out) + outbound-call + approx. DB-read bytes, selected range</div>
         </div>
 
         <div class="adm-card adm-kpi-card" data-accent="violet">
           <span class="adm-kpi-icon" aria-hidden="true">🏆</span>
-          <div class="adm-card-label">Top Route</div>
+          <div class="adm-card-label" data-i18n="admin.bandwidth.topRoute">Top Route</div>
           <div class="adm-card-value adm-kpi-route-value" id="admKpiTopRoute">—</div>
           <div class="adm-card-sub" id="admKpiTopRouteMb"></div>
         </div>
@@ -157,7 +157,7 @@
 
       <p class="adm-tracking-note">
         <span class="adm-tracking-note-icon" aria-hidden="true">ℹ️</span>
-        <span>
+        <span data-i18n-html="admin.bandwidth.trackingNote">
           <strong>"Today's Usage"</strong> និង <strong>"Range Total"</strong> គ្របដណ្ដប់លើ HTTP
           routes ដែលម៉ាស៊ីនមេនេះដោះស្រាយ — ទាំងទិន្នន័យ request-body ដែលវាទទួល (ការផ្ទុកឡើង
           ដូចជាការផ្ទុកឡើងជាបាច់របស់ឧបករណ៍ធ្វើសមកាលកម្ម VBA ដែលបង្ហាញជាជួរដេក
@@ -184,16 +184,16 @@
 
         <div class="adm-chart-card">
           <div class="adm-chart-card-head">
-            <h2><span class="adm-chart-card-icon" aria-hidden="true">📈</span>Daily Bandwidth (MB)</h2>
-            <span class="adm-chart-card-sub">Tracked total per day, with the free-tier limit marked</span>
+            <h2><span class="adm-chart-card-icon" aria-hidden="true">📈</span><span data-i18n="admin.bandwidth.chartDailyBandwidth">Daily Bandwidth (MB)</span></h2>
+            <span class="adm-chart-card-sub" data-i18n="admin.bandwidth.chartDailyBandwidthSub">Tracked total per day, with the free-tier limit marked</span>
           </div>
           <div class="adm-chart-wrap"><canvas id="admDailyChart"></canvas></div>
         </div>
 
         <div class="adm-chart-card">
           <div class="adm-chart-card-head">
-            <h2><span class="adm-chart-card-icon" aria-hidden="true">📶</span>Top 10 Routes (MB, selected range)</h2>
-            <span class="adm-chart-card-sub">Heaviest routes over the current range</span>
+            <h2><span class="adm-chart-card-icon" aria-hidden="true">📶</span><span data-i18n="admin.bandwidth.chartTopRoutes">Top 10 Routes (MB, selected range)</span></h2>
+            <span class="adm-chart-card-sub" data-i18n="admin.bandwidth.chartTopRoutesSub">Heaviest routes over the current range</span>
           </div>
           <div class="adm-chart-wrap"><canvas id="admRoutesChart"></canvas></div>
         </div>
@@ -204,25 +204,25 @@
       <!-- TABLE -->
       <!-- ========================= -->
       <div class="adm-table-card">
-        <h2><span class="adm-chart-card-icon" aria-hidden="true">📋</span>All Routes — Selected Range</h2>
+        <h2><span class="adm-chart-card-icon" aria-hidden="true">📋</span><span data-i18n="admin.bandwidth.allRoutesTitle">All Routes — Selected Range</span></h2>
         <div class="adm-table-scroll">
         <table class="adm-table">
           <thead>
             <tr>
               <th>#</th>
-              <th>Route</th>
-              <th>Total</th>
-              <th>Requests</th>
-              <th>Avg / Req</th>
-              <th>Share</th>
-              <th>Status</th>
-              <th>Allowed Roles</th>
+              <th data-i18n="admin.bandwidth.colRoute">Route</th>
+              <th data-i18n="admin.bandwidth.colTotal">Total</th>
+              <th data-i18n="admin.bandwidth.colRequests">Requests</th>
+              <th data-i18n="admin.bandwidth.colAvgReq">Avg / Req</th>
+              <th data-i18n="admin.bandwidth.colShare">Share</th>
+              <th data-i18n="admin.bandwidth.colStatus">Status</th>
+              <th data-i18n="admin.bandwidth.colAllowedRoles">Allowed Roles</th>
             </tr>
           </thead>
           <tbody id="admTableBody"></tbody>
         </table>
         </div>
-        <div class="adm-table-empty" id="admTableEmpty" hidden>No data recorded yet for this range.</div>
+        <div class="adm-table-empty" id="admTableEmpty" hidden data-i18n="admin.bandwidth.noDataForRange">No data recorded yet for this range.</div>
       </div>
 
     </main>
@@ -232,6 +232,11 @@
 
 <!-- theme toggle API (window.CMTheme) — wire up a toggle button here later if desired -->
 <script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/admin.js"></script>
 
 <script src="/CM_Pro/assets/js/admin/admin-ui.js"></script>
 <script src="/CM_Pro/assets/js/admin/admin-nav.js"></script>

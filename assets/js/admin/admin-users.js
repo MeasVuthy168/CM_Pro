@@ -10,6 +10,7 @@
 
   const API_BASE = (window.API && window.API.BASE_URL) || "";
   const BRANCH_ROLES = new Set(["viewer_manager_a", "viewer_manager_b", "viewer_manager_c"]);
+  const t = (key, vars) => (window.CMI18n ? CMI18n.t(key, vars) : key);
 
   const state = {
     users: [],
@@ -41,13 +42,17 @@
     }[c]));
   }
 
-  const ROLE_LABELS = {
-    admin: "Admin", user: "User", viewer: "Viewer",
-    viewer_staff: "Viewer_Staff",
-    viewer_manager_a: "Viewer_Manager_A",
-    viewer_manager_b: "Viewer_Manager_B",
-    viewer_manager_c: "Viewer_Manager_C"
-  };
+  function roleLabel(role) {
+    const KEYS = {
+      admin: "admin.users.roleAdmin",
+      user: "admin.users.roleUser",
+      viewer_staff: "admin.users.roleViewerStaff",
+      viewer_manager_a: "admin.users.roleViewerManagerA",
+      viewer_manager_b: "admin.users.roleViewerManagerB",
+      viewer_manager_c: "admin.users.roleViewerManagerC"
+    };
+    return KEYS[role] ? t(KEYS[role]) : role;
+  }
 
   function roleBadgeClass(role) {
     if (role === "admin") return "adm-badge-role-admin";
@@ -85,15 +90,15 @@
             </div>
           </div>
         </td>
-        <td><span class="adm-badge ${roleBadgeClass(u.role)}">${escapeHtml(ROLE_LABELS[u.role] || u.role)}</span></td>
-        <td><span class="adm-badge ${u.isActive ? "adm-badge-status-active" : "adm-badge-status-inactive"}">${u.isActive ? "Active" : "Inactive"}</span></td>
+        <td><span class="adm-badge ${roleBadgeClass(u.role)}">${escapeHtml(roleLabel(u.role))}</span></td>
+        <td><span class="adm-badge ${u.isActive ? "adm-badge-status-active" : "adm-badge-status-inactive"}">${u.isActive ? t("admin.users.statusActive") : t("admin.users.statusInactive")}</span></td>
         <td>${escapeHtml(u.phone || "—")}</td>
         <td>${escapeHtml(u.branch || "—")}</td>
         <td>
           <div class="adm-row-actions">
-            <button type="button" class="adm-icon-btn" title="Edit" data-action="edit">✏️</button>
-            <button type="button" class="adm-icon-btn" title="Reset Password" data-action="reset">🔑</button>
-            <button type="button" class="adm-icon-btn adm-icon-btn-danger" title="Delete" data-action="delete">🗑️</button>
+            <button type="button" class="adm-icon-btn" title="${t("admin.users.edit")}" data-action="edit">✏️</button>
+            <button type="button" class="adm-icon-btn" title="${t("admin.users.resetPassword")}" data-action="reset">🔑</button>
+            <button type="button" class="adm-icon-btn adm-icon-btn-danger" title="${t("admin.users.delete")}" data-action="delete">🗑️</button>
           </div>
         </td>
       `;
@@ -128,7 +133,7 @@
       renderTable(state.users);
     } catch (e) {
       console.error("loadUsers failed:", e);
-      AdminUI.toast("Could not load user list.", "error");
+      AdminUI.toast(t("admin.users.couldNotLoadList"), "error");
     }
   }
 
@@ -211,7 +216,7 @@
         headers: authHeaders(),
         body: fd
       });
-      if (!res.ok) AdminUI.toast("User saved, but photo upload failed.", "error");
+      if (!res.ok) AdminUI.toast(t("admin.users.photoUploadFailed"), "error");
     }
   }
 
@@ -268,12 +273,12 @@
     }
 
     fFooter.innerHTML = `
-      <button type="button" class="adm-btn" id="ufBtnCancel">Cancel</button>
-      <button type="submit" class="adm-btn adm-btn-primary" id="ufBtnSave">${isEdit ? "Save Changes" : "Add User"}</button>
+      <button type="button" class="adm-btn" id="ufBtnCancel">${t("admin.users.cancel")}</button>
+      <button type="submit" class="adm-btn adm-btn-primary" id="ufBtnSave">${isEdit ? t("admin.users.saveChanges") : t("admin.users.addUserButton")}</button>
     `;
 
     AdminUI.openModal({
-      title: isEdit ? "Edit User" : "Add User",
+      title: isEdit ? t("admin.users.editUser") : t("admin.users.addUserModalTitle"),
       bodyNode,
       wide: true,
       onClose: () => {
@@ -293,9 +298,9 @@
       const role = fRole.value;
       const branch = BRANCH_ROLES.has(role) ? fBranch.value.trim() : "";
 
-      if (!username) return AdminUI.toast("Enter username.", "error");
-      if (!fullname) return AdminUI.toast("Enter full name.", "error");
-      if (BRANCH_ROLES.has(role) && !branch) return AdminUI.toast("Please select a Branch for this role.", "error");
+      if (!username) return AdminUI.toast(t("admin.users.enterUsername"), "error");
+      if (!fullname) return AdminUI.toast(t("admin.users.enterFullName"), "error");
+      if (BRANCH_ROLES.has(role) && !branch) return AdminUI.toast(t("admin.users.selectBranchForRole"), "error");
 
       const body = { fullname, role, phone: fPhone.value.trim(), branch };
 
@@ -308,16 +313,16 @@
             body: JSON.stringify(body)
           });
           const data = await res.json();
-          if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Edit user failed.", "error");
+          if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.users.editFailed"), "error");
 
           await commitPhotoChanges(username);
           AdminUI.closeModal();
           await loadUsers();
-          AdminUI.toast("User updated.", "success");
+          AdminUI.toast(t("admin.users.userUpdated"), "success");
         } else {
           const newPass = await AdminUI.prompt({
-            title: "Set Password",
-            label: "Password for new user",
+            title: t("admin.users.setPasswordTitle"),
+            label: t("admin.users.setPasswordLabel"),
             defaultValue: "123456"
           });
           if (!newPass) return;
@@ -328,16 +333,16 @@
             body: JSON.stringify({ username, password: newPass, ...body })
           });
           const data = await res.json();
-          if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Add user failed.", "error");
+          if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.users.addFailed"), "error");
 
           await commitPhotoChanges(username);
           AdminUI.closeModal();
           await loadUsers();
-          AdminUI.toast("User added successfully.", "success");
+          AdminUI.toast(t("admin.users.userAdded"), "success");
         }
       } catch (err) {
         console.error("Save user error:", err);
-        AdminUI.toast("Could not reach the server.", "error");
+        AdminUI.toast(t("admin.users.couldNotReachServer"), "error");
       }
     });
   }
@@ -347,9 +352,9 @@
   // ---------- delete ----------
   async function deleteUser(username) {
     const ok = await AdminUI.confirm({
-      title: "Delete user?",
-      message: `This permanently deletes <strong>${escapeHtml(username)}</strong>. This can't be undone.`,
-      confirmLabel: "Delete",
+      title: t("admin.users.deleteUserTitle"),
+      message: t("admin.users.deleteUserMessage", { username: escapeHtml(username) }),
+      confirmLabel: t("admin.users.delete"),
       danger: true
     });
     if (!ok) return;
@@ -360,22 +365,22 @@
         headers: authHeaders()
       });
       const data = await res.json();
-      if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Delete failed.", "error");
+      if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.users.deleteFailed"), "error");
 
       await loadUsers();
-      AdminUI.toast("User deleted.", "success");
+      AdminUI.toast(t("admin.users.userDeleted"), "success");
     } catch (e) {
       console.error("Delete user error:", e);
-      AdminUI.toast("Delete failed — could not reach the server.", "error");
+      AdminUI.toast(t("admin.users.deleteFailedServer"), "error");
     }
   }
 
   // ---------- reset password ----------
   async function resetPassword(username) {
     const newPass = await AdminUI.prompt({
-      title: "Reset Password",
-      message: `New password for <strong>${escapeHtml(username)}</strong>`,
-      placeholder: "New password"
+      title: t("admin.users.resetPasswordTitle"),
+      message: t("admin.users.resetPasswordMessage", { username: escapeHtml(username) }),
+      placeholder: t("admin.users.newPasswordPlaceholder")
     });
     if (!newPass) return;
 
@@ -386,12 +391,12 @@
         body: JSON.stringify({ newPassword: newPass })
       });
       const data = await res.json();
-      if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Reset password failed.", "error");
+      if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.users.resetPasswordFailed"), "error");
 
-      AdminUI.toast("Password reset successful.", "success");
+      AdminUI.toast(t("admin.users.resetPasswordSuccess"), "success");
     } catch (e) {
       console.error("Reset password error:", e);
-      AdminUI.toast("Reset password failed — could not reach the server.", "error");
+      AdminUI.toast(t("admin.users.resetPasswordFailedServer"), "error");
     }
   }
 

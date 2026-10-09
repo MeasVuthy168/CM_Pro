@@ -17,7 +17,7 @@ async function loadComponent(id, file) {
         }
         if (id === "topbar-container") {
             initTopbar({
-                title: "Officer Productivity",
+                titleKey: "creditreport.productivity.officerTitle",
                 showBack: true,
                 showLogo: false,
                 showProfile: false

@@ -46,7 +46,7 @@ href="../../assets/css/arrears.css">
 <!-- OFFLINE -->
 <!-- ========================= -->
 
-<div id="offlineBanner">
+<div id="offlineBanner" data-i18n="common.offline">
 ⚠️ No Internet Connection
 </div>
 
@@ -65,6 +65,11 @@ href="../../assets/css/arrears.css">
 
 <script src="/CM_Pro/shared/topbar.js"></script>
 <script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/features.js"></script>
 <script src="/CM_Pro/shared/loading.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 <script src="/CM_Pro/assets/js/toast.js"></script>
@@ -81,7 +86,7 @@ href="../../assets/css/arrears.css">
 
 <div class="page-container">
 
-<div class="print-only-title">របាយណ៍ឥណទានយឺតយ៉ាវប្រចាំថ្ងៃ</div>
+<div class="print-only-title" data-i18n="arrears.printTitle">របាយណ៍ឥណទានយឺតយ៉ាវប្រចាំថ្ងៃ</div>
 
 
 <!-- ========================= -->
@@ -97,35 +102,35 @@ href="../../assets/css/arrears.css">
 <div class="filter-grid filter-grid-primary">
 
 <div class="filter-group filter-group-wide">
-<label for="fKeyword">ស្វែងរកឈ្មោះ</label>
-<input type="text" id="fKeyword" placeholder="វាយឈ្មោះអតិថិជន..." autocomplete="off">
+<label for="fKeyword" data-i18n="arrears.filterKeywordLabel">ស្វែងរកឈ្មោះ</label>
+<input type="text" id="fKeyword" placeholder="វាយឈ្មោះអតិថិជន..." data-i18n-placeholder="arrears.filterKeywordPlaceholder" autocomplete="off">
 </div>
 
 <div class="filter-group">
-<label for="fBranch">សាខា</label>
+<label for="fBranch" data-i18n="arrears.filterBranchLabel">សាខា</label>
 <select id="fBranch">
-<option value="">All</option>
+<option value="" data-i18n="arrears.optionAll">All</option>
 </select>
 </div>
 
 <div class="filter-group">
-<label for="fOfficerResponse">ភ្នាក់ងារទទួលខុសត្រូវ</label>
+<label for="fOfficerResponse" data-i18n="arrears.filterOfficerResponseLabel">ភ្នាក់ងារទទួលខុសត្រូវ</label>
 <select id="fOfficerResponse">
-<option value="">All</option>
+<option value="" data-i18n="arrears.optionAll">All</option>
 </select>
 </div>
 
 <div class="filter-group">
-<label for="fTeamLeader">អនុប្រធាន/ផ្នែកFSRO</label>
+<label for="fTeamLeader" data-i18n="arrears.filterTeamLeaderLabel">អនុប្រធាន/ផ្នែកFSRO</label>
 <select id="fTeamLeader">
-<option value="">All</option>
+<option value="" data-i18n="arrears.optionAll">All</option>
 </select>
 </div>
 
 </div>
 
 <button type="button" id="btnToggleAdvancedFilters" class="filter-advanced-toggle" aria-expanded="false">
-<span>តម្រងបន្ថែម</span>
+<span data-i18n="arrears.advancedFiltersToggle">តម្រងបន្ថែម</span>
 <span id="advancedFilterBadge" class="filter-advanced-badge" hidden>0</span>
 <span class="filter-advanced-caret" aria-hidden="true">▾</span>
 </button>
@@ -134,17 +139,17 @@ href="../../assets/css/arrears.css">
 
 <!-- Column 1 (D2:D4 in the sheet) -->
 <div class="filter-group">
-<label for="fOfficerOwner">ភ្នាក់ងារផ្ទាល់ខ្លួន(ID)</label>
+<label for="fOfficerOwner" data-i18n="arrears.filterOfficerOwnerLabel">ភ្នាក់ងារផ្ទាល់ខ្លួន(ID)</label>
 <select id="fOfficerOwner">
-<option value="">All</option>
+<option value="" data-i18n="arrears.optionAll">All</option>
 </select>
 </div>
 
 <div class="filter-group">
-<label for="fPromiseStatus">ស្ថានភាពសន្យា</label>
+<label for="fPromiseStatus" data-i18n="arrears.filterPromiseStatusLabel">ស្ថានភាពសន្យា</label>
 <select id="fPromiseStatus">
-<option value="">All</option>
-<option value="មិនទាន់សន្យា">មិនទាន់សន្យា</option>
+<option value="" data-i18n="arrears.optionAll">All</option>
+<option value="មិនទាន់សន្យា" data-i18n="arrears.promiseNotYet">មិនទាន់សន្យា</option>
 <option value="Today_Payment">Today_Payment</option>
 <option value="Upcoming_left">Upcoming_left</option>
 <option value="Expired">Expired</option>
@@ -152,26 +157,26 @@ href="../../assets/css/arrears.css">
 </div>
 
 <div class="filter-group">
-<label for="fCurrency">រូបិយប័ណ្ណ</label>
+<label for="fCurrency" data-i18n="arrears.filterCurrencyLabel">រូបិយប័ណ្ណ</label>
 <select id="fCurrency">
-<option value="">All</option>
+<option value="" data-i18n="arrears.optionAll">All</option>
 <option value="USD">USD</option>
 <option value="KHR">KHR</option>
 </select>
 </div>
 
 <div class="filter-group">
-<label for="fOsClassify">សមតុល្យឥណទាន</label>
+<label for="fOsClassify" data-i18n="arrears.filterOsClassifyLabel">សមតុល្យឥណទាន</label>
 <select id="fOsClassify">
-<option value="">All</option>
+<option value="" data-i18n="arrears.optionAll">All</option>
 </select>
 </div>
 
 <!-- Column 3 (I2:I4) -->
 <div class="filter-group">
-<label for="fClass">ចំណាត់ថ្នាក់ឥណទាន</label>
+<label for="fClass" data-i18n="arrears.filterClassLabel">ចំណាត់ថ្នាក់ឥណទាន</label>
 <select id="fClass">
-<option value="">All</option>
+<option value="" data-i18n="arrears.optionAll">All</option>
 <option value="Normal_to_SpecialMention">Normal → Special Mention</option>
 <option value="SubStandard_to_Loss">Sub Standard → Loss</option>
 <option value="Normal">Normal</option>
@@ -183,26 +188,26 @@ href="../../assets/css/arrears.css">
 </div>
 
 <div class="filter-group">
-<label for="fPD">មាន/គ្មានសមតុល្យPD</label>
+<label for="fPD" data-i18n="arrears.filterPDLabel">មាន/គ្មានសមតុល្យPD</label>
 <select id="fPD">
-<option value="">All</option>
+<option value="" data-i18n="arrears.optionAll">All</option>
 <option value="Balanced_PD">Balanced_PD</option>
 <option value="No Balanced_PD">No Balanced_PD</option>
 </select>
 </div>
 
 <div class="filter-group">
-<label for="fOccupation">មុខរបរ/មុខងារ</label>
+<label for="fOccupation" data-i18n="arrears.filterOccupationLabel">មុខរបរ/មុខងារ</label>
 <select id="fOccupation">
-<option value="">All</option>
+<option value="" data-i18n="arrears.optionAll">All</option>
 </select>
 </div>
 
 <!-- Column 4 (M2:M4) -->
 <div class="filter-group">
-<label for="fProductType">ប្រភេទផលិតផល</label>
+<label for="fProductType" data-i18n="arrears.filterProductTypeLabel">ប្រភេទផលិតផល</label>
 <select id="fProductType">
-<option value="">All</option>
+<option value="" data-i18n="arrears.optionAll">All</option>
 <option value="Digital Products">Digital Products</option>
 <option value="Non-Digital Products">Non-Digital Products</option>
 </select>
@@ -214,15 +219,15 @@ href="../../assets/css/arrears.css">
      by arrears-loader.js once the topbar component has loaded — see
      the comment there for why this is a relocate, not a rebuild. -->
 <div id="arrearsMenuWrap" class="arrears-menu-wrap">
-<button id="btnArrearsMenu" class="arrears-menu-toggle" aria-label="More actions">⋮</button>
+<button id="btnArrearsMenu" class="arrears-menu-toggle" aria-label="More actions" data-i18n-aria-label="arrears.moreActionsAria">⋮</button>
 <div id="arrearsMenuDropdown" class="arrears-menu-dropdown">
-<button id="btnExport"><img src="/CM_Pro/assets/icons/arrear/export_excel.png" alt="" class="menu-icon"><span>Export Excel</span></button>
-<button id="btnExportPdf"><img src="/CM_Pro/assets/icons/arrear/export_pdf.png" alt="" class="menu-icon"><span>Export PDF</span></button>
-<button id="btnPrint"><img src="/CM_Pro/assets/icons/arrear/print.png" alt="" class="menu-icon"><span>Print</span></button>
-<button id="btnLandscape"><img src="/CM_Pro/assets/icons/arrear/landscape.png" alt="" class="menu-icon"><span>Landscape</span></button>
-<button id="btnNoReasonSummary"><img src="/CM_Pro/assets/icons/arrear/noReasonArrear.png" alt="" class="menu-icon"><span>មិនទាន់បំពេញ Reason Arrear</span></button>
-<button id="btnOutArea"><img src="/CM_Pro/assets/icons/arrear/out_area.png" alt="" class="menu-icon"><span>កែសម្រួលArrearក្រៅតំបន់</span></button>
-<button id="btnColumns"><img src="/CM_Pro/assets/icons/arrear/columns.png" alt="" class="menu-icon"><span>លាក់/បង្ហាញជួរឈរ</span></button>
+<button id="btnExport"><img src="/CM_Pro/assets/icons/arrear/export_excel.png" alt="" class="menu-icon"><span data-i18n="arrears.exportExcel">Export Excel</span></button>
+<button id="btnExportPdf"><img src="/CM_Pro/assets/icons/arrear/export_pdf.png" alt="" class="menu-icon"><span data-i18n="arrears.exportPdf">Export PDF</span></button>
+<button id="btnPrint"><img src="/CM_Pro/assets/icons/arrear/print.png" alt="" class="menu-icon"><span data-i18n="arrears.print">Print</span></button>
+<button id="btnLandscape"><img src="/CM_Pro/assets/icons/arrear/landscape.png" alt="" class="menu-icon"><span data-i18n="arrears.landscape">Landscape</span></button>
+<button id="btnNoReasonSummary"><img src="/CM_Pro/assets/icons/arrear/noReasonArrear.png" alt="" class="menu-icon"><span data-i18n="arrears.menuNoReasonSummary">មិនទាន់បំពេញ Reason Arrear</span></button>
+<button id="btnOutArea"><img src="/CM_Pro/assets/icons/arrear/out_area.png" alt="" class="menu-icon"><span data-i18n="arrears.menuOutArea">កែសម្រួលArrearក្រៅតំបន់</span></button>
+<button id="btnColumns"><img src="/CM_Pro/assets/icons/arrear/columns.png" alt="" class="menu-icon"><span data-i18n="arrears.menuColumns">លាក់/បង្ហាញជួរឈរ</span></button>
 </div>
 </div>
 
@@ -232,19 +237,19 @@ href="../../assets/css/arrears.css">
 </div>
 
 <div class="summary-row upload-meta" id="uploadMetaRow">
-<span>ទិន្នន័យចុងក្រោយនៅ <span class="num" id="lastUploadAt">-</span></span>
+<span><span data-i18n="arrears.lastUploadAtLabel">ទិន្នន័យចុងក្រោយនៅ</span> <span class="num" id="lastUploadAt">-</span></span>
 </div>
 
 <div class="summary-row upload-meta button-row">
-<span>ដោយៈ <span class="num" id="lastUploadBy">-</span></span>
-<button id="btnRefresh">Refresh</button>
-<button id="btnClear">Clear</button>
+<span><span data-i18n="arrears.lastUploadByLabel">ដោយៈ</span> <span class="num" id="lastUploadBy">-</span></span>
+<button id="btnRefresh" data-i18n="common.refresh">Refresh</button>
+<button id="btnClear" data-i18n="arrears.clearBtn">Clear</button>
 </div>
 
 <div class="summary-row pending-row" id="pendingRow" style="display:none;">
-<span>រង់ចាំដាក់ស្នើ: <span class="num" id="pendingCount">0</span></span>
-<button id="btnCancelAllPending">បោះបង់</button>
-<button id="btnSubmitAllPending">ដាក់ស្នើទាំងអស់</button>
+<span><span data-i18n="arrears.pendingLabel">រង់ចាំដាក់ស្នើ:</span> <span class="num" id="pendingCount">0</span></span>
+<button id="btnCancelAllPending" data-i18n="common.cancel">បោះបង់</button>
+<button id="btnSubmitAllPending" data-i18n="arrears.submitAllBtn">ដាក់ស្នើទាំងអស់</button>
 </div>
 
 </div>
@@ -261,23 +266,23 @@ href="../../assets/css/arrears.css">
 <div id="mapCard" class="map-card">
 
 <div class="map-head">
-<span class="map-title">ជ្រើសទីតាំងលើផែនទី</span>
+<span class="map-title" data-i18n="arrears.mapTitle">ជ្រើសទីតាំងលើផែនទី</span>
 <div class="map-modes">
-<button type="button" class="map-mode-btn active" data-mode="street">ផែនទី</button>
-<button type="button" class="map-mode-btn" data-mode="satellite">ផ្កាយរណប</button>
+<button type="button" class="map-mode-btn active" data-mode="street" data-i18n="arrears.mapModeStreet">ផែនទី</button>
+<button type="button" class="map-mode-btn" data-mode="satellite" data-i18n="arrears.mapModeSatellite">ផ្កាយរណប</button>
 </div>
-<button type="button" id="btnMapClose" class="map-close" aria-label="បិទ">✕</button>
+<button type="button" id="btnMapClose" class="map-close" aria-label="បិទ" data-i18n-aria-label="common.close">✕</button>
 </div>
 
 <div id="mapCanvas" class="map-canvas"></div>
 
-<div class="map-hint">ចុចលើផែនទីដើម្បីកំណត់ទីតាំង</div>
+<div class="map-hint" data-i18n="arrears.mapHint">ចុចលើផែនទីដើម្បីកំណត់ទីតាំង</div>
 
 <div class="map-foot">
 <span class="map-coords" id="mapCoords">-</span>
 <div class="map-foot-actions">
-<button type="button" id="btnMapHere" class="map-btn">📍 ទីតាំងខ្ញុំ</button>
-<button type="button" id="btnMapConfirm" class="map-btn map-btn-primary">យល់ព្រម</button>
+<button type="button" id="btnMapHere" class="map-btn" data-i18n="arrears.mapMyLocation">📍 ទីតាំងខ្ញុំ</button>
+<button type="button" id="btnMapConfirm" class="map-btn map-btn-primary" data-i18n="common.ok">យល់ព្រម</button>
 </div>
 </div>
 
@@ -288,34 +293,34 @@ href="../../assets/css/arrears.css">
 
 <div id="reasonCard" class="reason-card">
 
-<div class="reason-title">Reason Arrear</div>
+<div class="reason-title" data-i18n="arrears.reasonArrearTitle">Reason Arrear</div>
 <div class="reason-subtitle" id="reasonSubtitle">-</div>
 
 <!-- Loan context, filled by renderReasonInfo() in arrears.js -->
 <div class="reason-info" id="reasonInfo"></div>
 
 <div class="reason-group">
-<label for="reasonAJ">មុខរបរ</label>
+<label for="reasonAJ" data-i18n="arrears.reasonOccupationLabel">មុខរបរ</label>
 <input type="text" id="reasonAJ" placeholder="...">
 </div>
 
 <div class="reason-group">
-<label for="reasonAK">មូលហេតុ/ដំណោះស្រាយ</label>
+<label for="reasonAK" data-i18n="arrears.reasonSolutionLabel">មូលហេតុ/ដំណោះស្រាយ</label>
 <textarea id="reasonAK" placeholder="..."></textarea>
 </div>
 
 <div class="reason-group">
-<label for="reasonAL">ថ្ងៃសន្យាសង</label>
+<label for="reasonAL" data-i18n="arrears.reasonPromiseDateLabel">ថ្ងៃសន្យាសង</label>
 <input type="date" id="reasonAL">
 </div>
 
 <div class="reason-group">
-<label for="reasonGPS">និយាមការ (GPS)</label>
-<input type="text" id="reasonGPS" placeholder="មិនទាន់កំណត់ទីតាំង" inputmode="decimal" autocomplete="off">
+<label for="reasonGPS" data-i18n="arrears.reasonGpsLabel">និយាមការ (GPS)</label>
+<input type="text" id="reasonGPS" placeholder="មិនទាន់កំណត់ទីតាំង" data-i18n-placeholder="arrears.gpsNotSetPlaceholder" inputmode="decimal" autocomplete="off">
 <div class="reason-gps-row">
-<button type="button" id="btnGpsHere" class="reason-gps-btn"><span>📍</span> កំណត់ទីតាំងបច្ចុប្បន្ន</button>
-<button type="button" id="btnGpsPick" class="reason-gps-btn"><span>🗺️</span> ជ្រើសលើផែនទី</button>
-<button type="button" id="btnGpsOpen" class="reason-gps-btn"><span>🧭</span> មើលលើផែនទី</button>
+<button type="button" id="btnGpsHere" class="reason-gps-btn"><span>📍</span> <span data-i18n="arrears.gpsCurrentBtn">កំណត់ទីតាំងបច្ចុប្បន្ន</span></button>
+<button type="button" id="btnGpsPick" class="reason-gps-btn"><span>🗺️</span> <span data-i18n="arrears.gpsPickBtn">ជ្រើសលើផែនទី</span></button>
+<button type="button" id="btnGpsOpen" class="reason-gps-btn"><span>🧭</span> <span data-i18n="arrears.gpsViewBtn">មើលលើផែនទី</span></button>
 </div>
 <div class="reason-gps-hint" id="reasonGpsHint"></div>
 </div>
@@ -325,17 +330,17 @@ href="../../assets/css/arrears.css">
 <div class="reason-pending-note" id="reasonPendingNote"></div>
 
 <div class="reason-actions">
-<button id="btnReasonCancel">Cancel</button>
-<button id="btnReasonSave">រក្សាទុក</button>
-<button id="btnReasonSubmit">ដាក់ស្នើមូលហេតុយឺតយ៉ាវ</button>
+<button id="btnReasonCancel" data-i18n="common.cancel">Cancel</button>
+<button id="btnReasonSave" data-i18n="common.save">រក្សាទុក</button>
+<button id="btnReasonSubmit" data-i18n="arrears.submitReasonBtn">ដាក់ស្នើមូលហេតុយឺតយ៉ាវ</button>
 </div>
 
 <!-- Move between rows without closing the modal. Follows whatever
      filter/sort the table currently has. -->
 <div class="reason-nav">
-<button type="button" id="btnReasonPrev" class="reason-nav-btn" title="ថយក្រោយ">‹</button>
+<button type="button" id="btnReasonPrev" class="reason-nav-btn" title="ថយក្រោយ" data-i18n-title="arrears.navPrevTitle">‹</button>
 <span class="reason-nav-pos" id="reasonNavPos">-</span>
-<button type="button" id="btnReasonNext" class="reason-nav-btn" title="បន្ទាប់">›</button>
+<button type="button" id="btnReasonNext" class="reason-nav-btn" title="បន្ទាប់" data-i18n-title="arrears.navNextTitle">›</button>
 </div>
 
 
@@ -354,21 +359,21 @@ href="../../assets/css/arrears.css">
 <!-- LIST SCREEN: officers, each with their unfilled-reason count -->
 <div id="noReasonListScreen">
 
-<div class="reason-title">មិនទាន់បានបំពេញ Reason Arrear</div>
+<div class="reason-title" data-i18n="arrears.menuNoReasonSummary">មិនទាន់បានបំពេញ Reason Arrear</div>
 <div class="reason-subtitle" id="noReasonSubtitle">-</div>
-<div class="reason-subtitle noreason-last-upload">ទិន្នន័យចុងក្រោយនៅ <span id="noReasonLastUpload">-</span></div>
+<div class="reason-subtitle noreason-last-upload"><span data-i18n="arrears.lastUploadAtLabel">ទិន្នន័យចុងក្រោយនៅ</span> <span id="noReasonLastUpload">-</span></div>
 
 <div class="filter-group noreason-branch-filter">
-<label for="noReasonBranchFilter">សាខា</label>
+<label for="noReasonBranchFilter" data-i18n="arrears.filterBranchLabel">សាខា</label>
 <select id="noReasonBranchFilter">
-<option value="">All</option>
+<option value="" data-i18n="arrears.optionAll">All</option>
 </select>
 </div>
 
 <div class="filter-group noreason-team-filter">
-<label for="noReasonTeamFilter">ក្រុម</label>
+<label for="noReasonTeamFilter" data-i18n="arrears.teamLabel">ក្រុម</label>
 <select id="noReasonTeamFilter">
-<option value="">All</option>
+<option value="" data-i18n="arrears.optionAll">All</option>
 <option value="Credit Officer">Credit Officer</option>
 <option value="FSRO">FSRO</option>
 </select>
@@ -377,15 +382,15 @@ href="../../assets/css/arrears.css">
 <table class="noreason-table">
 <thead>
 <tr>
-<th>ឈ្មោះភ្នាក់ងារ</th>
-<th>មិនទាន់បំពេញReason Arrear</th>
+<th data-i18n="arrears.colOfficerName">ឈ្មោះភ្នាក់ងារ</th>
+<th data-i18n="arrears.colUnfilledCount">មិនទាន់បំពេញReason Arrear</th>
 </tr>
 </thead>
 <tbody id="noReasonTbody"></tbody>
 </table>
 
 <div class="reason-actions">
-<button id="btnNoReasonClose">Close</button>
+<button id="btnNoReasonClose" data-i18n="common.close">Close</button>
 </div>
 
 </div>
@@ -398,7 +403,7 @@ href="../../assets/css/arrears.css">
 
 <div class="outarea-sticky-header">
 <div class="reason-title" style="margin:0;" id="noReasonClientsTitle">-</div>
-<button type="button" id="btnNoReasonClientsCloseX" class="outarea-close-x" aria-label="បិទ">✕</button>
+<button type="button" id="btnNoReasonClientsCloseX" class="outarea-close-x" aria-label="បិទ" data-i18n-aria-label="common.close">✕</button>
 </div>
 
 <div class="reason-subtitle" id="noReasonClientsSubtitle">-</div>
@@ -406,18 +411,18 @@ href="../../assets/css/arrears.css">
 <table class="noreason-table">
 <thead>
 <tr>
-<th>No</th>
-<th>អតិថិជន</th>
-<th>លេខកិច្ចសន្យា</th>
+<th data-i18n="arrears.colNo">No</th>
+<th data-i18n="arrears.colCustomer">អតិថិជន</th>
+<th data-i18n="arrears.colLoanNumber">លេខកិច្ចសន្យា</th>
 <th>CIF</th>
-<th>ថ្ងៃយឺត</th>
+<th data-i18n="arrears.colDaysLate">ថ្ងៃយឺត</th>
 </tr>
 </thead>
 <tbody id="noReasonClientsTbody"></tbody>
 </table>
 
 <div class="reason-actions">
-<button id="btnNoReasonClientsBack">← ត្រឡប់ក្រោយ</button>
+<button id="btnNoReasonClientsBack" data-i18n="arrears.backArrowBtn">← ត្រឡប់ក្រោយ</button>
 </div>
 
 </div>
@@ -438,45 +443,45 @@ href="../../assets/css/arrears.css">
   <div id="outAreaListScreen">
 
     <div class="outarea-sticky-header">
-      <div class="reason-title" style="margin:0;">កែសម្រួលArrearក្រៅតំបន់</div>
-      <button type="button" id="btnOutAreaCloseX" class="outarea-close-x" aria-label="បិទ">✕</button>
+      <div class="reason-title" style="margin:0;" data-i18n="arrears.menuOutArea">កែសម្រួលArrearក្រៅតំបន់</div>
+      <button type="button" id="btnOutAreaCloseX" class="outarea-close-x" aria-label="បិទ" data-i18n-aria-label="common.close">✕</button>
     </div>
 
     <div class="reason-subtitle" id="outAreaListSubtitle">-</div>
 
     <div class="reason-group">
-      <label for="outAreaSearch">ស្វែងរក</label>
-      <input type="text" id="outAreaSearch" placeholder="ឈ្មោះ / LD-CIF / សាខា..." autocomplete="off">
+      <label for="outAreaSearch" data-i18n="common.search">ស្វែងរក</label>
+      <input type="text" id="outAreaSearch" placeholder="ឈ្មោះ / LD-CIF / សាខា..." data-i18n-placeholder="arrears.outAreaSearchPlaceholder" autocomplete="off">
     </div>
 
-    <button type="button" id="btnOutAreaToggleView" class="outarea-toggle-view-btn">
+    <button type="button" id="btnOutAreaToggleView" class="outarea-toggle-view-btn" data-i18n="arrears.viewEditedRecordsBtn">
       មើលកំណត់ត្រាដែលបានកែសម្រួល
     </button>
 
-    <button type="button" id="btnOutAreaSelectPaidOff" class="outarea-toggle-view-btn" hidden>
+    <button type="button" id="btnOutAreaSelectPaidOff" class="outarea-toggle-view-btn" hidden data-i18n="arrears.selectAllPaidOffBtn">
       ជ្រើសរើសទាំងអស់ (Paid off)
     </button>
 
     <div id="outAreaBulkBar" class="outarea-bulk-bar" hidden>
       <span id="outAreaBulkCount">0</span>
-      <button type="button" id="btnOutAreaBulkDelete" class="outarea-bulk-delete-btn">🗑️ លុបដែលបានជ្រើសរើស</button>
+      <button type="button" id="btnOutAreaBulkDelete" class="outarea-bulk-delete-btn" data-i18n="arrears.deleteSelectedBtn">🗑️ លុបដែលបានជ្រើសរើស</button>
     </div>
 
     <table class="noreason-table">
       <thead>
         <tr>
           <th id="outAreaColCheck" hidden><input type="checkbox" id="outAreaSelectAll"></th>
-          <th>ឈ្មោះ</th>
+          <th data-i18n="arrears.colName">ឈ្មោះ</th>
           <th>LD-CIF</th>
-          <th id="outAreaColThree">សាខាបច្ចុប្បន្ន</th>
-          <th id="outAreaColFour" hidden>សកម្មភាព</th>
+          <th id="outAreaColThree" data-i18n="arrears.colCurrentBranch">សាខាបច្ចុប្បន្ន</th>
+          <th id="outAreaColFour" hidden data-i18n="arrears.colAction">សកម្មភាព</th>
         </tr>
       </thead>
       <tbody id="outAreaTbody"></tbody>
     </table>
 
     <div class="reason-actions">
-      <button id="btnOutAreaClose">Close</button>
+      <button id="btnOutAreaClose" data-i18n="common.close">Close</button>
     </div>
 
   </div>
@@ -484,15 +489,15 @@ href="../../assets/css/arrears.css">
   <!-- DETAIL / REASSIGN SCREEN -->
   <div id="outAreaDetailScreen" style="display:none;">
 
-    <div class="reason-title">កែសម្រួលArrearក្រៅតំបន់</div>
+    <div class="reason-title" data-i18n="arrears.menuOutArea">កែសម្រួលArrearក្រៅតំបន់</div>
     <div class="reason-subtitle" id="outAreaDetailSubtitle">-</div>
 
     <div class="reason-info" id="outAreaInfo"></div>
 
     <div class="reason-group">
-      <label for="outAreaNewBranch">សាខាថ្មី</label>
+      <label for="outAreaNewBranch" data-i18n="arrears.newBranchLabel">សាខាថ្មី</label>
       <select id="outAreaNewBranch">
-        <option value="">— ជ្រើសសាខា —</option>
+        <option value="" data-i18n="arrears.selectBranchOption">— ជ្រើសសាខា —</option>
         <option value="Svay Rieng">Svay Rieng</option>
         <option value="Romeas Haek">Romeas Haek</option>
         <option value="Kraol Kou">Kraol Kou</option>
@@ -504,21 +509,21 @@ href="../../assets/css/arrears.css">
     </div>
 
     <div class="reason-group">
-      <label for="outAreaNewCO">ភ្នាក់ងារឥណទានថ្មី</label>
+      <label for="outAreaNewCO" data-i18n="arrears.newOfficerLabel">ភ្នាក់ងារឥណទានថ្មី</label>
       <select id="outAreaNewCO">
-        <option value="">— ជ្រើសសាខាមុន —</option>
+        <option value="" data-i18n="arrears.selectBranchFirstOption">— ជ្រើសសាខាមុន —</option>
       </select>
     </div>
 
     <div class="reason-meta" id="outAreaMeta"></div>
 
-    <button id="btnOutAreaDelete" type="button" class="outarea-delete-btn" style="display:none;">
+    <button id="btnOutAreaDelete" type="button" class="outarea-delete-btn" style="display:none;" data-i18n="arrears.deleteThisRecordBtn">
       🗑️ លុបកំណត់ត្រានេះ
     </button>
 
     <div class="reason-actions">
-      <button id="btnOutAreaBack">← Back</button>
-      <button id="btnOutAreaSave">រក្សាទុក</button>
+      <button id="btnOutAreaBack" data-i18n="arrears.backArrowBtn">← Back</button>
+      <button id="btnOutAreaSave" data-i18n="common.save">រក្សាទុក</button>
     </div>
 
   </div>
@@ -536,17 +541,17 @@ href="../../assets/css/arrears.css">
 <div id="columnsCard" class="reason-card noreason-card">
 
 <div class="outarea-sticky-header">
-<div class="reason-title" style="margin:0;">លាក់/បង្ហាញជួរឈរ</div>
-<button type="button" id="btnColumnsCloseX" class="outarea-close-x" aria-label="បិទ">✕</button>
+<div class="reason-title" style="margin:0;" data-i18n="arrears.menuColumns">លាក់/បង្ហាញជួរឈរ</div>
+<button type="button" id="btnColumnsCloseX" class="outarea-close-x" aria-label="បិទ" data-i18n-aria-label="common.close">✕</button>
 </div>
 
-<div class="reason-subtitle">ជម្រើសនេះរក្សាទុកលើឧបករណ៍នេះតែប៉ុណ្ណោះ។ ជួរ No និង Customer នៅតែបង្ហាញជានិច្ច។</div>
+<div class="reason-subtitle" data-i18n="arrears.columnsHint">ជម្រើសនេះរក្សាទុកលើឧបករណ៍នេះតែប៉ុណ្ណោះ។ ជួរ No និង Customer នៅតែបង្ហាញជានិច្ច។</div>
 
 <div id="columnsList" class="columns-list"></div>
 
 <div class="reason-actions">
-<button type="button" id="btnColumnsShowAll">បង្ហាញទាំងអស់</button>
-<button type="button" id="btnColumnsClose">Close</button>
+<button type="button" id="btnColumnsShowAll" data-i18n="arrears.showAllBtn">បង្ហាញទាំងអស់</button>
+<button type="button" id="btnColumnsClose" data-i18n="common.close">Close</button>
 </div>
 
 </div>
@@ -562,12 +567,12 @@ href="../../assets/css/arrears.css">
 <div class="table-card">
 
 <div id="landscapeTopBar" class="landscape-bar landscape-top-bar">
-<button id="btnExitLandscape" aria-label="Exit landscape">✕ ត្រឡប់ក្រោយ</button>
+<button id="btnExitLandscape" aria-label="Exit landscape" data-i18n-aria-label="arrears.exitLandscapeAria" data-i18n="arrears.exitLandscapeBtn">✕ ត្រឡប់ក្រោយ</button>
 <span id="landscapeRowCount" class="landscape-row-count"></span>
 </div>
 
 <div id="landscapeBottomBar" class="landscape-bar landscape-bottom-bar">
-<span class="landscape-hint">ចុចអេក្រង់ដើម្បីបង្ហាញ/លាក់ម៉ឺនុយ</span>
+<span class="landscape-hint" data-i18n="arrears.landscapeHint">ចុចអេក្រង់ដើម្បីបង្ហាញ/លាក់ម៉ឺនុយ</span>
 </div>
 
 <div class="table-scroll">
@@ -597,10 +602,10 @@ href="../../assets/css/arrears.css">
 <th data-sort-key="ministry" data-sort-type="text">Ministry</th>
 <th data-sort-key="promiseStatus" data-sort-type="text">Promise Status</th>
 <th data-sort-key="coId" data-sort-type="text">CO_ID</th>
-<th data-sort-key="cifCoborrower" data-sort-type="text">CIF_អ្នករួមខ្ចី</th>
-<th data-sort-key="ajReason" data-sort-type="text">មុខរបរ</th>
-<th data-sort-key="akSolution" data-sort-type="text">មូលហេតុ/ដំណោះស្រាយ</th>
-<th data-sort-key="alFollowup" data-sort-type="date">ថ្ងៃសន្យាសង</th>
+<th data-sort-key="cifCoborrower" data-sort-type="text" data-i18n="arrears.colCifCoborrower">CIF_អ្នករួមខ្ចី</th>
+<th data-sort-key="ajReason" data-sort-type="text" data-i18n="arrears.reasonOccupationLabel">មុខរបរ</th>
+<th data-sort-key="akSolution" data-sort-type="text" data-i18n="arrears.reasonSolutionLabel">មូលហេតុ/ដំណោះស្រាយ</th>
+<th data-sort-key="alFollowup" data-sort-type="date" data-i18n="arrears.reasonPromiseDateLabel">ថ្ងៃសន្យាសង</th>
 <th data-sort-key="user" data-sort-type="text">User</th>
 <th data-sort-key="dateBackup" data-sort-type="date">DateBackUpReasonArrear</th>
 </tr>
@@ -610,7 +615,7 @@ href="../../assets/css/arrears.css">
 <tbody id="tbodyArrears">
 
 <tr class="row-loading">
-<td colspan="26">Loading...</td>
+<td colspan="26" data-i18n="common.loading">Loading...</td>
 </tr>
 
 </tbody>
@@ -633,12 +638,12 @@ href="../../assets/css/arrears.css">
 
 <div id="arrScopeDialog" class="dialog">
 <div class="dialog-box">
-<div class="dialog-title">
+<div class="dialog-title" data-i18n="arrears.scopeDialogTitle">
 ជ្រើសរើសទិន្នន័យ Arrears ដែលចង់មើល
 </div>
 <div class="dialog-buttons">
-<button type="button" id="btnArrScopeAll">តាមតំបន់ខ្ញុំ</button>
-<button type="button" id="btnArrScopeOwn">ផ្ទាល់ខ្លួនខ្ញុំ</button>
+<button type="button" id="btnArrScopeAll" data-i18n="arrears.scopeAllBtn">តាមតំបន់ខ្ញុំ</button>
+<button type="button" id="btnArrScopeOwn" data-i18n="arrears.scopeOwnBtn">ផ្ទាល់ខ្លួនខ្ញុំ</button>
 </div>
 </div>
 </div>

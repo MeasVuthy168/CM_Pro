@@ -33,7 +33,7 @@ href="/CM_Pro/assets/css/global-splash.css">
 <!-- ========================= -->
 <!-- OFFLINE -->
 <!-- ========================= -->
-<div id="offlineBanner">
+<div id="offlineBanner" data-i18n="common.offline">
 ⚠️ No Internet Connection
 </div>
 <!-- ========================= -->
@@ -48,6 +48,11 @@ href="/CM_Pro/assets/css/global-splash.css">
 <!-- ========================= -->
 <script src="/CM_Pro/shared/topbar.js"></script>
 <script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/features.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 <script src="/CM_Pro/assets/js/toast.js"></script>
 <!-- ========================= -->
@@ -60,33 +65,33 @@ href="/CM_Pro/assets/css/global-splash.css">
 <div class="page-container">
 <div class="form-card">
 <div class="form-group">
-<label for="customerName">ឈ្មោះអតិថិជន</label>
-<input type="text" id="customerName" placeholder="ឧ. ACB">
+<label for="customerName" data-i18n="loanCalculate.customerNameLabel">ឈ្មោះអតិថិជន</label>
+<input type="text" id="customerName" placeholder="ឧ. ACB" data-i18n-placeholder="loanCalculate.customerNamePlaceholder">
 </div>
 <div class="form-group">
-<label for="loanAmount">ទំហំឥណទាន</label>
+<label for="loanAmount" data-i18n="loanCalculate.loanAmountLabel">ទំហំឥណទាន</label>
 <input type="number" id="loanAmount">
 </div>
 <div class="form-group">
-<label for="periodicRepayment">ប្រាក់សំណងខួប</label>
+<label for="periodicRepayment" data-i18n="loanCalculate.periodicRepaymentLabel">ប្រាក់សំណងខួប</label>
 <input type="number" id="periodicRepayment">
 </div>
 <div class="form-group">
-<label for="term">រយៈពេលខ្ចី (ខែ)</label>
+<label for="term" data-i18n="loanCalculate.termLabel">រយៈពេលខ្ចី (ខែ)</label>
 <input type="number" id="term">
 </div>
 <div class="form-group">
-<label for="interestRate">អត្រាការប្រាក់ប្រចាំឆ្នាំ (%)</label>
+<label for="interestRate" data-i18n="loanCalculate.interestRateLabel">អត្រាការប្រាក់ប្រចាំឆ្នាំ (%)</label>
 <input type="number" id="interestRate">
 </div>
 <div class="form-group">
-<label for="paymentMethod">របៀបសងប្រាក់</label>
+<label for="paymentMethod" data-i18n="loanCalculate.paymentMethodLabel">របៀបសងប្រាក់</label>
 <select id="paymentMethod">
-<option value="Linear">បង់ថយ</option>
-<option value="Annuity">បង់ថេរ</option>
+<option value="Linear" data-i18n="loanCalculate.methodLinear">បង់ថយ</option>
+<option value="Annuity" data-i18n="loanCalculate.methodAnnuity">បង់ថេរ</option>
 </select>
 </div>
-<button class="calculate-btn" id="btnCalculate">
+<button class="calculate-btn" id="btnCalculate" data-i18n="loanCalculate.calculateBtn">
 គណនា
 </button>
 <div class="export-buttons">

@@ -40,7 +40,7 @@ href="../../assets/css/creditreport/creditreport.css">
 
 <body>
 
-<div id="offlineBanner">
+<div id="offlineBanner" data-i18n="common.offline">
 ⚠️ No Internet Connection
 </div>
 
@@ -51,6 +51,11 @@ href="../../assets/css/creditreport/creditreport.css">
 
 <script src="/CM_Pro/shared/topbar.js"></script>
 <script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/creditreport.js"></script>
 <script src="/CM_Pro/shared/loading.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 <script src="/CM_Pro/assets/js/toast.js"></script>
@@ -68,12 +73,12 @@ href="../../assets/css/creditreport/creditreport.css">
 <div class="cr-hub-snapshot-card">
 <button type="button" id="btnCrSnapshotAll" class="cr-hub-snapshot-btn">
 <span class="cr-hub-snapshot-btn-icon">📸</span>
-<span id="crHubSnapshotBtnLabel">Snapshot All</span>
+<span id="crHubSnapshotBtnLabel" data-i18n="creditreport.hub.snapshotAll">Snapshot All</span>
 </button>
 <div class="cr-hub-snapshot-results" id="crHubSnapshotResults">
 <div class="cr-hub-snapshot-results-head">
 <span id="crHubSnapshotSummary"></span>
-<button type="button" class="cr-hub-snapshot-close" id="btnCrSnapshotResultsClose" aria-label="Dismiss">✕</button>
+<button type="button" class="cr-hub-snapshot-close" id="btnCrSnapshotResultsClose" aria-label="Dismiss" data-i18n-aria-label="creditreport.hub.dismiss">✕</button>
 </div>
 <div id="crHubSnapshotRows"></div>
 </div>
@@ -85,8 +90,8 @@ href="../../assets/css/creditreport/creditreport.css">
 <a class="cr-hub-card cr-hub-link" href="../arrears/index.html?from=creditreport">
 <div class="cr-hub-icon">👤</div>
 <div class="cr-hub-text">
-<div class="cr-hub-card-title">Daily Arrears by Credit Officer</div>
-<div class="cr-hub-card-sub">ប្រចាំថ្ងៃតាមភ្នាក់ងារ</div>
+<div class="cr-hub-card-title" data-i18n="creditreport.hub.dailyArrearsByCO">Daily Arrears by Credit Officer</div>
+<div class="cr-hub-card-sub" data-i18n="creditreport.hub.dailyArrearsByCOSub">ប្រចាំថ្ងៃតាមភ្នាក់ងារ</div>
 </div>
 <div class="cr-hub-arrow">›</div>
 </a>
@@ -94,8 +99,8 @@ href="../../assets/css/creditreport/creditreport.css">
 <a class="cr-hub-card cr-hub-link" href="RepDetailbyCO.html">
 <div class="cr-hub-icon">📋</div>
 <div class="cr-hub-text">
-<div class="cr-hub-card-title">Daily Monitoring by Officer</div>
-<div class="cr-hub-card-sub">ត្រួតពិនិត្យប្រចាំថ្ងៃតាមភ្នាក់ងារ</div>
+<div class="cr-hub-card-title" data-i18n="creditreport.hub.byOfficer">Daily Monitoring by Officer</div>
+<div class="cr-hub-card-sub" data-i18n="creditreport.hub.byOfficerSub">ត្រួតពិនិត្យប្រចាំថ្ងៃតាមភ្នាក់ងារ</div>
 </div>
 <div class="cr-hub-arrow">›</div>
 </a>
@@ -103,8 +108,8 @@ href="../../assets/css/creditreport/creditreport.css">
 <a class="cr-hub-card cr-hub-link" href="RepDetailbyBranch.html">
 <div class="cr-hub-icon">🏢</div>
 <div class="cr-hub-text">
-<div class="cr-hub-card-title">Daily Monitoring by Branch</div>
-<div class="cr-hub-card-sub">ត្រួតពិនិត្យប្រចាំថ្ងៃតាមសាខា</div>
+<div class="cr-hub-card-title" data-i18n="creditreport.hub.byBranch">Daily Monitoring by Branch</div>
+<div class="cr-hub-card-sub" data-i18n="creditreport.hub.byBranchSub">ត្រួតពិនិត្យប្រចាំថ្ងៃតាមសាខា</div>
 </div>
 <div class="cr-hub-arrow">›</div>
 </a>
@@ -112,8 +117,8 @@ href="../../assets/css/creditreport/creditreport.css">
 <a class="cr-hub-card cr-hub-link" href="RepDetailbyProduct.html">
 <div class="cr-hub-icon">📦</div>
 <div class="cr-hub-text">
-<div class="cr-hub-card-title">Daily Monitoring by Product</div>
-<div class="cr-hub-card-sub">ត្រួតពិនិត្យប្រចាំថ្ងៃតាមផលិតផល</div>
+<div class="cr-hub-card-title" data-i18n="creditreport.hub.byProduct">Daily Monitoring by Product</div>
+<div class="cr-hub-card-sub" data-i18n="creditreport.hub.byProductSub">ត្រួតពិនិត្យប្រចាំថ្ងៃតាមផលិតផល</div>
 </div>
 <div class="cr-hub-arrow">›</div>
 </a>
@@ -121,8 +126,8 @@ href="../../assets/css/creditreport/creditreport.css">
 <a class="cr-hub-card cr-hub-link" href="RepDetailbyLocation.html">
 <div class="cr-hub-icon">📍</div>
 <div class="cr-hub-text">
-<div class="cr-hub-card-title">Daily Monitoring by Location</div>
-<div class="cr-hub-card-sub">ត្រួតពិនិត្យប្រចាំថ្ងៃតាមទីតាំង</div>
+<div class="cr-hub-card-title" data-i18n="creditreport.hub.byLocation">Daily Monitoring by Location</div>
+<div class="cr-hub-card-sub" data-i18n="creditreport.hub.byLocationSub">ត្រួតពិនិត្យប្រចាំថ្ងៃតាមទីតាំង</div>
 </div>
 <div class="cr-hub-arrow">›</div>
 </a>
@@ -130,8 +135,8 @@ href="../../assets/css/creditreport/creditreport.css">
 <a class="cr-hub-card cr-hub-link" href="ReportCompare.html">
 <div class="cr-hub-icon">🔁</div>
 <div class="cr-hub-text">
-<div class="cr-hub-card-title">Credit Portfolio Trends</div>
-<div class="cr-hub-card-sub">ប្រៀបធៀបរបាយការណ៍ប្រចាំថ្ងៃ</div>
+<div class="cr-hub-card-title" data-i18n="creditreport.hub.portfolioTrends">Credit Portfolio Trends</div>
+<div class="cr-hub-card-sub" data-i18n="creditreport.hub.portfolioTrendsSub">ប្រៀបធៀបរបាយការណ៍ប្រចាំថ្ងៃ</div>
 </div>
 <div class="cr-hub-arrow">›</div>
 </a>

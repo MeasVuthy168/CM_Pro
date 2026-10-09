@@ -14,6 +14,8 @@
 // at once via the caret in the Branch column header (crToggleExpandAll()).
 // ========================================
 
+const t = (key, vars) => window.CMI18n ? CMI18n.t(key, vars) : key;
+
 const crToken =
     localStorage.getItem("token") ||
     sessionStorage.getItem("token");
@@ -51,95 +53,102 @@ const crIsAdmin = String(crLoggedInUser.role || "").toLowerCase() === "admin";
 // Each field's `key` is a dot-path into a branch item (or `total`).
 // money:true -> thousands-formatted number. pct:true -> XX.XX%.
 // ========================================
-function crGroupPct(prefix, label, labelKh) {
+function crGroupPct(prefix, labelKey) {
     return {
-        label, labelKh,
+        label: t(labelKey),
         fields: [
-            { key: prefix + ".count", label: "# Loan" },
-            { key: prefix + ".value", label: "Value", money: true },
-            { key: prefix + ".parPct", label: "PAR %", pct: true }
+            { key: prefix + ".count", label: t("creditreport.detail.colLoanHash") },
+            { key: prefix + ".value", label: t("creditreport.detail.colValue"), money: true },
+            { key: prefix + ".parPct", label: t("creditreport.detail.colParPct"), pct: true }
         ]
     };
 }
 
-const CR_SECTIONS = {
-    outstanding: {
-        groups: [{
-            label: "Loan Outstanding", labelKh: "សមតុល្យឥណទាន",
-            fields: [
-                { key: "loanOutstanding.loan", label: "# Loan" },
-                { key: "loanOutstanding.client", label: "# Client" },
-                { key: "loanOutstanding.value", label: "Value", money: true }
+// Built by a function (not a frozen module-level const) so every label
+// picks up the current language when a report is (re)rendered, rather
+// than being baked in once at page-load time.
+function crSections() {
+    const S = {
+        outstanding: {
+            groups: [{
+                label: t("creditreport.detail.sectionOutstanding"),
+                fields: [
+                    { key: "loanOutstanding.loan", label: t("creditreport.detail.colLoanHash") },
+                    { key: "loanOutstanding.client", label: t("creditreport.detail.colClient") },
+                    { key: "loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
+                ]
+            }]
+        },
+        disburse: {
+            groups: [{
+                label: t("creditreport.detail.sectionDisburse"),
+                fields: [
+                    { key: "loanDisburse.loan", label: t("creditreport.detail.colLoanHash") },
+                    { key: "loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
+                ]
+            }]
+        },
+        parT24: {
+            groups: [{
+                key: "parT24",
+                label: t("creditreport.detail.sectionT24"),
+                fields: [
+                    { key: "parT24.loan", label: t("creditreport.detail.colLoanHash") },
+                    { key: "parT24.value", label: t("creditreport.detail.colValue"), money: true },
+                    { key: "parT24.parPct", label: t("creditreport.detail.colParPct"), pct: true }
+                ]
+            }]
+        },
+        nbcOverdue: {
+            groups: [
+                crGroupPct("nbcOverdue.minor", "creditreport.detail.classMinorDefault"),
+                crGroupPct("nbcOverdue.specialMention", "creditreport.detail.classSpecialMention"),
+                crGroupPct("nbcOverdue.subStandard", "creditreport.detail.classSubStandardHyphen"),
+                crGroupPct("nbcOverdue.doubtful", "creditreport.detail.classDoubtful"),
+                crGroupPct("nbcOverdue.loss", "creditreport.detail.classLoss"),
+                crGroupPct("nbcOverdue.majorDefault", "creditreport.detail.classMajorDefault"),
+                crGroupPct("nbcOverdue.nonPerformingLoan", "creditreport.detail.classNonPerformingLoan"),
+                crGroupPct("nbcOverdue.total", "creditreport.detail.classTotalNbcOverdue")
             ]
-        }]
-    },
-    disburse: {
-        groups: [{
-            label: "Loan Disburse",
-            fields: [
-                { key: "loanDisburse.loan", label: "# Loan" },
-                { key: "loanDisburse.value", label: "Value", money: true }
+        },
+        writeOff: {
+            groups: [
+                {
+                    label: t("creditreport.detail.woBalanceWO"),
+                    fields: [
+                        { key: "writeOff.balanceWO.cif", label: t("creditreport.detail.colCifHash") },
+                        { key: "writeOff.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
+                        { key: "writeOff.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
+                    ]
+                },
+                {
+                    label: t("creditreport.detail.woWO"),
+                    fields: [
+                        { key: "writeOff.wo.count", label: "#" },
+                        { key: "writeOff.wo.prn", label: t("creditreport.detail.colPrn"), money: true }
+                    ]
+                },
+                {
+                    label: t("creditreport.detail.woCollected"),
+                    fields: [
+                        { key: "writeOff.woCollected.int", label: t("creditreport.detail.colInt"), money: true },
+                        { key: "writeOff.woCollected.prn", label: t("creditreport.detail.colPrn"), money: true }
+                    ]
+                }
             ]
-        }]
-    },
-    parT24: {
-        groups: [{
-            label: "Balance Loan at Risk (T24)",
-            fields: [
-                { key: "parT24.loan", label: "# Loan" },
-                { key: "parT24.value", label: "Value", money: true },
-                { key: "parT24.parPct", label: "PAR %", pct: true }
-            ]
-        }]
-    },
-    nbcOverdue: {
+        }
+    };
+    S.all = {
         groups: [
-            crGroupPct("nbcOverdue.minor", "Minor Default"),
-            crGroupPct("nbcOverdue.specialMention", "Special Mention"),
-            crGroupPct("nbcOverdue.subStandard", "Sub-Standard"),
-            crGroupPct("nbcOverdue.doubtful", "Doubtful"),
-            crGroupPct("nbcOverdue.loss", "Loss"),
-            crGroupPct("nbcOverdue.majorDefault", "Major Default"),
-            crGroupPct("nbcOverdue.nonPerformingLoan", "Non Performing Loan"),
-            crGroupPct("nbcOverdue.total", "Total NBC Overdue")
+            ...S.outstanding.groups,
+            ...S.disburse.groups,
+            ...S.parT24.groups,
+            ...S.nbcOverdue.groups,
+            ...S.writeOff.groups
         ]
-    },
-    writeOff: {
-        groups: [
-            {
-                label: "Balance WO",
-                fields: [
-                    { key: "writeOff.balanceWO.cif", label: "# (cif)" },
-                    { key: "writeOff.balanceWO.int", label: "Int", money: true },
-                    { key: "writeOff.balanceWO.prn", label: "Prn", money: true }
-                ]
-            },
-            {
-                label: "WO",
-                fields: [
-                    { key: "writeOff.wo.count", label: "#" },
-                    { key: "writeOff.wo.prn", label: "Prn", money: true }
-                ]
-            },
-            {
-                label: "WO Collected",
-                fields: [
-                    { key: "writeOff.woCollected.int", label: "Int", money: true },
-                    { key: "writeOff.woCollected.prn", label: "Prn", money: true }
-                ]
-            }
-        ]
-    }
-};
-CR_SECTIONS.all = {
-    groups: [
-        ...CR_SECTIONS.outstanding.groups,
-        ...CR_SECTIONS.disburse.groups,
-        ...CR_SECTIONS.parT24.groups,
-        ...CR_SECTIONS.nbcOverdue.groups,
-        ...CR_SECTIONS.writeOff.groups
-    ]
-};
+    };
+    return S;
+}
 
 // ========================================
 // URL STATE
@@ -154,7 +163,7 @@ function crReadStateFromUrl() {
     const p = new URLSearchParams(location.search);
 
     const section = p.get("section");
-    if (section && CR_SECTIONS[section]) {
+    if (section && crSections()[section]) {
         document.getElementById("crSection").value = section;
     }
 
@@ -401,8 +410,8 @@ function crBuildThead(section) {
     return `
       <tr class="cr-group-row">
         <th rowspan="2" class="cr-branch-col${sortCls("_name")}" data-sort-key="_name" data-sort-type="text">
-          <button type="button" id="crExpandAllBtn" class="cr-row-expand-btn cr-expand-all-btn${allExpanded ? " open" : ""}" aria-expanded="${allExpanded}" aria-label="Expand or collapse all rows">▾</button>
-          Branch
+          <button type="button" id="crExpandAllBtn" class="cr-row-expand-btn cr-expand-all-btn${allExpanded ? " open" : ""}" aria-expanded="${allExpanded}" aria-label="${t("creditreport.byBranch.expandAllAria")}">▾</button>
+          ${t("creditreport.detail.branch")}
         </th>
         ${groupCells}
       </tr>
@@ -430,10 +439,10 @@ function crBuildRow(item, section, isTotal) {
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
     const branchKey = isTotal ? "All Branch" : item.branch;
-    const branchLabel = isTotal ? "Total" : item.branch;
+    const branchLabel = isTotal ? t("common.total") : item.branch;
     const isExpanded = crExpandedBranches.has(branchKey);
     const branchCell = `
-        <button type="button" class="cr-row-expand-btn${isExpanded ? " open" : ""}" data-branch="${crEscapeHtml(branchKey)}" aria-expanded="${isExpanded}" aria-label="Toggle CO/FSRO/Digital breakdown">▾</button>
+        <button type="button" class="cr-row-expand-btn${isExpanded ? " open" : ""}" data-branch="${crEscapeHtml(branchKey)}" aria-expanded="${isExpanded}" aria-label="${t("creditreport.byBranch.toggleBreakdownAria")}">▾</button>
         <button type="button" class="cr-branch-link" data-branch="${crEscapeHtml(branchKey)}">${crEscapeHtml(branchLabel)}</button>`;
 
     let html = `
@@ -452,9 +461,9 @@ function crBuildRow(item, section, isTotal) {
         }
         if (co) {
             html +=
-                crBuildSummaryBreakdownRow(co, section, "CO") +
-                crBuildSummaryBreakdownRow(fsro, section, "FSRO") +
-                crBuildSummaryBreakdownRow(digital, section, "Digital");
+                crBuildSummaryBreakdownRow(co, section, t("creditreport.byBranch.teamCo")) +
+                crBuildSummaryBreakdownRow(fsro, section, t("creditreport.byCO.fsro")) +
+                crBuildSummaryBreakdownRow(digital, section, t("creditreport.byBranch.teamDigital"));
         }
     }
     return html;
@@ -509,7 +518,7 @@ function crT24ClassGroup(prefix, label) {
 }
 
 function crActiveSection(sectionKey) {
-    const section = CR_SECTIONS[sectionKey];
+    const section = crSections()[sectionKey];
 
     if (sectionKey === "nbcOverdue") {
         const nbcClass = document.getElementById("crNbcClass").value;
@@ -576,8 +585,8 @@ function crBuildHistoryThead(section) {
     ).join("");
     return `
       <tr class="cr-group-row">
-        <th rowspan="2" class="cr-branch-col">Branch</th>
-        <th rowspan="2" class="cr-date-col">Date</th>
+        <th rowspan="2" class="cr-branch-col">${t("creditreport.detail.branch")}</th>
+        <th rowspan="2" class="cr-date-col">${t("creditreport.byBranch.colDate")}</th>
         ${groupCells}
       </tr>
       <tr class="cr-sub-row">
@@ -594,7 +603,7 @@ function crBuildHistoryThead(section) {
 // under the Date cell, only while a T24 column is actually part of the
 // active section, per explicit request 2026-10-02.
 function crSectionHasT24(section) {
-    return section.groups.some(g => g.label === "Balance Loan at Risk (T24)");
+    return section.groups.some(g => g.key === "parT24");
 }
 
 function crBuildHistoryRow(dateKey, item, section, isTotal, t24AsOfText) {
@@ -602,15 +611,15 @@ function crBuildHistoryRow(dateKey, item, section, isTotal, t24AsOfText) {
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
     const branchKey = isTotal ? "All Branch" : item.branch;
-    const branchLabel = isTotal ? "All Branch" : item.branch;
+    const branchLabel = isTotal ? t("creditreport.byCO.allBranch") : item.branch;
     const rowKey = crHistoryRowKey(branchKey, dateKey);
     const isExpanded = crHistoryExpandedRows.has(rowKey);
     const branchCell = item.breakdown
-        ? `<button type="button" class="cr-row-expand-btn${isExpanded ? " open" : ""}" data-hist-key="${crEscapeHtml(rowKey)}" aria-expanded="${isExpanded}" aria-label="Toggle CO/FSRO/Digital breakdown">▾</button>${crEscapeHtml(branchLabel)}`
+        ? `<button type="button" class="cr-row-expand-btn${isExpanded ? " open" : ""}" data-hist-key="${crEscapeHtml(rowKey)}" aria-expanded="${isExpanded}" aria-label="${t("creditreport.byBranch.toggleBreakdownAria")}">▾</button>${crEscapeHtml(branchLabel)}`
         : crEscapeHtml(branchLabel);
 
     const t24Note = (crSectionHasT24(section) && t24AsOfText)
-        ? `<div class="cr-t24-asof" title="Balance Loan at Risk (T24) is as of its own ArreasT24ByCO feed, not this row's Date">T24: ${crEscapeHtml(t24AsOfText)}</div>`
+        ? `<div class="cr-t24-asof" title="${t("creditreport.detail.t24AsOfTooltip")}">T24: ${crEscapeHtml(t24AsOfText)}</div>`
         : "";
 
     // Admin-only — lets an admin remove a single day's saved snapshot
@@ -619,7 +628,7 @@ function crBuildHistoryRow(dateKey, item, section, isTotal, t24AsOfText) {
     // the CO/FSRO/Digital breakdown rows below it — they all share the
     // same saved snapshot document for this date.
     const delBtn = crIsAdmin
-        ? `<button type="button" class="cr-row-delete-btn" data-hist-del="${crEscapeHtml(dateKey)}" title="Delete this day's snapshot">🗑</button>`
+        ? `<button type="button" class="cr-row-delete-btn" data-hist-del="${crEscapeHtml(dateKey)}" title="${t("creditreport.detail.deleteDaySnapshotTitle")}">🗑</button>`
         : "";
 
     let html = `
@@ -631,9 +640,9 @@ function crBuildHistoryRow(dateKey, item, section, isTotal, t24AsOfText) {
 
     if (isExpanded && item.breakdown) {
         html +=
-            crBuildHistoryBreakdownRow(dateKey, item.breakdown.co, section, "CO", t24AsOfText) +
-            crBuildHistoryBreakdownRow(dateKey, item.breakdown.fsro, section, "FSRO", t24AsOfText) +
-            crBuildHistoryBreakdownRow(dateKey, item.breakdown.digital, section, "Digital", t24AsOfText);
+            crBuildHistoryBreakdownRow(dateKey, item.breakdown.co, section, t("creditreport.byBranch.teamCo"), t24AsOfText) +
+            crBuildHistoryBreakdownRow(dateKey, item.breakdown.fsro, section, t("creditreport.byCO.fsro"), t24AsOfText) +
+            crBuildHistoryBreakdownRow(dateKey, item.breakdown.digital, section, t("creditreport.byBranch.teamDigital"), t24AsOfText);
     }
     return html;
 }
@@ -647,7 +656,7 @@ function crBuildHistoryBreakdownRow(dateKey, item, section, team, t24AsOfText) {
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
     const t24Note = (crSectionHasT24(section) && t24AsOfText)
-        ? `<div class="cr-t24-asof" title="Balance Loan at Risk (T24) is as of its own ArreasT24ByCO feed, not this row's Date">T24: ${crEscapeHtml(t24AsOfText)}</div>`
+        ? `<div class="cr-t24-asof" title="${t("creditreport.detail.t24AsOfTooltip")}">T24: ${crEscapeHtml(t24AsOfText)}</div>`
         : "";
     return `
       <tr class="cr-breakdown-row">
@@ -675,7 +684,7 @@ function crRenderHistory() {
 
     if (!crHistoryData.days.length) {
         document.getElementById("crTbody").innerHTML = "";
-        crShowEmpty("No history saved for this date range yet.");
+        crShowEmpty(t("creditreport.detail.noHistorySaved"));
         return;
     }
 
@@ -715,7 +724,7 @@ async function crFetchHistory() {
         crHideLoading();
 
         if (!data.ok) {
-            crShowEmpty(data.message || "Failed to load history.");
+            crShowEmpty(data.message || t("creditreport.detail.failedLoadHistory"));
             return;
         }
         crHistoryData = data;
@@ -723,7 +732,7 @@ async function crFetchHistory() {
     } catch (e) {
         console.error(e);
         crHideLoading();
-        crShowEmpty("Network error loading history.");
+        crShowEmpty(t("creditreport.detail.networkErrorHistory"));
     }
 }
 
@@ -799,20 +808,20 @@ function crSetMode(mode) {
 async function crEnsureDetailedData() {
     if (crDetailedData) return true;
 
-    if (typeof showAppLoading === "function") showAppLoading("Loading breakdown...");
+    if (typeof showAppLoading === "function") showAppLoading(t("creditreport.byBranch.loadingBreakdown"));
     try {
         const url = `${API.BASE_URL}/api/creditreport/detailed${crBuildDateQuery()}`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
         const data = await res.json();
         if (!data.ok || !data.groups || !data.groups.length) {
-            throw new Error(data.message || "Could not load the breakdown.");
+            throw new Error(data.message || t("creditreport.byBranch.breakdownLoadFailed"));
         }
         crDetailedData = data;
         return true;
     } catch (e) {
         console.error(e);
         if (typeof showToast === "function") {
-            showToast("Could not load the breakdown. Please try again.", "error");
+            showToast(t("creditreport.byBranch.breakdownLoadFailedRetry"), "error");
         }
         return false;
     } finally {
@@ -954,7 +963,7 @@ window.addEventListener("orientationchange", () => setTimeout(crSetHeaderOffsets
 // in-button spinner — the button lives inside the collapsible date panel,
 // which is usually closed, so a spinner there would often be invisible
 // while the report was actually loading.
-function crShowLoading(message = "Loading Report Data...") {
+function crShowLoading(message = t("creditreport.loadingReportData")) {
     document.getElementById("crSkeleton").style.display = "block";
     document.getElementById("crTableScroll").style.display = "none";
     document.getElementById("crEmptyMsg").style.display = "none";
@@ -1072,7 +1081,7 @@ async function crRunReport() {
         crHideLoading();
 
         if (!data.ok) {
-            crShowEmpty(data.message || "Failed to load report.");
+            crShowEmpty(data.message || t("creditreport.detail.failedLoadReport"));
             return;
         }
 
@@ -1080,12 +1089,12 @@ async function crRunReport() {
         crRenderMeta(data.meta);
 
         document.getElementById("crDisbPeriod").textContent =
-            `${crFmtDateDMY(data.fromDate)} to ${crFmtDateDMY(data.toDate)}`;
+            t("creditreport.detail.dateRange", { from: crFmtDateDMY(data.fromDate), to: crFmtDateDMY(data.toDate) });
         document.getElementById("crWoPeriod").textContent =
-            `${crFmtDateDMY(data.woFromDate)} to ${crFmtDateDMY(data.woToDate)}`;
+            t("creditreport.detail.dateRange", { from: crFmtDateDMY(data.woFromDate), to: crFmtDateDMY(data.woToDate) });
 
         if (!data.items || !data.items.length) {
-            crShowEmpty("No data.");
+            crShowEmpty(t("common.noData"));
             return;
         }
 
@@ -1097,7 +1106,7 @@ async function crRunReport() {
     } catch (e) {
         console.error(e);
         crHideLoading();
-        crShowEmpty("Network error loading report.");
+        crShowEmpty(t("creditreport.detail.networkErrorReport"));
     }
 }
 // ========================================
@@ -1116,12 +1125,12 @@ function notify(message, type = "info") {
 // ========================================
 function crExportExcel() {
     if (typeof XLSX === "undefined") {
-        notify("Excel export library failed to load — check your connection and try again.", "error");
+        notify(t("creditreport.byBranch.excelLibFailedRetry"), "error");
         return;
     }
     const table = document.getElementById("crTable");
     if (!table || !document.getElementById("crTbody").children.length) {
-        notify("Nothing to export.", "warning");
+        notify(t("creditreport.detail.nothingToExport"), "warning");
         return;
     }
     const ws = XLSX.utils.table_to_sheet(table);
@@ -1167,16 +1176,16 @@ function extractPrintCss() {
 
 async function crExportPdf() {
     if (typeof html2canvas === "undefined" || typeof window.jspdf === "undefined") {
-        notify("PDF export library failed to load — check your connection and try again.", "error");
+        notify(t("creditreport.byBranch.pdfLibFailedRetry"), "error");
         return;
     }
     if (!document.getElementById("crTbody").children.length) {
-        notify("Nothing to export.", "warning");
+        notify(t("creditreport.detail.nothingToExport"), "warning");
         return;
     }
 
     if (typeof showAppLoading === "function") {
-        showAppLoading("Generating PDF...");
+        showAppLoading(t("creditreport.detail.generatingPdf"));
     }
 
     const tempStyleEl = document.createElement("style");
@@ -1268,7 +1277,7 @@ async function crExportPdf() {
         pdf.save(`CreditReport_${stamp}.pdf`);
     } catch (err) {
         console.error("[export pdf] failed:", err);
-        notify("Could not generate the PDF.", "error");
+        notify(t("creditreport.detail.pdfGenerateFailed"), "error");
     } finally {
         tempStyleEl.remove();
         void document.body.offsetHeight;
@@ -1300,7 +1309,7 @@ if (crIsAdmin) {
     if (snapBtn) snapBtn.style.display = "";
 }
 async function crRunSnapshotNow() {
-    if (typeof showAppLoading === "function") showAppLoading("Saving snapshot...");
+    if (typeof showAppLoading === "function") showAppLoading(t("creditreport.compare.savingSnapshot"));
     try {
         const res = await fetch(`${API.BASE_URL}/api/creditreport/summary/snapshot/run`, {
             method: "POST",
@@ -1309,13 +1318,13 @@ async function crRunSnapshotNow() {
         });
         const data = await res.json();
         if (data.ok) {
-            notify(`Snapshot saved for ${data.date}`, "success");
+            notify(t("creditreport.compare.snapshotSavedFor", { date: data.date }), "success");
         } else {
-            notify(data.message || "Snapshot failed", "error");
+            notify(data.message || t("creditreport.compare.snapshotFailed"), "error");
         }
     } catch (e) {
         console.error(e);
-        notify("Snapshot failed", "error");
+        notify(t("creditreport.compare.snapshotFailed"), "error");
     } finally {
         if (typeof hideAppLoading === "function") hideAppLoading();
     }
@@ -1369,7 +1378,7 @@ if (crMenuToggle && crMenuDropdown) {
 // ========================================
 async function crRefreshData() {
     document.getElementById("crMenuDropdown")?.classList.remove("show");
-    crShowLoading("Refreshing from database...");
+    crShowLoading(t("creditreport.detail.refreshingFromDb"));
 
     try {
         const res = await fetch(`${API.BASE_URL}/api/creditreport/refresh`, {
@@ -1380,7 +1389,7 @@ async function crRefreshData() {
 
         if (!data.ok) {
             crHideLoading();
-            crShowEmpty(data.message || "Could not refresh data.");
+            crShowEmpty(data.message || t("creditreport.detail.refreshFailed"));
             return;
         }
 
@@ -1392,7 +1401,7 @@ async function crRefreshData() {
     } catch (e) {
         console.error("[refresh data] failed:", e);
         crHideLoading();
-        crShowEmpty("Network error refreshing data.");
+        crShowEmpty(t("creditreport.detail.networkErrorRefresh"));
     }
 }
 document.getElementById("btnCrRefreshData")?.addEventListener("click", crRefreshData);
@@ -1421,7 +1430,7 @@ if (btnCrLandscape) {
         document.body.classList.add("cr-force-landscape");
         if (crLandscapeRowCount) {
             const rowCount = document.getElementById("crTbody").children.length;
-            crLandscapeRowCount.textContent = `${rowCount.toLocaleString()} rows`;
+            crLandscapeRowCount.textContent = t("creditreport.detail.rowsCount", { count: rowCount.toLocaleString() });
         }
         crShowLandscapeBars();
         document.getElementById("crMenuDropdown")?.classList.remove("show");
@@ -1499,8 +1508,8 @@ function crChartMetricOptions(section) {
 function crChartTitle() {
     const branchFilter = document.getElementById("crHistBranch").value;
     const teamFilter = document.getElementById("crHistTeam").value;
-    const teamLabel = { co: "CO", fsro: "FSRO", digital: "Digital" }[teamFilter] || "All Team";
-    return `${branchFilter || "All Branch"} — ${teamLabel}`;
+    const teamLabel = { co: t("creditreport.byBranch.teamCo"), fsro: t("creditreport.byCO.fsro"), digital: t("creditreport.byBranch.teamDigital") }[teamFilter] || t("creditreport.byCO.allTeam");
+    return `${branchFilter || t("creditreport.byCO.allBranch")} — ${teamLabel}`;
 }
 
 function crRenderChartMetricTabs(section, metricOptions) {
@@ -1565,7 +1574,7 @@ function crRenderChart(section) {
         });
     });
 
-    document.getElementById("crChartTitle").textContent = `${crChartTitle()} — ${section.groups.length === 1 ? section.groups[0].label : "Showing"}`;
+    document.getElementById("crChartTitle").textContent = `${crChartTitle()} — ${section.groups.length === 1 ? section.groups[0].label : t("creditreport.detail.showing")}`;
 
     const isPct = !!activeField?.pct;
     const ctx = document.getElementById("crChartCanvas").getContext("2d");
@@ -1611,7 +1620,7 @@ function crRenderChart(section) {
 function crOpenChart() {
     if (!crHistoryData || !crHistoryData.days.length) return;
     if (typeof Chart === "undefined") {
-        notify("Chart library failed to load — check your connection and refresh.", "error");
+        notify(t("creditreport.detail.chartLibFailed"), "error");
         return;
     }
     const sectionKey = document.getElementById("crSection").value;
@@ -1668,7 +1677,7 @@ if (crIsAdmin) {
         if (!btn) return;
         const dateKey = btn.getAttribute("data-hist-del");
         if (!dateKey) return;
-        if (!confirm(`Delete the saved snapshot for ${crFmtDateDMY(dateKey)}? This cannot be undone.`)) return;
+        if (!confirm(t("creditreport.compare.confirmDeleteSnapshot", { date: crFmtDateDMY(dateKey) }))) return;
 
         btn.disabled = true;
         try {
@@ -1681,14 +1690,14 @@ if (crIsAdmin) {
             if (data.ok) {
                 crHistoryData.days = crHistoryData.days.filter(d => d.date !== dateKey);
                 crRenderHistory();
-                notify(`Snapshot deleted for ${crFmtDateDMY(dateKey)}`, "success");
+                notify(t("creditreport.compare.snapshotDeletedFor", { date: crFmtDateDMY(dateKey) }), "success");
             } else {
-                notify(data.message || "Delete failed", "error");
+                notify(data.message || t("creditreport.compare.deleteFailed"), "error");
                 btn.disabled = false;
             }
         } catch (err) {
             console.error(err);
-            notify("Delete failed", "error");
+            notify(t("creditreport.compare.deleteFailed"), "error");
             btn.disabled = false;
         }
     });

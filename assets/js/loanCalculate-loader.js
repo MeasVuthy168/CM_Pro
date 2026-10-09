@@ -36,7 +36,7 @@ async function loadComponent(id,file){
 
             initTopbar({
 
-                title:"កម្មវិធី​គណនាឥណទាន",
+                titleKey:"dashboard.loanCalculator",
 
                 showBack:true,
 

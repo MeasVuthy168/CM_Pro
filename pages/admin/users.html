@@ -39,7 +39,7 @@
     <!-- SIDEBAR (auto-rendered by admin-nav.js) -->
     <!-- ========================= -->
     <aside class="adm-sidebar">
-      <div class="adm-sidebar-brand">CM_Pro Admin</div>
+      <div class="adm-sidebar-brand" data-i18n="admin.common.brand">CM_Pro Admin</div>
       <nav id="admSidebar"></nav>
     </aside>
 
@@ -53,11 +53,11 @@
       <!-- ========================= -->
       <div class="adm-header">
         <div class="adm-title-block">
-          <h1>User Management · គ្រប់គ្រងអ្នកប្រើប្រាស់</h1>
-          <p>Add, edit, and manage CM_Pro accounts</p>
+          <h1 data-i18n="admin.users.title">User Management</h1>
+          <p data-i18n="admin.users.subtitle">Add, edit, and manage CM_Pro accounts</p>
         </div>
         <div class="adm-header-right">
-          <span class="adm-user-chip" id="admUserLabel">Admin</span>
+          <span class="adm-user-chip" id="admUserLabel" data-i18n="admin.common.adminFallback">Admin</span>
           <div class="adm-topbar-actions" id="admTopbarActions"></div>
         </div>
       </div>
@@ -66,28 +66,28 @@
       <!-- TOOLBAR -->
       <!-- ========================= -->
       <div class="adm-toolbar">
-        <input type="text" class="adm-search-input" id="ufSearch" placeholder="Search username, full name, or phone…">
+        <input type="text" class="adm-search-input" id="ufSearch" placeholder="Search username, full name, or phone…" data-i18n-placeholder="admin.users.searchPlaceholder">
 
         <select class="adm-toolbar-select" id="ufSearchRole">
-          <option value="all">All Roles</option>
-          <option value="admin">Admin</option>
-          <option value="user">User</option>
-          <option value="viewer_staff">Viewer_Staff</option>
-          <option value="viewer_manager_a">Viewer_Manager_A</option>
-          <option value="viewer_manager_b">Viewer_Manager_B</option>
-          <option value="viewer_manager_c">Viewer_Manager_C</option>
+          <option value="all" data-i18n="admin.users.allRoles">All Roles</option>
+          <option value="admin" data-i18n="admin.users.roleAdmin">Admin</option>
+          <option value="user" data-i18n="admin.users.roleUser">User</option>
+          <option value="viewer_staff" data-i18n="admin.users.roleViewerStaff">Viewer_Staff</option>
+          <option value="viewer_manager_a" data-i18n="admin.users.roleViewerManagerA">Viewer_Manager_A</option>
+          <option value="viewer_manager_b" data-i18n="admin.users.roleViewerManagerB">Viewer_Manager_B</option>
+          <option value="viewer_manager_c" data-i18n="admin.users.roleViewerManagerC">Viewer_Manager_C</option>
         </select>
 
         <select class="adm-toolbar-select" id="ufSearchStatus">
-          <option value="all">All Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="all" data-i18n="admin.users.allStatus">All Status</option>
+          <option value="active" data-i18n="admin.users.statusActive">Active</option>
+          <option value="inactive" data-i18n="admin.users.statusInactive">Inactive</option>
         </select>
 
         <div class="adm-toolbar-spacer"></div>
 
-        <button type="button" class="adm-btn" id="ufBtnShowAll">Show All</button>
-        <button type="button" class="adm-btn adm-btn-primary" id="ufBtnAddUser">+ Add User</button>
+        <button type="button" class="adm-btn" id="ufBtnShowAll" data-i18n="admin.users.showAll">Show All</button>
+        <button type="button" class="adm-btn adm-btn-primary" id="ufBtnAddUser" data-i18n="admin.users.addUser">+ Add User</button>
       </div>
 
       <!-- ========================= -->
@@ -98,17 +98,17 @@
           <table class="adm-table">
             <thead>
               <tr>
-                <th>User</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Phone</th>
-                <th>Branch</th>
+                <th data-i18n="admin.users.colUser">User</th>
+                <th data-i18n="admin.users.colRole">Role</th>
+                <th data-i18n="admin.users.colStatus">Status</th>
+                <th data-i18n="admin.users.colPhone">Phone</th>
+                <th data-i18n="admin.users.colBranch">Branch</th>
                 <th></th>
               </tr>
             </thead>
             <tbody id="admUsersTableBody"></tbody>
           </table>
-          <div class="adm-table-empty" id="admUsersTableEmpty" hidden>No users found.</div>
+          <div class="adm-table-empty" id="admUsersTableEmpty" hidden data-i18n="admin.users.noUsersFound">No users found.</div>
         </div>
       </div>
 
@@ -122,32 +122,32 @@
   <form id="ufForm">
     <div class="adm-form-grid">
       <label class="adm-field">
-        <span>Username</span>
+        <span data-i18n="admin.users.fieldUsername">Username</span>
         <input type="text" id="ufUsername" autocomplete="off">
       </label>
 
       <label class="adm-field">
-        <span>Full Name</span>
+        <span data-i18n="admin.users.fieldFullName">Full Name</span>
         <input type="text" id="ufFullName" autocomplete="off">
       </label>
 
       <label class="adm-field">
-        <span>Role</span>
+        <span data-i18n="admin.users.fieldRole">Role</span>
         <select id="ufRole">
-          <option value="admin">Admin</option>
-          <option value="user">User</option>
-          <option value="viewer_staff">Viewer_Staff</option>
-          <option value="viewer_manager_a">Viewer_Manager_A</option>
-          <option value="viewer_manager_b">Viewer_Manager_B</option>
-          <option value="viewer_manager_c">Viewer_Manager_C</option>
+          <option value="admin" data-i18n="admin.users.roleAdmin">Admin</option>
+          <option value="user" data-i18n="admin.users.roleUser">User</option>
+          <option value="viewer_staff" data-i18n="admin.users.roleViewerStaff">Viewer_Staff</option>
+          <option value="viewer_manager_a" data-i18n="admin.users.roleViewerManagerA">Viewer_Manager_A</option>
+          <option value="viewer_manager_b" data-i18n="admin.users.roleViewerManagerB">Viewer_Manager_B</option>
+          <option value="viewer_manager_c" data-i18n="admin.users.roleViewerManagerC">Viewer_Manager_C</option>
         </select>
       </label>
 
       <label class="adm-field" id="ufBranchField" hidden>
-        <span>Branch</span>
+        <span data-i18n="admin.users.fieldBranch">Branch</span>
         <select id="ufBranch">
-          <option value="">— Select Branch —</option>
-          <option value="All Branch">All Branch</option>
+          <option value="" data-i18n="admin.users.selectBranch">— Select Branch —</option>
+          <option value="All Branch" data-i18n="admin.users.branchAll">All Branch</option>
           <option value="Svay Rieng">Svay Rieng</option>
           <option value="Romeas Haek">Romeas Haek</option>
           <option value="Kraol Kou">Kraol Kou</option>
@@ -159,27 +159,27 @@
       </label>
 
       <label class="adm-field">
-        <span>Status</span>
+        <span data-i18n="admin.users.fieldStatus">Status</span>
         <select id="ufStatus">
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="active" data-i18n="admin.users.statusActive">Active</option>
+          <option value="inactive" data-i18n="admin.users.statusInactive">Inactive</option>
         </select>
       </label>
 
       <label class="adm-field">
-        <span>Phone</span>
+        <span data-i18n="admin.users.fieldPhone">Phone</span>
         <input type="text" id="ufPhone" autocomplete="off">
       </label>
     </div>
 
     <div class="adm-photo-row">
       <div class="adm-photo-preview" id="ufPhotoPreview">
-        <span id="ufPhotoPlaceholder">No Photo</span>
+        <span id="ufPhotoPlaceholder" data-i18n="admin.users.noPhoto">No Photo</span>
         <img id="ufPhotoImg" alt="User photo" hidden>
       </div>
       <div class="adm-photo-actions">
-        <button type="button" class="adm-btn" id="ufBtnSelectPhoto">Select Photo…</button>
-        <button type="button" class="adm-btn" id="ufBtnRemovePhoto">Remove Photo</button>
+        <button type="button" class="adm-btn" id="ufBtnSelectPhoto" data-i18n="admin.users.selectPhoto">Select Photo…</button>
+        <button type="button" class="adm-btn" id="ufBtnRemovePhoto" data-i18n="admin.users.removePhoto">Remove Photo</button>
         <input type="file" id="ufPhotoInput" accept="image/*" hidden>
       </div>
     </div>
@@ -189,6 +189,12 @@
     </div>
   </form>
 </template>
+
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/admin.js"></script>
 
 <script src="/CM_Pro/shared/logout.js"></script>
 <script src="/CM_Pro/assets/js/toast.js"></script>

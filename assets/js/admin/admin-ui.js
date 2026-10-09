@@ -16,17 +16,23 @@
      AdminUI.closeModal();
    ===================================================== */
 (function () {
+  // t(): small helper so this file's hardcoded UI strings go through
+  // the i18n dictionary (shared/i18n/admin.js) when it's loaded.
+  const t = (key, vars) => (window.CMI18n ? CMI18n.t(key, vars) : key);
+
   // ---------- toast ----------
   // Delegates to your real CMToast (assets/js/toast.js) when it's loaded,
   // since that's the actual app-wide toast system — title + message +
   // avatar + progress bar + push-notification integration. Falls back to
   // a minimal built-in toast only if CMToast isn't present on a page.
-  const TOAST_TITLES = {
-    success: "Success",
-    error: "Error",
-    info: "Notice",
-    warning: "Warning"
-  };
+  function toastTitles() {
+    return {
+      success: t("admin.ui.toastSuccess"),
+      error: t("admin.ui.toastError"),
+      info: t("admin.ui.toastInfo"),
+      warning: t("admin.ui.toastWarning")
+    };
+  }
 
   function ensureFallbackStack() {
     let stack = document.getElementById("admToastStack");
@@ -61,7 +67,7 @@
     if (window.CMToast && typeof window.CMToast.show === "function") {
       window.CMToast.show({
         type,
-        title: TOAST_TITLES[type] || "Notice",
+        title: toastTitles()[type] || t("admin.ui.toastInfo"),
         message,
         duration
       });
@@ -107,7 +113,7 @@
     const closeBtn = document.createElement("button");
     closeBtn.type = "button";
     closeBtn.className = "adm-modal-close";
-    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.setAttribute("aria-label", t("admin.ui.close"));
     closeBtn.textContent = "✕";
     closeBtn.addEventListener("click", () => closeModal(null));
     header.appendChild(closeBtn);
@@ -129,7 +135,7 @@
   }
 
   // ---------- confirm dialog ----------
-  function confirmDialog({ title = "Are you sure?", message = "", confirmLabel = "Confirm", cancelLabel = "Cancel", danger = false }) {
+  function confirmDialog({ title = t("admin.ui.areYouSure"), message = "", confirmLabel = t("admin.ui.confirm"), cancelLabel = t("admin.ui.cancel"), danger = false }) {
     return new Promise((resolve) => {
       const body = document.createElement("div");
       body.innerHTML = `
@@ -152,7 +158,7 @@
   }
 
   // ---------- prompt dialog ----------
-  function promptDialog({ title = "Enter value", message = "", label = "", placeholder = "", defaultValue = "", inputType = "text", confirmLabel = "OK", cancelLabel = "Cancel" }) {
+  function promptDialog({ title = t("admin.ui.enterValue"), message = "", label = "", placeholder = "", defaultValue = "", inputType = "text", confirmLabel = t("admin.ui.ok"), cancelLabel = t("admin.ui.cancel") }) {
     return new Promise((resolve) => {
       const body = document.createElement("div");
       body.innerHTML = `

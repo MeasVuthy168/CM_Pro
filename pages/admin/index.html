@@ -39,7 +39,7 @@
     <!-- SIDEBAR (auto-rendered by admin-nav.js) -->
     <!-- ========================= -->
     <aside class="adm-sidebar">
-      <div class="adm-sidebar-brand">CM_Pro Admin</div>
+      <div class="adm-sidebar-brand" data-i18n="admin.common.brand">CM_Pro Admin</div>
       <nav id="admSidebar"></nav>
     </aside>
 
@@ -50,19 +50,18 @@
 
       <div class="adm-header">
         <div class="adm-title-block">
-          <h1>Welcome back · សូមស្វាគមន៍</h1>
-          <p>Pick a tool below to get started.</p>
+          <h1 data-i18n="admin.hub.title">Welcome back</h1>
+          <p data-i18n="admin.hub.subtitle">Pick a tool below to get started.</p>
         </div>
         <div class="adm-header-right">
-          <span class="adm-user-chip" id="admUserLabel">Admin</span>
+          <span class="adm-user-chip" id="admUserLabel" data-i18n="admin.common.adminFallback">Admin</span>
           <div class="adm-topbar-actions" id="admTopbarActions"></div>
         </div>
       </div>
 
-      <p class="adm-hub-welcome">
-        This is the central hub for CM_Pro admin tools. Bandwidth Stats is live today —
-        User Management, Data Uploads, Activity Logs, and App Versions are on the roadmap
-        and will light up here as each one ships, no bookmark changes needed.
+      <p class="adm-hub-welcome" data-i18n="admin.hub.description">
+        This is the central hub for CM_Pro admin tools — each tool below opens its own
+        dashboard, no bookmark changes needed as new ones are added.
       </p>
 
       <div class="adm-tools-grid" id="admToolsGrid"></div>
@@ -71,6 +70,12 @@
 
   </div>
 </div>
+
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/admin.js"></script>
 
 <script src="/CM_Pro/assets/js/admin/admin-ui.js"></script>
 <script src="/CM_Pro/assets/js/admin/admin-nav.js"></script>
