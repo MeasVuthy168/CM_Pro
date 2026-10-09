@@ -375,46 +375,76 @@ async function initNotificationSwitch(){
 }
 
 // =========================
-// THEME PICKER
+// ACCORDION PICKER (shared by Theme + Language)
 // =========================
-// window.CMTheme / window.CM_THEME_LIST come from shared/theme.js.
-// Renders one round swatch button per theme (color = that theme's
-// own preview color); tapping one flips the shared data-theme
-// attribute + localStorage flag that every page reads on load. The
-// actual color values for each theme live in each page's own CSS via
-// [data-theme="<id>"] blocks.
+// A header row (.setting-item, id = toggleId) expands/collapses a
+// list of radio rows (id = optionsId) below it — one per entry in
+// list. Tapping an option calls set() and re-renders; tapping the
+// header toggles .open on both the options box and its "›" arrow
+// (rotated 90° while open via CSS).
 
-function initThemeSwitch(){
+function initAccordionPicker(toggleId,chevronId,optionsId,list,get,set,withFlag){
 
-    const picker=document.getElementById("themePicker");
+    const toggleRow=document.getElementById(toggleId);
+    const chevron=document.getElementById(chevronId);
+    const optionsBox=document.getElementById(optionsId);
 
-    if(!picker || !window.CMTheme || !window.CM_THEME_LIST) return;
+    if(!toggleRow || !chevron || !optionsBox || !list) return;
 
     function render(){
 
-        const current=CMTheme.get();
+        const current=get();
 
-        picker.innerHTML = CM_THEME_LIST.map(t => `
-            <button
-                type="button"
-                class="theme-swatch${t.id===current ? " active" : ""}"
-                data-theme-id="${t.id}"
-                style="background:${t.swatch}"
-                aria-label="${t.label}"
-                title="${t.label}"
-            ><span class="theme-swatch-check">✓</span></button>
+        optionsBox.innerHTML = list.map(item => `
+            <div class="acc-option" data-id="${item.id}">
+                <span class="acc-option-radio${item.id===current ? " checked" : ""}">
+                    <span class="acc-option-radio-dot"></span>
+                </span>
+                ${withFlag ? `<span class="acc-option-flag">${item.flag}</span>` : ""}
+                <span class="acc-option-label">${item.label}</span>
+            </div>
         `).join("");
 
-        picker.querySelectorAll(".theme-swatch").forEach(btn => {
-            btn.addEventListener("click", () => {
-                CMTheme.set(btn.dataset.themeId);
+        optionsBox.querySelectorAll(".acc-option").forEach(row => {
+            row.addEventListener("click", () => {
+                set(row.dataset.id);
                 render();
             });
         });
 
     }
 
+    toggleRow.addEventListener("click", () => {
+        const isOpen=optionsBox.classList.toggle("open");
+        chevron.classList.toggle("open",isOpen);
+    });
+
     render();
+
+}
+
+// window.CMTheme / window.CM_THEME_LIST come from shared/theme.js
+// (Auto / Light / Dark — "auto" resolves to the OS preference).
+function initThemeSwitch(){
+
+    if(!window.CMTheme || !window.CM_THEME_LIST) return;
+
+    initAccordionPicker(
+        "themeToggle","themeChevron","themeOptions",
+        CM_THEME_LIST,CMTheme.get,CMTheme.set,false
+    );
+
+}
+
+// window.CMLanguage / window.CM_LANGUAGE_LIST come from shared/language.js.
+function initLanguageSwitch(){
+
+    if(!window.CMLanguage || !window.CM_LANGUAGE_LIST) return;
+
+    initAccordionPicker(
+        "languageToggle","languageChevron","languageOptions",
+        CM_LANGUAGE_LIST,CMLanguage.get,CMLanguage.set,true
+    );
 
 }
 
@@ -477,6 +507,8 @@ window.addEventListener("load",()=>{
     initNotificationSwitch();
 
     initThemeSwitch();
+
+    initLanguageSwitch();
 
     initLogoutDialog();
 

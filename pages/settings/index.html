@@ -11,7 +11,7 @@
 <script>
   document.documentElement.setAttribute(
     "data-theme",
-    localStorage.getItem("cm_theme") || "light"
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
   );
 </script>
 
@@ -65,13 +65,29 @@
 <span class="setting-arrow">›</span>
 </div>
 
-<div class="setting-item setting-item-theme">
+<div class="setting-item setting-item-theme" id="themeToggle">
 <div class="setting-left">
 <img src="/CM_Pro/assets/icons/setting/theme.png" class="setting-icon">
-<span>រូបរាង</span>
+<div class="setting-text">
+<span class="setting-title">Theme</span>
+<span class="setting-subtitle">Choose app appearance</span>
 </div>
-<div id="themePicker" class="theme-picker"></div>
 </div>
+<span class="setting-arrow acc-chevron" id="themeChevron">›</span>
+</div>
+<div id="themeOptions" class="acc-options"></div>
+
+<div class="setting-item setting-item-language" id="languageToggle">
+<div class="setting-left">
+<img src="/CM_Pro/assets/icons/setting/language.png" class="setting-icon">
+<div class="setting-text">
+<span class="setting-title">Language</span>
+<span class="setting-subtitle">App display language</span>
+</div>
+</div>
+<span class="setting-arrow acc-chevron" id="languageChevron">›</span>
+</div>
+<div id="languageOptions" class="acc-options"></div>
 
 <div class="setting-item">
 <div class="setting-left">
@@ -124,6 +140,7 @@
 
 <script src="/CM_Pro/shared/topbar.js"></script>
 <script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
 

@@ -447,62 +447,96 @@ input:checked + .slider:before{
 
 }
 
-/* =========================
-   Theme Picker
-   One round swatch button per theme (colored via inline style from
-   CM_THEME_LIST, not a CSS class per theme, since the list itself
-   lives in shared/theme.js). The active swatch gets a ring + a
-   checkmark; light/white swatches need their own border since white-
-   on-white would otherwise be invisible against the card background.
-========================= */
+/* ===========================
+   ACCORDION PICKER (Theme + Language)
+   #themeToggle / #languageToggle are normal .setting-item rows (icon
+   + title/subtitle + a "›" arrow, rotated 90° while open) that expand
+   #themeOptions / #languageOptions below them — one radio row per
+   entry (Language rows also get a flag). The checked ring/dot uses
+   var(--set-gold), the same accent already proven legible on the
+   card background in every theme (.setting-arrow, the checked switch
+   track).
+=========================== */
 
-.theme-picker{
+.setting-text{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:2px;
+
+    min-width:0;
+
+}
+
+.setting-title{
+
+    font-size:16px;
+
+    font-weight:700;
+
+    color:var(--set-text);
+
+}
+
+.setting-subtitle{
+
+    font-size:12.5px;
+
+    font-weight:400;
+
+    color:var(--set-text-muted);
+
+}
+
+.acc-chevron{
+
+    transition:transform .2s ease;
+
+}
+
+.acc-chevron.open{
+
+    transform:rotate(90deg);
+
+}
+
+.acc-options{
+
+    max-height:0;
+
+    overflow:hidden;
+
+    background:var(--set-card-bg);
+
+    transition:max-height .25s ease;
+
+}
+
+.acc-options.open{
+
+    max-height:200px;
+
+    border-bottom:1px solid var(--set-divider);
+
+}
+
+.acc-option{
 
     display:flex;
 
     align-items:center;
 
-    gap:8px;
+    gap:14px;
 
-    flex-wrap:wrap;
-
-    justify-content:flex-end;
-
-}
-
-.theme-swatch{
-
-    position:relative;
-
-    width:28px;
-
-    height:28px;
-
-    border-radius:50%;
-
-    border:1px solid var(--set-border);
+    padding:14px 20px;
 
     cursor:pointer;
 
-    padding:0;
-
-    flex-shrink:0;
-
-    transition:transform .15s;
-
 }
 
-.theme-swatch:active{
-
-    transform:scale(.9);
-
-}
-
-.theme-swatch-check{
-
-    position:absolute;
-
-    inset:0;
+.acc-option-radio{
 
     display:flex;
 
@@ -510,38 +544,65 @@ input:checked + .slider:before{
 
     justify-content:center;
 
-    color:#fff;
+    width:20px;
 
-    font-size:13px;
+    height:20px;
 
-    font-weight:bold;
+    border-radius:50%;
 
-    text-shadow:0 1px 2px rgba(0,0,0,.5);
+    border:2px solid var(--set-border);
+
+    flex-shrink:0;
+
+    transition:border-color .15s;
+
+}
+
+.acc-option-radio.checked{
+
+    border-color:var(--set-gold);
+
+}
+
+.acc-option-radio-dot{
+
+    width:10px;
+
+    height:10px;
+
+    border-radius:50%;
+
+    background:var(--set-gold);
 
     opacity:0;
 
-}
-
-.theme-swatch.active{
-
-    box-shadow:0 0 0 2px var(--set-card-bg), 0 0 0 4px var(--set-gold);
+    transition:opacity .15s;
 
 }
 
-.theme-swatch.active .theme-swatch-check{
+.acc-option-radio.checked .acc-option-radio-dot{
 
     opacity:1;
 
 }
 
-/* The light/white swatch's checkmark needs a dark shadow to read
-   against a white circle instead of the default white-on-white glow
-   tuned for the other, darker swatch colors. */
-.theme-swatch[data-theme-id="light"] .theme-swatch-check{
+.acc-option-flag{
 
-    color:var(--set-navy-dark);
+    font-size:22px;
 
-    text-shadow:none;
+    line-height:1;
+
+    flex-shrink:0;
+
+}
+
+.acc-option-label{
+
+    font-size:15px;
+
+    font-weight:500;
+
+    color:var(--set-text);
 
 }
 
