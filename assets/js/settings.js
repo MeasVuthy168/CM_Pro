@@ -422,38 +422,48 @@ function initThemeSwitch(){
 // LANGUAGE PICKER
 // =========================
 // window.CMLanguage / window.CM_LANGUAGE_LIST come from
-// shared/language.js. Same render/wire shape as initThemeSwitch()
-// above, just pill-shaped text chips (ខ្មែរ/English) instead of color
-// swatches — there's no color to preview for a language choice.
+// shared/language.js. The header row (#languageToggle) expands/
+// collapses #languageOptions, a list of flag + radio rows — one per
+// CM_LANGUAGE_LIST entry. Reuses the same "›" arrow every other
+// setting-item uses, just rotated 90° while open.
 
 function initLanguageSwitch(){
 
-    const picker=document.getElementById("languagePicker");
+    const toggleRow=document.getElementById("languageToggle");
+    const chevron=document.getElementById("languageChevron");
+    const optionsBox=document.getElementById("languageOptions");
 
-    if(!picker || !window.CMLanguage || !window.CM_LANGUAGE_LIST) return;
+    if(!toggleRow || !chevron || !optionsBox || !window.CMLanguage || !window.CM_LANGUAGE_LIST) return;
 
-    function render(){
+    function renderOptions(){
 
         const current=CMLanguage.get();
 
-        picker.innerHTML = CM_LANGUAGE_LIST.map(l => `
-            <button
-                type="button"
-                class="lang-chip${l.id===current ? " active" : ""}"
-                data-language-id="${l.id}"
-            >${l.label}</button>
+        optionsBox.innerHTML = CM_LANGUAGE_LIST.map(l => `
+            <div class="lang-option" data-language-id="${l.id}">
+                <span class="lang-option-radio${l.id===current ? " checked" : ""}">
+                    <span class="lang-option-radio-dot"></span>
+                </span>
+                <span class="lang-option-flag">${l.flag}</span>
+                <span class="lang-option-label">${l.label}</span>
+            </div>
         `).join("");
 
-        picker.querySelectorAll(".lang-chip").forEach(btn => {
-            btn.addEventListener("click", () => {
-                CMLanguage.set(btn.dataset.languageId);
-                render();
+        optionsBox.querySelectorAll(".lang-option").forEach(row => {
+            row.addEventListener("click", () => {
+                CMLanguage.set(row.dataset.languageId);
+                renderOptions();
             });
         });
 
     }
 
-    render();
+    toggleRow.addEventListener("click", () => {
+        const isOpen=optionsBox.classList.toggle("open");
+        chevron.classList.toggle("open",isOpen);
+    });
+
+    renderOptions();
 
 }
 

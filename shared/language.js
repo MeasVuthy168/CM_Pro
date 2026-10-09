@@ -15,8 +15,8 @@
   const STORAGE_KEY = "cm_language";
 
   const CM_LANGUAGE_LIST = [
-    { id: "km", label: "ខ្មែរ" },
-    { id: "en", label: "English" }
+    { id: "en", label: "English", flag: "🇬🇧" },
+    { id: "km", label: "Khmer", flag: "🇰🇭" }
   ];
   const VALID_LANGUAGE_IDS = CM_LANGUAGE_LIST.map(l => l.id);
 

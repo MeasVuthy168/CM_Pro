@@ -547,65 +547,159 @@ input:checked + .slider:before{
 
 /* ===========================
    LANGUAGE PICKER
-   Same row/right-aligned placement as .theme-picker above, but pill-
-   shaped text chips (ខ្មែរ/English) instead of color swatches — a
-   language choice has no color to preview.
+   An accordion: #languageToggle is a normal .setting-item row (icon +
+   title/subtitle + a "›" arrow, rotated 90° while open) that expands
+   #languageOptions below it — one flag + radio row per language.
+   The checked ring/dot uses var(--set-gold), the same accent already
+   proven legible on the card background in every theme (.setting-arrow,
+   the active theme swatch ring, the checked switch track).
 =========================== */
 
-.lang-picker{
+.setting-text{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:2px;
+
+    min-width:0;
+
+}
+
+.setting-title{
+
+    font-size:16px;
+
+    font-weight:700;
+
+    color:var(--set-text);
+
+}
+
+.setting-subtitle{
+
+    font-size:12.5px;
+
+    font-weight:400;
+
+    color:var(--set-text-muted);
+
+}
+
+.lang-chevron{
+
+    transition:transform .2s ease;
+
+}
+
+.lang-chevron.open{
+
+    transform:rotate(90deg);
+
+}
+
+.lang-options{
+
+    max-height:0;
+
+    overflow:hidden;
+
+    background:var(--set-card-bg);
+
+    transition:max-height .25s ease;
+
+}
+
+.lang-options.open{
+
+    max-height:200px;
+
+    border-bottom:1px solid var(--set-divider);
+
+}
+
+.lang-option{
 
     display:flex;
 
     align-items:center;
 
-    gap:8px;
+    gap:14px;
 
-    flex-wrap:wrap;
-
-    justify-content:flex-end;
-
-}
-
-.lang-chip{
-
-    padding:6px 14px;
-
-    border-radius:999px;
-
-    border:1px solid var(--set-border);
-
-    background:transparent;
-
-    color:var(--set-text);
-
-    font-size:13px;
-
-    font-weight:700;
+    padding:14px 20px;
 
     cursor:pointer;
 
-    transition:transform .15s;
+}
+
+.lang-option-radio{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    width:20px;
+
+    height:20px;
+
+    border-radius:50%;
+
+    border:2px solid var(--set-border);
+
+    flex-shrink:0;
+
+    transition:border-color .15s;
 
 }
 
-.lang-chip:active{
-
-    transform:scale(.95);
-
-}
-
-.lang-chip.active{
-
-    background:var(--set-gold);
+.lang-option-radio.checked{
 
     border-color:var(--set-gold);
 
-    /* Fixed dark ink, not var(--set-navy-dark) — darkgray theme sets
-       --set-navy-dark to the SAME light gray as --set-gold, which would
-       make this text invisible (same color as its own background). Every
-       theme's --set-gold is a light/mid tone, so a fixed dark color
-       reads fine against all of them. */
-    color:#1C2333;
+}
+
+.lang-option-radio-dot{
+
+    width:10px;
+
+    height:10px;
+
+    border-radius:50%;
+
+    background:var(--set-gold);
+
+    opacity:0;
+
+    transition:opacity .15s;
+
+}
+
+.lang-option-radio.checked .lang-option-radio-dot{
+
+    opacity:1;
+
+}
+
+.lang-option-flag{
+
+    font-size:22px;
+
+    line-height:1;
+
+    flex-shrink:0;
+
+}
+
+.lang-option-label{
+
+    font-size:15px;
+
+    font-weight:500;
+
+    color:var(--set-text);
 
 }
 
