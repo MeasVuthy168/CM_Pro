@@ -91,7 +91,7 @@
 
     padding:22px;
 
-    margin:24px 14px 14px;
+    margin:56px 14px 14px;
 
     box-shadow:var(--set-shadow);
 
@@ -268,9 +268,9 @@
 
     align-items:center;
 
-    padding:14px 20px;
+    padding:18px 20px;
 
-    min-height:66px;
+    min-height:72px;
 
     border-bottom:1px solid var(--set-divider);
 
@@ -323,6 +323,16 @@
     object-fit:contain;
 
     flex-shrink:0;
+
+}
+
+/* Icon PNGs are solid black-on-transparent — brightness(0) flattens
+   them to pure black (erasing any anti-aliased grey), then invert(1)
+   flips that to pure white, so they stay legible on the dark card
+   background instead of nearly disappearing. */
+[data-theme="dark"] .setting-icon{
+
+    filter:brightness(0) invert(1);
 
 }
 
