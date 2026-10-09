@@ -36,7 +36,7 @@
 
     grid-template-columns:repeat(3,1fr);
 
-    gap:10px;
+    gap:14px;
 
     padding:10px 4px;
 
@@ -50,15 +50,29 @@
 
 .dashboard-card{
 
+    /* A 1fr grid track still sizes to its item's min-content by
+       default (minmax(auto,1fr)) — without this, the longer English
+       titles (e.g. "Land Classification") force their column wider
+       than an even 1/3 split, overflowing the grid past the screen
+       edge. min-width:0 lets the track actually shrink to 1fr and the
+       title's own word-break:break-word wrap instead. */
+    min-width:0;
+
     background:var(--card-bg);
 
     border:1px solid var(--card-border);
 
     border-radius:24px;
 
-    aspect-ratio:1/1;
+    /* A fixed height (not aspect-ratio:1/1) so every card in the grid
+       matches, not just the ones sharing a row — CSS Grid only
+       auto-matches heights WITHIN a row by default, so a 2-line title
+       (e.g. "Land Classification") made its own row taller than the
+       others. Sized for the tallest case (icon + a 2-line title, see
+       .dashboard-card-title's own min-height below) so nothing clips. */
+    height:130px;
 
-    padding:10px 6px;
+    padding:14px 8px;
 
     display:flex;
 
@@ -102,13 +116,13 @@
 
 .dashboard-card img{
 
-    width:46px;
+    width:58px;
 
-    height:46px;
+    height:58px;
 
     object-fit:contain;
 
-    margin-bottom:8px;
+    margin-bottom:10px;
 
     pointer-events:none;
 
@@ -120,17 +134,30 @@
 
 .dashboard-card-title{
 
-    font-size:11px;
+    font-size:12.5px;
 
-    font-weight:600;
+    font-weight:700;
 
     line-height:1.25;
+
+    /* Reserves 2 lines' worth of height for every title, even a 1-line
+       one — keeps the icon sitting at the same spot on every card
+       (the flex column centers its children as a group, so a shorter
+       title would otherwise let the icon drift lower on that card). */
+    min-height:31px;
+
+    display:flex;
+
+    align-items:center;
 
     color:var(--card-text);
 
     text-align:center;
 
-    word-break:break-word;
+    /* overflow-wrap (not word-break) — only breaks a word mid-way when
+       it truly can't fit even alone on its own line, so a 2-word title
+       wraps at the space between words first wherever that's enough. */
+    overflow-wrap:break-word;
 
 }
 
@@ -142,7 +169,7 @@
 
 .dashboard-grid{
 
-    gap:18px;
+    gap:22px;
 
     padding:22px;
 
@@ -152,19 +179,23 @@
 
     border-radius:20px;
 
+    height:190px;
+
 }
 
 .dashboard-card img{
 
-    width:72px;
+    width:84px;
 
-    height:72px;
+    height:84px;
 
 }
 
 .dashboard-card-title{
 
-    font-size:18px;
+    font-size:20px;
+
+    min-height:50px;
 
 }
 
