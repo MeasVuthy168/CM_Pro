@@ -8,6 +8,7 @@
   if (!window.CMAdmin) return; // admin-loader.js already redirected away
 
   const API_BASE = (window.API && window.API.BASE_URL) || "";
+  const t = (key, vars) => (window.CMI18n ? CMI18n.t(key, vars) : key);
 
   let selectedFile = null;
 
@@ -34,10 +35,10 @@
     if (!iso) return "—";
     const d = new Date(iso);
     const diff = Math.floor((Date.now() - d.getTime()) / 1000);
-    if (diff < 60) return "Just now";
-    if (diff < 3600) return Math.floor(diff / 60) + " min ago";
-    if (diff < 86400) return Math.floor(diff / 3600) + " hr ago";
-    if (diff < 604800) return Math.floor(diff / 86400) + " day(s) ago";
+    if (diff < 60) return t("admin.common.timeJustNow");
+    if (diff < 3600) return t("admin.common.timeMinAgo", { n: Math.floor(diff / 60) });
+    if (diff < 86400) return t("admin.common.timeHrAgo", { n: Math.floor(diff / 3600) });
+    if (diff < 604800) return t("admin.common.timeDaysAgo", { n: Math.floor(diff / 86400) });
     return d.toLocaleDateString();
   }
 
@@ -58,17 +59,19 @@
 
       if (!data.ok) {
         el.statusError.hidden = false;
-        el.statusError.textContent = data.message || "Could not load wallpaper status.";
+        el.statusError.textContent = data.message || t("admin.wallpaper.couldNotLoadWallpaperStatus");
         return;
       }
 
       el.statusMeta.hidden = false;
-      el.statusMeta.textContent = `Last updated ${timeAgo(data.updatedAt)}${data.updatedBy ? ` by ${data.updatedBy}` : ""} · ${data.path}`;
+      el.statusMeta.textContent = data.updatedBy
+        ? t("admin.wallpaper.lastUpdatedBy", { time: timeAgo(data.updatedAt), by: data.updatedBy, path: data.path })
+        : t("admin.wallpaper.lastUpdated", { time: timeAgo(data.updatedAt), path: data.path });
     } catch (e) {
       console.error("loadStatus failed:", e);
       el.statusLoading.hidden = true;
       el.statusError.hidden = false;
-      el.statusError.textContent = "Could not reach the server.";
+      el.statusError.textContent = t("admin.wallpaper.couldNotReachServer");
     }
   }
 
@@ -92,9 +95,9 @@
     if (!selectedFile) return;
 
     el.btnUpload.disabled = true;
-    el.btnUpload.textContent = "Uploading…";
+    el.btnUpload.textContent = t("admin.wallpaper.uploading");
     el.uploadStatus.hidden = false;
-    el.uploadStatus.textContent = "Uploading to GitHub — please wait.";
+    el.uploadStatus.textContent = t("admin.wallpaper.uploadingToGithub");
 
     const fd = new FormData();
     fd.append("file", selectedFile);
@@ -108,15 +111,15 @@
       const data = await res.json();
 
       if (!res.ok || !data.ok) {
-        el.uploadStatus.textContent = data.message || "Upload failed.";
+        el.uploadStatus.textContent = data.message || t("admin.wallpaper.uploadFailed");
         el.btnUpload.disabled = false;
-        el.btnUpload.textContent = "Upload & Replace";
+        el.btnUpload.textContent = t("admin.wallpaper.uploadReplace");
         return;
       }
 
-      AdminUI.toast("Wallpaper updated.", "success");
+      AdminUI.toast(t("admin.wallpaper.updated"), "success");
       el.uploadStatus.hidden = true;
-      el.btnUpload.textContent = "Upload & Replace";
+      el.btnUpload.textContent = t("admin.wallpaper.uploadReplace");
       el.btnUpload.disabled = true;
 
       // reset the "new file" preview and refresh the current image + status
@@ -129,9 +132,9 @@
       loadStatus();
     } catch (e) {
       console.error("wallpaper upload failed:", e);
-      el.uploadStatus.textContent = "Upload failed — could not reach the server.";
+      el.uploadStatus.textContent = t("admin.wallpaper.uploadFailedServer");
       el.btnUpload.disabled = false;
-      el.btnUpload.textContent = "Upload & Replace";
+      el.btnUpload.textContent = t("admin.wallpaper.uploadReplace");
     }
   });
 

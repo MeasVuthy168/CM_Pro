@@ -13,6 +13,7 @@
   if (!window.CMAdmin) return; // admin-loader.js already redirected away
 
   const API_BASE = (window.API && window.API.BASE_URL) || "";
+  const t = (key, vars) => (window.CMI18n ? CMI18n.t(key, vars) : key);
 
   const RENDER_FREE_GB = 5; // 🔧 adjust if you change Render plans
   const POLL_MS = 10000; // live refresh every 10s
@@ -29,14 +30,17 @@
   };
 
   const ALL_ROLES = ["admin", "user", "viewer_staff", "viewer_manager_a", "viewer_manager_b", "viewer_manager_c"];
-  const ROLE_LABELS = {
-    admin: "Admin",
-    user: "User",
-    viewer_staff: "Viewer Staff",
-    viewer_manager_a: "Viewer Manager A",
-    viewer_manager_b: "Viewer Manager B",
-    viewer_manager_c: "Viewer Manager C"
-  };
+  function roleLabel(role) {
+    const KEYS = {
+      admin: "admin.bandwidth.roleLabelAdmin",
+      user: "admin.bandwidth.roleLabelUser",
+      viewer_staff: "admin.bandwidth.roleLabelViewerStaff",
+      viewer_manager_a: "admin.bandwidth.roleLabelViewerManagerA",
+      viewer_manager_b: "admin.bandwidth.roleLabelViewerManagerB",
+      viewer_manager_c: "admin.bandwidth.roleLabelViewerManagerC"
+    };
+    return KEYS[role] ? t(KEYS[role]) : role;
+  }
 
   // ---------- DOM refs ----------
   const el = {
@@ -105,7 +109,7 @@
       showError("");
     } catch (e) {
       console.error("bandwidth-stats fetch failed:", e);
-      showError("Could not reach the server — showing last known data.");
+      showError(t("admin.bandwidth.couldNotReachServer"));
     } finally {
       state.fetching = false;
     }
@@ -121,7 +125,7 @@
 
   // ---------- render ----------
   function renderAll(data) {
-    el.lastUpdated.textContent = `Updated ${fmtTime(new Date())}`;
+    el.lastUpdated.textContent = t("admin.bandwidth.updated", { time: fmtTime(new Date()) });
 
     renderKpis(data);
     renderDailyChart(data.dailyTotals || []);
@@ -143,7 +147,7 @@
     const pct = Math.min(100, (todayGb / RENDER_FREE_GB) * 100);
 
     el.kpiTodayGb.textContent = fmtMb(todayMb);
-    el.kpiTodayPct.textContent = `${pct < 0.1 && pct > 0 ? "<0.1" : pct.toFixed(0)}% of ${RENDER_FREE_GB} GB free tier`;
+    el.kpiTodayPct.textContent = t("admin.bandwidth.pctOfFreeTier", { pct: pct < 0.1 && pct > 0 ? "<0.1" : pct.toFixed(0), gb: RENDER_FREE_GB });
     el.kpiTodayBar.style.width = `${Math.max(pct, todayMb > 0 ? 0.5 : 0)}%`;
     el.kpiTodayBar.classList.toggle("adm-bar-warn", pct >= 70 && pct < 100);
     el.kpiTodayBar.classList.toggle("adm-bar-danger", pct >= 100);
@@ -190,7 +194,7 @@
       emptyEl.className = "adm-chart-empty";
       wrap.appendChild(emptyEl);
     }
-    emptyEl.textContent = message || "Collecting data — check back in a couple of minutes.";
+    emptyEl.textContent = message || t("admin.bandwidth.chartEmptyDefault");
     emptyEl.style.display = isEmpty ? "block" : "none";
     canvas.style.visibility = isEmpty ? "hidden" : "visible";
   }
@@ -218,7 +222,7 @@
       ctx.fillStyle = colors.bar2;
       ctx.font = "11px 'Krasar', sans-serif";
       ctx.textAlign = "right";
-      ctx.fillText(`${gbLimit} GB free-tier limit`, chartArea.right, y - 4);
+      ctx.fillText(t("admin.bandwidth.freeTierLimitLabel", { gb: gbLimit }), chartArea.right, y - 4);
       ctx.restore();
     }
   };
@@ -228,7 +232,7 @@
     if (!canvas) return;
 
     if (typeof Chart === "undefined") {
-      toggleChartEmptyState("admDailyChart", true, "Chart library failed to load — check your connection and refresh.");
+      toggleChartEmptyState("admDailyChart", true, t("admin.bandwidth.chartLibFailed"));
       return;
     }
 
@@ -288,7 +292,7 @@
     if (!canvas) return;
 
     if (typeof Chart === "undefined") {
-      toggleChartEmptyState("admRoutesChart", true, "Chart library failed to load — check your connection and refresh.");
+      toggleChartEmptyState("admRoutesChart", true, t("admin.bandwidth.chartLibFailed"));
       return;
     }
 
@@ -388,11 +392,11 @@
       const isProtected = PROTECTED_ROUTE_KEYS.has(key);
 
       const syntheticBadge = isOutbound
-        ? ' <span class="adm-badge adm-badge-flow-out" title="Outbound call this server made — not one of its own routes">↗ Outbound</span>'
+        ? ` <span class="adm-badge adm-badge-flow-out" title="${t("admin.bandwidth.outboundTitle")}">${t("admin.bandwidth.outboundBadge")}</span>`
         : isInbound
-        ? ' <span class="adm-badge adm-badge-flow-in" title="Request-body bytes received on this route — see its own row above/below for response bytes">↘ Request Body</span>'
+        ? ` <span class="adm-badge adm-badge-flow-in" title="${t("admin.bandwidth.requestBodyTitle")}">${t("admin.bandwidth.requestBodyBadge")}</span>`
         : isDbRead
-        ? ' <span class="adm-badge adm-badge-flow-db" title="Approximate MongoDB read size for this route\'s query — see its own row above/below for response bytes">⛁ DB Read (approx)</span>'
+        ? ` <span class="adm-badge adm-badge-flow-db" title="${t("admin.bandwidth.dbReadTitle")}">${t("admin.bandwidth.dbReadBadge")}</span>`
         : "";
 
       const tr = document.createElement("tr");
@@ -408,17 +412,17 @@
         </td>
         <td>
           ${isSynthetic
-            ? `<span class="adm-badge adm-badge-status-inactive" title="Kill switch only applies to this server's own routes">N/A</span>`
+            ? `<span class="adm-badge adm-badge-status-inactive" title="${t("admin.bandwidth.naKillSwitchTitle")}">${t("admin.bandwidth.naKillSwitch")}</span>`
             : isProtected
-            ? `<span class="adm-badge adm-badge-status-inactive" title="Login/kill-switch routes can't be disabled">Protected</span>`
+            ? `<span class="adm-badge adm-badge-status-inactive" title="${t("admin.bandwidth.protectedKillSwitchTitle")}">${t("admin.bandwidth.protectedBadge")}</span>`
             : `<button type="button" class="adm-toggle-switch${isDisabled ? "" : " adm-toggle-on"}" data-method="${escapeHtml(method)}" data-path="${escapeHtml(path)}" role="switch" aria-checked="${!isDisabled}"><span class="adm-toggle-knob"></span></button>`
           }
         </td>
         <td>
           ${isSynthetic
-            ? `<span class="adm-badge adm-badge-status-inactive" title="Role restriction only applies to this server's own routes">N/A</span>`
+            ? `<span class="adm-badge adm-badge-status-inactive" title="${t("admin.bandwidth.naRoleTitle")}">${t("admin.bandwidth.naKillSwitch")}</span>`
             : isProtected
-            ? `<span class="adm-badge adm-badge-status-inactive">Protected</span>`
+            ? `<span class="adm-badge adm-badge-status-inactive">${t("admin.bandwidth.protectedBadge")}</span>`
             : `<button type="button" class="adm-roles-btn">${roleSummaryLabel(key)}</button>`
           }
         </td>
@@ -440,9 +444,9 @@
 
   function roleSummaryLabel(key) {
     const roles = state.routeAllowedRoles.get(key);
-    if (!roles || roles.length === 0) return "All roles";
-    if (roles.length === 1) return ROLE_LABELS[roles[0]] || roles[0];
-    return `${roles.length} roles`;
+    if (!roles || roles.length === 0) return t("admin.bandwidth.allRoles");
+    if (roles.length === 1) return roleLabel(roles[0]);
+    return t("admin.bandwidth.rolesCount", { count: roles.length });
   }
 
   const PROTECTED_ROUTE_KEYS = new Set([
@@ -486,23 +490,23 @@
     bodyNode.innerHTML = `
       <p class="adm-role-editor-hint">
         <code>${escapeHtml(method)} ${escapeHtml(path)}</code><br>
-        Leave everything unchecked (or check all) to allow every role. Check specific roles to restrict this endpoint to only them.
+        ${t("admin.bandwidth.roleEditorHint")}
       </p>
       <div class="adm-role-checklist">
         ${ALL_ROLES.map(role => `
           <label class="adm-role-check-row">
             <input type="checkbox" value="${role}" ${currentRoles.has(role) ? "checked" : ""}>
-            <span>${ROLE_LABELS[role]}</span>
+            <span>${roleLabel(role)}</span>
           </label>
         `).join("")}
       </div>
       <div class="adm-role-editor-actions">
-        <button type="button" id="admRoleEditorCancel">Cancel</button>
-        <button type="button" id="admRoleEditorSave" class="adm-role-editor-save">Save</button>
+        <button type="button" id="admRoleEditorCancel">${t("admin.bandwidth.cancel")}</button>
+        <button type="button" id="admRoleEditorSave" class="adm-role-editor-save">${t("admin.bandwidth.save")}</button>
       </div>
     `;
 
-    const { body: mountedBody } = AdminUI.openModal({ title: "Allowed Roles", bodyNode });
+    const { body: mountedBody } = AdminUI.openModal({ title: t("admin.bandwidth.allowedRolesTitle"), bodyNode });
 
     mountedBody.querySelector("#admRoleEditorCancel").addEventListener("click", () => AdminUI.closeModal());
     mountedBody.querySelector("#admRoleEditorSave").addEventListener("click", async () => {
@@ -515,7 +519,7 @@
           body: JSON.stringify({ method, path, allowedRoles: selected })
         });
         const data = await res.json();
-        if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Failed to update.", "error");
+        if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.bandwidth.updateFailed"), "error");
 
         if (data.allowedRoles && data.allowedRoles.length > 0) {
           state.routeAllowedRoles.set(key, data.allowedRoles);
@@ -524,11 +528,11 @@
         }
 
         AdminUI.closeModal();
-        AdminUI.toast(`${key} access updated.`, "success");
+        AdminUI.toast(t("admin.bandwidth.accessUpdated", { key }), "success");
         renderTable(state.lastPayload?.topRoutes || []);
       } catch (e) {
         console.error("route-roles/set failed:", e);
-        AdminUI.toast("Could not reach the server.", "error");
+        AdminUI.toast(t("admin.bandwidth.couldNotReachServerShort"), "error");
       }
     });
   }
@@ -539,9 +543,9 @@
 
     if (currentlyEnabled) {
       const ok = await AdminUI.confirm({
-        title: "Disable this route?",
-        message: `<code>${method} ${path}</code> will immediately return an error to anyone who calls it, until you turn it back on. Use this to stop a specific endpoint from consuming more bandwidth.`,
-        confirmLabel: "Disable",
+        title: t("admin.bandwidth.disableRouteTitle"),
+        message: t("admin.bandwidth.disableRouteMessage", { method, path }),
+        confirmLabel: t("admin.bandwidth.disable"),
         danger: true
       });
       if (!ok) return;
@@ -556,17 +560,17 @@
         body: JSON.stringify({ method, path, disabled: newDisabled })
       });
       const data = await res.json();
-      if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Failed to update.", "error");
+      if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.bandwidth.updateFailed"), "error");
 
       if (newDisabled) state.disabledRoutes.add(key);
       else state.disabledRoutes.delete(key);
 
       btn.setAttribute("aria-checked", String(!newDisabled));
       btn.classList.toggle("adm-toggle-on", !newDisabled);
-      AdminUI.toast(newDisabled ? `${key} disabled.` : `${key} enabled.`, "success");
+      AdminUI.toast(newDisabled ? t("admin.bandwidth.routeDisabled", { key }) : t("admin.bandwidth.routeEnabled", { key }), "success");
     } catch (e) {
       console.error("toggleRoute failed:", e);
-      AdminUI.toast("Could not reach the server.", "error");
+      AdminUI.toast(t("admin.bandwidth.couldNotReachServerShort"), "error");
     }
   }
 
@@ -619,7 +623,7 @@
   async function fetchRenderDebug() {
     const btn = document.getElementById("admRenderDebugBtn");
     const out = document.getElementById("admRenderDebugOutput");
-    btn.textContent = "Loading raw response…";
+    btn.textContent = t("admin.bandwidth.loadingRawResponse");
     btn.disabled = true;
 
     try {
@@ -627,11 +631,11 @@
       const data = await res.json();
       out.value = JSON.stringify(data, null, 2);
       out.hidden = false;
-      btn.textContent = "Raw response loaded ↓ (tap box to select all, then copy)";
+      btn.textContent = t("admin.bandwidth.rawResponseLoaded");
     } catch (e) {
-      out.value = `Fetch failed: ${e.message}`;
+      out.value = t("admin.bandwidth.fetchFailed", { message: e.message });
       out.hidden = false;
-      btn.textContent = "Show raw response (debug)";
+      btn.textContent = t("admin.bandwidth.showRawResponse");
     } finally {
       btn.disabled = false;
     }
@@ -660,7 +664,7 @@
       bodyEl.hidden = false;
 
       document.getElementById("admRenderTotal").textContent = `${data.totalGb.toFixed(2)} GB / ${data.planGb} GB`;
-      document.getElementById("admRenderTotalSub").textContent = `${data.pctUsed}% of monthly free tier used`;
+      document.getElementById("admRenderTotalSub").textContent = t("admin.bandwidth.pctOfMonthlyFreeTier", { pct: data.pctUsed });
 
       const bar = document.getElementById("admRenderBar");
       bar.style.width = `${Math.min(100, data.pctUsed)}%`;
@@ -680,8 +684,8 @@
         const overageGb = data.overageGb || 0;
         const unbilledUsd = data.estimatedUnbilledUsd || 0;
         overageTextEl.textContent = overageGb > 0
-          ? `Unbilled Charges (est.): $${unbilledUsd.toFixed(2)} (${overageGb.toFixed(2)} GB over free tier @ $${(data.overageUsdPerGb || 0.15).toFixed(2)}/GB)`
-          : `Unbilled Charges: $0.00 — within free tier`;
+          ? t("admin.bandwidth.unbilledChargesEst", { usd: unbilledUsd.toFixed(2), gb: overageGb.toFixed(2), rate: (data.overageUsdPerGb || 0.15).toFixed(2) })
+          : t("admin.bandwidth.unbilledChargesZero");
         overageEl.classList.toggle("adm-render-overage-active", overageGb > 0);
       }
 
@@ -703,7 +707,7 @@
       loadingEl.hidden = true;
       bodyEl.hidden = true;
       setupEl.hidden = false;
-      setupEl.textContent = "Could not reach the server to load Render usage.";
+      setupEl.textContent = t("admin.bandwidth.couldNotLoadRenderUsage");
     }
   }
 

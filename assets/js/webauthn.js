@@ -80,9 +80,13 @@ function webauthnCredentialToJSON(credential, isRegistration) {
     return out;
 }
 
-function webauthnErrorMessage(err, fallback) {
-    if (err && err.name === "NotAllowedError") return "Cancelled or timed out.";
-    return (err && err.message) || fallback;
+function webauthnT(key) {
+    return window.CMI18n ? CMI18n.t(key) : key;
+}
+
+function webauthnErrorMessage(err, fallbackKey) {
+    if (err && err.name === "NotAllowedError") return webauthnT("webauthn.cancelled");
+    return (err && err.message) || webauthnT(fallbackKey);
 }
 
 // ---- Registration (Settings page — already logged in) ----
@@ -94,7 +98,7 @@ async function webauthnRegister(deviceLabel) {
         headers: { Authorization: `Bearer ${token}` }
     });
     const optData = await optRes.json();
-    if (!optData.ok) throw new Error(optData.message || "Could not start registration.");
+    if (!optData.ok) throw new Error(optData.message || webauthnT("webauthn.registerStartFailed"));
 
     const publicKey = webauthnOptionsFromJSON(optData.options, true);
 
@@ -102,9 +106,9 @@ async function webauthnRegister(deviceLabel) {
     try {
         credential = await navigator.credentials.create({ publicKey });
     } catch (err) {
-        throw new Error(webauthnErrorMessage(err, "Registration failed."));
+        throw new Error(webauthnErrorMessage(err, "webauthn.registerFailed"));
     }
-    if (!credential) throw new Error("Registration failed.");
+    if (!credential) throw new Error(webauthnT("webauthn.registerFailed"));
 
     const verifyRes = await fetch(`${API.BASE_URL}/api/webauthn/register/verify`, {
         method: "POST",
@@ -118,7 +122,7 @@ async function webauthnRegister(deviceLabel) {
         })
     });
     const verifyData = await verifyRes.json();
-    if (!verifyData.ok) throw new Error(verifyData.message || "Could not verify registration.");
+    if (!verifyData.ok) throw new Error(verifyData.message || webauthnT("webauthn.verifyFailed"));
 
     return true;
 }
@@ -130,7 +134,7 @@ async function webauthnListCredentials() {
         headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
-    if (!data.ok) throw new Error(data.message || "Could not load registered devices.");
+    if (!data.ok) throw new Error(data.message || webauthnT("webauthn.loadDevicesFailed"));
     return data.credentials;
 }
 
@@ -142,7 +146,7 @@ async function webauthnRemoveCredential(credentialId) {
         headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
-    if (!data.ok) throw new Error(data.message || "Could not remove device.");
+    if (!data.ok) throw new Error(data.message || webauthnT("webauthn.removeDeviceFailed"));
     return true;
 }
 
@@ -154,7 +158,7 @@ async function webauthnLogin(username) {
         body: JSON.stringify({ username })
     });
     const optData = await optRes.json();
-    if (!optData.ok) throw new Error(optData.message || "No fingerprint registered for this account.");
+    if (!optData.ok) throw new Error(optData.message || webauthnT("webauthn.noFingerprint"));
 
     const publicKey = webauthnOptionsFromJSON(optData.options, false);
 
@@ -162,9 +166,9 @@ async function webauthnLogin(username) {
     try {
         credential = await navigator.credentials.get({ publicKey });
     } catch (err) {
-        throw new Error(webauthnErrorMessage(err, "Login failed."));
+        throw new Error(webauthnErrorMessage(err, "webauthn.loginFailed"));
     }
-    if (!credential) throw new Error("Login failed.");
+    if (!credential) throw new Error(webauthnT("webauthn.loginFailed"));
 
     const verifyRes = await fetch(`${API.BASE_URL}/api/webauthn/login/verify`, {
         method: "POST",
@@ -175,7 +179,7 @@ async function webauthnLogin(username) {
         })
     });
     const verifyData = await verifyRes.json();
-    if (!verifyData.ok) throw new Error(verifyData.message || "Fingerprint login failed.");
+    if (!verifyData.ok) throw new Error(verifyData.message || webauthnT("login.msg.fingerprintFailed"));
 
     return verifyData;
 }

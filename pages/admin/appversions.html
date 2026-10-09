@@ -38,7 +38,7 @@
     <!-- SIDEBAR (auto-rendered by admin-nav.js) -->
     <!-- ========================= -->
     <aside class="adm-sidebar">
-      <div class="adm-sidebar-brand">CM_Pro Admin</div>
+      <div class="adm-sidebar-brand" data-i18n="admin.common.brand">CM_Pro Admin</div>
       <nav id="admSidebar"></nav>
     </aside>
 
@@ -52,11 +52,11 @@
       <!-- ========================= -->
       <div class="adm-header">
         <div class="adm-title-block">
-          <h1>App Versions · កំណែកម្មវិធី</h1>
-          <p>Publish new Excel workbook builds and manage version history</p>
+          <h1 data-i18n="admin.appversions.title">App Versions</h1>
+          <p data-i18n="admin.appversions.subtitle">Publish new Excel workbook builds and manage version history</p>
         </div>
         <div class="adm-header-right">
-          <span class="adm-user-chip" id="admUserLabel">Admin</span>
+          <span class="adm-user-chip" id="admUserLabel" data-i18n="admin.common.adminFallback">Admin</span>
           <div class="adm-topbar-actions" id="admTopbarActions"></div>
         </div>
       </div>
@@ -65,11 +65,11 @@
       <!-- CURRENT VERSION HERO CARD -->
       <!-- ========================= -->
       <div class="adm-card adm-version-hero" id="avHeroCard">
-        <div class="adm-render-loading" id="avHeroLoading">Loading current version…</div>
+        <div class="adm-render-loading" id="avHeroLoading" data-i18n="admin.appversions.loadingCurrent">Loading current version…</div>
         <div id="avHeroBody" hidden>
           <div class="adm-version-hero-top">
             <div>
-              <div class="adm-card-label">Current Version</div>
+              <div class="adm-card-label" data-i18n="admin.appversions.currentVersion">Current Version</div>
               <div class="adm-version-hero-number" id="avHeroVersion">—</div>
             </div>
             <span class="adm-badge" id="avHeroMandatory"></span>
@@ -79,7 +79,7 @@
           </div>
           <p class="adm-modal-message" id="avHeroNotes"></p>
         </div>
-        <div class="adm-render-setup" id="avHeroEmpty" hidden>No version has been published yet.</div>
+        <div class="adm-render-setup" id="avHeroEmpty" hidden data-i18n="admin.appversions.noVersionYet">No version has been published yet.</div>
       </div>
 
       <!-- ========================= -->
@@ -87,41 +87,41 @@
       <!-- ========================= -->
       <div class="adm-toolbar">
         <div class="adm-downloads-toggle-wrap">
-          <span>Downloads:</span>
+          <span data-i18n="admin.appversions.downloadsLabel">Downloads:</span>
           <button type="button" class="adm-toggle-switch adm-toggle-on" id="avDownloadsToggle" role="switch" aria-checked="true">
             <span class="adm-toggle-knob"></span>
           </button>
-          <span id="avDownloadsToggleLabel">On</span>
+          <span id="avDownloadsToggleLabel" data-i18n="admin.appversions.toggleOn">On</span>
         </div>
         <div class="adm-toolbar-spacer"></div>
-        <button type="button" class="adm-btn adm-btn-primary" id="avBtnUpload">+ Upload New Version</button>
+        <button type="button" class="adm-btn adm-btn-primary" id="avBtnUpload" data-i18n="admin.appversions.uploadNewVersion">+ Upload New Version</button>
       </div>
 
       <div class="adm-toolbar" style="margin-top:0;">
         <div class="adm-toolbar-spacer"></div>
-        <button type="button" class="adm-btn adm-btn-danger" id="avBtnCleanup">🧹 Clean Up Old Versions</button>
+        <button type="button" class="adm-btn adm-btn-danger" id="avBtnCleanup" data-i18n="admin.appversions.cleanupOldVersions">🧹 Clean Up Old Versions</button>
       </div>
 
       <!-- ========================= -->
       <!-- VERSION HISTORY TABLE -->
       <!-- ========================= -->
       <div class="adm-card adm-users-list-card">
-        <div class="adm-card-label" style="padding:16px 16px 0;">Version History</div>
+        <div class="adm-card-label" style="padding:16px 16px 0;" data-i18n="admin.appversions.versionHistory">Version History</div>
         <div class="adm-users-table-wrap">
           <table class="adm-table">
             <thead>
               <tr>
-                <th>Version</th>
-                <th>Size</th>
-                <th>Type</th>
-                <th>Notes</th>
-                <th>Released</th>
+                <th data-i18n="admin.appversions.colVersion">Version</th>
+                <th data-i18n="admin.appversions.colSize">Size</th>
+                <th data-i18n="admin.appversions.colType">Type</th>
+                <th data-i18n="admin.appversions.colNotes">Notes</th>
+                <th data-i18n="admin.appversions.colReleased">Released</th>
                 <th></th>
               </tr>
             </thead>
             <tbody id="avTableBody"></tbody>
           </table>
-          <div class="adm-table-empty" id="avTableEmpty" hidden>No versions uploaded yet.</div>
+          <div class="adm-table-empty" id="avTableEmpty" hidden data-i18n="admin.appversions.noVersionsUploaded">No versions uploaded yet.</div>
         </div>
       </div>
 
@@ -135,25 +135,25 @@
   <form id="avUploadForm">
     <div class="adm-form-grid">
       <label class="adm-field">
-        <span>Version</span>
+        <span data-i18n="admin.appversions.fieldVersion">Version</span>
         <input type="text" id="avFormVersion" placeholder="e.g. 1.4.2" autocomplete="off">
       </label>
 
       <label class="adm-field">
-        <span>Mandatory Update</span>
+        <span data-i18n="admin.appversions.fieldMandatory">Mandatory Update</span>
         <select id="avFormMandatory">
-          <option value="false">Optional</option>
-          <option value="true">Mandatory</option>
+          <option value="false" data-i18n="admin.appversions.optional">Optional</option>
+          <option value="true" data-i18n="admin.appversions.mandatory">Mandatory</option>
         </select>
       </label>
 
       <label class="adm-field adm-field-wide">
-        <span>Release Notes</span>
-        <input type="text" id="avFormNotes" placeholder="What changed in this version" autocomplete="off">
+        <span data-i18n="admin.appversions.fieldReleaseNotes">Release Notes</span>
+        <input type="text" id="avFormNotes" placeholder="What changed in this version" autocomplete="off" data-i18n-placeholder="admin.appversions.notesPlaceholder">
       </label>
 
       <label class="adm-field adm-field-wide">
-        <span>Workbook File (.xlsb / .xlsm)</span>
+        <span data-i18n="admin.appversions.fieldWorkbookFile">Workbook File (.xlsb / .xlsm)</span>
         <input type="file" id="avFormFile" accept=".xlsb,.xlsm,.xls,.xlsx">
       </label>
     </div>
@@ -161,8 +161,8 @@
     <p class="adm-modal-message" id="avUploadStatus" hidden></p>
 
     <div class="adm-modal-footer">
-      <button type="button" class="adm-btn" id="avFormCancel">Cancel</button>
-      <button type="submit" class="adm-btn adm-btn-primary" id="avFormSubmit">Upload</button>
+      <button type="button" class="adm-btn" id="avFormCancel" data-i18n="admin.appversions.cancel">Cancel</button>
+      <button type="submit" class="adm-btn adm-btn-primary" id="avFormSubmit" data-i18n="admin.appversions.upload">Upload</button>
     </div>
   </form>
 </template>
@@ -172,32 +172,38 @@
   <form id="avEditForm">
     <div class="adm-form-grid">
       <label class="adm-field">
-        <span>Type</span>
+        <span data-i18n="admin.appversions.fieldType">Type</span>
         <select id="avEditMandatory">
-          <option value="false">Optional</option>
-          <option value="true">Mandatory</option>
+          <option value="false" data-i18n="admin.appversions.optional">Optional</option>
+          <option value="true" data-i18n="admin.appversions.mandatory">Mandatory</option>
         </select>
       </label>
 
       <label class="adm-field adm-field-wide">
-        <span>Release Notes</span>
+        <span data-i18n="admin.appversions.fieldReleaseNotes">Release Notes</span>
         <input type="text" id="avEditNotes" autocomplete="off">
       </label>
 
       <label class="adm-field adm-field-wide">
-        <span>Replace File (optional — leave empty to keep the current file)</span>
+        <span data-i18n="admin.appversions.fieldReplaceFile">Replace File (optional — leave empty to keep the current file)</span>
         <input type="file" id="avEditFile" accept=".xlsb,.xlsm,.xls,.xlsx">
       </label>
     </div>
 
-    <p class="adm-modal-message">Replacing the file swaps the asset on this same version's existing GitHub Release — the version number itself doesn't change.</p>
+    <p class="adm-modal-message" data-i18n="admin.appversions.editFileHint">Replacing the file swaps the asset on this same version's existing GitHub Release — the version number itself doesn't change.</p>
 
     <div class="adm-modal-footer">
-      <button type="button" class="adm-btn" id="avEditCancel">Cancel</button>
-      <button type="submit" class="adm-btn adm-btn-primary" id="avEditSubmit">Save Changes</button>
+      <button type="button" class="adm-btn" id="avEditCancel" data-i18n="admin.appversions.cancel">Cancel</button>
+      <button type="submit" class="adm-btn adm-btn-primary" id="avEditSubmit" data-i18n="admin.appversions.saveChanges">Save Changes</button>
     </div>
   </form>
 </template>
+
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/admin.js"></script>
 
 <script src="/CM_Pro/shared/logout.js"></script>
 <script src="/CM_Pro/assets/js/admin/admin-ui.js"></script>

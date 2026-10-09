@@ -54,134 +54,129 @@
 // than a single officer would) — see ppRenderClientListInto().
 // ========================================
 
-const PP_CATEGORIES = [
+const t = (key, vars) => window.CMI18n ? CMI18n.t(key, vars) : key;
+
+// Built by a function (not a frozen module-level const) so every label
+// picks up the current language whenever a card is (re)rendered, rather
+// than being baked in once at page-load time.
+function ppCategories() {
+    const clientLists = () => [
+        { bucket: "co", label: t("creditreport.byBranch.teamCo") },
+        { bucket: "fsro", label: t("creditreport.byCO.fsro") },
+        { bucket: "digital", label: t("creditreport.byBranch.teamDigital") }
+    ];
+    return [
     {
         key: "outstanding",
         icon: "📊",
-        label: "Loan Outstanding",
+        label: t("creditreport.detail.sectionOutstanding"),
         chart: false,
         statGroups: [
-            { label: "Total", total: true, fields: [
-                { key: "total.loanOutstanding.loan", label: "Loan" },
-                { key: "total.loanOutstanding.client", label: "Client" },
-                { key: "total.loanOutstanding.value", label: "Value", money: true }
+            { label: t("common.total"), total: true, fields: [
+                { key: "total.loanOutstanding.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "total.loanOutstanding.client", label: t("creditreport.productivity.colClient") },
+                { key: "total.loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
             ] },
-            { label: "CO", fields: [
-                { key: "co.loanOutstanding.loan", label: "Loan" },
-                { key: "co.loanOutstanding.client", label: "Client" },
-                { key: "co.loanOutstanding.value", label: "Value", money: true }
+            { label: t("creditreport.byBranch.teamCo"), fields: [
+                { key: "co.loanOutstanding.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "co.loanOutstanding.client", label: t("creditreport.productivity.colClient") },
+                { key: "co.loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
             ] },
-            { label: "FSRO", fields: [
-                { key: "fsro.loanOutstanding.loan", label: "Loan" },
-                { key: "fsro.loanOutstanding.client", label: "Client" },
-                { key: "fsro.loanOutstanding.value", label: "Value", money: true }
+            { label: t("creditreport.byCO.fsro"), fields: [
+                { key: "fsro.loanOutstanding.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "fsro.loanOutstanding.client", label: t("creditreport.productivity.colClient") },
+                { key: "fsro.loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
             ] },
-            { label: "Digital", fields: [
-                { key: "digital.loanOutstanding.loan", label: "Loan" },
-                { key: "digital.loanOutstanding.client", label: "Client" },
-                { key: "digital.loanOutstanding.value", label: "Value", money: true }
+            { label: t("creditreport.byBranch.teamDigital"), fields: [
+                { key: "digital.loanOutstanding.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "digital.loanOutstanding.client", label: t("creditreport.productivity.colClient") },
+                { key: "digital.loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
             ] }
         ],
-        clientLists: [
-            { bucket: "co", label: "CO" },
-            { bucket: "fsro", label: "FSRO" },
-            { bucket: "digital", label: "Digital" }
-        ]
+        clientLists: clientLists()
     },
     {
         key: "disburse",
         icon: "💵",
-        label: "Loan Disburse",
+        label: t("creditreport.detail.sectionDisburse"),
         chart: true,
         statGroups: [
-            { label: "Total", total: true, fields: [
-                { key: "total.loanDisburse.loan", label: "Loan" },
-                { key: "total.loanDisburse.value", label: "Value", money: true }
+            { label: t("common.total"), total: true, fields: [
+                { key: "total.loanDisburse.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "total.loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
             ] },
-            { label: "CO", fields: [
-                { key: "co.loanDisburse.loan", label: "Loan" },
-                { key: "co.loanDisburse.value", label: "Value", money: true }
+            { label: t("creditreport.byBranch.teamCo"), fields: [
+                { key: "co.loanDisburse.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "co.loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
             ] },
-            { label: "FSRO", fields: [
-                { key: "fsro.loanDisburse.loan", label: "Loan" },
-                { key: "fsro.loanDisburse.value", label: "Value", money: true }
+            { label: t("creditreport.byCO.fsro"), fields: [
+                { key: "fsro.loanDisburse.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "fsro.loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
             ] },
-            { label: "Digital", fields: [
-                { key: "digital.loanDisburse.loan", label: "Loan" },
-                { key: "digital.loanDisburse.value", label: "Value", money: true }
+            { label: t("creditreport.byBranch.teamDigital"), fields: [
+                { key: "digital.loanDisburse.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "digital.loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
             ] }
         ],
-        clientLists: [
-            { bucket: "co", label: "CO" },
-            { bucket: "fsro", label: "FSRO" },
-            { bucket: "digital", label: "Digital" }
-        ]
+        clientLists: clientLists()
     },
     {
         key: "parT24",
         icon: "📈",
-        label: "Balance Loan at Risk (T24)",
+        label: t("creditreport.detail.sectionT24"),
         chart: false,
         statGroups: [
-            { label: "Total", total: true, fields: [
-                { key: "total.parT24.loan", label: "Loan" },
-                { key: "total.parT24.value", label: "Value", money: true },
-                { key: "total.parT24.parPct", label: "PAR", pct: true }
+            { label: t("common.total"), total: true, fields: [
+                { key: "total.parT24.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "total.parT24.value", label: t("creditreport.detail.colValue"), money: true },
+                { key: "total.parT24.parPct", label: t("creditreport.productivity.colPar"), pct: true }
             ] },
-            { label: "CO", fields: [
-                { key: "co.parT24.loan", label: "Loan" },
-                { key: "co.parT24.value", label: "Value", money: true },
-                { key: "co.parT24.parPct", label: "PAR", pct: true }
+            { label: t("creditreport.byBranch.teamCo"), fields: [
+                { key: "co.parT24.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "co.parT24.value", label: t("creditreport.detail.colValue"), money: true },
+                { key: "co.parT24.parPct", label: t("creditreport.productivity.colPar"), pct: true }
             ] },
-            { label: "FSRO", fields: [
-                { key: "fsro.parT24.loan", label: "Loan" },
-                { key: "fsro.parT24.value", label: "Value", money: true },
-                { key: "fsro.parT24.parPct", label: "PAR", pct: true }
+            { label: t("creditreport.byCO.fsro"), fields: [
+                { key: "fsro.parT24.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "fsro.parT24.value", label: t("creditreport.detail.colValue"), money: true },
+                { key: "fsro.parT24.parPct", label: t("creditreport.productivity.colPar"), pct: true }
             ] },
-            { label: "Digital", fields: [
-                { key: "digital.parT24.loan", label: "Loan" },
-                { key: "digital.parT24.value", label: "Value", money: true },
-                { key: "digital.parT24.parPct", label: "PAR", pct: true }
+            { label: t("creditreport.byBranch.teamDigital"), fields: [
+                { key: "digital.parT24.loan", label: t("creditreport.productivity.colLoan") },
+                { key: "digital.parT24.value", label: t("creditreport.detail.colValue"), money: true },
+                { key: "digital.parT24.parPct", label: t("creditreport.productivity.colPar"), pct: true }
             ] }
         ],
-        clientLists: [
-            { bucket: "co", label: "CO" },
-            { bucket: "fsro", label: "FSRO" },
-            { bucket: "digital", label: "Digital" }
-        ]
+        clientLists: clientLists()
     },
     {
         key: "nbcOverdue",
         icon: "⚠️",
-        label: "Balance Loan at Risk (NBC Overdue)",
+        label: t("creditreport.detail.sectionNbcOverdue"),
         chart: false,
         statGroups: [
-            { label: "Total", total: true, fields: [
-                { key: "total.nbcOverdue.total.count", label: "Loan" },
-                { key: "total.nbcOverdue.total.value", label: "Value", money: true },
-                { key: "total.nbcOverdue.total.parPct", label: "PAR", pct: true }
+            { label: t("common.total"), total: true, fields: [
+                { key: "total.nbcOverdue.total.count", label: t("creditreport.productivity.colLoan") },
+                { key: "total.nbcOverdue.total.value", label: t("creditreport.detail.colValue"), money: true },
+                { key: "total.nbcOverdue.total.parPct", label: t("creditreport.productivity.colPar"), pct: true }
             ] },
-            { label: "CO", fields: [
-                { key: "co.nbcOverdue.total.count", label: "Loan" },
-                { key: "co.nbcOverdue.total.value", label: "Value", money: true },
-                { key: "co.nbcOverdue.total.parPct", label: "PAR", pct: true }
+            { label: t("creditreport.byBranch.teamCo"), fields: [
+                { key: "co.nbcOverdue.total.count", label: t("creditreport.productivity.colLoan") },
+                { key: "co.nbcOverdue.total.value", label: t("creditreport.detail.colValue"), money: true },
+                { key: "co.nbcOverdue.total.parPct", label: t("creditreport.productivity.colPar"), pct: true }
             ] },
-            { label: "FSRO", fields: [
-                { key: "fsro.nbcOverdue.total.count", label: "Loan" },
-                { key: "fsro.nbcOverdue.total.value", label: "Value", money: true },
-                { key: "fsro.nbcOverdue.total.parPct", label: "PAR", pct: true }
+            { label: t("creditreport.byCO.fsro"), fields: [
+                { key: "fsro.nbcOverdue.total.count", label: t("creditreport.productivity.colLoan") },
+                { key: "fsro.nbcOverdue.total.value", label: t("creditreport.detail.colValue"), money: true },
+                { key: "fsro.nbcOverdue.total.parPct", label: t("creditreport.productivity.colPar"), pct: true }
             ] },
-            { label: "Digital", fields: [
-                { key: "digital.nbcOverdue.total.count", label: "Loan" },
-                { key: "digital.nbcOverdue.total.value", label: "Value", money: true },
-                { key: "digital.nbcOverdue.total.parPct", label: "PAR", pct: true }
+            { label: t("creditreport.byBranch.teamDigital"), fields: [
+                { key: "digital.nbcOverdue.total.count", label: t("creditreport.productivity.colLoan") },
+                { key: "digital.nbcOverdue.total.value", label: t("creditreport.detail.colValue"), money: true },
+                { key: "digital.nbcOverdue.total.parPct", label: t("creditreport.productivity.colPar"), pct: true }
             ] }
         ],
-        clientLists: [
-            { bucket: "co", label: "CO" },
-            { bucket: "fsro", label: "FSRO" },
-            { bucket: "digital", label: "Digital" }
-        ]
+        clientLists: clientLists()
     },
     // Shows Balance WO (the outstanding written-off balance, # cif/Int/Prn)
     // rather than the WO period figures, per explicit request 2026-10-01 —
@@ -189,37 +184,34 @@ const PP_CATEGORIES = [
     {
         key: "writeOff",
         icon: "✂️",
-        label: "Write Off",
+        label: t("creditreport.detail.sectionWriteOff"),
         chart: false,
         statGroups: [
-            { label: "Total", total: true, fields: [
-                { key: "total.writeOff.balanceWO.cif", label: "# (cif)" },
-                { key: "total.writeOff.balanceWO.int", label: "Int", money: true },
-                { key: "total.writeOff.balanceWO.prn", label: "Prn", money: true }
+            { label: t("common.total"), total: true, fields: [
+                { key: "total.writeOff.balanceWO.cif", label: t("creditreport.detail.colCifHash") },
+                { key: "total.writeOff.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
+                { key: "total.writeOff.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
             ] },
-            { label: "CO", fields: [
-                { key: "co.writeOff.balanceWO.cif", label: "# (cif)" },
-                { key: "co.writeOff.balanceWO.int", label: "Int", money: true },
-                { key: "co.writeOff.balanceWO.prn", label: "Prn", money: true }
+            { label: t("creditreport.byBranch.teamCo"), fields: [
+                { key: "co.writeOff.balanceWO.cif", label: t("creditreport.detail.colCifHash") },
+                { key: "co.writeOff.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
+                { key: "co.writeOff.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
             ] },
-            { label: "FSRO", fields: [
-                { key: "fsro.writeOff.balanceWO.cif", label: "# (cif)" },
-                { key: "fsro.writeOff.balanceWO.int", label: "Int", money: true },
-                { key: "fsro.writeOff.balanceWO.prn", label: "Prn", money: true }
+            { label: t("creditreport.byCO.fsro"), fields: [
+                { key: "fsro.writeOff.balanceWO.cif", label: t("creditreport.detail.colCifHash") },
+                { key: "fsro.writeOff.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
+                { key: "fsro.writeOff.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
             ] },
-            { label: "Digital", fields: [
-                { key: "digital.writeOff.balanceWO.cif", label: "# (cif)" },
-                { key: "digital.writeOff.balanceWO.int", label: "Int", money: true },
-                { key: "digital.writeOff.balanceWO.prn", label: "Prn", money: true }
+            { label: t("creditreport.byBranch.teamDigital"), fields: [
+                { key: "digital.writeOff.balanceWO.cif", label: t("creditreport.detail.colCifHash") },
+                { key: "digital.writeOff.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
+                { key: "digital.writeOff.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
             ] }
         ],
-        clientLists: [
-            { bucket: "co", label: "CO" },
-            { bucket: "fsro", label: "FSRO" },
-            { bucket: "digital", label: "Digital" }
-        ]
+        clientLists: clientLists()
     }
-];
+    ];
+}
 
 const PP_LIST_PAGE_SIZE = 100;
 
@@ -274,7 +266,7 @@ function ppSkeletonHtml() {
              <div class="op-skel-line" style="width:82%"></div>`;
 }
 function ppErrorHtml(err) {
-    return `<div class="op-state op-state-error">${ppEscapeHtml((err && err.message) || "Something went wrong.")}</div>`;
+    return `<div class="op-state op-state-error">${ppEscapeHtml((err && err.message) || t("voice.genericError"))}</div>`;
 }
 
 // ========================================
@@ -306,7 +298,7 @@ async function ppFetchSummary(product, meta) {
     const url = `${API.BASE_URL}/api/creditreport/product-performance-summary?product=${encodeURIComponent(product)}${ppBuildQuery(meta)}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${ppToken}` } });
     const data = await res.json();
-    if (!data.ok) throw new Error(data.message || "Failed to load product data.");
+    if (!data.ok) throw new Error(data.message || t("creditreport.productivity.failedLoadProductData"));
     return data;
 }
 
@@ -354,11 +346,11 @@ function ppCardStatsHtml(cat, data) {
 
 function ppCardMarkup(cat, data) {
     const listTabsHtml = cat.clientLists.map((cl, i) =>
-        `<button type="button" class="op-mode-tab${i === 0 ? " active" : ""}" data-mode="list:${cl.bucket}">👥 List of Client ${ppEscapeHtml(cl.label)}</button>`
+        `<button type="button" class="op-mode-tab${i === 0 ? " active" : ""}" data-mode="list:${cl.bucket}">👥 ${t("creditreport.productivity.listOfClient")} ${ppEscapeHtml(cl.label)}</button>`
     ).join("");
 
     const chartTabHtml = cat.chart
-        ? `<button type="button" class="op-mode-tab" data-mode="chart">📈 Chart</button>`
+        ? `<button type="button" class="op-mode-tab" data-mode="chart">📈 ${t("creditreport.detail.chart")}</button>`
         : "";
 
     return `
@@ -383,7 +375,7 @@ function ppCardMarkup(cat, data) {
 
 function ppRenderCards() {
     const wrap = document.getElementById("ppCards");
-    wrap.innerHTML = PP_CATEGORIES.map(cat => ppCardMarkup(cat, ppState.data)).join("");
+    wrap.innerHTML = ppCategories().map(cat => ppCardMarkup(cat, ppState.data)).join("");
     wrap.style.display = "flex";
     ppFitStatsToWidth();
 }
@@ -492,40 +484,45 @@ async function ppFetchClientListRows(section, bucket) {
         `&section=${encodeURIComponent(section)}&bucket=${encodeURIComponent(bucket)}${q}`;
 
     const res = await fetch(url, { headers: { Authorization: `Bearer ${ppToken}` } });
-    if (!res.ok) throw new Error("Could not load the client list. Please try again.");
+    if (!res.ok) throw new Error(t("creditreport.productivity.clientListLoadFailedRetry"));
     const data = await res.json();
-    if (!data.ok) throw new Error(data.message || "Could not load the client list.");
+    if (!data.ok) throw new Error(data.message || t("creditreport.productivity.clientListLoadFailed"));
     return data.items || [];
 }
 
 // ---- Column specs (same shape as Branch Productivity's own) ----
-const PP_CLIENT_TABLE_COLS = [
-    { key: "name", label: "Name", type: "text" },
-    { key: "cif", label: "CIF", type: "text" },
-    { key: "loanNumber", label: "Loan Number", type: "text" },
-    { key: "disburseDate", label: "Disburse Date", type: "date" },
-    { key: "address", label: "Address", type: "text" },
-    { key: "loanSize", label: "Loan Size", type: "number" },
-    { key: "osUsd", label: "OS USD", type: "number" }
-];
+// Functions (not frozen consts) so labels pick up the current language.
+function ppClientTableCols() {
+    return [
+    { key: "name", label: t("creditreport.compare.colName"), type: "text" },
+    { key: "cif", label: t("creditreport.compare.colCif"), type: "text" },
+    { key: "loanNumber", label: t("creditreport.productivity.colLoanNumber"), type: "text" },
+    { key: "disburseDate", label: t("creditreport.productivity.colDisburseDate"), type: "date" },
+    { key: "address", label: t("creditreport.productivity.colAddress"), type: "text" },
+    { key: "loanSize", label: t("creditreport.productivity.colLoanSize"), type: "number" },
+    { key: "osUsd", label: t("creditreport.productivity.colOsUsd"), type: "number" }
+    ];
+}
 
-const PP_ARREARS_TABLE_COLS = [
-    { key: "name", label: "Customer", type: "text" },
-    { key: "loanNumber", label: "Loan Number", type: "text" },
-    { key: "class", label: "Class", type: "text" },
-    { key: "address", label: "Location", type: "text" },
-    { key: "disburseDate", label: "DisDate", type: "date" },
-    { key: "prnOS", label: "Prn.OS", type: "number" },
-    { key: "intOS", label: "Int.OS", type: "number" },
-    { key: "prnDue", label: "Prn.Due", type: "number" },
-    { key: "intDue", label: "Int.Due", type: "number" },
-    { key: "penalty", label: "Penalty", type: "number" },
-    { key: "arreas", label: "Arreas", type: "number" },
-    { key: "day", label: "Day", type: "number" },
-    { key: "balance", label: "Balnce", type: "number" },
-    { key: "accountLoan", label: "Account Loan", type: "text" },
-    { key: "cif", label: "CIF", type: "text" }
-];
+function ppArrearsTableCols() {
+    return [
+    { key: "name", label: t("creditreport.productivity.colCustomer"), type: "text" },
+    { key: "loanNumber", label: t("creditreport.productivity.colLoanNumber"), type: "text" },
+    { key: "class", label: t("creditreport.compare.colClass"), type: "text" },
+    { key: "address", label: t("creditreport.compare.dimLocation"), type: "text" },
+    { key: "disburseDate", label: t("creditreport.productivity.colDisDate"), type: "date" },
+    { key: "prnOS", label: t("creditreport.productivity.colPrnOs"), type: "number" },
+    { key: "intOS", label: t("creditreport.productivity.colIntOs"), type: "number" },
+    { key: "prnDue", label: t("creditreport.productivity.colPrnDue"), type: "number" },
+    { key: "intDue", label: t("creditreport.productivity.colIntDue"), type: "number" },
+    { key: "penalty", label: t("creditreport.productivity.colPenalty"), type: "number" },
+    { key: "arreas", label: t("creditreport.productivity.colArreas"), type: "number" },
+    { key: "day", label: t("creditreport.productivity.colDay"), type: "number" },
+    { key: "balance", label: t("creditreport.productivity.colBalnce"), type: "number" },
+    { key: "accountLoan", label: t("creditreport.productivity.colAccountLoan"), type: "text" },
+    { key: "cif", label: t("creditreport.compare.colCif"), type: "text" }
+    ];
+}
 
 function ppTableThHtml(col) {
     return `<th data-sort-key="${col.key}" data-sort-type="${col.type}">${ppEscapeHtml(col.label)}</th>`;
@@ -539,8 +536,9 @@ function ppTableTdHtml(col, row) {
 }
 
 function ppClientTableHtml(rows, { showDate = true } = {}) {
-    if (!rows.length) return `<div class="op-state">No clients found for this category.</div>`;
-    const cols = showDate ? PP_CLIENT_TABLE_COLS : PP_CLIENT_TABLE_COLS.filter(c => c.key !== "disburseDate");
+    if (!rows.length) return `<div class="op-state">${t("creditreport.productivity.noClientsFound")}</div>`;
+    const allCols = ppClientTableCols();
+    const cols = showDate ? allCols : allCols.filter(c => c.key !== "disburseDate");
     return `
       <div class="op-client-table-wrap">
         <table class="op-client-table">
@@ -551,12 +549,13 @@ function ppClientTableHtml(rows, { showDate = true } = {}) {
 }
 
 function ppArrearsTableHtml(rows) {
-    if (!rows.length) return `<div class="op-state">No clients found for this category.</div>`;
+    if (!rows.length) return `<div class="op-state">${t("creditreport.productivity.noClientsFound")}</div>`;
+    const cols = ppArrearsTableCols();
     return `
       <div class="op-client-table-wrap">
         <table class="op-client-table">
-          <thead><tr><th>No</th>${PP_ARREARS_TABLE_COLS.map(ppTableThHtml).join("")}</tr></thead>
-          <tbody>${rows.map((r, i) => `<tr><td>${i + 1}</td>${PP_ARREARS_TABLE_COLS.map(c => ppTableTdHtml(c, r)).join("")}</tr>`).join("")}</tbody>
+          <thead><tr><th>${t("creditreport.productivity.colNo")}</th>${cols.map(ppTableThHtml).join("")}</tr></thead>
+          <tbody>${rows.map((r, i) => `<tr><td>${i + 1}</td>${cols.map(c => ppTableTdHtml(c, r)).join("")}</tr>`).join("")}</tbody>
         </table>
       </div>`;
 }
@@ -580,15 +579,15 @@ function ppCompareForSort(a, b, type) {
 
 function ppExportRowsToExcel(rows, cols, filenamePrefix) {
     if (typeof XLSX === "undefined") {
-        if (typeof showToast === "function") showToast("Excel export library failed to load.", "error");
+        if (typeof showToast === "function") showToast(t("creditreport.detail.excelLibFailed"), "error");
         return;
     }
     if (!rows.length) {
-        if (typeof showToast === "function") showToast("Nothing to export.", "warning");
+        if (typeof showToast === "function") showToast(t("creditreport.detail.nothingToExport"), "warning");
         return;
     }
     const sheetData = rows.map((r, i) => {
-        const out = { No: i + 1 };
+        const out = { [t("creditreport.productivity.colNo")]: i + 1 };
         cols.forEach(c => {
             const v = r[c.key];
             out[c.label] = c.type === "date" ? ppFmtDateDMY(v) : (v === "" || v == null ? "" : v);
@@ -611,7 +610,8 @@ function ppExportRowsToExcel(rows, cols, filenamePrefix) {
 // once up front, and every render computes a sorted VIEW from it — so
 // the "default" state always has an intact original order to return to.
 function ppRenderClientListInto(container, rows, { arrears = false, showDate = true, filenamePrefix = "clients" } = {}) {
-    const cols = arrears ? PP_ARREARS_TABLE_COLS : (showDate ? PP_CLIENT_TABLE_COLS : PP_CLIENT_TABLE_COLS.filter(c => c.key !== "disburseDate"));
+    const allCols = ppClientTableCols();
+    const cols = arrears ? ppArrearsTableCols() : (showDate ? allCols : allCols.filter(c => c.key !== "disburseDate"));
     const buildTableHtml = arrears ? ppArrearsTableHtml : (rs => ppClientTableHtml(rs, { showDate }));
 
     const originalRows = rows.slice();
@@ -629,13 +629,13 @@ function ppRenderClientListInto(container, rows, { arrears = false, showDate = t
         const displayRows = getDisplayRows();
         const visibleRows = displayRows.slice(0, visibleCount);
         const exportBtnHtml = rows.length
-            ? `<div class="op-list-actions"><button type="button" class="op-list-export-btn">⬇ Export Excel</button></div>`
+            ? `<div class="op-list-actions"><button type="button" class="op-list-export-btn">⬇ ${t("creditreport.menu.exportExcel")}</button></div>`
             : "";
         const countHtml = rows.length
-            ? `<div class="op-list-count">Showing ${visibleRows.length.toLocaleString()} of ${rows.length.toLocaleString()}</div>`
+            ? `<div class="op-list-count">${t("creditreport.productivity.showingXOfY", { shown: visibleRows.length.toLocaleString(), total: rows.length.toLocaleString() })}</div>`
             : "";
         const moreHtml = visibleCount < rows.length
-            ? `<div class="op-list-more-wrap"><button type="button" class="op-list-more-btn">Show More</button></div>`
+            ? `<div class="op-list-more-wrap"><button type="button" class="op-list-more-btn">${t("creditreport.productivity.showMore")}</button></div>`
             : "";
         container.innerHTML = exportBtnHtml + buildTableHtml(visibleRows) + countHtml + moreHtml;
         if (!rows.length) return;
@@ -686,7 +686,13 @@ function ppHeatBucket(value, maxValue) {
     return 1;
 }
 
-const PP_HEAT_DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+function ppHeatDow() {
+    return [
+        t("creditreport.compare.dowSun"), t("creditreport.compare.dowMon"), t("creditreport.compare.dowTue"),
+        t("creditreport.compare.dowWed"), t("creditreport.compare.dowThu"), t("creditreport.compare.dowFri"),
+        t("creditreport.compare.dowSat")
+    ];
+}
 
 let ppKhHolidays = new Set();
 let ppKhHolidaysPromise = null;
@@ -710,7 +716,7 @@ function ppBuildDisburseHeatmapHtml(dates, values, counts, product, meta, totalD
     const maxValue = Math.max(0, ...values);
     const firstDow = new Date(dates[0] + "T00:00:00").getDay();
 
-    let cells = PP_HEAT_DOW.map(d => `<div class="op-heat-dow">${d}</div>`).join("");
+    let cells = ppHeatDow().map(d => `<div class="op-heat-dow">${d}</div>`).join("");
     for (let i = 0; i < firstDow; i++) cells += `<div class="op-heat-cell op-heat-pad"></div>`;
 
     dates.forEach((dateStr, i) => {
@@ -751,29 +757,29 @@ function ppBuildDisburseHeatmapHtml(dates, values, counts, product, meta, totalD
         .toLocaleString("en-US", { month: "long", year: "numeric" });
 
     return `
-      <div class="op-heat-title">Daily Loan Disbursement — ${ppEscapeHtml(product)}</div>
+      <div class="op-heat-title">${t("creditreport.productivity.dailyLoanDisbursement")} — ${ppEscapeHtml(product)}</div>
       <div class="op-heat-subtitle-group">
-        <div class="op-heat-subtitle-line">Period Date: ${period}</div>
-        <div class="op-heat-subtitle-line">Total  Disburse: ${ppFmtNum(totalLoan)}LD, USD${ppFmtNum(totalValue)}</div>
+        <div class="op-heat-subtitle-line">${t("creditreport.productivity.periodDate")}: ${period}</div>
+        <div class="op-heat-subtitle-line">${t("creditreport.productivity.totalDisburse")}: ${ppFmtNum(totalLoan)}LD, USD${ppFmtNum(totalValue)}</div>
       </div>
       <div class="op-heat-grid">${cells}</div>
       <div class="op-heat-legend">
-        <span>Less</span>
+        <span>${t("creditreport.productivity.less")}</span>
         <span class="op-heat-sw op-heat-h0"></span>
         <span class="op-heat-sw op-heat-h1"></span>
         <span class="op-heat-sw op-heat-h2"></span>
         <span class="op-heat-sw op-heat-h3"></span>
         <span class="op-heat-sw op-heat-h4"></span>
-        <span>More</span>
+        <span>${t("creditreport.productivity.more")}</span>
       </div>
       <div class="op-heat-legend op-heat-legend-2">
-        <span class="op-heat-sw op-heat-ring-weekend"></span><span>Weekend</span>
-        <span class="op-heat-sw op-heat-ring-holiday"></span><span>Holiday</span>
+        <span class="op-heat-sw op-heat-ring-weekend"></span><span>${t("creditreport.productivity.weekend")}</span>
+        <span class="op-heat-sw op-heat-ring-holiday"></span><span>${t("creditreport.productivity.holiday")}</span>
       </div>
       <div class="op-heat-nav">
-        <button type="button" class="op-heat-nav-btn" data-dir="prev" aria-label="Previous month">‹</button>
+        <button type="button" class="op-heat-nav-btn" data-dir="prev" aria-label="${t("creditreport.compare.prevMonth")}">‹</button>
         <span class="op-heat-nav-label">${ppEscapeHtml(monthLabel)}</span>
-        <button type="button" class="op-heat-nav-btn" data-dir="next" aria-label="Next month">›</button>
+        <button type="button" class="op-heat-nav-btn" data-dir="next" aria-label="${t("creditreport.compare.nextMonth")}">›</button>
       </div>
       <div class="op-heat-day-panel"></div>`;
 }
@@ -809,7 +815,7 @@ function ppShowHeatTooltip(cell, tooltip) {
     const count = Number(cell.dataset.count);
     const [, mm, dd] = date.split("-");
     tooltip.innerHTML = `<span class="op-heat-tt-date">${dd}-${mm}:</span> ` + (
-        value > 0 ? `${ppFmtNum(value)} · ${count} loan${count > 1 ? "s" : ""}` : "No disbursement"
+        value > 0 ? `${ppFmtNum(value)} · ${t("creditreport.productivity.loanCount", { count })}` : t("creditreport.productivity.noDisbursement")
     );
     tooltip.classList.add("show");
 }
@@ -839,9 +845,9 @@ async function ppFetchDayClients(dateKey) {
         const url = `${API.BASE_URL}/api/creditreport/product-clients?product=${encodeURIComponent(ppState.product)}` +
             `&section=disburse&bucket=${bucket}${q}`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${ppToken}` } });
-        if (!res.ok) throw new Error("Could not load clients for this day. Please try again.");
+        if (!res.ok) throw new Error(t("creditreport.productivity.dayClientsLoadFailedRetry"));
         const data = await res.json();
-        if (!data.ok) throw new Error(data.message || "Could not load clients for this day.");
+        if (!data.ok) throw new Error(data.message || t("creditreport.productivity.dayClientsLoadFailed"));
         return data.items || [];
     }));
     return results.flat();
@@ -870,10 +876,10 @@ function ppWireDayClientPanel(container) {
 
             const [, mm, dd] = date.split("-");
             const count = Number(cell.dataset.count) || 0;
-            const heading = `<div class="op-heat-day-panel-head">${dd}-${mm}: ${count} loan${count === 1 ? "" : "s"}</div>`;
+            const heading = `<div class="op-heat-day-panel-head">${dd}-${mm}: ${t("creditreport.productivity.loanCount", { count })}</div>`;
 
             if (count === 0) {
-                panel.innerHTML = `<div class="op-heat-day-panel-head">${dd}-${mm}: No disbursement</div>`;
+                panel.innerHTML = `<div class="op-heat-day-panel-head">${dd}-${mm}: ${t("creditreport.productivity.noDisbursement")}</div>`;
                 return;
             }
 
@@ -904,9 +910,9 @@ async function ppFetchDisburseChartData(monthOverride) {
     const holidaysReady = ppEnsureKhHolidays();
 
     const res = await fetch(url, { headers: { Authorization: `Bearer ${ppToken}` } });
-    if (!res.ok) throw new Error("Could not load the disbursement chart. Please try again.");
+    if (!res.ok) throw new Error(t("creditreport.productivity.chartLoadFailedRetry"));
     const data = await res.json();
-    if (!data.ok) throw new Error(data.message || "Could not load the disbursement chart.");
+    if (!data.ok) throw new Error(data.message || t("creditreport.productivity.chartLoadFailed"));
     await holidaysReady;
 
     const dates = data.dates || [];
@@ -923,7 +929,7 @@ function ppRenderDisburseHeatmapInto(container, fullscreen) {
     const { dates, values, counts } = ppDisburseChartData;
     const btnHtml = fullscreen
         ? ""
-        : `<button type="button" class="op-chart-fullscreen-btn" aria-label="Fullscreen chart">⛶</button>`;
+        : `<button type="button" class="op-chart-fullscreen-btn" aria-label="${t("creditreport.productivity.fullscreenChartAria")}">⛶</button>`;
     container.innerHTML = btnHtml + ppBuildDisburseHeatmapHtml(dates, values, counts, ppState.product, ppState.meta, ppState.data?.total);
 
     ppWireHeatmapTooltips(container);
@@ -938,7 +944,7 @@ async function ppNavigateDisburseMonth(delta, container, fullscreen) {
     try {
         const chartData = await ppFetchDisburseChartData(newAnchor);
         if (!chartData) {
-            container.innerHTML = `<div class="op-state">No disbursement data for this period.</div>`;
+            container.innerHTML = `<div class="op-state">${t("creditreport.productivity.noDisbursementDataPeriod")}</div>`;
             return;
         }
         ppRenderDisburseHeatmapInto(container, fullscreen);
@@ -950,7 +956,7 @@ async function ppNavigateDisburseMonth(delta, container, fullscreen) {
 async function ppRenderDisburseChart(wrap) {
     const chartData = await ppFetchDisburseChartData();
     if (!chartData) {
-        wrap.innerHTML = `<div class="op-state">No disbursement data for this period.</div>`;
+        wrap.innerHTML = `<div class="op-state">${t("creditreport.productivity.noDisbursementDataPeriod")}</div>`;
         return;
     }
     ppRenderDisburseHeatmapInto(wrap, false);
@@ -1016,7 +1022,7 @@ async function ppInit() {
     ppState.meta = meta;
 
     if (!product) {
-        ppShowEmpty("No product was specified. Go back and select a product from the report.");
+        ppShowEmpty(t("creditreport.productivity.noProductSpecified"));
         return;
     }
     ppState.product = product;
@@ -1027,7 +1033,7 @@ async function ppInit() {
         ppFinishLoad();
     } catch (err) {
         console.error(err);
-        ppShowEmpty(err.message || "Network error loading product data.");
+        ppShowEmpty(err.message || t("creditreport.productivity.networkErrorProductData"));
     }
 }
 

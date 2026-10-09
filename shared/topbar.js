@@ -3,6 +3,7 @@ window.initTopbar = function(config={}){
     const {
 
         title = "",
+        titleKey = "",
 
         userName = "",
 
@@ -111,8 +112,25 @@ window.initTopbar = function(config={}){
             titleEl.style.display =
                 "block";
 
-            titleEl.innerText =
-                title || "CM_Pro";
+            // titleKey keeps the title in sync if the language changes
+            // while this page is open (data-i18n is picked up by
+            // shared/i18n.js's own listener); a plain title never
+            // re-translates itself, so prefer passing titleKey.
+            if(titleKey){
+
+                titleEl.setAttribute("data-i18n", titleKey);
+
+                titleEl.innerText =
+                    window.CMI18n ? CMI18n.t(titleKey) : (title || "CM_Pro");
+
+            }else{
+
+                titleEl.removeAttribute("data-i18n");
+
+                titleEl.innerText =
+                    title || "CM_Pro";
+
+            }
 
         }
 

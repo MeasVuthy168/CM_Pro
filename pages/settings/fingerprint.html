@@ -197,7 +197,7 @@
 </head>
 <body>
 
-<div id="offlineBanner">
+<div id="offlineBanner" data-i18n="common.offline">
 ⚠️ No Internet Connection
 </div>
 
@@ -207,26 +207,26 @@
 
 <div class="fp-card">
 <div class="fp-intro-icon">👆</div>
-<div class="fp-intro-title">ការចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខ</div>
-<div class="fp-intro-text">
+<div class="fp-intro-title" data-i18n="settings.fingerprint.introTitle">ការចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខ</div>
+<div class="fp-intro-text" data-i18n="settings.fingerprint.introText">
 ចុះឈ្មោះស្នាមម្រាមដៃ ឬ Face ID លើឧបករណ៍នេះ ដើម្បីចូលប្រើប្រាស់ដោយមិនចាំបាច់វាយពាក្យសម្ងាត់។
 </div>
 </div>
 
-<div id="fpUnsupported" class="fp-card fp-unsupported" hidden>
+<div id="fpUnsupported" class="fp-card fp-unsupported" hidden data-i18n="settings.fingerprint.unsupported">
 ឧបករណ៍ ឬកម្មវិធីរុករកនេះ មិនគាំទ្រការចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខទេ។
 </div>
 
 <div id="fpSupportedArea">
 
 <button type="button" id="fpAddBtn" class="fp-add-btn">
-<span>➕</span> បន្ថែមឧបករណ៍នេះ
+<span>➕</span> <span data-i18n="settings.fingerprint.addBtn">បន្ថែមឧបករណ៍នេះ</span>
 </button>
 
-<div class="fp-section-label">ឧបករណ៍ដែលបានចុះឈ្មោះ</div>
+<div class="fp-section-label" data-i18n="settings.fingerprint.registeredDevices">ឧបករណ៍ដែលបានចុះឈ្មោះ</div>
 
 <div id="fpDeviceList" class="fp-card">
-<div class="fp-empty">កំពុងផ្ទុក...</div>
+<div class="fp-empty" data-i18n="common.loading">កំពុងផ្ទុក...</div>
 </div>
 
 </div>
@@ -242,6 +242,11 @@
 
 <script src="/CM_Pro/shared/topbar.js"></script>
 <script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/settings.js"></script>
 <script src="/CM_Pro/assets/js/toast.js"></script>
 <script src="/CM_Pro/assets/js/webauthn.js"></script>
 

@@ -36,7 +36,7 @@ async function loadComponent(id,file){
 
             initTopbar({
 
-                title:"Customer Search",
+                titleKey:"dashboard.customerSearch",
 
                 showBack:true,
 

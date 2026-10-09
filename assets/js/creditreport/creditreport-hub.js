@@ -19,15 +19,17 @@ const crHubLoggedInUser = JSON.parse(
 );
 const crHubIsAdmin = String(crHubLoggedInUser.role || "").toLowerCase() === "admin";
 
+const t = (key, vars) => window.CMI18n ? CMI18n.t(key, vars) : key;
+
 const CR_HUB_SNAPSHOT_TARGETS = [
-    { label: "Branch", url: "/api/creditreport/summary/snapshot/run" },
-    { label: "Officer", url: "/api/creditreport/byco/snapshot/run" },
-    { label: "Product", url: "/api/creditreport/byproduct/snapshot/run" },
-    { label: "Location", url: "/api/creditreport/bylocation/snapshot/run" },
+    { label: () => t("creditreport.hub.targetBranch"), url: "/api/creditreport/summary/snapshot/run" },
+    { label: () => t("creditreport.hub.targetOfficer"), url: "/api/creditreport/byco/snapshot/run" },
+    { label: () => t("creditreport.hub.targetProduct"), url: "/api/creditreport/byproduct/snapshot/run" },
+    { label: () => t("creditreport.hub.targetLocation"), url: "/api/creditreport/bylocation/snapshot/run" },
     // The combined OS/Disburse/WO/Overdue/T24 snapshot Report Comparison
     // reads both sides of a compare from — formerly its own page-local
     // "Snapshot Now" button, absorbed here 2026-10-08.
-    { label: "Compare", url: "/api/creditreport/snapshot/run" }
+    { label: () => t("creditreport.hub.targetCompare"), url: "/api/creditreport/snapshot/run" }
 ];
 
 function crHubEscapeHtml(text) {
@@ -51,19 +53,19 @@ async function crHubRunOneSnapshot(target) {
         });
         const data = await res.json();
         if (data.ok) {
-            return { label: target.label, ok: true, date: data.date };
+            return { label: target.label(), ok: true, date: data.date };
         }
-        return { label: target.label, ok: false, message: data.message || "Failed" };
+        return { label: target.label(), ok: false, message: data.message || t("creditreport.hub.snapshotFailed") };
     } catch (e) {
         console.error(e);
-        return { label: target.label, ok: false, message: "Network error" };
+        return { label: target.label(), ok: false, message: t("creditreport.hub.networkError") };
     }
 }
 
 function crHubRenderResults(results) {
     const okCount = results.filter(r => r.ok).length;
     document.getElementById("crHubSnapshotSummary").textContent =
-        `${okCount}/${results.length} saved`;
+        t("creditreport.hub.snapshotSavedCount", { ok: okCount, total: results.length });
     document.getElementById("crHubSnapshotRows").innerHTML = results.map(r =>
         `<div class="cr-hub-snapshot-row${r.ok ? " ok" : " fail"}">` +
             `<span class="cr-hub-snapshot-dot"></span>` +
@@ -85,7 +87,8 @@ if (crHubIsAdmin) {
         const btn = document.getElementById("btnCrSnapshotAll");
         const label = document.getElementById("crHubSnapshotBtnLabel");
         btn.disabled = true;
-        label.textContent = "Running...";
+        label.removeAttribute("data-i18n");
+        label.textContent = t("creditreport.hub.running");
         document.getElementById("crHubSnapshotResults").style.display = "none";
         try {
             const results = await Promise.all(CR_HUB_SNAPSHOT_TARGETS.map(crHubRunOneSnapshot));
@@ -93,13 +96,14 @@ if (crHubIsAdmin) {
             const allOk = results.every(r => r.ok);
             if (typeof showToast === "function") {
                 showToast(
-                    allOk ? "All 4 snapshots saved." : "Some snapshots failed — see details below.",
+                    allOk ? t("creditreport.hub.snapshotAllSaved") : t("creditreport.hub.snapshotSomeFailed"),
                     allOk ? "success" : "error"
                 );
             }
         } finally {
             btn.disabled = false;
-            label.textContent = "Snapshot All";
+            label.setAttribute("data-i18n", "creditreport.hub.snapshotAll");
+            label.textContent = t("creditreport.hub.snapshotAll");
         }
     });
 }

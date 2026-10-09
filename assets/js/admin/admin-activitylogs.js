@@ -10,6 +10,7 @@
 
   const API_BASE = (window.API && window.API.BASE_URL) || "";
   const PAGE_SIZE = 300;
+  const t = (key, vars) => (window.CMI18n ? CMI18n.t(key, vars) : key);
 
   const state = {
     logs: [],
@@ -64,10 +65,10 @@
     if (!iso) return "—";
     const d = new Date(iso);
     const diff = Math.floor((Date.now() - d.getTime()) / 1000);
-    if (diff < 60) return "Just now";
-    if (diff < 3600) return Math.floor(diff / 60) + " min ago";
-    if (diff < 86400) return Math.floor(diff / 3600) + " hr ago";
-    if (diff < 604800) return Math.floor(diff / 86400) + " day(s) ago";
+    if (diff < 60) return t("admin.common.timeJustNow");
+    if (diff < 3600) return t("admin.common.timeMinAgo", { n: Math.floor(diff / 60) });
+    if (diff < 86400) return t("admin.common.timeHrAgo", { n: Math.floor(diff / 3600) });
+    if (diff < 604800) return t("admin.common.timeDaysAgo", { n: Math.floor(diff / 86400) });
     return d.toLocaleDateString();
   }
 
@@ -91,7 +92,7 @@
     const current = el.action.value;
     const actions = [...new Set(state.logs.map((l) => l.action).filter(Boolean))].sort();
 
-    el.action.innerHTML = `<option value="all">All Actions</option>` +
+    el.action.innerHTML = `<option value="all">${t("admin.activitylogs.allActions")}</option>` +
       actions.map((a) => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join("");
 
     if (actions.includes(current)) el.action.value = current;
@@ -181,7 +182,7 @@
       el.btnLoadMore.hidden = !state.hasMore;
     } catch (e) {
       console.error("fetchLogs failed:", e);
-      AdminUI.toast("Could not load activity logs.", "error");
+      AdminUI.toast(t("admin.activitylogs.couldNotLoad"), "error");
     } finally {
       state.loading = false;
     }
@@ -215,7 +216,7 @@
     if (!emptyEl) {
       emptyEl = document.createElement("div");
       emptyEl.className = "adm-chart-empty";
-      emptyEl.textContent = "No data for the current filter.";
+      emptyEl.textContent = t("admin.activitylogs.noDataForFilter");
       wrap.appendChild(emptyEl);
     }
     emptyEl.style.display = isEmpty ? "block" : "none";
@@ -391,8 +392,8 @@
     const byIp = new Map(); // ip -> { count, usernames:Set, lastAt }
 
     for (const l of failedLogins) {
-      const username = l.username || "(unknown username)";
-      const ip = l.ipAddress || "(unknown IP)";
+      const username = l.username || t("admin.activitylogs.unknownUsername");
+      const ip = l.ipAddress || t("admin.activitylogs.unknownIp");
 
       const u = byUsername.get(username) || { count: 0, lastIp: "", lastAt: "" };
       u.count++;
@@ -410,7 +411,9 @@
 
     for (const [username, u] of byUsername) {
       if (u.count < SUSPICIOUS_FAILED_LOGIN_THRESHOLD) continue;
-      items.push(`🔒 <strong>${escapeHtml(username)}</strong> — ${u.count} failed logins (most recent from ${escapeHtml(u.lastIp)}, ${timeAgo(u.lastAt)})`);
+      items.push(t("admin.activitylogs.suspiciousUserLine", {
+        username: escapeHtml(username), count: u.count, ip: escapeHtml(u.lastIp), timeAgo: timeAgo(u.lastAt)
+      }));
     }
 
     // Only surfaced when it spans multiple accounts — a single user
@@ -419,7 +422,9 @@
     // multi-account pattern the per-username view can't show.
     for (const [ip, i] of byIp) {
       if (i.count < SUSPICIOUS_FAILED_LOGIN_THRESHOLD || i.usernames.size < 2) continue;
-      items.push(`🌐 IP <strong>${escapeHtml(ip)}</strong> — ${i.count} failed logins across ${i.usernames.size} accounts (most recent ${timeAgo(i.lastAt)})`);
+      items.push(t("admin.activitylogs.suspiciousIpLine", {
+        ip: escapeHtml(ip), count: i.count, accounts: i.usernames.size, timeAgo: timeAgo(i.lastAt)
+      }));
     }
 
     el.suspiciousCard.hidden = items.length === 0;
@@ -452,7 +457,7 @@
             <div class="adm-avatar">${escapeHtml(initials(log.fullname, log.username))}</div>
             <div class="adm-user-identity-text">
               <span class="adm-user-identity-name">${escapeHtml(log.fullname || log.username || "—")}</span>
-              <span class="adm-user-identity-username">@${escapeHtml(log.username || "unknown")}</span>
+              <span class="adm-user-identity-username">@${escapeHtml(log.username || t("admin.activitylogs.unknownUser"))}</span>
             </div>
           </div>
         </td>
@@ -470,18 +475,18 @@
   function openDetailModal(log) {
     const body = document.createElement("div");
     const rows = [
-      ["Time", new Date(log.logAt).toLocaleString()],
-      ["User", `${log.fullname || "—"} (@${log.username || "unknown"})`],
-      ["Role", log.role || "—"],
-      ["Action", log.action],
-      ["Module", log.module || "—"],
-      ["Result", log.result || "—"],
-      ["Message", log.message || "—"],
-      ["Device", log.deviceName || "—"],
-      ["Machine User", log.machineUser || "—"],
-      ["Workbook", log.workbookName || "—"],
-      ["App Version", log.appVersion || "—"],
-      ["IP Address", log.ipAddress || "—"]
+      [t("admin.activitylogs.detailTime"), new Date(log.logAt).toLocaleString()],
+      [t("admin.activitylogs.detailUser"), `${log.fullname || "—"} (@${log.username || t("admin.activitylogs.unknownUser")})`],
+      [t("admin.activitylogs.detailRole"), log.role || "—"],
+      [t("admin.activitylogs.detailAction"), log.action],
+      [t("admin.activitylogs.detailModule"), log.module || "—"],
+      [t("admin.activitylogs.detailResult"), log.result || "—"],
+      [t("admin.activitylogs.detailMessage"), log.message || "—"],
+      [t("admin.activitylogs.detailDevice"), log.deviceName || "—"],
+      [t("admin.activitylogs.detailMachineUser"), log.machineUser || "—"],
+      [t("admin.activitylogs.detailWorkbook"), log.workbookName || "—"],
+      [t("admin.activitylogs.detailAppVersion"), log.appVersion || "—"],
+      [t("admin.activitylogs.detailIp"), log.ipAddress || "—"]
     ];
 
     body.innerHTML = rows.map(([label, value]) => `
@@ -491,12 +496,12 @@
       </div>
     `).join("");
 
-    AdminUI.openModal({ title: "Log Detail", bodyNode: body, wide: true });
+    AdminUI.openModal({ title: t("admin.activitylogs.detailTitle"), bodyNode: body, wide: true });
   }
 
   // ---------- export CSV ----------
   function exportCsv() {
-    if (!state.logs.length) return AdminUI.toast("Nothing loaded to export.", "error");
+    if (!state.logs.length) return AdminUI.toast(t("admin.activitylogs.nothingToExport"), "error");
 
     const headers = ["Time", "Username", "FullName", "Role", "Action", "Module", "Result", "Message", "Device", "MachineUser", "Workbook", "AppVersion", "IP"];
     const csvEscape = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -518,7 +523,7 @@
     a.remove();
     URL.revokeObjectURL(url);
 
-    AdminUI.toast(`Exported ${state.logs.length} loaded log(s).`, "success");
+    AdminUI.toast(t("admin.activitylogs.exported", { count: state.logs.length }), "success");
   }
 
   el.btnExport.addEventListener("click", exportCsv);
@@ -527,21 +532,18 @@
   function openCleanupModal() {
     const body = document.createElement("div");
     body.innerHTML = `
-      <p class="adm-modal-message">
-        Permanently deletes activity logs older than the number of days below.
-        This can't be undone.
-      </p>
+      <p class="adm-modal-message">${t("admin.activitylogs.cleanupExplain")}</p>
       <label class="adm-cleanup-field">
-        <span>Keep logs from the last (days)</span>
+        <span>${t("admin.activitylogs.keepDays")}</span>
         <input type="number" id="alKeepDays" value="180" min="1">
       </label>
       <div class="adm-modal-footer">
-        <button type="button" class="adm-btn" id="alCleanupCancel">Cancel</button>
-        <button type="button" class="adm-btn adm-btn-danger" id="alCleanupConfirm">Delete Old Logs</button>
+        <button type="button" class="adm-btn" id="alCleanupCancel">${t("admin.activitylogs.cancel")}</button>
+        <button type="button" class="adm-btn adm-btn-danger" id="alCleanupConfirm">${t("admin.activitylogs.deleteOldLogs")}</button>
       </div>
     `;
 
-    const { body: mountedBody } = AdminUI.openModal({ title: "Clean Up Old Logs", bodyNode: body });
+    const { body: mountedBody } = AdminUI.openModal({ title: t("admin.activitylogs.cleanupModalTitle"), bodyNode: body });
 
     mountedBody.querySelector("#alCleanupCancel").addEventListener("click", () => AdminUI.closeModal());
     mountedBody.querySelector("#alCleanupConfirm").addEventListener("click", async () => {
@@ -554,14 +556,14 @@
           body: JSON.stringify({ keepDays })
         });
         const data = await res.json();
-        if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Cleanup failed.", "error");
+        if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.activitylogs.cleanupFailed"), "error");
 
         AdminUI.closeModal();
-        AdminUI.toast(`Deleted ${data.deletedCount} log(s) older than ${data.cutoffCambodiaText}.`, "success");
+        AdminUI.toast(t("admin.activitylogs.cleanupDeleted", { count: data.deletedCount, cutoff: data.cutoffCambodiaText }), "success");
         fetchLogs(true);
       } catch (e) {
         console.error("cleanup failed:", e);
-        AdminUI.toast("Cleanup failed — could not reach the server.", "error");
+        AdminUI.toast(t("admin.activitylogs.cleanupFailedServer"), "error");
       }
     });
   }

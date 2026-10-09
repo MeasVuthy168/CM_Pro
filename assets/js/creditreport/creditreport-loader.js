@@ -18,7 +18,7 @@ async function loadComponent(id, file) {
         }
         if (id === "topbar-container") {
             initTopbar({
-                title: "Credit Report",
+                titleKey: "dashboard.creditReport",
                 showBack: true,
                 showLogo: false,
                 showProfile: false

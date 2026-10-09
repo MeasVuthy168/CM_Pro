@@ -38,7 +38,7 @@
     <!-- SIDEBAR (auto-rendered by admin-nav.js) -->
     <!-- ========================= -->
     <aside class="adm-sidebar">
-      <div class="adm-sidebar-brand">CM_Pro Admin</div>
+      <div class="adm-sidebar-brand" data-i18n="admin.common.brand">CM_Pro Admin</div>
       <nav id="admSidebar"></nav>
     </aside>
 
@@ -52,11 +52,11 @@
       <!-- ========================= -->
       <div class="adm-header">
         <div class="adm-title-block">
-          <h1>Wallpaper · ផ្ទាំងផ្ទៃខាងក្រោយ</h1>
-          <p>Background image shown across the app and Excel client</p>
+          <h1 data-i18n="admin.wallpaper.title">Wallpaper</h1>
+          <p data-i18n="admin.wallpaper.subtitle">Background image shown across the app and Excel client</p>
         </div>
         <div class="adm-header-right">
-          <span class="adm-user-chip" id="admUserLabel">Admin</span>
+          <span class="adm-user-chip" id="admUserLabel" data-i18n="admin.common.adminFallback">Admin</span>
           <div class="adm-topbar-actions" id="admTopbarActions"></div>
         </div>
       </div>
@@ -65,13 +65,13 @@
       <!-- CURRENT WALLPAPER -->
       <!-- ========================= -->
       <div class="adm-card adm-wallpaper-card">
-        <div class="adm-card-label">Current Wallpaper</div>
+        <div class="adm-card-label" data-i18n="admin.wallpaper.currentWallpaper">Current Wallpaper</div>
 
         <div class="adm-wallpaper-preview" style="height:400px; width:100%; overflow:hidden; border-radius:14px; border:1px solid var(--adm-border); display:flex; align-items:center; justify-content:center;">
           <img id="wpCurrentImg" alt="Current wallpaper" style="width:100%; height:100%; object-fit:contain; display:block;">
         </div>
 
-        <div class="adm-render-loading" id="wpStatusLoading">Loading status…</div>
+        <div class="adm-render-loading" id="wpStatusLoading" data-i18n="admin.wallpaper.loadingStatus">Loading status…</div>
         <div class="adm-version-hero-meta" id="wpStatusMeta" hidden></div>
         <div class="adm-render-setup" id="wpStatusError" hidden></div>
       </div>
@@ -80,28 +80,34 @@
       <!-- UPLOAD NEW WALLPAPER -->
       <!-- ========================= -->
       <div class="adm-card">
-        <div class="adm-card-label">Upload New Wallpaper</div>
+        <div class="adm-card-label" data-i18n="admin.wallpaper.uploadNewWallpaper">Upload New Wallpaper</div>
 
         <div class="adm-photo-row" style="margin-top:12px;">
           <div class="adm-photo-preview" id="wpNewPreviewBox" style="width:120px; height:80px; border-radius:10px;">
-            <span id="wpNewPlaceholder">No file selected</span>
+            <span id="wpNewPlaceholder" data-i18n="admin.wallpaper.noFileSelected">No file selected</span>
             <img id="wpNewImg" alt="New wallpaper preview" hidden>
           </div>
           <div class="adm-photo-actions">
-            <button type="button" class="adm-btn" id="wpBtnSelect">Select Image…</button>
+            <button type="button" class="adm-btn" id="wpBtnSelect" data-i18n="admin.wallpaper.selectImage">Select Image…</button>
             <input type="file" id="wpFileInput" accept="image/*" hidden>
           </div>
         </div>
 
         <p class="adm-modal-message" id="wpUploadStatus" hidden></p>
 
-        <button type="button" class="adm-btn adm-btn-primary" id="wpBtnUpload" disabled>Upload &amp; Replace</button>
+        <button type="button" class="adm-btn adm-btn-primary" id="wpBtnUpload" disabled data-i18n="admin.wallpaper.uploadReplace">Upload &amp; Replace</button>
       </div>
 
     </main>
 
   </div>
 </div>
+
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/admin.js"></script>
 
 <script src="/CM_Pro/shared/logout.js"></script>
 <script src="/CM_Pro/assets/js/admin/admin-ui.js"></script>

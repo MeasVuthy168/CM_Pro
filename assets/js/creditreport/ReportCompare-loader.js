@@ -17,7 +17,7 @@ async function loadComponent(id, file) {
         }
         if (id === "topbar-container") {
             initTopbar({
-                title: "Credit Portfolio Trends",
+                titleKey: "creditreport.compare.title",
                 showBack: true,
                 showLogo: false,
                 showProfile: false,

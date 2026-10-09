@@ -36,7 +36,7 @@ async function loadComponent(id,file){
 
             initTopbar({
 
-                title:"Notifications",
+                titleKey:"nav.notification",
 
                 showBack:true,
 

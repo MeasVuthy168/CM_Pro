@@ -276,6 +276,8 @@ const togglePassword=document.getElementById("togglePassword");
 
 const rememberMe=document.getElementById("rememberMe");
 
+const t=(key)=>window.CMI18n ? CMI18n.t(key) : key;
+
 // =========================
 // REMEMBER LOGIN
 // =========================
@@ -329,13 +331,13 @@ togglePassword.addEventListener("click",()=>{
 
         passwordInput.type="text";
 
-        togglePassword.innerText="Hide";
+        togglePassword.innerText=t("login.hide");
 
     }else{
 
         passwordInput.type="password";
 
-        togglePassword.innerText="Show";
+        togglePassword.innerText=t("login.show");
 
     }
 
@@ -467,7 +469,7 @@ form.addEventListener("submit",async(e)=>{
 
     if(!username || !password){
 
-        showMessage("Please enter username/password","error");
+        showMessage(t("login.msg.missingFields"),"error");
 
         return;
 
@@ -503,13 +505,13 @@ form.addEventListener("submit",async(e)=>{
 
         if(!response.ok || !data.ok){
 
-            showMessage(data.message || "Login failed","error");
+            showMessage(data.message || t("login.msg.loginFailed"),"error");
 
             return;
 
         }
 
-        showMessage("Login successful","success");
+        showMessage(t("login.msg.success"),"success");
 
         // ===== REDIRECT =====
 
@@ -523,7 +525,7 @@ form.addEventListener("submit",async(e)=>{
 
         console.error(error);
 
-        showMessage("Cannot connect to server","error");
+        showMessage(t("login.msg.cannotConnect"),"error");
 
     }finally{
 
@@ -553,7 +555,7 @@ if(fingerprintBtn){
 
         if(!username){
 
-            showMessage("សូមវាយបញ្ចូល Username មុនសិន","error");
+            showMessage(t("login.msg.enterUsernameFirst"),"error");
             return;
 
         }
@@ -565,7 +567,7 @@ if(fingerprintBtn){
 
             const data=await webauthnLogin(username);
 
-            showMessage("Login successful","success");
+            showMessage(t("login.msg.success"),"success");
 
             setTimeout(()=>{
 
@@ -576,7 +578,7 @@ if(fingerprintBtn){
         }catch(err){
 
             console.error(err);
-            showMessage(err.message || "ការចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខបានបរាជ័យ","error");
+            showMessage(err.message || t("login.msg.fingerprintFailed"),"error");
 
         }finally{
 

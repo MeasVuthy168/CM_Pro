@@ -16,7 +16,7 @@ async function loadComponent(id, file) {
         }
         if (id === "topbar-container") {
             initTopbar({
-                title: "Daily Monitoring by Officer",
+                titleKey: "creditreport.hub.byOfficer",
                 showBack: true,
                 showLogo: false,
                 showProfile: false

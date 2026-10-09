@@ -36,7 +36,7 @@ async function loadComponent(id,file){
 
             initTopbar({
 
-                title:"ចំនួនខែចូលនិវត្តន៍",
+                titleKey:"dashboard.retirementLeft",
 
                 showBack:true,
 

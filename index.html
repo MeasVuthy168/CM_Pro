@@ -39,7 +39,7 @@
 
 <body>
 
-<div id="offlineBanner">
+<div id="offlineBanner" data-i18n="common.offline">
 ⚠️ No Internet Connection
 </div>
 
@@ -59,6 +59,10 @@
 
 <script src="/CM_Pro/shared/topbar.js"></script>
 <script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
 <script src="/CM_Pro/shared/logout.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 <script src="/CM_Pro/assets/js/toast.js"></script>
@@ -85,21 +89,21 @@
 
 <a href="./pages/customers/index.html" class="dashboard-card">
 <img src="./assets/icons/customer.PNG">
-<div class="dashboard-card-title">
+<div class="dashboard-card-title" data-i18n="dashboard.customerSearch">
 Customer Search
 </div>
 </a>
 
 <a href="./pages/arrears/index.html" class="dashboard-card">
 <img src="./assets/icons/arrears.PNG">
-<div class="dashboard-card-title">
+<div class="dashboard-card-title" data-i18n="dashboard.dailyArrears">
 Daily Arrears
 </div>
 </a>
 
 <a href="./pages/turnover/index.html" class="dashboard-card">
 <img src="./assets/icons/turnover.PNG">
-<div class="dashboard-card-title">
+<div class="dashboard-card-title" data-i18n="dashboard.averageTurnover">
 Average Turnover
 </div>
 </a>
@@ -108,21 +112,21 @@ Average Turnover
 
 <a href="./pages/spotcheck/index.html" class="dashboard-card">
 <img src="./assets/icons/spotcheck.PNG">
-<div class="dashboard-card-title">
+<div class="dashboard-card-title" data-i18n="dashboard.spotCheck">
 Spot Check
 </div>
 </a>
 
 <a href="./pages/officertask/index.html" class="dashboard-card">
 <img src="./assets/icons/officer.PNG">
-<div class="dashboard-card-title">
+<div class="dashboard-card-title" data-i18n="dashboard.officerTask">
 Officer Task
 </div>
 </a>
 
 <a href="./pages/landClassisfy/index.html" class="dashboard-card">
 <img src="./assets/icons/landClassisfy.PNG">
-<div class="dashboard-card-title">
+<div class="dashboard-card-title" data-i18n="dashboard.landClassification">
 Land Classification
 </div>
 </a>
@@ -131,21 +135,21 @@ Land Classification
 
 <a href="./pages/creditreport/index.html" class="dashboard-card">
 <img src="./assets/icons/creditreport.PNG">
-<div class="dashboard-card-title">
+<div class="dashboard-card-title" data-i18n="dashboard.creditReport">
 Credit Report
 </div>
 </a>
 
 <a href="./pages/loanCalculate/index.html" class="dashboard-card">
 <img src="./assets/icons/loan.PNG">
-<div class="dashboard-card-title">
+<div class="dashboard-card-title" data-i18n="dashboard.loanCalculator">
 Loan Calculator
 </div>
 </a>
 
 <a href="./pages/retirement/index.html" class="dashboard-card">
 <img src="./assets/icons/retirement.PNG">
-<div class="dashboard-card-title">
+<div class="dashboard-card-title" data-i18n="dashboard.retirementLeft">
 Retirement Left
 </div>
 </a>
@@ -158,8 +162,8 @@ Retirement Left
 <div id="assistantRobotSlot" class="assistant-icon"></div>
 </div>
 
-<div class="assistant-text" id="assistantText">
-សូមស្វាគមន៍ មកកាន់ប្រព័ន្ធតាមដានឥណទាន CM_Pro 🎉
+<div class="assistant-text" id="assistantText" data-i18n="common.loading">
+Loading...
 </div>
 
 <button id="assistantMicBtn" class="assistant-mic-btn" aria-label="Voice command" type="button">🎤</button>
@@ -176,16 +180,16 @@ Retirement Left
 
 <div class="voice-sheet">
 
-<div class="voice-sheet-greeting" id="voiceGreeting">Hi,</div>
+<div class="voice-sheet-greeting" id="voiceGreeting" data-i18n="voice.greetingNoName">Hi,</div>
 
-<div class="voice-sheet-status" id="voiceStatus">What can I do for you?</div>
+<div class="voice-sheet-status" id="voiceStatus" data-i18n="voice.prompt">What can I do for you?</div>
 
 <div class="voice-sheet-btn-wrap" id="voiceBtnWrap">
 <div class="voice-sheet-ring"></div>
-<button class="voice-sheet-btn" id="voiceStopBtn" type="button" aria-label="Stop listening">⏹</button>
+<button class="voice-sheet-btn" id="voiceStopBtn" type="button" aria-label="Stop listening" data-i18n-aria-label="voice.stopAria">⏹</button>
 </div>
 
-<div class="voice-sheet-hint">Try saying "Open Customer Search"</div>
+<div class="voice-sheet-hint" data-i18n="voice.hint">Try saying "Open Customer Search"</div>
 
 </div>
 
@@ -197,8 +201,8 @@ Retirement Left
 
 <div id="voiceSnackbar" class="voice-snackbar">
 <div class="voice-snackbar-icon">i</div>
-<div class="voice-snackbar-text">Voice command not found</div>
-<button id="voiceSnackbarHelp" class="voice-snackbar-help" type="button">HELP</button>
+<div class="voice-snackbar-text" data-i18n="voice.notFound">Voice command not found</div>
+<button id="voiceSnackbarHelp" class="voice-snackbar-help" type="button" data-i18n="voice.help">HELP</button>
 </div>
 
 <!-- ========================= -->

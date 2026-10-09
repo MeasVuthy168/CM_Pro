@@ -48,7 +48,7 @@ href="/CM_Pro/assets/css/global-splash.css">
 <!-- OFFLINE -->
 <!-- ========================= -->
 
-<div id="offlineBanner">
+<div id="offlineBanner" data-i18n="common.offline">
 
 ⚠️ No Internet Connection
 
@@ -73,6 +73,16 @@ href="/CM_Pro/assets/css/global-splash.css">
 
 <script src="/CM_Pro/shared/theme.js"></script>
 
+<script src="/CM_Pro/shared/language.js"></script>
+
+<script src="/CM_Pro/shared/i18n.js"></script>
+
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+
+<script src="/CM_Pro/shared/i18n/features.js"></script>
+
 <script src="/CM_Pro/shared/loading.js"></script>
 
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
@@ -95,7 +105,7 @@ href="/CM_Pro/assets/css/global-splash.css">
 
 <div class="form-group">
 
-<label for="inputKeyword">
+<label for="inputKeyword" data-i18n="customers.keywordLabel">
 
 Input Keyword
 
@@ -109,6 +119,8 @@ id="inputKeyword"
 
 placeholder="CIF, Name, Phone..."
 
+data-i18n-placeholder="customers.keywordPlaceholder"
+
 autocomplete="off"
 
 >
@@ -117,7 +129,7 @@ autocomplete="off"
 
 <div class="button-row">
 
-<button id="btnSearch">
+<button id="btnSearch" data-i18n="common.search">
 
 Search
 
@@ -127,7 +139,7 @@ Search
 
 <div class="result-row">
 
-<span class="result-label">Result</span>
+<span class="result-label" data-i18n="customers.resultLabel">Result</span>
 
 <span id="resultCount" class="result-value">0</span>
 
@@ -141,7 +153,7 @@ Search
 
 <div id="infoCard" class="info-card">
 
-<div class="info-title">
+<div class="info-title" data-i18n="customers.infoTitle">
 
 Customer Information
 
@@ -157,7 +169,7 @@ Customer Information
 
 <div class="info-row">
 
-<div class="info-label">Khmer Name</div>
+<div class="info-label" data-i18n="customers.khNameLabel">Khmer Name</div>
 
 <div id="infoKhName" class="info-value">-</div>
 
@@ -165,7 +177,7 @@ Customer Information
 
 <div class="info-row">
 
-<div class="info-label">DOB</div>
+<div class="info-label" data-i18n="customers.dobLabel">DOB</div>
 
 <div id="infoDOB" class="info-value">-</div>
 
@@ -173,7 +185,7 @@ Customer Information
 
 <div class="info-row">
 
-<div class="info-label">Legal ID</div>
+<div class="info-label" data-i18n="customers.legalIdLabel">Legal ID</div>
 
 <div id="infoLegalID" class="info-value">-</div>
 
@@ -181,7 +193,7 @@ Customer Information
 
 <div class="info-row">
 
-<div class="info-label">Telephone</div>
+<div class="info-label" data-i18n="customers.telephoneLabel">Telephone</div>
 
 <div id="infoTelephone" class="info-value">-</div>
 
@@ -189,7 +201,7 @@ Customer Information
 
 <div class="info-row">
 
-<div class="info-label">Address</div>
+<div class="info-label" data-i18n="customers.addressLabel">Address</div>
 
 <div id="infoAddress" class="info-value">-</div>
 
@@ -197,7 +209,7 @@ Customer Information
 
 <div class="info-row">
 
-<div class="info-label">Co-Borrower</div>
+<div class="info-label" data-i18n="customers.coBorrowerLabel">Co-Borrower</div>
 
 <div id="infoCoBorrower" class="info-value">-</div>
 
@@ -219,16 +231,16 @@ Customer Information
 
 <tr>
 
-<th>Source</th>
+<th data-i18n="customers.colSource">Source</th>
 <th>CIF</th>
-<th>English Name</th>
-<th>Khmer Name</th>
-<th>DOB</th>
-<th>Legal ID</th>
-<th>Balance</th>
-<th>Telephone</th>
-<th>Address</th>
-<th>Co-Borrower</th>
+<th data-i18n="customers.colEnglishName">English Name</th>
+<th data-i18n="customers.khNameLabel">Khmer Name</th>
+<th data-i18n="customers.dobLabel">DOB</th>
+<th data-i18n="customers.legalIdLabel">Legal ID</th>
+<th data-i18n="customers.colBalance">Balance</th>
+<th data-i18n="customers.telephoneLabel">Telephone</th>
+<th data-i18n="customers.addressLabel">Address</th>
+<th data-i18n="customers.coBorrowerLabel">Co-Borrower</th>
 
 </tr>
 
@@ -238,7 +250,7 @@ Customer Information
 
 <tr class="row-empty">
 
-<td colspan="10">
+<td colspan="10" data-i18n="customers.pleaseSearch">
 
 Please search
 

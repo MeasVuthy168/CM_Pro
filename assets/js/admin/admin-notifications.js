@@ -8,6 +8,7 @@
   if (!window.CMAdmin) return; // admin-loader.js already redirected away
 
   const API_BASE = (window.API && window.API.BASE_URL) || "";
+  const t = (key, vars) => (window.CMI18n ? CMI18n.t(key, vars) : key);
 
   const state = { items: [] };
 
@@ -47,16 +48,16 @@
     if (!iso) return "—";
     const d = new Date(iso);
     const diff = Math.floor((Date.now() - d.getTime()) / 1000);
-    if (diff < 60) return "Just now";
-    if (diff < 3600) return Math.floor(diff / 60) + " min ago";
-    if (diff < 86400) return Math.floor(diff / 3600) + " hr ago";
-    if (diff < 604800) return Math.floor(diff / 86400) + " day(s) ago";
+    if (diff < 60) return t("admin.common.timeJustNow");
+    if (diff < 3600) return t("admin.common.timeMinAgo", { n: Math.floor(diff / 60) });
+    if (diff < 86400) return t("admin.common.timeHrAgo", { n: Math.floor(diff / 3600) });
+    if (diff < 604800) return t("admin.common.timeDaysAgo", { n: Math.floor(diff / 86400) });
     return d.toLocaleDateString();
   }
 
   function targetLabel(n) {
-    if (n.targetType === "all") return "All Users";
-    if (n.targetType === "role") return `Role: ${n.targetValue}`;
+    if (n.targetType === "all") return t("admin.notifications.targetAllLabel");
+    if (n.targetType === "role") return t("admin.notifications.targetRoleLabel", { role: n.targetValue });
     if (n.targetType === "username") return `@${n.targetValue}`;
     return n.targetType;
   }
@@ -117,7 +118,7 @@
       renderSummary();
     } catch (e) {
       console.error("loadNotifications failed:", e);
-      AdminUI.toast("Could not load notifications.", "error");
+      AdminUI.toast(t("admin.notifications.couldNotLoad"), "error");
     }
   }
 
@@ -157,11 +158,11 @@
           </div>
         </td>
         <td><span class="adm-badge ${targetBadgeClass(n)}">${escapeHtml(targetLabel(n))}</span></td>
-        <td>${escapeHtml(n.createdBy || "system")}</td>
+        <td>${escapeHtml(n.createdBy || t("admin.notifications.systemFallback"))}</td>
         <td>
           <div class="adm-row-actions">
-            <button type="button" class="adm-icon-btn" title="View" data-action="view">👁️</button>
-            <button type="button" class="adm-icon-btn adm-icon-btn-danger" title="Delete" data-action="delete">🗑️</button>
+            <button type="button" class="adm-icon-btn" title="${t("admin.notifications.view")}" data-action="view">👁️</button>
+            <button type="button" class="adm-icon-btn adm-icon-btn-danger" title="${t("admin.notifications.delete")}" data-action="delete">🗑️</button>
           </div>
         </td>
       `;
@@ -174,13 +175,13 @@
   function viewDetail(n) {
     const body = document.createElement("div");
     const rows = [
-      ["Time", new Date(n.createdAt).toLocaleString()],
-      ["Title", n.title],
-      ["Message", n.message || "—"],
-      ["Type", n.type],
-      ["Module", n.moduleCode || "—"],
-      ["Target", targetLabel(n)],
-      ["Sent By", n.createdBy || "system"]
+      [t("admin.notifications.detailTime"), new Date(n.createdAt).toLocaleString()],
+      [t("admin.notifications.detailTitleLabel"), n.title],
+      [t("admin.notifications.detailMessage"), n.message || "—"],
+      [t("admin.notifications.detailType"), n.type],
+      [t("admin.notifications.detailModule"), n.moduleCode || "—"],
+      [t("admin.notifications.detailTarget"), targetLabel(n)],
+      [t("admin.notifications.detailSentBy"), n.createdBy || t("admin.notifications.systemFallback")]
     ];
     body.innerHTML = rows.map(([label, value]) => `
       <div class="adm-logs-detail-row">
@@ -188,14 +189,14 @@
         <span>${escapeHtml(value)}</span>
       </div>
     `).join("");
-    AdminUI.openModal({ title: "Notification Detail", bodyNode: body, wide: true });
+    AdminUI.openModal({ title: t("admin.notifications.detailTitle"), bodyNode: body, wide: true });
   }
 
   async function deleteNotification(n) {
     const ok = await AdminUI.confirm({
-      title: "Delete notification?",
-      message: `This permanently deletes "<strong>${escapeHtml(n.title)}</strong>" for everyone. This can't be undone.`,
-      confirmLabel: "Delete",
+      title: t("admin.notifications.deleteTitle"),
+      message: t("admin.notifications.deleteMessage", { title: escapeHtml(n.title) }),
+      confirmLabel: t("admin.notifications.delete"),
       danger: true
     });
     if (!ok) return;
@@ -206,13 +207,13 @@
         headers: authHeaders()
       });
       const data = await res.json();
-      if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Delete failed.", "error");
+      if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.notifications.deleteFailed"), "error");
 
       await loadNotifications();
-      AdminUI.toast("Notification deleted.", "success");
+      AdminUI.toast(t("admin.notifications.deleted"), "success");
     } catch (e) {
       console.error("delete notification failed:", e);
-      AdminUI.toast("Delete failed — could not reach the server.", "error");
+      AdminUI.toast(t("admin.notifications.deleteFailedServer"), "error");
     }
   }
 
@@ -254,7 +255,7 @@
     fTargetType.addEventListener("change", updateTargetFields);
     updateTargetFields();
 
-    AdminUI.openModal({ title: "Send Notification", bodyNode, wide: true });
+    AdminUI.openModal({ title: t("admin.notifications.sendModalTitle"), bodyNode, wide: true });
 
     bodyNode.querySelector("#nfFormCancel").addEventListener("click", () => AdminUI.closeModal());
 
@@ -268,8 +269,8 @@
         : targetType === "username" ? fUsername.value.trim()
         : "";
 
-      if (!title) return AdminUI.toast("Enter a title.", "error");
-      if (targetType !== "all" && !targetValue) return AdminUI.toast("Enter a target value.", "error");
+      if (!title) return AdminUI.toast(t("admin.notifications.enterTitle"), "error");
+      if (targetType !== "all" && !targetValue) return AdminUI.toast(t("admin.notifications.enterTargetValue"), "error");
 
       try {
         const res = await fetch(`${API_BASE}/api/admin/notifications/send`, {
@@ -278,14 +279,14 @@
           body: JSON.stringify({ title, message, targetType, targetValue })
         });
         const data = await res.json();
-        if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Send failed.", "error");
+        if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.notifications.sendFailed"), "error");
 
         AdminUI.closeModal();
         await loadNotifications();
-        AdminUI.toast("Notification sent.", "success");
+        AdminUI.toast(t("admin.notifications.sent"), "success");
       } catch (err) {
         console.error("send notification failed:", err);
-        AdminUI.toast("Could not reach the server.", "error");
+        AdminUI.toast(t("admin.notifications.couldNotReachServer"), "error");
       }
     });
   }
@@ -296,21 +297,18 @@
   function openCleanupModal() {
     const body = document.createElement("div");
     body.innerHTML = `
-      <p class="adm-modal-message">
-        Permanently deletes notifications older than the number of days below.
-        This can't be undone.
-      </p>
+      <p class="adm-modal-message">${t("admin.notifications.cleanupExplain")}</p>
       <label class="adm-cleanup-field">
-        <span>Keep notifications from the last (days)</span>
+        <span>${t("admin.notifications.keepDays")}</span>
         <input type="number" id="nfKeepDays" value="30" min="1">
       </label>
       <div class="adm-modal-footer">
-        <button type="button" class="adm-btn" id="nfCleanupCancel">Cancel</button>
-        <button type="button" class="adm-btn adm-btn-danger" id="nfCleanupConfirm">Delete Old Notifications</button>
+        <button type="button" class="adm-btn" id="nfCleanupCancel">${t("admin.notifications.cancel")}</button>
+        <button type="button" class="adm-btn adm-btn-danger" id="nfCleanupConfirm">${t("admin.notifications.deleteOldConfirm")}</button>
       </div>
     `;
 
-    const { body: mountedBody } = AdminUI.openModal({ title: "Clean Up Old Notifications", bodyNode: body });
+    const { body: mountedBody } = AdminUI.openModal({ title: t("admin.notifications.cleanupModalTitle"), bodyNode: body });
 
     mountedBody.querySelector("#nfCleanupCancel").addEventListener("click", () => AdminUI.closeModal());
     mountedBody.querySelector("#nfCleanupConfirm").addEventListener("click", async () => {
@@ -323,14 +321,14 @@
           body: JSON.stringify({ keepDays })
         });
         const data = await res.json();
-        if (!res.ok || !data.ok) return AdminUI.toast(data.message || "Cleanup failed.", "error");
+        if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.notifications.cleanupFailed"), "error");
 
         AdminUI.closeModal();
-        AdminUI.toast(`Deleted ${data.deletedNotifications} notification(s).`, "success");
+        AdminUI.toast(t("admin.notifications.cleanupDeleted", { count: data.deletedNotifications }), "success");
         loadNotifications();
       } catch (e) {
         console.error("cleanup failed:", e);
-        AdminUI.toast("Cleanup failed — could not reach the server.", "error");
+        AdminUI.toast(t("admin.notifications.cleanupFailedServer"), "error");
       }
     });
   }
@@ -340,15 +338,15 @@
   // ---------- prune dead subscriptions ----------
   async function pruneSubscriptions() {
     const ok = await AdminUI.confirm({
-      title: "Prune dead subscriptions?",
-      message: "This sends a small test push to every stored subscription right now to check which are still alive. Dead ones (404/410) are deleted immediately. Devices that are genuinely still active may briefly show a low-priority \"System Check\" notification. This can take a little while for a large list.",
-      confirmLabel: "Run Prune",
+      title: t("admin.notifications.pruneConfirmTitle"),
+      message: t("admin.notifications.pruneConfirmMessage"),
+      confirmLabel: t("admin.notifications.runPrune"),
       danger: false
     });
     if (!ok) return;
 
     el.btnPrune.disabled = true;
-    el.btnPrune.textContent = "Pruning…";
+    el.btnPrune.textContent = t("admin.notifications.pruning");
 
     try {
       const res = await fetch(`${API_BASE}/api/admin/notifications/prune-subscriptions`, {
@@ -357,20 +355,20 @@
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
-        AdminUI.toast(data.message || "Prune failed.", "error");
+        AdminUI.toast(data.message || t("admin.notifications.pruneFailed"), "error");
       } else {
         AdminUI.toast(
-          `Checked ${data.totalChecked} — ${data.alive} alive, ${data.pruned} removed, ${data.errors} transient errors.`,
+          t("admin.notifications.pruneResult", { checked: data.totalChecked, alive: data.alive, pruned: data.pruned, errors: data.errors }),
           "success"
         );
         loadPushStats();
       }
     } catch (e) {
       console.error("prune failed:", e);
-      AdminUI.toast("Prune failed — could not reach the server.", "error");
+      AdminUI.toast(t("admin.notifications.pruneFailedServer"), "error");
     } finally {
       el.btnPrune.disabled = false;
-      el.btnPrune.textContent = "📡 Prune Dead Subscriptions";
+      el.btnPrune.textContent = t("admin.notifications.pruneDeadSubs");
     }
   }
 

@@ -267,7 +267,7 @@ transform:scale(.98);
 
 <div class="vc-header-icon">🎤</div>
 
-<div class="vc-title">Voice Command</div>
+<div class="vc-title" data-i18n="settings.voice.cardTitle">Voice Command</div>
 
 </div>
 
@@ -275,9 +275,9 @@ transform:scale(.98);
 
 <div class="section">
 
-<div class="sectionTitle">What is voice command?</div>
+<div class="sectionTitle" data-i18n="settings.voice.whatIsTitle">What is voice command?</div>
 
-<div class="sectionBody">
+<div class="sectionBody" data-i18n-html="settings.voice.whatIsBody">
 Voice commands in CM_Pro are a hands-free way to move around the app.
 Tap the microphone on the Home page and speak a command, such as
 <b>"Open Daily Arrears"</b> or <b>"Switch to Dark Mode"</b>, and the
@@ -288,11 +288,11 @@ app opens that page or applies that theme for you.
 
 <div class="section">
 
-<div class="sectionTitle">What you can say</div>
+<div class="sectionTitle" data-i18n="settings.voice.whatYouCanSay">What you can say</div>
 
-<div class="subheading">I. Open a page</div>
+<div class="subheading" data-i18n="settings.voice.openPage">I. Open a page</div>
 
-<ol class="cmd-list">
+<ol class="cmd-list" data-i18n-html="settings.voice.openPageList">
 <li>Open <b>Customer Search</b></li>
 <li>Open <b>Daily Arrears</b></li>
 <li>Open <b>Average Turnover</b></li>
@@ -306,22 +306,21 @@ app opens that page or applies that theme for you.
 <li>Open <b>Home</b></li>
 </ol>
 
-<div class="subheading">II. Change the app theme</div>
+<div class="subheading" data-i18n="settings.voice.changeTheme">II. Change the app theme</div>
 
-<ol class="cmd-list">
+<ol class="cmd-list" data-i18n-html="settings.voice.themeList">
 <li>Switch to <b>Light Mode</b></li>
 <li>Switch to <b>Dark Mode</b></li>
-<li>Switch to <b>Gold Mode</b></li>
-<li>Switch to <b>Dark Gray Mode</b></li>
+<li>Switch to <b>Auto Mode</b></li>
 </ol>
 
 </div>
 
 <div class="section">
 
-<div class="sectionTitle">Conclusion</div>
+<div class="sectionTitle" data-i18n="settings.voice.conclusion">Conclusion</div>
 
-<div class="sectionBody">
+<div class="sectionBody" data-i18n="settings.voice.conclusionBody">
 Voice commands are currently limited to opening pages and switching
 themes. We're continuing to expand the range of supported commands
 and improve recognition accuracy over time.
@@ -331,7 +330,8 @@ and improve recognition accuracy over time.
 
 <button
 class="backBtn"
-onclick="history.back()">
+onclick="history.back()"
+data-i18n="settings.voice.gotIt">
 
 Ok, got it
 
@@ -340,6 +340,13 @@ Ok, got it
 </div>
 
 </div>
+
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/settings.js"></script>
 
 </body>
 

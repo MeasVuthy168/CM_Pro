@@ -26,7 +26,7 @@
 <!-- ========================= -->
 <!-- OFFLINE -->
 <!-- ========================= -->
-<div id="offlineBanner">
+<div id="offlineBanner" data-i18n="common.offline">
 ⚠️ No Internet Connection
 </div>
 
@@ -43,6 +43,11 @@
 <!-- ========================= -->
 <script src="/CM_Pro/shared/topbar.js"></script>
 <script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/features.js"></script>
 <script src="/CM_Pro/shared/loading.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 <script src="/CM_Pro/assets/js/toast.js"></script>
@@ -61,11 +66,11 @@
   <div class="sc-header">
 
     <div class="sc-header-text">
-      <h1>ការត្រួតពិនិត្យហ្វាស៊ីលីធីក្រោយពេលបញ្ចេញ</h1>
-      <p class="sc-header-sub">Facilities Spot Check</p>
+      <h1 data-i18n="spotcheck.pageTitle">ការត្រួតពិនិត្យហ្វាស៊ីលីធីក្រោយពេលបញ្ចេញ</h1>
+      <p class="sc-header-sub" data-i18n="spotcheck.pageSubtitle">Facilities Spot Check</p>
     </div>
     <button id="btnAddNew" class="sc-btn sc-btn-gold">
-      <span class="sc-icon">+</span> បញ្ចូលថ្មី
+      <span class="sc-icon">+</span> <span data-i18n="spotcheck.addNewBtn">បញ្ចូលថ្មី</span>
     </button>
   </div>
 
@@ -73,11 +78,11 @@
   <div class="sc-summary">
     <div class="sc-summary-item">
       <span class="sc-summary-value" id="statTotal">—</span>
-      <span class="sc-summary-label">សរុបទាំងអស់</span>
+      <span class="sc-summary-label" data-i18n="spotcheck.statTotalLabel">សរុបទាំងអស់</span>
     </div>
     <div class="sc-summary-item">
       <span class="sc-summary-value" id="statMonth">—</span>
-      <span class="sc-summary-label">ខែនេះ</span>
+      <span class="sc-summary-label" data-i18n="spotcheck.statMonthLabel">ខែនេះ</span>
     </div>
   </div>
 
@@ -85,10 +90,10 @@
   <div class="sc-toolbar">
     <div class="sc-search">
       <span class="sc-search-icon">⌕</span>
-      <input type="text" id="searchInput" placeholder="ស្វែងរកតាម CIF ឬ ឈ្មោះអតិថិជន...">
+      <input type="text" id="searchInput" placeholder="ស្វែងរកតាម CIF ឬ ឈ្មោះអតិថិជន..." data-i18n-placeholder="spotcheck.searchPlaceholder">
     </div>
     <select id="filterConclusion" class="sc-select-filter">
-      <option value="">សេចក្តីសន្និដ្ឋាន — ទាំងអស់</option>
+      <option value="" data-i18n="spotcheck.filterConclusionAllOption">សេចក្តីសន្និដ្ឋាន — ទាំងអស់</option>
     </select>
   </div>
 
@@ -96,12 +101,12 @@
   <div id="listContainer" class="sc-list"></div>
 
   <div id="emptyState" class="sc-empty" hidden>
-    <p>មិនទាន់មានទិន្នន័យត្រួតពិនិត្យនៅឡើយទេ</p>
-    <button class="sc-btn sc-btn-outline" id="btnEmptyAdd">បញ្ចូលដំបូង</button>
+    <p data-i18n="spotcheck.emptyStateText">មិនទាន់មានទិន្នន័យត្រួតពិនិត្យនៅឡើយទេ</p>
+    <button class="sc-btn sc-btn-outline" id="btnEmptyAdd" data-i18n="spotcheck.addFirstBtn">បញ្ចូលដំបូង</button>
   </div>
 
   <div id="noResultsState" class="sc-empty" hidden>
-    <p>រកមិនឃើញលទ្ធផលដែលត្រូវនឹងការស្វែងរក</p>
+    <p data-i18n="spotcheck.noResultsText">រកមិនឃើញលទ្ធផលដែលត្រូវនឹងការស្វែងរក</p>
   </div>
 
 </main>
@@ -114,12 +119,12 @@
 
     <div class="sc-panel-header">
       <h2 id="formPanelTitle">បញ្ចូលថ្មី</h2>
-      <button id="btnCloseForm" class="sc-icon-btn" aria-label="បិទ">✕</button>
+      <button id="btnCloseForm" class="sc-icon-btn" aria-label="បិទ" data-i18n-aria-label="common.close">✕</button>
     </div>
 
     <div class="sc-tabs">
-      <button type="button" class="sc-tab-btn active" data-tab="tab1">I. ព័ត៌មានឥណទាន</button>
-      <button type="button" class="sc-tab-btn" data-tab="tab2">II. ការត្រួតពិនិត្យផ្ទាល់</button>
+      <button type="button" class="sc-tab-btn active" data-tab="tab1" data-i18n="spotcheck.tab1Label">I. ព័ត៌មានឥណទាន</button>
+      <button type="button" class="sc-tab-btn" data-tab="tab2" data-i18n="spotcheck.tab2Label">II. ការត្រួតពិនិត្យផ្ទាល់</button>
     </div>
 
     <form id="spotCheckForm" class="sc-form">
@@ -129,60 +134,60 @@
 
         <!-- ក - ព័ត៌មានអតិថិជន -->
         <fieldset class="sc-section">
-          <legend>ក - ព័ត៌មានអតិថិជន</legend>
+          <legend data-i18n="spotcheck.legendCustomerInfo">ក - ព័ត៌មានអតិថិជន</legend>
 
           <div class="sc-field">
-            <label for="txtCIF">លេខអតិថិជន (CIF) <span class="req">*</span></label>
+            <label for="txtCIF"><span data-i18n="spotcheck.cifLabel">លេខអតិថិជន (CIF)</span> <span class="req">*</span></label>
             <input type="text" id="txtCIF" required autocomplete="off">
             <span id="cifLookupStatus" class="sc-cif-status" hidden></span>
           </div>
 
           <div class="sc-field-row">
             <div class="sc-field sc-field-sm">
-              <label for="cboCycle">វដ្តត្រួតពិនិត្យ <span class="req">*</span></label>
+              <label for="cboCycle"><span data-i18n="spotcheck.cycleLabel">វដ្តត្រួតពិនិត្យ</span> <span class="req">*</span></label>
               <input type="text" id="cboCycle" list="cycleOptions" required placeholder="1-10">
               <datalist id="cycleOptions"></datalist>
             </div>
             <div class="sc-field">
-              <label for="txtSpotCheckDate">ថ្ងៃត្រួតពិនិត្យ <span class="req">*</span></label>
+              <label for="txtSpotCheckDate"><span data-i18n="spotcheck.checkDateLabel">ថ្ងៃត្រួតពិនិត្យ</span> <span class="req">*</span></label>
               <input type="date" id="txtSpotCheckDate" required>
             </div>
           </div>
 
           <div class="sc-field-row">
             <div class="sc-field">
-              <label for="txtBranch">សាខា (Branch)</label>
+              <label for="txtBranch" data-i18n="spotcheck.branchLabel">សាខា (Branch)</label>
               <input type="text" id="txtBranch">
             </div>
             <div class="sc-field">
-              <label for="txtLoanID">លេខកិច្ចសន្យា (Loan ID)</label>
+              <label for="txtLoanID" data-i18n="spotcheck.loanIdLabel">លេខកិច្ចសន្យា (Loan ID)</label>
               <input type="text" id="txtLoanID">
             </div>
           </div>
 
           <div class="sc-field">
-            <label for="txtCustomerName">ឈ្មោះអតិថិជន</label>
+            <label for="txtCustomerName" data-i18n="spotcheck.customerNameLabel">ឈ្មោះអតិថិជន</label>
             <input type="text" id="txtCustomerName">
           </div>
 
           <div class="sc-field-row">
             <div class="sc-field">
-              <label for="txtDisbursementDate">ថ្ងៃបញ្ចេញកម្ចី</label>
+              <label for="txtDisbursementDate" data-i18n="spotcheck.disbursementDateLabel">ថ្ងៃបញ្ចេញកម្ចី</label>
               <input type="date" id="txtDisbursementDate">
             </div>
             <div class="sc-field">
-              <label for="txtMaturityDate">ថ្ងៃផុតកំណត់</label>
+              <label for="txtMaturityDate" data-i18n="spotcheck.maturityDateLabel">ថ្ងៃផុតកំណត់</label>
               <input type="date" id="txtMaturityDate">
             </div>
           </div>
 
           <div class="sc-field-row">
             <div class="sc-field">
-              <label for="txtLoanSize">ទំហំឥណទាន</label>
+              <label for="txtLoanSize" data-i18n="spotcheck.loanSizeLabel">ទំហំឥណទាន</label>
               <input type="number" step="0.01" id="txtLoanSize">
             </div>
             <div class="sc-field sc-field-sm">
-              <label for="txtCurrency">រូបិយប័ណ្ណ</label>
+              <label for="txtCurrency" data-i18n="spotcheck.currencyLabel">រូបិយប័ណ្ណ</label>
               <select id="txtCurrency">
                 <option value="">—</option>
                 <option value="USD">USD</option>
@@ -194,61 +199,61 @@
 
           <div class="sc-field-row">
             <div class="sc-field">
-              <label for="txtOutstanding">សមតុល្យ</label>
+              <label for="txtOutstanding" data-i18n="spotcheck.outstandingLabel">សមតុល្យ</label>
               <input type="number" step="0.01" id="txtOutstanding">
             </div>
             <div class="sc-field">
-              <label for="txtInterestRate">អត្រាការប្រាក់ <span class="sc-hint">ឧ. 18</span></label>
+              <label for="txtInterestRate"><span data-i18n="spotcheck.interestRateLabel">អត្រាការប្រាក់</span> <span class="sc-hint" data-i18n="spotcheck.hintExample18">ឧ. 18</span></label>
               <input type="text" id="txtInterestRate" placeholder="18">
             </div>
           </div>
 
           <div class="sc-field-row">
             <div class="sc-field">
-              <label for="txtLoanType">ប្រភេទឥណទាន</label>
+              <label for="txtLoanType" data-i18n="spotcheck.loanTypeLabel">ប្រភេទឥណទាន</label>
               <input type="text" id="txtLoanType">
             </div>
             <div class="sc-field">
-              <label for="txtTerm">រយៈពេលខ្ចី <span class="sc-hint">ឧ. 36</span></label>
+              <label for="txtTerm"><span data-i18n="spotcheck.termLabel">រយៈពេលខ្ចី</span> <span class="sc-hint" data-i18n="spotcheck.hintExample36">ឧ. 36</span></label>
               <input type="text" id="txtTerm" placeholder="36">
             </div>
           </div>
 
           <div class="sc-field">
-            <label for="txtCreditOfficer">មន្ត្រីឥណទាន</label>
+            <label for="txtCreditOfficer" data-i18n="spotcheck.creditOfficerLabel">មន្ត្រីឥណទាន</label>
             <input type="text" id="txtCreditOfficer">
           </div>
         </fieldset>
 
         <!-- ខ - ប្រវត្តិសងប្រាក់ -->
         <fieldset class="sc-section" id="cardRepaymentHistory">
-          <legend>ខ - ប្រវត្តិសងប្រាក់</legend>
+          <legend data-i18n="spotcheck.legendRepaymentHistory">ខ - ប្រវត្តិសងប្រាក់</legend>
 
           <div class="sc-field">
-            <label for="cboRepaymentHistory">ស្ថានភាព <span class="req">*</span></label>
+            <label for="cboRepaymentHistory"><span data-i18n="spotcheck.statusLabel">ស្ថានភាព</span> <span class="req">*</span></label>
             <select id="cboRepaymentHistory" required>
-              <option value="">-- ជ្រើសរើស --</option>
+              <option value="" data-i18n="spotcheck.selectOption">-- ជ្រើសរើស --</option>
             </select>
           </div>
           <div class="sc-field">
-            <label for="txtLateDays">មូលហេតុយឺតយ៉ាវ</label>
+            <label for="txtLateDays" data-i18n="spotcheck.lateReasonLabel">មូលហេតុយឺតយ៉ាវ</label>
             <input type="text" id="txtLateDays">
           </div>
         </fieldset>
 
         <!-- គ - ឯកសារឥណទាន -->
         <fieldset class="sc-section">
-          <legend>គ - ឯកសារឥណទាន</legend>
+          <legend data-i18n="spotcheck.legendLoanDocs">គ - ឯកសារឥណទាន</legend>
 
           <div class="sc-field">
-            <label for="cboLoanCompletion">ស្ថានភាព <span class="req">*</span></label>
+            <label for="cboLoanCompletion"><span data-i18n="spotcheck.statusLabel">ស្ថានភាព</span> <span class="req">*</span></label>
             <select id="cboLoanCompletion" required>
-              <option value="">-- ជ្រើសរើស --</option>
+              <option value="" data-i18n="spotcheck.selectOption">-- ជ្រើសរើស --</option>
             </select>
           </div>
 
           <div class="sc-field">
-            <label for="txtLoanCompletionNote">មូលហេតុ</label>
+            <label for="txtLoanCompletionNote" data-i18n="spotcheck.reasonLabel">មូលហេតុ</label>
             <textarea id="txtLoanCompletionNote" rows="2"></textarea>
           </div>
         </fieldset>
@@ -260,104 +265,104 @@
 
         <!-- ក - ព័ត៌មានមុខរបរ -->
         <fieldset class="sc-section">
-          <legend>ក - ព័ត៌មានមុខរបរ</legend>
+          <legend data-i18n="spotcheck.legendOccupationInfo">ក - ព័ត៌មានមុខរបរ</legend>
 
           <div class="sc-field sc-autosuggest">
-            <label for="txtOccupationInFile">មុខរបរពេលខ្ចី <span class="req">*</span></label>
+            <label for="txtOccupationInFile"><span data-i18n="spotcheck.occupationAtLoanLabel">មុខរបរពេលខ្ចី</span> <span class="req">*</span></label>
             <input type="text" id="txtOccupationInFile" required autocomplete="off">
             <ul id="lstOccupationInFileSuggest" class="sc-suggest-list" hidden></ul>
           </div>
 
           <div class="sc-field sc-autosuggest">
-            <label for="txtCurrentOccupation">មុខរបរបច្ចុប្បន្ន <span class="req">*</span></label>
+            <label for="txtCurrentOccupation"><span data-i18n="spotcheck.currentOccupationLabel">មុខរបរបច្ចុប្បន្ន</span> <span class="req">*</span></label>
             <input type="text" id="txtCurrentOccupation" required autocomplete="off">
             <ul id="lstCurrentOccupationSuggest" class="sc-suggest-list" hidden></ul>
           </div>
 
           <div class="sc-field">
-            <label for="cboBusinessSituation">ស្ថានភាពជំនួញ <span class="req">*</span></label>
+            <label for="cboBusinessSituation"><span data-i18n="spotcheck.businessSituationLabel">ស្ថានភាពជំនួញ</span> <span class="req">*</span></label>
             <select id="cboBusinessSituation" required>
-              <option value="">-- ជ្រើសរើស --</option>
+              <option value="" data-i18n="spotcheck.selectOption">-- ជ្រើសរើស --</option>
             </select>
           </div>
 
           <div class="sc-field">
-            <label for="txtOccupationDifferenceNote">បញ្ជាក់បន្ថែម</label>
+            <label for="txtOccupationDifferenceNote" data-i18n="spotcheck.additionalNoteLabel">បញ្ជាក់បន្ថែម</label>
             <textarea id="txtOccupationDifferenceNote" rows="2"></textarea>
           </div>
         </fieldset>
 
         <!-- ខ - ព័ត៌មានទ្រព្យធានា -->
         <fieldset class="sc-section">
-          <legend>ខ - ព័ត៌មានទ្រព្យដាក់ធានាឥណទាន</legend>
+          <legend data-i18n="spotcheck.legendCollateralInfo">ខ - ព័ត៌មានទ្រព្យដាក់ធានាឥណទាន</legend>
 
           <div class="sc-field">
-            <label for="cboCollateralType">ប្រភេទទ្រព្យ <span class="req">*</span></label>
+            <label for="cboCollateralType"><span data-i18n="spotcheck.collateralTypeLabel">ប្រភេទទ្រព្យ</span> <span class="req">*</span></label>
             <select id="cboCollateralType" required>
-              <option value="">-- ជ្រើសរើស --</option>
+              <option value="" data-i18n="spotcheck.selectOption">-- ជ្រើសរើស --</option>
             </select>
           </div>
 
           <div class="sc-field">
-            <label for="cboCollateralChange">ទ្រព្យធានា <span class="req">*</span></label>
+            <label for="cboCollateralChange"><span data-i18n="spotcheck.collateralChangeLabel">ទ្រព្យធានា</span> <span class="req">*</span></label>
             <select id="cboCollateralChange" required>
-              <option value="">-- ជ្រើសរើស --</option>
+              <option value="" data-i18n="spotcheck.selectOption">-- ជ្រើសរើស --</option>
             </select>
           </div>
 
           <div class="sc-field">
-            <label for="cboCollateralPrice">តម្លៃទ្រព្យ <span class="req">*</span></label>
+            <label for="cboCollateralPrice"><span data-i18n="spotcheck.collateralPriceLabel">តម្លៃទ្រព្យ</span> <span class="req">*</span></label>
             <select id="cboCollateralPrice" required>
-              <option value="">-- ជ្រើសរើស --</option>
+              <option value="" data-i18n="spotcheck.selectOption">-- ជ្រើសរើស --</option>
             </select>
           </div>
 
           <div class="sc-field">
-            <label for="txtCollateralNote">បញ្ជាក់បន្ថែម</label>
+            <label for="txtCollateralNote" data-i18n="spotcheck.additionalNoteLabel">បញ្ជាក់បន្ថែម</label>
             <textarea id="txtCollateralNote" rows="2"></textarea>
           </div>
         </fieldset>
 
         <!-- គ - សញ្ញាណហានិភ័យ -->
         <fieldset class="sc-section">
-          <legend>គ - សញ្ញាណហានិភ័យ</legend>
+          <legend data-i18n="spotcheck.legendRiskIndicator">គ - សញ្ញាណហានិភ័យ</legend>
 
           <div class="sc-field">
-            <label for="cboPurpose">បំណងប្រើប្រាស់ <span class="req">*</span></label>
+            <label for="cboPurpose"><span data-i18n="spotcheck.purposeLabel">បំណងប្រើប្រាស់</span> <span class="req">*</span></label>
             <select id="cboPurpose" required>
-              <option value="">-- ជ្រើសរើស --</option>
+              <option value="" data-i18n="spotcheck.selectOption">-- ជ្រើសរើស --</option>
             </select>
           </div>
           <div class="sc-field">
-            <label for="txtPurposeNote">បញ្ជាក់បន្ថែម</label>
+            <label for="txtPurposeNote" data-i18n="spotcheck.additionalNoteLabel">បញ្ជាក់បន្ថែម</label>
             <textarea id="txtPurposeNote" rows="2"></textarea>
           </div>
 
           <div class="sc-field">
-            <label for="cboRepaymentSource">ប្រភពសំណង <span class="req">*</span></label>
+            <label for="cboRepaymentSource"><span data-i18n="spotcheck.repaymentSourceLabel">ប្រភពសំណង</span> <span class="req">*</span></label>
             <select id="cboRepaymentSource" required>
-              <option value="">-- ជ្រើសរើស --</option>
+              <option value="" data-i18n="spotcheck.selectOption">-- ជ្រើសរើស --</option>
             </select>
           </div>
           <div class="sc-field">
-            <label for="txtRepaymentSourceNote">បញ្ជាក់បន្ថែម</label>
+            <label for="txtRepaymentSourceNote" data-i18n="spotcheck.additionalNoteLabel">បញ្ជាក់បន្ថែម</label>
             <textarea id="txtRepaymentSourceNote" rows="2"></textarea>
           </div>
         </fieldset>
 
         <!-- យ - សន្និដ្ឋាន -->
         <fieldset class="sc-section">
-          <legend>យ - សន្និដ្ឋាន</legend>
+          <legend data-i18n="spotcheck.legendConclusion">យ - សន្និដ្ឋាន</legend>
 
           <div class="sc-field">
-            <label for="cboConclusion">សន្និដ្ឋាន <span class="req">*</span></label>
+            <label for="cboConclusion"><span data-i18n="spotcheck.conclusionLabel">សន្និដ្ឋាន</span> <span class="req">*</span></label>
             <select id="cboConclusion" required>
-              <option value="">-- ជ្រើសរើស --</option>
+              <option value="" data-i18n="spotcheck.selectOption">-- ជ្រើសរើស --</option>
             </select>
           </div>
 
           <div class="sc-field" id="conclusionOtherWrap" hidden>
-            <label for="txtConclusionOther">សរសេរផ្ទាល់</label>
+            <label for="txtConclusionOther" data-i18n="spotcheck.writeOwnLabel">សរសេរផ្ទាល់</label>
             <textarea id="txtConclusionOther" rows="3"></textarea>
           </div>
         </fieldset>
@@ -372,8 +377,8 @@
     </form>
 
     <div class="sc-panel-footer">
-      <button type="button" id="btnCancelForm" class="sc-btn sc-btn-outline">បោះបង់</button>
-      <button type="submit" form="spotCheckForm" id="btnSaveForm" class="sc-btn sc-btn-navy">រក្សាទុក</button>
+      <button type="button" id="btnCancelForm" class="sc-btn sc-btn-outline" data-i18n="common.cancel">បោះបង់</button>
+      <button type="submit" form="spotCheckForm" id="btnSaveForm" class="sc-btn sc-btn-navy" data-i18n="common.save">រក្សាទុក</button>
     </div>
   </div>
 </div>
@@ -381,12 +386,12 @@
 <!-- ============ DELETE CONFIRM MODAL ============ -->
 <div id="deleteOverlay" class="sc-overlay sc-overlay-center" hidden>
   <div class="sc-confirm" role="alertdialog" aria-modal="true">
-    <h3>លុបទិន្នន័យនេះ?</h3>
+    <h3 data-i18n="spotcheck.deleteConfirmTitle">លុបទិន្នន័យនេះ?</h3>
     <p>CIF: <strong id="deleteCifLabel"></strong></p>
-    <p class="sc-confirm-warn">សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។</p>
+    <p class="sc-confirm-warn" data-i18n="spotcheck.deleteWarning">សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។</p>
     <div class="sc-confirm-actions">
-      <button id="btnCancelDelete" class="sc-btn sc-btn-outline">បោះបង់</button>
-      <button id="btnConfirmDelete" class="sc-btn sc-btn-danger">លុប</button>
+      <button id="btnCancelDelete" class="sc-btn sc-btn-outline" data-i18n="common.cancel">បោះបង់</button>
+      <button id="btnConfirmDelete" class="sc-btn sc-btn-danger" data-i18n="common.delete">លុប</button>
     </div>
   </div>
 </div>

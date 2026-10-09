@@ -40,7 +40,7 @@ href="../../assets/css/creditreport/RepDetailbyProduct.css">
 
 <body>
 
-<div id="offlineBanner">
+<div id="offlineBanner" data-i18n="common.offline">
 ⚠️ No Internet Connection
 </div>
 
@@ -51,6 +51,11 @@ href="../../assets/css/creditreport/RepDetailbyProduct.css">
 
 <script src="/CM_Pro/shared/topbar.js"></script>
 <script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/creditreport.js"></script>
 <script src="/CM_Pro/shared/loading.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 <script src="/CM_Pro/assets/js/toast.js"></script>
@@ -59,7 +64,7 @@ href="../../assets/css/creditreport/RepDetailbyProduct.css">
 
 <div class="page-container">
 
-<div class="print-only-title">របាយការណ៍ត្រួតពិនិត្យប្រចាំថ្ងៃតាមផលិតផល</div>
+<div class="print-only-title" data-i18n="creditreport.byProduct.printTitle">របាយការណ៍ត្រួតពិនិត្យប្រចាំថ្ងៃតាមផលិតផល</div>
 
 <!-- ========================= -->
 <!-- REPORT INFO + FILTERS -->
@@ -70,32 +75,32 @@ href="../../assets/css/creditreport/RepDetailbyProduct.css">
 <div class="cr-info-block">
 
 <div class="cr-info-row">
-<span class="cr-info-label"><span class="cr-info-icon">💵</span>Loan Disbursement from</span>
+<span class="cr-info-label"><span class="cr-info-icon">💵</span><span data-i18n="creditreport.detail.loanDisbFrom">Loan Disbursement from</span></span>
 <span class="cr-info-value" id="crDisbPeriod">-</span>
 </div>
 
 <div class="cr-info-row">
-<span class="cr-info-label"><span class="cr-info-icon">✂️</span>Write Off from</span>
+<span class="cr-info-label"><span class="cr-info-icon">✂️</span><span data-i18n="creditreport.detail.writeOffFrom">Write Off from</span></span>
 <span class="cr-info-value" id="crWoPeriod">-</span>
 </div>
 
 <div class="cr-info-row">
-<span class="cr-info-label"><span class="cr-info-icon">📊</span>NBC Loan Outstanding Grid Merge</span>
+<span class="cr-info-label"><span class="cr-info-icon">📊</span><span data-i18n="creditreport.detail.osGridMerge">NBC Loan Outstanding Grid Merge</span></span>
 <span class="cr-info-value" id="crOsGridMerge">-</span>
 </div>
 
 <div class="cr-info-row">
-<span class="cr-info-label"><span class="cr-info-icon">⚠️</span>NBC Overdue Loan Grid Merge</span>
+<span class="cr-info-label"><span class="cr-info-icon">⚠️</span><span data-i18n="creditreport.detail.overdueGridMerge">NBC Overdue Loan Grid Merge</span></span>
 <span class="cr-info-value" id="crOverdueGridMerge">-</span>
 </div>
 
 <div class="cr-info-row">
-<span class="cr-info-label"><span class="cr-info-icon">⏱️</span>Payment in Arears with Penalty</span>
+<span class="cr-info-label"><span class="cr-info-icon">⏱️</span><span data-i18n="creditreport.detail.arrearsPenalty">Payment in Arears with Penalty</span></span>
 <span class="cr-info-value" id="crArrearsPenalty">-</span>
 </div>
 
 <div class="cr-info-row">
-<span class="cr-info-label"><span class="cr-info-icon">📦</span>Products</span>
+<span class="cr-info-label"><span class="cr-info-icon">📦</span><span data-i18n="creditreport.byProduct.productsCount">Products</span></span>
 <span class="cr-info-value" id="crProductCount">-</span>
 </div>
 
@@ -107,18 +112,18 @@ href="../../assets/css/creditreport/RepDetailbyProduct.css">
 <div class="cr-view-controls">
 
 <div class="cr-mode-row">
-<button type="button" id="crModeCurrentBtn" class="cr-mode-btn active">Current</button>
-<button type="button" id="crModeHistoryBtn" class="cr-mode-btn">Daily History</button>
+<button type="button" id="crModeCurrentBtn" class="cr-mode-btn active" data-i18n="creditreport.detail.current">Current</button>
+<button type="button" id="crModeHistoryBtn" class="cr-mode-btn" data-i18n="creditreport.detail.dailyHistory">Daily History</button>
 </div>
 
 <div class="cr-date-panel" id="crHistoryPanel" style="display:none">
 <div class="filter-grid">
 <div class="filter-group">
-<label for="crHistFromDate">From</label>
+<label for="crHistFromDate" data-i18n="creditreport.detail.from">From</label>
 <input type="date" id="crHistFromDate">
 </div>
 <div class="filter-group">
-<label for="crHistToDate">To</label>
+<label for="crHistToDate" data-i18n="creditreport.detail.to">To</label>
 <input type="date" id="crHistToDate">
 </div>
 </div>
@@ -130,75 +135,75 @@ href="../../assets/css/creditreport/RepDetailbyProduct.css">
      render datalist suggestions). Same data already on each row, no
      refetch. -->
 <div class="cr-select-row" id="crHistProductRow" style="display:none;">
-<label for="crHistProductSearch" class="cr-select-label">Product</label>
+<label for="crHistProductSearch" class="cr-select-label" data-i18n="creditreport.compare.dimProduct">Product</label>
 <div class="cr-hist-search-wrap">
-<input type="text" id="crHistProductSearch" class="cr-select" placeholder="Search product..." autocomplete="off">
-<button type="button" class="cr-hist-search-clear" id="crHistProductClear" aria-label="Clear product search" hidden>✕</button>
+<input type="text" id="crHistProductSearch" class="cr-select" placeholder="Search product..." autocomplete="off" data-i18n-placeholder="creditreport.byProduct.searchPlaceholder">
+<button type="button" class="cr-hist-search-clear" id="crHistProductClear" aria-label="Clear product search" hidden data-i18n-aria-label="creditreport.byProduct.clearProductSearch">✕</button>
 </div>
 </div>
 
 <div class="cr-select-row">
-<label for="crSection" class="cr-select-label">Showing</label>
+<label for="crSection" class="cr-select-label" data-i18n="creditreport.detail.showing">Showing</label>
 <select id="crSection" class="cr-select">
-<option value="all">All Sections</option>
-<option value="outstanding">Loan Outstanding — សមតុល្យឥណទាន</option>
-<option value="disburse">Loan Disburse</option>
-<option value="parT24">Balance Loan at Risk (T24)</option>
-<option value="nbcOverdue">Balance Loan at Risk (NBC Overdue)</option>
-<option value="writeOff">Write Off</option>
+<option value="all" data-i18n="creditreport.detail.allSections">All Sections</option>
+<option value="outstanding" data-i18n="creditreport.detail.sectionOutstanding">Loan Outstanding — សមតុល្យឥណទាន</option>
+<option value="disburse" data-i18n="creditreport.detail.sectionDisburse">Loan Disburse</option>
+<option value="parT24" data-i18n="creditreport.detail.sectionT24">Balance Loan at Risk (T24)</option>
+<option value="nbcOverdue" data-i18n="creditreport.detail.sectionNbcOverdue">Balance Loan at Risk (NBC Overdue)</option>
+<option value="writeOff" data-i18n="creditreport.detail.sectionWriteOff">Write Off</option>
 </select>
 </div>
 
 <div class="cr-select-row" id="crClassRow" style="display:none;">
-<label for="crClass" class="cr-select-label">Loan Class</label>
+<label for="crClass" class="cr-select-label" data-i18n="creditreport.detail.loanClass">Loan Class</label>
 <select id="crClass" class="cr-select">
-<option value="total">Total T24 Overdue</option>
-<option value="Normal_to_SpecialMention">Normal → Special Mention</option>
-<option value="SubStandard_to_Loss">Sub Standard → Loss</option>
-<option value="Normal">Normal</option>
-<option value="Special Mention">Special Mention</option>
-<option value="Sub Standard">Sub Standard</option>
-<option value="Doubtful">Doubtful</option>
-<option value="Loss">Loss</option>
+<option value="total" data-i18n="creditreport.detail.classTotalT24">Total T24 Overdue</option>
+<option value="Normal_to_SpecialMention" data-i18n="creditreport.detail.classNormalToSpecial">Normal → Special Mention</option>
+<option value="SubStandard_to_Loss" data-i18n="creditreport.detail.classSubToLoss">Sub Standard → Loss</option>
+<option value="Normal" data-i18n="creditreport.detail.classNormal">Normal</option>
+<option value="Special Mention" data-i18n="creditreport.detail.classSpecialMention">Special Mention</option>
+<option value="Sub Standard" data-i18n="creditreport.detail.classSubStandard">Sub Standard</option>
+<option value="Doubtful" data-i18n="creditreport.detail.classDoubtful">Doubtful</option>
+<option value="Loss" data-i18n="creditreport.detail.classLoss">Loss</option>
 </select>
 </div>
 
 <div class="cr-select-row" id="crProductRow" style="display:none;">
-<label for="crProduct" class="cr-select-label">Product Type</label>
+<label for="crProduct" class="cr-select-label" data-i18n="creditreport.detail.productType">Product Type</label>
 <select id="crProduct" class="cr-select">
-<option value="">All</option>
-<option value="Digital Products">Digital Products</option>
-<option value="Non-Digital Products">Non-Digital Products</option>
+<option value="" data-i18n="creditreport.detail.all">All</option>
+<option value="Digital Products" data-i18n="creditreport.detail.digitalProducts">Digital Products</option>
+<option value="Non-Digital Products" data-i18n="creditreport.detail.nonDigitalProducts">Non-Digital Products</option>
 </select>
 </div>
 
 <div class="cr-select-row" id="crNbcClassRow" style="display:none;">
-<label for="crNbcClass" class="cr-select-label">Loan Class</label>
+<label for="crNbcClass" class="cr-select-label" data-i18n="creditreport.detail.loanClass">Loan Class</label>
 <select id="crNbcClass" class="cr-select">
-<option value="">All</option>
-<option value="minor">Minor Default</option>
-<option value="specialMention">Special Mention</option>
-<option value="subStandard">Sub-Standard</option>
-<option value="doubtful">Doubtful</option>
-<option value="loss">Loss</option>
-<option value="majorDefault">Major Default</option>
-<option value="nonPerformingLoan">Non Performing Loan</option>
-<option value="total">Total NBC Overdue</option>
+<option value="" data-i18n="creditreport.detail.all">All</option>
+<option value="minor" data-i18n="creditreport.detail.classMinorDefault">Minor Default</option>
+<option value="specialMention" data-i18n="creditreport.detail.classSpecialMention">Special Mention</option>
+<option value="subStandard" data-i18n="creditreport.detail.classSubStandardHyphen">Sub-Standard</option>
+<option value="doubtful" data-i18n="creditreport.detail.classDoubtful">Doubtful</option>
+<option value="loss" data-i18n="creditreport.detail.classLoss">Loss</option>
+<option value="majorDefault" data-i18n="creditreport.detail.classMajorDefault">Major Default</option>
+<option value="nonPerformingLoan" data-i18n="creditreport.detail.classNonPerformingLoan">Non Performing Loan</option>
+<option value="total" data-i18n="creditreport.detail.classTotalNbcOverdue">Total NBC Overdue</option>
 </select>
 </div>
 
 <div class="cr-select-row" id="crNbcProductRow" style="display:none;">
-<label for="crNbcProduct" class="cr-select-label">Product Type</label>
+<label for="crNbcProduct" class="cr-select-label" data-i18n="creditreport.detail.productType">Product Type</label>
 <select id="crNbcProduct" class="cr-select">
-<option value="">All</option>
-<option value="Digital Products">Digital Products</option>
-<option value="Non-Digital Products">Non-Digital Products</option>
+<option value="" data-i18n="creditreport.detail.all">All</option>
+<option value="Digital Products" data-i18n="creditreport.detail.digitalProducts">Digital Products</option>
+<option value="Non-Digital Products" data-i18n="creditreport.detail.nonDigitalProducts">Non-Digital Products</option>
 </select>
 </div>
 
-<button id="btnCrHistRun" class="cr-run-btn" disabled style="display:none">View History</button>
+<button id="btnCrHistRun" class="cr-run-btn" disabled style="display:none" data-i18n="creditreport.detail.viewHistory">View History</button>
 
-<button type="button" id="btnCrHistChart" class="cr-run-btn cr-chart-btn" style="display:none">📊 Chart</button>
+<button type="button" id="btnCrHistChart" class="cr-run-btn cr-chart-btn" style="display:none">📊 <span data-i18n="creditreport.detail.chart">Chart</span></button>
 
 </div>
 
@@ -208,17 +213,17 @@ href="../../assets/css/creditreport/RepDetailbyProduct.css">
 <!-- MENU (relocated into topbar by the loader) -->
 <!-- ========================= -->
 <div id="crMenuWrap" class="arrears-menu-wrap">
-<button id="btnCrMenu" class="arrears-menu-toggle" aria-label="More actions">⋮</button>
+<button id="btnCrMenu" class="arrears-menu-toggle" aria-label="More actions" data-i18n-aria-label="creditreport.menu.moreActions">⋮</button>
 <div id="crMenuDropdown" class="arrears-menu-dropdown">
 <!-- Admin only — shown via JS (crIsAdmin), per explicit request
      2026-10-08, mirroring the Credit Report hub's own "Snapshot All"
      and Credit Portfolio Trends' own "📸 Snapshot" menu item. -->
-<button id="btnCrSnapshot" style="display:none"><span class="menu-icon" aria-hidden="true">📸</span><span>Snapshot</span></button>
-<button id="btnCrExport"><img src="/CM_Pro/assets/icons/arrear/export_excel.png" alt="" class="menu-icon"><span>Export Excel</span></button>
-<button id="btnCrExportPdf"><img src="/CM_Pro/assets/icons/arrear/export_pdf.png" alt="" class="menu-icon"><span>Export PDF</span></button>
-<button id="btnCrPrint"><img src="/CM_Pro/assets/icons/arrear/print.png" alt="" class="menu-icon"><span>Print</span></button>
-<button id="btnCrLandscape"><img src="/CM_Pro/assets/icons/arrear/landscape.png" alt="" class="menu-icon"><span>Landscape</span></button>
-<button id="btnCrRefreshData"><img src="/CM_Pro/assets/icons/arrear/refresh.png" alt="" class="menu-icon"><span>Refresh Data</span></button>
+<button id="btnCrSnapshot" style="display:none"><span class="menu-icon" aria-hidden="true">📸</span><span data-i18n="creditreport.menu.snapshot">Snapshot</span></button>
+<button id="btnCrExport"><img src="/CM_Pro/assets/icons/arrear/export_excel.png" alt="" class="menu-icon"><span data-i18n="creditreport.menu.exportExcel">Export Excel</span></button>
+<button id="btnCrExportPdf"><img src="/CM_Pro/assets/icons/arrear/export_pdf.png" alt="" class="menu-icon"><span data-i18n="creditreport.menu.exportPdf">Export PDF</span></button>
+<button id="btnCrPrint"><img src="/CM_Pro/assets/icons/arrear/print.png" alt="" class="menu-icon"><span data-i18n="creditreport.menu.print">Print</span></button>
+<button id="btnCrLandscape"><img src="/CM_Pro/assets/icons/arrear/landscape.png" alt="" class="menu-icon"><span data-i18n="creditreport.menu.landscape">Landscape</span></button>
+<button id="btnCrRefreshData"><img src="/CM_Pro/assets/icons/arrear/refresh.png" alt="" class="menu-icon"><span data-i18n="creditreport.menu.refreshData">Refresh Data</span></button>
 </div>
 </div>
 
@@ -229,12 +234,12 @@ href="../../assets/css/creditreport/RepDetailbyProduct.css">
 <div class="table-card">
 
 <div id="landscapeTopBar" class="landscape-bar landscape-top-bar">
-<button id="btnCrExitLandscape" aria-label="Exit landscape">✕ ត្រឡប់ក្រោយ</button>
+<button id="btnCrExitLandscape" aria-label="Exit landscape" data-i18n="creditreport.menu.exitLandscape" data-i18n-aria-label="creditreport.detail.exitLandscapeAria">✕ ត្រឡប់ក្រោយ</button>
 <span id="crLandscapeRowCount" class="landscape-row-count"></span>
 </div>
 
 <div id="landscapeBottomBar" class="landscape-bar landscape-bottom-bar">
-<span class="landscape-hint">ចុចអេក្រង់ដើម្បីបង្ហាញ/លាក់ម៉ឺនុយ</span>
+<span class="landscape-hint" data-i18n="creditreport.menu.landscapeHint">ចុចអេក្រង់ដើម្បីបង្ហាញ/លាក់ម៉ឺនុយ</span>
 </div>
 
 <div id="crSkeleton" class="cr-skeleton">
@@ -255,8 +260,9 @@ type="text"
 class="cr-search-input"
 id="crSearchInput"
 placeholder="Search product..."
-autocomplete="off">
-<button type="button" class="cr-search-clear" id="crSearchClear" aria-label="Clear search" hidden>✕</button>
+autocomplete="off"
+data-i18n-placeholder="creditreport.byProduct.searchPlaceholder">
+<button type="button" class="cr-search-clear" id="crSearchClear" aria-label="Clear search" hidden data-i18n-aria-label="creditreport.detail.clearSearchAria">✕</button>
 </div>
 
 <div class="table-scroll" id="crTableScroll" style="display:none">
@@ -282,7 +288,7 @@ autocomplete="off">
 <div class="cr-chart-panel">
 <div class="cr-chart-header">
 <h3 class="cr-chart-title" id="crChartTitle">Chart</h3>
-<button type="button" id="btnCrChartClose" class="cr-chart-close" aria-label="Close chart">✕</button>
+<button type="button" id="btnCrChartClose" class="cr-chart-close" aria-label="Close chart" data-i18n-aria-label="creditreport.detail.closeChartAria">✕</button>
 </div>
 <div class="cr-chart-metric-row" id="crChartMetricRow"></div>
 <div class="cr-chart-canvas-wrap">

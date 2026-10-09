@@ -36,7 +36,7 @@ async function loadComponent(id,file){
 
             initTopbar({
 
-                title:"Setting",
+                titleKey:"nav.setting",
 
                 showBack:true,
 
@@ -391,6 +391,11 @@ function initAccordionPicker(toggleId,chevronId,optionsId,list,get,set,withFlag)
 
     if(!toggleRow || !chevron || !optionsBox || !list) return;
 
+    function labelFor(item){
+        if(item.labelKey && window.CMI18n) return CMI18n.t(item.labelKey);
+        return item.label;
+    }
+
     function render(){
 
         const current=get();
@@ -401,7 +406,7 @@ function initAccordionPicker(toggleId,chevronId,optionsId,list,get,set,withFlag)
                     <span class="acc-option-radio-dot"></span>
                 </span>
                 ${withFlag ? `<span class="acc-option-flag">${item.flag}</span>` : ""}
-                <span class="acc-option-label">${item.label}</span>
+                <span class="acc-option-label">${labelFor(item)}</span>
             </div>
         `).join("");
 
@@ -418,6 +423,11 @@ function initAccordionPicker(toggleId,chevronId,optionsId,list,get,set,withFlag)
         const isOpen=optionsBox.classList.toggle("open");
         chevron.classList.toggle("open",isOpen);
     });
+
+    // Theme's own labels (Auto/Light/Dark) are translated too — unlike
+    // plain data-i18n DOM text, this JS-generated markup needs its own
+    // re-render when the language changes.
+    window.addEventListener("cm-language-changed", render);
 
     render();
 

@@ -44,7 +44,7 @@ href="../../assets/css/creditreport/BranchProductivity.css">
 
 <body>
 
-<div id="offlineBanner">
+<div id="offlineBanner" data-i18n="common.offline">
 ⚠️ No Internet Connection
 </div>
 
@@ -55,6 +55,11 @@ href="../../assets/css/creditreport/BranchProductivity.css">
 
 <script src="/CM_Pro/shared/topbar.js"></script>
 <script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/creditreport.js"></script>
 <script src="/CM_Pro/shared/loading.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 <script src="/CM_Pro/assets/js/toast.js"></script>
@@ -106,7 +111,7 @@ href="../../assets/css/creditreport/BranchProductivity.css">
 <!-- ========================= -->
 
 <div class="op-chart-fs-overlay" id="ppChartFsOverlay" hidden>
-<button type="button" class="op-chart-fs-close" id="ppChartFsClose" aria-label="Close fullscreen">✕</button>
+<button type="button" class="op-chart-fs-close" id="ppChartFsClose" aria-label="Close fullscreen" data-i18n-aria-label="creditreport.productivity.closeFullscreenAria">✕</button>
 <div class="op-chart-fs-body-wrap" id="ppChartFsBody"></div>
 </div>
 
