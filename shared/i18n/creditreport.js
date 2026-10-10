@@ -176,10 +176,10 @@ CMI18n.register({
 
   "creditreport.detail.loanClass": { km: "ចំណាត់ថ្នាក់ឥណទាន", en: "Loan Class" },
   "creditreport.detail.classTotalT24": { km: "សរុប​ឥណទានយឺតយ៉ាវ", en: "Total T24 Overdue" },
-  "creditreport.detail.classNormalToSpecial": { km: "ធម្មតា→ឃ្លាំមេីល", en: "Normal → Special Mention" },
+  "creditreport.detail.classNormalToSpecial": { km: "ធម្មតា→ឃ្លាំមើល", en: "Normal → Special Mention" },
   "creditreport.detail.classSubToLoss": { km: "ក្រោមស្តង់ដារ→បាត់បង់", en: "Sub Standard → Loss" },
   "creditreport.detail.classNormal": { km: "ធម្មតា", en: "Normal" },
-  "creditreport.detail.classSpecialMention": { km: "ឃ្លាំមេីល", en: "Special Mention" },
+  "creditreport.detail.classSpecialMention": { km: "ឃ្លាំមើល", en: "Special Mention" },
   "creditreport.detail.classSubStandard": { km: "ក្រោមស្តង់ដារ", en: "Sub Standard" },
   "creditreport.detail.classSubStandardHyphen": { km: "ក្រោមស្តង់ដារ", en: "Sub-Standard" },
   "creditreport.detail.classDoubtful": { km: "សង្ស័យ", en: "Doubtful" },
