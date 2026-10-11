@@ -153,7 +153,7 @@ CMI18n.register({
   // section/class/product selects, search, landscape, chart.
   // ==================================================================
   "creditreport.detail.loanDisbFrom": { km: "ការបញ្ចេញឥណទានចាប់ពី", en: "Loan Disbursement from" },
-  "creditreport.detail.writeOffFrom": { km: "ឥណទាន​លុបចេញពីបញ្ជីចាប់", en: "Write Off from" },
+  "creditreport.detail.writeOffFrom": { km: "ឥណទាន​លុបចេញពីបញ្ជីចាប់ពី", en: "Write Off from" },
   "creditreport.detail.osGridMerge": { km: "សមតុល្យ​ឥណទាន​បញ្ចូលគ្នា NBC", en: "NBC Loan Outstanding Grid Merge" },
   "creditreport.detail.overdueGridMerge": { km: "ឥណទានយឺតយ៉ាវបញ្ចូលគ្នា ​NBC", en: "NBC Overdue Loan Grid Merge" },
   "creditreport.detail.arrearsPenalty": { km: "ឥណទានយឺតយ៉ាវមានប្រាក់ពិន័យ​ T24", en: "Payment in Arears with Penalty" },
