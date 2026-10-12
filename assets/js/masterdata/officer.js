@@ -108,8 +108,10 @@ function mdRenderList() {
         <div class="md-row-card" data-id="${mdEscapeHtml(o.officerId)}">
             <div class="md-row-top">
                 <div>
-                    <div class="md-row-name">${mdEscapeHtml(o.name) || "-"}${o.nameKh ? ` (${mdEscapeHtml(o.nameKh)})` : ""}</div>
-                    <div class="md-row-id">${t("masterdata.officer.colId")}: ${mdEscapeHtml(o.officerId) || "-"}${o.phone ? ` &middot; ${mdEscapeHtml(o.phone)}` : ""}</div>
+                    <div class="md-row-name">${mdEscapeHtml(o.name) || "-"}</div>
+                    <div class="md-row-id">${t("masterdata.officer.colId")}: ${mdEscapeHtml(o.officerId) || "-"}</div>
+                    <div class="md-row-id">${t("masterdata.officer.colNameKh")}: ${mdEscapeHtml(o.nameKh) || "-"}</div>
+                    <div class="md-row-id">${t("masterdata.officer.colPhone")}: ${mdEscapeHtml(o.phone) || "-"}</div>
                 </div>
                 ${mdIsAdmin ? `
                 <div class="md-row-actions">
