@@ -23,6 +23,8 @@ CMI18n.register({
   // ==================================================================
   "masterdata.officer.title": { km: "បញ្ជីមន្ត្រីឥណទាន", en: "List Officer" },
   "masterdata.officer.searchPlaceholder": { km: "ស្វែងរកតាមលេខសម្គាល់ ឬឈ្មោះ...", en: "Search by ID or name..." },
+  "masterdata.officer.clearSearch": { km: "សម្អាតការស្វែងរក", en: "Clear search" },
+  "masterdata.officer.clearFilter": { km: "សម្អាតតម្រង", en: "Clear Filter" },
   "masterdata.officer.filterTeam": { km: "ក្រុម", en: "Team" },
   "masterdata.officer.filterBranch": { km: "សាខា", en: "Branch" },
   "masterdata.officer.allTeams": { km: "គ្រប់ក្រុមទាំងអស់", en: "All Teams" },
