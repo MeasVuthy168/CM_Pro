@@ -18,7 +18,7 @@ CMI18n.register({
   "dashboard.dailyArrears": { km: "ការយឺតយ៉ាវប្រចាំថ្ងៃ", en: "Daily Arrears" },
   "dashboard.averageTurnover": { km: "ការបង្វិលជុំមធ្យម", en: "Average Turnover" },
   "dashboard.spotCheck": { km: "ត្រួតពិនិត្យភ្លាមៗ", en: "Spot Check" },
-  "dashboard.officerTask": { km: "កិច្ចការមន្ត្រី", en: "Officer Task" },
+  "dashboard.masterData": { km: "ទិន្នន័យមូលដ្ឋាន", en: "Master Data" },
   "dashboard.landClassification": { km: "ចំណាត់ថ្នាក់ដីធ្លី", en: "Land Classification" },
   "dashboard.creditReport": { km: "របាយការណ៍ឥណទាន", en: "Credit Report" },
   "dashboard.loanCalculator": { km: "គណនាឥណទាន", en: "Loan Calculator" },
