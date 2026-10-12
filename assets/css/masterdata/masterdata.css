@@ -1,0 +1,133 @@
+/* =====================================================
+   MASTER DATA — shared theme tokens + hub list
+   Same palette/approach as creditreport.css's own hub — light/dark
+   via [data-theme] on <html>. Prefixed --md- so it never collides
+   with any other page's own tokens.
+   ===================================================== */
+:root{
+    --md-page-bg:#F5F7FA;
+    --md-card-bg:#FFFFFF;
+    --md-border:#E2E6ED;
+    --md-text:#1C2333;
+    --md-text-muted:#6B7280;
+    --md-shadow:0 4px 14px rgba(0,0,0,.08);
+    --md-navy:#003B8B;
+    --md-navy-dark:#002D6B;
+    --md-gold:#D4AF37;
+    --md-gold-light:#FFD700;
+}
+
+[data-theme="dark"]{
+    --md-page-bg:#0B1220;
+    --md-card-bg:#131C2E;
+    --md-border:#223055;
+    --md-text:#EAF0FF;
+    --md-text-muted:#8FA0C7;
+    --md-shadow:0 2px 14px rgba(0,0,0,.4);
+    --md-navy-dark:#FFD700;
+}
+
+[data-theme="gold"]{
+    --md-page-bg:#FFF8E7;
+    --md-card-bg:#FFFDF6;
+    --md-navy:#8A5A00;
+    --md-navy-dark:#6B4500;
+    --md-border:#C9971F;
+}
+
+[data-theme="darkgray"]{
+    --md-page-bg:#2B2E33;
+    --md-card-bg:#363A41;
+    --md-border:#474C55;
+    --md-text:#F0F1F3;
+    --md-text-muted:#A9AEB6;
+    --md-shadow:0 4px 14px rgba(0,0,0,.35);
+    --md-navy:#D8DAE0;
+    --md-navy-dark:#D8DAE0;
+    --md-gold:#D8DAE0;
+    --md-gold-light:#E8EAED;
+}
+
+*{ box-sizing:border-box; }
+
+.page-container{
+    width:100%;
+    padding:16px 0;
+    padding-bottom:90px;
+    background:var(--md-page-bg);
+    min-height:100vh;
+    font-family:'KRASAR', sans-serif;
+    color:var(--md-text);
+}
+
+/* ===== Hub list (pages/masterdata/index.html) ===== */
+.md-hub-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    padding:0 16px;
+}
+
+.md-hub-card{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:var(--md-card-bg);
+    border:1px solid var(--md-border);
+    border-radius:14px;
+    padding:16px;
+    box-shadow:var(--md-shadow);
+    text-decoration:none;
+    color:var(--md-text);
+    cursor:pointer;
+}
+
+.md-hub-card.md-hub-disabled{
+    cursor:default;
+    opacity:.6;
+}
+
+.md-hub-icon{
+    font-size:26px;
+    width:44px;
+    height:44px;
+    flex:0 0 44px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:12px;
+    background:rgba(0,59,139,.08);
+}
+[data-theme="dark"] .md-hub-icon{ background:rgba(255,255,255,.1); }
+
+.md-hub-text{ flex:1; min-width:0; }
+.md-hub-card-title{
+    font-size:14.5px;
+    font-weight:700;
+    color:var(--md-text);
+}
+.md-hub-card-sub{
+    font-size:11.5px;
+    color:var(--md-text-muted);
+    margin-top:2px;
+}
+
+.md-hub-badge{
+    font-size:10.5px;
+    font-weight:700;
+    color:var(--md-text-muted);
+    background:rgba(107,114,128,.15);
+    border-radius:20px;
+    padding:3px 10px;
+    flex:0 0 auto;
+    white-space:nowrap;
+}
+
+.md-hub-arrow{
+    font-size:22px;
+    color:var(--md-navy-dark);
+    flex:0 0 auto;
+}
+[data-theme="dark"] .md-hub-arrow{ color:var(--md-gold-light); }
+
+.md-hub-link:active{ opacity:.85; transform:scale(.99); }

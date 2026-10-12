@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>Master Data</title>
+
+<meta
+name="theme-color"
+content="#032d73">
+
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
+  );
+</script>
+
+<link
+rel="stylesheet"
+href="../../assets/css/main.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/masterdata/masterdata.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
+
+</head>
+
+<body>
+
+<div id="offlineBanner" data-i18n="common.offline">
+⚠️ No Internet Connection
+</div>
+
+<script src="../../config/api.js"></script>
+<script src="/CM_Pro/shared/touch-polish.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/masterdata.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+
+<div id="topbar-container"></div>
+
+<div class="page-container">
+
+<div class="md-hub-list">
+
+<a class="md-hub-card md-hub-link" href="officer.html">
+<div class="md-hub-icon">🧑‍💼</div>
+<div class="md-hub-text">
+<div class="md-hub-card-title" data-i18n="masterdata.hub.listOfficer">List Officer</div>
+<div class="md-hub-card-sub" data-i18n="masterdata.hub.listOfficerSub">Manage credit officers</div>
+</div>
+<div class="md-hub-arrow">›</div>
+</a>
+
+<div class="md-hub-card md-hub-disabled">
+<div class="md-hub-icon">📍</div>
+<div class="md-hub-text">
+<div class="md-hub-card-title" data-i18n="masterdata.hub.listLocation">List Location</div>
+<div class="md-hub-card-sub" data-i18n="masterdata.hub.listLocationSub">Manage locations</div>
+</div>
+<div class="md-hub-badge" data-i18n="masterdata.hub.comingSoon">Coming soon</div>
+</div>
+
+<div class="md-hub-card md-hub-disabled">
+<div class="md-hub-icon">📦</div>
+<div class="md-hub-text">
+<div class="md-hub-card-title" data-i18n="masterdata.hub.listProduct">List Product</div>
+<div class="md-hub-card-sub" data-i18n="masterdata.hub.listProductSub">Manage products</div>
+</div>
+<div class="md-hub-badge" data-i18n="masterdata.hub.comingSoon">Coming soon</div>
+</div>
+
+</div>
+
+</div>
+
+<div id="bottomnav-container"></div>
+
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<script src="../../assets/js/masterdata/masterdata-hub-loader.js"></script>
+
+</body>
+
+</html>
