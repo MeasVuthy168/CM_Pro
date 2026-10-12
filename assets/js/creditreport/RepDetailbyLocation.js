@@ -1645,6 +1645,15 @@ function crRenderChart(section) {
         `${matchedLocation} — ${section.groups.length === 1 ? section.groups[0].label : t("creditreport.detail.showing")}`;
 
     const isPct = !!activeField?.pct;
+    // A slow-moving aggregate (e.g. Loan Outstanding) barely changes day to
+    // day relative to its own size, so an axis anchored at 0 flattens every
+    // real move into an invisible near-straight line. Zooming to the data's
+    // own range (padded) makes that movement visible — skipped for % fields,
+    // where 0 is a meaningful, bounded reference point worth keeping.
+    const crChartValues = datasets.flatMap(ds => ds.data).filter(v => v != null);
+    const crChartMin = crChartValues.length ? Math.min(...crChartValues) : 0;
+    const crChartMax = crChartValues.length ? Math.max(...crChartValues) : 0;
+    const crChartPad = Math.max((crChartMax - crChartMin) * 0.1, Math.abs(crChartMax) * 0.02, 1);
     const ctx = document.getElementById("crChartCanvas").getContext("2d");
     const textMuted = getComputedStyle(document.documentElement).getPropertyValue("--cr-text-muted").trim();
     const grid = getComputedStyle(document.documentElement).getPropertyValue("--cr-chart-grid").trim();
@@ -1666,7 +1675,9 @@ function crRenderChart(section) {
             },
             scales: {
                 y: {
-                    beginAtZero: true,
+                    beginAtZero: isPct,
+                    min: isPct ? undefined : Math.max(0, crChartMin - crChartPad),
+                    max: isPct ? undefined : crChartMax + crChartPad,
                     ticks: {
                         color: textMuted,
                         callback: (v) => isPct ? crFmtPct(v) : crFmtNum(v)
