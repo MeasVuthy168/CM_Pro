@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>List Location</title>
+
+<meta
+name="theme-color"
+content="#032d73">
+
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
+  );
+</script>
+
+<link
+rel="stylesheet"
+href="../../assets/css/main.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/masterdata/masterdata.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/masterdata/location.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
+
+</head>
+
+<body>
+
+<div id="offlineBanner" data-i18n="common.offline">
+⚠️ No Internet Connection
+</div>
+
+<div id="topbar-container"></div>
+
+<div class="page-container">
+
+<div class="md-summary-row" id="mdSummaryRow">
+<div class="md-summary-tile">
+<div class="md-summary-value" id="mdSummaryTotal">0</div>
+<div class="md-summary-label" data-i18n="masterdata.location.summaryTotal">Total Locations</div>
+</div>
+<div class="md-summary-tile">
+<div class="md-summary-value" id="mdSummaryFamily">0</div>
+<div class="md-summary-label" data-i18n="masterdata.location.summaryFamily">Total Family</div>
+</div>
+<div class="md-summary-tile">
+<div class="md-summary-value" id="mdSummaryDistricts">0</div>
+<div class="md-summary-label" data-i18n="masterdata.location.summaryDistricts">Districts</div>
+</div>
+</div>
+
+<div class="md-toolbar">
+<div class="md-search-row">
+<div class="md-search-wrap">
+<input type="text" id="mdSearchInput" class="md-search-input" data-i18n-placeholder="masterdata.location.searchPlaceholder" placeholder="Search by district, commune, village...">
+<button type="button" id="mdSearchClear" class="md-search-clear" data-i18n-aria-label="masterdata.location.clearSearch" aria-label="Clear search" style="display:none">&times;</button>
+</div>
+</div>
+<div class="md-filter-row">
+<select id="mdFilterDistrict" class="md-filter-select">
+<option value="" data-i18n="masterdata.location.allDistricts">All Districts</option>
+</select>
+<select id="mdFilterBranch" class="md-filter-select">
+<option value="" data-i18n="masterdata.location.allBranches">All Branches</option>
+<option value="Kraol Kou">Kraol Kou</option>
+<option value="Nhor">Nhor</option>
+<option value="Romeas Haek">Romeas Haek</option>
+<option value="Rumduol">Rumduol</option>
+<option value="Svay Chrom">Svay Chrom</option>
+<option value="Svay Rieng">Svay Rieng</option>
+<option value="Svay Teab">Svay Teab</option>
+</select>
+</div>
+<div class="md-filter-row">
+<select id="mdSortSelect" class="md-filter-select">
+<option value="district_asc" data-i18n="masterdata.location.sortDistrictAsc">District (A-Z)</option>
+<option value="district_desc" data-i18n="masterdata.location.sortDistrictDesc">District (Z-A)</option>
+<option value="village_asc" data-i18n="masterdata.location.sortVillageAsc">Village (A-Z)</option>
+<option value="village_desc" data-i18n="masterdata.location.sortVillageDesc">Village (Z-A)</option>
+</select>
+</div>
+<div class="md-filter-actions">
+<button type="button" id="mdClearFilterBtn" class="md-btn-clear-filter" data-i18n="masterdata.location.clearFilter">Clear Filter</button>
+</div>
+</div>
+
+<div class="md-add-row" id="mdAddRow" style="display:none">
+<button type="button" class="md-add-btn" id="btnMdAdd">
+<span>➕</span> <span data-i18n="masterdata.location.addBtn">Add Location</span>
+</button>
+</div>
+
+<div class="md-list" id="mdList">
+<div class="md-empty" id="mdEmpty" data-i18n="common.loading">Loading...</div>
+</div>
+
+</div>
+
+<div id="bottomnav-container"></div>
+
+<!-- Add/Edit dialog -->
+<div id="mdLocationDialog" class="md-dialog">
+<div class="md-dialog-box">
+<div class="md-dialog-title" id="mdDialogTitle" data-i18n="masterdata.location.modalAddTitle">Add Location</div>
+
+<label class="md-field-label" data-i18n="masterdata.location.fieldDistrict">District</label>
+<input type="text" id="mdFieldDistrict" class="md-field-input">
+
+<label class="md-field-label" data-i18n="masterdata.location.fieldCommune">Commune</label>
+<input type="text" id="mdFieldCommune" class="md-field-input">
+
+<label class="md-field-label" data-i18n="masterdata.location.fieldVillage">Village</label>
+<input type="text" id="mdFieldVillage" class="md-field-input">
+
+<label class="md-field-label" data-i18n="masterdata.location.fieldFamily"># Family</label>
+<input type="number" id="mdFieldFamily" class="md-field-input" min="0">
+
+<label class="md-field-label" data-i18n="masterdata.location.fieldBranch">Branch</label>
+<select id="mdFieldBranch" class="md-field-select">
+<option value=""></option>
+<option value="Kraol Kou">Kraol Kou</option>
+<option value="Nhor">Nhor</option>
+<option value="Romeas Haek">Romeas Haek</option>
+<option value="Rumduol">Rumduol</option>
+<option value="Svay Chrom">Svay Chrom</option>
+<option value="Svay Rieng">Svay Rieng</option>
+<option value="Svay Teab">Svay Teab</option>
+</select>
+
+<label class="md-field-label" data-i18n="masterdata.location.fieldOfficer">Credit Officer</label>
+<input type="text" id="mdFieldOfficer" class="md-field-input">
+
+<div class="md-dialog-buttons">
+<button type="button" class="md-btn-save" id="btnMdSave" data-i18n="masterdata.location.save">Save</button>
+<button type="button" class="md-btn-cancel" id="btnMdCancel" data-i18n="masterdata.location.cancel">Cancel</button>
+</div>
+</div>
+</div>
+
+<!-- Delete confirm dialog -->
+<div id="mdDeleteDialog" class="md-dialog">
+<div class="md-dialog-box">
+<div class="md-dialog-title" data-i18n="masterdata.location.deleteConfirmTitle">Delete this location?</div>
+<div class="md-dialog-body-text" id="mdDeleteBody"></div>
+<div class="md-dialog-buttons">
+<button type="button" class="md-btn-delete" id="btnMdConfirmDelete" data-i18n="masterdata.location.confirmDelete">Delete</button>
+<button type="button" class="md-btn-cancel" id="btnMdCancelDelete" data-i18n="masterdata.location.cancel">Cancel</button>
+</div>
+</div>
+</div>
+
+<script src="../../config/api.js"></script>
+<script src="/CM_Pro/shared/touch-polish.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/masterdata.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<script src="../../assets/js/masterdata/location.js"></script>
+
+</body>
+
+</html>
