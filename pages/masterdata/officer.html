@@ -76,8 +76,27 @@ href="../../assets/css/masterdata/officer.css">
 <input type="text" id="mdSearchInput" class="md-search-input" data-i18n-placeholder="masterdata.officer.searchPlaceholder" placeholder="Search by ID or name...">
 </div>
 <div class="md-filter-row">
-<select id="mdFilterTeam" class="md-filter-select"></select>
-<select id="mdFilterBranch" class="md-filter-select"></select>
+<select id="mdFilterTeam" class="md-filter-select">
+<option value="" data-i18n="masterdata.officer.allTeams">All Teams</option>
+<option value="FSRO">FSRO</option>
+<option value="Meas Vuthy">Meas Vuthy</option>
+<option value="Sok Danel">Sok Danel</option>
+<option value="Soum ChanSereyVoan">Soum ChanSereyVoan</option>
+<option value="Theum Dany">Theum Dany</option>
+<option value="admin">admin</option>
+<option value="__blank__" data-i18n="masterdata.officer.blankValue">(Blank Value)</option>
+</select>
+<select id="mdFilterBranch" class="md-filter-select">
+<option value="" data-i18n="masterdata.officer.allBranches">All Branches</option>
+<option value="Kraol Kou">Kraol Kou</option>
+<option value="Nhor">Nhor</option>
+<option value="Romeas Haek">Romeas Haek</option>
+<option value="Rumduol">Rumduol</option>
+<option value="Svay Chrom">Svay Chrom</option>
+<option value="Svay Rieng">Svay Rieng</option>
+<option value="Svay Teab">Svay Teab</option>
+<option value="Stop Disburse">Stop Disburse</option>
+</select>
 </div>
 <div class="md-filter-row">
 <select id="mdSortSelect" class="md-filter-select">
@@ -114,14 +133,35 @@ href="../../assets/css/masterdata/officer.css">
 <label class="md-field-label" data-i18n="masterdata.officer.fieldName">Name</label>
 <input type="text" id="mdFieldName" class="md-field-input">
 
+<label class="md-field-label" data-i18n="masterdata.officer.fieldNameKh">Khmer Name</label>
+<input type="text" id="mdFieldNameKh" class="md-field-input">
+
+<label class="md-field-label" data-i18n="masterdata.officer.fieldPhone">Phone Number</label>
+<input type="tel" id="mdFieldPhone" class="md-field-input">
+
 <label class="md-field-label" data-i18n="masterdata.officer.fieldTeam">Team</label>
 <select id="mdFieldTeam" class="md-field-select">
-<option value="Credit Officer">Credit Officer</option>
+<option value=""></option>
 <option value="FSRO">FSRO</option>
+<option value="Meas Vuthy">Meas Vuthy</option>
+<option value="Sok Danel">Sok Danel</option>
+<option value="Soum ChanSereyVoan">Soum ChanSereyVoan</option>
+<option value="Theum Dany">Theum Dany</option>
+<option value="admin">admin</option>
 </select>
 
 <label class="md-field-label" data-i18n="masterdata.officer.fieldBranch">Branch</label>
-<input type="text" id="mdFieldBranch" class="md-field-input">
+<select id="mdFieldBranch" class="md-field-select">
+<option value=""></option>
+<option value="Kraol Kou">Kraol Kou</option>
+<option value="Nhor">Nhor</option>
+<option value="Romeas Haek">Romeas Haek</option>
+<option value="Rumduol">Rumduol</option>
+<option value="Svay Chrom">Svay Chrom</option>
+<option value="Svay Rieng">Svay Rieng</option>
+<option value="Svay Teab">Svay Teab</option>
+<option value="Stop Disburse">Stop Disburse</option>
+</select>
 
 <div class="md-dialog-buttons">
 <button type="button" class="md-btn-save" id="btnMdSave" data-i18n="masterdata.officer.save">Save</button>

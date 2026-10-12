@@ -31,6 +31,9 @@
     display:flex;
     gap:10px;
 }
+.md-filter-row + .md-filter-row{
+    margin-top:14px;
+}
 
 .md-filter-select{
     flex:1;
