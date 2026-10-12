@@ -54,14 +54,15 @@ async function mdLoadOfficers() {
 // ========================================
 function mdRenderSummary() {
     const total = mdOfficers.length;
-    const coCount = mdOfficers.filter(o => o.team && o.team.trim().toLowerCase() === "credit officer").length;
     const fsroCount = mdOfficers.filter(o => o.team && o.team.trim().toLowerCase() === "fsro").length;
-    const branchCount = new Set(mdOfficers.map(o => o.branch).filter(Boolean)).size;
+    const coCount = mdOfficers.filter(o =>
+        (o.team || "").trim().toLowerCase() !== "fsro" &&
+        (o.branch || "").trim().toLowerCase() !== "stop disburse"
+    ).length;
 
     document.getElementById("mdSummaryTotal").textContent = total;
     document.getElementById("mdSummaryCO").textContent = coCount;
     document.getElementById("mdSummaryFSRO").textContent = fsroCount;
-    document.getElementById("mdSummaryBranches").textContent = branchCount;
 }
 
 // ========================================
