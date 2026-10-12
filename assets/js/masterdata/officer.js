@@ -41,37 +41,12 @@ async function mdLoadOfficers() {
             return;
         }
         mdOfficers = data.items || [];
-        mdPopulateFilters();
         mdRenderSummary();
         mdRenderList();
     } catch (e) {
         console.error(e);
         notify(t("masterdata.officer.networkError"), "error");
     }
-}
-
-// ========================================
-// FILTERS (Team / Branch — built from whatever's actually in the data)
-// ========================================
-function mdPopulateFilters() {
-    const teamSel = document.getElementById("mdFilterTeam");
-    const branchSel = document.getElementById("mdFilterBranch");
-    const prevTeam = teamSel.value;
-    const prevBranch = branchSel.value;
-
-    const teams = [...new Set(mdOfficers.map(o => o.team).filter(Boolean))].sort();
-    const branches = [...new Set(mdOfficers.map(o => o.branch).filter(Boolean))].sort();
-
-    teamSel.innerHTML =
-        `<option value="">${t("masterdata.officer.allTeams")}</option>` +
-        teams.map(tm => `<option value="${mdEscapeHtml(tm)}">${mdEscapeHtml(tm)}</option>`).join("");
-
-    branchSel.innerHTML =
-        `<option value="">${t("masterdata.officer.allBranches")}</option>` +
-        branches.map(b => `<option value="${mdEscapeHtml(b)}">${mdEscapeHtml(b)}</option>`).join("");
-
-    if (teams.includes(prevTeam)) teamSel.value = prevTeam;
-    if (branches.includes(prevBranch)) branchSel.value = prevBranch;
 }
 
 // ========================================
@@ -106,10 +81,14 @@ function mdFilteredOfficers() {
     const sortBy = document.getElementById("mdSortSelect").value;
 
     return mdOfficers.filter(o => {
-        if (teamFilter && o.team !== teamFilter) return false;
+        if (teamFilter) {
+            if (teamFilter === "__blank__") {
+                if (o.team) return false;
+            } else if (o.team !== teamFilter) return false;
+        }
         if (branchFilter && o.branch !== branchFilter) return false;
         if (keyword) {
-            const hay = `${o.officerId} ${o.name}`.toLowerCase();
+            const hay = `${o.officerId} ${o.name} ${o.nameKh || ""} ${o.phone || ""}`.toLowerCase();
             if (!hay.includes(keyword)) return false;
         }
         return true;
@@ -129,8 +108,8 @@ function mdRenderList() {
         <div class="md-row-card" data-id="${mdEscapeHtml(o.officerId)}">
             <div class="md-row-top">
                 <div>
-                    <div class="md-row-name">${mdEscapeHtml(o.name) || "-"}</div>
-                    <div class="md-row-id">${t("masterdata.officer.colId")}: ${mdEscapeHtml(o.officerId) || "-"}</div>
+                    <div class="md-row-name">${mdEscapeHtml(o.name) || "-"}${o.nameKh ? ` (${mdEscapeHtml(o.nameKh)})` : ""}</div>
+                    <div class="md-row-id">${t("masterdata.officer.colId")}: ${mdEscapeHtml(o.officerId) || "-"}${o.phone ? ` &middot; ${mdEscapeHtml(o.phone)}` : ""}</div>
                 </div>
                 ${mdIsAdmin ? `
                 <div class="md-row-actions">
@@ -157,8 +136,10 @@ function mdOpenDialog(officer) {
     document.getElementById("mdFieldId").value = officer ? officer.officerId : "";
     document.getElementById("mdFieldId").disabled = !!officer;
     document.getElementById("mdFieldName").value = officer ? officer.name : "";
-    document.getElementById("mdFieldTeam").value = officer && officer.team ? officer.team : "Credit Officer";
-    document.getElementById("mdFieldBranch").value = officer ? officer.branch : "";
+    document.getElementById("mdFieldNameKh").value = officer ? (officer.nameKh || "") : "";
+    document.getElementById("mdFieldPhone").value = officer ? (officer.phone || "") : "";
+    document.getElementById("mdFieldTeam").value = officer ? (officer.team || "") : "";
+    document.getElementById("mdFieldBranch").value = officer ? (officer.branch || "") : "";
 
     document.getElementById("mdOfficerDialog").classList.add("show");
 }
@@ -171,14 +152,16 @@ function mdCloseDialog() {
 async function mdSaveOfficer() {
     const officerId = document.getElementById("mdFieldId").value.trim();
     const name = document.getElementById("mdFieldName").value.trim();
+    const nameKh = document.getElementById("mdFieldNameKh").value.trim();
+    const phone = document.getElementById("mdFieldPhone").value.trim();
     const team = document.getElementById("mdFieldTeam").value;
-    const branch = document.getElementById("mdFieldBranch").value.trim();
+    const branch = document.getElementById("mdFieldBranch").value;
 
     if (!officerId) return notify(t("masterdata.officer.idRequired"), "warning");
     if (!name) return notify(t("masterdata.officer.nameRequired"), "warning");
 
     try {
-        const data = await API.post("/api/creditofficer/upsert", { officerId, name, team, branch });
+        const data = await API.post("/api/creditofficer/upsert", { officerId, name, nameKh, phone, team, branch });
         if (!data.ok) {
             notify(data.message || t("masterdata.officer.saveFailed"), "error");
             return;
