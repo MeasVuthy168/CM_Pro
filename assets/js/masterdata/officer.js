@@ -219,10 +219,33 @@ async function mdConfirmDelete() {
 // ========================================
 // EVENTS
 // ========================================
-document.getElementById("mdSearchInput").addEventListener("input", mdRenderList);
+const mdSearchInput = document.getElementById("mdSearchInput");
+const mdSearchClearBtn = document.getElementById("mdSearchClear");
+
+function mdUpdateSearchClearVisibility() {
+    mdSearchClearBtn.style.display = mdSearchInput.value ? "flex" : "none";
+}
+
+mdSearchInput.addEventListener("input", () => {
+    mdUpdateSearchClearVisibility();
+    mdRenderList();
+});
+mdSearchClearBtn.addEventListener("click", () => {
+    mdSearchInput.value = "";
+    mdUpdateSearchClearVisibility();
+    mdRenderList();
+    mdSearchInput.focus();
+});
+
 document.getElementById("mdFilterTeam").addEventListener("change", mdRenderList);
 document.getElementById("mdFilterBranch").addEventListener("change", mdRenderList);
 document.getElementById("mdSortSelect").addEventListener("change", mdRenderList);
+
+document.getElementById("mdClearFilterBtn").addEventListener("click", () => {
+    document.getElementById("mdFilterTeam").value = "";
+    document.getElementById("mdFilterBranch").value = "";
+    mdRenderList();
+});
 
 document.getElementById("btnMdAdd").addEventListener("click", () => mdOpenDialog(null));
 document.getElementById("btnMdSave").addEventListener("click", mdSaveOfficer);
