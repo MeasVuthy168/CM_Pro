@@ -69,7 +69,10 @@ href="../../assets/css/masterdata/officer.css">
 
 <div class="md-toolbar">
 <div class="md-search-row">
+<div class="md-search-wrap">
 <input type="text" id="mdSearchInput" class="md-search-input" data-i18n-placeholder="masterdata.officer.searchPlaceholder" placeholder="Search by ID or name...">
+<button type="button" id="mdSearchClear" class="md-search-clear" data-i18n-aria-label="masterdata.officer.clearSearch" aria-label="Clear search" style="display:none">&times;</button>
+</div>
 </div>
 <div class="md-filter-row">
 <select id="mdFilterTeam" class="md-filter-select">
@@ -101,6 +104,9 @@ href="../../assets/css/masterdata/officer.css">
 <option value="id_asc" data-i18n="masterdata.officer.sortIdAsc">Officer ID (A-Z)</option>
 <option value="id_desc" data-i18n="masterdata.officer.sortIdDesc">Officer ID (Z-A)</option>
 </select>
+</div>
+<div class="md-filter-actions">
+<button type="button" id="mdClearFilterBtn" class="md-btn-clear-filter" data-i18n="masterdata.officer.clearFilter">Clear Filter</button>
 </div>
 </div>
 
