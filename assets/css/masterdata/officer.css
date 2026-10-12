@@ -51,8 +51,8 @@
 /* ===== Summary tiles ===== */
 .md-summary-row{
     display:grid;
-    grid-template-columns:repeat(2, 1fr);
-    gap:10px;
+    grid-template-columns:repeat(3, 1fr);
+    gap:8px;
     padding:0 16px 14px;
 }
 
@@ -60,12 +60,12 @@
     background:var(--md-card-bg);
     border:1px solid var(--md-border);
     border-radius:14px;
-    padding:12px 14px;
+    padding:10px 8px;
     box-shadow:var(--md-shadow);
 }
 
 .md-summary-value{
-    font-size:20px;
+    font-size:18px;
     font-weight:700;
     color:var(--md-navy-dark);
 }
