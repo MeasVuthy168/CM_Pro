@@ -1,0 +1,272 @@
+/* =====================================================
+   LIST OFFICER — uses masterdata.css's shared --md- tokens
+   (page-container, theme variables) already loaded alongside this.
+   ===================================================== */
+
+.md-toolbar{
+    padding:0 16px 14px;
+}
+
+.md-search-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:10px;
+}
+
+.md-search-input{
+    flex:1;
+    min-width:0;
+    height:44px;
+    padding:0 14px;
+    border-radius:12px;
+    border:1px solid var(--md-border);
+    background:var(--md-card-bg);
+    color:var(--md-text);
+    font-family:'KRASAR', sans-serif;
+    font-size:14px;
+}
+.md-search-input::placeholder{ color:var(--md-text-muted); }
+
+.md-filter-row{
+    display:flex;
+    gap:10px;
+}
+
+.md-filter-select{
+    flex:1;
+    min-width:0;
+    height:42px;
+    padding:0 10px;
+    border-radius:12px;
+    border:1px solid var(--md-border);
+    background:var(--md-card-bg);
+    color:var(--md-text);
+    font-family:'KRASAR', sans-serif;
+    font-size:13.5px;
+}
+
+/* ===== Summary tiles ===== */
+.md-summary-row{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:10px;
+    padding:0 16px 14px;
+}
+
+.md-summary-tile{
+    background:var(--md-card-bg);
+    border:1px solid var(--md-border);
+    border-radius:14px;
+    padding:12px 14px;
+    box-shadow:var(--md-shadow);
+}
+
+.md-summary-value{
+    font-size:20px;
+    font-weight:700;
+    color:var(--md-navy-dark);
+}
+[data-theme="dark"] .md-summary-value{ color:var(--md-gold-light); }
+
+.md-summary-label{
+    font-size:11.5px;
+    color:var(--md-text-muted);
+    margin-top:2px;
+}
+
+/* ===== Add button ===== */
+.md-add-row{
+    padding:0 16px 14px;
+}
+
+.md-add-btn{
+    width:100%;
+    height:46px;
+    border:none;
+    border-radius:12px;
+    background:linear-gradient(180deg,#FFD700,#D4AF37);
+    color:#002D6B;
+    font-size:15px;
+    font-weight:700;
+    font-family:'KRASAR', sans-serif;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+}
+.md-add-btn:active{ transform:scale(.98); }
+
+/* ===== List ===== */
+.md-list{
+    padding:0 16px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.md-row-card{
+    background:var(--md-card-bg);
+    border:1px solid var(--md-border);
+    border-radius:14px;
+    padding:14px;
+    box-shadow:var(--md-shadow);
+}
+
+.md-row-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+}
+
+.md-row-name{
+    font-size:15px;
+    font-weight:700;
+    color:var(--md-text);
+}
+
+.md-row-id{
+    font-size:12px;
+    color:var(--md-text-muted);
+    margin-top:2px;
+}
+
+.md-row-tags{
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+    flex-wrap:wrap;
+}
+
+.md-tag{
+    font-size:11.5px;
+    font-weight:600;
+    padding:4px 10px;
+    border-radius:20px;
+    background:rgba(0,59,139,.08);
+    color:var(--md-navy-dark);
+}
+[data-theme="dark"] .md-tag{ background:rgba(255,255,255,.08); color:var(--md-gold-light); }
+
+.md-row-actions{
+    display:flex;
+    gap:8px;
+    flex:0 0 auto;
+}
+
+.md-icon-btn{
+    width:34px;
+    height:34px;
+    border-radius:10px;
+    border:1px solid var(--md-border);
+    background:transparent;
+    color:var(--md-text-muted);
+    font-size:15px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.md-icon-btn:active{ transform:scale(.95); }
+.md-icon-btn.md-danger{ color:#C0392B; border-color:rgba(192,57,43,.35); }
+
+.md-empty{
+    text-align:center;
+    padding:40px 20px;
+    color:var(--md-text-muted);
+    font-size:14px;
+}
+
+/* ===== Add/Edit modal ===== */
+.md-dialog{
+    position:fixed;
+    left:0; top:0;
+    width:100%; height:100%;
+    display:none;
+    justify-content:center;
+    align-items:center;
+    background:rgba(0,0,0,.55);
+    z-index:99999;
+    padding:24px;
+}
+.md-dialog.show{ display:flex; }
+
+.md-dialog-box{
+    width:100%;
+    max-width:420px;
+    background:var(--md-card-bg);
+    border:1px solid var(--md-border);
+    border-radius:18px;
+    padding:22px;
+    box-shadow:0 10px 30px rgba(0,0,0,.3);
+}
+
+.md-dialog-title{
+    font-size:17px;
+    font-weight:700;
+    color:var(--md-text);
+    margin-bottom:16px;
+}
+
+.md-field-label{
+    font-size:12.5px;
+    color:var(--md-text-muted);
+    margin-bottom:6px;
+    display:block;
+}
+
+.md-field-input,
+.md-field-select{
+    width:100%;
+    height:44px;
+    padding:0 12px;
+    border-radius:10px;
+    border:1px solid var(--md-border);
+    background:var(--md-page-bg);
+    color:var(--md-text);
+    font-family:'KRASAR', sans-serif;
+    font-size:14px;
+    margin-bottom:14px;
+}
+.md-field-input:disabled{ opacity:.6; }
+
+.md-dialog-buttons{
+    display:flex;
+    gap:12px;
+    margin-top:4px;
+}
+
+.md-dialog-buttons button{
+    flex:1;
+    height:46px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:15px;
+    font-weight:700;
+    font-family:'KRASAR', sans-serif;
+}
+
+.md-btn-save{
+    background:linear-gradient(180deg,#FFD700,#D4AF37);
+    color:#002D6B;
+}
+
+.md-btn-cancel{
+    background:transparent;
+    border:1.5px solid var(--md-border) !important;
+    color:var(--md-text);
+}
+
+.md-dialog-body-text{
+    font-size:14px;
+    color:var(--md-text-muted);
+    margin-bottom:20px;
+    line-height:1.5;
+}
+
+.md-btn-delete{
+    background:#C0392B;
+    color:#fff;
+}
