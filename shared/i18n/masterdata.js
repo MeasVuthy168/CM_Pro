@@ -35,6 +35,8 @@ CMI18n.register({
 
   "masterdata.officer.colId": { km: "លេខសម្គាល់", en: "Officer ID" },
   "masterdata.officer.colName": { km: "ឈ្មោះ", en: "Name" },
+  "masterdata.officer.colNameKh": { km: "ឈ្មោះជាភាសាខ្មែរ", en: "Khmer Name" },
+  "masterdata.officer.colPhone": { km: "លេខទូរស័ព្ទ", en: "Phone" },
   "masterdata.officer.colTeam": { km: "ក្រុម", en: "Team" },
   "masterdata.officer.colBranch": { km: "សាខា", en: "Branch" },
   "masterdata.officer.colActions": { km: "សកម្មភាព", en: "Actions" },
