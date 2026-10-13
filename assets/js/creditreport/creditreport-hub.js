@@ -109,7 +109,10 @@ async function crHubRunOneT24Refresh(target) {
 }
 
 // Reuses the same results panel as crHubRenderResults — whichever
-// admin action ran most recently is what it shows.
+// admin action ran most recently is what it shows. Each target
+// refreshes just its single latest saved date now, so the detail
+// shown is that date (or "no saved day yet" the first time, before
+// any Daily History has ever been saved for that report).
 function crHubRenderT24Results(results) {
     const okCount = results.filter(r => r.ok).length;
     document.getElementById("crHubSnapshotSummary").textContent =
@@ -118,7 +121,7 @@ function crHubRenderT24Results(results) {
         `<div class="cr-hub-snapshot-row${r.ok ? " ok" : " fail"}">` +
             `<span class="cr-hub-snapshot-dot"></span>` +
             `<span class="cr-hub-snapshot-label">${crHubEscapeHtml(r.label)}</span>` +
-            `<span class="cr-hub-snapshot-detail">${r.ok ? t("creditreport.hub.t24RefreshedDays", { count: r.refreshed }) : crHubEscapeHtml(r.message)}</span>` +
+            `<span class="cr-hub-snapshot-detail">${r.ok ? (r.refreshed ? crHubFmtDateDMY(r.date) : t("creditreport.hub.t24RefreshedNone")) : crHubEscapeHtml(r.message)}</span>` +
         `</div>`
     ).join("");
     document.getElementById("crHubSnapshotResults").style.display = "block";
@@ -156,11 +159,17 @@ if (crHubIsAdmin) {
     });
 
     // Admin escape hatch for the per-date T24 freeze (see each
-    // lib/creditreport-*.js's own comment): refreshes T24 for every
-    // already-saved Daily History date across all 4 reports in one
-    // click, instead of one admin click per row on each report's own
-    // history table.
+    // lib/creditreport-*.js's own comment): refreshes T24 for just the
+    // latest already-saved Daily History date, across all 4 reports in
+    // one click, instead of one admin click per row on each report's
+    // own history table. T24 and NBC OS are two separate uploads (see
+    // runBranchDailySnapshotNow's own comment) — the confirm below
+    // exists because refreshing T24 against a stale OS-driven latest
+    // day is a likely admin mistake, not because this action touches OS
+    // data itself.
     document.getElementById("btnCrRefreshAllT24").addEventListener("click", async () => {
+        if (!confirm(t("creditreport.hub.confirmRefreshAllT24"))) return;
+
         const btn = document.getElementById("btnCrRefreshAllT24");
         const label = document.getElementById("crHubRefreshBtnLabel");
         btn.disabled = true;
