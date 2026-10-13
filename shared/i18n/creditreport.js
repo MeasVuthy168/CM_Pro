@@ -38,6 +38,15 @@ CMI18n.register({
   "creditreport.hub.targetLocation": { km: "ទីតាំង", en: "Location" },
   "creditreport.hub.targetCompare": { km: "ប្រៀបធៀប", en: "Compare" },
 
+  // "Refresh All T24" — admin escape hatch for the per-date T24 freeze
+  // (see each lib/creditreport-*.js's own comment): re-pulls live T24
+  // into every already-saved Daily History date across all 4 reports.
+  "creditreport.hub.refreshAllT24": { km: "ទាញយក T24 ថ្មីទាំងអស់", en: "Refresh All T24" },
+  "creditreport.hub.refreshingT24": { km: "កំពុងទាញយក T24...", en: "Refreshing T24..." },
+  "creditreport.hub.t24RefreshAllDone": { km: "បានទាញយក T24 ថ្មីសម្រាប់ទាំង 4 របាយការណ៍។", en: "T24 refreshed for all 4 reports." },
+  "creditreport.hub.t24RefreshSomeFailed": { km: "ការទាញយក T24 ថ្មីខ្លះបរាជ័យ — សូមមើលព័ត៌មានលម្អិតខាងក្រោម។", en: "Some T24 refreshes failed — see details below." },
+  "creditreport.hub.t24RefreshedDays": { km: "បានទាញយកថ្មី {count} ថ្ងៃ", en: "{count} days refreshed" },
+
   // Shared across report pages — a generic loading overlay message
   // (crShowLoading("Loading Report Data...") convention).
   "creditreport.loadingReportData": { km: "កំពុងផ្ទុកទិន្នន័យរបាយការណ៍...", en: "Loading Report Data..." },

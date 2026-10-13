@@ -75,6 +75,15 @@ href="../../assets/css/creditreport/creditreport.css">
 <span class="cr-hub-snapshot-btn-icon">📸</span>
 <span id="crHubSnapshotBtnLabel" data-i18n="creditreport.hub.snapshotAll">Snapshot All</span>
 </button>
+<!-- Admin escape hatch for the per-date T24 freeze (see each
+     lib/creditreport-*.js's own comment): refreshes T24 for every
+     already-saved Daily History date across all 4 reports in one
+     click, instead of the per-row 🔄 button on each report's own
+     history table. -->
+<button type="button" id="btnCrRefreshAllT24" class="cr-hub-refresh-btn">
+<span class="cr-hub-snapshot-btn-icon">🔄</span>
+<span id="crHubRefreshBtnLabel" data-i18n="creditreport.hub.refreshAllT24">Refresh All T24</span>
+</button>
 <div class="cr-hub-snapshot-results" id="crHubSnapshotResults">
 <div class="cr-hub-snapshot-results-head">
 <span id="crHubSnapshotSummary"></span>
