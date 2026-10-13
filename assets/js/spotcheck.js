@@ -269,15 +269,23 @@ function scPopulateProductTypeOptions() {
 // ---------------------------------------------------------
 // Rendering
 // ---------------------------------------------------------
+// "YYYY-MM" for the current local month, in the same shape scMonthKey()
+// produces for a record's spotCheckDate — so the two compare directly.
+function scCurrentMonthKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
 function scRenderSummary() {
   document.getElementById("statTotal").textContent = scAllRecords.length;
 
-  const now = new Date();
-  const thisMonth = scAllRecords.filter((r) => {
-    const rec = scRecordToObj(r);
-    const d = scParseDateFlexible(rec.spotCheckDate);
-    return d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  }).length;
+  // Was comparing new Date(rec.spotCheckDate) directly — but spotCheckDate
+  // is stored "dd-mmm-yyyy" (or sometimes a raw Excel serial number),
+  // neither of which native Date() parses, so this always silently read
+  // as 0. scMonthKey() already does the real parsing (via scStoredToIso)
+  // for the month filter dropdown — reuse it here too.
+  const currentMonthKey = scCurrentMonthKey();
+  const thisMonth = scAllRecords.filter((r) => scMonthKey(scRecordToObj(r)) === currentMonthKey).length;
   document.getElementById("statMonth").textContent = thisMonth;
 }
 
@@ -324,6 +332,7 @@ function scRenderList() {
     .sort(SC_SORTERS[sortBy] || SC_SORTERS.checkdate_desc);
 
   scCurrentRows = filtered;
+  document.getElementById("scResultCount").textContent = `${filtered.length} ករណី`;
 
   const container = document.getElementById("listContainer");
   const emptyState = document.getElementById("emptyState");
@@ -363,8 +372,8 @@ function scBuildTable(rows) {
       <td>${scEscapeHtml(rec.branch || "—")}</td>
       <td>${scEscapeHtml(rec.creditOfficer || "—")}</td>
       <td>${scEscapeHtml(rec.loanType || "—")}</td>
-      <td>${scEscapeHtml(rec.spotCheckDate || "—")}</td>
-      <td>${scEscapeHtml(rec.disbursementDate || "—")}</td>
+      <td>${scEscapeHtml(scDisplayDate(rec.spotCheckDate))}</td>
+      <td>${scEscapeHtml(scDisplayDate(rec.disbursementDate))}</td>
       <td>
         <div class="sc-table-actions">
           <button class="sc-action-btn sc-export-btn" aria-label="ទាញយកទម្រង់"><img src="/CM_Pro/assets/icons/spotcheck/download.png" alt=""><span>ទាញយក</span></button>
@@ -446,27 +455,76 @@ function scSanitizeForSpreadsheet(value) {
   return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
 }
 
+// Date-typed fields in SC_FIELD_ORDER — exported through scDisplayDate()
+// so a raw Excel serial in the data doesn't leak into the spreadsheet
+// as-is (see scDisplayDate's own comment for why that happens).
+const SC_DATE_FIELDS = new Set(["disbursementDate", "maturityDate", "spotCheckDate"]);
+
+// Khmer column labels for every field in SC_FIELD_ORDER, reusing the
+// same wording as the form's own labels where a field maps 1:1 to one
+// (spotcheck.*Label keys in shared/i18n/features.js); a few fields share
+// a generic form label ("ស្ថានភាព", "បញ្ជាក់បន្ថែម" for several notes) so
+// those get a more specific label here to keep export columns unambiguous.
+const SC_EXPORT_LABELS = {
+  branch: "សាខា (Branch)",
+  loanId: "លេខកិច្ចសន្យា (Loan ID)",
+  customerName: "ឈ្មោះអតិថិជន",
+  disbursementDate: "ថ្ងៃបញ្ចេញកម្ចី",
+  maturityDate: "ថ្ងៃផុតកំណត់",
+  loanSize: "ទំហំឥណទាន",
+  currency: "រូបិយប័ណ្ណ",
+  outstanding: "សមតុល្យ",
+  creditOfficer: "មន្ត្រីឥណទាន",
+  interestRate: "អត្រាការប្រាក់",
+  loanType: "ប្រភេទឥណទាន",
+  term: "រយៈពេលខ្ចី",
+  cycle: "វដ្តត្រួតពិនិត្យ",
+  repaymentHistory: "ស្ថានភាពប្រវត្តិសងប្រាក់",
+  lateDays: "មូលហេតុយឺតយ៉ាវ",
+  loanCompletion: "ស្ថានភាពឯកសារឥណទាន",
+  loanCompletionNote: "មូលហេតុ (ឯកសារឥណទាន)",
+  occupationInFile: "មុខរបរពេលខ្ចី",
+  currentOccupation: "មុខរបរបច្ចុប្បន្ន",
+  businessSituation: "ស្ថានភាពជំនួញ",
+  occupationDifferenceNote: "បញ្ជាក់បន្ថែម (មុខរបរ)",
+  collateralType: "ប្រភេទទ្រព្យ",
+  collateralChange: "ទ្រព្យធានា",
+  collateralPrice: "តម្លៃទ្រព្យ",
+  collateralNote: "បញ្ជាក់បន្ថែម (ទ្រព្យធានា)",
+  purpose: "បំណងប្រើប្រាស់",
+  purposeNote: "បញ្ជាក់បន្ថែម (បំណងប្រើប្រាស់)",
+  repaymentSource: "ប្រភពសំណង",
+  repaymentSourceNote: "បញ្ជាក់បន្ថែម (ប្រភពសំណង)",
+  conclusion: "សេចក្តីសន្និដ្ឋាន",
+  spotCheckDate: "ថ្ងៃត្រួតពិនិត្យ",
+  owner: "អ្នកបញ្ចូល",
+  timestamp: "ពេលវេលាកត់ត្រា"
+};
+
 function scExportExcel() {
   if (!scCurrentRows.length) {
     alert("មិនមានទិន្នន័យសម្រាប់នាំចេញទេ");
     return;
   }
 
-  const sheetData = scCurrentRows.map((rec, i) => ({
-    "No": i + 1,
-    "CIF": scSanitizeForSpreadsheet(rec.cif),
-    "ឈ្មោះអតិថិជន": scSanitizeForSpreadsheet(rec.customerName),
-    "សាខា": scSanitizeForSpreadsheet(rec.branch),
-    "មន្ត្រីឥណទាន": scSanitizeForSpreadsheet(rec.creditOfficer),
-    "ប្រភេទឥណទាន": scSanitizeForSpreadsheet(rec.loanType),
-    "ថ្ងៃត្រួតពិនិត្យ": rec.spotCheckDate,
-    "ថ្ងៃបញ្ចេញកម្ចី": rec.disbursementDate,
-    "លេខកិច្ចសន្យា": scSanitizeForSpreadsheet(rec.loanId),
-    "ទំហំឥណទាន": rec.loanSize,
-    "រូបិយប័ណ្ណ": rec.currency,
-    "សមតុល្យ": rec.outstanding,
-    "សេចក្តីសន្និដ្ឋាន": scSanitizeForSpreadsheet(rec.conclusion)
-  }));
+  // Every field in SC_FIELD_ORDER (the full 34-column VBA v[] layout),
+  // not a curated subset — "cif" is placed right after "No" since it's
+  // the record's key, the rest follow their stored column order.
+  const sheetData = scCurrentRows.map((rec, i) => {
+    const row = { "No": i + 1, "CIF": scSanitizeForSpreadsheet(rec.cif) };
+    SC_FIELD_ORDER.forEach((key) => {
+      if (key === "cif") return;
+      const label = SC_EXPORT_LABELS[key] || key;
+      if (SC_DATE_FIELDS.has(key)) {
+        row[label] = scDisplayDate(rec[key]);
+      } else if (key === "timestamp") {
+        row[label] = rec[key] ? scFormatTimestamp(rec[key]) : "";
+      } else {
+        row[label] = scSanitizeForSpreadsheet(rec[key] || "");
+      }
+    });
+    return row;
+  });
 
   const ws = XLSX.utils.json_to_sheet(sheetData);
   const wb = XLSX.utils.book_new();
@@ -498,7 +556,7 @@ function scBuildCard(rec) {
     </div>
     <div class="sc-card-meta">
       <span>${scEscapeHtml(rec.branch || "—")}</span>
-      <span>${scEscapeHtml(rec.spotCheckDate || "—")}</span>
+      <span>${scEscapeHtml(scDisplayDate(rec.spotCheckDate))}</span>
       ${rec.conclusion ? `<span class="sc-badge">${scEscapeHtml(rec.conclusion)}</span>` : ""}
     </div>
   `;
@@ -1203,6 +1261,20 @@ function scStoredToIso(stored) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+// Normalizes ANY stored date representation (proper "dd-mmm-yyyy", a bare
+// Excel serial number from data synced from the Excel sheet — e.g.
+// "46326" — or already-ISO) into the canonical "dd-mmm-yyyy" display
+// format, by round-tripping through scStoredToIso()/scIsoToStored(), the
+// same conversion the edit form already uses for its date inputs. Without
+// this, a record whose date came through as a raw serial shows that
+// serial number as-is in the list/card/export instead of a real date.
+// Falls back to the raw stored string (or "—") only if it truly can't be
+// parsed as a date.
+function scDisplayDate(stored) {
+  if (!stored) return "—";
+  const iso = scStoredToIso(stored);
+  return iso ? scIsoToStored(iso) : stored;
+}
 
 // "36" -> "36ខែ" — only appends the suffix if the value is a bare number
 function scFormatTerm(val) {
