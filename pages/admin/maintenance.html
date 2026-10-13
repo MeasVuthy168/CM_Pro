@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>CM_Pro Admin — Storage Cleanup</title>
+
+<meta name="theme-color" content="#002D6B">
+
+<!-- theme flash-prevention -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
+  );
+</script>
+
+<script src="/CM_Pro/config/api.js"></script>
+<script src="/CM_Pro/shared/touch-polish.js"></script>
+
+<!-- auth guard: redirects away if not a logged-in admin -->
+<script src="/CM_Pro/assets/js/admin/admin-loader.js"></script>
+
+<!-- ========================= -->
+<!-- STYLES -->
+<!-- ========================= -->
+<link rel="stylesheet" href="/CM_Pro/assets/css/base.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/admin.css">
+
+</head>
+<body data-adm-page="maintenance">
+
+<div class="adm-page">
+  <div class="adm-shell">
+
+    <!-- ========================= -->
+    <!-- SIDEBAR (auto-rendered by admin-nav.js) -->
+    <!-- ========================= -->
+    <aside class="adm-sidebar">
+      <div class="adm-sidebar-brand" data-i18n="admin.common.brand">CM_Pro Admin</div>
+      <nav id="admSidebar"></nav>
+    </aside>
+
+    <!-- ========================= -->
+    <!-- MAIN -->
+    <!-- ========================= -->
+    <main class="adm-main">
+
+      <!-- ========================= -->
+      <!-- HEADER -->
+      <!-- ========================= -->
+      <div class="adm-header">
+        <div class="adm-title-block">
+          <h1 data-i18n="admin.maintenance.title">Storage Cleanup</h1>
+          <p data-i18n="admin.maintenance.subtitle">Manage database storage usage.</p>
+        </div>
+        <div class="adm-header-right">
+          <span class="adm-user-chip" id="admUserLabel" data-i18n="admin.common.adminFallback">Admin</span>
+          <div class="adm-topbar-actions" id="admTopbarActions"></div>
+        </div>
+      </div>
+
+      <!-- ========================= -->
+      <!-- DEBIT TURN OVER CLEANUP -->
+      <!-- ========================= -->
+      <div class="adm-card">
+        <div class="adm-card-label" data-i18n="admin.maintenance.debitTurnOverLabel">Debit Turn Over Data</div>
+
+        <p class="adm-modal-message" data-i18n="admin.maintenance.debitTurnOverExplain">
+          Debit Turn Over data grows every day with no automatic cleanup, which keeps increasing storage usage.
+          Use the tool below to permanently delete data older than the number of days below. This can't be undone.
+        </p>
+
+        <label class="adm-cleanup-field">
+          <span data-i18n="admin.maintenance.keepDays">Keep data from the last (days)</span>
+          <input type="number" id="dtoKeepDays" value="365" min="1">
+        </label>
+
+        <p class="adm-modal-message" id="dtoPreviewResult" hidden></p>
+
+        <div class="adm-modal-footer" style="justify-content:flex-start; gap:12px;">
+          <button type="button" class="adm-btn" id="dtoBtnPreview" data-i18n="admin.maintenance.preview">Preview</button>
+          <button type="button" class="adm-btn adm-btn-danger" id="dtoBtnDelete" disabled data-i18n="admin.maintenance.deletePermanently">Delete Permanently</button>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+</div>
+
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/admin.js"></script>
+
+<script src="/CM_Pro/shared/logout.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-ui.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-nav.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-maintenance.js"></script>
+
+</body>
+</html>
