@@ -75,8 +75,8 @@ const SC_OPTION_LISTS = {
   cboLoanCompletion: ["ត្រឹមត្រូវ", "មិនត្រឹមត្រូវតាមនីតិវិធីនិងសេចក្តីណែនាំ_Violate"],
   cboBusinessSituation: ["ដដែល", "កើនឡើង", "ឱនភាព", "ក្ស័យធន"],
   cboCollateralType: ["Payroll", "Clean", "ដីភូមិ និងផ្ទះ", "ដីភូមិ ផ្ទះ និងដីស្រែ", "ដីភូមិ", "ដីស្រែ"],
-  cboCollateralChange: ["រក្សាភាពដើម", "ប្រែប្រួល"],
-  cboCollateralPrice: ["អាចធានាឥណទានបាន", "មិនអាចធានាឥណទានបាន"],
+  cboCollateralChange: ["រក្សាភាពដើម", "ប្រែប្រួល", "NA"],
+  cboCollateralPrice: ["អាចធានាឥណទានបាន", "មិនអាចធានាឥណទានបាន", "NA"],
   cboPurpose: ["ត្រឹមត្រូវតាមការស្នើសុំ", "មិនត្រឹមត្រូវតាមការស្នើសុំ"],
   cboRepaymentSource: ["ផ្ទាល់ខ្លួន", "សាច់ញាតិ", "អ្នកធានា", "ធនាគារ", "ស្ថាប័នហិរញ្ញវត្ថុ", "មេខ្យល់", "ផ្សេងៗ"],
 };
@@ -104,6 +104,8 @@ let scDeleteTargetCIF = null;
 let scOccupationSuggestions = [];
 let scCurrentRows = [];     // whatever's currently displayed (post-filter, post-sort) — feeds Export Excel
 let scViewMode = localStorage.getItem("sc_view") === "list" ? "list" : "card";
+let scOriginalCycle = null; // the cycle value a record was opened with, while editing — see the cboCycle change listener
+let scLastSavedCif = null;  // most recently saved/updated CIF — pinned to the top of the list/card view
 
 // ---------------------------------------------------------
 // Bootstrapping — independent of the component loader; only
@@ -128,14 +130,6 @@ function scPopulateSelectOptions() {
       el.appendChild(o);
     });
   });
-
-  // Cycle: typeable input backed by a 1-10 datalist (select + type both work)
-  const cycleList = document.getElementById("cycleOptions");
-  for (let i = 1; i <= 10; i++) {
-    const o = document.createElement("option");
-    o.value = String(i);
-    cycleList.appendChild(o);
-  }
 
   // Conclusion: 2 preset long-form sentences + a custom "other" entry
   // (form dropdown only — the toolbar's Conclusion filter was removed).
@@ -330,6 +324,16 @@ function scRenderList() {
       return matchesSearch && matchesMonth && matchesBranch && matchesOfficer && matchesProduct;
     })
     .sort(SC_SORTERS[sortBy] || SC_SORTERS.checkdate_desc);
+
+  // Pin the just-saved/updated record to the top of whatever sort/filter
+  // is currently applied, so the officer sees their own entry right away.
+  if (scLastSavedCif) {
+    const pinnedIndex = filtered.findIndex((rec) => rec.cif === scLastSavedCif);
+    if (pinnedIndex > 0) {
+      const [pinned] = filtered.splice(pinnedIndex, 1);
+      filtered.unshift(pinned);
+    }
+  }
 
   scCurrentRows = filtered;
   document.getElementById("scResultCount").textContent = `${filtered.length} ករណី`;
@@ -674,17 +678,63 @@ function scFormToArray() {
 // list existed, etc.), a new option is added on the fly so the real
 // saved value is preserved and visible instead of silently going
 // blank — this was making Section II dropdowns look "not loaded".
+// Khmer text can reach this page via different input paths (manual
+// typing, copy/paste, the original VBA/Excel export) that don't always
+// produce byte-identical Unicode for visually-identical text — the same
+// glyphs can be encoded with combining characters in a different order.
+// Comparing raw strings then treats a stored value as "not matching any
+// option" even when it's really the same option, which was spawning a
+// visually-duplicate extra <option> (see scSetSelectValue below).
+// Normalizing to NFC before comparing fixes that.
+function scNormalizeKhmer(s) {
+  return (s || "").normalize("NFC").trim();
+}
+
 function scSetSelectValue(id, value) {
   const el = document.getElementById(id);
   if (!el) return;
+  const normalized = scNormalizeKhmer(value);
+  const match = [...el.options].find((o) => scNormalizeKhmer(o.value) === normalized);
+
+  if (match) {
+    el.value = match.value;
+    return;
+  }
+
   const v = value || "";
-  if (v && ![...el.options].some((o) => o.value === v)) {
+  if (v) {
     const o = document.createElement("option");
     o.value = v;
     o.textContent = v;
     el.appendChild(o);
   }
   el.value = v;
+}
+
+// Collateral Type "Payroll"/"Clean" means there's no physical collateral
+// to describe — Collateral (changed?) and Collateral Value (can it
+// secure the loan?) don't apply, so they're forced to "NA" and locked.
+// Any other Collateral Type is a real property type, so those two
+// unlock again (and reset to blank, since there's no sensible value to
+// carry over from the "NA" state).
+const SC_NO_COLLATERAL_TYPES = new Set(["Payroll", "Clean"]);
+
+function scApplyCollateralLock() {
+  const typeEl = document.getElementById("cboCollateralType");
+  const changeEl = document.getElementById("cboCollateralChange");
+  const priceEl = document.getElementById("cboCollateralPrice");
+  const noCollateral = SC_NO_COLLATERAL_TYPES.has(typeEl.value);
+
+  changeEl.disabled = noCollateral;
+  priceEl.disabled = noCollateral;
+
+  if (noCollateral) {
+    changeEl.value = "NA";
+    priceEl.value = "NA";
+  } else if (changeEl.value === "NA" || priceEl.value === "NA") {
+    changeEl.value = "";
+    priceEl.value = "";
+  }
 }
 
 function scOpenForm(rec) {
@@ -715,6 +765,7 @@ function scOpenForm(rec) {
     document.getElementById("txtLoanType").value = rec.loanType || "";
     document.getElementById("txtTerm").value = rec.term || "";
     document.getElementById("cboCycle").value = rec.cycle || "";
+    scOriginalCycle = rec.cycle || "";
     scSetSelectValue("cboRepaymentHistory", rec.repaymentHistory);
     document.getElementById("txtLateDays").value = rec.lateDays || "";
     scSetSelectValue("cboLoanCompletion", rec.loanCompletion);
@@ -726,6 +777,7 @@ function scOpenForm(rec) {
     scSetSelectValue("cboCollateralType", rec.collateralType);
     scSetSelectValue("cboCollateralChange", rec.collateralChange);
     scSetSelectValue("cboCollateralPrice", rec.collateralPrice);
+    scApplyCollateralLock();
     document.getElementById("txtCollateralNote").value = rec.collateralNote || "";
     scSetSelectValue("cboPurpose", rec.purpose);
     document.getElementById("txtPurposeNote").value = rec.purposeNote || "";
@@ -752,11 +804,14 @@ function scOpenForm(rec) {
       : "";
   } else {
     scEditingCIF = null;
+    scOriginalCycle = null;
     title.textContent = "បញ្ចូលថ្មី";
     document.getElementById("txtCIF").readOnly = false;
+    document.getElementById("cboCycle").value = "1";
     document.getElementById("conclusionOtherWrap").hidden = true;
     document.getElementById("metaUser").textContent = "";
     document.getElementById("metaTimestamp").textContent = "";
+    scApplyCollateralLock();
   }
 
   scUpdateSaveButtonMode();
@@ -839,6 +894,7 @@ async function scSaveRecord(e) {
     const data = await res.json();
     if (!res.ok || data.ok === false) throw new Error(data.error || "Save failed");
 
+    scLastSavedCif = cif;
     scCloseForm();
     await scRefreshList();
   } catch (err) {
@@ -1111,6 +1167,17 @@ function scBindEvents() {
     const wrap = document.getElementById("conclusionOtherWrap");
     wrap.hidden = e.target.value !== SC_CONCLUSION_OTHER;
     if (!wrap.hidden) document.getElementById("txtConclusionOther").focus();
+  });
+
+  document.getElementById("cboCollateralType").addEventListener("change", scApplyCollateralLock);
+
+  // Editing an existing record and changing the cycle number means this
+  // is a different visit — the previously-saved check date no longer
+  // applies, so clear it and make the officer pick the date of this visit.
+  document.getElementById("cboCycle").addEventListener("change", (e) => {
+    if (scEditingCIF && e.target.value !== scOriginalCycle) {
+      document.getElementById("txtSpotCheckDate").value = "";
+    }
   });
 
   document.getElementById("txtTerm").addEventListener("blur", (e) => {

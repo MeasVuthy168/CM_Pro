@@ -753,7 +753,8 @@
    Date, Maturity Date) — visibly locked so it's clear they can't be
    typed into, not just unresponsive. */
 .sc-field input[readonly],
-.sc-field input[disabled] {
+.sc-field input[disabled],
+.sc-field select[disabled] {
   background: var(--sc-bg);
   color: var(--sc-text-muted);
   cursor: not-allowed;
