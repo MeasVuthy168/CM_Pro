@@ -434,6 +434,14 @@
   object-fit: contain;
 }
 
+/* Icon PNGs are solid black-on-transparent — brightness(0) flattens
+   them to pure black, then invert(1) flips that to pure white, so
+   they stay legible on the dark dropdown background (same treatment
+   as .setting-icon on the Settings page). */
+[data-theme="dark"] .sc-menu-icon {
+  filter: brightness(0) invert(1);
+}
+
 /* ---------- List ---------- */
 .sc-list {
   display: flex;
@@ -803,7 +811,7 @@
 
 /* ---------- Delete confirm ---------- */
 .sc-confirm {
-  background: #fff;
+  background: var(--sc-card-bg);
   border-radius: var(--sc-radius);
   padding: 20px;
   width: 90%;

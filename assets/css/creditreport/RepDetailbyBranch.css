@@ -802,6 +802,13 @@
     flex:0 0 20px;
     object-fit:contain;
 }
+/* Icon PNGs are solid black-on-transparent — brightness(0) flattens
+   them to pure black, then invert(1) flips that to pure white, so
+   they stay legible on the dark dropdown background (same treatment
+   as .setting-icon on the Settings page). */
+[data-theme="dark"] .arrears-menu-dropdown button .menu-icon{
+    filter:brightness(0) invert(1);
+}
 .arrears-menu-dropdown button:active,
 .arrears-menu-dropdown button:hover{
     background:rgba(212,175,55,.25);
