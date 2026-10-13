@@ -70,7 +70,7 @@
     font-weight:700;
     cursor:pointer;
 }
-[data-theme="dark"] .rc-compare-btn{ color:#002D6B; background:var(--cr-gold-light); }
+[data-theme="dark"] .rc-compare-btn{ color:#0E1B3C; background:var(--cr-gold-light); }
 
 /* ===== Transition tables ===== */
 .rc-badge{
@@ -114,7 +114,7 @@
     text-overflow:ellipsis;
 }
 .rc-sub-tab.active{ background:var(--cr-navy-dark); color:#fff; }
-[data-theme="dark"] .rc-sub-tab.active{ color:#002D6B; }
+[data-theme="dark"] .rc-sub-tab.active{ color:#0E1B3C; }
 
 .rc-shell{ padding-top:14px; }
 
@@ -147,7 +147,7 @@
     text-align:center;
 }
 .rc-main-tab.active{ background:var(--cr-navy-dark); color:#fff; border-color:transparent; }
-[data-theme="dark"] .rc-main-tab.active{ color:#002D6B; }
+[data-theme="dark"] .rc-main-tab.active{ color:#0E1B3C; }
 [data-theme="darkgray"] .rc-main-tab.active{ color:#1C2333; }
 
 /* ===== Section head — icon + bilingual title above the KPI card,
@@ -181,7 +181,7 @@
     align-items:center;
     justify-content:center;
     font-size:17px;
-    background:var(--rc-accent-bg, rgba(0,59,139,.12));
+    background:var(--rc-accent-bg, rgba(26, 46, 87,.12));
 }
 .rc-section-head-text{ min-width:0; }
 .rc-section-title{
@@ -443,7 +443,7 @@
 [data-theme="dark"] .op-heat-cell.rc-snap-has,
 [data-theme="darkgray"] .op-heat-cell.rc-snap-has{ background:var(--cr-gold-light); }
 [data-theme="dark"] .op-heat-cell.rc-snap-has .op-heat-day,
-[data-theme="darkgray"] .op-heat-cell.rc-snap-has .op-heat-day{ color:#002D6B; }
+[data-theme="darkgray"] .op-heat-cell.rc-snap-has .op-heat-day{ color:#0E1B3C; }
 .op-heat-cell:not(.rc-snap-has):not(.op-heat-pad){ cursor:default; opacity:.55; }
 .rc-del-cal-legend{
     display:flex;

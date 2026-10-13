@@ -197,8 +197,8 @@
     const isDark = document.documentElement.getAttribute("data-theme") === "dark";
     return {
       textMuted: cs.getPropertyValue("--adm-text-muted").trim() || "#8FA0C7",
-      grid: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,45,107,0.10)",
-      navy: cs.getPropertyValue("--adm-navy-700").trim() || "#003B8B",
+      grid: isDark ? "rgba(255,255,255,0.10)" : "rgba(14, 27, 60,0.10)",
+      navy: cs.getPropertyValue("--adm-navy-700").trim() || "#1A2E57",
       gold: cs.getPropertyValue("--adm-gold-500").trim() || "#D4AF37",
       ok: cs.getPropertyValue("--adm-ok").trim() || "#1F9D55",
       danger: cs.getPropertyValue("--adm-danger").trim() || "#C0392B"

@@ -13,7 +13,7 @@ only holds styles specific to the notifications page.
     --notif-text-body:#4B5568;
     --notif-text-muted:#6B7280;
     --notif-text-muted2:#9AA5B8;
-    --notif-navy-dark:#002D6B;
+    --notif-navy-dark:#0E1B3C;
     --notif-shadow:0 4px 14px rgba(0,0,0,.08);
     --notif-avatar-bg:#E2E6ED;
 }
@@ -205,7 +205,7 @@ only holds styles specific to the notifications page.
 
     background:linear-gradient(180deg,#FFD700,#D4AF37);
 
-    color:#002D6B;
+    color:#0E1B3C;
 
     font-size:15px;
 
@@ -278,7 +278,7 @@ only holds styles specific to the notifications page.
 
     border-color:#D4AF37;
 
-    color:#002D6B;
+    color:#0E1B3C;
 
 }
 
@@ -706,7 +706,7 @@ only holds styles specific to the notifications page.
 
     inset:0;
 
-    background:rgba(0,45,107,.85);
+    background:rgba(14, 27, 60,.85);
 
     display:flex;
 
@@ -845,7 +845,7 @@ only holds styles specific to the notifications page.
 .notification-menu-item:hover,
 .notification-menu-item:active{
 
-    background:rgba(0,59,139,.06);
+    background:rgba(26, 46, 87,.06);
 
 }
 

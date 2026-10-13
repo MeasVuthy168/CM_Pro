@@ -912,7 +912,7 @@ flex:1;
 text-align:left;
 font-size:18px;
 font-weight:bold;
-color:#032d73;
+color:#0e1b3c;
 padding-top:18px;
 letter-spacing:.3px;
 ">
@@ -1058,7 +1058,7 @@ font-size:12px;
 
 <tr
 style="
-background:#032d73;
+background:#0e1b3c;
 color:white;
 ">
 
@@ -1385,7 +1385,7 @@ color:{rgb:"FFFFFF"}
 
 fill:{
 
-fgColor:{rgb:"032D73"}
+fgColor:{rgb:"0E1B3C"}
 
 },
 
@@ -1429,7 +1429,7 @@ color:{rgb:"FFFFFF"}
 
 fill:{
 
-fgColor:{rgb:"032D73"}
+fgColor:{rgb:"0E1B3C"}
 
 },
 

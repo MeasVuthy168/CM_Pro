@@ -176,8 +176,8 @@
     return {
       text: cs.getPropertyValue("--adm-text").trim() || (isDark ? "#EAF0FF" : "#14213D"),
       textMuted: cs.getPropertyValue("--adm-text-muted").trim() || "#8FA0C7",
-      grid: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,45,107,0.10)",
-      bar1: cs.getPropertyValue("--adm-navy-700").trim() || "#003B8B",
+      grid: isDark ? "rgba(255,255,255,0.10)" : "rgba(14, 27, 60,0.10)",
+      bar1: cs.getPropertyValue("--adm-navy-700").trim() || "#1A2E57",
       bar2: cs.getPropertyValue("--adm-gold-500").trim() || "#D4AF37"
     };
   }

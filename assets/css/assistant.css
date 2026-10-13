@@ -1,7 +1,7 @@
 :root{
     --asst-card-bg:#FFFFFF;
     --asst-border:#D4AF37;
-    --asst-text:#002D6B;
+    --asst-text:#0E1B3C;
     --asst-shimmer-mid:#5B84C4;
 }
 
@@ -207,7 +207,7 @@
     top:-8px;
     left:64px;
     background:#00E5FF;
-    color:#003B8B;
+    color:#1A2E57;
     font-size:10px;
     font-weight:800;
     padding:2px 9px;
@@ -252,8 +252,8 @@
     display:inline-block;
     margin-top:10px;
     background:#00E5FF;
-    color:#003B8B;
-    -webkit-text-fill-color:#003B8B;
+    color:#1A2E57;
+    -webkit-text-fill-color:#1A2E57;
     border:none;
     border-radius:14px;
     padding:6px 18px;
@@ -301,7 +301,7 @@
     border:none;
     border-radius:50%;
     background:var(--asst-border);
-    color:#002D6B;
+    color:#0E1B3C;
     font-size:16px;
     display:flex;
     align-items:center;
@@ -406,7 +406,7 @@
     border:none;
     border-radius:50%;
     background:linear-gradient(180deg,#FFD700,#D4AF37);
-    color:#002D6B;
+    color:#0E1B3C;
     font-size:26px;
     display:flex;
     align-items:center;

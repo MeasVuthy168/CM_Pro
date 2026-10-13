@@ -5,8 +5,8 @@
     --cr-text:#1C2333;
     --cr-text-muted:#6B7280;
     --cr-shadow:0 4px 14px rgba(0,0,0,.08);
-    --cr-navy:#003B8B;
-    --cr-navy-dark:#002D6B;
+    --cr-navy:#1A2E57;
+    --cr-navy-dark:#0E1B3C;
     --cr-gold:#D4AF37;
     --cr-gold-light:#FFD700;
 }
@@ -88,7 +88,7 @@
     align-items:center;
     justify-content:center;
     border-radius:12px;
-    background:rgba(0,59,139,.08);
+    background:rgba(26, 46, 87,.08);
 }
 [data-theme="dark"] .cr-hub-icon{ background:rgba(255,255,255,.1); }
 
@@ -143,7 +143,7 @@
 .cr-hub-snapshot-btn-icon{ font-size:16px; line-height:1; }
 [data-theme="dark"] .cr-hub-snapshot-btn{
     background:linear-gradient(135deg,#D4AF37,#FFD700);
-    color:#002D6B;
+    color:#0E1B3C;
 }
 [data-theme="darkgray"] .cr-hub-snapshot-btn{
     color:#1C2333;
