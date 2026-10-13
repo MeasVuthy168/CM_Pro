@@ -380,6 +380,29 @@ CMI18n.register({
   "admin.maintenance.deleteFailed": { km: "លុបបានបរាជ័យ។", en: "Delete failed." },
   "admin.maintenance.deleteFailedServer": { km: "លុបបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Delete failed — could not reach the server." },
   "admin.maintenance.loadCollectionsFailed": { km: "មិនអាចផ្ទុកបញ្ជី Collection បានទេ។", en: "Could not load the collections list." },
+  "admin.maintenance.wipeLabel": { km: "លុបទិន្នន័យទាំងមូលតាម Source", en: "Wipe Collection by Source" },
+  "admin.maintenance.wipeExplain": {
+    km: "Collection ទាំងនេះជំនួសទិន្នន័យទាំងមូលរាល់ពេល Upload ថ្មី ដូច្នេះមិនមានទិន្នន័យ \"ចាស់\" ត្រូវកាត់ទេ។ ជ្រើសរើស Collection និង Source មួយ រួចលុបជួរទាំងអស់របស់ Source នោះជាអចិន្ត្រៃយ៍។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។",
+    en: "These collections replace their data entirely on every upload, so there's no \"old\" data to prune by date. Choose a collection and a source, then permanently delete all of that source's rows. This can't be undone."
+  },
+  "admin.maintenance.source": { km: "Source", en: "Source" },
+  "admin.maintenance.sourceRowCount": { km: "{source} ({count} ជួរ)", en: "{source} ({count} rows)" },
+  "admin.maintenance.noSources": { km: "— គ្មានទិន្នន័យ —", en: "— no data —" },
+  "admin.maintenance.loadSourcesFailed": { km: "មិនអាចផ្ទុកបញ្ជី Source បានទេ។", en: "Could not load the sources list." },
+  "admin.maintenance.wipePreviewResult": {
+    km: "រកឃើញ {count} ជួរ សម្រាប់ {source} នៃ {collection} — ត្រៀមរួចសម្រាប់លុប។",
+    en: "Found {count} row(s) for {source} in {collection} — ready to delete."
+  },
+  "admin.maintenance.wipeConfirmMessage": {
+    km: "អ្នកនឹងលុបជាអចិន្ត្រៃយ៍នូវជួរចំនួន {count} ទាំងអស់ សម្រាប់ {source} នៃ {collection}។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។ តើអ្នកប្រាកដទេ?",
+    en: "You are about to permanently delete all {count} row(s) for {source} in {collection}. This can't be undone. Are you sure?"
+  },
+  "admin.maintenance.wiped": {
+    km: "បានលុបជួរចំនួន {count} សម្រាប់ {source} នៃ {collection}។",
+    en: "Deleted {count} row(s) for {source} in {collection}."
+  },
+  "admin.maintenance.wipeFailed": { km: "លុបបានបរាជ័យ។", en: "Delete failed." },
+  "admin.maintenance.wipeFailedServer": { km: "លុបបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Delete failed — could not reach the server." },
 
   // ===================================================
   // bandwidth.html + admin.js — Bandwidth Dashboard
