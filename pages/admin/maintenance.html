@@ -148,6 +148,30 @@
         </div>
       </div>
 
+      <!-- ========================= -->
+      <!-- COMPACT REPORT SNAPSHOT HISTORY -->
+      <!-- Keeps only each closed month's last business day (per the same -->
+      <!-- Cambodian weekend/holiday calendar used on the Branch/Officer -->
+      <!-- Productivity charts) for Branch/Officer/Location/Product report -->
+      <!-- history snapshots, deleting the rest of that month's daily rows. -->
+      <!-- ========================= -->
+      <div class="adm-card">
+        <div class="adm-card-label" data-i18n="admin.maintenance.compactLabel">Compact Report Snapshot History</div>
+
+        <p class="adm-modal-message" data-i18n="admin.maintenance.compactExplain">
+          Daily report-history snapshots (Branch/Officer/Location/Product) grow by one row per business day forever.
+          This keeps only the last business day of each already-closed month (skipping weekends and Cambodian public
+          holidays) and deletes the rest of that month's daily rows. The current month is never touched. This can't be undone.
+        </p>
+
+        <p class="adm-modal-message" id="cpPreviewResult" hidden></p>
+
+        <div class="adm-modal-footer" style="justify-content:flex-start; gap:12px;">
+          <button type="button" class="adm-btn" id="cpBtnPreview" data-i18n="admin.maintenance.compactPreview">Preview</button>
+          <button type="button" class="adm-btn adm-btn-danger" id="cpBtnRun" disabled data-i18n="admin.maintenance.compactRun">Compact Now</button>
+        </div>
+      </div>
+
     </main>
 
   </div>

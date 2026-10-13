@@ -387,4 +387,98 @@
   wp.btnDelete.addEventListener("click", openWipeConfirmModal);
 
   loadWipeCollections();
+
+  // =====================================================
+  // Compact Report Snapshot History — collapses each already-closed
+  // month of daily Branch/Officer/Location/Product report-history
+  // snapshots down to that month's last business day (per the backend's
+  // Cambodian weekend/holiday calendar). No collection/source picker
+  // needed — it always runs across all four report types in one pass,
+  // same preview-before-run guard as the other tools.
+  // =====================================================
+  const cp = {
+    previewResult: document.getElementById("cpPreviewResult"),
+    btnPreview: document.getElementById("cpBtnPreview"),
+    btnRun: document.getElementById("cpBtnRun")
+  };
+
+  let lastCompactPreview = null; // { months, count }
+
+  function invalidateCompactPreview() {
+    lastCompactPreview = null;
+    cp.btnRun.disabled = true;
+    cp.previewResult.hidden = true;
+  }
+
+  async function runCompactPreview() {
+    cp.btnPreview.disabled = true;
+    try {
+      const res = await fetch(`${API_BASE}/api/maintenance/compact-snapshots`, {
+        method: "POST",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ dryRun: true })
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        location.replace(window.CM_ADMIN_CONFIG.loginPage);
+        return;
+      }
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.maintenance.compactPreviewFailed"), "error");
+
+      lastCompactPreview = { months: data.monthsAffected, count: data.count };
+      cp.previewResult.hidden = false;
+      cp.previewResult.textContent = data.count > 0
+        ? t("admin.maintenance.compactPreviewResult", { months: data.monthsAffected, count: data.count })
+        : t("admin.maintenance.compactPreviewEmpty");
+      cp.btnRun.disabled = data.count === 0;
+    } catch (e) {
+      console.error("compact preview failed:", e);
+      AdminUI.toast(t("admin.maintenance.compactPreviewFailedServer"), "error");
+    } finally {
+      cp.btnPreview.disabled = false;
+    }
+  }
+
+  cp.btnPreview.addEventListener("click", runCompactPreview);
+
+  function openCompactConfirmModal() {
+    if (!lastCompactPreview) {
+      return AdminUI.toast(t("admin.maintenance.previewFirst"), "error");
+    }
+
+    const body = document.createElement("div");
+    body.innerHTML = `
+      <p class="adm-modal-message">${t("admin.maintenance.compactConfirmMessage", { count: lastCompactPreview.count, months: lastCompactPreview.months })}</p>
+      <div class="adm-modal-footer">
+        <button type="button" class="adm-btn" id="cpRunCancel">${t("admin.maintenance.cancel")}</button>
+        <button type="button" class="adm-btn adm-btn-danger" id="cpRunConfirm">${t("admin.maintenance.confirmDelete")}</button>
+      </div>
+    `;
+
+    const { body: mountedBody } = AdminUI.openModal({ title: t("admin.maintenance.compactConfirmTitle"), bodyNode: body });
+
+    mountedBody.querySelector("#cpRunCancel").addEventListener("click", () => AdminUI.closeModal());
+    mountedBody.querySelector("#cpRunConfirm").addEventListener("click", async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/maintenance/compact-snapshots`, {
+          method: "POST",
+          headers: { ...authHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.maintenance.compactFailed"), "error");
+
+        AdminUI.closeModal();
+        AdminUI.toast(t("admin.maintenance.compactDone", { count: data.deletedCount, months: data.monthsAffected }), "success");
+        invalidateCompactPreview();
+      } catch (e) {
+        console.error("compact run failed:", e);
+        AdminUI.toast(t("admin.maintenance.compactFailedServer"), "error");
+      }
+    });
+  }
+
+  cp.btnRun.addEventListener("click", openCompactConfirmModal);
 })();
