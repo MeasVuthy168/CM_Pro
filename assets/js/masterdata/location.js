@@ -26,6 +26,7 @@ const mdIsAdmin = String(mdLoggedInUser.role || "").toLowerCase() === "admin";
 
 let mdLocations = [];     // full list from the server, unfiltered
 let mdEditingId = null;   // location id currently being edited, or null for "add"
+let mdViewMode = localStorage.getItem("md_location_view") === "list" ? "list" : "card";
 
 function mdEscapeHtml(text) {
     const div = document.createElement("div");
@@ -45,6 +46,8 @@ async function mdLoadLocations() {
         }
         mdLocations = data.items || [];
         mdPopulateDistrictFilter();
+        mdPopulateCommuneFilter();
+        mdPopulateOfficerFilter();
         mdRenderSummary();
         mdRenderList();
     } catch (e) {
@@ -70,6 +73,39 @@ function mdPopulateDistrictFilter() {
     if (districts.includes(prev)) sel.value = prev;
 }
 
+// Commune options narrow to the currently selected District (all
+// communes if no District is selected). Re-run whenever District
+// changes, same as Officer below does for Branch.
+function mdPopulateCommuneFilter() {
+    const districtFilter = document.getElementById("mdFilterDistrict").value;
+    const sel = document.getElementById("mdFilterCommune");
+    const prev = sel.value;
+    const scoped = districtFilter ? mdLocations.filter(l => l.district === districtFilter) : mdLocations;
+    const communes = [...new Set(scoped.map(l => l.commune).filter(Boolean))].sort();
+
+    sel.innerHTML =
+        `<option value="">${t("masterdata.location.allCommunes")}</option>` +
+        communes.map(c => `<option value="${mdEscapeHtml(c)}">${mdEscapeHtml(c)}</option>`).join("");
+
+    if (communes.includes(prev)) sel.value = prev;
+}
+
+// Officer options narrow to the currently selected Branch (all
+// officers if no Branch is selected).
+function mdPopulateOfficerFilter() {
+    const branchFilter = document.getElementById("mdFilterBranch").value;
+    const sel = document.getElementById("mdFilterOfficer");
+    const prev = sel.value;
+    const scoped = branchFilter ? mdLocations.filter(l => l.branch === branchFilter) : mdLocations;
+    const officers = [...new Set(scoped.map(l => l.officer).filter(Boolean))].sort();
+
+    sel.innerHTML =
+        `<option value="">${t("masterdata.location.allOfficers")}</option>` +
+        officers.map(o => `<option value="${mdEscapeHtml(o)}">${mdEscapeHtml(o)}</option>`).join("");
+
+    if (officers.includes(prev)) sel.value = prev;
+}
+
 // ========================================
 // SUMMARY
 // ========================================
@@ -77,10 +113,12 @@ function mdRenderSummary() {
     const total = mdLocations.length;
     const totalFamily = mdLocations.reduce((sum, l) => sum + (parseInt(l.family, 10) || 0), 0);
     const districtCount = new Set(mdLocations.map(l => l.district).filter(Boolean)).size;
+    const communeCount = new Set(mdLocations.map(l => l.commune).filter(Boolean)).size;
 
     document.getElementById("mdSummaryTotal").textContent = total;
     document.getElementById("mdSummaryFamily").textContent = totalFamily;
     document.getElementById("mdSummaryDistricts").textContent = districtCount;
+    document.getElementById("mdSummaryCommunes").textContent = communeCount;
 }
 
 // ========================================
@@ -96,12 +134,16 @@ const MD_SORTERS = {
 function mdFilteredLocations() {
     const keyword = document.getElementById("mdSearchInput").value.trim().toLowerCase();
     const districtFilter = document.getElementById("mdFilterDistrict").value;
+    const communeFilter = document.getElementById("mdFilterCommune").value;
     const branchFilter = document.getElementById("mdFilterBranch").value;
+    const officerFilter = document.getElementById("mdFilterOfficer").value;
     const sortBy = document.getElementById("mdSortSelect").value;
 
     return mdLocations.filter(l => {
         if (districtFilter && l.district !== districtFilter) return false;
+        if (communeFilter && l.commune !== communeFilter) return false;
         if (branchFilter && l.branch !== branchFilter) return false;
+        if (officerFilter && l.officer !== officerFilter) return false;
         if (keyword) {
             const hay = `${l.district} ${l.commune} ${l.village} ${l.branch || ""} ${l.officer || ""}`.toLowerCase();
             if (!hay.includes(keyword)) return false;
@@ -119,7 +161,29 @@ function mdRenderList() {
         return;
     }
 
-    list.innerHTML = rows.map(l => `
+    const actionsHtml = mdIsAdmin ? `
+                <div class="md-row-actions">
+                    <button type="button" class="md-icon-btn md-edit-btn" aria-label="${t("masterdata.location.editBtn")}">✏️</button>
+                    <button type="button" class="md-icon-btn md-danger md-delete-btn" aria-label="${t("masterdata.location.deleteBtn")}">🗑️</button>
+                </div>` : "";
+    const tagsHtml = l => `
+            <div class="md-row-tags">
+                ${l.branch ? `<span class="md-tag">${mdEscapeHtml(l.branch)}</span>` : ""}
+                ${l.officer ? `<span class="md-tag">${mdEscapeHtml(l.officer)}</span>` : ""}
+            </div>`;
+
+    list.innerHTML = rows.map(l => mdViewMode === "list" ? `
+        <div class="md-row-card md-row-compact" data-id="${mdEscapeHtml(l.id)}">
+            <div class="md-row-top">
+                <div>
+                    <div class="md-row-name">${mdEscapeHtml(l.village) || "-"}</div>
+                    <div class="md-row-id">${mdEscapeHtml(l.district) || "-"} &middot; ${mdEscapeHtml(l.commune) || "-"} &middot; ${t("masterdata.location.colFamily")}: ${mdEscapeHtml(l.family) || "-"}</div>
+                </div>
+                ${actionsHtml}
+            </div>
+            ${tagsHtml(l)}
+        </div>
+    ` : `
         <div class="md-row-card" data-id="${mdEscapeHtml(l.id)}">
             <div class="md-row-top">
                 <div>
@@ -128,16 +192,9 @@ function mdRenderList() {
                     <div class="md-row-id">${t("masterdata.location.colCommune")}: ${mdEscapeHtml(l.commune) || "-"}</div>
                     <div class="md-row-id">${t("masterdata.location.colFamily")}: ${mdEscapeHtml(l.family) || "-"}</div>
                 </div>
-                ${mdIsAdmin ? `
-                <div class="md-row-actions">
-                    <button type="button" class="md-icon-btn md-edit-btn" aria-label="${t("masterdata.location.editBtn")}">✏️</button>
-                    <button type="button" class="md-icon-btn md-danger md-delete-btn" aria-label="${t("masterdata.location.deleteBtn")}">🗑️</button>
-                </div>` : ""}
+                ${actionsHtml}
             </div>
-            <div class="md-row-tags">
-                ${l.branch ? `<span class="md-tag">${mdEscapeHtml(l.branch)}</span>` : ""}
-                ${l.officer ? `<span class="md-tag">${mdEscapeHtml(l.officer)}</span>` : ""}
-            </div>
+            ${tagsHtml(l)}
         </div>
     `).join("");
 }
@@ -254,15 +311,43 @@ mdSearchClearBtn.addEventListener("click", () => {
     mdSearchInput.focus();
 });
 
-document.getElementById("mdFilterDistrict").addEventListener("change", mdRenderList);
-document.getElementById("mdFilterBranch").addEventListener("change", mdRenderList);
+document.getElementById("mdFilterDistrict").addEventListener("change", () => {
+    document.getElementById("mdFilterCommune").value = "";
+    mdPopulateCommuneFilter();
+    mdRenderList();
+});
+document.getElementById("mdFilterCommune").addEventListener("change", mdRenderList);
+document.getElementById("mdFilterBranch").addEventListener("change", () => {
+    document.getElementById("mdFilterOfficer").value = "";
+    mdPopulateOfficerFilter();
+    mdRenderList();
+});
+document.getElementById("mdFilterOfficer").addEventListener("change", mdRenderList);
 document.getElementById("mdSortSelect").addEventListener("change", mdRenderList);
 
 document.getElementById("mdClearFilterBtn").addEventListener("click", () => {
     document.getElementById("mdFilterDistrict").value = "";
+    document.getElementById("mdFilterCommune").value = "";
     document.getElementById("mdFilterBranch").value = "";
+    document.getElementById("mdFilterOfficer").value = "";
+    mdPopulateCommuneFilter();
+    mdPopulateOfficerFilter();
     mdRenderList();
 });
+
+function mdApplyViewModeButtons() {
+    document.getElementById("mdViewCardBtn").classList.toggle("active", mdViewMode === "card");
+    document.getElementById("mdViewListBtn").classList.toggle("active", mdViewMode === "list");
+}
+function mdSetViewMode(mode) {
+    mdViewMode = mode;
+    localStorage.setItem("md_location_view", mode);
+    mdApplyViewModeButtons();
+    mdRenderList();
+}
+document.getElementById("mdViewCardBtn").addEventListener("click", () => mdSetViewMode("card"));
+document.getElementById("mdViewListBtn").addEventListener("click", () => mdSetViewMode("list"));
+mdApplyViewModeButtons();
 
 document.getElementById("btnMdAdd").addEventListener("click", () => mdOpenDialog(null));
 document.getElementById("btnMdSave").addEventListener("click", mdSaveLocation);
