@@ -223,18 +223,18 @@
           <div class="sc-field-row">
             <div class="sc-field">
               <label for="txtDisbursementDate" data-i18n="spotcheck.disbursementDateLabel">ថ្ងៃបញ្ចេញកម្ចី</label>
-              <input type="date" id="txtDisbursementDate">
+              <input type="date" id="txtDisbursementDate" readonly>
             </div>
             <div class="sc-field">
               <label for="txtMaturityDate" data-i18n="spotcheck.maturityDateLabel">ថ្ងៃផុតកំណត់</label>
-              <input type="date" id="txtMaturityDate">
+              <input type="date" id="txtMaturityDate" readonly>
             </div>
           </div>
 
           <div class="sc-field-row">
             <div class="sc-field">
               <label for="txtLoanSize" data-i18n="spotcheck.loanSizeLabel">ទំហំឥណទាន</label>
-              <input type="number" step="0.01" id="txtLoanSize">
+              <input type="text" inputmode="decimal" id="txtLoanSize">
             </div>
             <div class="sc-field sc-field-sm">
               <label for="txtCurrency" data-i18n="spotcheck.currencyLabel">រូបិយប័ណ្ណ</label>
@@ -250,7 +250,7 @@
           <div class="sc-field-row">
             <div class="sc-field">
               <label for="txtOutstanding" data-i18n="spotcheck.outstandingLabel">សមតុល្យ</label>
-              <input type="number" step="0.01" id="txtOutstanding">
+              <input type="text" inputmode="decimal" id="txtOutstanding">
             </div>
             <div class="sc-field">
               <label for="txtInterestRate"><span data-i18n="spotcheck.interestRateLabel">អត្រាការប្រាក់</span> <span class="sc-hint" data-i18n="spotcheck.hintExample18">ឧ. 18</span></label>

@@ -633,9 +633,9 @@ function scFormToArray() {
     customerName: get("txtCustomerName"),
     disbursementDate: scIsoToStored(get("txtDisbursementDate")),
     maturityDate: scIsoToStored(get("txtMaturityDate")),
-    loanSize: get("txtLoanSize"),
+    loanSize: scUnformatAmount(get("txtLoanSize")),
     currency: get("txtCurrency"),
-    outstanding: get("txtOutstanding"),
+    outstanding: scUnformatAmount(get("txtOutstanding")),
     creditOfficer: get("txtCreditOfficer"),
     interestRate: scFormatRate(get("txtInterestRate")),
     loanType: get("txtLoanType"),
@@ -707,9 +707,9 @@ function scOpenForm(rec) {
     document.getElementById("txtCustomerName").value = rec.customerName || "";
     document.getElementById("txtDisbursementDate").value = scStoredToIso(rec.disbursementDate);
     document.getElementById("txtMaturityDate").value = scStoredToIso(rec.maturityDate);
-    document.getElementById("txtLoanSize").value = rec.loanSize || "";
+    document.getElementById("txtLoanSize").value = scFormatAmount(rec.loanSize);
     document.getElementById("txtCurrency").value = rec.currency || "";
-    document.getElementById("txtOutstanding").value = rec.outstanding || "";
+    document.getElementById("txtOutstanding").value = scFormatAmount(rec.outstanding);
     document.getElementById("txtCreditOfficer").value = rec.creditOfficer || "";
     document.getElementById("txtInterestRate").value = rec.interestRate || "";
     document.getElementById("txtLoanType").value = rec.loanType || "";
@@ -814,11 +814,8 @@ function scValidateForm() {
 async function scSaveRecord(e) {
   e.preventDefault();
 
-  if (document.getElementById("btnSaveForm").dataset.mode === "next") {
-    scSwitchTab("tab2");
-    return;
-  }
-
+  // The form only submits (type="submit") when btnSaveForm is in "save"
+  // mode — the Next step is type="button", handled separately on click.
   if (!scValidateForm()) return;
 
   const cif = document.getElementById("txtCIF").value.trim();
@@ -993,8 +990,8 @@ async function scAutofillFromNbcos(cif) {
     document.getElementById("txtCustomerName").value = at(SC_NBCOS_MAP.customerName);
     document.getElementById("txtDisbursementDate").value = scStoredToIso(at(SC_NBCOS_MAP.disbursementDate));
     document.getElementById("txtMaturityDate").value = scStoredToIso(at(SC_NBCOS_MAP.maturityDate));
-    document.getElementById("txtLoanSize").value = at(SC_NBCOS_MAP.loanSize);
-    document.getElementById("txtOutstanding").value = at(SC_NBCOS_MAP.outstanding);
+    document.getElementById("txtLoanSize").value = scFormatAmount(at(SC_NBCOS_MAP.loanSize));
+    document.getElementById("txtOutstanding").value = scFormatAmount(at(SC_NBCOS_MAP.outstanding));
     document.getElementById("txtLoanType").value = at(SC_NBCOS_MAP.loanType);
     document.getElementById("txtCreditOfficer").value = at(SC_NBCOS_MAP.creditOfficer);
 
@@ -1027,6 +1024,14 @@ function scBindEvents() {
   document.getElementById("btnCloseForm").addEventListener("click", scCloseForm);
   document.getElementById("btnCancelForm").addEventListener("click", scCloseForm);
   document.getElementById("spotCheckForm").addEventListener("submit", scSaveRecord);
+  // Next (Tab I -> Tab II) never submits the form — see scUpdateSaveButtonMode()
+  // for why — so it's handled on click, independent of the submit event.
+  document.getElementById("btnSaveForm").addEventListener("click", (e) => {
+    if (e.currentTarget.dataset.mode === "next") {
+      e.preventDefault();
+      scSwitchTab("tab2");
+    }
+  });
 
   SC_TAB1_REQUIRED_IDS.forEach((id) => {
     document.getElementById(id).addEventListener("input", scUpdateSaveButtonMode);
@@ -1114,6 +1119,12 @@ function scBindEvents() {
   document.getElementById("txtInterestRate").addEventListener("blur", (e) => {
     e.target.value = scFormatRate(e.target.value);
   });
+  document.getElementById("txtLoanSize").addEventListener("blur", (e) => {
+    e.target.value = scFormatAmount(e.target.value);
+  });
+  document.getElementById("txtOutstanding").addEventListener("blur", (e) => {
+    e.target.value = scFormatAmount(e.target.value);
+  });
 
   document.getElementById("txtCIF").addEventListener("blur", (e) => {
     const cif = e.target.value.trim();
@@ -1151,6 +1162,14 @@ function scSwitchTab(tabId) {
 // Tab I complete + still viewing Tab I -> button becomes "បន្ទាប់" (Next),
 // which just advances to Tab II instead of submitting. Anywhere else,
 // it's the real Save/Edit button.
+//
+// The Next step also switches the button's own type to "button" (not
+// "submit") — some browsers/webviews don't reliably exclude required
+// fields inside a hidden="" tab panel from native constraint validation
+// before the submit event fires, which silently blocks the click with
+// no visible error. type="button" sidesteps native form submission
+// (and its validation) entirely for this step; only the real Save/Edit
+// step (type="submit") goes through scSaveRecord()'s own scValidateForm().
 function scUpdateSaveButtonMode() {
   const btn = document.getElementById("btnSaveForm");
   const onTab1 = !document.getElementById("tab1").hidden;
@@ -1159,9 +1178,11 @@ function scUpdateSaveButtonMode() {
   if (onTab1 && tab1Complete) {
     btn.textContent = "បន្ទាប់";
     btn.dataset.mode = "next";
+    btn.type = "button";
   } else {
     btn.textContent = scEditingCIF ? "កែប្រែ" : "រក្សាទុក";
     btn.dataset.mode = "save";
+    btn.type = "submit";
   }
 }
 
@@ -1288,6 +1309,24 @@ function scFormatRate(val) {
   const trimmed = (val || "").trim();
   if (/^\d+(\.\d+)?$/.test(trimmed)) return `${trimmed}%ក្នុងមួយឆ្នាំ`;
   return trimmed;
+}
+
+// "108000000" or an already-formatted "108,000,000.00" -> "108,000,000.00"
+// (#,##0.00) — Loan Size / Outstanding display format. Strips existing
+// commas first so re-formatting an already-formatted value on a second
+// blur is a no-op rather than compounding. Non-numeric input (empty,
+// partially typed) is left as-is rather than forced to "0.00".
+function scFormatAmount(val) {
+  const cleaned = String(val || "").replace(/,/g, "").trim();
+  if (!cleaned || isNaN(Number(cleaned))) return val || "";
+  return Number(cleaned).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Reverses scFormatAmount() for storage — the DB keeps these as plain
+// numeric strings (no thousand separators), same shape as the existing
+// data, so only the on-screen display is formatted.
+function scUnformatAmount(val) {
+  return String(val || "").replace(/,/g, "").trim();
 }
 
 function scFormatTimestamp(iso) {
