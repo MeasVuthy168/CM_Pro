@@ -65,8 +65,33 @@
 
 .md-filter-actions{
     display:flex;
-    justify-content:flex-end;
+    justify-content:space-between;
+    align-items:center;
     margin-top:10px;
+}
+
+.md-view-toggle{
+    display:flex;
+    gap:6px;
+}
+
+.md-view-btn{
+    width:34px;
+    height:34px;
+    border-radius:10px;
+    border:1px solid var(--md-border);
+    background:transparent;
+    color:var(--md-text-muted);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.md-view-btn:active{ transform:scale(.95); }
+.md-view-btn.active{
+    background:linear-gradient(180deg,#FFD700,#D4AF37);
+    border-color:transparent;
+    color:#002D6B;
 }
 
 .md-btn-clear-filter{
@@ -99,8 +124,8 @@
 /* ===== Summary tiles ===== */
 .md-summary-row{
     display:grid;
-    grid-template-columns:repeat(3, 1fr);
-    gap:8px;
+    grid-template-columns:repeat(4, 1fr);
+    gap:6px;
     padding:0 16px 14px;
 }
 
@@ -108,19 +133,19 @@
     background:var(--md-card-bg);
     border:1px solid var(--md-border);
     border-radius:14px;
-    padding:10px 8px;
+    padding:10px 6px;
     box-shadow:var(--md-shadow);
 }
 
 .md-summary-value{
-    font-size:18px;
+    font-size:16px;
     font-weight:700;
     color:var(--md-navy-dark);
 }
 [data-theme="dark"] .md-summary-value{ color:var(--md-gold-light); }
 
 .md-summary-label{
-    font-size:11.5px;
+    font-size:10.5px;
     color:var(--md-text-muted);
     margin-top:2px;
 }
@@ -162,6 +187,17 @@
     border-radius:14px;
     padding:14px;
     box-shadow:var(--md-shadow);
+}
+
+/* List view: one compact row per location instead of the full card */
+.md-row-card.md-row-compact{
+    padding:10px 14px;
+}
+.md-row-compact .md-row-name{
+    font-size:14px;
+}
+.md-row-compact .md-row-tags{
+    margin-top:6px;
 }
 
 .md-row-top{
