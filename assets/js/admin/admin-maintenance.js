@@ -18,7 +18,9 @@
     btnPreview: document.getElementById("dtoBtnPreview"),
     btnDelete: document.getElementById("dtoBtnDelete"),
     btnActivityLogsCleanup: document.getElementById("alBtnCleanup"),
-    btnNotificationsCleanup: document.getElementById("nfBtnCleanup")
+    alKeepDays: document.getElementById("alKeepDays"),
+    btnNotificationsCleanup: document.getElementById("nfBtnCleanup"),
+    nfKeepDays: document.getElementById("nfKeepDays")
   };
 
   let lastPreview = null; // { days, count, cutoff } — must match current input to allow delete
@@ -115,14 +117,14 @@
   el.btnDelete.addEventListener("click", openDeleteConfirmModal);
 
   // ---------- Activity Logs cleanup (moved from admin-activitylogs.js) ----------
+  // The keepDays input lives directly on the card now (not inside the
+  // modal) — the modal is just a final yes/no confirmation.
   function openActivityLogsCleanupModal() {
+    const keepDays = Number(el.alKeepDays.value || 180);
+
     const body = document.createElement("div");
     body.innerHTML = `
-      <p class="adm-modal-message">${t("admin.activitylogs.cleanupExplain")}</p>
-      <label class="adm-cleanup-field">
-        <span>${t("admin.activitylogs.keepDays")}</span>
-        <input type="number" id="alKeepDays" value="180" min="1">
-      </label>
+      <p class="adm-modal-message">${t("admin.activitylogs.cleanupConfirmMessage", { days: keepDays })}</p>
       <div class="adm-modal-footer">
         <button type="button" class="adm-btn" id="alCleanupCancel">${t("admin.activitylogs.cancel")}</button>
         <button type="button" class="adm-btn adm-btn-danger" id="alCleanupConfirm">${t("admin.activitylogs.deleteOldLogs")}</button>
@@ -133,8 +135,6 @@
 
     mountedBody.querySelector("#alCleanupCancel").addEventListener("click", () => AdminUI.closeModal());
     mountedBody.querySelector("#alCleanupConfirm").addEventListener("click", async () => {
-      const keepDays = Number(mountedBody.querySelector("#alKeepDays").value || 180);
-
       try {
         const res = await fetch(`${API_BASE}/api/activitylogs/cleanup`, {
           method: "POST",
@@ -157,13 +157,11 @@
 
   // ---------- Notifications cleanup (moved from admin-notifications.js) ----------
   function openNotificationsCleanupModal() {
+    const keepDays = Number(el.nfKeepDays.value || 30);
+
     const body = document.createElement("div");
     body.innerHTML = `
-      <p class="adm-modal-message">${t("admin.notifications.cleanupExplain")}</p>
-      <label class="adm-cleanup-field">
-        <span>${t("admin.notifications.keepDays")}</span>
-        <input type="number" id="nfKeepDays" value="30" min="1">
-      </label>
+      <p class="adm-modal-message">${t("admin.notifications.cleanupConfirmMessage", { days: keepDays })}</p>
       <div class="adm-modal-footer">
         <button type="button" class="adm-btn" id="nfCleanupCancel">${t("admin.notifications.cancel")}</button>
         <button type="button" class="adm-btn adm-btn-danger" id="nfCleanupConfirm">${t("admin.notifications.deleteOldConfirm")}</button>
@@ -174,8 +172,6 @@
 
     mountedBody.querySelector("#nfCleanupCancel").addEventListener("click", () => AdminUI.closeModal());
     mountedBody.querySelector("#nfCleanupConfirm").addEventListener("click", async () => {
-      const keepDays = Number(mountedBody.querySelector("#nfKeepDays").value || 30);
-
       try {
         const res = await fetch(`${API_BASE}/api/notifications/cleanup`, {
           method: "POST",
