@@ -26,7 +26,7 @@
   justify-content: center;
   font-size: 1.4rem;
   background: linear-gradient(135deg, var(--adm-navy-900), var(--adm-navy-700));
-  box-shadow: 0 4px 14px rgba(0, 45, 107, 0.28);
+  box-shadow: 0 4px 14px rgba(14, 27, 60, 0.28);
 }
 [data-theme="dark"] .adm-bw-title-icon {
   background: linear-gradient(135deg, var(--adm-gold-500), var(--adm-gold-300));
@@ -192,7 +192,7 @@
 }
 .adm-kpi-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(0, 45, 107, 0.14);
+  box-shadow: 0 8px 22px rgba(14, 27, 60, 0.14);
 }
 [data-theme="dark"] .adm-kpi-card:hover {
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
@@ -276,7 +276,7 @@
 
 table.adm-table tbody tr { transition: background-color 0.12s ease; }
 table.adm-table tbody tr:hover { background-color: var(--adm-navy-100); }
-table.adm-table tbody tr:nth-child(even) { background-color: rgba(0, 45, 107, 0.025); }
+table.adm-table tbody tr:nth-child(even) { background-color: rgba(14, 27, 60, 0.025); }
 [data-theme="dark"] table.adm-table tbody tr:nth-child(even) { background-color: rgba(255, 255, 255, 0.025); }
 
 .adm-route-chip {

@@ -5,11 +5,11 @@
     --tvr-text:#1C2333;
     --tvr-text-muted:#6B7280;
     --tvr-shadow:0 4px 14px rgba(0,0,0,.08);
-    --tvr-navy:#003B8B;
-    --tvr-navy-dark:#002D6B;
+    --tvr-navy:#1A2E57;
+    --tvr-navy-dark:#0E1B3C;
     --tvr-readonly-bg:#EAF0FB;
-    --tvr-outline-btn-border:#003B8B;
-    --tvr-outline-btn-text:#003B8B;
+    --tvr-outline-btn-border:#1A2E57;
+    --tvr-outline-btn-text:#1A2E57;
 }
 
 [data-theme="dark"]{
@@ -143,7 +143,7 @@ background:#16223F;
 
 border-color:var(--tvr-navy);
 
-box-shadow:0 0 0 3px rgba(0,59,139,.12);
+box-shadow:0 0 0 3px rgba(26, 46, 87,.12);
 
 }
 
@@ -231,7 +231,7 @@ background:linear-gradient(180deg,#FFD700,#D4AF37);
 
 border-color:#D4AF37;
 
-color:#002D6B;
+color:#0E1B3C;
 
 }
 
@@ -288,7 +288,7 @@ overflow:hidden;
 
 .table-card thead{
 
-background:#003B8B;
+background:#1A2E57;
 
 color:#FFD700;
 
@@ -328,7 +328,7 @@ background:#eef1f8;
 
 font-weight:bold;
 
-color:#032d73;
+color:#0e1b3c;
 
 }
 
@@ -336,7 +336,7 @@ color:#032d73;
 
 padding:10px;
 
-color:#032d73;
+color:#0e1b3c;
 
 }
 
@@ -390,7 +390,7 @@ justify-content:center;
 
 align-items:center;
 
-background:rgba(0,45,107,.85);
+background:rgba(14, 27, 60,.85);
 
 z-index:9999;
 

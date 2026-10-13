@@ -11,8 +11,8 @@
     --md-text:#1C2333;
     --md-text-muted:#6B7280;
     --md-shadow:0 4px 14px rgba(0,0,0,.08);
-    --md-navy:#003B8B;
-    --md-navy-dark:#002D6B;
+    --md-navy:#1A2E57;
+    --md-navy-dark:#0E1B3C;
     --md-gold:#D4AF37;
     --md-gold-light:#FFD700;
 }
@@ -96,7 +96,7 @@
     align-items:center;
     justify-content:center;
     border-radius:12px;
-    background:rgba(0,59,139,.08);
+    background:rgba(26, 46, 87,.08);
 }
 [data-theme="dark"] .md-hub-icon{ background:rgba(255,255,255,.1); }
 

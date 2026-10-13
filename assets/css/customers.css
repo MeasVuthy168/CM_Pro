@@ -1,6 +1,6 @@
 :root{
-    --cst-navy-dark:#002D6B;
-    --cst-navy:#003B8B;
+    --cst-navy-dark:#0E1B3C;
+    --cst-navy:#1A2E57;
     --cst-gold:#D4AF37;
     --cst-gold-light:#FFD700;
     --cst-page-bg:#F5F7FA;
@@ -154,7 +154,7 @@ background:#16223F;
 
 border-color:var(--cst-navy);
 
-box-shadow:0 0 0 3px rgba(0,59,139,.12);
+box-shadow:0 0 0 3px rgba(26, 46, 87,.12);
 
 }
 
@@ -206,7 +206,7 @@ transform:scale(.97);
 
 background:linear-gradient(180deg,#FFD700,#D4AF37);
 
-color:#002D6B;
+color:#0E1B3C;
 
 }
 
@@ -458,7 +458,7 @@ overflow:hidden;
 
 .table-card thead{
 
-background:#003B8B;
+background:#1A2E57;
 
 color:#FFD700;
 

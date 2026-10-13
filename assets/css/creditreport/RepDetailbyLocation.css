@@ -14,8 +14,8 @@
     --cr-text:#1C2333;
     --cr-text-muted:#6B7280;
     --cr-shadow:0 4px 14px rgba(0,0,0,.08);
-    --cr-navy:#003B8B;
-    --cr-navy-dark:#002D6B;
+    --cr-navy:#1A2E57;
+    --cr-navy-dark:#0E1B3C;
     --cr-gold:#D4AF37;
     --cr-gold-light:#FFD700;
     --cr-danger:#b3261e;
@@ -39,7 +39,7 @@
     --cr-series-7:#4a3aa7;
     --cr-series-8:#e34948;
     --cr-chart-surface:#fcfcfb;
-    --cr-chart-grid:rgba(0,45,107,.10);
+    --cr-chart-grid:rgba(14, 27, 60,.10);
 }
 
 [data-theme="dark"]{
@@ -205,7 +205,7 @@
 }
 [data-theme="dark"] .cr-run-btn{
     background:linear-gradient(135deg,#D4AF37,#FFD700);
-    color:#002D6B;
+    color:#0E1B3C;
 }
 [data-theme="darkgray"] .cr-run-btn{
     color:#1C2333;
@@ -330,7 +330,7 @@
 }
 [data-theme="dark"] .cr-chart-metric-btn.active{
     background:linear-gradient(135deg,#D4AF37,#FFD700);
-    color:#002D6B;
+    color:#0E1B3C;
 }
 .cr-chart-canvas-wrap{
     position:relative;
@@ -350,7 +350,7 @@
     background:var(--cr-navy-dark);
     color:var(--cr-gold-light);
 }
-[data-theme="dark"] .table-card thead th.cr-date-col{ color:#002D6B; }
+[data-theme="dark"] .table-card thead th.cr-date-col{ color:#0E1B3C; }
 .table-card tbody td.cr-date-col{ color:var(--cr-text-muted); }
 .cr-total-row td.cr-date-col{ color:var(--cr-total-text) !important; }
 
@@ -688,7 +688,7 @@
     text-align:center;
     z-index:2;
 }
-[data-theme="dark"] .table-card thead th{ color:#002D6B; background:var(--cr-navy-dark); }
+[data-theme="dark"] .table-card thead th{ color:#0E1B3C; background:var(--cr-navy-dark); }
 [data-theme="darkgray"] .table-card thead th{ background:#1F2226; color:#D8DAE0; }
 
 .table-card thead tr.cr-group-row th{ z-index:4; }
@@ -744,7 +744,7 @@
     background:var(--cr-navy-dark);
     color:var(--cr-gold-light);
 }
-[data-theme="dark"] .table-card thead th.cr-name-col{ color:#002D6B; }
+[data-theme="dark"] .table-card thead th.cr-name-col{ color:#0E1B3C; }
 [data-theme="darkgray"] .table-card thead th.cr-name-col{ background:#1F2226; color:#D8DAE0; }
 .table-card tbody td.cr-name-col{
     background:var(--cr-card-bg);
