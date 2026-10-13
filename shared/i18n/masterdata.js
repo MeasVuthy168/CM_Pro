@@ -101,6 +101,7 @@ CMI18n.register({
   "masterdata.location.colFamily": { km: "គ្រួសារ", en: "Family" },
   "masterdata.location.colBranch": { km: "សាខា", en: "Branch" },
   "masterdata.location.colOfficer": { km: "មន្ត្រីឥណទាន", en: "Credit Officer" },
+  "masterdata.location.colActions": { km: "សកម្មភាព", en: "Actions" },
 
   "masterdata.location.summaryTotal": { km: "ទីតាំងសរុប", en: "Total Locations" },
   "masterdata.location.summaryFamily": { km: "គ្រួសារសរុប", en: "Total Family" },
