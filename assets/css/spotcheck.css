@@ -752,10 +752,12 @@
 /* Fields sourced from OS/nbcos data (CIF while editing, Disbursement
    Date, Maturity Date) — visibly locked so it's clear they can't be
    typed into, not just unresponsive. */
-.sc-field input[readonly] {
+.sc-field input[readonly],
+.sc-field input[disabled] {
   background: var(--sc-bg);
   color: var(--sc-text-muted);
   cursor: not-allowed;
+  opacity: 1; /* override the browser's default dimmed look for disabled inputs */
 }
 
 .sc-suggest-list {
