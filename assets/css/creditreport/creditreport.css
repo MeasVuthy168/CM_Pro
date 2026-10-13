@@ -151,6 +151,26 @@
 .cr-hub-snapshot-btn:active{ opacity:.85; transform:scale(.99); }
 .cr-hub-snapshot-btn:disabled{ opacity:.7; cursor:default; }
 
+.cr-hub-refresh-btn{
+    width:100%;
+    background:transparent;
+    color:var(--cr-text);
+    border:1.5px solid var(--cr-border);
+    border-radius:12px;
+    padding:13px;
+    margin-top:8px;
+    font-family:'KRASAR',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+}
+.cr-hub-refresh-btn:active{ opacity:.7; transform:scale(.99); }
+.cr-hub-refresh-btn:disabled{ opacity:.5; cursor:default; }
+
 .cr-hub-snapshot-results{
     display:none;
     margin-top:12px;
