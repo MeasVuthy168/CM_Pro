@@ -2,7 +2,7 @@
     --card-bg:#FFFFFF;
     --card-border:#E2E6ED;
     --card-text:#1C2333;
-    --card-shadow:0 4px 12px rgba(0,45,107,.1);
+    --card-shadow:0 4px 12px rgba(14, 27, 60,.1);
 }
 
 [data-theme="dark"]{

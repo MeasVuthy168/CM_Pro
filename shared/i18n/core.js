@@ -16,8 +16,11 @@ CMI18n.register({
   // Dashboard cards
   "dashboard.customerSearch": { km: "ស្វែងរកអតិថិជន", en: "Customer Search" },
   "dashboard.dailyArrears": { km: "ការយឺតយ៉ាវប្រចាំថ្ងៃ", en: "Daily Arrears" },
-  "dashboard.averageTurnover": { km: "ការបង្វិលជុំមធ្យម", en: "Average Turnover" },
-  "dashboard.spotCheck": { km: "ត្រួតពិនិត្យភ្លាមៗ", en: "Spot Check" },
+  // Kept in English in both languages — these are the feature's actual
+  // names, not translatable labels (same reasoning as "E-Proxy" staying
+  // untranslated in the reference app).
+  "dashboard.averageTurnover": { km: "Average Turnover", en: "Average Turnover" },
+  "dashboard.spotCheck": { km: "Spot Check", en: "Spot Check" },
   "dashboard.masterData": { km: "ទិន្នន័យមូលដ្ឋាន", en: "Master Data" },
   "dashboard.landClassification": { km: "ចំណាត់ថ្នាក់ដីធ្លី", en: "Land Classification" },
   "dashboard.creditReport": { km: "របាយការណ៍ឥណទាន", en: "Credit Report" },

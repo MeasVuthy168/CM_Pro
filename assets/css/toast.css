@@ -54,7 +54,7 @@ overflow:hidden;
 box-shadow:
 0 12px 35px rgba(0,0,0,.18);
 
-border-left:5px solid #032d73;
+border-left:5px solid #0e1b3c;
 
 cursor:pointer;
 
@@ -216,7 +216,7 @@ font-weight:bold;
 
 background:#eef4ff;
 
-color:#032d73;
+color:#0e1b3c;
 
 flex-shrink:0;
 
@@ -232,7 +232,7 @@ font-size:16px;
 
 font-weight:700;
 
-color:#032d73;
+color:#0e1b3c;
 
 line-height:1.35;
 
@@ -404,7 +404,7 @@ width:100%;
 
 transform-origin:left center;
 
-background:#032d73;
+background:#0e1b3c;
 
 }
 

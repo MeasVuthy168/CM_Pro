@@ -88,7 +88,7 @@
 .md-view-btn.active{
     background:linear-gradient(180deg,#FFD700,#D4AF37);
     border-color:transparent;
-    color:#002D6B;
+    color:#0E1B3C;
 }
 
 .md-btn-clear-filter{
@@ -158,7 +158,7 @@
     border:none;
     border-radius:12px;
     background:linear-gradient(180deg,#FFD700,#D4AF37);
-    color:#002D6B;
+    color:#0E1B3C;
     font-size:15px;
     font-weight:700;
     font-family:'KRASAR', sans-serif;
@@ -275,7 +275,7 @@
     font-weight:600;
     padding:4px 10px;
     border-radius:20px;
-    background:rgba(0,59,139,.08);
+    background:rgba(26, 46, 87,.08);
     color:var(--md-navy-dark);
 }
 [data-theme="dark"] .md-tag{ background:rgba(255,255,255,.08); color:var(--md-gold-light); }
@@ -381,7 +381,7 @@
 
 .md-btn-save{
     background:linear-gradient(180deg,#FFD700,#D4AF37);
-    color:#002D6B;
+    color:#0E1B3C;
 }
 
 .md-btn-cancel{

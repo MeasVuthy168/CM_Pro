@@ -1,6 +1,6 @@
 :root{
-    --set-navy-dark:#002D6B;
-    --set-navy:#003B8B;
+    --set-navy-dark:#0E1B3C;
+    --set-navy:#1A2E57;
     --set-gold:#D4AF37;
     --set-gold-light:#FFD700;
     --set-page-bg:#F5F7FA;
@@ -292,7 +292,7 @@
 
 .setting-item:active{
 
-    background:rgba(0,59,139,.06);
+    background:rgba(26, 46, 87,.06);
 
 }
 

@@ -5,8 +5,8 @@
    =========================================================== */
 
 :root {
-  --sc-navy-dark: #002D6B;
-  --sc-navy: #003B8B;
+  --sc-navy-dark: #0E1B3C;
+  --sc-navy: #1A2E57;
   --sc-gold: #D4AF37;
   --sc-gold-light: #FFD700;
   --sc-bg: #F5F7FA;
@@ -144,7 +144,7 @@
   color: var(--sc-navy);
   border: 1.5px solid var(--sc-navy);
 }
-.sc-btn-outline:hover { background: rgba(0, 59, 139, 0.06); }
+.sc-btn-outline:hover { background: rgba(26, 46, 87, 0.06); }
 
 .sc-btn-danger {
   background: var(--sc-danger);
@@ -226,7 +226,7 @@
 .sc-search input:focus {
   outline: none;
   border-color: var(--sc-navy);
-  box-shadow: 0 0 0 3px rgba(0, 59, 139, 0.12);
+  box-shadow: 0 0 0 3px rgba(26, 46, 87, 0.12);
 }
 
 .sc-search input {
@@ -363,7 +363,7 @@
 .sc-table tbody td { color: var(--sc-text); }
 .sc-table tbody tr:last-child td { border-bottom: none; }
 .sc-table tbody tr { cursor: pointer; }
-.sc-table tbody tr:hover { background: rgba(0, 45, 107, 0.04); }
+.sc-table tbody tr:hover { background: rgba(14, 27, 60, 0.04); }
 
 .sc-table-actions {
   display: flex;
@@ -458,7 +458,7 @@
   position: relative;
   transition: box-shadow 0.15s ease;
 }
-.sc-card:hover { box-shadow: 0 2px 10px rgba(0, 45, 107, 0.08); }
+.sc-card:hover { box-shadow: 0 2px 10px rgba(14, 27, 60, 0.08); }
 
 .sc-card-top {
   display: flex;
@@ -653,7 +653,7 @@
 .sc-cif-spinner {
   width: 12px;
   height: 12px;
-  border: 2px solid rgba(0, 59, 139, 0.2);
+  border: 2px solid rgba(26, 46, 87, 0.2);
   border-top-color: var(--sc-navy);
   border-radius: 50%;
   animation: sc-spin 0.7s linear infinite;
@@ -748,7 +748,7 @@
 .sc-field textarea:focus {
   outline: none;
   border-color: var(--sc-navy);
-  box-shadow: 0 0 0 3px rgba(0, 59, 139, 0.12);
+  box-shadow: 0 0 0 3px rgba(26, 46, 87, 0.12);
 }
 
 .sc-field input.sc-field-error,

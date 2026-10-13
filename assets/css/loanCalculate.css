@@ -5,9 +5,9 @@
     --lc-text:#1C2333;
     --lc-text-muted:#6B7280;
     --lc-shadow:0 4px 14px rgba(0,0,0,.08);
-    --lc-navy:#003B8B;
-    --lc-navy-dark:#002D6B;
-    --lc-select-arrow:%23003B8B;
+    --lc-navy:#1A2E57;
+    --lc-navy-dark:#0E1B3C;
+    --lc-select-arrow:%231A2E57;
 }
 
 [data-theme="dark"]{
@@ -115,7 +115,7 @@ min-height:100vh;
 }
 .form-group select{
     appearance:none;
-    background-image:url('data:image/svg+xml;utf8,<svg fill="%23003B8B" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-image:url('data:image/svg+xml;utf8,<svg fill="%231A2E57" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
     background-repeat:no-repeat;
     background-position:right 10px center;
     background-size:20px;
@@ -140,7 +140,7 @@ min-height:100vh;
     padding:14px;
     background:linear-gradient(180deg,#FFD700,#D4AF37);
     border:none;
-    color:#002D6B;
+    color:#0E1B3C;
     font-weight:700;
     font-size:16px;
     border-radius:10px;
@@ -238,7 +238,7 @@ min-height:100vh;
     text-align:center;
 }
 .pdf-wrapper th{
-    background:#003B8B;
+    background:#1A2E57;
     color:#FFD700;
 }
 .pdf-wrapper .info-table th{
@@ -247,7 +247,7 @@ min-height:100vh;
 .pdf-wrapper .total-row{
     font-weight:700;
     background:rgba(212,175,55,.15);
-    color:#002D6B;
+    color:#0E1B3C;
 }
 @media (max-width:420px){
 .form-group label{
@@ -282,7 +282,7 @@ justify-content:center;
 
 align-items:center;
 
-background:rgba(0,45,107,.85);
+background:rgba(14, 27, 60,.85);
 
 z-index:9999;
 

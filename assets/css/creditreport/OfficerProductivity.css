@@ -11,8 +11,8 @@
     --cr-text:#1C2333;
     --cr-text-muted:#6B7280;
     --cr-shadow:0 4px 14px rgba(0,0,0,.08);
-    --cr-navy:#003B8B;
-    --cr-navy-dark:#002D6B;
+    --cr-navy:#1A2E57;
+    --cr-navy-dark:#0E1B3C;
     --cr-gold:#D4AF37;
     --cr-gold-light:#FFD700;
     --cr-danger:#b3261e;
@@ -29,7 +29,7 @@
     --cr-heat-1:#CFE0F7;
     --cr-heat-2:#8FB3E8;
     --cr-heat-3:#4A7BC7;
-    --cr-heat-4:#003B8B;
+    --cr-heat-4:#1A2E57;
     --cr-heat-ink-lo:#1C2333;
     --cr-heat-ink-hi:#FFFFFF;
     /* Ring highlight for weekend cells (op-heat-weekend). Holiday cells
@@ -163,7 +163,7 @@
     font-weight:800;
     font-size:17px;
 }
-[data-theme="dark"] .op-avatar{ color:#002D6B; background:linear-gradient(135deg,#D4AF37,#FFD700); }
+[data-theme="dark"] .op-avatar{ color:#0E1B3C; background:linear-gradient(135deg,#D4AF37,#FFD700); }
 [data-theme="darkgray"] .op-avatar{ color:#1C2333; }
 .op-header-text{ min-width:0; flex:1 1 auto; }
 .op-officer-name{ font-size:16.5px; font-weight:800; word-break:break-word; }
@@ -360,7 +360,7 @@
     font-family:'KRASAR', sans-serif;
 }
 .op-mode-tab.active{ background:var(--cr-navy-dark); color:#fff; }
-[data-theme="dark"] .op-mode-tab.active{ color:#002D6B; }
+[data-theme="dark"] .op-mode-tab.active{ color:#0E1B3C; }
 [data-theme="darkgray"] .op-mode-tab.active{ color:#1C2333; }
 
 .op-mode-body{ min-height:60px; }

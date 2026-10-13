@@ -7,12 +7,12 @@
     --arr-text-muted2:#9AA5B8;
     --arr-shadow:0 4px 14px rgba(0,0,0,.08);
     --arr-shadow-modal:0 8px 28px rgba(0,0,0,.25);
-    --arr-navy:#003B8B;
-    --arr-navy-dark:#002D6B;
+    --arr-navy:#1A2E57;
+    --arr-navy-dark:#0E1B3C;
     --arr-gold:#D4AF37;
     --arr-gold-light:#FFD700;
-    --arr-outline-btn-border:#003B8B;
-    --arr-outline-btn-text:#003B8B;
+    --arr-outline-btn-border:#1A2E57;
+    --arr-outline-btn-text:#1A2E57;
 }
 
 [data-theme="dark"]{
@@ -204,7 +204,7 @@ border-radius:999px;
 
 background:var(--arr-gold);
 
-color:#002D6B;
+color:#0E1B3C;
 
 font-size:11px;
 
@@ -328,9 +328,9 @@ text-size-adjust:none;
 .filter-group input:focus,
 .filter-group select:focus{
 
-border-color:#003B8B;
+border-color:#1A2E57;
 
-box-shadow:0 0 0 3px rgba(0,59,139,.12);
+box-shadow:0 0 0 3px rgba(26, 46, 87,.12);
 
 }
 
@@ -591,7 +591,7 @@ border-radius:10px;
 
 background:linear-gradient(180deg,#FFD700,#D4AF37);
 
-color:#002D6B;
+color:#0E1B3C;
 
 font-size:13px;
 
@@ -830,7 +830,7 @@ position:sticky;
 
 top:0;
 
-background:#003B8B;
+background:#1A2E57;
 
 color:#FFD700;
 
@@ -945,7 +945,7 @@ box-shadow:2px 0 4px rgba(0,0,0,.12);
 
 z-index:3;
 
-background:#003B8B;
+background:#1A2E57;
 
 }
 
@@ -1472,7 +1472,7 @@ padding:0;
 
 background:linear-gradient(180deg,#FFD700,#D4AF37);
 
-color:#002D6B;
+color:#0E1B3C;
 
 }
 
@@ -1534,7 +1534,7 @@ border-radius:10px;
 
 background:linear-gradient(180deg,#FFD700,#D4AF37);
 
-color:#002D6B;
+color:#0E1B3C;
 
 font-size:13px;
 
@@ -1601,7 +1601,7 @@ flex-basis:100%;
 
 background:linear-gradient(180deg,#FFD700,#D4AF37);
 
-color:#002D6B;
+color:#0E1B3C;
 
 }
 
@@ -2247,7 +2247,7 @@ display:none !important;
     border-radius:10px;
     border:1px solid var(--arr-border, #e2e6ed);
     background:var(--arr-card-bg, #fff);
-    color:var(--arr-navy, #003b8b);
+    color:var(--arr-navy, #1a2e57);
     font-size:20px;
     font-weight:800;
     font-family:'KRASAR',sans-serif;
@@ -2288,7 +2288,7 @@ display:none !important;
     gap:8px;
 }
 .reason-info-row.reason-info-lead .reason-info-value{
-    color:var(--arr-navy, #003b8b);
+    color:var(--arr-navy, #1a2e57);
     font-weight:800;
 }
 [data-theme="dark"] .reason-info-row.reason-info-lead .reason-info-value{
@@ -2430,7 +2430,7 @@ display:none !important;
     cursor:pointer;
 }
 .map-mode-btn.active{
-    background:var(--arr-navy, #003b8b);
+    background:var(--arr-navy, #1a2e57);
     color:#fff;
 }
 [data-theme="dark"] .map-mode-btn.active{
@@ -2461,7 +2461,7 @@ display:none !important;
 #reasonGPS{
     font-size:11.5px;
     font-weight:700;
-    color:var(--arr-navy, #003b8b);
+    color:var(--arr-navy, #1a2e57);
 }
 [data-theme="dark"] .reason-group input,
 [data-theme="dark"] .reason-group textarea,
@@ -2481,7 +2481,7 @@ display:none !important;
 /* The date input renders its own text node on iOS, so it needs the
    colour set explicitly rather than inheriting. */
 .reason-group input[type="date"]{
-    color:var(--arr-navy, #003b8b);
+    color:var(--arr-navy, #1a2e57);
 }
 [data-theme="dark"] .reason-group input[type="date"]{
     color:var(--arr-gold-light, #ffd700);
@@ -2534,7 +2534,7 @@ display:none !important;
    right after it rather than being pushed to the far edge. */
 .reason-info-cell .reason-info-value{
     font-weight:800;
-    color:var(--arr-navy, #003b8b);
+    color:var(--arr-navy, #1a2e57);
     word-break:break-word;
 }
 [data-theme="dark"] .reason-info-cell .reason-info-value{
@@ -2621,7 +2621,7 @@ display:none !important;
     border-radius:10px;
     border:1px solid var(--arr-border, #e2e6ed);
     background:var(--arr-card-bg, #fff);
-    color:var(--arr-navy-dark, #032d73);
+    color:var(--arr-navy-dark, #0e1b3c);
     font-family:'KRASAR',sans-serif;
     font-size:13px;
     font-weight:600;
@@ -2876,7 +2876,7 @@ display:none !important;
 }
 
 #btnArrScopeAll{
-    background:var(--arr-navy, #003B8B);
+    background:var(--arr-navy, #1A2E57);
 }
 
 #btnArrScopeOwn{
