@@ -62,8 +62,33 @@
 
 .md-filter-actions{
     display:flex;
-    justify-content:flex-end;
+    justify-content:space-between;
+    align-items:center;
     margin-top:10px;
+}
+
+.md-view-toggle{
+    display:flex;
+    gap:6px;
+}
+
+.md-view-btn{
+    width:34px;
+    height:34px;
+    border-radius:10px;
+    border:1px solid var(--md-border);
+    background:transparent;
+    color:var(--md-text-muted);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.md-view-btn:active{ transform:scale(.95); }
+.md-view-btn.active{
+    background:linear-gradient(180deg,#FFD700,#D4AF37);
+    border-color:transparent;
+    color:#002D6B;
 }
 
 .md-btn-clear-filter{
@@ -159,6 +184,64 @@
     border-radius:14px;
     padding:14px;
     box-shadow:var(--md-shadow);
+}
+
+/* ===== List view: scrollable table instead of cards ===== */
+.md-table-wrap{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    border:1px solid var(--md-border);
+    border-radius:14px;
+    background:var(--md-card-bg);
+    box-shadow:var(--md-shadow);
+}
+
+.md-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12.5px;
+    font-family:'KRASAR', sans-serif;
+}
+
+.md-table th,
+.md-table td{
+    padding:10px 12px;
+    text-align:left;
+    white-space:nowrap;
+    border-bottom:1px solid var(--md-border);
+}
+
+.md-table thead th{
+    font-size:11px;
+    font-weight:700;
+    color:var(--md-text-muted);
+    text-transform:uppercase;
+    letter-spacing:.02em;
+    background:var(--md-page-bg);
+    position:sticky;
+    top:0;
+}
+
+.md-table tbody td{
+    color:var(--md-text);
+}
+
+.md-table tbody tr:last-child td{
+    border-bottom:none;
+}
+
+.md-table tbody tr:active{
+    background:rgba(255,255,255,.04);
+}
+
+.md-table-actions{
+    display:flex;
+    gap:6px;
+}
+.md-table-actions .md-icon-btn{
+    width:28px;
+    height:28px;
+    font-size:13px;
 }
 
 .md-row-top{

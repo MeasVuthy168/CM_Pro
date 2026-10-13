@@ -29,6 +29,8 @@ CMI18n.register({
   "masterdata.officer.filterBranch": { km: "សាខា", en: "Branch" },
   "masterdata.officer.allTeams": { km: "គ្រប់ក្រុមទាំងអស់", en: "All Teams" },
   "masterdata.officer.allBranches": { km: "គ្រប់សាខាទាំងអស់", en: "All Branches" },
+  "masterdata.officer.viewCard": { km: "ទិដ្ឋភាពកាត", en: "Card view" },
+  "masterdata.officer.viewList": { km: "ទិដ្ឋភាពបញ្ជី", en: "List view" },
   "masterdata.officer.sortNameAsc": { km: "ឈ្មោះ (ក-អ)", en: "Name (A-Z)" },
   "masterdata.officer.sortNameDesc": { km: "ឈ្មោះ (អ-ក)", en: "Name (Z-A)" },
   "masterdata.officer.sortIdAsc": { km: "លេខសម្គាល់ (ក-អ)", en: "Officer ID (A-Z)" },
