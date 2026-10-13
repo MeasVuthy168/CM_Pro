@@ -519,12 +519,18 @@ function crBuildHistoryRow(dateKey, item, section, opts = {}) {
     const delBtn = (crIsAdmin && !isDetail)
         ? `<button type="button" class="cr-row-delete-btn" data-hist-del="${crEscapeHtml(dateKey)}" title="${t("creditreport.detail.deleteDaySnapshotTitle")}">🗑</button>`
         : "";
+    // Admin-only — re-pulls currently-live T24 into this date's saved
+    // snapshot (T24 is otherwise frozen once a date is first saved).
+    // Same exclusion as delBtn: never on the "Other Address" detail rows.
+    const refreshBtn = (crIsAdmin && !isDetail)
+        ? `<button type="button" class="cr-row-refresh-btn" data-hist-refresh="${crEscapeHtml(dateKey)}" title="${t("creditreport.detail.refreshT24Title")}">🔄</button>`
+        : "";
 
     const rowClass = isTotal ? ' class="cr-total-row"' : isOtherAddress ? ' class="cr-other-row"' : isDetail ? ' class="cr-other-detail-row"' : "";
     return `
       <tr${rowClass}>
         <td class="cr-name-col${isDetail ? " cr-other-detail-name" : ""}">${nameCellContent}</td>
-        <td class="cr-date-col"><div class="cr-date-main">${crFmtDateDMY(dateKey)}${delBtn}</div>${t24Note}</td>
+        <td class="cr-date-col"><div class="cr-date-main">${crFmtDateDMY(dateKey)}${refreshBtn}${delBtn}</div>${t24Note}</td>
         ${familyCells}
         ${cells}
       </tr>`;
@@ -1527,6 +1533,38 @@ if (crIsAdmin) {
         } catch (err) {
             console.error(err);
             notify(t("creditreport.compare.deleteFailed"), "error");
+            btn.disabled = false;
+        }
+    });
+
+    // Re-pulls live T24 into one date's already-frozen snapshot. Simplest
+    // correct refresh is to just re-fetch the whole visible date range
+    // afterward — crFetchHistory() already re-renders.
+    document.getElementById("crTbody").addEventListener("click", async (e) => {
+        const btn = e.target.closest(".cr-row-refresh-btn");
+        if (!btn) return;
+        const dateKey = btn.getAttribute("data-hist-refresh");
+        if (!dateKey) return;
+        if (!confirm(t("creditreport.compare.confirmRefreshT24", { date: crFmtDateDMY(dateKey) }))) return;
+
+        btn.disabled = true;
+        try {
+            const res = await fetch(`${API.BASE_URL}/api/creditreport/bylocation/snapshot/refresh-t24`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${crToken}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ date: dateKey })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                await crFetchHistory();
+                notify(t("creditreport.compare.t24RefreshedFor", { date: crFmtDateDMY(dateKey) }), "success");
+            } else {
+                notify(data.message || t("creditreport.compare.t24RefreshFailed"), "error");
+                btn.disabled = false;
+            }
+        } catch (err) {
+            console.error(err);
+            notify(t("creditreport.compare.t24RefreshFailed"), "error");
             btn.disabled = false;
         }
     });
