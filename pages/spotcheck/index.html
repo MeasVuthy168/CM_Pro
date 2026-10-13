@@ -195,8 +195,7 @@
           <div class="sc-field-row">
             <div class="sc-field sc-field-sm">
               <label for="cboCycle"><span data-i18n="spotcheck.cycleLabel">វដ្តត្រួតពិនិត្យ</span> <span class="req">*</span></label>
-              <input type="text" id="cboCycle" list="cycleOptions" required placeholder="1-10">
-              <datalist id="cycleOptions"></datalist>
+              <input type="number" id="cboCycle" min="1" max="20" step="1" required>
             </div>
             <div class="sc-field">
               <label for="txtSpotCheckDate"><span data-i18n="spotcheck.checkDateLabel">ថ្ងៃត្រួតពិនិត្យ</span> <span class="req">*</span></label>
@@ -207,17 +206,17 @@
           <div class="sc-field-row">
             <div class="sc-field">
               <label for="txtBranch" data-i18n="spotcheck.branchLabel">សាខា (Branch)</label>
-              <input type="text" id="txtBranch">
+              <input type="text" id="txtBranch" disabled>
             </div>
             <div class="sc-field">
               <label for="txtLoanID" data-i18n="spotcheck.loanIdLabel">លេខកិច្ចសន្យា (Loan ID)</label>
-              <input type="text" id="txtLoanID">
+              <input type="text" id="txtLoanID" disabled>
             </div>
           </div>
 
           <div class="sc-field">
             <label for="txtCustomerName" data-i18n="spotcheck.customerNameLabel">ឈ្មោះអតិថិជន</label>
-            <input type="text" id="txtCustomerName">
+            <input type="text" id="txtCustomerName" disabled>
           </div>
 
           <div class="sc-field-row">
@@ -234,11 +233,11 @@
           <div class="sc-field-row">
             <div class="sc-field">
               <label for="txtLoanSize" data-i18n="spotcheck.loanSizeLabel">ទំហំឥណទាន</label>
-              <input type="text" inputmode="decimal" id="txtLoanSize">
+              <input type="text" inputmode="decimal" id="txtLoanSize" disabled>
             </div>
             <div class="sc-field sc-field-sm">
               <label for="txtCurrency" data-i18n="spotcheck.currencyLabel">រូបិយប័ណ្ណ</label>
-              <select id="txtCurrency">
+              <select id="txtCurrency" disabled>
                 <option value="">—</option>
                 <option value="USD">USD</option>
                 <option value="KHR">KHR</option>
@@ -250,28 +249,28 @@
           <div class="sc-field-row">
             <div class="sc-field">
               <label for="txtOutstanding" data-i18n="spotcheck.outstandingLabel">សមតុល្យ</label>
-              <input type="text" inputmode="decimal" id="txtOutstanding">
+              <input type="text" inputmode="decimal" id="txtOutstanding" disabled>
             </div>
             <div class="sc-field">
               <label for="txtInterestRate"><span data-i18n="spotcheck.interestRateLabel">អត្រាការប្រាក់</span> <span class="sc-hint" data-i18n="spotcheck.hintExample18">ឧ. 18</span></label>
-              <input type="text" id="txtInterestRate" placeholder="18">
+              <input type="text" id="txtInterestRate" placeholder="18" disabled>
             </div>
           </div>
 
           <div class="sc-field-row">
             <div class="sc-field">
               <label for="txtLoanType" data-i18n="spotcheck.loanTypeLabel">ប្រភេទឥណទាន</label>
-              <input type="text" id="txtLoanType">
+              <input type="text" id="txtLoanType" disabled>
             </div>
             <div class="sc-field">
               <label for="txtTerm"><span data-i18n="spotcheck.termLabel">រយៈពេលខ្ចី</span> <span class="sc-hint" data-i18n="spotcheck.hintExample36">ឧ. 36</span></label>
-              <input type="text" id="txtTerm" placeholder="36">
+              <input type="text" id="txtTerm" placeholder="36" disabled>
             </div>
           </div>
 
           <div class="sc-field">
             <label for="txtCreditOfficer" data-i18n="spotcheck.creditOfficerLabel">មន្ត្រីឥណទាន</label>
-            <input type="text" id="txtCreditOfficer">
+            <input type="text" id="txtCreditOfficer" disabled>
           </div>
         </fieldset>
 
