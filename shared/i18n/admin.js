@@ -28,6 +28,7 @@ CMI18n.register({
   "admin.nav.notifications": { km: "ការជូនដំណឹង", en: "Notifications" },
   "admin.nav.wallpaper": { km: "ផ្ទាំងផ្ទៃខាងក្រោយ", en: "Wallpaper" },
   "admin.nav.versions": { km: "កំណែកម្មវិធី", en: "App Versions" },
+  "admin.nav.maintenance": { km: "សម្អាតទិន្នន័យ", en: "Storage Cleanup" },
   "admin.nav.soonBadge": { km: "ឆាប់ៗនេះ", en: "Soon" },
   "admin.nav.comingSoonBadge": { km: "ឆាប់ៗនេះ", en: "Coming soon" },
   "admin.nav.backToApp": { km: "ត្រឡប់ទៅកម្មវិធី", en: "Back to App" },
@@ -359,6 +360,41 @@ CMI18n.register({
   "admin.activitylogs.cleanupFailed": { km: "សម្អាតបានបរាជ័យ។", en: "Cleanup failed." },
   "admin.activitylogs.cleanupDeleted": { km: "បានលុបកំណត់ហេតុ {count} ចាស់ជាង {cutoff}។", en: "Deleted {count} log(s) older than {cutoff}." },
   "admin.activitylogs.cleanupFailedServer": { km: "សម្អាតបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Cleanup failed — could not reach the server." },
+
+  // ===================================================
+  // maintenance.html + admin-maintenance.js — Storage Cleanup
+  // ===================================================
+  "admin.maintenance.title": { km: "សម្អាតទិន្នន័យផ្ទុកក្នុង Server", en: "Storage Cleanup" },
+  "admin.maintenance.subtitle": { km: "គ្រប់គ្រងទំហំផ្ទុកទិន្នន័យនៅលើ Database ។", en: "Manage database storage usage." },
+  "admin.maintenance.debitTurnOverLabel": { km: "ទិន្នន័យ Debit Turn Over", en: "Debit Turn Over Data" },
+  "admin.maintenance.debitTurnOverExplain": {
+    km: "ទិន្នន័យ Debit Turn Over កើនឡើងរាល់ថ្ងៃដោយគ្មានការសម្អាតដោយស្វ័យប្រវត្តិ ដែលធ្វើឱ្យទំហំផ្ទុកកើនឡើងជាបន្តបន្ទាប់។ ប្រើមុខងារខាងក្រោមដើម្បីលុបជាអចិន្ត្រៃយ៍នូវទិន្នន័យដែលចាស់ជាងចំនួនថ្ងៃកំណត់។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។",
+    en: "Debit Turn Over data grows every day with no automatic cleanup, which keeps increasing storage usage. Use the tool below to permanently delete data older than the number of days below. This can't be undone."
+  },
+  "admin.maintenance.keepDays": { km: "រក្សាទុកទិន្នន័យពី (ថ្ងៃ) ចុងក្រោយ", en: "Keep data from the last (days)" },
+  "admin.maintenance.preview": { km: "មើលមុនលុប", en: "Preview" },
+  "admin.maintenance.deletePermanently": { km: "លុបជាអចិន្ត្រៃយ៍", en: "Delete Permanently" },
+  "admin.maintenance.previewFirst": { km: "សូមចុច \"មើលមុនលុប\" សិន មុននឹងលុប។", en: "Please click \"Preview\" first before deleting." },
+  "admin.maintenance.previewResult": {
+    km: "រកឃើញ {count} ជួរដែលចាស់ជាង {cutoff} — ត្រៀមរួចសម្រាប់លុប។",
+    en: "Found {count} row(s) older than {cutoff} — ready to delete."
+  },
+  "admin.maintenance.previewResultEmpty": {
+    km: "មិនមានជួរណាមួយចាស់ជាង {cutoff} ទេ — គ្មានអ្វីត្រូវលុប។",
+    en: "No rows older than {cutoff} — nothing to delete."
+  },
+  "admin.maintenance.previewFailed": { km: "មើលមុនលុបបានបរាជ័យ។", en: "Preview failed." },
+  "admin.maintenance.previewFailedServer": { km: "មើលមុនលុបបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Preview failed — could not reach the server." },
+  "admin.maintenance.deleteConfirmTitle": { km: "បញ្ជាក់ការលុបជាអចិន្ត្រៃយ៍", en: "Confirm Permanent Deletion" },
+  "admin.maintenance.deleteConfirmMessage": {
+    km: "អ្នកនឹងលុបជាអចិន្ត្រៃយ៍នូវជួរចំនួន {count} ដែលចាស់ជាង {cutoff}។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។ តើអ្នកប្រាកដទេ?",
+    en: "You are about to permanently delete {count} row(s) older than {cutoff}. This can't be undone. Are you sure?"
+  },
+  "admin.maintenance.cancel": { km: "បោះបង់", en: "Cancel" },
+  "admin.maintenance.confirmDelete": { km: "បញ្ជាក់ការលុប", en: "Confirm Delete" },
+  "admin.maintenance.deleted": { km: "បានលុបជួរចំនួន {count} ដែលចាស់ជាង {cutoff}។", en: "Deleted {count} row(s) older than {cutoff}." },
+  "admin.maintenance.deleteFailed": { km: "លុបបានបរាជ័យ។", en: "Delete failed." },
+  "admin.maintenance.deleteFailedServer": { km: "លុបបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Delete failed — could not reach the server." },
 
   // ===================================================
   // bandwidth.html + admin.js — Bandwidth Dashboard

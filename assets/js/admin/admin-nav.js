@@ -15,7 +15,8 @@ const CM_ADMIN_TOOLS = [
   { key: "logs",      label: "Activity Logs",    labelKey: "admin.nav.logs",         icon: "🧾", href: "/CM_Pro/pages/admin/activitylogs.html",status: "live" },
   { key: "notifications", label: "Notifications", labelKey: "admin.nav.notifications", icon: "🔔", href: "/CM_Pro/pages/admin/notifications.html", status: "live" },
   { key: "wallpaper", label: "Wallpaper",        labelKey: "admin.nav.wallpaper",     icon: "🖼️", href: "/CM_Pro/pages/admin/wallpaper.html",   status: "live" },
-  { key: "versions",  label: "App Versions",     labelKey: "admin.nav.versions",     icon: "📦", href: "/CM_Pro/pages/admin/appversions.html", status: "live" }
+  { key: "versions",  label: "App Versions",     labelKey: "admin.nav.versions",     icon: "📦", href: "/CM_Pro/pages/admin/appversions.html", status: "live" },
+  { key: "maintenance", label: "Storage Cleanup", labelKey: "admin.nav.maintenance", icon: "🧹", href: "/CM_Pro/pages/admin/maintenance.html", status: "live" }
 ];
 
 // t(): small helper so this file's hardcoded UI strings go through the
