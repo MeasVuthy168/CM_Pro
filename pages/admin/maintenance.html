@@ -91,6 +91,39 @@
         </div>
       </div>
 
+      <!-- ========================= -->
+      <!-- WIPE COLLECTION BY SOURCE -->
+      <!-- For wipe-and-replace collections (ListBlocked, ScheduleRepayments, -->
+      <!-- PrevOS, NewRegister, …) where there's no "old" data to prune by -->
+      <!-- date — the dropdowns are populated from GET /api/maintenance/ -->
+      <!-- wipe-collections and GET /api/maintenance/wipe-sources. -->
+      <!-- ========================= -->
+      <div class="adm-card">
+        <div class="adm-card-label" data-i18n="admin.maintenance.wipeLabel">Wipe Collection by Source</div>
+
+        <p class="adm-modal-message" data-i18n="admin.maintenance.wipeExplain">
+          These collections replace their data entirely on every upload, so there's no "old" data to prune by date.
+          Choose a collection and a source, then permanently delete all of that source's rows. This can't be undone.
+        </p>
+
+        <label class="adm-cleanup-field">
+          <span data-i18n="admin.maintenance.collection">Collection</span>
+          <select id="wpCollection"></select>
+        </label>
+
+        <label class="adm-cleanup-field">
+          <span data-i18n="admin.maintenance.source">Source</span>
+          <select id="wpSource"></select>
+        </label>
+
+        <p class="adm-modal-message" id="wpPreviewResult" hidden></p>
+
+        <div class="adm-modal-footer" style="justify-content:flex-start; gap:12px;">
+          <button type="button" class="adm-btn" id="wpBtnPreview" data-i18n="admin.maintenance.preview">Preview</button>
+          <button type="button" class="adm-btn adm-btn-danger" id="wpBtnDelete" disabled data-i18n="admin.maintenance.deletePermanently">Delete Permanently</button>
+        </div>
+      </div>
+
     </main>
 
   </div>
