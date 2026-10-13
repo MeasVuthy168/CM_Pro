@@ -147,6 +147,10 @@ CMI18n.register({
   "creditreport.compare.snapshotSavedFor": { km: "បានរក្សាទុករូបថតសម្រាប់ {date}", en: "Snapshot saved for {date}" },
   "creditreport.compare.snapshotFailed": { km: "ការរក្សាទុករូបថតបានបរាជ័យ", en: "Snapshot failed" },
 
+  "creditreport.compare.confirmRefreshT24": { km: "ទាញយក T24 ថ្មីសម្រាប់ {date}? តួលេខផ្សេងទៀតសម្រាប់ថ្ងៃនេះនឹងមិនផ្លាស់ប្តូរទេ។", en: "Pull in fresh T24 for {date}? Everything else saved for this day stays unchanged." },
+  "creditreport.compare.t24RefreshedFor": { km: "បានទាញយក T24 ថ្មីសម្រាប់ {date}", en: "T24 refreshed for {date}" },
+  "creditreport.compare.t24RefreshFailed": { km: "ការទាញយក T24 ថ្មីបានបរាជ័យ", en: "T24 refresh failed" },
+
   // ==================================================================
   // SHARED ACROSS THE 4 "DAILY MONITORING" DETAIL REPORTS (by Location /
   // Product / Officer / Branch) — filter card info rows, view controls,
@@ -212,6 +216,7 @@ CMI18n.register({
 
   "creditreport.detail.t24AsOfTooltip": { km: "សមតុល្យឥណទានប្រថុយប្រថាន (T24) គឺគិតតាមទិន្នន័យផ្ទាល់របស់វា មិនមែនតាមកាលបរិច្ឆេទជួរដេកនេះទេ", en: "Balance Loan at Risk (T24) is as of its own ArreasT24ByCO feed, not this row's Date" },
   "creditreport.detail.deleteDaySnapshotTitle": { km: "លុបរូបថតរក្សាទុកសម្រាប់ថ្ងៃនេះ", en: "Delete this day's snapshot" },
+  "creditreport.detail.refreshT24Title": { km: "ទាញយក T24 ថ្មីសម្រាប់ថ្ងៃនេះ", en: "Refresh T24 for this day" },
   "creditreport.detail.noHistorySaved": { km: "មិនទាន់មានប្រវត្តិរក្សាទុកសម្រាប់កំឡុងកាលបរិច្ឆេទនេះនៅឡើយទេ។", en: "No history saved for this date range yet." },
   "creditreport.detail.failedLoadHistory": { km: "បរាជ័យក្នុងការផ្ទុកប្រវត្តិ។", en: "Failed to load history." },
   "creditreport.detail.networkErrorHistory": { km: "មានបញ្ហាការតភ្ជាប់បណ្តាញពេលផ្ទុកប្រវត្តិ។", en: "Network error loading history." },
