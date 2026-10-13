@@ -161,29 +161,54 @@ function mdRenderList() {
         return;
     }
 
-    const actionsHtml = mdIsAdmin ? `
-                <div class="md-row-actions">
+    if (mdViewMode === "list") {
+        mdRenderTable(list, rows);
+    } else {
+        mdRenderCards(list, rows);
+    }
+}
+
+function mdRenderTable(list, rows) {
+    const bodyRows = rows.map(l => `
+        <tr data-id="${mdEscapeHtml(l.id)}">
+            <td>${mdEscapeHtml(l.village) || "-"}</td>
+            <td>${mdEscapeHtml(l.district) || "-"}</td>
+            <td>${mdEscapeHtml(l.commune) || "-"}</td>
+            <td class="md-table-family">${mdEscapeHtml(l.family) || "-"}</td>
+            <td>${mdEscapeHtml(l.branch) || "-"}</td>
+            <td>${mdEscapeHtml(l.officer) || "-"}</td>
+            ${mdIsAdmin ? `
+            <td>
+                <div class="md-table-actions">
                     <button type="button" class="md-icon-btn md-edit-btn" aria-label="${t("masterdata.location.editBtn")}">✏️</button>
                     <button type="button" class="md-icon-btn md-danger md-delete-btn" aria-label="${t("masterdata.location.deleteBtn")}">🗑️</button>
-                </div>` : "";
-    const tagsHtml = l => `
-            <div class="md-row-tags">
-                ${l.branch ? `<span class="md-tag">${mdEscapeHtml(l.branch)}</span>` : ""}
-                ${l.officer ? `<span class="md-tag">${mdEscapeHtml(l.officer)}</span>` : ""}
-            </div>`;
-
-    list.innerHTML = rows.map(l => mdViewMode === "list" ? `
-        <div class="md-row-card md-row-compact" data-id="${mdEscapeHtml(l.id)}">
-            <div class="md-row-top">
-                <div>
-                    <div class="md-row-name">${mdEscapeHtml(l.village) || "-"}</div>
-                    <div class="md-row-id">${mdEscapeHtml(l.district) || "-"} &middot; ${mdEscapeHtml(l.commune) || "-"} &middot; ${t("masterdata.location.colFamily")}: ${mdEscapeHtml(l.family) || "-"}</div>
                 </div>
-                ${actionsHtml}
-            </div>
-            ${tagsHtml(l)}
+            </td>` : ""}
+        </tr>
+    `).join("");
+
+    list.innerHTML = `
+        <div class="md-table-wrap">
+        <table class="md-table">
+        <thead>
+        <tr>
+            <th>${t("masterdata.location.colVillage")}</th>
+            <th>${t("masterdata.location.colDistrict")}</th>
+            <th>${t("masterdata.location.colCommune")}</th>
+            <th>${t("masterdata.location.colFamily")}</th>
+            <th>${t("masterdata.location.colBranch")}</th>
+            <th>${t("masterdata.location.colOfficer")}</th>
+            ${mdIsAdmin ? `<th>${t("masterdata.location.colActions")}</th>` : ""}
+        </tr>
+        </thead>
+        <tbody>${bodyRows}</tbody>
+        </table>
         </div>
-    ` : `
+    `;
+}
+
+function mdRenderCards(list, rows) {
+    list.innerHTML = rows.map(l => `
         <div class="md-row-card" data-id="${mdEscapeHtml(l.id)}">
             <div class="md-row-top">
                 <div>
@@ -192,9 +217,16 @@ function mdRenderList() {
                     <div class="md-row-id">${t("masterdata.location.colCommune")}: ${mdEscapeHtml(l.commune) || "-"}</div>
                     <div class="md-row-id">${t("masterdata.location.colFamily")}: ${mdEscapeHtml(l.family) || "-"}</div>
                 </div>
-                ${actionsHtml}
+                ${mdIsAdmin ? `
+                <div class="md-row-actions">
+                    <button type="button" class="md-icon-btn md-edit-btn" aria-label="${t("masterdata.location.editBtn")}">✏️</button>
+                    <button type="button" class="md-icon-btn md-danger md-delete-btn" aria-label="${t("masterdata.location.deleteBtn")}">🗑️</button>
+                </div>` : ""}
             </div>
-            ${tagsHtml(l)}
+            <div class="md-row-tags">
+                ${l.branch ? `<span class="md-tag">${mdEscapeHtml(l.branch)}</span>` : ""}
+                ${l.officer ? `<span class="md-tag">${mdEscapeHtml(l.officer)}</span>` : ""}
+            </div>
         </div>
     `).join("");
 }
@@ -364,9 +396,10 @@ document.getElementById("mdDeleteDialog").addEventListener("click", (e) => {
 
 // Event delegation for row edit/delete buttons (rows are re-rendered
 // wholesale on every search/filter, so binding once here instead of
-// per-row avoids rebinding listeners after every render).
+// per-row avoids rebinding listeners after every render). Matches
+// both the card view's .md-row-card divs and the table view's <tr>s.
 document.getElementById("mdList").addEventListener("click", (e) => {
-    const card = e.target.closest(".md-row-card");
+    const card = e.target.closest("[data-id]");
     if (!card) return;
     const id = card.dataset.id;
     const location = mdLocations.find(l => l.id === id);
