@@ -406,7 +406,7 @@ CMI18n.register({
   "admin.maintenance.mongoUsageTitle": { km: "ការប្រើប្រាស់ទំហំផ្ទុក MongoDB", en: "MongoDB Storage Usage" },
   "admin.maintenance.loadingMongoUsage": { km: "កំពុងផ្ទុកការប្រើប្រាស់ទំហំផ្ទុក…", en: "Loading storage usage…" },
   "admin.maintenance.pctOfStorageQuota": { km: "{pct}% នៃកម្រិតទំហំផ្ទុកឥតគិតថ្លៃបានប្រើប្រាស់", en: "{pct}% of free-tier storage quota used" },
-  "admin.maintenance.indexSizeNote": { km: "បូកនឹងលិបិក្រម {indexMb} MB ទៀត (មិនគិតក្នុងកូតាទេ)", en: "Plus {indexMb} MB in indexes (not counted toward the quota)" },
+  "admin.maintenance.dataIndexBreakdown": { km: "ទិន្នន័យ {dataMb} MB · លិបិក្រម {indexMb} MB (ទាំងពីរត្រូវបានរាប់បញ្ចូលខាងលើ)", en: "Data {dataMb} MB · Indexes {indexMb} MB (both counted above)" },
   "admin.maintenance.couldNotLoadMongoUsage": { km: "មិនអាចផ្ទុកការប្រើប្រាស់ទំហំផ្ទុកបានទេ។", en: "Could not load storage usage." },
 
   // ===================================================
