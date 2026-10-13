@@ -32,6 +32,18 @@ const CR_HUB_SNAPSHOT_TARGETS = [
     { label: () => t("creditreport.hub.targetCompare"), url: "/api/creditreport/snapshot/run" }
 ];
 
+// "Refresh All T24" targets — just the 4 Daily History reports, each
+// with a per-date T24 freeze (see lib/creditreport-*.js). Report
+// Comparison's own combined snapshot isn't part of that freeze system,
+// so it's deliberately left out here (unlike CR_HUB_SNAPSHOT_TARGETS
+// above, which does include it).
+const CR_HUB_T24_REFRESH_TARGETS = [
+    { label: () => t("creditreport.hub.targetBranch"), url: "/api/creditreport/summary/snapshot/refresh-t24-all" },
+    { label: () => t("creditreport.hub.targetOfficer"), url: "/api/creditreport/byco/snapshot/refresh-t24-all" },
+    { label: () => t("creditreport.hub.targetProduct"), url: "/api/creditreport/byproduct/snapshot/refresh-t24-all" },
+    { label: () => t("creditreport.hub.targetLocation"), url: "/api/creditreport/bylocation/snapshot/refresh-t24-all" }
+];
+
 function crHubEscapeHtml(text) {
     const div = document.createElement("div");
     div.textContent = text == null ? "" : String(text);
@@ -76,6 +88,42 @@ function crHubRenderResults(results) {
     document.getElementById("crHubSnapshotResults").style.display = "block";
 }
 
+// Same shape as crHubRunOneSnapshot, but the endpoint returns a
+// `refreshed` day count instead of a single `date`.
+async function crHubRunOneT24Refresh(target) {
+    try {
+        const res = await fetch(`${API.BASE_URL}${target.url}`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${crHubToken}`, "Content-Type": "application/json" },
+            body: "{}"
+        });
+        const data = await res.json();
+        if (data.ok) {
+            return { label: target.label(), ok: true, refreshed: data.refreshed };
+        }
+        return { label: target.label(), ok: false, message: data.message || t("creditreport.hub.snapshotFailed") };
+    } catch (e) {
+        console.error(e);
+        return { label: target.label(), ok: false, message: t("creditreport.hub.networkError") };
+    }
+}
+
+// Reuses the same results panel as crHubRenderResults — whichever
+// admin action ran most recently is what it shows.
+function crHubRenderT24Results(results) {
+    const okCount = results.filter(r => r.ok).length;
+    document.getElementById("crHubSnapshotSummary").textContent =
+        t("creditreport.hub.snapshotSavedCount", { ok: okCount, total: results.length });
+    document.getElementById("crHubSnapshotRows").innerHTML = results.map(r =>
+        `<div class="cr-hub-snapshot-row${r.ok ? " ok" : " fail"}">` +
+            `<span class="cr-hub-snapshot-dot"></span>` +
+            `<span class="cr-hub-snapshot-label">${crHubEscapeHtml(r.label)}</span>` +
+            `<span class="cr-hub-snapshot-detail">${r.ok ? t("creditreport.hub.t24RefreshedDays", { count: r.refreshed }) : crHubEscapeHtml(r.message)}</span>` +
+        `</div>`
+    ).join("");
+    document.getElementById("crHubSnapshotResults").style.display = "block";
+}
+
 if (crHubIsAdmin) {
     document.getElementById("crHubAdminToolbar").style.display = "";
 
@@ -104,6 +152,35 @@ if (crHubIsAdmin) {
             btn.disabled = false;
             label.setAttribute("data-i18n", "creditreport.hub.snapshotAll");
             label.textContent = t("creditreport.hub.snapshotAll");
+        }
+    });
+
+    // Admin escape hatch for the per-date T24 freeze (see each
+    // lib/creditreport-*.js's own comment): refreshes T24 for every
+    // already-saved Daily History date across all 4 reports in one
+    // click, instead of one admin click per row on each report's own
+    // history table.
+    document.getElementById("btnCrRefreshAllT24").addEventListener("click", async () => {
+        const btn = document.getElementById("btnCrRefreshAllT24");
+        const label = document.getElementById("crHubRefreshBtnLabel");
+        btn.disabled = true;
+        label.removeAttribute("data-i18n");
+        label.textContent = t("creditreport.hub.refreshingT24");
+        document.getElementById("crHubSnapshotResults").style.display = "none";
+        try {
+            const results = await Promise.all(CR_HUB_T24_REFRESH_TARGETS.map(crHubRunOneT24Refresh));
+            crHubRenderT24Results(results);
+            const allOk = results.every(r => r.ok);
+            if (typeof showToast === "function") {
+                showToast(
+                    allOk ? t("creditreport.hub.t24RefreshAllDone") : t("creditreport.hub.t24RefreshSomeFailed"),
+                    allOk ? "success" : "error"
+                );
+            }
+        } finally {
+            btn.disabled = false;
+            label.setAttribute("data-i18n", "creditreport.hub.refreshAllT24");
+            label.textContent = t("creditreport.hub.refreshAllT24");
         }
     });
 }
