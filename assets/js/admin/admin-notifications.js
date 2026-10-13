@@ -20,7 +20,6 @@
     btnSearch: document.getElementById("nfBtnSearch"),
     btnReset: document.getElementById("nfBtnReset"),
     btnSend: document.getElementById("nfBtnSend"),
-    btnCleanup: document.getElementById("nfBtnCleanup"),
     btnPrune: document.getElementById("nfBtnPrune"),
 
     kpiTotal: document.getElementById("nfKpiTotal"),
@@ -293,47 +292,7 @@
 
   el.btnSend.addEventListener("click", openSendModal);
 
-  // ---------- cleanup ----------
-  function openCleanupModal() {
-    const body = document.createElement("div");
-    body.innerHTML = `
-      <p class="adm-modal-message">${t("admin.notifications.cleanupExplain")}</p>
-      <label class="adm-cleanup-field">
-        <span>${t("admin.notifications.keepDays")}</span>
-        <input type="number" id="nfKeepDays" value="30" min="1">
-      </label>
-      <div class="adm-modal-footer">
-        <button type="button" class="adm-btn" id="nfCleanupCancel">${t("admin.notifications.cancel")}</button>
-        <button type="button" class="adm-btn adm-btn-danger" id="nfCleanupConfirm">${t("admin.notifications.deleteOldConfirm")}</button>
-      </div>
-    `;
-
-    const { body: mountedBody } = AdminUI.openModal({ title: t("admin.notifications.cleanupModalTitle"), bodyNode: body });
-
-    mountedBody.querySelector("#nfCleanupCancel").addEventListener("click", () => AdminUI.closeModal());
-    mountedBody.querySelector("#nfCleanupConfirm").addEventListener("click", async () => {
-      const keepDays = Number(mountedBody.querySelector("#nfKeepDays").value || 30);
-
-      try {
-        const res = await fetch(`${API_BASE}/api/notifications/cleanup`, {
-          method: "POST",
-          headers: { ...authHeaders(), "Content-Type": "application/json" },
-          body: JSON.stringify({ keepDays })
-        });
-        const data = await res.json();
-        if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.notifications.cleanupFailed"), "error");
-
-        AdminUI.closeModal();
-        AdminUI.toast(t("admin.notifications.cleanupDeleted", { count: data.deletedNotifications }), "success");
-        loadNotifications();
-      } catch (e) {
-        console.error("cleanup failed:", e);
-        AdminUI.toast(t("admin.notifications.cleanupFailedServer"), "error");
-      }
-    });
-  }
-
-  el.btnCleanup.addEventListener("click", openCleanupModal);
+  // Cleanup moved to the Storage Cleanup admin page (admin-maintenance.js).
 
   // ---------- prune dead subscriptions ----------
   async function pruneSubscriptions() {
