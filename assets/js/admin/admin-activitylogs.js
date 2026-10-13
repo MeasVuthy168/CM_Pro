@@ -37,7 +37,6 @@
     suspiciousList: document.getElementById("alSuspiciousList"),
 
     btnExport: document.getElementById("alBtnExport"),
-    btnCleanup: document.getElementById("alBtnCleanup"),
 
     tableBody: document.getElementById("alTableBody"),
     tableEmpty: document.getElementById("alTableEmpty"),
@@ -528,47 +527,7 @@
 
   el.btnExport.addEventListener("click", exportCsv);
 
-  // ---------- cleanup ----------
-  function openCleanupModal() {
-    const body = document.createElement("div");
-    body.innerHTML = `
-      <p class="adm-modal-message">${t("admin.activitylogs.cleanupExplain")}</p>
-      <label class="adm-cleanup-field">
-        <span>${t("admin.activitylogs.keepDays")}</span>
-        <input type="number" id="alKeepDays" value="180" min="1">
-      </label>
-      <div class="adm-modal-footer">
-        <button type="button" class="adm-btn" id="alCleanupCancel">${t("admin.activitylogs.cancel")}</button>
-        <button type="button" class="adm-btn adm-btn-danger" id="alCleanupConfirm">${t("admin.activitylogs.deleteOldLogs")}</button>
-      </div>
-    `;
-
-    const { body: mountedBody } = AdminUI.openModal({ title: t("admin.activitylogs.cleanupModalTitle"), bodyNode: body });
-
-    mountedBody.querySelector("#alCleanupCancel").addEventListener("click", () => AdminUI.closeModal());
-    mountedBody.querySelector("#alCleanupConfirm").addEventListener("click", async () => {
-      const keepDays = Number(mountedBody.querySelector("#alKeepDays").value || 180);
-
-      try {
-        const res = await fetch(`${API_BASE}/api/activitylogs/cleanup`, {
-          method: "POST",
-          headers: { ...authHeaders(), "Content-Type": "application/json" },
-          body: JSON.stringify({ keepDays })
-        });
-        const data = await res.json();
-        if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.activitylogs.cleanupFailed"), "error");
-
-        AdminUI.closeModal();
-        AdminUI.toast(t("admin.activitylogs.cleanupDeleted", { count: data.deletedCount, cutoff: data.cutoffCambodiaText }), "success");
-        fetchLogs(true);
-      } catch (e) {
-        console.error("cleanup failed:", e);
-        AdminUI.toast(t("admin.activitylogs.cleanupFailedServer"), "error");
-      }
-    });
-  }
-
-  el.btnCleanup.addEventListener("click", openCleanupModal);
+  // Cleanup moved to the Storage Cleanup admin page (admin-maintenance.js).
 
   // ---------- init ----------
   function init() {

@@ -16,7 +16,9 @@
     keepDays: document.getElementById("dtoKeepDays"),
     previewResult: document.getElementById("dtoPreviewResult"),
     btnPreview: document.getElementById("dtoBtnPreview"),
-    btnDelete: document.getElementById("dtoBtnDelete")
+    btnDelete: document.getElementById("dtoBtnDelete"),
+    btnActivityLogsCleanup: document.getElementById("alBtnCleanup"),
+    btnNotificationsCleanup: document.getElementById("nfBtnCleanup")
   };
 
   let lastPreview = null; // { days, count, cutoff } — must match current input to allow delete
@@ -111,4 +113,86 @@
   }
 
   el.btnDelete.addEventListener("click", openDeleteConfirmModal);
+
+  // ---------- Activity Logs cleanup (moved from admin-activitylogs.js) ----------
+  function openActivityLogsCleanupModal() {
+    const body = document.createElement("div");
+    body.innerHTML = `
+      <p class="adm-modal-message">${t("admin.activitylogs.cleanupExplain")}</p>
+      <label class="adm-cleanup-field">
+        <span>${t("admin.activitylogs.keepDays")}</span>
+        <input type="number" id="alKeepDays" value="180" min="1">
+      </label>
+      <div class="adm-modal-footer">
+        <button type="button" class="adm-btn" id="alCleanupCancel">${t("admin.activitylogs.cancel")}</button>
+        <button type="button" class="adm-btn adm-btn-danger" id="alCleanupConfirm">${t("admin.activitylogs.deleteOldLogs")}</button>
+      </div>
+    `;
+
+    const { body: mountedBody } = AdminUI.openModal({ title: t("admin.activitylogs.cleanupModalTitle"), bodyNode: body });
+
+    mountedBody.querySelector("#alCleanupCancel").addEventListener("click", () => AdminUI.closeModal());
+    mountedBody.querySelector("#alCleanupConfirm").addEventListener("click", async () => {
+      const keepDays = Number(mountedBody.querySelector("#alKeepDays").value || 180);
+
+      try {
+        const res = await fetch(`${API_BASE}/api/activitylogs/cleanup`, {
+          method: "POST",
+          headers: { ...authHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify({ keepDays })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.activitylogs.cleanupFailed"), "error");
+
+        AdminUI.closeModal();
+        AdminUI.toast(t("admin.activitylogs.cleanupDeleted", { count: data.deletedCount, cutoff: data.cutoffCambodiaText }), "success");
+      } catch (e) {
+        console.error("activity logs cleanup failed:", e);
+        AdminUI.toast(t("admin.activitylogs.cleanupFailedServer"), "error");
+      }
+    });
+  }
+
+  el.btnActivityLogsCleanup?.addEventListener("click", openActivityLogsCleanupModal);
+
+  // ---------- Notifications cleanup (moved from admin-notifications.js) ----------
+  function openNotificationsCleanupModal() {
+    const body = document.createElement("div");
+    body.innerHTML = `
+      <p class="adm-modal-message">${t("admin.notifications.cleanupExplain")}</p>
+      <label class="adm-cleanup-field">
+        <span>${t("admin.notifications.keepDays")}</span>
+        <input type="number" id="nfKeepDays" value="30" min="1">
+      </label>
+      <div class="adm-modal-footer">
+        <button type="button" class="adm-btn" id="nfCleanupCancel">${t("admin.notifications.cancel")}</button>
+        <button type="button" class="adm-btn adm-btn-danger" id="nfCleanupConfirm">${t("admin.notifications.deleteOldConfirm")}</button>
+      </div>
+    `;
+
+    const { body: mountedBody } = AdminUI.openModal({ title: t("admin.notifications.cleanupModalTitle"), bodyNode: body });
+
+    mountedBody.querySelector("#nfCleanupCancel").addEventListener("click", () => AdminUI.closeModal());
+    mountedBody.querySelector("#nfCleanupConfirm").addEventListener("click", async () => {
+      const keepDays = Number(mountedBody.querySelector("#nfKeepDays").value || 30);
+
+      try {
+        const res = await fetch(`${API_BASE}/api/notifications/cleanup`, {
+          method: "POST",
+          headers: { ...authHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify({ keepDays })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.notifications.cleanupFailed"), "error");
+
+        AdminUI.closeModal();
+        AdminUI.toast(t("admin.notifications.cleanupDeleted", { count: data.deletedNotifications }), "success");
+      } catch (e) {
+        console.error("notifications cleanup failed:", e);
+        AdminUI.toast(t("admin.notifications.cleanupFailedServer"), "error");
+      }
+    });
+  }
+
+  el.btnNotificationsCleanup?.addEventListener("click", openNotificationsCleanupModal);
 })();
