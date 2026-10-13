@@ -62,6 +62,29 @@
       </div>
 
       <!-- ========================= -->
+      <!-- MONGODB STORAGE USAGE (live, plan vs usage) -->
+      <!-- ========================= -->
+      <div class="adm-card adm-render-card" id="admMongoUsageCard">
+        <div class="adm-card-label">
+          <span aria-hidden="true">🗄️</span>
+          <span data-i18n="admin.maintenance.mongoUsageTitle">MongoDB Storage Usage</span>
+        </div>
+
+        <div class="adm-render-loading" id="mtMongoLoading" data-i18n="admin.maintenance.loadingMongoUsage">Loading storage usage…</div>
+
+        <div id="mtMongoBody" hidden>
+          <div class="adm-card-value" id="mtMongoTotal">— MB</div>
+          <span class="adm-card-sub" id="mtMongoTotalSub"></span>
+          <div class="adm-bar-track"><div class="adm-bar-fill" id="mtMongoBar"></div></div>
+          <div class="adm-render-sources" id="mtMongoSources"></div>
+        </div>
+
+        <div class="adm-render-setup" id="mtMongoSetup" hidden data-i18n="admin.maintenance.couldNotLoadMongoUsage">
+          Could not load storage usage.
+        </div>
+      </div>
+
+      <!-- ========================= -->
       <!-- GENERIC COLLECTION CLEANUP -->
       <!-- The dropdown is populated from GET /api/maintenance/collections -->
       <!-- (a backend-defined allowlist) — never a raw collection name. -->

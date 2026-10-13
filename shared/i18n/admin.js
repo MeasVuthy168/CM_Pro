@@ -403,6 +403,10 @@ CMI18n.register({
   },
   "admin.maintenance.wipeFailed": { km: "លុបបានបរាជ័យ។", en: "Delete failed." },
   "admin.maintenance.wipeFailedServer": { km: "លុបបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Delete failed — could not reach the server." },
+  "admin.maintenance.mongoUsageTitle": { km: "ការប្រើប្រាស់ទំហំផ្ទុក MongoDB", en: "MongoDB Storage Usage" },
+  "admin.maintenance.loadingMongoUsage": { km: "កំពុងផ្ទុកការប្រើប្រាស់ទំហំផ្ទុក…", en: "Loading storage usage…" },
+  "admin.maintenance.pctOfStorageQuota": { km: "{pct}% នៃកម្រិតទំហំផ្ទុកឥតគិតថ្លៃបានប្រើប្រាស់", en: "{pct}% of free-tier storage quota used" },
+  "admin.maintenance.couldNotLoadMongoUsage": { km: "មិនអាចផ្ទុកការប្រើប្រាស់ទំហំផ្ទុកបានទេ។", en: "Could not load storage usage." },
 
   // ===================================================
   // bandwidth.html + admin.js — Bandwidth Dashboard
