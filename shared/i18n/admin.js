@@ -285,6 +285,7 @@ CMI18n.register({
   "admin.notifications.cleanupFailed": { km: "សម្អាតបានបរាជ័យ។", en: "Cleanup failed." },
   "admin.notifications.cleanupDeleted": { km: "បានលុបការជូនដំណឹង {count} ។", en: "Deleted {count} notification(s)." },
   "admin.notifications.cleanupFailedServer": { km: "សម្អាតបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Cleanup failed — could not reach the server." },
+  "admin.notifications.cleanupConfirmMessage": { km: "តើអ្នកប្រាកដថាចង់លុបការជូនដំណឹងដែលចាស់ជាង {days} ថ្ងៃជាអចិន្ត្រៃយ៍មែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។", en: "Are you sure you want to permanently delete notifications older than {days} days? This can't be undone." },
   "admin.notifications.pruneConfirmTitle": { km: "សម្អាត Subscription ដែលស្លាប់?", en: "Prune dead subscriptions?" },
   "admin.notifications.pruneConfirmMessage": { km: "នេះនឹងផ្ញើ push តេស្តតូចមួយទៅ subscription ដែលបានរក្សាទុកនីមួយៗឥឡូវនេះ ដើម្បីពិនិត្យថាមួយណានៅសកម្មនៅឡើយ។ ឧបករណ៍ដែលស្លាប់ (404/410) នឹងត្រូវបានលុបភ្លាមៗ។ ឧបករណ៍ដែលពិតជានៅសកម្មអាចនឹងបង្ហាញការជូនដំណឹងអាទិភាពទាបមួយបន្តិច \"System Check\"។ វាអាចចំណាយពេលបន្តិចសម្រាប់បញ្ជីធំ។", en: "This sends a small test push to every stored subscription right now to check which are still alive. Dead ones (404/410) are deleted immediately. Devices that are genuinely still active may briefly show a low-priority \"System Check\" notification. This can take a little while for a large list." },
   "admin.notifications.runPrune": { km: "ដំណើរការសម្អាត", en: "Run Prune" },
@@ -360,6 +361,7 @@ CMI18n.register({
   "admin.activitylogs.cleanupFailed": { km: "សម្អាតបានបរាជ័យ។", en: "Cleanup failed." },
   "admin.activitylogs.cleanupDeleted": { km: "បានលុបកំណត់ហេតុ {count} ចាស់ជាង {cutoff}។", en: "Deleted {count} log(s) older than {cutoff}." },
   "admin.activitylogs.cleanupFailedServer": { km: "សម្អាតបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Cleanup failed — could not reach the server." },
+  "admin.activitylogs.cleanupConfirmMessage": { km: "តើអ្នកប្រាកដថាចង់លុបកំណត់ហេតុសកម្មភាពដែលចាស់ជាង {days} ថ្ងៃជាអចិន្ត្រៃយ៍មែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។", en: "Are you sure you want to permanently delete activity logs older than {days} days? This can't be undone." },
 
   // ===================================================
   // maintenance.html + admin-maintenance.js — Storage Cleanup

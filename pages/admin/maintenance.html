@@ -93,6 +93,10 @@
         <p class="adm-modal-message" data-i18n="admin.activitylogs.cleanupExplain">
           Permanently deletes activity logs older than the number of days below. This can't be undone.
         </p>
+        <label class="adm-cleanup-field">
+          <span data-i18n="admin.activitylogs.keepDays">Keep logs from the last (days)</span>
+          <input type="number" id="alKeepDays" value="180" min="1">
+        </label>
         <div class="adm-modal-footer" style="justify-content:flex-start; gap:12px;">
           <button type="button" class="adm-btn adm-btn-danger" id="alBtnCleanup" data-i18n="admin.activitylogs.cleanupOldLogs">🧹 Clean Up Old Logs</button>
         </div>
@@ -106,6 +110,10 @@
         <p class="adm-modal-message" data-i18n="admin.notifications.cleanupExplain">
           Permanently deletes notifications older than the number of days below. This can't be undone.
         </p>
+        <label class="adm-cleanup-field">
+          <span data-i18n="admin.notifications.keepDays">Keep notifications from the last (days)</span>
+          <input type="number" id="nfKeepDays" value="30" min="1">
+        </label>
         <div class="adm-modal-footer" style="justify-content:flex-start; gap:12px;">
           <button type="button" class="adm-btn adm-btn-danger" id="nfBtnCleanup" data-i18n="admin.notifications.cleanupOld">🧹 Clean Up Old Notifications</button>
         </div>
