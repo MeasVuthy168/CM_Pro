@@ -45,7 +45,8 @@ CMI18n.register({
   "creditreport.hub.refreshingT24": { km: "កំពុងទាញយក T24...", en: "Refreshing T24..." },
   "creditreport.hub.t24RefreshAllDone": { km: "បានទាញយក T24 ថ្មីសម្រាប់ទាំង 4 របាយការណ៍។", en: "T24 refreshed for all 4 reports." },
   "creditreport.hub.t24RefreshSomeFailed": { km: "ការទាញយក T24 ថ្មីខ្លះបរាជ័យ — សូមមើលព័ត៌មានលម្អិតខាងក្រោម។", en: "Some T24 refreshes failed — see details below." },
-  "creditreport.hub.t24RefreshedDays": { km: "បានទាញយកថ្មី {count} ថ្ងៃ", en: "{count} days refreshed" },
+  "creditreport.hub.t24RefreshedNone": { km: "មិនទាន់មានទិន្នន័យរក្សាទុកទេ", en: "No saved day yet" },
+  "creditreport.hub.confirmRefreshAllT24": { km: "តើអ្នកបាន Upload ទិន្នន័យ NBC Loan Outstanding Grid Merge ចុងក្រោយបំផុតហើយឫនៅ?", en: "Have you uploaded the latest NBC Loan Outstanding Grid Merge data yet?" },
 
   // Shared across report pages — a generic loading overlay message
   // (crShowLoading("Loading Report Data...") convention).
