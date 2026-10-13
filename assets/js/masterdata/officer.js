@@ -23,6 +23,7 @@ const mdIsAdmin = String(mdLoggedInUser.role || "").toLowerCase() === "admin";
 
 let mdOfficers = [];      // full list from the server, unfiltered
 let mdEditingId = null;   // officerId currently being edited, or null for "add"
+let mdViewMode = localStorage.getItem("md_officer_view") === "list" ? "list" : "card";
 
 function mdEscapeHtml(text) {
     const div = document.createElement("div");
@@ -105,6 +106,53 @@ function mdRenderList() {
         return;
     }
 
+    if (mdViewMode === "list") {
+        mdRenderTable(list, rows);
+    } else {
+        mdRenderCards(list, rows);
+    }
+}
+
+function mdRenderTable(list, rows) {
+    const bodyRows = rows.map(o => `
+        <tr data-id="${mdEscapeHtml(o.officerId)}">
+            <td>${mdEscapeHtml(o.officerId) || "-"}</td>
+            <td>${mdEscapeHtml(o.name) || "-"}</td>
+            <td>${mdEscapeHtml(o.nameKh) || "-"}</td>
+            <td>${mdEscapeHtml(o.phone) || "-"}</td>
+            <td>${mdEscapeHtml(o.team) || "-"}</td>
+            <td>${mdEscapeHtml(o.branch) || "-"}</td>
+            ${mdIsAdmin ? `
+            <td>
+                <div class="md-table-actions">
+                    <button type="button" class="md-icon-btn md-edit-btn" aria-label="${t("masterdata.officer.editBtn")}">✏️</button>
+                    <button type="button" class="md-icon-btn md-danger md-delete-btn" aria-label="${t("masterdata.officer.deleteBtn")}">🗑️</button>
+                </div>
+            </td>` : ""}
+        </tr>
+    `).join("");
+
+    list.innerHTML = `
+        <div class="md-table-wrap">
+        <table class="md-table">
+        <thead>
+        <tr>
+            <th>${t("masterdata.officer.colId")}</th>
+            <th>${t("masterdata.officer.colName")}</th>
+            <th>${t("masterdata.officer.colNameKh")}</th>
+            <th>${t("masterdata.officer.colPhone")}</th>
+            <th>${t("masterdata.officer.colTeam")}</th>
+            <th>${t("masterdata.officer.colBranch")}</th>
+            ${mdIsAdmin ? `<th>${t("masterdata.officer.colActions")}</th>` : ""}
+        </tr>
+        </thead>
+        <tbody>${bodyRows}</tbody>
+        </table>
+        </div>
+    `;
+}
+
+function mdRenderCards(list, rows) {
     list.innerHTML = rows.map(o => `
         <div class="md-row-card" data-id="${mdEscapeHtml(o.officerId)}">
             <div class="md-row-top">
@@ -247,6 +295,20 @@ document.getElementById("mdClearFilterBtn").addEventListener("click", () => {
     mdRenderList();
 });
 
+function mdApplyViewModeButtons() {
+    document.getElementById("mdViewCardBtn").classList.toggle("active", mdViewMode === "card");
+    document.getElementById("mdViewListBtn").classList.toggle("active", mdViewMode === "list");
+}
+function mdSetViewMode(mode) {
+    mdViewMode = mode;
+    localStorage.setItem("md_officer_view", mode);
+    mdApplyViewModeButtons();
+    mdRenderList();
+}
+document.getElementById("mdViewCardBtn").addEventListener("click", () => mdSetViewMode("card"));
+document.getElementById("mdViewListBtn").addEventListener("click", () => mdSetViewMode("list"));
+mdApplyViewModeButtons();
+
 document.getElementById("btnMdAdd").addEventListener("click", () => mdOpenDialog(null));
 document.getElementById("btnMdSave").addEventListener("click", mdSaveOfficer);
 document.getElementById("btnMdCancel").addEventListener("click", mdCloseDialog);
@@ -262,9 +324,10 @@ document.getElementById("mdDeleteDialog").addEventListener("click", (e) => {
 
 // Event delegation for row edit/delete buttons (rows are re-rendered
 // wholesale on every search/filter, so binding once here instead of
-// per-row avoids rebinding listeners after every render).
+// per-row avoids rebinding listeners after every render). Matches
+// both the card view's .md-row-card divs and the table view's <tr>s.
 document.getElementById("mdList").addEventListener("click", (e) => {
-    const card = e.target.closest(".md-row-card");
+    const card = e.target.closest("[data-id]");
     if (!card) return;
     const officerId = card.dataset.id;
     const officer = mdOfficers.find(o => o.officerId === officerId);
