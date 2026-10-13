@@ -407,6 +407,28 @@ CMI18n.register({
   "admin.maintenance.loadingMongoUsage": { km: "កំពុងផ្ទុកការប្រើប្រាស់ទំហំផ្ទុក…", en: "Loading storage usage…" },
   "admin.maintenance.pctOfStorageQuota": { km: "{pct}% នៃកម្រិតទំហំផ្ទុកឥតគិតថ្លៃបានប្រើប្រាស់", en: "{pct}% of free-tier storage quota used" },
   "admin.maintenance.dataIndexBreakdown": { km: "ទិន្នន័យ {dataMb} MB · លិបិក្រម {indexMb} MB (ទាំងពីរត្រូវបានរាប់បញ្ចូលខាងលើ)", en: "Data {dataMb} MB · Indexes {indexMb} MB (both counted above)" },
+  "admin.maintenance.compactLabel": { km: "បង្រួមប្រវត្តិរូបភាពរបាយការណ៍", en: "Compact Report Snapshot History" },
+  "admin.maintenance.compactExplain": {
+    km: "ប្រវត្តិរូបភាពប្រចាំថ្ងៃ (Branch/Officer/Location/Product) កើនឡើងមួយជួរក្នុងមួយថ្ងៃធ្វើការជារៀងរហូត។ មុខងារនេះរក្សាទុកតែរូបភាពចុងបំផុតក្នុងខែ (ថ្ងៃធ្វើការចុងក្រោយ មិនរាប់ចុងសប្តាហ៍ និងថ្ងៃឈប់សម្រាកជាតិ) សម្រាប់ខែដែលបានបញ្ចប់ ហើយលុបរូបភាពប្រចាំថ្ងៃផ្សេងទៀតក្នុងខែនោះចោល។ ខែបច្ចុប្បន្នមិនត្រូវបានប៉ះពាល់ទេ។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។",
+    en: "Daily report-history snapshots (Branch/Officer/Location/Product) grow by one row per business day forever. This keeps only the last business day of each already-closed month (skipping weekends and Cambodian public holidays) and deletes the rest of that month's daily rows. The current month is never touched. This can't be undone."
+  },
+  "admin.maintenance.compactPreview": { km: "មើលមុនលុប", en: "Preview" },
+  "admin.maintenance.compactRun": { km: "បង្រួមឥឡូវនេះ", en: "Compact Now" },
+  "admin.maintenance.compactPreviewResult": {
+    km: "ខែបិទចំនួន {months} នឹងបង្រួម — លុបជួរចំនួន {count} សរុប (រក្សាទុកថ្ងៃចុងខែនីមួយៗ)។",
+    en: "{months} closed month(s) to compact — {count} row(s) total would be deleted (each month's last day kept)."
+  },
+  "admin.maintenance.compactPreviewEmpty": { km: "គ្មានខែបិទណាមួយត្រូវបង្រួមទេ — ទិន្នន័យទាំងអស់ត្រូវបានបង្រួមរួចហើយ ឬនៅក្នុងខែបច្ចុប្បន្ន។", en: "No closed months need compacting — everything's already compacted or still in the current month." },
+  "admin.maintenance.compactPreviewFailed": { km: "មើលមុនលុបបានបរាជ័យ។", en: "Preview failed." },
+  "admin.maintenance.compactPreviewFailedServer": { km: "មើលមុនលុបបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Preview failed — could not reach the server." },
+  "admin.maintenance.compactConfirmTitle": { km: "បញ្ជាក់ការបង្រួម", en: "Confirm Compaction" },
+  "admin.maintenance.compactConfirmMessage": {
+    km: "អ្នកនឹងលុបជាអចិន្ត្រៃយ៍នូវជួរចំនួន {count} ពីខែបិទចំនួន {months} ដោយរក្សាទុកតែថ្ងៃចុងខែនីមួយៗ។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។ តើអ្នកប្រាកដទេ?",
+    en: "You are about to permanently delete {count} row(s) across {months} closed month(s), keeping only each month's last day. This can't be undone. Are you sure?"
+  },
+  "admin.maintenance.compactDone": { km: "បានបង្រួមរួចរាល់ — លុបជួរចំនួន {count} ពីខែបិទចំនួន {months}។", en: "Compaction complete — deleted {count} row(s) across {months} month(s)." },
+  "admin.maintenance.compactFailed": { km: "បង្រួមបានបរាជ័យ។", en: "Compaction failed." },
+  "admin.maintenance.compactFailedServer": { km: "បង្រួមបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Compaction failed — could not reach the server." },
   "admin.maintenance.couldNotLoadMongoUsage": { km: "មិនអាចផ្ទុកការប្រើប្រាស់ទំហំផ្ទុកបានទេ។", en: "Could not load storage usage." },
 
   // ===================================================
