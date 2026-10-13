@@ -23,6 +23,17 @@ async function loadComponent(id,file){
                 showLogo:false,
                 showProfile:false
             });
+
+            // Relocate the page's own "..." menu (Export Excel, built in
+            // index.html) into the topbar's right side — moves the
+            // EXISTING element rather than rebuilding it, so the click
+            // handler wired in spotcheck.js keeps working. Same pattern
+            // as arrears-loader.js.
+            const menuWrap=document.getElementById("scMenuWrap");
+            const topbarRight=document.querySelector("#topbar-container .topbar-right");
+            if(menuWrap && topbarRight){
+                topbarRight.insertBefore(menuWrap, topbarRight.firstChild);
+            }
         }
     }catch(error){
         console.error(error);

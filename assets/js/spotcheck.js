@@ -102,6 +102,8 @@ let scAllRecords = [];      // raw {k, v, uploadedAt} from server
 let scEditingCIF = null;    // null = adding new
 let scDeleteTargetCIF = null;
 let scOccupationSuggestions = [];
+let scCurrentRows = [];     // whatever's currently displayed (post-filter, post-sort) — feeds Export Excel
+let scViewMode = localStorage.getItem("sc_view") === "list" ? "list" : "card";
 
 // ---------------------------------------------------------
 // Bootstrapping — independent of the component loader; only
@@ -136,18 +138,13 @@ function scPopulateSelectOptions() {
   }
 
   // Conclusion: 2 preset long-form sentences + a custom "other" entry
+  // (form dropdown only — the toolbar's Conclusion filter was removed).
   const conclusionEl = document.getElementById("cboConclusion");
-  const filterEl = document.getElementById("filterConclusion");
   SC_CONCLUSION_OPTIONS.forEach((text) => {
     const o1 = document.createElement("option");
     o1.value = text;
     o1.textContent = text;
     conclusionEl.appendChild(o1);
-
-    const o2 = document.createElement("option");
-    o2.value = text;
-    o2.textContent = text;
-    filterEl.appendChild(o2);
   });
   const otherOpt = document.createElement("option");
   otherOpt.value = SC_CONCLUSION_OTHER;
@@ -169,6 +166,10 @@ async function scRefreshList() {
     if (!data.ok) throw new Error(data.error || "Load failed");
     scAllRecords = data.data || [];
     scRebuildOccupationSuggestions();
+    scPopulateMonthOptions();
+    scPopulateBranchOptions();
+    scPopulateOfficerOptions();
+    scPopulateProductTypeOptions();
     scRenderSummary();
     scRenderList();
   } catch (err) {
@@ -195,6 +196,77 @@ function scRebuildOccupationSuggestions() {
 }
 
 // ---------------------------------------------------------
+// Filter dropdowns — Month/Branch/Officer/Product Type. Branch, Officer
+// and Product Type have no master-data source on this page (they're
+// free-text fields on each record — see SC_FIELD_ORDER), so their
+// options are derived from whatever's actually been entered, same
+// low-tech approach assets/js/arrears.js uses for its own Branch/
+// Officer/Product filters.
+// ---------------------------------------------------------
+function scDistinctSorted(records, field) {
+  const set = new Set();
+  records.forEach((r) => {
+    const rec = scRecordToObj(r);
+    const v = (rec[field] || "").trim();
+    if (v) set.add(v);
+  });
+  return Array.from(set).sort((a, b) => a.localeCompare(b));
+}
+
+// Keeps the first option (the "All" placeholder) and replaces the rest,
+// preserving the current selection if it's still among the new values.
+function scSetSelectOptions(selectEl, values, labelFn) {
+  const placeholder = selectEl.options[0];
+  const currentValue = selectEl.value;
+  selectEl.innerHTML = "";
+  if (placeholder) selectEl.appendChild(placeholder);
+  values.forEach((v) => {
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = labelFn ? labelFn(v) : v;
+    selectEl.appendChild(o);
+  });
+  const stillValid = Array.from(selectEl.options).some((o) => o.value === currentValue);
+  selectEl.value = stillValid ? currentValue : "";
+}
+
+// "YYYY-MM" key derived from the stored "dd-mmm-yyyy" spotCheckDate, via
+// the same scStoredToIso() the form already uses.
+function scMonthKey(rec) {
+  const iso = scStoredToIso(rec.spotCheckDate);
+  return iso ? iso.slice(0, 7) : "";
+}
+
+function scPopulateMonthOptions() {
+  const set = new Set();
+  scAllRecords.forEach((r) => {
+    const key = scMonthKey(scRecordToObj(r));
+    if (key) set.add(key);
+  });
+  const months = Array.from(set).sort((a, b) => b.localeCompare(a)); // newest first
+  scSetSelectOptions(document.getElementById("filterMonth"), months, (v) => {
+    const [y, m] = v.split("-");
+    return `${m}/${y}`;
+  });
+}
+
+function scPopulateBranchOptions() {
+  scSetSelectOptions(document.getElementById("filterBranch"), scDistinctSorted(scAllRecords, "branch"));
+}
+
+// Cascades on the selected Branch — only officers who have at least one
+// spot check record under that branch show up.
+function scPopulateOfficerOptions() {
+  const branch = document.getElementById("filterBranch").value;
+  const scoped = branch ? scAllRecords.filter((r) => scRecordToObj(r).branch === branch) : scAllRecords;
+  scSetSelectOptions(document.getElementById("filterOfficer"), scDistinctSorted(scoped, "creditOfficer"));
+}
+
+function scPopulateProductTypeOptions() {
+  scSetSelectOptions(document.getElementById("filterProductType"), scDistinctSorted(scAllRecords, "loanType"));
+}
+
+// ---------------------------------------------------------
 // Rendering
 // ---------------------------------------------------------
 function scRenderSummary() {
@@ -209,24 +281,55 @@ function scRenderSummary() {
   document.getElementById("statMonth").textContent = thisMonth;
 }
 
+// Empty/invalid dates always sort to the end, regardless of direction.
+function scCompareDates(aIso, bIso) {
+  if (!aIso && !bIso) return 0;
+  if (!aIso) return 1;
+  if (!bIso) return -1;
+  return aIso.localeCompare(bIso);
+}
+
+const SC_SORTERS = {
+  name_asc: (a, b) => (a.customerName || "").localeCompare(b.customerName || ""),
+  name_desc: (a, b) => (b.customerName || "").localeCompare(a.customerName || ""),
+  officer_asc: (a, b) => (a.creditOfficer || "").localeCompare(b.creditOfficer || ""),
+  officer_desc: (a, b) => (b.creditOfficer || "").localeCompare(a.creditOfficer || ""),
+  checkdate_desc: (a, b) => scCompareDates(scStoredToIso(b.spotCheckDate), scStoredToIso(a.spotCheckDate)),
+  checkdate_asc: (a, b) => scCompareDates(scStoredToIso(a.spotCheckDate), scStoredToIso(b.spotCheckDate)),
+  bookdate_desc: (a, b) => scCompareDates(scStoredToIso(b.disbursementDate), scStoredToIso(a.disbursementDate)),
+  bookdate_asc: (a, b) => scCompareDates(scStoredToIso(a.disbursementDate), scStoredToIso(b.disbursementDate)),
+};
+
 function scRenderList() {
   const search = document.getElementById("searchInput").value.trim().toLowerCase();
-  const conclusionFilter = document.getElementById("filterConclusion").value;
+  const monthFilter = document.getElementById("filterMonth").value;
+  const branchFilter = document.getElementById("filterBranch").value;
+  const officerFilter = document.getElementById("filterOfficer").value;
+  const productFilter = document.getElementById("filterProductType").value;
+  const sortBy = document.getElementById("sortSelect").value;
 
-  const filtered = scAllRecords.filter((r) => {
-    const rec = scRecordToObj(r);
-    const matchesSearch =
-      !search ||
-      rec.cif.toLowerCase().includes(search) ||
-      (rec.customerName || "").toLowerCase().includes(search);
-    const matchesConclusion = !conclusionFilter || rec.conclusion === conclusionFilter;
-    return matchesSearch && matchesConclusion;
-  });
+  const filtered = scAllRecords
+    .map((r) => scRecordToObj(r))
+    .filter((rec) => {
+      const matchesSearch =
+        !search ||
+        rec.cif.toLowerCase().includes(search) ||
+        (rec.customerName || "").toLowerCase().includes(search);
+      const matchesMonth = !monthFilter || scMonthKey(rec) === monthFilter;
+      const matchesBranch = !branchFilter || rec.branch === branchFilter;
+      const matchesOfficer = !officerFilter || rec.creditOfficer === officerFilter;
+      const matchesProduct = !productFilter || rec.loanType === productFilter;
+      return matchesSearch && matchesMonth && matchesBranch && matchesOfficer && matchesProduct;
+    })
+    .sort(SC_SORTERS[sortBy] || SC_SORTERS.checkdate_desc);
+
+  scCurrentRows = filtered;
 
   const container = document.getElementById("listContainer");
   const emptyState = document.getElementById("emptyState");
   const noResultsState = document.getElementById("noResultsState");
 
+  container.classList.toggle("sc-list-table", scViewMode === "list");
   container.innerHTML = "";
 
   if (scAllRecords.length === 0) {
@@ -242,9 +345,134 @@ function scRenderList() {
   }
   noResultsState.hidden = true;
 
-  filtered
-    .sort((a, b) => (b.uploadedAt || "").localeCompare(a.uploadedAt || ""))
-    .forEach((r) => container.appendChild(scBuildCard(scRecordToObj(r))));
+  if (scViewMode === "list") {
+    container.appendChild(scBuildTable(filtered));
+  } else {
+    filtered.forEach((rec) => container.appendChild(scBuildCard(rec)));
+  }
+}
+
+function scBuildTable(rows) {
+  const wrap = document.createElement("div");
+  wrap.className = "sc-table-wrap";
+
+  const bodyRows = rows.map((rec) => `
+    <tr data-cif="${scEscapeHtml(rec.cif)}">
+      <td>${scEscapeHtml(rec.cif)}</td>
+      <td>${scEscapeHtml(rec.customerName || "—")}</td>
+      <td>${scEscapeHtml(rec.branch || "—")}</td>
+      <td>${scEscapeHtml(rec.creditOfficer || "—")}</td>
+      <td>${scEscapeHtml(rec.loanType || "—")}</td>
+      <td>${scEscapeHtml(rec.spotCheckDate || "—")}</td>
+      <td>${scEscapeHtml(rec.disbursementDate || "—")}</td>
+      <td>
+        <div class="sc-table-actions">
+          <button class="sc-action-btn sc-export-btn" aria-label="ទាញយកទម្រង់"><img src="/CM_Pro/assets/icons/spotcheck/download.png" alt=""><span>ទាញយក</span></button>
+          <button class="sc-action-btn sc-edit-btn" aria-label="កែសម្រួល"><img src="/CM_Pro/assets/icons/spotcheck/edit.png" alt=""><span>កែប្រែ</span></button>
+          <button class="sc-action-btn sc-delete-btn" aria-label="លុប"><img src="/CM_Pro/assets/icons/spotcheck/delete.png" alt=""><span>លុប</span></button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+
+  wrap.innerHTML = `
+    <table class="sc-table">
+      <thead>
+        <tr>
+          <th>CIF</th>
+          <th>ឈ្មោះអតិថិជន</th>
+          <th>សាខា</th>
+          <th>មន្ត្រីឥណទាន</th>
+          <th>ប្រភេទឥណទាន</th>
+          <th>ថ្ងៃត្រួតពិនិត្យ</th>
+          <th>ថ្ងៃបញ្ចេញកម្ចី</th>
+          <th>សកម្មភាព</th>
+        </tr>
+      </thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+  `;
+
+  // Event delegation would need one listener per row anyway for the
+  // row-click-to-open behavior, so bind per-row directly here — same
+  // row count as the card grid it replaces, no extra cost.
+  wrap.querySelectorAll("tbody tr").forEach((tr) => {
+    const rec = rows.find((r) => r.cif === tr.dataset.cif);
+    if (!rec) return;
+    tr.querySelector(".sc-edit-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      scOpenForm(rec);
+    });
+    tr.querySelector(".sc-delete-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      scOpenDeleteConfirm(rec.cif);
+    });
+    tr.querySelector(".sc-export-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      scExportForm(rec.cif, e.currentTarget);
+    });
+    tr.addEventListener("click", () => scOpenForm(rec));
+  });
+
+  return wrap;
+}
+
+// ---------------------------------------------------------
+// List / Card view toggle (persisted) — same pattern as List Officer
+// ---------------------------------------------------------
+function scApplyViewModeButtons() {
+  document.getElementById("scViewCardBtn").classList.toggle("active", scViewMode === "card");
+  document.getElementById("scViewListBtn").classList.toggle("active", scViewMode === "list");
+}
+
+function scSetViewMode(mode) {
+  scViewMode = mode;
+  localStorage.setItem("sc_view", mode);
+  scApplyViewModeButtons();
+  scRenderList();
+}
+
+// ---------------------------------------------------------
+// Export Excel (⋮ menu) — exports scCurrentRows, i.e. whatever is
+// currently visible after search/filter/sort, not the full dataset.
+// Client-side only, same XLSX.js approach as assets/js/arrears.js.
+// ---------------------------------------------------------
+
+// Guards against a free-text note starting with =, +, -, @, tab or CR
+// being read back as a live formula by Excel — same guard arrears.js
+// uses, since several Spot Check fields are free text officers type.
+function scSanitizeForSpreadsheet(value) {
+  if (typeof value !== "string") return value;
+  return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+}
+
+function scExportExcel() {
+  if (!scCurrentRows.length) {
+    alert("មិនមានទិន្នន័យសម្រាប់នាំចេញទេ");
+    return;
+  }
+
+  const sheetData = scCurrentRows.map((rec, i) => ({
+    "No": i + 1,
+    "CIF": scSanitizeForSpreadsheet(rec.cif),
+    "ឈ្មោះអតិថិជន": scSanitizeForSpreadsheet(rec.customerName),
+    "សាខា": scSanitizeForSpreadsheet(rec.branch),
+    "មន្ត្រីឥណទាន": scSanitizeForSpreadsheet(rec.creditOfficer),
+    "ប្រភេទឥណទាន": scSanitizeForSpreadsheet(rec.loanType),
+    "ថ្ងៃត្រួតពិនិត្យ": rec.spotCheckDate,
+    "ថ្ងៃបញ្ចេញកម្ចី": rec.disbursementDate,
+    "លេខកិច្ចសន្យា": scSanitizeForSpreadsheet(rec.loanId),
+    "ទំហំឥណទាន": rec.loanSize,
+    "រូបិយប័ណ្ណ": rec.currency,
+    "សមតុល្យ": rec.outstanding,
+    "សេចក្តីសន្និដ្ឋាន": scSanitizeForSpreadsheet(rec.conclusion)
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "SpotCheck");
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "");
+  XLSX.writeFile(wb, `SpotCheck_${stamp}.xlsx`);
 }
 
 function scBuildCard(rec) {
@@ -750,8 +978,64 @@ function scBindEvents() {
   document.getElementById("btnCancelDelete").addEventListener("click", scCloseDeleteConfirm);
   document.getElementById("btnConfirmDelete").addEventListener("click", scConfirmDelete);
 
-  document.getElementById("searchInput").addEventListener("input", scDebounce(scRenderList, 200));
-  document.getElementById("filterConclusion").addEventListener("change", scRenderList);
+  const searchInput = document.getElementById("searchInput");
+  const searchClearBtn = document.getElementById("searchClear");
+  const scUpdateSearchClearVisibility = () => {
+    searchClearBtn.style.display = searchInput.value ? "flex" : "none";
+  };
+  searchInput.addEventListener("input", scDebounce(() => {
+    scUpdateSearchClearVisibility();
+    scRenderList();
+  }, 200));
+  searchClearBtn.addEventListener("click", () => {
+    searchInput.value = "";
+    scUpdateSearchClearVisibility();
+    scRenderList();
+    searchInput.focus();
+  });
+
+  document.getElementById("filterMonth").addEventListener("change", scRenderList);
+  document.getElementById("filterBranch").addEventListener("change", () => {
+    scPopulateOfficerOptions(); // re-scope the Officer list to the newly picked Branch
+    scRenderList();
+  });
+  document.getElementById("filterOfficer").addEventListener("change", scRenderList);
+  document.getElementById("filterProductType").addEventListener("change", scRenderList);
+  document.getElementById("sortSelect").addEventListener("change", scRenderList);
+
+  document.getElementById("btnClearFilter").addEventListener("click", () => {
+    document.getElementById("filterMonth").value = "";
+    document.getElementById("filterBranch").value = "";
+    document.getElementById("filterProductType").value = "";
+    scPopulateOfficerOptions(); // branch reset -> officer list reverts to unscoped
+    document.getElementById("filterOfficer").value = "";
+    scRenderList();
+  });
+
+  document.getElementById("scViewCardBtn").addEventListener("click", () => scSetViewMode("card"));
+  document.getElementById("scViewListBtn").addEventListener("click", () => scSetViewMode("list"));
+  scApplyViewModeButtons();
+
+  const scMenuToggle = document.getElementById("btnScMenu");
+  const scMenuDropdown = document.getElementById("scMenuDropdown");
+  if (scMenuToggle && scMenuDropdown) {
+    scMenuToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      scMenuDropdown.classList.toggle("show");
+    });
+    scMenuDropdown.addEventListener("click", (e) => {
+      if (e.target.closest("button")) scMenuDropdown.classList.remove("show");
+    });
+    document.addEventListener("click", (e) => {
+      if (!scMenuDropdown.contains(e.target) && e.target !== scMenuToggle) {
+        scMenuDropdown.classList.remove("show");
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") scMenuDropdown.classList.remove("show");
+    });
+  }
+  document.getElementById("btnScExportExcel").addEventListener("click", scExportExcel);
 
   scBindAutosuggest("txtOccupationInFile", "lstOccupationInFileSuggest");
   scBindAutosuggest("txtCurrentOccupation", "lstCurrentOccupationSuggest");

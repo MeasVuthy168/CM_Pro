@@ -74,6 +74,17 @@
     </button>
   </div>
 
+  <!-- "..." menu (Export Excel) gets relocated into the topbar's right
+       side by spotcheck-loader.js once the topbar component has loaded —
+       same relocate-not-rebuild pattern as pages/arrears/index.html, so
+       the click handler wired in spotcheck.js keeps working. -->
+  <div id="scMenuWrap" class="sc-menu-wrap">
+    <button id="btnScMenu" class="sc-menu-toggle" aria-label="More actions" data-i18n-aria-label="spotcheck.moreActionsAria">⋮</button>
+    <div id="scMenuDropdown" class="sc-menu-dropdown">
+      <button id="btnScExportExcel"><img src="/CM_Pro/assets/icons/arrear/export_excel.png" alt="" class="sc-menu-icon"><span data-i18n="spotcheck.exportExcel">នាំចេញ Excel</span></button>
+    </div>
+  </div>
+
   <!-- ============ SUMMARY STRIP ============ -->
   <div class="sc-summary">
     <div class="sc-summary-item">
@@ -91,10 +102,48 @@
     <div class="sc-search">
       <span class="sc-search-icon">⌕</span>
       <input type="text" id="searchInput" placeholder="ស្វែងរកតាម CIF ឬ ឈ្មោះអតិថិជន..." data-i18n-placeholder="spotcheck.searchPlaceholder">
+      <button type="button" id="searchClear" class="sc-search-clear" aria-label="Clear search" data-i18n-aria-label="spotcheck.searchClearAria" style="display:none">&times;</button>
     </div>
-    <select id="filterConclusion" class="sc-select-filter">
-      <option value="" data-i18n="spotcheck.filterConclusionAllOption">សេចក្តីសន្និដ្ឋាន — ទាំងអស់</option>
+  </div>
+
+  <div class="sc-filter-row">
+    <select id="filterMonth" class="sc-select-filter">
+      <option value="" data-i18n="spotcheck.filterMonthAll">ខែត្រួតពិនិត្យ — ទាំងអស់</option>
     </select>
+    <select id="filterBranch" class="sc-select-filter">
+      <option value="" data-i18n="spotcheck.filterBranchAll">សាខា — ទាំងអស់</option>
+    </select>
+  </div>
+  <div class="sc-filter-row">
+    <select id="filterOfficer" class="sc-select-filter">
+      <option value="" data-i18n="spotcheck.filterOfficerAll">មន្ត្រីឥណទាន — ទាំងអស់</option>
+    </select>
+    <select id="filterProductType" class="sc-select-filter">
+      <option value="" data-i18n="spotcheck.filterProductAll">ប្រភេទឥណទាន — ទាំងអស់</option>
+    </select>
+  </div>
+  <div class="sc-filter-row">
+    <select id="sortSelect" class="sc-select-filter sc-select-sort">
+      <option value="name_asc" data-i18n="spotcheck.sortNameAsc">ឈ្មោះ (A-Z)</option>
+      <option value="name_desc" data-i18n="spotcheck.sortNameDesc">ឈ្មោះ (Z-A)</option>
+      <option value="officer_asc" data-i18n="spotcheck.sortOfficerAsc">មន្ត្រីឥណទាន (A-Z)</option>
+      <option value="officer_desc" data-i18n="spotcheck.sortOfficerDesc">មន្ត្រីឥណទាន (Z-A)</option>
+      <option value="checkdate_desc" data-i18n="spotcheck.sortCheckDateDesc">ថ្ងៃត្រួតពិនិត្យ (ថ្មី➝ចាស់)</option>
+      <option value="checkdate_asc" data-i18n="spotcheck.sortCheckDateAsc">ថ្ងៃត្រួតពិនិត្យ (ចាស់➝ថ្មី)</option>
+      <option value="bookdate_desc" data-i18n="spotcheck.sortBookDateDesc">ថ្ងៃបញ្ចេញកម្ចី (ថ្មី➝ចាស់)</option>
+      <option value="bookdate_asc" data-i18n="spotcheck.sortBookDateAsc">ថ្ងៃបញ្ចេញកម្ចី (ចាស់➝ថ្មី)</option>
+    </select>
+  </div>
+  <div class="sc-filter-actions">
+    <div class="sc-view-toggle" id="scViewToggle">
+      <button type="button" class="sc-view-btn" id="scViewCardBtn" data-view="card" aria-label="Card view" data-i18n-aria-label="spotcheck.viewCardAria">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+      </button>
+      <button type="button" class="sc-view-btn" id="scViewListBtn" data-view="list" aria-label="List view" data-i18n-aria-label="spotcheck.viewListAria">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+      </button>
+    </div>
+    <button type="button" id="btnClearFilter" class="sc-btn-clear-filter" data-i18n="spotcheck.clearFilter">សម្អាតតម្រង</button>
   </div>
 
   <!-- ============ LIST ============ -->
@@ -400,6 +449,9 @@
 
 <!-- NOTIFICATION BADGE -->
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<!-- Export Excel (⋮ menu) — same CDN build pages/arrears/index.html uses -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <!-- SPOTCHECK LOGIC -->
 <script src="../../assets/js/spotcheck.js"></script>

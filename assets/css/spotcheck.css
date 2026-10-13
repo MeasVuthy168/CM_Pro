@@ -229,7 +229,34 @@
   box-shadow: 0 0 0 3px rgba(0, 59, 139, 0.12);
 }
 
+.sc-search input {
+  padding-right: 34px; /* room for the clear button */
+}
+
+.sc-search-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--sc-text-muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sc-search-clear:active { transform: translateY(-50%) scale(0.9); }
+
 .sc-select-filter {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
   border: 1px solid var(--sc-border);
   border-radius: 10px;
   padding: 0 10px;
@@ -237,7 +264,167 @@
   font-size: 13px;
   background: var(--sc-card-bg);
   color: var(--sc-text);
-  max-width: 40%;
+}
+
+/* ---------- Filter rows (month/branch, officer/product, sort) ---------- */
+.sc-filter-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.sc-filter-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.sc-view-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.sc-view-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--sc-border);
+  background: transparent;
+  color: var(--sc-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sc-view-btn:active { transform: scale(0.95); }
+.sc-view-btn.active {
+  background: linear-gradient(180deg, var(--sc-gold-light), var(--sc-gold));
+  border-color: transparent;
+  color: var(--sc-navy-dark);
+}
+
+.sc-btn-clear-filter {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--sc-border);
+  background: transparent;
+  color: var(--sc-text-muted);
+  font-family: var(--sc-font);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sc-btn-clear-filter:active { transform: scale(0.97); }
+
+/* ---------- List view (table) ---------- */
+.sc-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--sc-border);
+  border-radius: var(--sc-radius);
+  background: var(--sc-card-bg);
+}
+
+.sc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  font-family: var(--sc-font);
+}
+
+.sc-table th,
+.sc-table td {
+  padding: 10px 12px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--sc-border);
+}
+
+.sc-table thead th {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sc-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  background: var(--sc-bg);
+  position: sticky;
+  top: 0;
+}
+
+.sc-table tbody td { color: var(--sc-text); }
+.sc-table tbody tr:last-child td { border-bottom: none; }
+.sc-table tbody tr { cursor: pointer; }
+.sc-table tbody tr:hover { background: rgba(0, 45, 107, 0.04); }
+
+.sc-table-actions {
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+.sc-table-actions .sc-action-btn span { display: none; } /* icon-only in the dense table row */
+
+/* ---------- "..." topbar menu (Export Excel) ---------- */
+.sc-menu-wrap { position: relative; }
+
+.sc-menu-toggle {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+}
+.sc-menu-toggle:active { transform: scale(0.95); }
+
+.sc-menu-dropdown {
+  display: none;
+  position: absolute;
+  top: 48px;
+  right: 0;
+  background: var(--sc-card-bg);
+  border: 1px solid var(--sc-border);
+  border-radius: 12px;
+  padding: 6px;
+  min-width: 170px;
+  width: max-content;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  z-index: 200;
+  flex-direction: column;
+  gap: 4px;
+}
+.sc-menu-dropdown.show { display: flex; }
+
+.sc-menu-dropdown button {
+  height: 38px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sc-text);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--sc-font);
+  text-align: left;
+  padding: 0 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sc-menu-dropdown button:active,
+.sc-menu-dropdown button:hover { background: rgba(212, 175, 55, 0.2); }
+
+.sc-menu-icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  object-fit: contain;
 }
 
 /* ---------- List ---------- */
@@ -614,8 +801,12 @@
 }
 .sc-confirm-actions .sc-btn { flex: 1; justify-content: center; }
 
+/* List view (table) always spans full width, card grid never applies to it */
+.sc-list.sc-list-table { display: block; }
+
 /* ---------- Responsive: desktop ---------- */
 @media (min-width: 768px) {
   .sc-main { padding: 24px 32px 48px; }
   .sc-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .sc-list.sc-list-table { display: block; }
 }
