@@ -29,6 +29,72 @@
     return { Authorization: `Bearer ${window.CMAdmin.token}` };
   }
 
+  // =====================================================
+  // MongoDB Storage Usage — live plan-vs-usage from GET /api/admin/mongo-usage
+  // (the cluster's own dbStats/collStats, no extra API key needed, mirrors
+  // the Render Account Usage card on the Bandwidth page). Fixed independent
+  // of the cleanup tools below — just context for why they matter.
+  // =====================================================
+  async function fetchMongoUsage() {
+    const loadingEl = document.getElementById("mtMongoLoading");
+    const bodyEl = document.getElementById("mtMongoBody");
+    const setupEl = document.getElementById("mtMongoSetup");
+    if (!loadingEl) return; // card not on this page
+
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/mongo-usage`, { headers: authHeaders() });
+      const data = await res.json();
+
+      if (!data.ok) {
+        loadingEl.hidden = true;
+        bodyEl.hidden = true;
+        setupEl.hidden = false;
+        if (data.message) {
+          setupEl.removeAttribute("data-i18n");
+          setupEl.textContent = data.message;
+        }
+        return;
+      }
+
+      loadingEl.hidden = true;
+      setupEl.hidden = true;
+      bodyEl.hidden = false;
+
+      document.getElementById("mtMongoTotal").textContent = `${data.totalMb.toFixed(1)} MB / ${data.planMb} MB`;
+      document.getElementById("mtMongoTotalSub").textContent = t("admin.maintenance.pctOfStorageQuota", { pct: data.pctUsed });
+
+      const bar = document.getElementById("mtMongoBar");
+      bar.style.width = `${Math.min(100, data.pctUsed)}%`;
+      bar.classList.toggle("adm-bar-warn", data.pctUsed >= 70 && data.pctUsed < 100);
+      bar.classList.toggle("adm-bar-danger", data.pctUsed >= 100);
+
+      const sourcesEl = document.getElementById("mtMongoSources");
+      const entries = Object.entries(data.byCollectionMb || {});
+      sourcesEl.innerHTML = entries.length
+        ? entries
+            .sort((a, b) => b[1] - a[1])
+            .map(([name, mb]) => `
+              <div class="adm-render-source-row">
+                <span>${name}</span>
+                <span>${mb.toFixed(1)} MB</span>
+              </div>
+            `)
+            .join("")
+        : "";
+    } catch (e) {
+      console.error("mongo-usage fetch failed:", e);
+      loadingEl.hidden = true;
+      bodyEl.hidden = true;
+      setupEl.hidden = false;
+      setupEl.textContent = t("admin.maintenance.couldNotLoadMongoUsage");
+    }
+  }
+
+  if (document.getElementById("admMongoUsageCard")) {
+    fetchMongoUsage();
+    setInterval(fetchMongoUsage, 5 * 60 * 1000);
+  }
+
   function currentEntry() {
     return collections.find((c) => c.key === el.collection.value) || null;
   }
