@@ -70,8 +70,8 @@
 
       const indexNoteEl = document.getElementById("mtMongoIndexNote");
       if (indexNoteEl) {
-        indexNoteEl.textContent = data.indexMb > 0
-          ? t("admin.maintenance.indexSizeNote", { indexMb: data.indexMb.toFixed(1) })
+        indexNoteEl.textContent = (data.dataMb != null && data.indexMb != null)
+          ? t("admin.maintenance.dataIndexBreakdown", { dataMb: data.dataMb.toFixed(1), indexMb: data.indexMb.toFixed(1) })
           : "";
       }
 
