@@ -153,4 +153,165 @@
   el.btnDelete.addEventListener("click", openDeleteConfirmModal);
 
   loadCollections();
+
+  // =====================================================
+  // Wipe Collection by Source — for wipe-and-replace collections
+  // (ListBlocked, ScheduleRepayments, PrevOS, NewRegister, …) where
+  // there's no "old" data to prune by date. Admin picks a collection,
+  // then one of its existing `source` values, then deletes every row
+  // for that source. Same preview-before-delete guard as above.
+  // =====================================================
+  const wp = {
+    collection: document.getElementById("wpCollection"),
+    source: document.getElementById("wpSource"),
+    previewResult: document.getElementById("wpPreviewResult"),
+    btnPreview: document.getElementById("wpBtnPreview"),
+    btnDelete: document.getElementById("wpBtnDelete")
+  };
+
+  let wipeCollections = []; // [{ key, label }]
+  let lastWipePreview = null; // { collection, source, count }
+
+  function currentWipeEntry() {
+    return wipeCollections.find((c) => c.key === wp.collection.value) || null;
+  }
+
+  function invalidateWipePreview() {
+    lastWipePreview = null;
+    wp.btnDelete.disabled = true;
+    wp.previewResult.hidden = true;
+  }
+
+  wp.source.addEventListener("change", invalidateWipePreview);
+
+  async function loadWipeSources() {
+    const entry = currentWipeEntry();
+    invalidateWipePreview();
+    wp.source.innerHTML = "";
+    if (!entry) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/maintenance/wipe-sources?collection=${encodeURIComponent(entry.key)}`, {
+        headers: authHeaders()
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        location.replace(window.CM_ADMIN_CONFIG.loginPage);
+        return;
+      }
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.message || "Failed to load sources");
+
+      const sources = data.sources || [];
+      wp.source.innerHTML = sources.length
+        ? sources.map((s) => `<option value="${s.source}">${t("admin.maintenance.sourceRowCount", { source: s.source, count: s.count })}</option>`).join("")
+        : `<option value="">${t("admin.maintenance.noSources")}</option>`;
+    } catch (e) {
+      console.error("loadWipeSources failed:", e);
+      AdminUI.toast(t("admin.maintenance.loadSourcesFailed"), "error");
+    }
+  }
+
+  wp.collection.addEventListener("change", loadWipeSources);
+
+  async function loadWipeCollections() {
+    try {
+      const res = await fetch(`${API_BASE}/api/maintenance/wipe-collections`, { headers: authHeaders() });
+
+      if (res.status === 401 || res.status === 403) {
+        location.replace(window.CM_ADMIN_CONFIG.loginPage);
+        return;
+      }
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.message || "Failed to load collections");
+
+      wipeCollections = data.collections || [];
+      wp.collection.innerHTML = wipeCollections.map((c) => `<option value="${c.key}">${c.label}</option>`).join("");
+      await loadWipeSources();
+    } catch (e) {
+      console.error("loadWipeCollections failed:", e);
+      AdminUI.toast(t("admin.maintenance.loadCollectionsFailed"), "error");
+    }
+  }
+
+  async function runWipePreview() {
+    const entry = currentWipeEntry();
+    const source = wp.source.value;
+    if (!entry || !source) return;
+
+    wp.btnPreview.disabled = true;
+    try {
+      const res = await fetch(`${API_BASE}/api/maintenance/wipe`, {
+        method: "POST",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ collection: entry.key, source, dryRun: true })
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        location.replace(window.CM_ADMIN_CONFIG.loginPage);
+        return;
+      }
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.maintenance.previewFailed"), "error");
+
+      lastWipePreview = { collection: entry.key, source, count: data.count };
+      wp.previewResult.hidden = false;
+      wp.previewResult.textContent = t("admin.maintenance.wipePreviewResult", { count: data.count, source, collection: entry.label });
+      wp.btnDelete.disabled = data.count === 0;
+    } catch (e) {
+      console.error("wipe preview failed:", e);
+      AdminUI.toast(t("admin.maintenance.previewFailedServer"), "error");
+    } finally {
+      wp.btnPreview.disabled = false;
+    }
+  }
+
+  wp.btnPreview.addEventListener("click", runWipePreview);
+
+  function openWipeConfirmModal() {
+    const entry = currentWipeEntry();
+    const source = wp.source.value;
+    if (!entry || !lastWipePreview || lastWipePreview.collection !== entry.key || lastWipePreview.source !== source) {
+      return AdminUI.toast(t("admin.maintenance.previewFirst"), "error");
+    }
+
+    const body = document.createElement("div");
+    body.innerHTML = `
+      <p class="adm-modal-message">${t("admin.maintenance.wipeConfirmMessage", { count: lastWipePreview.count, source, collection: entry.label })}</p>
+      <div class="adm-modal-footer">
+        <button type="button" class="adm-btn" id="wpDeleteCancel">${t("admin.maintenance.cancel")}</button>
+        <button type="button" class="adm-btn adm-btn-danger" id="wpDeleteConfirm">${t("admin.maintenance.confirmDelete")}</button>
+      </div>
+    `;
+
+    const { body: mountedBody } = AdminUI.openModal({ title: t("admin.maintenance.deleteConfirmTitle"), bodyNode: body });
+
+    mountedBody.querySelector("#wpDeleteCancel").addEventListener("click", () => AdminUI.closeModal());
+    mountedBody.querySelector("#wpDeleteConfirm").addEventListener("click", async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/maintenance/wipe`, {
+          method: "POST",
+          headers: { ...authHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify({ collection: entry.key, source })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.maintenance.wipeFailed"), "error");
+
+        AdminUI.closeModal();
+        AdminUI.toast(t("admin.maintenance.wiped", { count: data.deletedCount, source, collection: entry.label }), "success");
+        invalidateWipePreview();
+        loadWipeSources();
+      } catch (e) {
+        console.error("wipe delete failed:", e);
+        AdminUI.toast(t("admin.maintenance.wipeFailedServer"), "error");
+      }
+    });
+  }
+
+  wp.btnDelete.addEventListener("click", openWipeConfirmModal);
+
+  loadWipeCollections();
 })();
