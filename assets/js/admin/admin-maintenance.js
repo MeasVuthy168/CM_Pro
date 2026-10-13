@@ -68,6 +68,13 @@
       bar.classList.toggle("adm-bar-warn", data.pctUsed >= 70 && data.pctUsed < 100);
       bar.classList.toggle("adm-bar-danger", data.pctUsed >= 100);
 
+      const indexNoteEl = document.getElementById("mtMongoIndexNote");
+      if (indexNoteEl) {
+        indexNoteEl.textContent = data.indexMb > 0
+          ? t("admin.maintenance.indexSizeNote", { indexMb: data.indexMb.toFixed(1) })
+          : "";
+      }
+
       const sourcesEl = document.getElementById("mtMongoSources");
       const entries = Object.entries(data.byCollectionMb || {});
       sourcesEl.innerHTML = entries.length
