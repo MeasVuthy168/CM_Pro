@@ -64,15 +64,21 @@
 
     border-radius:24px;
 
-    /* A fixed height (not aspect-ratio:1/1) so every card in the grid
-       matches, not just the ones sharing a row — CSS Grid only
-       auto-matches heights WITHIN a row by default, so a 2-line title
-       (e.g. "Land Classification") made its own row taller than the
-       others. Sized for the tallest case (icon + a 2-line title, see
-       .dashboard-card-title's own min-height below) so nothing clips. */
-    height:130px;
+    /* Square, not a fixed height — every column in the 3-col grid is
+       the same width (repeat(3,1fr)), so deriving height FROM that
+       width makes every card the same square size in every row, not
+       just within one row (CSS Grid only auto-matches heights WITHIN
+       a row by default). min-height is a safety floor for very narrow
+       screens, where a true square would otherwise be too short for
+       the icon + a 2-line title (see .dashboard-card-title) to fit
+       without clipping. */
+    aspect-ratio:1/1;
 
-    padding:14px 8px;
+    height:auto;
+
+    min-height:98px;
+
+    padding:10px 6px;
 
     display:flex;
 
@@ -112,21 +118,44 @@
 
 /* =========================
    Card Icon
+   Inline SVG (not <img>) so the navy shapes below can be re-themed
+   for dark mode — an externally-loaded <img src="*.svg"> can't be
+   recolored by this document's CSS at all.
 ========================= */
 
-.dashboard-card img{
+.dashboard-card svg{
 
-    width:58px;
+    width:42px;
 
-    height:58px;
+    height:42px;
 
-    object-fit:contain;
+    margin-bottom:6px;
 
-    margin-bottom:10px;
+    flex-shrink:0;
 
     pointer-events:none;
 
 }
+
+/* Icon ink — the navy shapes that sit directly against the card
+   background (not on top of a gold shape, which never needs this:
+   gold already reads fine against both a white and a dark card). In
+   dark mode the card background is itself a dark navy, so the same
+   navy fill/stroke used in light mode would nearly disappear into it
+   — swap to a light tint instead, same as --card-text / --sc-text's
+   own light/dark convention. ic-contrast is the inverse, for a small
+   white accent drawn ON TOP of an .ic-ink shape (e.g. a highlight or
+   badge mark) — it has to flip the other way so it stays visible
+   once its background flips from dark to light. */
+.dashboard-card svg .ic-ink{ fill:#0E1B3C; }
+.dashboard-card svg .ic-ink-s{ stroke:#0E1B3C; }
+.dashboard-card svg .ic-contrast{ fill:#fff; }
+.dashboard-card svg .ic-contrast-s{ stroke:#fff; }
+
+[data-theme="dark"] .dashboard-card svg .ic-ink{ fill:#EAF0FF; }
+[data-theme="dark"] .dashboard-card svg .ic-ink-s{ stroke:#EAF0FF; }
+[data-theme="dark"] .dashboard-card svg .ic-contrast{ fill:#0E1B3C; }
+[data-theme="dark"] .dashboard-card svg .ic-contrast-s{ stroke:#0E1B3C; }
 
 /* =========================
    Card Title
@@ -134,17 +163,17 @@
 
 .dashboard-card-title{
 
-    font-size:12.5px;
+    font-size:11.5px;
 
     font-weight:700;
 
-    line-height:1.25;
+    line-height:1.2;
 
     /* Reserves 2 lines' worth of height for every title, even a 1-line
        one — keeps the icon sitting at the same spot on every card
        (the flex column centers its children as a group, so a shorter
        title would otherwise let the icon drift lower on that card). */
-    min-height:31px;
+    min-height:27px;
 
     display:flex;
 
@@ -179,23 +208,25 @@
 
     border-radius:20px;
 
-    height:190px;
+    /* aspect-ratio (from the base rule) already keeps it square at
+       whatever size the wider tablet column computes to — no fixed
+       height override needed here. */
 
 }
 
-.dashboard-card img{
+.dashboard-card svg{
 
-    width:84px;
+    width:60px;
 
-    height:84px;
+    height:60px;
 
 }
 
 .dashboard-card-title{
 
-    font-size:20px;
+    font-size:18px;
 
-    min-height:50px;
+    min-height:44px;
 
 }
 
