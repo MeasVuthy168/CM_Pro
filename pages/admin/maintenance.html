@@ -62,60 +62,32 @@
       </div>
 
       <!-- ========================= -->
-      <!-- DEBIT TURN OVER CLEANUP -->
+      <!-- GENERIC COLLECTION CLEANUP -->
+      <!-- The dropdown is populated from GET /api/maintenance/collections -->
+      <!-- (a backend-defined allowlist) — never a raw collection name. -->
       <!-- ========================= -->
       <div class="adm-card">
-        <div class="adm-card-label" data-i18n="admin.maintenance.debitTurnOverLabel">Debit Turn Over Data</div>
+        <div class="adm-card-label" data-i18n="admin.maintenance.cleanupLabel">Clean Up Old Data</div>
 
-        <p class="adm-modal-message" data-i18n="admin.maintenance.debitTurnOverExplain">
-          Debit Turn Over data grows every day with no automatic cleanup, which keeps increasing storage usage.
-          Use the tool below to permanently delete data older than the number of days below. This can't be undone.
+        <p class="adm-modal-message" data-i18n="admin.maintenance.cleanupExplain">
+          Choose a collection, then permanently delete its data older than the number of days below. This can't be undone.
         </p>
+
+        <label class="adm-cleanup-field">
+          <span data-i18n="admin.maintenance.collection">Collection</span>
+          <select id="mtCollection"></select>
+        </label>
 
         <label class="adm-cleanup-field">
           <span data-i18n="admin.maintenance.keepDays">Keep data from the last (days)</span>
-          <input type="number" id="dtoKeepDays" value="365" min="1">
+          <input type="number" id="mtKeepDays" min="1">
         </label>
 
-        <p class="adm-modal-message" id="dtoPreviewResult" hidden></p>
+        <p class="adm-modal-message" id="mtPreviewResult" hidden></p>
 
         <div class="adm-modal-footer" style="justify-content:flex-start; gap:12px;">
-          <button type="button" class="adm-btn" id="dtoBtnPreview" data-i18n="admin.maintenance.preview">Preview</button>
-          <button type="button" class="adm-btn adm-btn-danger" id="dtoBtnDelete" disabled data-i18n="admin.maintenance.deletePermanently">Delete Permanently</button>
-        </div>
-      </div>
-
-      <!-- ========================= -->
-      <!-- ACTIVITY LOGS CLEANUP -->
-      <!-- ========================= -->
-      <div class="adm-card">
-        <div class="adm-card-label" data-i18n="admin.nav.logs">Activity Logs</div>
-        <p class="adm-modal-message" data-i18n="admin.activitylogs.cleanupExplain">
-          Permanently deletes activity logs older than the number of days below. This can't be undone.
-        </p>
-        <label class="adm-cleanup-field">
-          <span data-i18n="admin.activitylogs.keepDays">Keep logs from the last (days)</span>
-          <input type="number" id="alKeepDays" value="180" min="1">
-        </label>
-        <div class="adm-modal-footer" style="justify-content:flex-start; gap:12px;">
-          <button type="button" class="adm-btn adm-btn-danger" id="alBtnCleanup" data-i18n="admin.activitylogs.cleanupOldLogs">🧹 Clean Up Old Logs</button>
-        </div>
-      </div>
-
-      <!-- ========================= -->
-      <!-- NOTIFICATIONS CLEANUP -->
-      <!-- ========================= -->
-      <div class="adm-card">
-        <div class="adm-card-label" data-i18n="admin.nav.notifications">Notifications</div>
-        <p class="adm-modal-message" data-i18n="admin.notifications.cleanupExplain">
-          Permanently deletes notifications older than the number of days below. This can't be undone.
-        </p>
-        <label class="adm-cleanup-field">
-          <span data-i18n="admin.notifications.keepDays">Keep notifications from the last (days)</span>
-          <input type="number" id="nfKeepDays" value="30" min="1">
-        </label>
-        <div class="adm-modal-footer" style="justify-content:flex-start; gap:12px;">
-          <button type="button" class="adm-btn adm-btn-danger" id="nfBtnCleanup" data-i18n="admin.notifications.cleanupOld">🧹 Clean Up Old Notifications</button>
+          <button type="button" class="adm-btn" id="mtBtnPreview" data-i18n="admin.maintenance.preview">Preview</button>
+          <button type="button" class="adm-btn adm-btn-danger" id="mtBtnDelete" disabled data-i18n="admin.maintenance.deletePermanently">Delete Permanently</button>
         </div>
       </div>
 

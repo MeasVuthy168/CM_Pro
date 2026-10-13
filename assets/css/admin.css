@@ -698,6 +698,17 @@
   color: var(--adm-text);
   width: 100px;
 }
+.adm-cleanup-field select {
+  font-family: inherit;
+  font-size: 0.88rem;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--adm-border);
+  background-color: var(--adm-card-bg);
+  color: var(--adm-text);
+  width: 260px;
+  max-width: 100%;
+}
 [data-theme="dark"] .adm-badge-status-active { background-color: #10261A; }
 
 /* row action icon buttons */

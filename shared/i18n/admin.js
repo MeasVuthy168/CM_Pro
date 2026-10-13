@@ -237,7 +237,6 @@ CMI18n.register({
   "admin.notifications.search": { km: "ស្វែងរក", en: "Search" },
   "admin.notifications.sendNotification": { km: "+ ផ្ញើការជូនដំណឹង", en: "+ Send Notification" },
   "admin.notifications.pruneDeadSubs": { km: "📡 សម្អាត Subscription ដែលស្លាប់", en: "📡 Prune Dead Subscriptions" },
-  "admin.notifications.cleanupOld": { km: "🧹 សម្អាតការជូនដំណឹងចាស់", en: "🧹 Clean Up Old Notifications" },
   "admin.notifications.colTime": { km: "ពេលវេលា", en: "Time" },
   "admin.notifications.colTitle": { km: "ចំណងជើង", en: "Title" },
   "admin.notifications.colTarget": { km: "គោលដៅ", en: "Target" },
@@ -278,14 +277,6 @@ CMI18n.register({
   "admin.notifications.sendFailed": { km: "ផ្ញើបានបរាជ័យ។", en: "Send failed." },
   "admin.notifications.sent": { km: "ការជូនដំណឹងត្រូវបានផ្ញើរួចរាល់។", en: "Notification sent." },
   "admin.notifications.couldNotReachServer": { km: "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Could not reach the server." },
-  "admin.notifications.cleanupModalTitle": { km: "សម្អាតការជូនដំណឹងចាស់", en: "Clean Up Old Notifications" },
-  "admin.notifications.cleanupExplain": { km: "លុបជាអចិន្ត្រៃយ៍នូវការជូនដំណឹងដែលចាស់ជាងចំនួនថ្ងៃខាងក្រោម។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។", en: "Permanently deletes notifications older than the number of days below. This can't be undone." },
-  "admin.notifications.keepDays": { km: "រក្សាទុកការជូនដំណឹងពី (ថ្ងៃ) ចុងក្រោយ", en: "Keep notifications from the last (days)" },
-  "admin.notifications.deleteOldConfirm": { km: "លុបការជូនដំណឹងចាស់", en: "Delete Old Notifications" },
-  "admin.notifications.cleanupFailed": { km: "សម្អាតបានបរាជ័យ។", en: "Cleanup failed." },
-  "admin.notifications.cleanupDeleted": { km: "បានលុបការជូនដំណឹង {count} ។", en: "Deleted {count} notification(s)." },
-  "admin.notifications.cleanupFailedServer": { km: "សម្អាតបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Cleanup failed — could not reach the server." },
-  "admin.notifications.cleanupConfirmMessage": { km: "តើអ្នកប្រាកដថាចង់លុបការជូនដំណឹងដែលចាស់ជាង {days} ថ្ងៃជាអចិន្ត្រៃយ៍មែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។", en: "Are you sure you want to permanently delete notifications older than {days} days? This can't be undone." },
   "admin.notifications.pruneConfirmTitle": { km: "សម្អាត Subscription ដែលស្លាប់?", en: "Prune dead subscriptions?" },
   "admin.notifications.pruneConfirmMessage": { km: "នេះនឹងផ្ញើ push តេស្តតូចមួយទៅ subscription ដែលបានរក្សាទុកនីមួយៗឥឡូវនេះ ដើម្បីពិនិត្យថាមួយណានៅសកម្មនៅឡើយ។ ឧបករណ៍ដែលស្លាប់ (404/410) នឹងត្រូវបានលុបភ្លាមៗ។ ឧបករណ៍ដែលពិតជានៅសកម្មអាចនឹងបង្ហាញការជូនដំណឹងអាទិភាពទាបមួយបន្តិច \"System Check\"។ វាអាចចំណាយពេលបន្តិចសម្រាប់បញ្ជីធំ។", en: "This sends a small test push to every stored subscription right now to check which are still alive. Dead ones (404/410) are deleted immediately. Devices that are genuinely still active may briefly show a low-priority \"System Check\" notification. This can take a little while for a large list." },
   "admin.notifications.runPrune": { km: "ដំណើរការសម្អាត", en: "Run Prune" },
@@ -322,7 +313,6 @@ CMI18n.register({
   "admin.activitylogs.chartTopActions": { km: "សកម្មភាពកំពូល 10", en: "Top 10 Actions" },
   "admin.activitylogs.chartTopUsers": { km: "អ្នកប្រើប្រាស់កំពូល 10", en: "Top 10 Users" },
   "admin.activitylogs.exportCsv": { km: "⬇️ នាំចេញ CSV", en: "⬇️ Export CSV" },
-  "admin.activitylogs.cleanupOldLogs": { km: "🧹 សម្អាតកំណត់ហេតុចាស់", en: "🧹 Clean Up Old Logs" },
   "admin.activitylogs.colTime": { km: "ពេលវេលា", en: "Time" },
   "admin.activitylogs.colUser": { km: "អ្នកប្រើប្រាស់", en: "User" },
   "admin.activitylogs.colAction": { km: "សកម្មភាព", en: "Action" },
@@ -353,50 +343,43 @@ CMI18n.register({
   "admin.activitylogs.detailIp": { km: "អាសយដ្ឋាន IP", en: "IP Address" },
   "admin.activitylogs.nothingToExport": { km: "មិនមានអ្វីផ្ទុកសម្រាប់នាំចេញទេ។", en: "Nothing loaded to export." },
   "admin.activitylogs.exported": { km: "បាននាំចេញកំណត់ហេតុចំនួន {count}។", en: "Exported {count} loaded log(s)." },
-  "admin.activitylogs.cleanupModalTitle": { km: "សម្អាតកំណត់ហេតុចាស់", en: "Clean Up Old Logs" },
-  "admin.activitylogs.cleanupExplain": { km: "លុបជាអចិន្ត្រៃយ៍នូវកំណត់ហេតុសកម្មភាពដែលចាស់ជាងចំនួនថ្ងៃខាងក្រោម។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។", en: "Permanently deletes activity logs older than the number of days below. This can't be undone." },
-  "admin.activitylogs.keepDays": { km: "រក្សាទុកកំណត់ហេតុពី (ថ្ងៃ) ចុងក្រោយ", en: "Keep logs from the last (days)" },
-  "admin.activitylogs.cancel": { km: "បោះបង់", en: "Cancel" },
-  "admin.activitylogs.deleteOldLogs": { km: "លុបកំណត់ហេតុចាស់", en: "Delete Old Logs" },
-  "admin.activitylogs.cleanupFailed": { km: "សម្អាតបានបរាជ័យ។", en: "Cleanup failed." },
-  "admin.activitylogs.cleanupDeleted": { km: "បានលុបកំណត់ហេតុ {count} ចាស់ជាង {cutoff}។", en: "Deleted {count} log(s) older than {cutoff}." },
-  "admin.activitylogs.cleanupFailedServer": { km: "សម្អាតបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Cleanup failed — could not reach the server." },
-  "admin.activitylogs.cleanupConfirmMessage": { km: "តើអ្នកប្រាកដថាចង់លុបកំណត់ហេតុសកម្មភាពដែលចាស់ជាង {days} ថ្ងៃជាអចិន្ត្រៃយ៍មែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។", en: "Are you sure you want to permanently delete activity logs older than {days} days? This can't be undone." },
 
   // ===================================================
   // maintenance.html + admin-maintenance.js — Storage Cleanup
   // ===================================================
   "admin.maintenance.title": { km: "សម្អាតទិន្នន័យផ្ទុកក្នុង Server", en: "Storage Cleanup" },
   "admin.maintenance.subtitle": { km: "គ្រប់គ្រងទំហំផ្ទុកទិន្នន័យនៅលើ Database ។", en: "Manage database storage usage." },
-  "admin.maintenance.debitTurnOverLabel": { km: "ទិន្នន័យ Debit Turn Over", en: "Debit Turn Over Data" },
-  "admin.maintenance.debitTurnOverExplain": {
-    km: "ទិន្នន័យ Debit Turn Over កើនឡើងរាល់ថ្ងៃដោយគ្មានការសម្អាតដោយស្វ័យប្រវត្តិ ដែលធ្វើឱ្យទំហំផ្ទុកកើនឡើងជាបន្តបន្ទាប់។ ប្រើមុខងារខាងក្រោមដើម្បីលុបជាអចិន្ត្រៃយ៍នូវទិន្នន័យដែលចាស់ជាងចំនួនថ្ងៃកំណត់។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។",
-    en: "Debit Turn Over data grows every day with no automatic cleanup, which keeps increasing storage usage. Use the tool below to permanently delete data older than the number of days below. This can't be undone."
+  "admin.maintenance.cleanupLabel": { km: "សម្អាតទិន្នន័យចាស់", en: "Clean Up Old Data" },
+  "admin.maintenance.cleanupExplain": {
+    km: "ជ្រើសរើស Collection មួយ រួចលុបជាអចិន្ត្រៃយ៍នូវទិន្នន័យដែលចាស់ជាងចំនួនថ្ងៃខាងក្រោម។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។",
+    en: "Choose a collection, then permanently delete its data older than the number of days below. This can't be undone."
   },
+  "admin.maintenance.collection": { km: "Collection", en: "Collection" },
   "admin.maintenance.keepDays": { km: "រក្សាទុកទិន្នន័យពី (ថ្ងៃ) ចុងក្រោយ", en: "Keep data from the last (days)" },
   "admin.maintenance.preview": { km: "មើលមុនលុប", en: "Preview" },
   "admin.maintenance.deletePermanently": { km: "លុបជាអចិន្ត្រៃយ៍", en: "Delete Permanently" },
   "admin.maintenance.previewFirst": { km: "សូមចុច \"មើលមុនលុប\" សិន មុននឹងលុប។", en: "Please click \"Preview\" first before deleting." },
   "admin.maintenance.previewResult": {
-    km: "រកឃើញ {count} ជួរដែលចាស់ជាង {cutoff} — ត្រៀមរួចសម្រាប់លុប។",
-    en: "Found {count} row(s) older than {cutoff} — ready to delete."
+    km: "រកឃើញ {count} ជួរ នៃ {collection} ដែលចាស់ជាង {cutoff} — ត្រៀមរួចសម្រាប់លុប។",
+    en: "Found {count} row(s) in {collection} older than {cutoff} — ready to delete."
   },
   "admin.maintenance.previewResultEmpty": {
-    km: "មិនមានជួរណាមួយចាស់ជាង {cutoff} ទេ — គ្មានអ្វីត្រូវលុប។",
-    en: "No rows older than {cutoff} — nothing to delete."
+    km: "មិនមានជួរណាមួយនៃ {collection} ចាស់ជាង {cutoff} ទេ — គ្មានអ្វីត្រូវលុប។",
+    en: "No rows in {collection} older than {cutoff} — nothing to delete."
   },
   "admin.maintenance.previewFailed": { km: "មើលមុនលុបបានបរាជ័យ។", en: "Preview failed." },
   "admin.maintenance.previewFailedServer": { km: "មើលមុនលុបបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Preview failed — could not reach the server." },
   "admin.maintenance.deleteConfirmTitle": { km: "បញ្ជាក់ការលុបជាអចិន្ត្រៃយ៍", en: "Confirm Permanent Deletion" },
   "admin.maintenance.deleteConfirmMessage": {
-    km: "អ្នកនឹងលុបជាអចិន្ត្រៃយ៍នូវជួរចំនួន {count} ដែលចាស់ជាង {cutoff}។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។ តើអ្នកប្រាកដទេ?",
-    en: "You are about to permanently delete {count} row(s) older than {cutoff}. This can't be undone. Are you sure?"
+    km: "អ្នកនឹងលុបជាអចិន្ត្រៃយ៍នូវជួរចំនួន {count} នៃ {collection} ដែលចាស់ជាង {cutoff}។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។ តើអ្នកប្រាកដទេ?",
+    en: "You are about to permanently delete {count} row(s) in {collection} older than {cutoff}. This can't be undone. Are you sure?"
   },
   "admin.maintenance.cancel": { km: "បោះបង់", en: "Cancel" },
   "admin.maintenance.confirmDelete": { km: "បញ្ជាក់ការលុប", en: "Confirm Delete" },
-  "admin.maintenance.deleted": { km: "បានលុបជួរចំនួន {count} ដែលចាស់ជាង {cutoff}។", en: "Deleted {count} row(s) older than {cutoff}." },
+  "admin.maintenance.deleted": { km: "បានលុបជួរចំនួន {count} នៃ {collection} ដែលចាស់ជាង {cutoff}។", en: "Deleted {count} row(s) in {collection} older than {cutoff}." },
   "admin.maintenance.deleteFailed": { km: "លុបបានបរាជ័យ។", en: "Delete failed." },
   "admin.maintenance.deleteFailedServer": { km: "លុបបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Delete failed — could not reach the server." },
+  "admin.maintenance.loadCollectionsFailed": { km: "មិនអាចផ្ទុកបញ្ជី Collection បានទេ។", en: "Could not load the collections list." },
 
   // ===================================================
   // bandwidth.html + admin.js — Bandwidth Dashboard
