@@ -27,6 +27,7 @@
 <!-- ========================= -->
 <link rel="stylesheet" href="/CM_Pro/assets/css/base.css">
 <link rel="stylesheet" href="/CM_Pro/assets/css/admin.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
 
 </head>
 <body data-adm-page="maintenance">
@@ -116,11 +117,16 @@
       </div>
 
       <!-- ========================= -->
-      <!-- WIPE COLLECTION BY SOURCE -->
+      <!-- WIPE COLLECTION BY SOURCE + WIPE LOCK MANAGEMENT -->
       <!-- For wipe-and-replace collections (ListBlocked, ScheduleRepayments, -->
       <!-- PrevOS, NewRegister, …) where there's no "old" data to prune by -->
       <!-- date — the dropdowns are populated from GET /api/maintenance/ -->
-      <!-- wipe-collections and GET /api/maintenance/wipe-sources. -->
+      <!-- wipe-collections and GET /api/maintenance/wipe-sources. Every -->
+      <!-- real wipe locks that source against re-upload (so an -->
+      <!-- auto-syncing Excel client can't silently undo it) — the table -->
+      <!-- below lists every currently-locked source from GET -->
+      <!-- /api/maintenance/wipe-locks, one card for both since they're -->
+      <!-- two views of the same action. -->
       <!-- ========================= -->
       <div class="adm-card">
         <div class="adm-card-label" data-i18n="admin.maintenance.wipeLabel">Wipe Collection by Source</div>
@@ -159,16 +165,10 @@
           <button type="button" class="adm-btn" id="wpBtnPreview" data-i18n="admin.maintenance.preview">Preview</button>
           <button type="button" class="adm-btn adm-btn-danger" id="wpBtnDelete" disabled data-i18n="admin.maintenance.deletePermanently">Delete Permanently</button>
         </div>
-      </div>
 
-      <!-- ========================= -->
-      <!-- WIPE LOCK MANAGEMENT -->
-      <!-- Shows every source currently locked against re-upload by the -->
-      <!-- card above (GET /api/maintenance/wipe-locks), so an admin can -->
-      <!-- see what's locked, in which mode, and unlock it manually. -->
-      <!-- ========================= -->
-      <div class="adm-table-card">
-        <h2 data-i18n="admin.maintenance.lockManagementTitle">Wipe Lock Management</h2>
+        <div style="border-top:1px solid var(--adm-border); margin:18px 0 14px;"></div>
+
+        <div class="adm-card-label" data-i18n="admin.maintenance.lockManagementTitle">Wipe Lock Management</div>
 
         <p class="adm-modal-message" data-i18n="admin.maintenance.lockManagementExplain">
           Sources wiped above are locked against re-upload so an auto-syncing Excel client can't silently undo the wipe.
@@ -228,6 +228,7 @@
 <script src="/CM_Pro/shared/i18n/admin.js"></script>
 
 <script src="/CM_Pro/shared/logout.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
 <script src="/CM_Pro/assets/js/admin/admin-ui.js"></script>
 <script src="/CM_Pro/assets/js/admin/admin-nav.js"></script>
 <script src="/CM_Pro/assets/js/admin/admin-maintenance.js"></script>
