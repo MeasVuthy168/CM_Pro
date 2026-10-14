@@ -237,10 +237,19 @@
   const wp = {
     collection: document.getElementById("wpCollection"),
     source: document.getElementById("wpSource"),
+    mode: document.getElementById("wpMode"),
+    durationField: document.getElementById("wpDurationField"),
+    duration: document.getElementById("wpDuration"),
     previewResult: document.getElementById("wpPreviewResult"),
     btnPreview: document.getElementById("wpBtnPreview"),
     btnDelete: document.getElementById("wpBtnDelete")
   };
+
+  function updateWipeDurationVisibility() {
+    wp.durationField.hidden = wp.mode.value !== "temporary";
+  }
+  wp.mode.addEventListener("change", updateWipeDurationVisibility);
+  updateWipeDurationVisibility();
 
   let wipeCollections = []; // [{ key, label }]
   let lastWipePreview = null; // { collection, source, count }
@@ -364,11 +373,17 @@
 
     mountedBody.querySelector("#wpDeleteCancel").addEventListener("click", () => AdminUI.closeModal());
     mountedBody.querySelector("#wpDeleteConfirm").addEventListener("click", async () => {
+      const mode = wp.mode.value;
+      const durationHours = mode === "temporary" ? Number(wp.duration.value) : undefined;
+      if (mode === "temporary" && (!durationHours || durationHours <= 0)) {
+        return AdminUI.toast(t("admin.maintenance.lockDurationRequired"), "error");
+      }
+
       try {
         const res = await fetch(`${API_BASE}/api/maintenance/wipe`, {
           method: "POST",
           headers: { ...authHeaders(), "Content-Type": "application/json" },
-          body: JSON.stringify({ collection: entry.key, source })
+          body: JSON.stringify({ collection: entry.key, source, mode, durationHours })
         });
         const data = await res.json();
         if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.maintenance.wipeFailed"), "error");
@@ -377,6 +392,7 @@
         AdminUI.toast(t("admin.maintenance.wiped", { count: data.deletedCount, source, collection: entry.label }), "success");
         invalidateWipePreview();
         loadWipeSources();
+        loadWipeLocks();
       } catch (e) {
         console.error("wipe delete failed:", e);
         AdminUI.toast(t("admin.maintenance.wipeFailedServer"), "error");
@@ -387,6 +403,106 @@
   wp.btnDelete.addEventListener("click", openWipeConfirmModal);
 
   loadWipeCollections();
+
+  // =====================================================
+  // Wipe Lock Management — every source currently locked against
+  // re-upload by the card above (GET /api/maintenance/wipe-locks).
+  // Status is computed server-side from expiresAt, so a simple
+  // periodic refetch (not a client-side countdown) is enough to keep
+  // "Expired" accurate without any extra client-side date math.
+  // =====================================================
+  const wl = { tbody: document.getElementById("wlTableBody"), empty: document.getElementById("wlEmpty") };
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+  }
+
+  function formatShortDateTime(iso) {
+    if (!iso) return "";
+    try {
+      return new Date(iso).toLocaleString(undefined, {
+        year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+      });
+    } catch (e) {
+      return iso;
+    }
+  }
+
+  async function unlockSource(collection, source, collectionLabel) {
+    try {
+      const res = await fetch(`${API_BASE}/api/maintenance/wipe-unlock`, {
+        method: "POST",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ collection, source })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.maintenance.unlockFailed"), "error");
+
+      AdminUI.toast(t("admin.maintenance.unlocked", { source, collection: collectionLabel }), "success");
+      loadWipeLocks();
+      if (currentWipeEntry() && currentWipeEntry().key === collection) loadWipeSources();
+    } catch (e) {
+      console.error("unlock failed:", e);
+      AdminUI.toast(t("admin.maintenance.unlockFailedServer"), "error");
+    }
+  }
+
+  async function loadWipeLocks() {
+    try {
+      const res = await fetch(`${API_BASE}/api/maintenance/wipe-locks`, { headers: authHeaders() });
+
+      if (res.status === 401 || res.status === 403) {
+        location.replace(window.CM_ADMIN_CONFIG.loginPage);
+        return;
+      }
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.message || "Failed to load wipe locks");
+
+      const locks = data.locks || [];
+      wl.empty.hidden = locks.length > 0;
+      wl.tbody.innerHTML = locks.map((l) => {
+        const modeLabel = l.mode === "permanent"
+          ? t("admin.maintenance.lockModePermanentShort")
+          : t("admin.maintenance.lockModeTemporaryShort");
+        const statusLabel = l.status === "Locked"
+          ? t("admin.maintenance.lockStatusLocked")
+          : t("admin.maintenance.lockStatusExpired");
+        const badgeClass = l.status === "Locked" ? "adm-badge-status-failed" : "adm-badge-status-inactive";
+        const statusTitle = l.mode === "temporary" && l.expiresAt
+          ? ` title="${t("admin.maintenance.lockExpiresAt", { date: formatShortDateTime(l.expiresAt) })}"`
+          : "";
+        const lockedByText = escapeHtml([l.lockedBy, formatShortDateTime(l.lockedAt)].filter(Boolean).join(" · "));
+        const action = l.status === "Locked"
+          ? `<button type="button" class="adm-btn adm-btn-danger wl-unlock-btn" data-collection="${escapeHtml(l.collection)}" data-source="${escapeHtml(l.source)}" data-label="${escapeHtml(l.collectionLabel)}">${t("admin.maintenance.unlock")}</button>`
+          : `<span class="adm-card-sub">${t("admin.maintenance.lockStatusExpired")}</span>`;
+
+        return `
+          <tr>
+            <td>${escapeHtml(l.collectionLabel)}</td>
+            <td>${escapeHtml(l.source)}</td>
+            <td>${modeLabel}</td>
+            <td><span class="adm-badge ${badgeClass}"${statusTitle}>${statusLabel}</span></td>
+            <td>${lockedByText}</td>
+            <td>${action}</td>
+          </tr>
+        `;
+      }).join("");
+
+      wl.tbody.querySelectorAll(".wl-unlock-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          unlockSource(btn.dataset.collection, btn.dataset.source, btn.dataset.label);
+        });
+      });
+    } catch (e) {
+      console.error("loadWipeLocks failed:", e);
+    }
+  }
+
+  loadWipeLocks();
+  setInterval(loadWipeLocks, 60 * 1000);
 
   // =====================================================
   // Compact Report Snapshot History — collapses each already-closed
