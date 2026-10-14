@@ -35,15 +35,20 @@
        + assistant box were shorter than that floor. 100dvh (dynamic
        viewport height, accounts for mobile browser chrome) overrides
        the 100vh fallback wherever it's supported. overflow:hidden is
-       what actually stops the page scrolling. */
+       what actually stops the page scrolling. --topbar-h is kept in
+       sync with the topbar's own real rendered height by topbar.js
+       (it varies: a plain title bar vs. this page's logo+profile+name
+       bar), so this calc always reflects the true remaining space. */
     height:calc(100vh - var(--topbar-h) - var(--bottomnav-h));
     height:calc(100dvh - var(--topbar-h) - var(--bottomnav-h));
 
-    /* Equal top/bottom padding — with justify-content:center splitting
-       any leftover space evenly between the two, an unequal top/bottom
-       value here would still bake in a constant offset on top of that
-       split, so the two gaps wouldn't quite match. */
-    padding:16px 16px 16px;
+    /* No vertical padding — the three vertical gaps (topbar→grid,
+       grid→box, box→bottom nav) are left entirely to
+       justify-content:space-evenly below, so there's a single source
+       of truth for them instead of a fixed padding value competing
+       with a flex distribution. Horizontal padding is unrelated (left/
+       right inset for the grid/box) and stays fixed. */
+    padding:0 16px;
 
     box-sizing:border-box;
 
@@ -51,22 +56,24 @@
 
     overflow:hidden;
 
-    /* .dashboard-grid and .assistant-box (assistant.css) are now both
-       normal-flow children here, stacked top-to-bottom with a small
-       constant gap between them (assistant-box's own margin-top). Any
-       leftover height (grid + box combo shorter than the available
-       space) is split EVENLY above the grid and below the box via
-       justify-content:center, so the gap from the topbar down to the
-       grid matches the gap from the box up to the bottom nav — rather
-       than flex-start, which would dump 100% of the leftover space
-       below the box. .dashboard-grid can still shrink/scroll
-       internally (cards.css) and .assistant-box never shrinks
-       (assistant.css) if a screen is too short to fit both at their
-       natural size, so centering never pushes either off-screen. */
+    /* .dashboard-grid and .assistant-box (assistant.css) are the two
+       normal-flow children here. justify-content:space-evenly splits
+       any leftover height (container taller than grid+box's natural
+       size) into THREE equal gaps: above the grid, between the grid
+       and the box, and below the box — so the space below the topbar
+       and the space above the bottom nav both grow/shrink together
+       with the middle gap as the screen height changes, instead of a
+       fixed middle gap (margin-top on .assistant-box, removed) plus
+       only the two outer gaps flexing. .dashboard-grid can still
+       shrink/scroll internally (cards.css, flex-shrink:1) and
+       .assistant-box never shrinks (assistant.css, flex-shrink:0) on
+       a screen too short to fit both at natural size — space-evenly
+       then just has nothing left to distribute (all 3 gaps go to 0)
+       rather than ever overlapping or clipping either one. */
     display:flex;
 
     flex-direction:column;
 
-    justify-content:center;
+    justify-content:space-evenly;
 
 }
