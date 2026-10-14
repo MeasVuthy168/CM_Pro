@@ -276,6 +276,17 @@ if(
     // the height can shift again once the profile ring wrapper gets
     // inserted after the photo loads — so this keeps watching, not
     // just measuring once.
+    //
+    // Also writes that same real height into --topbar-h itself (an
+    // inline style on <html>, so it beats every stylesheet rule
+    // including the @media(max-width:480px) override in topbar.css).
+    // dashboard.css's height:calc(100dvh - var(--topbar-h) - ...)
+    // reads this variable, not the spacer's own height — leaving it
+    // at the static 72/78px default while the real profile-box topbar
+    // renders taller made .dashboard-container's calc'd height too
+    // tall by the difference, pushing its justify-content:center
+    // balance point down and making the gap above the grid grow at
+    // the gap below the assistant box's expense.
     // =========================
 
     const spacerEl =
@@ -291,8 +302,12 @@ if(
     if(spacerEl && topbarEl){
 
         const syncSpacerHeight = ()=>{
-            spacerEl.style.minHeight =
-                topbarEl.offsetHeight + "px";
+            const h = topbarEl.offsetHeight;
+            spacerEl.style.minHeight = h + "px";
+            document.documentElement.style.setProperty(
+                "--topbar-h",
+                h + "px"
+            );
         };
 
         syncSpacerHeight();
