@@ -2,6 +2,15 @@
    Bottom Navigation
 ========================= */
 
+:root{
+
+    /* Shared with dashboard.css, which sizes the home page's content
+       area to exactly fill the gap between the fixed topbar (see
+       topbar.css's --topbar-h) and this fixed bottom nav. */
+    --bottomnav-h:78px;
+
+}
+
 .bottom-nav{
 
     position:fixed;
@@ -11,7 +20,7 @@
 
     width:100%;
 
-    height:78px;
+    height:var(--bottomnav-h);
 
     background:#0E1B3C;
 

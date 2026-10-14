@@ -27,12 +27,29 @@
 
 .dashboard-container{
 
-    padding:20px;
+    /* Exactly the space between the fixed topbar and the fixed bottom
+       nav (both position:fixed, so they're out of normal flow — this
+       is the one place that needs to know their heights) — not
+       min-height:100vh, which only guaranteed a floor and let the
+       page grow taller than the screen and scroll whenever the grid
+       + assistant box were shorter than that floor. 100dvh (dynamic
+       viewport height, accounts for mobile browser chrome) overrides
+       the 100vh fallback wherever it's supported. overflow:hidden is
+       what actually stops the page scrolling; .dashboard-grid (in
+       cards.css) has its own max-height + overflow-y:auto as a safety
+       net so a very short screen scrolls the icon grid internally
+       instead of the grid visually colliding with .assistant-box,
+       which is position:fixed (assistant.css) and so isn't sized by
+       this container's layout at all. */
+    height:calc(100vh - var(--topbar-h) - var(--bottomnav-h));
+    height:calc(100dvh - var(--topbar-h) - var(--bottomnav-h));
 
-    padding-bottom:120px;
+    padding:16px 16px 12px;
+
+    box-sizing:border-box;
 
     background:var(--dash-page-bg);
 
-    min-height:100vh;
+    overflow:hidden;
 
 }
