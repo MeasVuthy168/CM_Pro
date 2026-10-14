@@ -30,21 +30,23 @@
 
 /* =========================
    Assistant Box
-   Fixed just above the bottom nav (78px, see bottomnav.css — that
-   height never varies, so this can be a plain CSS constant rather
-   than needing the topbar's JS-measured approach) so it stays put
-   while the dashboard grid scrolls underneath it. The page's own
-   bottom padding is kept in sync with this box's real height by
-   syncAssistantBoxSpacer() in dashboard.js, since update-mode's
-   extra CTA/highlight lines make it taller than the plain greeting.
-   The 14px gap above the nav (rather than sitting flush against it)
-   is deliberate — matches the reference design's breathing room.
+   A normal-flow sibling of .dashboard-grid inside .dashboard-container
+   (dashboard.css) now, not position:fixed — fixed positioning sized
+   its distance from the bottom nav as a constant (92px), so on a tall
+   phone the GRID's own natural height left a large empty gap between
+   it and this box, and on a short phone the two could overlap. As a
+   normal-flow element, margin-top below is a small CONSTANT gap under
+   the grid regardless of device height; .dashboard-container's own
+   flex-shrink rules (cards.css: .dashboard-grid can shrink/scroll
+   internally, flex-shrink:0 here keeps this box always fully visible)
+   handle a screen too short to fit both. position:relative is kept
+   so .assistant-mic-btn / .assistant-new-badge / .assistant-dismiss
+   (all position:absolute) still anchor to this box, not the page.
 ========================= */
 .assistant-box{
-    position:fixed;
-    left:16px;
-    right:16px;
-    bottom:92px;
+    position:relative;
+    flex-shrink:0;
+    margin-top:20px;
     z-index:50;
     background:var(--asst-card-bg);
     border:1px solid var(--asst-border);
