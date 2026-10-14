@@ -246,7 +246,11 @@
   };
 
   function updateWipeDurationVisibility() {
-    wp.durationField.hidden = wp.mode.value !== "temporary";
+    // .adm-cleanup-field sets display:flex, which (being an author-stylesheet
+    // class rule) beats the browser's own [hidden]{display:none} rule — so
+    // toggling .hidden here would leave the field visibly in place. Setting
+    // the inline style directly always wins over that class.
+    wp.durationField.style.display = wp.mode.value === "temporary" ? "" : "none";
   }
   wp.mode.addEventListener("change", updateWipeDurationVisibility);
   updateWipeDurationVisibility();
@@ -379,6 +383,7 @@
         return AdminUI.toast(t("admin.maintenance.lockDurationRequired"), "error");
       }
 
+      if (typeof showAppLoading === "function") showAppLoading(t("admin.maintenance.deletingEllipsis"));
       try {
         const res = await fetch(`${API_BASE}/api/maintenance/wipe`, {
           method: "POST",
@@ -396,6 +401,8 @@
       } catch (e) {
         console.error("wipe delete failed:", e);
         AdminUI.toast(t("admin.maintenance.wipeFailedServer"), "error");
+      } finally {
+        if (typeof hideAppLoading === "function") hideAppLoading();
       }
     });
   }
