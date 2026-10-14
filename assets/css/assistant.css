@@ -34,19 +34,20 @@
    (dashboard.css) now, not position:fixed — fixed positioning sized
    its distance from the bottom nav as a constant (92px), so on a tall
    phone the GRID's own natural height left a large empty gap between
-   it and this box, and on a short phone the two could overlap. As a
-   normal-flow element, margin-top below is a small CONSTANT gap under
-   the grid regardless of device height; .dashboard-container's own
-   flex-shrink rules (cards.css: .dashboard-grid can shrink/scroll
-   internally, flex-shrink:0 here keeps this box always fully visible)
-   handle a screen too short to fit both. position:relative is kept
-   so .assistant-mic-btn / .assistant-new-badge / .assistant-dismiss
-   (all position:absolute) still anchor to this box, not the page.
+   it and this box, and on a short phone the two could overlap. The
+   gap above this box is no longer a margin here — dashboard.css's
+   justify-content:space-evenly owns all three vertical gaps (topbar→
+   grid, grid→box, box→bottom nav) as one proportional group, so this
+   box doesn't also need its own fixed spacing. flex-shrink:0 keeps it
+   always fully visible (cards.css's .dashboard-grid is the one that
+   shrinks/scrolls internally instead on a screen too short to fit
+   both). position:relative is kept so .assistant-mic-btn /
+   .assistant-new-badge / .assistant-dismiss (all position:absolute)
+   still anchor to this box, not the page.
 ========================= */
 .assistant-box{
     position:relative;
     flex-shrink:0;
-    margin-top:20px;
     z-index:50;
     background:var(--asst-card-bg);
     border:1px solid var(--asst-border);
