@@ -39,7 +39,11 @@
     height:calc(100vh - var(--topbar-h) - var(--bottomnav-h));
     height:calc(100dvh - var(--topbar-h) - var(--bottomnav-h));
 
-    padding:16px 16px 14px;
+    /* Equal top/bottom padding — with justify-content:center splitting
+       any leftover space evenly between the two, an unequal top/bottom
+       value here would still bake in a constant offset on top of that
+       split, so the two gaps wouldn't quite match. */
+    padding:16px 16px 16px;
 
     box-sizing:border-box;
 
@@ -49,17 +53,20 @@
 
     /* .dashboard-grid and .assistant-box (assistant.css) are now both
        normal-flow children here, stacked top-to-bottom with a small
-       constant gap between them (assistant-box's own margin-top) —
-       so that gap stays the same size on every phone instead of
-       growing with the screen. Any truly leftover height (a short
-       grid + box combo on a tall phone) just becomes empty space
-       below the box, not a gap wedged between the two. flex-start
-       (the default) packs both to the top for that; .dashboard-grid
-       can shrink/scroll internally (cards.css) and .assistant-box
-       never shrinks (assistant.css) if a screen is too short to fit
-       both at their natural size. */
+       constant gap between them (assistant-box's own margin-top). Any
+       leftover height (grid + box combo shorter than the available
+       space) is split EVENLY above the grid and below the box via
+       justify-content:center, so the gap from the topbar down to the
+       grid matches the gap from the box up to the bottom nav — rather
+       than flex-start, which would dump 100% of the leftover space
+       below the box. .dashboard-grid can still shrink/scroll
+       internally (cards.css) and .assistant-box never shrinks
+       (assistant.css) if a screen is too short to fit both at their
+       natural size, so centering never pushes either off-screen. */
     display:flex;
 
     flex-direction:column;
+
+    justify-content:center;
 
 }
