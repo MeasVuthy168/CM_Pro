@@ -403,6 +403,7 @@ CMI18n.register({
   },
   "admin.maintenance.wipeFailed": { km: "លុបបានបរាជ័យ។", en: "Delete failed." },
   "admin.maintenance.wipeFailedServer": { km: "លុបបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Delete failed — could not reach the server." },
+  "admin.maintenance.deletingEllipsis": { km: "កំពុងលុប...", en: "Deleting..." },
 
   "admin.maintenance.lockMode": { km: "ចាក់សោបន្ទាប់ពីលុប", en: "Lock after wipe" },
   "admin.maintenance.lockModePermanent": { km: "អចិន្ត្រៃយ៍ — រហូតដល់ដោះសោដោយដៃ", en: "Permanent — until manually unlocked" },
