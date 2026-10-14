@@ -2,6 +2,15 @@
    TOPBAR
 ========================= */
 
+:root{
+
+    /* Shared with dashboard.css, which sizes the home page's content
+       area to exactly fill the gap between the fixed topbar and the
+       fixed bottom nav (see bottomnav.css's --bottomnav-h). */
+    --topbar-h:78px;
+
+}
+
 .topbar{
 
     background:#0E1B3C;
@@ -10,7 +19,7 @@
 
     width:100%;
 
-    min-height:78px;
+    min-height:var(--topbar-h);
 
     padding:10px 14px;
 
@@ -49,7 +58,7 @@
    the fix rather than every page's own CSS. */
 #topbar-container{
 
-    min-height:78px;
+    min-height:var(--topbar-h);
 
 }
 
@@ -339,17 +348,15 @@
 
 @media(max-width:480px){
 
-    .topbar{
+    :root{
 
-        min-height:72px;
-
-        padding:8px 10px;
+        --topbar-h:72px;
 
     }
 
-    #topbar-container{
+    .topbar{
 
-        min-height:72px;
+        padding:8px 10px;
 
     }
 
