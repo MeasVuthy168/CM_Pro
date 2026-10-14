@@ -412,11 +412,13 @@
   loadWipeCollections();
 
   // =====================================================
-  // Wipe Lock Management — every source currently locked against
-  // re-upload by the card above (GET /api/maintenance/wipe-locks).
-  // Status is computed server-side from expiresAt, so a simple
-  // periodic refetch (not a client-side countdown) is enough to keep
-  // "Expired" accurate without any extra client-side date math.
+  // Wipe Lock Management — every source across all 4 wipe-and-replace
+  // collections (GET /api/maintenance/wipe-locks), not just ones
+  // currently locked — each row can be locked (without touching its
+  // data, unlike the wipe form above) or unlocked from here. Status is
+  // computed server-side from expiresAt, so a simple periodic refetch
+  // (not a client-side countdown) is enough to keep "Expired" accurate
+  // without any extra client-side date math.
   // =====================================================
   const wl = { tbody: document.getElementById("wlTableBody"), empty: document.getElementById("wlEmpty") };
 
@@ -438,6 +440,7 @@
   }
 
   async function unlockSource(collection, source, collectionLabel) {
+    if (typeof showAppLoading === "function") showAppLoading(t("admin.maintenance.unlockingEllipsis"));
     try {
       const res = await fetch(`${API_BASE}/api/maintenance/wipe-unlock`, {
         method: "POST",
@@ -453,7 +456,72 @@
     } catch (e) {
       console.error("unlock failed:", e);
       AdminUI.toast(t("admin.maintenance.unlockFailedServer"), "error");
+    } finally {
+      if (typeof hideAppLoading === "function") hideAppLoading();
     }
+  }
+
+  // Locks a source directly from the table (no wipe) — opens a small
+  // mode/duration picker, same shape as the wipe form's own fields.
+  function openLockModal(collection, source, collectionLabel) {
+    const body = document.createElement("div");
+    body.innerHTML = `
+      <p class="adm-modal-message">${t("admin.maintenance.lockConfirmMessage", { source, collection: collectionLabel })}</p>
+      <label class="adm-cleanup-field">
+        <span>${t("admin.maintenance.lockMode")}</span>
+        <select id="lkMode">
+          <option value="permanent">${t("admin.maintenance.lockModePermanent")}</option>
+          <option value="temporary">${t("admin.maintenance.lockModeTemporary")}</option>
+        </select>
+      </label>
+      <label class="adm-cleanup-field" id="lkDurationField">
+        <span>${t("admin.maintenance.lockDuration")}</span>
+        <input type="number" id="lkDuration" min="1" value="24">
+      </label>
+      <div class="adm-modal-footer">
+        <button type="button" class="adm-btn" id="lkCancel">${t("admin.maintenance.cancel")}</button>
+        <button type="button" class="adm-btn adm-btn-danger" id="lkConfirm">${t("admin.maintenance.lockConfirmBtn")}</button>
+      </div>
+    `;
+
+    const { body: mountedBody } = AdminUI.openModal({ title: t("admin.maintenance.lockConfirmTitle"), bodyNode: body });
+
+    const modeSel = mountedBody.querySelector("#lkMode");
+    const durationField = mountedBody.querySelector("#lkDurationField");
+    function updateLockDurationVisibility() {
+      durationField.style.display = modeSel.value === "temporary" ? "" : "none";
+    }
+    modeSel.addEventListener("change", updateLockDurationVisibility);
+    updateLockDurationVisibility();
+
+    mountedBody.querySelector("#lkCancel").addEventListener("click", () => AdminUI.closeModal());
+    mountedBody.querySelector("#lkConfirm").addEventListener("click", async () => {
+      const mode = modeSel.value;
+      const durationHours = mode === "temporary" ? Number(mountedBody.querySelector("#lkDuration").value) : undefined;
+      if (mode === "temporary" && (!durationHours || durationHours <= 0)) {
+        return AdminUI.toast(t("admin.maintenance.lockDurationRequired"), "error");
+      }
+
+      if (typeof showAppLoading === "function") showAppLoading(t("admin.maintenance.lockingEllipsis"));
+      try {
+        const res = await fetch(`${API_BASE}/api/maintenance/wipe-lock`, {
+          method: "POST",
+          headers: { ...authHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify({ collection, source, mode, durationHours })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.maintenance.lockFailed"), "error");
+
+        AdminUI.closeModal();
+        AdminUI.toast(t("admin.maintenance.locked", { source, collection: collectionLabel }), "success");
+        loadWipeLocks();
+      } catch (e) {
+        console.error("lock failed:", e);
+        AdminUI.toast(t("admin.maintenance.lockFailedServer"), "error");
+      } finally {
+        if (typeof hideAppLoading === "function") hideAppLoading();
+      }
+    });
   }
 
   async function loadWipeLocks() {
@@ -473,18 +541,23 @@
       wl.tbody.innerHTML = locks.map((l) => {
         const modeLabel = l.mode === "permanent"
           ? t("admin.maintenance.lockModePermanentShort")
-          : t("admin.maintenance.lockModeTemporaryShort");
-        const statusLabel = l.status === "Locked"
-          ? t("admin.maintenance.lockStatusLocked")
-          : t("admin.maintenance.lockStatusExpired");
+          : l.mode === "temporary"
+            ? t("admin.maintenance.lockModeTemporaryShort")
+            : "—";
+
+        const statusLabelKey = { Locked: "lockStatusLocked", Expired: "lockStatusExpired", Unlocked: "lockStatusUnlocked" }[l.status];
+        const statusLabel = t(`admin.maintenance.${statusLabelKey}`);
         const badgeClass = l.status === "Locked" ? "adm-badge-status-failed" : "adm-badge-status-inactive";
         const statusTitle = l.mode === "temporary" && l.expiresAt
           ? ` title="${t("admin.maintenance.lockExpiresAt", { date: formatShortDateTime(l.expiresAt) })}"`
           : "";
+
         const lockedByText = escapeHtml([l.lockedBy, formatShortDateTime(l.lockedAt)].filter(Boolean).join(" · "));
+
+        const dataAttrs = `data-collection="${escapeHtml(l.collection)}" data-source="${escapeHtml(l.source)}" data-label="${escapeHtml(l.collectionLabel)}"`;
         const action = l.status === "Locked"
-          ? `<button type="button" class="adm-btn adm-btn-danger wl-unlock-btn" data-collection="${escapeHtml(l.collection)}" data-source="${escapeHtml(l.source)}" data-label="${escapeHtml(l.collectionLabel)}">${t("admin.maintenance.unlock")}</button>`
-          : `<span class="adm-card-sub">${t("admin.maintenance.lockStatusExpired")}</span>`;
+          ? `<button type="button" class="adm-btn adm-btn-danger wl-unlock-btn" ${dataAttrs}>${t("admin.maintenance.unlock")}</button>`
+          : `<button type="button" class="adm-btn wl-lock-btn" ${dataAttrs}>${t("admin.maintenance.lock")}</button>`;
 
         return `
           <tr>
@@ -501,6 +574,11 @@
       wl.tbody.querySelectorAll(".wl-unlock-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
           unlockSource(btn.dataset.collection, btn.dataset.source, btn.dataset.label);
+        });
+      });
+      wl.tbody.querySelectorAll(".wl-lock-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          openLockModal(btn.dataset.collection, btn.dataset.source, btn.dataset.label);
         });
       });
     } catch (e) {
