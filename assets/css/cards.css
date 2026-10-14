@@ -40,6 +40,21 @@
 
     padding:10px 4px;
 
+    /* .dashboard-container's padding-bottom is kept in sync with
+       .assistant-box's real height by syncAssistantBoxSpacer()
+       (dashboard.js) — .assistant-box itself is position:fixed
+       (assistant.css), so it doesn't push this grid down on its own.
+       max-height/overflow-y are a safety net for a screen too short
+       to fit every card row above that reserved space: the icon grid
+       scrolls internally instead of spilling underneath the assistant
+       box, or forcing the whole page to scroll (.dashboard-container
+       itself has overflow:hidden). */
+    max-height:100%;
+
+    min-height:0;
+
+    overflow-y:auto;
+
 }
 
 /* =========================
