@@ -77,6 +77,18 @@ CMI18n.register({
   "login.pin.forgot": { km: "ភ្លេចលេខកូដ?", en: "Forgot PIN?" },
   "login.msg.pinFailed": { km: "ចូលដោយកូដ PIN បានបរាជ័យ", en: "PIN login failed" },
 
+  // First-login PIN setup prompt (skippable — see login.js maybePromptPinSetup)
+  "login.pinSetup.enterPassword": { km: "សូមបញ្ចូលពាក្យសម្ងាត់របស់អ្នកជាមុនសិន", en: "Please enter your password first" },
+  "login.pinSetup.createTitle": { km: "បង្កើតកូដ PIN ៦ខ្ទង់", en: "Create a 6-digit PIN" },
+  "login.pinSetup.confirmTitle": { km: "បញ្ជាក់កូដ PIN", en: "Confirm your PIN" },
+  "login.pinSetup.mismatch": { km: "កូដ PIN មិនត្រូវគ្នា — សូមព្យាយាមម្តងទៀត", en: "PINs don't match — try again" },
+  "login.pinSetup.success": { km: "បានរៀបចំកូដ PIN ដោយជោគជ័យ", en: "PIN set up successfully" },
+  "login.pinSetup.skip": { km: "រំលងឥឡូវនេះ", en: "Skip for now" },
+  "login.pinSetup.biometricPrompt": { km: "បើកដំណើរការស្នាមម្រាមដៃ ឬ ផ្ទៃមុខ?", en: "Enable Fingerprint / Face ID too?" },
+  "login.pinSetup.enableBiometric": { km: "បើកដំណើរការ", en: "Enable" },
+  "login.pinSetup.skipBiometric": { km: "មិនទាន់ទេ", en: "Not now" },
+  "login.pinSetup.biometricSuccess": { km: "បានបើកដំណើរការដោយជោគជ័យ", en: "Enabled successfully" },
+
   // WebAuthn (shared by login.html and pages/settings/fingerprint.html)
   "webauthn.registerStartFailed": { km: "មិនអាចចាប់ផ្តើមការចុះឈ្មោះបានទេ។", en: "Could not start registration." },
   "webauthn.registerFailed": { km: "ការចុះឈ្មោះបានបរាជ័យ។", en: "Registration failed." },
@@ -85,5 +97,16 @@ CMI18n.register({
   "webauthn.removeDeviceFailed": { km: "មិនអាចលុបឧបករណ៍បានទេ។", en: "Could not remove device." },
   "webauthn.noFingerprint": { km: "គណនីនេះមិនទាន់បានចុះឈ្មោះស្នាមម្រាមដៃទេ។", en: "No fingerprint registered for this account." },
   "webauthn.loginFailed": { km: "ការចូលប្រើប្រាស់បានបរាជ័យ។", en: "Login failed." },
-  "webauthn.cancelled": { km: "បានបោះបង់ ឬអស់ម៉ោង។", en: "Cancelled or timed out." }
+  "webauthn.cancelled": { km: "បានបោះបង់ ឬអស់ម៉ោង។", en: "Cancelled or timed out." },
+  "webauthn.unsupported": { km: "ឧបករណ៍នេះមិនគាំទ្រការផ្ទៀងផ្ទាត់ដោយស្នាមម្រាមដៃទេ។", en: "This device doesn't support fingerprint/face verification." },
+
+  // App Lock overlay (config/session.js, shown on every protected page)
+  "applock.greeting": { km: "សូមស្វាគមន៍មកវិញ, {name}", en: "Welcome back, {name}" },
+  "applock.lockedMessage": { km: "ការព្យាយាមខុសច្រើនដងពេក។ សូមចូលប្រើប្រាស់ម្តងទៀត។", en: "Too many incorrect attempts. Please log in again." },
+  "applock.attemptsRemaining": { km: "កូដ PIN មិនត្រឹមត្រូវ — នៅសល់ {n} ដងទៀត", en: "Incorrect PIN — {n} attempts remaining" },
+  "applock.offline": { km: "គ្មានការតភ្ជាប់អ៊ីនធឺណិត — មិនអាចផ្ទៀងផ្ទាត់បានទេ", en: "No internet connection — cannot verify right now" },
+  // Own copy of "Log Out" rather than reusing settings.logout — that
+  // key only loads on Settings pages (shared/i18n/settings.js), but
+  // this overlay can appear on every protected page.
+  "applock.logout": { km: "ចាកចេញ", en: "Log Out" }
 });

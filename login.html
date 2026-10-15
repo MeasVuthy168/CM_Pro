@@ -246,6 +246,82 @@ id="statusBox"
 </div>
 
 <!-- ========================= -->
+<!-- PIN SETUP OVERLAY (first login without a PIN yet — skippable) -->
+<!-- ========================= -->
+
+<div id="pinSetupOverlay" class="pin-overlay" hidden>
+
+<div class="pin-overlay-inner">
+
+<div class="pin-overlay-title" id="pinSetupTitle"></div>
+
+<!-- Step: current password (only shown when completeLogin() didn't
+     already have it in memory — i.e. fingerprint/PIN login, not a
+     fresh password login) -->
+<div id="pinSetupPasswordStep" hidden>
+<input
+type="password"
+id="pinSetupPassword"
+class="input-box"
+placeholder="Password"
+data-i18n-placeholder="login.passwordPlaceholder"
+autocomplete="current-password"
+style="margin-bottom:20px;"
+>
+<button type="button" class="login-btn" id="pinSetupPasswordNext" data-i18n="common.next">
+Next
+</button>
+</div>
+
+<!-- Steps: create PIN / confirm PIN (same dots+keypad, reused for both) -->
+<div id="pinSetupEntryStep" hidden>
+
+<div class="pin-dots" id="pinSetupDots">
+<span class="pin-dot"></span>
+<span class="pin-dot"></span>
+<span class="pin-dot"></span>
+<span class="pin-dot"></span>
+<span class="pin-dot"></span>
+<span class="pin-dot"></span>
+</div>
+
+<div class="pin-overlay-status" id="pinSetupStatus"></div>
+
+<div class="pin-keypad">
+<button type="button" class="pin-key" data-setup-digit="1">1</button>
+<button type="button" class="pin-key" data-setup-digit="2">2</button>
+<button type="button" class="pin-key" data-setup-digit="3">3</button>
+<button type="button" class="pin-key" data-setup-digit="4">4</button>
+<button type="button" class="pin-key" data-setup-digit="5">5</button>
+<button type="button" class="pin-key" data-setup-digit="6">6</button>
+<button type="button" class="pin-key" data-setup-digit="7">7</button>
+<button type="button" class="pin-key" data-setup-digit="8">8</button>
+<button type="button" class="pin-key" data-setup-digit="9">9</button>
+<span></span>
+<button type="button" class="pin-key" data-setup-digit="0">0</button>
+<button type="button" class="pin-key pin-key-back" id="pinSetupBackspace" aria-label="Backspace">⌫</button>
+</div>
+
+</div>
+
+<!-- Step: enable biometrics (after a successful PIN setup) -->
+<div id="pinSetupBiometricStep" hidden>
+<div class="pin-overlay-status" id="pinSetupBiometricStatus" style="color:#b9c6e0;"></div>
+<button type="button" class="login-btn" id="pinSetupEnableBiometric" data-i18n="login.pinSetup.enableBiometric" style="margin-bottom:12px;">
+Enable
+</button>
+<div class="pin-forgot" id="pinSetupSkipBiometric" data-i18n="login.pinSetup.skipBiometric">Not now</div>
+</div>
+
+<div class="pin-forgot" id="pinSetupSkipBtn" data-i18n="login.pinSetup.skip">
+រំលងឥឡូវនេះ
+</div>
+
+</div>
+
+</div>
+
+<!-- ========================= -->
 <!-- GLOBAL SPLASH -->
 <!-- ========================= -->
 

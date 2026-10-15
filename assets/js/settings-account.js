@@ -304,10 +304,51 @@ function initChangePasswordSheet() {
 }
 
 // =========================
+// AUTO-LOCK TIMEOUT
+// Same accordion-picker pattern as Theme/Language above (initAccordionPicker,
+// defined in settings.js, loaded just before this file). Read/written
+// directly from config/session.js's own localStorage key so the two
+// files don't need to share any other code — config/session.js treats
+// a missing key as the 5-minute default, same default this list starts
+// selected on.
+// =========================
+
+const AUTO_LOCK_TIMEOUT_KEY = "cm_lock_timeout_minutes";
+const AUTO_LOCK_DEFAULT_MINUTES = "5";
+
+const AUTO_LOCK_LIST = [
+    { id: "0", labelKey: "settings.account.autoLock.immediate" },
+    { id: "1", labelKey: "settings.account.autoLock.1min" },
+    { id: "5", labelKey: "settings.account.autoLock.5min" },
+    { id: "10", labelKey: "settings.account.autoLock.10min" },
+    { id: "15", labelKey: "settings.account.autoLock.15min" }
+];
+
+function getAutoLockMinutes() {
+    return localStorage.getItem(AUTO_LOCK_TIMEOUT_KEY) || AUTO_LOCK_DEFAULT_MINUTES;
+}
+
+function setAutoLockMinutes(id) {
+    localStorage.setItem(AUTO_LOCK_TIMEOUT_KEY, id);
+}
+
+function initAutoLockPicker() {
+
+    if (typeof initAccordionPicker !== "function") return;
+
+    initAccordionPicker(
+        "autoLockToggle", "autoLockChevron", "autoLockOptions",
+        AUTO_LOCK_LIST, getAutoLockMinutes, setAutoLockMinutes, false
+    );
+
+}
+
+// =========================
 // INIT
 // =========================
 
 window.addEventListener("load", () => {
     initFingerprintQuickToggle();
     initChangePasswordSheet();
+    initAutoLockPicker();
 });
