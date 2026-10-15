@@ -71,6 +71,12 @@ CMI18n.register({
   "login.msg.enterUsernameFirst": { km: "សូមវាយបញ្ចូល Username មុនសិន", en: "Please enter your Username first" },
   "login.msg.fingerprintFailed": { km: "ការចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខបានបរាជ័យ", en: "Fingerprint or Face login failed" },
 
+  // PIN quick-login (set via Settings -> Account -> Change Pin)
+  "login.pin": { km: "🔢 ចូលដោយកូដ PIN", en: "🔢 Login with PIN" },
+  "login.pin.enterTitle": { km: "សូមបញ្ចូលលេខកូដ", en: "Please enter your PIN" },
+  "login.pin.forgot": { km: "ភ្លេចលេខកូដ?", en: "Forgot PIN?" },
+  "login.msg.pinFailed": { km: "ចូលដោយកូដ PIN បានបរាជ័យ", en: "PIN login failed" },
+
   // WebAuthn (shared by login.html and pages/settings/fingerprint.html)
   "webauthn.registerStartFailed": { km: "មិនអាចចាប់ផ្តើមការចុះឈ្មោះបានទេ។", en: "Could not start registration." },
   "webauthn.registerFailed": { km: "ការចុះឈ្មោះបានបរាជ័យ។", en: "Registration failed." },

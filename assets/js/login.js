@@ -591,6 +591,180 @@ if(fingerprintBtn){
 }
 
 // =========================
+// PIN LOGIN
+// Set via Settings -> Account -> Change Pin (requires being logged in
+// already). Same username requirement and error-handling shape as
+// fingerprint login just above, just swapping the credential prompt
+// for this full-screen keypad instead of the platform's WebAuthn UI.
+// =========================
+
+const pinLoginBtn=document.getElementById("pinLoginBtn");
+
+const pinOverlay=document.getElementById("pinOverlay");
+
+const pinDotsEl=document.getElementById("pinDots");
+
+const pinOverlayStatus=document.getElementById("pinOverlayStatus");
+
+const pinBackBtn=document.getElementById("pinBackBtn");
+
+const pinForgotBtn=document.getElementById("pinForgotBtn");
+
+if(pinLoginBtn && pinOverlay){
+
+    let pinDigits="";
+
+    let pinSubmitting=false;
+
+    function renderPinDots(){
+
+        pinDotsEl.querySelectorAll(".pin-dot").forEach((dot,i)=>{
+
+            dot.classList.toggle("filled",i<pinDigits.length);
+            dot.classList.remove("error");
+
+        });
+
+    }
+
+    function resetPinEntry(){
+
+        pinDigits="";
+        pinSubmitting=false;
+        pinOverlayStatus.innerText="";
+        renderPinDots();
+
+    }
+
+    function openPinOverlay(){
+
+        const username=document.getElementById("username").value.trim();
+
+        if(!username){
+
+            showMessage(t("login.msg.enterUsernameFirst"),"error");
+            return;
+
+        }
+
+        resetPinEntry();
+        pinOverlay.hidden=false;
+
+    }
+
+    function closePinOverlay(){
+
+        pinOverlay.hidden=true;
+        resetPinEntry();
+
+    }
+
+    async function submitPin(){
+
+        if(pinSubmitting) return;
+
+        pinSubmitting=true;
+
+        const username=document.getElementById("username").value.trim();
+
+        try{
+
+            const response=await fetch(
+
+                `${API.BASE_URL}/api/auth/login-pin`,
+
+                {
+                    method:"POST",
+                    headers:{ "Content-Type":"application/json" },
+                    body:JSON.stringify({username,pin:pinDigits})
+                }
+
+            );
+
+            const data=await response.json();
+
+            if(!response.ok || !data.ok){
+
+                pinOverlayStatus.innerText=data.message || t("login.msg.pinFailed");
+
+                pinDotsEl.querySelectorAll(".pin-dot").forEach(dot=>dot.classList.add("error"));
+
+                pinDotsEl.classList.add("shake");
+
+                setTimeout(()=>{
+
+                    pinDotsEl.classList.remove("shake");
+                    pinDigits="";
+                    pinSubmitting=false;
+                    renderPinDots();
+
+                },400);
+
+                return;
+
+            }
+
+            pinOverlayStatus.innerText="";
+
+            setTimeout(()=>{
+
+                closePinOverlay();
+                completeLogin(data,rememberMe.checked);
+
+            },300);
+
+        }catch(error){
+
+            console.error(error);
+
+            pinOverlayStatus.innerText=t("login.msg.cannotConnect");
+            pinDigits="";
+            pinSubmitting=false;
+            renderPinDots();
+
+        }
+
+    }
+
+    pinLoginBtn.addEventListener("click",openPinOverlay);
+
+    pinBackBtn.addEventListener("click",closePinOverlay);
+
+    pinForgotBtn.addEventListener("click",closePinOverlay);
+
+    pinOverlay.querySelectorAll(".pin-key[data-digit]").forEach(key=>{
+
+        key.addEventListener("click",()=>{
+
+            if(pinSubmitting || pinDigits.length>=6) return;
+
+            pinDigits+=key.dataset.digit;
+
+            renderPinDots();
+
+            if(pinDigits.length===6){
+
+                submitPin();
+
+            }
+
+        });
+
+    });
+
+    document.getElementById("pinBackspace").addEventListener("click",()=>{
+
+        if(pinSubmitting) return;
+
+        pinDigits=pinDigits.slice(0,-1);
+
+        renderPinDots();
+
+    });
+
+}
+
+// =========================
 // HIDE SPLASH
 // =========================
 
