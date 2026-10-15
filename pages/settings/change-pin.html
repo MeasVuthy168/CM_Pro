@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Change Pin - CM_Pro</title>
+<meta name="theme-color" content="#0e1b3c">
+
+<!-- Applied before any CSS loads, so there's no flash of the wrong
+     theme on page load. Keep this as the very first thing in <head>. -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
+  );
+</script>
+
+<link rel="stylesheet" href="../../assets/css/main.css">
+
+<style>
+
+/* Same :root / [data-theme] variable convention as fingerprint.html —
+   kept local to this page rather than added to settings.css since
+   only this page uses them. */
+
+:root{
+    --pin-page-bg:#F5F7FA;
+    --pin-card-bg:#FFFFFF;
+    --pin-border:#E2E6ED;
+    --pin-text:#1C2333;
+    --pin-text-muted:#6B7280;
+    --pin-navy-dark:#0E1B3C;
+    --pin-gold:#D4AF37;
+}
+
+[data-theme="dark"]{
+    --pin-page-bg:#0E1B3C;
+    --pin-card-bg:linear-gradient(180deg,#1A2E57,#0E1B3C);
+    --pin-border:#D4AF37;
+    --pin-text:#fff;
+    --pin-text-muted:#cdd9ef;
+}
+
+[data-theme="gold"]{
+    --pin-page-bg:#FFF8E7;
+    --pin-card-bg:#FFFDF6;
+    --pin-border:#C9971F;
+    --pin-navy-dark:#6B4500;
+}
+
+[data-theme="darkgray"]{
+    --pin-page-bg:#2B2E33;
+    --pin-card-bg:#363A41;
+    --pin-border:#474C55;
+    --pin-text:#F0F1F3;
+    --pin-text-muted:#A9AEB6;
+    --pin-navy-dark:#D8DAE0;
+}
+
+.pin-page{
+    background:var(--pin-page-bg);
+    min-height:100vh;
+    box-sizing:border-box;
+    padding:16px;
+    padding-bottom:100px;
+}
+
+.pin-card{
+    background:var(--pin-card-bg);
+    border:1px solid var(--pin-border);
+    border-radius:16px;
+    padding:20px;
+}
+
+.pin-intro-icon{
+    font-size:40px;
+    text-align:center;
+    margin-bottom:8px;
+}
+
+.pin-intro-title{
+    font-size:17px;
+    font-weight:700;
+    color:var(--pin-text);
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.pin-field{
+    margin-bottom:16px;
+}
+
+.pin-field label{
+    display:block;
+    font-size:13.5px;
+    color:var(--pin-text-muted);
+    margin-bottom:6px;
+}
+
+.pin-input-wrap{
+    position:relative;
+    display:flex;
+    align-items:center;
+}
+
+.pin-input-wrap input{
+    width:100%;
+    height:50px;
+    padding:0 46px 0 14px;
+    border:1px solid var(--pin-border);
+    border-radius:12px;
+    background:var(--pin-page-bg);
+    color:var(--pin-text);
+    font-size:18px;
+    letter-spacing:4px;
+    box-sizing:border-box;
+}
+
+.pin-input-wrap input:focus{
+    outline:none;
+    border-color:var(--pin-gold);
+}
+
+.pin-eye{
+    position:absolute;
+    right:6px;
+    width:36px;
+    height:36px;
+    border:none;
+    background:transparent;
+    font-size:17px;
+    cursor:pointer;
+    color:var(--pin-text-muted);
+}
+
+.pin-rules{
+    margin:4px 0 20px;
+}
+
+.pin-rule{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:5px 0;
+    font-size:13.5px;
+    color:var(--pin-text-muted);
+}
+
+.pin-rule-icon{
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    flex-shrink:0;
+    background:rgba(192,57,43,.12);
+    color:#C0392B;
+}
+
+.pin-rule.ok .pin-rule-icon{
+    background:rgba(39,174,96,.15);
+    color:#27AE60;
+}
+
+.pin-rule.ok{
+    color:var(--pin-text);
+}
+
+.pin-submit{
+    width:100%;
+    height:52px;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(180deg,#FFD700,#D4AF37);
+    color:#0E1B3C;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+}
+.pin-submit:active{ transform:scale(.98); }
+.pin-submit:disabled{
+    opacity:.55;
+    cursor:default;
+}
+
+</style>
+
+</head>
+<body>
+
+<div id="offlineBanner" data-i18n="common.offline">
+⚠️ No Internet Connection
+</div>
+
+<div id="topbar-container"></div>
+
+<div class="pin-page">
+
+<div class="pin-card">
+
+<div class="pin-intro-icon">🔑</div>
+<div class="pin-intro-title" data-i18n="settings.account.changePin">ប្តូរកូដ PIN</div>
+
+<div class="pin-field">
+<label data-i18n="settings.account.newPin">កូដ PIN ថ្មី</label>
+<div class="pin-input-wrap">
+<input type="password" id="pinNew" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off">
+<button type="button" class="pin-eye" data-target="pinNew">👁</button>
+</div>
+</div>
+
+<div class="pin-field">
+<label data-i18n="settings.account.confirmPin">បញ្ជាក់កូដ PIN</label>
+<div class="pin-input-wrap">
+<input type="password" id="pinConfirm" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off">
+<button type="button" class="pin-eye" data-target="pinConfirm">👁</button>
+</div>
+</div>
+
+<div class="pin-rules">
+<div class="pin-rule" data-rule="digits"><span class="pin-rule-icon">✕</span><span data-i18n="settings.account.rule.pinDigits">ត្រូវតែមាន ៦ ខ្ទង់</span></div>
+<div class="pin-rule" data-rule="match"><span class="pin-rule-icon">✕</span><span data-i18n="settings.account.rule.pinMatch">ត្រូវតែដូចគ្នា</span></div>
+</div>
+
+<button type="button" id="pinSubmitBtn" class="pin-submit" disabled data-i18n="settings.account.changePin">ប្តូរកូដ PIN</button>
+
+</div>
+
+</div>
+
+<div id="bottomnav-container"></div>
+
+<script src="../../config/api.js"></script>
+<script src="/CM_Pro/shared/touch-polish.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/settings.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+
+<script src="../../assets/js/settings-changepin.js"></script>
+
+</body>
+</html>

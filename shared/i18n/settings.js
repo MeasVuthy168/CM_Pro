@@ -30,6 +30,35 @@ CMI18n.register({
   "settings.account.phone": { km: "លេខទូរស័ព្ទ", en: "Phone Number" },
   "settings.account.unknown": { km: "មិនស្គាល់", en: "Unknown" },
 
+  // Settings main list — "Account" group (fingerprint toggle, change
+  // password, change pin, sign out)
+  "settings.account.sectionTitle": { km: "គណនី", en: "Account" },
+  "settings.account.manageDevices": { km: "គ្រប់គ្រងឧបករណ៍ដែលបានចុះឈ្មោះ", en: "Manage registered devices" },
+
+  // Change Password (bottom sheet, pages/settings/index.html)
+  "settings.account.changePassword": { km: "ប្តូរពាក្យសម្ងាត់", en: "Change Password" },
+  "settings.account.oldPassword": { km: "ពាក្យសម្ងាត់ចាស់", en: "Old Password" },
+  "settings.account.newPassword": { km: "ពាក្យសម្ងាត់ថ្មី", en: "New Password" },
+  "settings.account.confirmPassword": { km: "បញ្ជាក់ពាក្យសម្ងាត់", en: "Confirm Password" },
+  "settings.account.rule.length": { km: "យ៉ាងតិច ១២ តួអក្សរ", en: "Minimum 12 characters" },
+  "settings.account.rule.lowercase": { km: "យ៉ាងតិចមានអក្សរតូចមួយ", en: "At least one lowercase letter" },
+  "settings.account.rule.uppercase": { km: "យ៉ាងតិចមានអក្សរធំមួយ", en: "At least one uppercase letter" },
+  "settings.account.rule.number": { km: "យ៉ាងតិចមានលេខមួយ", en: "At least one number" },
+  "settings.account.rule.special": { km: "យ៉ាងតិចមានតួអក្សរពិសេសមួយ", en: "At least one special character" },
+  "settings.account.passwordMismatch": { km: "ពាក្យសម្ងាត់ថ្មី និង ការបញ្ជាក់មិនដូចគ្នាទេ", en: "New password and confirmation do not match" },
+  "settings.account.changePasswordSuccess": { km: "បានប្តូរពាក្យសម្ងាត់ដោយជោគជ័យ", en: "Password changed successfully" },
+  "settings.account.changePasswordFailed": { km: "ប្តូរពាក្យសម្ងាត់បរាជ័យ", en: "Could not change password" },
+  "settings.account.changing": { km: "កំពុងដំណើរការ...", en: "Changing..." },
+
+  // Change Pin (pages/settings/change-pin.html)
+  "settings.account.changePin": { km: "ប្តូរកូដ PIN", en: "Change Pin" },
+  "settings.account.newPin": { km: "កូដ PIN ថ្មី", en: "New PIN" },
+  "settings.account.confirmPin": { km: "បញ្ជាក់កូដ PIN", en: "Confirm PIN" },
+  "settings.account.rule.pinDigits": { km: "ត្រូវតែមាន ៦ ខ្ទង់", en: "Must be 6 digits" },
+  "settings.account.rule.pinMatch": { km: "ត្រូវតែដូចគ្នា", en: "Must be the same" },
+  "settings.account.changePinSuccess": { km: "បានប្តូរកូដ PIN ដោយជោគជ័យ", en: "PIN changed successfully" },
+  "settings.account.changePinFailed": { km: "ប្តូរកូដ PIN បរាជ័យ", en: "Could not change PIN" },
+
   // fingerprint.html + settings-fingerprint.js
   "settings.fingerprint.title": { km: "ចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខ", en: "Fingerprint Login" },
   "settings.fingerprint.introTitle": { km: "ការចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខ", en: "Login with Fingerprint or Face" },
