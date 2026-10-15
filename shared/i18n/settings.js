@@ -52,12 +52,22 @@ CMI18n.register({
 
   // Change Pin (pages/settings/change-pin.html)
   "settings.account.changePin": { km: "ប្តូរកូដ PIN", en: "Change Pin" },
+  "settings.account.currentPassword": { km: "ពាក្យសម្ងាត់បច្ចុប្បន្ន", en: "Current Password" },
   "settings.account.newPin": { km: "កូដ PIN ថ្មី", en: "New PIN" },
   "settings.account.confirmPin": { km: "បញ្ជាក់កូដ PIN", en: "Confirm PIN" },
   "settings.account.rule.pinDigits": { km: "ត្រូវតែមាន ៦ ខ្ទង់", en: "Must be 6 digits" },
   "settings.account.rule.pinMatch": { km: "ត្រូវតែដូចគ្នា", en: "Must be the same" },
   "settings.account.changePinSuccess": { km: "បានប្តូរកូដ PIN ដោយជោគជ័យ", en: "PIN changed successfully" },
   "settings.account.changePinFailed": { km: "ប្តូរកូដ PIN បរាជ័យ", en: "Could not change PIN" },
+
+  // Auto-lock (pages/settings/index.html Account section)
+  "settings.account.autoLock.title": { km: "ចាក់សោស្វ័យប្រវត្តិ", en: "Auto-lock" },
+  "settings.account.autoLock.subtitle": { km: "ចាក់សោកម្មវិធីបន្ទាប់ពីអសកម្ម", en: "Lock the app after inactivity" },
+  "settings.account.autoLock.immediate": { km: "ភ្លាមៗពេលចាកចេញ", en: "Immediately" },
+  "settings.account.autoLock.1min": { km: "១ នាទី", en: "1 minute" },
+  "settings.account.autoLock.5min": { km: "៥ នាទី", en: "5 minutes" },
+  "settings.account.autoLock.10min": { km: "១០ នាទី", en: "10 minutes" },
+  "settings.account.autoLock.15min": { km: "១៥ នាទី", en: "15 minutes" },
 
   // fingerprint.html + settings-fingerprint.js
   "settings.fingerprint.title": { km: "ចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខ", en: "Fingerprint Login" },

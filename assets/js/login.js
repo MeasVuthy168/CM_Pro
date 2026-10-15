@@ -374,7 +374,7 @@ function setLoading(isLoading){
 // Shared by both the password submit handler below and the fingerprint
 // login button — same token storage / loggedInUser cache / remember-me /
 // redirect logic regardless of which credential the server accepted.
-function completeLogin(data,remember){
+function completeLogin(data,remember,knownPassword){
 
     // ===== CLEAR TOKEN =====
 
@@ -445,23 +445,44 @@ function completeLogin(data,remember){
 
     }
 
-    // ===== REDIRECT =====
+    // ===== REDIRECT (after an optional PIN-setup detour) =====
 
-    const role=(userData.role || "user").toLowerCase();
+    function goToDestination(){
 
-    const next=getSafeNextParam();
+        const role=(userData.role || "user").toLowerCase();
 
-    window.location.href=
+        const next=getSafeNextParam();
 
-        next
+        window.location.href=
 
-            ? next
+            next
 
-            : role==="admin"
+                ? next
 
-                ? "/CM_Pro/pages/admin/index.html"
+                : role==="admin"
 
-                : "/CM_Pro/index.html";
+                    ? "/CM_Pro/pages/admin/index.html"
+
+                    : "/CM_Pro/index.html";
+
+    }
+
+    // "Mandatory but skippable" PIN onboarding: a user who's never set
+    // a PIN sees this once per login (not a hard block — Skip just
+    // proceeds), on whichever method they just logged in with. Password
+    // login has the plaintext password in memory already (knownPassword,
+    // never stored) so setup can call change-pin without asking again;
+    // fingerprint/PIN-login don't have it, so that flow asks for it as
+    // its first step instead.
+    if(!userData.hasPin && typeof maybePromptPinSetup==="function"){
+
+        maybePromptPinSetup(knownPassword).finally(goToDestination);
+
+    }else{
+
+        goToDestination();
+
+    }
 
 }
 
@@ -523,7 +544,7 @@ form.addEventListener("submit",async(e)=>{
 
         setTimeout(()=>{
 
-            completeLogin(data,rememberMe.checked);
+            completeLogin(data,rememberMe.checked,password);
 
         },700);
 
@@ -809,6 +830,220 @@ if(pinLoginBtn && pinOverlay){
         }
 
     }
+
+}
+
+// =========================
+// FIRST-LOGIN PIN SETUP (skippable)
+// Shown from completeLogin() whenever hasPin is false, on whatever
+// method the user just logged in with. Never blocks reaching the
+// Dashboard — "Skip for now" is always visible and just resolves the
+// returned promise immediately. Re-appears on the next login until a
+// PIN actually gets set (no separate "don't ask again" — the whole
+// point is this is meant to actually get used, not silently forgotten).
+// =========================
+
+function maybePromptPinSetup(knownPassword){
+
+    return new Promise((resolve)=>{
+
+        const overlay=document.getElementById("pinSetupOverlay");
+
+        if(!overlay){ resolve(); return; }
+
+        const titleEl=document.getElementById("pinSetupTitle");
+        const passwordStep=document.getElementById("pinSetupPasswordStep");
+        const passwordInput2=document.getElementById("pinSetupPassword");
+        const passwordNextBtn=document.getElementById("pinSetupPasswordNext");
+        const entryStep=document.getElementById("pinSetupEntryStep");
+        const dotsEl=document.getElementById("pinSetupDots");
+        const statusEl=document.getElementById("pinSetupStatus");
+        const backspaceBtn=document.getElementById("pinSetupBackspace");
+        const biometricStep=document.getElementById("pinSetupBiometricStep");
+        const biometricStatus=document.getElementById("pinSetupBiometricStatus");
+        const enableBiometricBtn=document.getElementById("pinSetupEnableBiometric");
+        const skipBiometricBtn=document.getElementById("pinSetupSkipBiometric");
+        const skipBtn=document.getElementById("pinSetupSkipBtn");
+
+        let password=knownPassword || "";
+        let firstPin="";
+        let digits="";
+        let phase=password ? "create" : "password";
+
+        function finish(){
+            overlay.hidden=true;
+            resolve();
+        }
+
+        function showStep(name){
+
+            passwordStep.hidden = name!=="password";
+            entryStep.hidden = name!=="create" && name!=="confirm";
+            biometricStep.hidden = name!=="biometric";
+
+            if(name==="create"){
+                titleEl.innerText=t("login.pinSetup.createTitle");
+            }else if(name==="confirm"){
+                titleEl.innerText=t("login.pinSetup.confirmTitle");
+            }else{
+                titleEl.innerText="";
+            }
+
+        }
+
+        function renderDots(){
+            dotsEl.querySelectorAll(".pin-dot").forEach((dot,i)=>{
+                dot.classList.toggle("filled",i<digits.length);
+                dot.classList.remove("error");
+            });
+        }
+
+        async function submitSetup(){
+
+            try{
+
+                const token=localStorage.getItem("token") || sessionStorage.getItem("token");
+
+                const res=await fetch(`${API.BASE_URL}/api/auth/change-pin`,{
+                    method:"POST",
+                    headers:{
+                        "Content-Type":"application/json",
+                        Authorization:`Bearer ${token}`
+                    },
+                    body:JSON.stringify({password,newPin:firstPin,confirmPin:digits})
+                });
+
+                const data=await res.json();
+
+                if(!data.ok){
+                    statusEl.innerText=data.message || t("settings.account.changePinFailed");
+                    digits="";
+                    firstPin="";
+                    phase="create";
+                    showStep("create");
+                    renderDots();
+                    return;
+                }
+
+                notify_maybe(t("login.pinSetup.success"));
+
+                if(typeof isWebAuthnAvailable==="function" && isWebAuthnAvailable()){
+                    phase="biometric";
+                    biometricStatus.innerText=t("login.pinSetup.biometricPrompt");
+                    showStep("biometric");
+                }else{
+                    finish();
+                }
+
+            }catch(err){
+
+                console.error(err);
+                statusEl.innerText=t("login.msg.cannotConnect");
+                digits="";
+                phase="create";
+                showStep("create");
+                renderDots();
+
+            }
+
+        }
+
+        function notify_maybe(message){
+            if(typeof CMToast!=="undefined" && CMToast.show){
+                CMToast.show({type:"success",title:t("common.success"),message});
+            }
+        }
+
+        overlay.querySelectorAll(".pin-key[data-setup-digit]").forEach(key=>{
+
+            key.addEventListener("click",()=>{
+
+                if(digits.length>=6) return;
+
+                digits+=key.dataset.setupDigit;
+                renderDots();
+
+                if(digits.length===6){
+
+                    if(phase==="create"){
+                        firstPin=digits;
+                        digits="";
+                        phase="confirm";
+                        showStep("confirm");
+                        renderDots();
+                    }else if(phase==="confirm"){
+                        if(digits!==firstPin){
+                            statusEl.innerText=t("login.pinSetup.mismatch");
+                            digits="";
+                            firstPin="";
+                            phase="create";
+                            showStep("create");
+                            renderDots();
+                        }else{
+                            submitSetup();
+                        }
+                    }
+
+                }
+
+            });
+
+        });
+
+        backspaceBtn.addEventListener("click",()=>{
+            digits=digits.slice(0,-1);
+            renderDots();
+        });
+
+        passwordNextBtn.addEventListener("click",()=>{
+
+            const val=passwordInput2.value;
+            if(!val){
+                return;
+            }
+            password=val;
+            phase="create";
+            showStep("create");
+
+        });
+
+        enableBiometricBtn.addEventListener("click",async()=>{
+
+            try{
+
+                const credId=await webauthnRegister("");
+
+                // Same localStorage convention as settings-account.js's
+                // fingerprint toggle and config/session.js's App Lock
+                // overlay — both read this exact key to know THIS device
+                // has biometrics registered, keyed by username so a
+                // shared device doesn't mix up accounts.
+                const user=JSON.parse(localStorage.getItem("loggedInUser") || "{}");
+                if(user.username && credId){
+                    localStorage.setItem(`cm_webauthn_device_cred_${user.username}`,credId);
+                }
+
+                notify_maybe(t("login.pinSetup.biometricSuccess"));
+
+            }catch(err){
+                console.error(err);
+            }finally{
+                finish();
+            }
+
+        });
+
+        skipBiometricBtn.addEventListener("click",finish);
+
+        skipBtn.addEventListener("click",finish);
+
+        // ----- open -----
+
+        overlay.hidden=false;
+        showStep(phase);
+        renderDots();
+
+    });
 
 }
 

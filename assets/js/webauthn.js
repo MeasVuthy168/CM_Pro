@@ -186,3 +186,44 @@ async function webauthnLogin(username) {
 
     return verifyData;
 }
+
+// ---- Unlock (App Lock overlay — already has a valid token) ----
+// Deliberately separate from webauthnLogin above: the /unlock/options
+// and /unlock/verify endpoints require the existing token (requireJwt)
+// and issue no new one, so a successful unlock can never silently
+// extend/reset the session's real expiry the way a fresh login would.
+async function webauthnUnlock() {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+    const optRes = await fetch(`${API.BASE_URL}/api/webauthn/unlock/options`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    const optData = await optRes.json();
+    if (!optData.ok) throw new Error(optData.message || webauthnT("webauthn.noFingerprint"));
+
+    const publicKey = webauthnOptionsFromJSON(optData.options, false);
+
+    let credential;
+    try {
+        credential = await navigator.credentials.get({ publicKey });
+    } catch (err) {
+        throw new Error(webauthnErrorMessage(err, "webauthn.loginFailed"));
+    }
+    if (!credential) throw new Error(webauthnT("webauthn.loginFailed"));
+
+    const verifyRes = await fetch(`${API.BASE_URL}/api/webauthn/unlock/verify`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            response: webauthnCredentialToJSON(credential, false)
+        })
+    });
+    const verifyData = await verifyRes.json();
+    if (!verifyData.ok) throw new Error(verifyData.message || webauthnT("login.msg.fingerprintFailed"));
+
+    return true;
+}

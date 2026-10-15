@@ -14,6 +14,10 @@ function logout(){
 
         sessionStorage.clear();
 
+        localStorage.removeItem("cm_lock_active");
+
+        localStorage.removeItem("cm_lock_last_activity");
+
         window.location.replace("/CM_Pro/login.html");
 
     }
