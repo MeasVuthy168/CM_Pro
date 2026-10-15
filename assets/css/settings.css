@@ -743,3 +743,335 @@ input:checked + .slider:before{
     color:#EAF0FF;
 
 }
+
+/* ===========================
+   ACCOUNT SECTION LABEL
+   Small uppercase header above the new "Account" setting-list (same
+   convention as .fp-section-label in fingerprint.html).
+=========================== */
+
+.setting-section-label{
+
+    font-size:12.5px;
+
+    font-weight:700;
+
+    color:var(--set-text-muted);
+
+    text-transform:uppercase;
+
+    letter-spacing:.04em;
+
+    margin:0 20px 8px;
+
+}
+
+.setting-icon-emoji{
+
+    width:24px;
+
+    font-size:19px;
+
+    line-height:1;
+
+    text-align:center;
+
+    flex-shrink:0;
+
+}
+
+/* ===========================
+   CHANGE PASSWORD SHEET
+   A bottom sheet (not the centered .dialog used for logout) so a
+   multi-field form has room to breathe — slides up from the bottom
+   nav, rounded top corners, scrollable if content is taller than the
+   screen (a 6-rule checklist + 3 fields can get tight on a short
+   phone).
+=========================== */
+
+.sheet{
+
+    position:fixed;
+
+    inset:0;
+
+    z-index:99999;
+
+    display:none;
+
+}
+
+.sheet.show{
+
+    display:block;
+
+}
+
+.sheet-backdrop{
+
+    position:absolute;
+
+    inset:0;
+
+    background:rgba(0,0,0,.55);
+
+}
+
+.sheet-box{
+
+    position:absolute;
+
+    left:0;
+
+    right:0;
+
+    bottom:0;
+
+    max-height:88vh;
+
+    overflow-y:auto;
+
+    background:var(--set-card-bg);
+
+    border-radius:24px 24px 0 0;
+
+    padding:10px 20px calc(24px + env(safe-area-inset-bottom));
+
+    box-shadow:0 -10px 30px rgba(0,0,0,.25);
+
+    box-sizing:border-box;
+
+    /* Slides up from below the viewport rather than just appearing,
+       so opening it reads as a sheet rising from the bottom nav
+       rather than a flat fade-in. */
+    transform:translateY(100%);
+
+    transition:transform .25s ease;
+
+}
+
+.sheet.show .sheet-box{
+
+    transform:translateY(0);
+
+}
+
+.sheet-handle{
+
+    width:40px;
+
+    height:4px;
+
+    border-radius:4px;
+
+    background:var(--set-border);
+
+    margin:6px auto 14px;
+
+}
+
+.sheet-title{
+
+    font-size:18px;
+
+    font-weight:700;
+
+    color:var(--set-text);
+
+    text-align:center;
+
+    margin-bottom:20px;
+
+}
+
+.cp-field{
+
+    margin-bottom:16px;
+
+}
+
+.cp-field label{
+
+    display:block;
+
+    font-size:13.5px;
+
+    color:var(--set-text-muted);
+
+    margin-bottom:6px;
+
+}
+
+.cp-input-wrap{
+
+    position:relative;
+
+    display:flex;
+
+    align-items:center;
+
+}
+
+.cp-input-wrap input{
+
+    width:100%;
+
+    height:50px;
+
+    padding:0 46px 0 14px;
+
+    border:1px solid var(--set-border);
+
+    border-radius:12px;
+
+    background:var(--set-page-bg);
+
+    color:var(--set-text);
+
+    font-size:15px;
+
+    box-sizing:border-box;
+
+}
+
+.cp-input-wrap input:focus{
+
+    outline:none;
+
+    border-color:var(--set-gold);
+
+}
+
+.cp-eye{
+
+    position:absolute;
+
+    right:6px;
+
+    width:36px;
+
+    height:36px;
+
+    border:none;
+
+    background:transparent;
+
+    font-size:17px;
+
+    cursor:pointer;
+
+    color:var(--set-text-muted);
+
+}
+
+.cp-rules{
+
+    margin:4px 0 10px;
+
+}
+
+.cp-rule{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:5px 0;
+
+    font-size:13.5px;
+
+    color:var(--set-text-muted);
+
+}
+
+.cp-rule-icon{
+
+    width:18px;
+
+    height:18px;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:11px;
+
+    flex-shrink:0;
+
+    background:rgba(192,57,43,.12);
+
+    color:#C0392B;
+
+}
+
+.cp-rule.ok .cp-rule-icon{
+
+    background:rgba(39,174,96,.15);
+
+    color:#27AE60;
+
+}
+
+.cp-rule.ok{
+
+    color:var(--set-text);
+
+}
+
+.cp-error{
+
+    font-size:13px;
+
+    color:#C0392B;
+
+    text-align:center;
+
+    min-height:18px;
+
+    margin-bottom:6px;
+
+}
+
+.cp-submit{
+
+    width:100%;
+
+    height:52px;
+
+    border:none;
+
+    border-radius:12px;
+
+    background:var(--set-gold);
+
+    color:var(--set-navy-dark);
+
+    font-size:16px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:opacity .15s,transform .15s;
+
+}
+
+.cp-submit:active{
+
+    transform:scale(.98);
+
+}
+
+.cp-submit:disabled{
+
+    opacity:.5;
+
+    cursor:default;
+
+}

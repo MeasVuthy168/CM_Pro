@@ -49,14 +49,6 @@
 <span class="setting-arrow">›</span>
 </div>
 
-<div class="setting-item" onclick="location.href='fingerprint.html'">
-<div class="setting-left">
-<img src="/CM_Pro/assets/icons/setting/fingerprint.png" class="setting-icon">
-<span data-i18n="settings.fingerprintRow">ការចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខ</span>
-</div>
-<span class="setting-arrow">›</span>
-</div>
-
 <div class="setting-item" onclick="location.href='about.html'">
 <div class="setting-left">
 <img src="/CM_Pro/assets/icons/setting/info.png" class="setting-icon">
@@ -102,6 +94,41 @@
 </div>
 </div>
 
+</div>
+
+<div class="setting-section-label" data-i18n="settings.account.sectionTitle">គណនី</div>
+
+<div class="setting-list">
+
+<div class="setting-item" id="fpToggleRow">
+<div class="setting-left" id="fpToggleLabel">
+<img src="/CM_Pro/assets/icons/setting/fingerprint.png" class="setting-icon">
+<span data-i18n="settings.fingerprintRow">ការចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខ</span>
+</div>
+<div class="notify-right">
+<label class="switch">
+<input id="fpQuickToggle" type="checkbox">
+<span class="slider round"></span>
+</label>
+</div>
+</div>
+
+<div class="setting-item" id="changePasswordRow">
+<div class="setting-left">
+<span class="setting-icon-emoji">🔒</span>
+<span data-i18n="settings.account.changePassword">ប្តូរពាក្យសម្ងាត់</span>
+</div>
+<span class="setting-arrow">›</span>
+</div>
+
+<div class="setting-item" onclick="location.href='change-pin.html'">
+<div class="setting-left">
+<span class="setting-icon-emoji">🔑</span>
+<span data-i18n="settings.account.changePin">ប្តូរកូដ PIN</span>
+</div>
+<span class="setting-arrow">›</span>
+</div>
+
 <div class="setting-item logout" id="logoutBtn">
 <div class="setting-left">
 <img src="/CM_Pro/assets/icons/setting/logout-rounded-left.png" class="setting-icon">
@@ -132,6 +159,54 @@
 </div>
 </div>
 
+<!-- Change Password Sheet -->
+<div id="changePasswordSheet" class="sheet">
+<div class="sheet-backdrop" id="cpSheetBackdrop"></div>
+<div class="sheet-box">
+
+<div class="sheet-handle"></div>
+
+<div class="sheet-title" data-i18n="settings.account.changePassword">ប្តូរពាក្យសម្ងាត់</div>
+
+<div class="cp-field">
+<label data-i18n="settings.account.oldPassword">ពាក្យសម្ងាត់ចាស់</label>
+<div class="cp-input-wrap">
+<input type="password" id="cpOldPassword" autocomplete="current-password">
+<button type="button" class="cp-eye" data-target="cpOldPassword">👁</button>
+</div>
+</div>
+
+<div class="cp-field">
+<label data-i18n="settings.account.newPassword">ពាក្យសម្ងាត់ថ្មី</label>
+<div class="cp-input-wrap">
+<input type="password" id="cpNewPassword" autocomplete="new-password">
+<button type="button" class="cp-eye" data-target="cpNewPassword">👁</button>
+</div>
+</div>
+
+<div class="cp-field">
+<label data-i18n="settings.account.confirmPassword">បញ្ជាក់ពាក្យសម្ងាត់</label>
+<div class="cp-input-wrap">
+<input type="password" id="cpConfirmPassword" autocomplete="new-password">
+<button type="button" class="cp-eye" data-target="cpConfirmPassword">👁</button>
+</div>
+</div>
+
+<div class="cp-rules">
+<div class="cp-rule" data-rule="lowercase"><span class="cp-rule-icon">✕</span><span data-i18n="settings.account.rule.lowercase">យ៉ាងតិចមានអក្សរតូចមួយ</span></div>
+<div class="cp-rule" data-rule="length"><span class="cp-rule-icon">✕</span><span data-i18n="settings.account.rule.length">យ៉ាងតិច ១២ តួអក្សរ</span></div>
+<div class="cp-rule" data-rule="uppercase"><span class="cp-rule-icon">✕</span><span data-i18n="settings.account.rule.uppercase">យ៉ាងតិចមានអក្សរធំមួយ</span></div>
+<div class="cp-rule" data-rule="number"><span class="cp-rule-icon">✕</span><span data-i18n="settings.account.rule.number">យ៉ាងតិចមានលេខមួយ</span></div>
+<div class="cp-rule" data-rule="special"><span class="cp-rule-icon">✕</span><span data-i18n="settings.account.rule.special">យ៉ាងតិចមានតួអក្សរពិសេសមួយ</span></div>
+</div>
+
+<div class="cp-error" id="cpError"></div>
+
+<button type="button" id="cpSubmitBtn" class="cp-submit" disabled data-i18n="settings.account.changePassword">ប្តូរពាក្យសម្ងាត់</button>
+
+</div>
+</div>
+
 <script src="../../config/api.js"></script>
 <script src="/CM_Pro/shared/touch-polish.js"></script>
 <script src="../../config/auth.js"></script>
@@ -147,8 +222,11 @@
 <script src="/CM_Pro/shared/i18n/settings.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+<script src="/CM_Pro/assets/js/webauthn.js"></script>
 
 <script src="../../assets/js/settings.js"></script>
+<script src="../../assets/js/settings-account.js"></script>
 
 </body>
 </html>
