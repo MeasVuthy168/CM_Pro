@@ -119,7 +119,15 @@ async function initFingerprintQuickToggle() {
 
                 const label = (prompt(t("settings.fingerprint.namePrompt"), "") || "").trim().slice(0, 60);
 
-                const credId = await webauthnRegister(label);
+                // Self-heals the "already registered" dead end: if this
+                // authenticator already has a credential for this
+                // account that this browser has no local record of
+                // (e.g. a prior attempt that errored out after the
+                // server had actually finished registering it), a
+                // plain webauthnRegister() would fail forever since
+                // there'd be no locally-tracked id to remove by
+                // toggling off and back on.
+                const credId = await webauthnRegisterWithRecovery(label);
 
                 fpSetStoredCredId(credId || "");
 
@@ -131,6 +139,12 @@ async function initFingerprintQuickToggle() {
 
                 if (id) {
                     await webauthnRemoveCredential(id);
+                } else {
+                    // No locally-tracked credential to target — fall
+                    // back to clearing everything the server has for
+                    // this account, since the user explicitly asked
+                    // for fingerprint login off.
+                    await webauthnRemoveAllCredentials();
                 }
 
                 fpSetStoredCredId("");
