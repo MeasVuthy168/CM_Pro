@@ -270,16 +270,86 @@ const loading=document.getElementById("loading");
 
 const statusBox=document.getElementById("statusBox");
 
+const usernameInput=document.getElementById("username");
+
 const passwordInput=document.getElementById("password");
 
 const togglePassword=document.getElementById("togglePassword");
 
-const rememberMe=document.getElementById("rememberMe");
-
 const t=(key)=>window.CMI18n ? CMI18n.t(key) : key;
 
 // =========================
+// TWO-STEP FORM (username, then password)
+// =========================
+
+const loginStep1=document.getElementById("loginStep1");
+const loginStep2=document.getElementById("loginStep2");
+const usernameNextBtn=document.getElementById("usernameNextBtn");
+const usernameSummaryText=document.getElementById("usernameSummaryText");
+const usernameChangeBtn=document.getElementById("usernameChangeBtn");
+const forgotPasswordBtn=document.getElementById("forgotPasswordBtn");
+
+function showLoginStep1(){
+
+    loginStep1.hidden=false;
+    loginStep2.hidden=true;
+    showMessage("","");
+    usernameInput.focus();
+
+}
+
+function showLoginStep2(){
+
+    const username=usernameInput.value.trim();
+
+    if(!username){
+
+        showMessage(t("login.msg.missingFields"),"error");
+        return;
+
+    }
+
+    usernameSummaryText.innerText=username;
+
+    loginStep1.hidden=true;
+    loginStep2.hidden=false;
+    showMessage("","");
+    passwordInput.value="";
+    passwordInput.focus();
+
+}
+
+usernameNextBtn.addEventListener("click",showLoginStep2);
+
+// Enter on the username field should advance to step 2, not submit the
+// form outright — there's no password typed yet at that point.
+usernameInput.addEventListener("keydown",(e)=>{
+
+    if(e.key!=="Enter") return;
+
+    e.preventDefault();
+    showLoginStep2();
+
+});
+
+usernameChangeBtn.addEventListener("click",showLoginStep1);
+
+forgotPasswordBtn.addEventListener("click",()=>{
+
+    // No self-service reset flow exists on the backend (admin-only
+    // reset-password requires an admin's own JWT) — pointing users at
+    // their admin is the honest option rather than a dead-end form.
+    showMessage(t("login.msg.forgotPassword"),"info");
+
+});
+
+// =========================
 // REMEMBER LOGIN
+// Every successful login is "remembered" now (no checkbox) — this is
+// what makes the App Lock / PIN-unlock flow (config/session.js,
+// pages/settings) actually useful: closing and reopening the app is
+// supposed to land on a PIN/biometric unlock, not a blank login form,
+// the same way a real banking app behaves.
 // =========================
 
 let rememberedLogin=null;
@@ -298,11 +368,9 @@ try{
 
 }
 
-if(rememberedLogin){
+if(rememberedLogin && rememberedLogin.username){
 
-    document.getElementById("username").value=rememberedLogin.username || "";
-
-    rememberMe.checked=true;
+    usernameInput.value=rememberedLogin.username;
 
     // Older builds stored the plaintext password alongside the username —
     // scrub it from this browser's localStorage the first time this runs,
@@ -318,6 +386,12 @@ if(rememberedLogin){
         );
 
     }
+
+    // A known username on this device skips straight to the password
+    // step — PIN-enabled users get intercepted before this even runs
+    // (see the PIN LOGIN section's auto-open check further down, which
+    // opens its own full-screen overlay instead).
+    showLoginStep2();
 
 }
 
@@ -374,7 +448,7 @@ function setLoading(isLoading){
 // Shared by both the password submit handler below and the fingerprint
 // login button — same token storage / loggedInUser cache / remember-me /
 // redirect logic regardless of which credential the server accepted.
-function completeLogin(data,remember,knownPassword){
+function completeLogin(data,knownPassword){
 
     // ===== CLEAR TOKEN =====
 
@@ -383,16 +457,12 @@ function completeLogin(data,remember,knownPassword){
     sessionStorage.removeItem("token");
 
     // ===== SAVE TOKEN =====
+    // Always localStorage now (no Remember Me checkbox) — the whole
+    // point of the App Lock / PIN-unlock system is that closing and
+    // reopening the app lands on an unlock screen, not a blank login
+    // form, which requires the session to actually persist.
 
-    if(remember){
-
-        localStorage.setItem("token",data.token);
-
-    }else{
-
-        sessionStorage.setItem("token",data.token);
-
-    }
+    localStorage.setItem("token",data.token);
 
     // ===== USER DATA =====
 
@@ -411,9 +481,7 @@ function completeLogin(data,remember,knownPassword){
             role:userData.role || "user",
 
             // Drives the "skip straight to the PIN screen next time"
-            // check further down this file — only meaningful alongside
-            // remember_login below, which is cleared whenever Remember
-            // Me isn't checked.
+            // check further down this file, alongside remember_login.
             hasPin:!!userData.hasPin
 
         })
@@ -421,29 +489,20 @@ function completeLogin(data,remember,knownPassword){
     );
 
     // ===== REMEMBER LOGIN =====
-    // Only the username is persisted — the token set above (already
-    // in localStorage when Remember Me is checked) is what actually
-    // keeps the session alive across visits. Storing the plaintext
-    // password here too gained nothing but risk: anyone who can read
-    // this origin's localStorage (an XSS elsewhere, a malicious
-    // extension, a shared machine) would get the real account
-    // password, not just a scoped/expiring token.
+    // Only the username is persisted — the token set above is what
+    // actually keeps the session alive across visits. Storing the
+    // plaintext password here too gained nothing but risk: anyone who
+    // can read this origin's localStorage (an XSS elsewhere, a
+    // malicious extension, a shared machine) would get the real
+    // account password, not just a scoped/expiring token.
 
-    if(remember){
+    localStorage.setItem(
 
-        localStorage.setItem(
+        "remember_login",
 
-            "remember_login",
+        JSON.stringify({username:userData.username || ""})
 
-            JSON.stringify({username:userData.username || ""})
-
-        );
-
-    }else{
-
-        localStorage.removeItem("remember_login");
-
-    }
+    );
 
     // ===== REDIRECT (after an optional PIN-setup detour) =====
 
@@ -544,7 +603,7 @@ form.addEventListener("submit",async(e)=>{
 
         setTimeout(()=>{
 
-            completeLogin(data,rememberMe.checked,password);
+            completeLogin(data,password);
 
         },700);
 
@@ -563,69 +622,12 @@ form.addEventListener("submit",async(e)=>{
 });
 
 // =========================
-// FINGERPRINT LOGIN
-// =========================
-
-const fingerprintBtn=document.getElementById("fingerprintLoginBtn");
-
-if(fingerprintBtn){
-
-    if(typeof isWebAuthnAvailable==="function" && isWebAuthnAvailable()){
-
-        fingerprintBtn.hidden=false;
-
-    }
-
-    fingerprintBtn.addEventListener("click",async()=>{
-
-        const username=document.getElementById("username").value.trim();
-
-        if(!username){
-
-            showMessage(t("login.msg.enterUsernameFirst"),"error");
-            return;
-
-        }
-
-        try{
-
-            setLoading(true);
-            showMessage("","");
-
-            const data=await webauthnLogin(username);
-
-            showMessage(t("login.msg.success"),"success");
-
-            setTimeout(()=>{
-
-                completeLogin(data,rememberMe.checked);
-
-            },500);
-
-        }catch(err){
-
-            console.error(err);
-            showMessage(err.message || t("login.msg.fingerprintFailed"),"error");
-
-        }finally{
-
-            setLoading(false);
-
-        }
-
-    });
-
-}
-
-// =========================
 // PIN LOGIN
-// Set via Settings -> Account -> Change Pin (requires being logged in
-// already). Same username requirement and error-handling shape as
-// fingerprint login just above, just swapping the credential prompt
-// for this full-screen keypad instead of the platform's WebAuthn UI.
+// No manual button for this anymore (removed from the login form along
+// with fingerprint login) — this overlay now only ever opens
+// automatically, for a returning device that's already remembered and
+// has a PIN set (see the auto-open check at the bottom of this block).
 // =========================
-
-const pinLoginBtn=document.getElementById("pinLoginBtn");
 
 const pinOverlay=document.getElementById("pinOverlay");
 
@@ -637,7 +639,7 @@ const pinBackBtn=document.getElementById("pinBackBtn");
 
 const pinForgotBtn=document.getElementById("pinForgotBtn");
 
-if(pinLoginBtn && pinOverlay){
+if(pinOverlay){
 
     let pinDigits="";
 
@@ -683,6 +685,12 @@ if(pinLoginBtn && pinOverlay){
 
         pinOverlay.hidden=true;
         resetPinEntry();
+
+        // The auto-open path (bottom of this block) never shows the
+        // password step — it opens this overlay straight from page
+        // load. Reveal it now (username already known) rather than
+        // falling back to the bare username step.
+        showLoginStep2();
 
     }
 
@@ -735,8 +743,7 @@ if(pinLoginBtn && pinOverlay){
 
             setTimeout(()=>{
 
-                closePinOverlay();
-                completeLogin(data,rememberMe.checked);
+                completeLogin(data);
 
             },300);
 
@@ -752,8 +759,6 @@ if(pinLoginBtn && pinOverlay){
         }
 
     }
-
-    pinLoginBtn.addEventListener("click",openPinOverlay);
 
     pinBackBtn.addEventListener("click",closePinOverlay);
 

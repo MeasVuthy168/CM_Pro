@@ -27,6 +27,7 @@ CMI18n.register({
   "common.refresh": { km: "ផ្ទុកឡើងវិញ", en: "Refresh" },
   "common.submit": { km: "ដាក់ស្នើ", en: "Submit" },
   "common.next": { km: "បន្ទាប់", en: "Next" },
+  "common.change": { km: "ប្តូរ", en: "Change" },
   "common.total": { km: "សរុប", en: "Total" },
   "common.offline": { km: "⚠️ គ្មានការតភ្ជាប់អ៊ីនធឺណិត", en: "⚠️ No Internet Connection" }
 });

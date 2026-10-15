@@ -58,9 +58,8 @@ CMI18n.register({
   "login.passwordPlaceholder": { km: "ពាក្យសម្ងាត់", en: "Password" },
   "login.show": { km: "បង្ហាញ", en: "Show" },
   "login.hide": { km: "លាក់", en: "Hide" },
-  "login.rememberMe": { km: "ចងចាំខ្ញុំ", en: "Remember Me" },
   "login.submit": { km: "ចូលប្រើប្រាស់", en: "Log In" },
-  "login.fingerprint": { km: "👆 ចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខ", en: "👆 Login with Fingerprint or Face" },
+  "login.forgotPassword": { km: "ភ្លេចពាក្យសម្ងាត់?", en: "Forgot Password?" },
   "login.installTitle": { km: "📲 ដំឡើង CM_Pro", en: "📲 Install CM_Pro" },
   "login.installText": { km: "ចុច <b>Share</b> បន្ទាប់មក <b>Add to Home Screen</b>", en: "Tap <b>Share</b> then <b>Add to Home Screen</b>" },
   "login.installOk": { km: "យល់ព្រម", en: "OK" },
@@ -69,10 +68,9 @@ CMI18n.register({
   "login.msg.success": { km: "ចូលប្រើប្រាស់ជោគជ័យ", en: "Login successful" },
   "login.msg.cannotConnect": { km: "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ", en: "Cannot connect to server" },
   "login.msg.enterUsernameFirst": { km: "សូមវាយបញ្ចូល Username មុនសិន", en: "Please enter your Username first" },
-  "login.msg.fingerprintFailed": { km: "ការចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខបានបរាជ័យ", en: "Fingerprint or Face login failed" },
+  "login.msg.forgotPassword": { km: "សូមទាក់ទងអ្នកគ្រប់គ្រងសាខារបស់អ្នក ដើម្បីកំណត់ពាក្យសម្ងាត់ឡើងវិញ។", en: "Please contact your branch administrator to reset your password." },
 
   // PIN quick-login (set via Settings -> Account -> Change Pin)
-  "login.pin": { km: "🔢 ចូលដោយកូដ PIN", en: "🔢 Login with PIN" },
   "login.pin.enterTitle": { km: "សូមបញ្ចូលលេខកូដ", en: "Please enter your PIN" },
   "login.pin.forgot": { km: "ភ្លេចលេខកូដ?", en: "Forgot PIN?" },
   "login.msg.pinFailed": { km: "ចូលដោយកូដ PIN បានបរាជ័យ", en: "PIN login failed" },
@@ -99,6 +97,7 @@ CMI18n.register({
   "webauthn.loginFailed": { km: "ការចូលប្រើប្រាស់បានបរាជ័យ។", en: "Login failed." },
   "webauthn.cancelled": { km: "បានបោះបង់ ឬអស់ម៉ោង។", en: "Cancelled or timed out." },
   "webauthn.unsupported": { km: "ឧបករណ៍នេះមិនគាំទ្រការផ្ទៀងផ្ទាត់ដោយស្នាមម្រាមដៃទេ។", en: "This device doesn't support fingerprint/face verification." },
+  "webauthn.alreadyRegistered": { km: "ឧបករណ៍នេះបានចុះឈ្មោះរួចហើយ។ សូមបិទកុងតាក់ រួចបើកម្តងទៀត។", en: "This device is already registered. Try turning the switch off, then on again." },
 
   // App Lock overlay (config/session.js, shown on every protected page)
   "applock.greeting": { km: "សូមស្វាគមន៍មកវិញ, {name}", en: "Welcome back, {name}" },
