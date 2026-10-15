@@ -193,6 +193,18 @@ function cmShouldBeLocked() {
 
     if (cmIsMarkedLocked()) return true;
 
+    // "Immediately" (0 minutes) means "lock the instant the app is
+    // backgrounded" — that's the visibilitychange listener further
+    // down, which sets cmIsMarkedLocked() the moment the tab/app is
+    // hidden. It does NOT mean "lock while still looking at the
+    // screen just because a few seconds passed without a tap" — but
+    // that's what the elapsed-activity check below would do, since
+    // with a 0ms timeout it's satisfied on literally the very next
+    // 15s interval tick even while the user is actively reading the
+    // current page. Skip it entirely for timeout=0 so only an actual
+    // backgrounding event can lock.
+    if (cmLockTimeoutMinutes() === 0) return false;
+
     const last = cmGetLastActivity();
     if (!last) return false; // no activity recorded yet this session — treat as fresh, not locked
 
