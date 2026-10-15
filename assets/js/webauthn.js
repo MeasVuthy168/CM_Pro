@@ -124,7 +124,10 @@ async function webauthnRegister(deviceLabel) {
     const verifyData = await verifyRes.json();
     if (!verifyData.ok) throw new Error(verifyData.message || webauthnT("webauthn.verifyFailed"));
 
-    return true;
+    // credential.id is the same base64url value the server stored as
+    // credentialID — callers that need to recognize "this device" later
+    // (e.g. a quick on/off toggle, settings-account.js) can hang onto it.
+    return credential.id;
 }
 
 async function webauthnListCredentials() {
