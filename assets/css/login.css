@@ -249,6 +249,247 @@ body{
 }
 
 /* =========================
+   PIN Login Overlay
+   Full-screen (covers the whole login page, not just the card) so the
+   keypad has room to breathe on a small phone — same navy/gold palette
+   as .login-card rather than the plain gray a generic reference design
+   would use, so it reads as part of this app rather than a different
+   screen bolted on.
+========================= */
+
+.pin-overlay{
+
+    position:fixed;
+
+    inset:0;
+
+    z-index:999999;
+
+    background:#0E1B3C;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:20px;
+
+    box-sizing:border-box;
+
+}
+
+.pin-overlay[hidden]{
+
+    display:none;
+
+}
+
+.pin-overlay-inner{
+
+    width:100%;
+
+    max-width:380px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+}
+
+.pin-back-btn{
+
+    align-self:flex-start;
+
+    width:44px;
+
+    height:44px;
+
+    border:none;
+
+    border-radius:12px;
+
+    background:rgba(255,255,255,.08);
+
+    color:#fff;
+
+    font-size:20px;
+
+    cursor:pointer;
+
+    margin-bottom:30px;
+
+}
+
+.pin-back-btn:active{
+
+    transform:scale(.94);
+
+}
+
+.pin-overlay-title{
+
+    color:#fff;
+
+    font-size:19px;
+
+    font-weight:600;
+
+    text-align:center;
+
+    margin-bottom:26px;
+
+}
+
+.pin-dots{
+
+    display:flex;
+
+    gap:16px;
+
+    margin-bottom:16px;
+
+}
+
+.pin-dot{
+
+    width:16px;
+
+    height:16px;
+
+    border-radius:50%;
+
+    border:2px solid #FFD700;
+
+    box-sizing:border-box;
+
+    transition:background .15s;
+
+}
+
+.pin-dot.filled{
+
+    background:#FFD700;
+
+}
+
+.pin-dot.error{
+
+    border-color:#ff6b6b;
+
+    background:#ff6b6b;
+
+}
+
+.pin-overlay-status{
+
+    min-height:20px;
+
+    color:#ff6b6b;
+
+    font-size:14px;
+
+    font-weight:600;
+
+    text-align:center;
+
+    margin-bottom:10px;
+
+}
+
+.pin-keypad{
+
+    width:100%;
+
+    max-width:300px;
+
+    display:grid;
+
+    grid-template-columns:repeat(3,1fr);
+
+    gap:18px 28px;
+
+    margin-top:10px;
+
+}
+
+.pin-key{
+
+    height:64px;
+
+    border:none;
+
+    border-radius:50%;
+
+    background:rgba(255,255,255,.06);
+
+    color:#fff;
+
+    font-size:26px;
+
+    font-weight:500;
+
+    cursor:pointer;
+
+    transition:background .15s,transform .1s;
+
+}
+
+.pin-key:active{
+
+    background:rgba(255,215,0,.18);
+
+    transform:scale(.94);
+
+}
+
+.pin-key-back{
+
+    font-size:20px;
+
+    background:transparent;
+
+}
+
+.pin-forgot{
+
+    margin-top:30px;
+
+    color:#b9c6e0;
+
+    font-size:14.5px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+}
+
+.pin-forgot:active{
+
+    opacity:.7;
+
+}
+
+@keyframes pinDotsShake{
+
+    0%,100%{ transform:translateX(0); }
+    20%{ transform:translateX(-8px); }
+    40%{ transform:translateX(8px); }
+    60%{ transform:translateX(-6px); }
+    80%{ transform:translateX(6px); }
+
+}
+
+.pin-dots.shake{
+
+    animation:pinDotsShake .4s ease;
+
+}
+
+/* =========================
    Status + Loading
 ========================= */
 
