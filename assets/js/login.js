@@ -672,6 +672,35 @@ if(pinOverlay){
 
     }
 
+    // Mirrors config/session.js's App Lock overlay: if this device has
+    // Face ID/fingerprint registered for this user, try it the instant
+    // the PIN screen opens — no separate "Login with Fingerprint"
+    // button needed (that was removed earlier), just the same silent
+    // auto-prompt the reference app does. The PIN keypad stays visible
+    // underneath the whole time, so a cancelled/failed biometric
+    // attempt just leaves the user exactly where they'd expect: typing
+    // their PIN, with no extra error noise for backing out of a prompt
+    // they didn't explicitly ask for.
+    async function maybeTryBiometricLogin(username){
+
+        if(typeof isWebAuthnAvailable!=="function" || !isWebAuthnAvailable()) return;
+
+        const hasDeviceCred=!!localStorage.getItem(`cm_webauthn_device_cred_${username}`);
+        if(!hasDeviceCred) return;
+
+        try{
+
+            const data=await webauthnLogin(username);
+            completeLogin(data);
+
+        }catch(err){
+
+            console.error("[login] auto biometric login failed:",err);
+
+        }
+
+    }
+
     function openPinOverlay(){
 
         const username=document.getElementById("username").value.trim();
@@ -685,6 +714,8 @@ if(pinOverlay){
 
         resetPinEntry();
         pinOverlay.hidden=false;
+
+        maybeTryBiometricLogin(username);
 
     }
 
@@ -1023,7 +1054,7 @@ function maybePromptPinSetup(knownPassword){
 
             try{
 
-                const credId=await webauthnRegister("");
+                const credId=await webauthnRegisterWithRecovery("");
 
                 // Same localStorage convention as settings-account.js's
                 // fingerprint toggle and config/session.js's App Lock

@@ -187,7 +187,7 @@ fpAddBtn?.addEventListener("click", async () => {
         // so ask for a short one rather than guessing from the user agent.
         const label = (prompt(t("settings.fingerprint.namePrompt"), "") || "").trim().slice(0, 60);
 
-        await webauthnRegister(label);
+        await webauthnRegisterWithRecovery(label);
 
         notify(t("settings.fingerprint.registerSuccess"), "success");
 

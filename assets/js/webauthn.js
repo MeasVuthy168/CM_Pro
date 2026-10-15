@@ -113,7 +113,14 @@ async function webauthnRegister(deviceLabel) {
     try {
         credential = await navigator.credentials.create({ publicKey });
     } catch (err) {
-        throw new Error(webauthnErrorMessage(err, "webauthn.registerFailed"));
+        // Preserve the original DOMException name (e.g.
+        // "InvalidStateError") as .code — callers that need to tell
+        // "already registered" apart from other failures (settings-
+        // account.js's self-heal retry) would otherwise only see a
+        // generic Error with a translated, language-dependent message.
+        const wrapped = new Error(webauthnErrorMessage(err, "webauthn.registerFailed"));
+        wrapped.code = err && err.name;
+        throw wrapped;
     }
     if (!credential) throw new Error(webauthnT("webauthn.registerFailed"));
 
@@ -135,6 +142,49 @@ async function webauthnRegister(deviceLabel) {
     // credentialID — callers that need to recognize "this device" later
     // (e.g. a quick on/off toggle, settings-account.js) can hang onto it.
     return credential.id;
+}
+
+// Best-effort: remove every credential the server has for this
+// account. Used when there's no reliable way to target just one
+// device's credential (see webauthnRegisterWithRecovery below, and
+// settings-account.js's quick toggle when it has no locally-tracked
+// id to remove) -- the authenticator itself can end up with a
+// credential the server knows about that a particular browser's own
+// storage doesn't (a prior registration attempt that errored out
+// client-side after the server had already finished it, a leftover
+// from testing, cleared site data, a different build), and WebAuthn
+// gives no way to ask the authenticator which credential id it
+// already has. Callers only use this where clearing everything is
+// the reasonable, user-intended outcome: an explicit "turn it off",
+// or a registration attempt that just proved this exact authenticator
+// already has *something* registered.
+async function webauthnRemoveAllCredentials() {
+    try {
+        const devices = await webauthnListCredentials();
+        for (const d of devices) {
+            await webauthnRemoveCredential(d.id);
+        }
+    } catch {
+        // offline, etc. -- caller proceeds regardless
+    }
+}
+
+// Wraps webauthnRegister with one self-heal retry: if this
+// authenticator says it already has a credential for this account
+// (InvalidStateError), that's the "already registered" dead end a
+// plain retry can't recover from on its own -- clear every credential
+// the server has for this account and register again, instead of
+// leaving the caller stuck on an error with no way to act on it.
+async function webauthnRegisterWithRecovery(deviceLabel) {
+    try {
+        return await webauthnRegister(deviceLabel);
+    } catch (err) {
+        if (err && err.code === "InvalidStateError") {
+            await webauthnRemoveAllCredentials();
+            return webauthnRegister(deviceLabel);
+        }
+        throw err;
+    }
 }
 
 async function webauthnListCredentials() {
