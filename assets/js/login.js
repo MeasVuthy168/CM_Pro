@@ -408,7 +408,13 @@ function completeLogin(data,remember){
 
             fullname:userData.fullname || "",
 
-            role:userData.role || "user"
+            role:userData.role || "user",
+
+            // Drives the "skip straight to the PIN screen next time"
+            // check further down this file — only meaningful alongside
+            // remember_login below, which is cleared whenever Remember
+            // Me isn't checked.
+            hasPin:!!userData.hasPin
 
         })
 
@@ -761,6 +767,48 @@ if(pinLoginBtn && pinOverlay){
         renderPinDots();
 
     });
+
+    // ===== SKIP STRAIGHT TO PIN FOR A RETURNING, PIN-ENABLED USER =====
+    // Matches the "log in with your password once, then unlock with a
+    // PIN after that" pattern from other banking apps. The AUTO LOGIN
+    // block up top already redirects straight past this whole page
+    // (no form shown at all) whenever a still-valid token exists — this
+    // covers the other case, where that token has expired (or this is a
+    // fresh visit) but the device still remembers a username that HAS a
+    // PIN set (cached on the last successful login, any method). Rather
+    // than making them type the full password again, open the PIN
+    // keypad immediately in place of the password form — the keypad's
+    // own back arrow / "Forgot PIN?" link reveals the already-prefilled
+    // password form underneath for anyone who wants (or needs) it.
+
+    if(rememberedLogin && rememberedLogin.username){
+
+        let cachedUser={};
+
+        try{
+
+            cachedUser=JSON.parse(localStorage.getItem("loggedInUser") || "{}");
+
+        }catch{
+
+            cachedUser={};
+
+        }
+
+        if(
+
+            cachedUser.username===rememberedLogin.username &&
+            cachedUser.hasPin
+
+        ){
+
+            document.getElementById("username").value=rememberedLogin.username;
+
+            openPinOverlay();
+
+        }
+
+    }
 
 }
 
