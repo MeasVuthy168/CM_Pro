@@ -508,6 +508,14 @@ function initLogoutDialog(){
 
         sessionStorage.clear();
 
+        // App Lock state (config/session.js) — a logout is a full
+        // session end, not just a lock, so this must be cleared too
+        // rather than leaving a stale "locked" flag behind for
+        // whoever logs in next on this device.
+        localStorage.removeItem("cm_lock_active");
+
+        localStorage.removeItem("cm_lock_last_activity");
+
         window.location.replace("/CM_Pro/login.html");
 
     });

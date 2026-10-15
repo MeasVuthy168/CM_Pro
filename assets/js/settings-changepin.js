@@ -117,6 +117,7 @@ function notify(message, type) {
     }
 }
 
+const currentPasswordInput = document.getElementById("pinCurrentPassword");
 const newInput = document.getElementById("pinNew");
 const confirmInput = document.getElementById("pinConfirm");
 const submitBtn = document.getElementById("pinSubmitBtn");
@@ -132,6 +133,7 @@ function validate() {
 
     const digitsOk = /^\d{6}$/.test(newPin);
     const matchOk = newPin.length > 0 && newPin === confirmPin;
+    const passwordOk = currentPasswordInput.value.length > 0;
 
     const digitsRule = document.querySelector('.pin-rule[data-rule="digits"]');
     const matchRule = document.querySelector('.pin-rule[data-rule="match"]');
@@ -146,12 +148,14 @@ function validate() {
         matchRule.querySelector(".pin-rule-icon").textContent = matchOk ? "✓" : "✕";
     }
 
-    const canSubmit = digitsOk && matchOk;
+    const canSubmit = digitsOk && matchOk && passwordOk;
     submitBtn.disabled = !canSubmit;
 
     return canSubmit;
 
 }
+
+currentPasswordInput.addEventListener("input", validate);
 
 [newInput, confirmInput].forEach(input => {
 
@@ -194,6 +198,7 @@ submitBtn.addEventListener("click", async () => {
                 Authorization: `Bearer ${token}`
             },
             body: JSON.stringify({
+                password: currentPasswordInput.value,
                 newPin: newInput.value,
                 confirmPin: confirmInput.value
             })
