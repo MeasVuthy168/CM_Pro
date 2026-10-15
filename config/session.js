@@ -269,8 +269,7 @@ function cmInjectStyles() {
 #cmLockOverlay{position:fixed;inset:0;z-index:2147483647;background:#0E1B3C;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;overflow-y:auto;}
 #cmLockOverlay.show{display:flex;}
 .cm-lock-inner{width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;}
-.cm-lock-logo{width:72px;height:72px;border-radius:50%;margin-bottom:14px;object-fit:cover;}
-.cm-lock-photo{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid #D4AF37;background:#16223F;margin-bottom:10px;}
+.cm-lock-photo{width:84px;height:84px;border-radius:50%;object-fit:cover;border:2px solid #D4AF37;background:#16223F;margin-bottom:14px;}
 .cm-lock-greeting{color:#fff;font-size:17px;font-weight:600;text-align:center;margin-bottom:4px;}
 .cm-lock-title{color:#b9c6e0;font-size:14px;text-align:center;margin-bottom:22px;}
 .cm-lock-dots{display:flex;gap:16px;margin-bottom:10px;}
@@ -278,8 +277,8 @@ function cmInjectStyles() {
 .cm-lock-dot.filled{background:#FFD700;}
 .cm-lock-dot.error{border-color:#ff6b6b;background:#ff6b6b;}
 .cm-lock-status{min-height:20px;color:#ff6b6b;font-size:13.5px;font-weight:600;text-align:center;margin-bottom:8px;}
-.cm-lock-keypad{width:100%;max-width:280px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px 24px;margin-top:6px;}
-.cm-lock-key{height:58px;border:none;border-radius:50%;background:rgba(255,255,255,.06);color:#fff;font-size:24px;font-weight:500;cursor:pointer;}
+.cm-lock-keypad{width:100%;max-width:320px;display:grid;grid-template-columns:repeat(3,1fr);justify-items:center;gap:18px;margin-top:6px;}
+.cm-lock-key{width:72px;height:72px;border:none;border-radius:50%;background:rgba(255,255,255,.06);color:#fff;font-size:28px;font-weight:500;cursor:pointer;}
 .cm-lock-key:active{background:rgba(255,215,0,.18);transform:scale(.94);}
 .cm-lock-key-back{font-size:18px;background:transparent;}
 .cm-lock-fp-btn{margin-top:18px;width:56px;height:56px;border-radius:50%;border:1.5px solid #FFD700;background:transparent;color:#FFD700;font-size:24px;cursor:pointer;}
@@ -428,7 +427,6 @@ function cmBuildLockOverlay() {
     el.id = "cmLockOverlay";
     el.innerHTML = `
         <div class="cm-lock-inner">
-            <img class="cm-lock-logo" src="/CM_Pro/assets/images/icon-192-maskable.png" alt="CM_Pro">
             <img class="cm-lock-photo" id="cmLockPhoto" style="display:none;" alt="">
             <div class="cm-lock-greeting" id="cmLockGreeting"></div>
             <div class="cm-lock-title"></div>

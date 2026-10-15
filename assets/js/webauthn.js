@@ -86,6 +86,13 @@ function webauthnT(key) {
 
 function webauthnErrorMessage(err, fallbackKey) {
     if (err && err.name === "NotAllowedError") return webauthnT("webauthn.cancelled");
+    // Thrown by the browser itself (before any server round-trip) when
+    // excludeCredentials matches an authenticator already registered on
+    // this device — i.e. the toggle's local "is this device registered"
+    // tracking fell out of sync with what the server/authenticator
+    // actually has. settings-account.js catches this by name and
+    // re-syncs instead of just surfacing the raw browser message.
+    if (err && err.name === "InvalidStateError") return webauthnT("webauthn.alreadyRegistered");
     return (err && err.message) || webauthnT(fallbackKey);
 }
 

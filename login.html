@@ -110,6 +110,10 @@ SVG Credit Monitoring System
 
 <form id="loginForm">
 
+<!-- ===== STEP 1: USERNAME ===== -->
+
+<div id="loginStep1">
+
 <input
 type="text"
 id="username"
@@ -120,6 +124,26 @@ autocomplete="username"
 required
 >
 
+<button
+type="button"
+class="login-btn"
+id="usernameNextBtn"
+data-i18n="common.next"
+>
+Next
+</button>
+
+</div>
+
+<!-- ===== STEP 2: PASSWORD ===== -->
+
+<div id="loginStep2" hidden>
+
+<div class="username-summary" id="usernameSummary">
+<span id="usernameSummaryText"></span>
+<span class="username-change-link" id="usernameChangeBtn" data-i18n="common.change">Change</span>
+</div>
+
 <div class="password-wrapper">
 
 <input
@@ -129,7 +153,6 @@ class="input-box"
 placeholder="Password"
 data-i18n-placeholder="login.passwordPlaceholder"
 autocomplete="current-password"
-required
 >
 
 <span
@@ -142,17 +165,10 @@ Show
 
 </div>
 
-<div class="remember-row">
-
-<input
-type="checkbox"
-id="rememberMe"
->
-
-<label for="rememberMe" data-i18n="login.rememberMe">
-Remember Me
-</label>
-
+<div class="forgot-password-row">
+<span class="forgot-password-link" id="forgotPasswordBtn" data-i18n="login.forgotPassword">
+Forgot Password?
+</span>
 </div>
 
 <button
@@ -164,24 +180,7 @@ data-i18n="login.submit"
 ចូលប្រើប្រាស់
 </button>
 
-<button
-type="button"
-class="fingerprint-login-btn"
-id="fingerprintLoginBtn"
-hidden
-data-i18n="login.fingerprint"
->
-👆 ចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខ
-</button>
-
-<button
-type="button"
-class="fingerprint-login-btn"
-id="pinLoginBtn"
-data-i18n="login.pin"
->
-🔢 ចូលដោយកូដ PIN
-</button>
+</div>
 
 <div
 class="loading"
