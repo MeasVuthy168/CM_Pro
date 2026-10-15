@@ -42,6 +42,16 @@ const LAST_ACTIVITY_KEY = "cm_lock_last_activity";
 const TIMEOUT_MINUTES_KEY = "cm_lock_timeout_minutes";
 const DEFAULT_TIMEOUT_MINUTES = 5;
 
+// sessionStorage (not localStorage) is the point — it's scoped to the
+// browser/PWA process and is gone the instant that process is actually
+// closed, even though it survives an in-app page navigation (same
+// process) or a brief background/foreground cycle (process usually
+// still alive). That's exactly the signal needed to tell "the app was
+// closed and relaunched" apart from "the user tapped to another page"
+// without touching every one of the ~24 HTML files.
+const SESSION_ALIVE_KEY = "cm_session_alive";
+const JUST_AUTHENTICATED_KEY = "cm_just_authenticated";
+
 const ACTIVITY_EVENTS = ["click", "touchstart", "keydown", "pointerdown"];
 
 const CHECK_INTERVAL_MS = 15 * 1000;
@@ -214,6 +224,36 @@ function cmShowImmediateBlock() {
 
 }
 
+// Fresh process start = sessionStorage has no record of this process
+// having run before. Marks it (so later page loads in the same
+// process — in-app navigation, or a background/foreground cycle that
+// didn't actually kill the process — aren't treated as a relaunch)
+// and reports whether this call is the one that found it unmarked.
+function cmMarkAndCheckFreshProcessStart() {
+    try {
+        if (sessionStorage.getItem(SESSION_ALIVE_KEY)) return false;
+        sessionStorage.setItem(SESSION_ALIVE_KEY, "1");
+        return true;
+    } catch {
+        // sessionStorage unavailable — fail open to the pre-existing
+        // (timeout-only) lock behavior rather than risk locking every
+        // single page load.
+        return false;
+    }
+}
+
+function cmConsumeJustAuthenticated() {
+    try {
+        if (sessionStorage.getItem(JUST_AUTHENTICATED_KEY) === "1") {
+            sessionStorage.removeItem(JUST_AUTHENTICATED_KEY);
+            return true;
+        }
+    } catch {
+        // ignore
+    }
+    return false;
+}
+
 // =========================================================
 // BOOT — runs immediately (synchronous, top of file)
 // =========================================================
@@ -225,7 +265,22 @@ if (!cmEnsureSessionValid()) {
     return;
 }
 
-const cmNeedsImmediateLock = cmShouldBeLocked();
+let cmNeedsImmediateLock = cmShouldBeLocked();
+
+// Closing the app fully and reopening it must always land on the PIN
+// screen, regardless of how little time has passed — the inactivity
+// timeout above is a separate policy for backgrounding without a real
+// close. Skip this exactly once right after an actual login/unlock
+// (goToDestination() in login.js sets the flag before navigating
+// here), so a successful login doesn't immediately bounce back to a
+// lock screen.
+if (cmMarkAndCheckFreshProcessStart()) {
+    const justAuthenticated = cmConsumeJustAuthenticated();
+    if (!justAuthenticated && cmGetStoredUser().hasPin) {
+        cmNeedsImmediateLock = true;
+    }
+}
+
 if (cmNeedsImmediateLock) {
     cmShowImmediateBlock();
 }

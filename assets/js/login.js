@@ -508,6 +508,13 @@ function completeLogin(data,knownPassword){
 
     function goToDestination(){
 
+        // Tells config/session.js on the destination page that this
+        // load is a real login/unlock, not an app relaunch, so it
+        // doesn't immediately bounce back to its own PIN lock screen.
+        // sessionStorage (not localStorage) because it only needs to
+        // survive this one same-tab navigation.
+        try { sessionStorage.setItem("cm_just_authenticated","1"); } catch {}
+
         const role=(userData.role || "user").toLowerCase();
 
         const next=getSafeNextParam();
