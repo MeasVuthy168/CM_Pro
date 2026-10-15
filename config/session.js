@@ -659,16 +659,39 @@ function cmCheckAndMaybeLock() {
 
 }
 
+// Browsers also fire visibilitychange("hidden") right before a normal
+// in-app page navigation unloads the current page — not just on an
+// actual backgrounding (switching apps, hitting Home) — because the
+// outgoing document briefly becomes "hidden" as the next one takes
+// over. Reacting to "hidden" immediately made "Immediately" lock on
+// every single page tap, not just on leaving the app. Deferred commit
+// fixes it: only set the lock flag if the page is STILL hidden a
+// moment later. A real navigation has already torn the page down
+// (and this pending timer with it) by then; an actual backgrounding
+// leaves the page alive and still hidden, so the timer still fires.
+let cmHiddenLockTimer = null;
+
 document.addEventListener("visibilitychange", () => {
 
     if (document.hidden) {
         // "Immediately" (0 minutes) is specifically about backgrounding,
-        // not just elapsed time since the last tap — lock the instant
-        // the tab/app is hidden rather than waiting for the next check.
+        // not just elapsed time since the last tap — lock as soon as
+        // the tab/app is confirmed hidden rather than waiting for the
+        // next periodic check.
         if (cmLockTimeoutMinutes() === 0) {
-            try { localStorage.setItem(LOCK_ACTIVE_KEY, "1"); } catch {}
+            cmHiddenLockTimer = setTimeout(() => {
+                cmHiddenLockTimer = null;
+                if (document.hidden) {
+                    try { localStorage.setItem(LOCK_ACTIVE_KEY, "1"); } catch {}
+                }
+            }, 300);
         }
         return;
+    }
+
+    if (cmHiddenLockTimer) {
+        clearTimeout(cmHiddenLockTimer);
+        cmHiddenLockTimer = null;
     }
 
     // Became visible again — re-check immediately rather than waiting
