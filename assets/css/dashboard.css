@@ -1,5 +1,6 @@
 :root{--dash-page-bg:#F5F7FA}
-.dashboard-container{color-scheme:light;--dash-page-bg:#F5F7FA;background:#F5F7FA;color:#0E1B3C}
+.dashboard-container{--dash-page-bg:#F5F7FA;background:var(--dash-page-bg);color:#0E1B3C}
+[data-theme="dark"] .dashboard-container{--dash-page-bg:#0B1220;background:var(--dash-page-bg);color:#E5EDF9}
 
 /* =========================
    Dashboard Layout
@@ -39,7 +40,7 @@
 
     box-sizing:border-box;
 
-    background:#F5F7FA;
+    background:var(--dash-page-bg,#F5F7FA);
 
     overflow:hidden;
 
