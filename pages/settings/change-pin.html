@@ -73,9 +73,13 @@
 }
 
 .pin-intro-icon{
-    font-size:40px;
-    text-align:center;
+    display:flex;
+    justify-content:center;
+    color:var(--pin-navy-dark);
     margin-bottom:8px;
+}
+[data-theme="dark"] .pin-intro-icon{
+    color:#D4AF37;
 }
 
 .pin-intro-title{
@@ -200,7 +204,14 @@
 
 <div class="pin-card">
 
-<div class="pin-intro-icon">🔑</div>
+<div class="pin-intro-icon">
+<svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="7.5" cy="14.5" r="4"/>
+<path d="M10.5 11.5 20 2"/>
+<path d="M16.5 5.5 19 8"/>
+<path d="M13.5 8.5 16 11"/>
+</svg>
+</div>
 <div class="pin-intro-title" data-i18n="settings.account.changePin">ប្តូរកូដ PIN</div>
 
 <div class="pin-field">

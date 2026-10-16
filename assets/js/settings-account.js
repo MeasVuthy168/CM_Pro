@@ -239,146 +239,9 @@ async function initFingerprintQuickToggle() {
 
 }
 
-// =========================
-// CHANGE PASSWORD SHEET
-// =========================
-
-const PASSWORD_RULES = [
-    { id: "lowercase", test: pw => /[a-z]/.test(pw) },
-    { id: "length", test: pw => pw.length >= 12 },
-    { id: "uppercase", test: pw => /[A-Z]/.test(pw) },
-    { id: "number", test: pw => /[0-9]/.test(pw) },
-    { id: "special", test: pw => /[^A-Za-z0-9]/.test(pw) }
-];
-
-function initChangePasswordSheet() {
-
-    const row = document.getElementById("changePasswordRow");
-    const sheet = document.getElementById("changePasswordSheet");
-    const backdrop = document.getElementById("cpSheetBackdrop");
-
-    const oldInput = document.getElementById("cpOldPassword");
-    const newInput = document.getElementById("cpNewPassword");
-    const confirmInput = document.getElementById("cpConfirmPassword");
-
-    const errorEl = document.getElementById("cpError");
-    const submitBtn = document.getElementById("cpSubmitBtn");
-
-    if (!row || !sheet || !oldInput || !newInput || !confirmInput || !submitBtn) return;
-
-    function openSheet() {
-        oldInput.value = "";
-        newInput.value = "";
-        confirmInput.value = "";
-        errorEl.textContent = "";
-        [oldInput, newInput, confirmInput].forEach(i => i.type = "password");
-        validate();
-        sheet.classList.add("show");
-    }
-
-    function closeSheet() {
-        sheet.classList.remove("show");
-    }
-
-    row.addEventListener("click", openSheet);
-    backdrop.addEventListener("click", closeSheet);
-
-    sheet.querySelectorAll(".cp-eye").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const target = document.getElementById(btn.dataset.target);
-            if (!target) return;
-            target.type = target.type === "password" ? "text" : "password";
-        });
-    });
-
-    function validate() {
-
-        const newPw = newInput.value;
-        const confirmPw = confirmInput.value;
-
-        let allOk = true;
-
-        PASSWORD_RULES.forEach(rule => {
-            const ruleEl = sheet.querySelector(`.cp-rule[data-rule="${rule.id}"]`);
-            if (!ruleEl) return;
-            const ok = rule.test(newPw);
-            ruleEl.classList.toggle("ok", ok);
-            ruleEl.querySelector(".cp-rule-icon").textContent = ok ? "✓" : "✕";
-            if (!ok) allOk = false;
-        });
-
-        errorEl.textContent = "";
-
-        const matches = confirmPw.length > 0 && newPw === confirmPw;
-        if (confirmPw.length > 0 && !matches) {
-            errorEl.textContent = t("settings.account.passwordMismatch");
-        }
-
-        const canSubmit = allOk && matches && oldInput.value.length > 0;
-        submitBtn.disabled = !canSubmit;
-
-        return canSubmit;
-
-    }
-
-    [oldInput, newInput, confirmInput].forEach(i => i.addEventListener("input", validate));
-
-    submitBtn.addEventListener("click", async () => {
-
-        if (!validate()) return;
-
-        submitBtn.disabled = true;
-        const originalLabel = submitBtn.textContent;
-
-        // Drop data-i18n while this button shows a transient "Changing..."
-        // label — otherwise a later CMI18n.apply() pass triggered by any
-        // unrelated DOM change (e.g. a MutationObserver reacting to the
-        // toast being inserted) can stomp it back to "Change Password"
-        // mid-request, same class of bug as topbar.js's action button.
-        submitBtn.removeAttribute("data-i18n");
-        submitBtn.textContent = t("settings.account.changing");
-
-        try {
-
-            const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-
-            const res = await fetch(`${API.BASE_URL}/api/auth/change-password`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    oldPassword: oldInput.value,
-                    newPassword: newInput.value
-                })
-            });
-
-            const data = await res.json();
-
-            if (!data.ok) {
-                throw new Error(data.message || t("settings.account.changePasswordFailed"));
-            }
-
-            notify(t("settings.account.changePasswordSuccess"), "success");
-            closeSheet();
-
-        } catch (err) {
-
-            console.error("[settings-account] change password failed:", err);
-            errorEl.textContent = err.message || t("settings.account.changePasswordFailed");
-
-        } finally {
-
-            submitBtn.setAttribute("data-i18n", "settings.account.changePassword");
-            submitBtn.textContent = originalLabel;
-            validate();
-
-        }
-
-    });
-
-}
+// Change Password now lives on its own page (change-password.html,
+// mirroring change-pin.html) instead of a bottom sheet here — see
+// assets/js/settings-changepassword.js.
 
 // =========================
 // AUTO-LOCK TIMEOUT
@@ -426,7 +289,6 @@ function initAutoLockPicker() {
 
 window.addEventListener("load", () => {
     initFingerprintQuickToggle();
-    initChangePasswordSheet();
     initAutoLockPicker();
 });
 
