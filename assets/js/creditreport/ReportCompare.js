@@ -9,7 +9,9 @@
 //   GET  /api/creditreport/snapshot/dates -> { ok, dates:[...], today }
 //   POST /api/creditreport/snapshot/run   (admin only) -> { ok, date, counts }
 //   GET  /api/creditreport/compare?dateA=&dateB=
-//     -> { ok, dateA, dateB, diff:{ os, disburse, wo, overdue, t24 } }
+//     -> { ok, dateA, dateB, diff:{...summary only}, detailMeta:{...counts/by-dimension} }
+//   GET  /api/creditreport/compare/details?dateA=&dateB=&tab=&kind=&page=&pageSize=
+//     -> { ok, rows:[...], total, page, pages } (on-demand, max 200 rows)
 //     os/disburse: { total:{countA,countB,countDiff,...valueA/B/Diff},
 //                    branch:[{key,countA,countB,countDiff,...valueA/B/Diff}],
 //                    officerId:[...], product:[...], location:[...] }
@@ -39,6 +41,9 @@ const rcIsAdmin = String(rcUser.role || "").toLowerCase() === "admin";
 
 let rcDates = [];
 let rcDiff = null;
+let rcDetailMeta = null;
+let rcDetailPage = 1;
+let rcDetailRequestId = 0;
 // The two dates the current rcDiff actually compares — echoed back by
 // the compare endpoint rather than read from the selects, so the label
 // always matches what's on screen even if the selects change afterward.
@@ -342,18 +347,17 @@ function rcUpdateDimChipsAvailability() {
 // lists are built from — used both to group-count by dimension and to
 // populate the specific-value dropdown. Outstanding/Disburse aren't
 // here — they're pre-aggregated server-side (rcDiff[tab][dim] directly).
-function rcClientRowArrays(tab) {
-    const d = rcDiff[tab];
-    if (tab === "wo") return { entered: d.entered, exited: d.exited };
-    if (tab === "t24" || tab === "overdue") return { entered: d.entered, exited: d.exited, changed: d.changed };
-    return {};
+function rcDetailCount(tab, kind, dim = rcDim, value = rcDimValue) {
+    const meta = rcDetailMeta?.[tab]?.[kind];
+    if (!meta) return 0;
+    if (dim && value) return Number(meta.byDim?.[dim]?.[value] || 0);
+    return Number(meta.total || 0);
 }
 
 function rcDimValuesForClientTab(tab, dim) {
-    const arrays = rcClientRowArrays(tab);
     const set = new Set();
-    for (const rows of Object.values(arrays)) {
-        for (const r of rows) { const v = r[dim]; if (v) set.add(v); }
+    for (const kind of (tab === "wo" ? ["entered", "exited"] : ["entered", "exited", "changed"])) {
+        Object.keys(rcDetailMeta?.[tab]?.[kind]?.byDim?.[dim] || {}).forEach(v => set.add(v));
     }
     return [...set].sort((a, b) => a.localeCompare(b));
 }
@@ -419,35 +423,23 @@ function rcGroupCounts(rows, dim) {
 }
 
 function rcRenderClientDimBreakdown() {
-    const arrays = rcClientRowArrays(rcActiveTab);
-    const enteredBy = rcGroupCounts(arrays.entered || [], rcDim);
-    const exitedBy = rcGroupCounts(arrays.exited || [], rcDim);
-    const hasChanged = !!arrays.changed;
-    const upgradeBy = hasChanged ? rcGroupCounts(arrays.changed.filter(r => r.direction === "upgrade"), rcDim) : null;
-    const downgradeBy = hasChanged ? rcGroupCounts(arrays.changed.filter(r => r.direction === "downgrade"), rcDim) : null;
-
-    const keys = new Set([...enteredBy.keys(), ...exitedBy.keys(), ...(hasChanged ? arrays.changed.map(r => r[rcDim]).filter(Boolean) : [])]);
+    const kinds = rcActiveTab === "wo" ? ["entered", "exited"] : ["entered", "exited", "changed"];
+    const counts = Object.fromEntries(kinds.map(kind => [kind, rcDetailMeta?.[rcActiveTab]?.[kind]?.byDim?.[rcDim] || {}]));
+    const keys = new Set(kinds.flatMap(kind => Object.keys(counts[kind])));
     if (!keys.size) return `<div class="op-empty">${t("creditreport.compare.noRows")}</div>`;
-
-    const score = k => (enteredBy.get(k) || 0) + (exitedBy.get(k) || 0) + (hasChanged ? (upgradeBy.get(k) || 0) + (downgradeBy.get(k) || 0) : 0);
-    // Default order (no column sort picked yet): busiest dimension value first.
-    const rows = [...keys].sort((a, b) => score(b) - score(a)).map(k => ({
-        key: k,
-        entered: enteredBy.get(k) || 0,
-        exited: exitedBy.get(k) || 0,
-        upgrade: hasChanged ? (upgradeBy.get(k) || 0) : 0,
-        downgrade: hasChanged ? (downgradeBy.get(k) || 0) : 0
-    }));
+    const rows = [...keys].map(key => ({
+        key,
+        entered: counts.entered?.[key] || 0,
+        exited: counts.exited?.[key] || 0,
+        changed: counts.changed?.[key] || 0
+    })).sort((a, b) => (b.entered + b.exited + b.changed) - (a.entered + a.exited + a.changed));
 
     const stateKey = `${rcActiveTab}:dimbreak`;
     const cols = [
         { key: "key", label: rcDimensions()[rcDim], type: "text" },
         { key: "entered", label: `✅ ${t("creditreport.compare.colEntered")}`, type: "number" },
         { key: "exited", label: `↩️ ${t("creditreport.compare.colExited")}`, type: "number" },
-        ...(hasChanged ? [
-            { key: "upgrade", label: `⬆ ${t("creditreport.compare.colUpgrade")}`, type: "number" },
-            { key: "downgrade", label: `⬇ ${t("creditreport.compare.colDowngrade")}`, type: "number" }
-        ] : [])
+        ...(rcActiveTab !== "wo" ? [{ key: "changed", label: "🔀 Changed", type: "number" }] : [])
     ];
     const sorted = rcApplySort(rows, stateKey);
 
@@ -461,7 +453,7 @@ function rcRenderClientDimBreakdown() {
                 <td>${rcEscapeHtml(r.key)}</td>
                 <td>${r.entered}</td>
                 <td>${r.exited}</td>
-                ${hasChanged ? `<td>${r.upgrade}</td><td>${r.downgrade}</td>` : ""}
+                ${rcActiveTab !== "wo" ? `<td>${r.changed}</td>` : ""}
               </tr>`).join("")}
           </tbody>
         </table>
@@ -544,33 +536,63 @@ function rcRenderTabBody() {
         if (!rcDimValue) html += rcRenderClientDimBreakdown();
         html += `
           <div class="rc-sub-tabs">
-            <button type="button" class="rc-sub-tab${rcSubTab.wo === "entered" ? " active" : ""}" data-sub="entered">✅ ${t("creditreport.compare.subEntered", { count: rcApplyDimFilter(diff.wo.entered).length })}</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.wo === "exited" ? " active" : ""}" data-sub="exited">↩️ ${t("creditreport.compare.subExited", { count: rcApplyDimFilter(diff.wo.exited).length })}</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.wo === "entered" ? " active" : ""}" data-sub="entered">✅ ${t("creditreport.compare.subEntered", { count: rcDetailCount("wo", "entered") })}</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.wo === "exited" ? " active" : ""}" data-sub="exited">↩️ ${t("creditreport.compare.subExited", { count: rcDetailCount("wo", "exited") })}</button>
           </div>`;
-        html += rcClientTableHtml(rcApplyDimFilter(diff.wo[rcSubTab.wo]), rcWoCols(), `wo:${rcSubTab.wo}`);
+        html += `<div id="rcDetailTable"><div class="op-empty">Loading client details…</div></div>`;
     } else if (rcActiveTab === "overdue") {
         if (!rcDimValue) html += rcRenderClientDimBreakdown();
         html += `
           <div class="rc-sub-tabs">
-            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "changed" ? " active" : ""}" data-sub="changed">🔀 ${t("creditreport.compare.subChanged", { count: rcApplyDimFilter(diff.overdue.changed).length })}</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "entered" ? " active" : ""}" data-sub="entered">✅ ${t("creditreport.compare.subNewOverdue", { count: rcApplyDimFilter(diff.overdue.entered).length })}</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "exited" ? " active" : ""}" data-sub="exited">↩️ ${t("creditreport.compare.subResolved", { count: rcApplyDimFilter(diff.overdue.exited).length })}</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "changed" ? " active" : ""}" data-sub="changed">🔀 ${t("creditreport.compare.subChanged", { count: rcDetailCount("overdue", "changed") })}</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "entered" ? " active" : ""}" data-sub="entered">✅ ${t("creditreport.compare.subNewOverdue", { count: rcDetailCount("overdue", "entered") })}</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.overdue === "exited" ? " active" : ""}" data-sub="exited">↩️ ${t("creditreport.compare.subResolved", { count: rcDetailCount("overdue", "exited") })}</button>
           </div>`;
-        if (rcSubTab.overdue === "changed") html += rcClientTableHtml(rcApplyDimFilter(diff.overdue.changed), rcChangedCols(), "overdue:changed");
-        else html += rcClientTableHtml(rcApplyDimFilter(diff.overdue[rcSubTab.overdue]), rcEnterExitCols(), `overdue:${rcSubTab.overdue}`);
+        html += `<div id="rcDetailTable"><div class="op-empty">Loading client details…</div></div>`;
     } else if (rcActiveTab === "t24") {
         if (!rcDimValue) html += rcRenderClientDimBreakdown();
         html += `
           <div class="rc-sub-tabs">
-            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "changed" ? " active" : ""}" data-sub="changed">🔀 ${t("creditreport.compare.subChanged", { count: rcApplyDimFilter(diff.t24.changed).length })}</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "entered" ? " active" : ""}" data-sub="entered">✅ ${t("creditreport.compare.subEntered", { count: rcApplyDimFilter(diff.t24.entered).length })}</button>
-            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "exited" ? " active" : ""}" data-sub="exited">↩️ ${t("creditreport.compare.subExited", { count: rcApplyDimFilter(diff.t24.exited).length })}</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "changed" ? " active" : ""}" data-sub="changed">🔀 ${t("creditreport.compare.subChanged", { count: rcDetailCount("t24", "changed") })}</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "entered" ? " active" : ""}" data-sub="entered">✅ ${t("creditreport.compare.subEntered", { count: rcDetailCount("t24", "entered") })}</button>
+            <button type="button" class="rc-sub-tab${rcSubTab.t24 === "exited" ? " active" : ""}" data-sub="exited">↩️ ${t("creditreport.compare.subExited", { count: rcDetailCount("t24", "exited") })}</button>
           </div>`;
-        if (rcSubTab.t24 === "changed") html += rcClientTableHtml(rcApplyDimFilter(diff.t24.changed), rcChangedCols(), "t24:changed");
-        else html += rcClientTableHtml(rcApplyDimFilter(diff.t24[rcSubTab.t24]), rcT24EnterExitCols(), `t24:${rcSubTab.t24}`);
+        html += `<div id="rcDetailTable"><div class="op-empty">Loading client details…</div></div>`;
     }
 
     document.getElementById("rcTabBody").innerHTML = html;
+    if (["wo", "overdue", "t24"].includes(rcActiveTab)) rcLoadDetailRows();
+}
+
+async function rcLoadDetailRows() {
+    const host = document.getElementById("rcDetailTable");
+    if (!host || !rcDiffDateA || !rcDiffDateB) return;
+    const kind = rcSubTab[rcActiveTab];
+    const requestId = ++rcDetailRequestId;
+    const params = new URLSearchParams({
+        dateA: rcDiffDateA, dateB: rcDiffDateB, tab: rcActiveTab, kind,
+        dim: rcDim || "", dimValue: rcDimValue || "", page: String(rcDetailPage), pageSize: "50"
+    });
+    host.innerHTML = `<div class="op-empty">Loading client details…</div>`;
+    try {
+        const data = await rcApiGet(`/api/creditreport/compare/details?${params.toString()}`);
+        if (requestId !== rcDetailRequestId || !document.getElementById("rcDetailTable")) return;
+        if (!data.ok) { host.innerHTML = `<div class="op-empty">${rcEscapeHtml(data.message || "Unable to load details.")}</div>`; return; }
+        const cols = rcActiveTab === "wo" ? rcWoCols()
+            : kind === "changed" ? rcChangedCols()
+            : rcActiveTab === "t24" ? rcT24EnterExitCols() : rcEnterExitCols();
+        const table = rcClientTableHtml(data.rows || [], cols, `${rcActiveTab}:${kind}`);
+        const pager = data.total > data.pageSize ? `
+          <div class="rc-detail-pager">
+            <button type="button" data-detail-page="${data.page - 1}" ${data.page <= 1 ? "disabled" : ""}>‹</button>
+            <span>Page ${data.page} / ${data.pages} · ${rcFmtNum(data.total)} rows</span>
+            <button type="button" data-detail-page="${data.page + 1}" ${data.page >= data.pages ? "disabled" : ""}>›</button>
+          </div>` : `<div class="rc-detail-total">${rcFmtNum(data.total)} rows</div>`;
+        host.innerHTML = table + pager;
+    } catch (e) {
+        console.error(e);
+        if (requestId === rcDetailRequestId && host.isConnected) host.innerHTML = `<div class="op-empty">Failed to load client details.</div>`;
+    }
 }
 
 function rcRenderAll() {
@@ -603,6 +625,8 @@ async function rcRunCompare() {
         if (!data.ok) { rcShowEmpty(data.message || t("creditreport.compare.failedCompare")); return; }
 
         rcDiff = data.diff;
+        rcDetailMeta = data.detailMeta || {};
+        rcDetailPage = 1;
         rcDiffDateA = data.dateA || dateA;
         rcDiffDateB = data.dateB || dateB;
         document.getElementById("rcTransitionsCard").style.display = "block";
@@ -889,6 +913,7 @@ document.addEventListener("click", (e) => {
         document.querySelectorAll("#rcTabs .rc-main-tab").forEach(t => t.classList.remove("active"));
         mainTab.classList.add("active");
         rcActiveTab = mainTab.dataset.tab;
+        rcDetailPage = 1;
         rcUpdateDimChipsAvailability();
         rcPopulateDimValueSelect();
         rcRenderAll();
@@ -900,13 +925,21 @@ document.addEventListener("click", (e) => {
         dimChip.classList.add("active");
         rcDim = dimChip.dataset.dim;
         rcDimValue = "";
+        rcDetailPage = 1;
         rcPopulateDimValueSelect();
         rcRenderAll();
+        return;
+    }
+    const pageBtn = e.target.closest("#rcDetailTable [data-detail-page]");
+    if (pageBtn) {
+        rcDetailPage = Number(pageBtn.dataset.detailPage) || 1;
+        rcLoadDetailRows();
         return;
     }
     const subTab = e.target.closest(".rc-sub-tab");
     if (subTab) {
         rcSubTab[rcActiveTab] = subTab.dataset.sub;
+        rcDetailPage = 1;
         rcRenderTabBody();
         return;
     }
@@ -920,6 +953,7 @@ document.addEventListener("click", (e) => {
 
 document.getElementById("rcDimValueSelect").addEventListener("change", (e) => {
     rcDimValue = e.target.value;
+    rcDetailPage = 1;
     rcRenderAll();
 });
 
