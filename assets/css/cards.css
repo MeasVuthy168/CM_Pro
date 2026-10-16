@@ -2,7 +2,6 @@
    The home menu always stays light; other pages retain their own themes. */
 
 .dashboard-grid{
-    color-scheme:light;
     --card-text:#0E1B3C;
     display:grid;
     grid-template-columns:repeat(3,minmax(0,1fr));
@@ -29,7 +28,7 @@
     align-items:center;
     text-align:center;
     text-decoration:none;
-    color:#0E1B3C;
+    color:var(--dashboard-card-text,#0E1B3C);
     transition:transform .2s ease,box-shadow .2s ease;
     box-shadow:0 5px 18px rgba(14,27,60,.08);
     user-select:none;
@@ -68,7 +67,7 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    color:#0E1B3C;
+    color:var(--dashboard-card-text,#0E1B3C);
     font-size:11.5px;
     font-weight:500;
     line-height:1.2;
@@ -84,4 +83,31 @@
 }
 @media (min-width:1200px){
     .dashboard-grid{max-width:1000px;margin:auto}
+}
+
+
+/* Dark theme: preserve the original PNG artwork, but let card
+   surfaces, borders and labels follow the user's selected theme. */
+[data-theme="dark"] .dashboard-grid{
+    color-scheme:dark;
+    --dashboard-card-text:#E5EDF9;
+}
+[data-theme="dark"] .dashboard-card{
+    background:#172337;
+    border-color:#30415A;
+    color:#E5EDF9;
+    box-shadow:0 5px 18px rgba(0,0,0,.22);
+}
+[data-theme="dark"] .dashboard-card:nth-child(1){background:#172943;border-color:#2C4A70}
+[data-theme="dark"] .dashboard-card:nth-child(2){background:#302A1C;border-color:#594A2A}
+[data-theme="dark"] .dashboard-card:nth-child(3){background:#193126;border-color:#2D5841}
+[data-theme="dark"] .dashboard-card:nth-child(4){background:#29223B;border-color:#493B68}
+[data-theme="dark"] .dashboard-card:nth-child(5){background:#19313A;border-color:#2D5662}
+[data-theme="dark"] .dashboard-card:nth-child(6){background:#35291F;border-color:#62462D}
+[data-theme="dark"] .dashboard-card:nth-child(7){background:#1D332B;border-color:#355A49}
+[data-theme="dark"] .dashboard-card:nth-child(8){background:#38232A;border-color:#633943}
+[data-theme="dark"] .dashboard-card:nth-child(9){background:#202B46;border-color:#3A4D78}
+[data-theme="dark"] .dashboard-card-title{color:#E5EDF9}
+[data-theme="dark"] .dashboard-card:hover{
+    box-shadow:0 8px 22px rgba(0,0,0,.34);
 }
