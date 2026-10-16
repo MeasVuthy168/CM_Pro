@@ -1,264 +1,87 @@
-:root{
-    --card-bg:#FFFFFF;
-    --card-border:#E2E6ED;
-    --card-text:#1C2333;
-    --card-shadow:0 4px 12px rgba(14, 27, 60,.1);
-}
-
-[data-theme="dark"]{
-    --card-bg:#131C2E;
-    --card-border:#223055;
-    --card-text:#EAF0FF;
-    --card-shadow:0 2px 14px rgba(0,0,0,.4);
-}
-
-/* GOLD THEME — its own warm card background, not just a border swap. */
-[data-theme="gold"]{
-    --card-bg:#FFFDF6;
-    --card-border:#C9971F;
-}
-
-/* DARK GRAY THEME — flat neutral dark, a subtle neutral border, not the loud accent-colored outline other themes use. */
-[data-theme="darkgray"]{
-    --card-bg:#363A41;
-    --card-border:#474C55;
-    --card-text:#F0F1F3;
-    --card-shadow:0 4px 12px rgba(0,0,0,.35);
-}
-
-/* =========================
-   Dashboard Grid
-========================= */
+/* Dashboard menu cards — isolated from the app-wide theme.
+   The home menu always stays light; other pages retain their own themes. */
 
 .dashboard-grid{
-
+    color-scheme:light;
+    --card-text:#0E1B3C;
     display:grid;
-
-    grid-template-columns:repeat(3,1fr);
-
+    grid-template-columns:repeat(3,minmax(0,1fr));
     gap:14px;
-
     padding:10px 4px;
-
-    /* .dashboard-container (dashboard.css) is a flex column with this
-       grid and .assistant-box (assistant.css, flex-shrink:0, so it's
-       never the one that gives) as its two children. flex-shrink:1 +
-       min-height:0 let this grid actually shrink below its natural
-       content height when a screen is too short to fit both at full
-       size — overflow-y:auto then scrolls the icon grid internally in
-       that case, instead of pushing .assistant-box off-screen or
-       forcing the whole page to scroll (.dashboard-container itself
-       has overflow:hidden). */
     flex-shrink:1;
-
     min-height:0;
-
     overflow-y:auto;
-
 }
-
-/* =========================
-   Dashboard Cards
-   NOTE: matches the same :root=light / [data-theme="dark"]=override
-   convention used in every other retrofitted CSS file in this app.
-========================= */
 
 .dashboard-card{
-
-    /* A 1fr grid track still sizes to its item's min-content by
-       default (minmax(auto,1fr)) — without this, the longer English
-       titles (e.g. "Land Classification") force their column wider
-       than an even 1/3 split, overflowing the grid past the screen
-       edge. min-width:0 lets the track actually shrink to 1fr and the
-       title's own word-break:break-word wrap instead. */
     min-width:0;
-
-    background:var(--card-bg);
-
-    border:1px solid var(--card-border);
-
+    background:#EEF5FF;
+    border:1px solid #DCE6F3;
     border-radius:24px;
-
-    /* Square, not a fixed height — every column in the 3-col grid is
-       the same width (repeat(3,1fr)), so deriving height FROM that
-       width makes every card the same square size in every row, not
-       just within one row (CSS Grid only auto-matches heights WITHIN
-       a row by default). min-height is a safety floor for very narrow
-       screens, where a true square would otherwise be too short for
-       the icon + a 2-line title (see .dashboard-card-title) to fit
-       without clipping. */
     aspect-ratio:1/1;
-
     height:auto;
-
     min-height:98px;
-
     padding:10px 6px;
-
+    box-sizing:border-box;
     display:flex;
-
     flex-direction:column;
-
     justify-content:center;
-
     align-items:center;
-
     text-align:center;
-
     text-decoration:none;
-
-    color:var(--card-text);
-
-    transition:.2s;
-
-    box-shadow:var(--card-shadow);
-
+    color:#0E1B3C;
+    transition:transform .2s ease,box-shadow .2s ease;
+    box-shadow:0 5px 18px rgba(14,27,60,.08);
     user-select:none;
-
     -webkit-tap-highlight-color:transparent;
-
 }
+.dashboard-card:nth-child(1){background:#EEF5FF;border-color:#D8E5F7}
+.dashboard-card:nth-child(2){background:#FFF9E9;border-color:#F1E7CA}
+.dashboard-card:nth-child(3){background:#ECFBF0;border-color:#D5EBDD}
+.dashboard-card:nth-child(4){background:#F5F0FF;border-color:#E4D9F7}
+.dashboard-card:nth-child(5){background:#EAF9FC;border-color:#D2EAF0}
+.dashboard-card:nth-child(6){background:#FFF5E9;border-color:#F2E0CC}
+.dashboard-card:nth-child(7){background:#EDFAF1;border-color:#D6EBDD}
+.dashboard-card:nth-child(8){background:#FFF0F1;border-color:#F2DADD}
+.dashboard-card:nth-child(9){background:#EEF2FF;border-color:#D8E0F5}
 
 .dashboard-card:hover{
-
     transform:translateY(-3px);
-
+    box-shadow:0 8px 22px rgba(14,27,60,.12);
 }
+.dashboard-card:active{transform:scale(.97)}
 
-.dashboard-card:active{
-
-    transform:scale(.96);
-
-}
-
-/* =========================
-   Card Icon
-   Inline SVG (not <img>) so the navy shapes below can be re-themed
-   for dark mode — an externally-loaded <img src="*.svg"> can't be
-   recolored by this document's CSS at all.
-========================= */
-
-.dashboard-card svg{
-
-    width:42px;
-
-    height:42px;
-
-    margin-bottom:6px;
-
+.dashboard-card-icon{
+    display:block;
+    width:72%;
+    height:68%;
+    max-width:180px;
+    max-height:180px;
+    object-fit:contain;
+    margin:0 0 8px;
     flex-shrink:0;
-
     pointer-events:none;
-
 }
-
-/* Icon ink — the navy shapes that sit directly against the card
-   background (not on top of a gold shape, which never needs this:
-   gold already reads fine against both a white and a dark card). In
-   dark mode the card background is itself a dark navy, so the same
-   navy fill/stroke used in light mode would nearly disappear into it
-   — swap to a light tint instead, same as --card-text / --sc-text's
-   own light/dark convention. ic-contrast is the inverse, for a small
-   white accent drawn ON TOP of an .ic-ink shape (e.g. a highlight or
-   badge mark) — it has to flip the other way so it stays visible
-   once its background flips from dark to light. */
-.dashboard-card svg .ic-ink{ fill:#0E1B3C; }
-.dashboard-card svg .ic-ink-s{ stroke:#0E1B3C; }
-.dashboard-card svg .ic-contrast{ fill:#fff; }
-.dashboard-card svg .ic-contrast-s{ stroke:#fff; }
-
-[data-theme="dark"] .dashboard-card svg .ic-ink{ fill:#EAF0FF; }
-[data-theme="dark"] .dashboard-card svg .ic-ink-s{ stroke:#EAF0FF; }
-[data-theme="dark"] .dashboard-card svg .ic-contrast{ fill:#0E1B3C; }
-[data-theme="dark"] .dashboard-card svg .ic-contrast-s{ stroke:#0E1B3C; }
-
-/* =========================
-   Card Title
-========================= */
 
 .dashboard-card-title{
-
-    font-size:11.5px;
-
-    font-weight:400;
-
-    line-height:1.2;
-
-    /* Reserves 2 lines' worth of height for every title, even a 1-line
-       one — keeps the icon sitting at the same spot on every card
-       (the flex column centers its children as a group, so a shorter
-       title would otherwise let the icon drift lower on that card). */
     min-height:27px;
-
     display:flex;
-
     align-items:center;
-
-    color:var(--card-text);
-
+    justify-content:center;
+    color:#0E1B3C;
+    font-size:11.5px;
+    font-weight:500;
+    line-height:1.2;
     text-align:center;
-
-    /* overflow-wrap (not word-break) — only breaks a word mid-way when
-       it truly can't fit even alone on its own line, so a 2-word title
-       wraps at the space between words first wherever that's enough. */
     overflow-wrap:break-word;
-
 }
-
-/* =========================
-   Tablet
-========================= */
 
 @media (min-width:768px){
-
-.dashboard-grid{
-
-    gap:22px;
-
-    padding:22px;
-
+    .dashboard-grid{gap:22px;padding:22px}
+    .dashboard-card{border-radius:20px}
+    .dashboard-card-icon{width:72%;height:68%;max-width:180px;max-height:180px}
+    .dashboard-card-title{font-size:18px;min-height:44px}
 }
-
-.dashboard-card{
-
-    border-radius:20px;
-
-    /* aspect-ratio (from the base rule) already keeps it square at
-       whatever size the wider tablet column computes to — no fixed
-       height override needed here. */
-
-}
-
-.dashboard-card svg{
-
-    width:60px;
-
-    height:60px;
-
-}
-
-.dashboard-card-title{
-
-    font-size:18px;
-
-    min-height:44px;
-
-}
-
-}
-
-/* =========================
-   Desktop
-========================= */
-
 @media (min-width:1200px){
-
-.dashboard-grid{
-
-    max-width:1000px;
-
-    margin:auto;
-
-}
-
+    .dashboard-grid{max-width:1000px;margin:auto}
 }
