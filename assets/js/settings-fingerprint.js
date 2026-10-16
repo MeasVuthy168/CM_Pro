@@ -104,11 +104,22 @@ const fpResetStatus = document.getElementById("fpResetStatus");
 const fpResetCancelBtn = document.getElementById("fpResetCancelBtn");
 const fpResetConfirmBtn = document.getElementById("fpResetConfirmBtn");
 
+// Plain outline glyphs rather than emoji — an iPhone-shaped silhouette
+// for iOS/Mac (not Apple's own logo, which isn't ours to reproduce)
+// and a simplified Android "bugdroid" for Android (Google releases
+// that mascot under CC-BY specifically for reuse like this). Both use
+// currentColor so they inherit .fp-device-icon's color automatically.
+const FP_ICON_IOS = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.3"/><line x1="10.2" y1="19.3" x2="13.8" y2="19.3"/><circle cx="12" cy="5.3" r=".15" fill="currentColor"/></svg>`;
+
+const FP_ICON_ANDROID = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6.3 10v5.2c0 .5.4 1 1 1h.4v2.1a1.15 1.15 0 0 0 2.3 0v-2.1h4v2.1a1.15 1.15 0 0 0 2.3 0v-2.1h.4c.6 0 1-.5 1-1V10H6.3z"/><path d="M6.1 9.3a5.9 5.9 0 0 1 11.8 0H6.1z"/><circle cx="9.3" cy="6.6" r=".55"/><circle cx="14.7" cy="6.6" r=".55"/><path d="M7.5 3.9 6.3 2.6M16.5 3.9l1.2-1.3" stroke="currentColor" stroke-width=".9" stroke-linecap="round" fill="none"/><rect x="4.6" y="10" width="1.3" height="4.8" rx=".65"/><rect x="18.1" y="10" width="1.3" height="4.8" rx=".65"/></svg>`;
+
+const FP_ICON_GENERIC = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="12" rx="1.5"/><line x1="8" y1="20.5" x2="16" y2="20.5"/><line x1="12" y1="17" x2="12" y2="20.5"/></svg>`;
+
 function fpDeviceIconFor(label) {
     const l = (label || "").toLowerCase();
-    if (l.includes("iphone") || l.includes("ipad") || l.includes("mac")) return "🍎";
-    if (l.includes("android") || l.includes("pixel") || l.includes("samsung")) return "🤖";
-    return "💻";
+    if (l.includes("iphone") || l.includes("ipad") || l.includes("mac")) return FP_ICON_IOS;
+    if (l.includes("android") || l.includes("pixel") || l.includes("samsung")) return FP_ICON_ANDROID;
+    return FP_ICON_GENERIC;
 }
 
 function fpFormatDate(iso) {

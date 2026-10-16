@@ -516,7 +516,18 @@ function cmBuildLockOverlay() {
                 <button type="button" class="cm-lock-key" data-digit="0">0</button>
                 <button type="button" class="cm-lock-key cm-lock-key-back" id="cmLockBackspace">⌫</button>
             </div>
-            <button type="button" class="cm-lock-fp-btn" id="cmLockFpBtn" style="display:none;" aria-label="Fingerprint">👆</button>
+            <button type="button" class="cm-lock-fp-btn" id="cmLockFpBtn" style="display:none;" aria-label="Fingerprint">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 7V5a1 1 0 0 1 1-1h2"/>
+                    <path d="M17 4h2a1 1 0 0 1 1 1v2"/>
+                    <path d="M20 17v2a1 1 0 0 1-1 1h-2"/>
+                    <path d="M7 20H5a1 1 0 0 1-1-1v-2"/>
+                    <path d="M12 11c.8 0 1.5.7 1.5 1.5v2c0 1-.3 2-.8 2.8"/>
+                    <path d="M9.5 16.5c.3-1 .5-2.1.5-3.2a3 3 0 0 1 6 0c0 .4 0 .8-.1 1.2"/>
+                    <path d="M7.5 17.5c.5-1.5.8-3 .8-4.7a4.7 4.7 0 0 1 9.2-1.3"/>
+                    <path d="M5.5 18.3c.8-2 1.3-4.1 1.3-6.3a6.2 6.2 0 0 1 11-3.9"/>
+                </svg>
+            </button>
             <div class="cm-lock-links">
                 <span class="cm-lock-link" id="cmLockForgot"></span>
                 <span class="cm-lock-link" id="cmLockLogout"></span>
