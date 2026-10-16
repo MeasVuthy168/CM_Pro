@@ -653,7 +653,7 @@ async function rcRunCompare() {
     } catch (e) {
         console.error(e);
         document.getElementById("rcPageSkel").style.display = "none";
-        rcShowEmpty(t("creditreport.compare.serverErrorCompare"));
+        rcShowEmpty(e.message || t("creditreport.compare.serverErrorCompare"));
     } finally {
         rcCompareInFlight = false;
         compareButton.disabled = false;
