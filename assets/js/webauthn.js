@@ -97,6 +97,17 @@ function webauthnErrorMessage(err, fallbackKey) {
 }
 
 // ---- Registration (Settings page — already logged in) ----
+// deviceLabel may be a plain string, OR a function (sync or async)
+// called AFTER navigator.credentials.create() succeeds, to resolve the
+// label. That ordering matters: iOS Safari only allows
+// navigator.credentials.create() within a short window of the user's
+// tap, and a blocking prompt() dialog beforehand — which can run for
+// many seconds while the person actually types a name — reliably
+// burns through that window before create() is even called, even
+// though the exact same flow (prompt, then create()) works fine on
+// Android/Chrome, which is far more lenient here. Asking for the
+// label after create() has already succeeded keeps the tap-to-create()
+// gap down to just the one options fetch below.
 async function webauthnRegister(deviceLabel) {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
 
@@ -124,6 +135,10 @@ async function webauthnRegister(deviceLabel) {
     }
     if (!credential) throw new Error(webauthnT("webauthn.registerFailed"));
 
+    const resolvedLabel = typeof deviceLabel === "function"
+        ? await deviceLabel()
+        : (deviceLabel || "");
+
     const verifyRes = await fetch(`${API.BASE_URL}/api/webauthn/register/verify`, {
         method: "POST",
         headers: {
@@ -131,7 +146,7 @@ async function webauthnRegister(deviceLabel) {
             Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
-            deviceLabel: deviceLabel || "",
+            deviceLabel: resolvedLabel,
             response: webauthnCredentialToJSON(credential, true)
         })
     });
