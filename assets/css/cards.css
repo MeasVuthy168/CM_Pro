@@ -1,29 +1,16 @@
 :root{
     --card-bg:#FFFFFF;
-    --card-border:#E2E6ED;
-    --card-text:#1C2333;
-    --card-shadow:0 4px 12px rgba(14, 27, 60,.1);
+    --card-border:#DCE6F3;
+    --card-text:#0E1B3C;
+    --card-shadow:0 5px 18px rgba(14,27,60,.08);
 }
-
-[data-theme="dark"]{
-    --card-bg:#131C2E;
-    --card-border:#223055;
-    --card-text:#EAF0FF;
-    --card-shadow:0 2px 14px rgba(0,0,0,.4);
-}
-
-/* GOLD THEME — its own warm card background, not just a border swap. */
-[data-theme="gold"]{
-    --card-bg:#FFFDF6;
-    --card-border:#C9971F;
-}
-
-/* DARK GRAY THEME — flat neutral dark, a subtle neutral border, not the loud accent-colored outline other themes use. */
-[data-theme="darkgray"]{
-    --card-bg:#363A41;
-    --card-border:#474C55;
-    --card-text:#F0F1F3;
-    --card-shadow:0 4px 12px rgba(0,0,0,.35);
+/* Dashboard cards are intentionally theme-isolated: always light. */
+.dashboard-grid{
+    color-scheme:light;
+    --card-bg:#FFFFFF;
+    --card-border:#DCE6F3;
+    --card-text:#0E1B3C;
+    --card-shadow:0 5px 18px rgba(14,27,60,.08);
 }
 
 /* =========================
@@ -64,8 +51,7 @@
 ========================= */
 
 .dashboard-card{
-
-    /* A 1fr grid track still sizes to its item's min-content by
+/* A 1fr grid track still sizes to its item's min-content by
        default (minmax(auto,1fr)) — without this, the longer English
        titles (e.g. "Land Classification") force their column wider
        than an even 1/3 split, overflowing the grid past the screen
@@ -107,7 +93,7 @@
 
     text-decoration:none;
 
-    color:var(--card-text);
+    color:#0E1B3C;
 
     transition:.2s;
 
@@ -118,6 +104,16 @@
     -webkit-tap-highlight-color:transparent;
 
 }
+
+.dashboard-card:nth-child(1){background:#EEF5FF;border-color:#D8E5F7}
+.dashboard-card:nth-child(2){background:#FFF9E9;border-color:#F1E7CA}
+.dashboard-card:nth-child(3){background:#ECFBF0;border-color:#D5EBDD}
+.dashboard-card:nth-child(4){background:#F5F0FF;border-color:#E4D9F7}
+.dashboard-card:nth-child(5){background:#EAF9FC;border-color:#D2EAF0}
+.dashboard-card:nth-child(6){background:#FFF5E9;border-color:#F2E0CC}
+.dashboard-card:nth-child(7){background:#EDFAF1;border-color:#D6EBDD}
+.dashboard-card:nth-child(8){background:#FFF0F1;border-color:#F2DADD}
+.dashboard-card:nth-child(9){background:#EEF2FF;border-color:#D8E0F5}
 
 .dashboard-card:hover{
 
@@ -138,39 +134,18 @@
    recolored by this document's CSS at all.
 ========================= */
 
-.dashboard-card svg{
-
-    width:42px;
-
-    height:42px;
-
-    margin-bottom:6px;
-
+.dashboard-card-icon{
+    width:72%;
+    height:68%;
+    max-width:180px;
+    max-height:180px;
+    object-fit:contain;
+    margin-bottom:8px;
     flex-shrink:0;
-
     pointer-events:none;
-
 }
 
-/* Icon ink — the navy shapes that sit directly against the card
-   background (not on top of a gold shape, which never needs this:
-   gold already reads fine against both a white and a dark card). In
-   dark mode the card background is itself a dark navy, so the same
-   navy fill/stroke used in light mode would nearly disappear into it
-   — swap to a light tint instead, same as --card-text / --sc-text's
-   own light/dark convention. ic-contrast is the inverse, for a small
-   white accent drawn ON TOP of an .ic-ink shape (e.g. a highlight or
-   badge mark) — it has to flip the other way so it stays visible
-   once its background flips from dark to light. */
-.dashboard-card svg .ic-ink{ fill:#0E1B3C; }
-.dashboard-card svg .ic-ink-s{ stroke:#0E1B3C; }
-.dashboard-card svg .ic-contrast{ fill:#fff; }
-.dashboard-card svg .ic-contrast-s{ stroke:#fff; }
-
-[data-theme="dark"] .dashboard-card svg .ic-ink{ fill:#EAF0FF; }
-[data-theme="dark"] .dashboard-card svg .ic-ink-s{ stroke:#EAF0FF; }
-[data-theme="dark"] .dashboard-card svg .ic-contrast{ fill:#0E1B3C; }
-[data-theme="dark"] .dashboard-card svg .ic-contrast-s{ stroke:#0E1B3C; }
+/* PNG icons retain their original colors in every theme. */
 
 /* =========================
    Card Title
@@ -194,7 +169,7 @@
 
     align-items:center;
 
-    color:var(--card-text);
+    color:#0E1B3C;
 
     text-align:center;
 
@@ -229,7 +204,7 @@
 
 }
 
-.dashboard-card svg{
+.dashboard-card-icon{
 
     width:60px;
 
