@@ -9,6 +9,7 @@ CMI18n.register({
   // Main Settings list
   "settings.myAccount": { km: "គណនីរបស់ខ្ញុំ", en: "My Account" },
   "settings.fingerprintRow": { km: "ការចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខ", en: "Login with Fingerprint or Face" },
+  "settings.manageDevicesRow": { km: "គ្រប់គ្រងឧបករណ៍", en: "Manage Devices" },
   "settings.about": { km: "អំពីកម្មវិធី", en: "About" },
   "settings.notification": { km: "ការជូនដំណឹង", en: "Notification" },
   "settings.logout": { km: "ចាកចេញ", en: "Log Out" },
