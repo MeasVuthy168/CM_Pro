@@ -11,9 +11,14 @@ CMI18n.register({
   "settings.fingerprintRow": { km: "ការចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខ", en: "Login with Fingerprint or Face" },
   "settings.manageDevicesRow": { km: "គ្រប់គ្រងឧបករណ៍", en: "Manage Devices" },
   "settings.about": { km: "អំពីកម្មវិធី", en: "About" },
+  "settings.contactRow": { km: "ទំនាក់ទំនង", en: "Contact" },
   "settings.notification": { km: "ការជូនដំណឹង", en: "Notification" },
   "settings.logout": { km: "ចាកចេញ", en: "Log Out" },
   "settings.logoutConfirm": { km: "តើអ្នកពិតជាចង់ចាកចេញមែនទេ?", en: "Are you sure you want to log out?" },
+
+  // Settings main list — section labels
+  "settings.preferencesSectionTitle": { km: "ចំណូលចិត្ត", en: "Preferences" },
+  "settings.informationSectionTitle": { km: "ព័ត៌មាន", en: "Information" },
 
   // Theme / Language accordion rows
   "settings.theme.title": { km: "រូបរាង", en: "Theme" },
@@ -121,6 +126,12 @@ CMI18n.register({
   "settings.about.noVersionInfo": { km: "មិនទាន់មានព័ត៌មានអំពីកំណែ", en: "No version info available yet" },
   "settings.about.defaultReleaseNotes": { km: "សូមធ្វើបច្ចុប្បន្នភាពទៅកំណែចុងក្រោយ ដើម្បីទទួលបានមុខងារថ្មីៗ ការកែលម្អប្រសិទ្ធភាព និងការជួសជុលបញ្ហាផ្សេងៗ។", en: "Please update to the latest version for new features, performance improvements, and bug fixes." },
   "settings.about.versionLoadFailed": { km: "មិនអាចទាញយកព័ត៌មាន Version បាន។", en: "Could not load version information." },
+
+  // contact.html
+  "settings.contact.branchName": { km: "ធនាគារ ACLEDA សាខាខេត្តស្វាយរៀង", en: "ACLEDA Bank Svay Rieng Branch" },
+  "settings.contact.roleSenior": { km: "ប្រធានក្រុមឥណទានសាខា", en: "Senior Branch Credit Manager" },
+  "settings.contact.roleAssistant": { km: "ជំនួយការប្រធានឥណទានសាខា", en: "Assistant Branch Credit Manager" },
+  "settings.contact.telegramTitle": { km: "ទាក់ទងតាម Telegram", en: "Contact Us via Telegram" },
 
   // voicecommand.html
   "settings.voice.cardTitle": { km: "ពាក្យបញ្ជាសំឡេង", en: "Voice Command" },
