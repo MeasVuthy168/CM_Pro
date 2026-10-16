@@ -252,6 +252,20 @@ function fpCloseResetOverlay() {
 fpResetAllBtn?.addEventListener("click", fpOpenResetOverlay);
 fpResetCancelBtn?.addEventListener("click", fpCloseResetOverlay);
 
+// Password and PIN are "enter one or the other", but both fields stay
+// editable at once -- without this, someone could fill in a correct
+// password AND a mistyped/forgotten PIN, submit, and have no way to
+// tell from the form itself that the server only checked the password
+// (it takes priority whenever present) and ignored the PIN entirely.
+// Clearing the other field on input keeps exactly one credential
+// "active" at submit time, so there's never that ambiguity.
+fpResetPassword?.addEventListener("input", () => {
+    if (fpResetPassword.value) fpResetPin.value = "";
+});
+fpResetPin?.addEventListener("input", () => {
+    if (fpResetPin.value) fpResetPassword.value = "";
+});
+
 fpResetConfirmBtn?.addEventListener("click", async () => {
 
     const password = fpResetPassword.value;
