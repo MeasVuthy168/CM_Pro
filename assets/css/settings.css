@@ -770,11 +770,13 @@ input:checked + .slider:before{
 
     width:24px;
 
-    font-size:19px;
+    height:24px;
 
-    line-height:1;
+    display:flex;
 
-    text-align:center;
+    align-items:center;
+
+    justify-content:center;
 
     flex-shrink:0;
 
