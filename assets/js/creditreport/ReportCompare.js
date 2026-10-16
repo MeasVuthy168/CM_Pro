@@ -164,18 +164,52 @@ function rcHideEmpty() {
     document.getElementById("rcEmpty").style.display = "none";
 }
 
+const RC_API_TIMEOUT_MS = 25000;
+
 async function rcApiGet(path) {
-    const res = await fetch(`${API.BASE_URL}${path}`, { headers: { Authorization: `Bearer ${rcToken}` } });
-    return res.json();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), RC_API_TIMEOUT_MS);
+    try {
+        const res = await fetch(`${API.BASE_URL}${path}`, {
+            headers: { Authorization: `Bearer ${rcToken}` },
+            signal: controller.signal,
+            cache: "no-store"
+        });
+        let data;
+        try {
+            data = await res.json();
+        } catch {
+            throw new Error(`Report API returned an invalid response (HTTP ${res.status}).`);
+        }
+        if (!res.ok) {
+            const error = new Error(data.message || `Report request failed (HTTP ${res.status}).`);
+            error.status = res.status;
+            throw error;
+        }
+        return data;
+    } catch (error) {
+        if (error.name === "AbortError") {
+            throw new Error("The report request took too long. Check your connection and try again.");
+        }
+        throw error;
+    } finally {
+        clearTimeout(timeoutId);
+    }
 }
 
 // ========================================
 // DATE PICKERS
 // ========================================
 async function rcLoadDates() {
-    const data = await rcApiGet("/api/creditreport/snapshot/dates");
-    if (!data.ok) { rcShowEmpty(data.message || t("creditreport.compare.failedLoadDates")); return; }
-    rcDates = data.dates || [];
+    try {
+        const data = await rcApiGet("/api/creditreport/snapshot/dates");
+        if (!data.ok) { rcShowEmpty(data.message || t("creditreport.compare.failedLoadDates")); return; }
+        rcDates = data.dates || [];
+    } catch (error) {
+        console.error("[Credit Portfolio Trends] failed to load snapshot dates:", error);
+        rcShowEmpty(error.message || t("creditreport.compare.failedLoadDates"));
+        return;
+    }
 
     const selA = document.getElementById("rcDateA");
     const selB = document.getElementById("rcDateB");
@@ -587,11 +621,18 @@ function rcRenderAll() {
 // 2026-10-08 — using the app-wide loading overlay (shared/loading.js),
 // same convention/message as the 4 Daily Monitoring reports' own
 // crShowLoading("Loading Report Data...").
+let rcCompareInFlight = false;
+
 async function rcRunCompare() {
+    if (rcCompareInFlight) return;
     const dateA = document.getElementById("rcDateA").value;
     const dateB = document.getElementById("rcDateB").value;
     if (!dateA || !dateB) return;
 
+    rcCompareInFlight = true;
+    const compareButton = document.getElementById("rcCompareBtn");
+    compareButton.disabled = true;
+    compareButton.setAttribute("aria-busy", "true");
     rcHideEmpty();
     document.getElementById("rcTransitionsCard").style.display = "none";
     document.getElementById("rcPageSkel").style.display = "flex";
@@ -614,6 +655,9 @@ async function rcRunCompare() {
         document.getElementById("rcPageSkel").style.display = "none";
         rcShowEmpty(t("creditreport.compare.serverErrorCompare"));
     } finally {
+        rcCompareInFlight = false;
+        compareButton.disabled = false;
+        compareButton.removeAttribute("aria-busy");
         if (typeof hideAppLoading === "function") hideAppLoading();
     }
 }
