@@ -9,7 +9,9 @@
 //   GET  /api/creditreport/snapshot/dates -> { ok, dates:[...], today }
 //   POST /api/creditreport/snapshot/run   (admin only) -> { ok, date, counts }
 //   GET  /api/creditreport/compare?dateA=&dateB=
-//     -> { ok, dateA, dateB, diff:{ os, disburse, wo, overdue, t24 } }
+//     -> { ok, dateA, dateB, diff:{...summary only}, detailMeta:{...counts/by-dimension} }
+//   GET  /api/creditreport/compare/details?dateA=&dateB=&tab=&kind=&page=&pageSize=
+//     -> { ok, rows:[...], total, page, pages } (on-demand, max 200 rows)
 //     os/disburse: { total:{countA,countB,countDiff,...valueA/B/Diff},
 //                    branch:[{key,countA,countB,countDiff,...valueA/B/Diff}],
 //                    officerId:[...], product:[...], location:[...] }
@@ -911,6 +913,7 @@ document.addEventListener("click", (e) => {
         document.querySelectorAll("#rcTabs .rc-main-tab").forEach(t => t.classList.remove("active"));
         mainTab.classList.add("active");
         rcActiveTab = mainTab.dataset.tab;
+        rcDetailPage = 1;
         rcUpdateDimChipsAvailability();
         rcPopulateDimValueSelect();
         rcRenderAll();
@@ -922,6 +925,7 @@ document.addEventListener("click", (e) => {
         dimChip.classList.add("active");
         rcDim = dimChip.dataset.dim;
         rcDimValue = "";
+        rcDetailPage = 1;
         rcPopulateDimValueSelect();
         rcRenderAll();
         return;
