@@ -462,23 +462,3 @@
     font-size:12.5px;
     padding:20px 0;
 }
-
-/* Prevent repeated taps while a compare request is in progress. */
-.rc-compare-btn:disabled{
-    opacity:.65;
-    cursor:wait;
-    filter:saturate(.75);
-}
-.rc-compare-btn[aria-busy="true"]::after{
-    content:"";
-    display:inline-block;
-    width:12px;
-    height:12px;
-    margin-left:9px;
-    border:2px solid currentColor;
-    border-right-color:transparent;
-    border-radius:50%;
-    vertical-align:-2px;
-    animation:rc-compare-spin .7s linear infinite;
-}
-@keyframes rc-compare-spin{to{transform:rotate(360deg)}}
