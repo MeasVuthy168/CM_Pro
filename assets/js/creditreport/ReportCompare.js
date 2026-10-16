@@ -437,7 +437,7 @@ function rcRenderClientDimBreakdown() {
         { key: "key", label: rcDimensions()[rcDim], type: "text" },
         { key: "entered", label: `✅ ${t("creditreport.compare.colEntered")}`, type: "number" },
         { key: "exited", label: `↩️ ${t("creditreport.compare.colExited")}`, type: "number" },
-        ...(rcActiveTab !== "wo" ? [{ key: "changed", label: `🔀 ${t("creditreport.compare.colChanged")}`, type: "number" }] : [])
+        ...(rcActiveTab !== "wo" ? [{ key: "changed", label: "🔀 Changed", type: "number" }] : [])
     ];
     const sorted = rcApplySort(rows, stateKey);
 
