@@ -91,8 +91,18 @@ updateOnlineStatus();
 
 const fpAddBtn = document.getElementById("fpAddBtn");
 const fpDeviceList = document.getElementById("fpDeviceList");
+const fpDeviceCount = document.getElementById("fpDeviceCount");
 const fpUnsupported = document.getElementById("fpUnsupported");
 const fpSupportedArea = document.getElementById("fpSupportedArea");
+const fpResetAllBtn = document.getElementById("fpResetAllBtn");
+const fpCleanupNotice = document.getElementById("fpCleanupNotice");
+const fpResetOverlay = document.getElementById("fpResetOverlay");
+const fpResetCount = document.getElementById("fpResetCount");
+const fpResetPassword = document.getElementById("fpResetPassword");
+const fpResetPin = document.getElementById("fpResetPin");
+const fpResetStatus = document.getElementById("fpResetStatus");
+const fpResetCancelBtn = document.getElementById("fpResetCancelBtn");
+const fpResetConfirmBtn = document.getElementById("fpResetConfirmBtn");
 
 function fpDeviceIconFor(label) {
     const l = (label || "").toLowerCase();
@@ -114,7 +124,13 @@ function t(key, vars) {
     return window.CMI18n ? CMI18n.t(key, vars) : key;
 }
 
+let fpLastDeviceCount = 0;
+
 function fpRenderDevices(devices) {
+
+    fpLastDeviceCount = devices.length;
+    fpDeviceCount.innerText = t("settings.fingerprint.deviceCount", { n: devices.length });
+    fpResetAllBtn.hidden = devices.length === 0;
 
     if (!devices.length) {
         fpDeviceList.innerHTML = `<div class="fp-empty">${t("settings.fingerprint.noDevices")}</div>`;
@@ -207,6 +223,70 @@ fpAddBtn?.addEventListener("click", async () => {
 
         fpAddBtn.disabled = false;
         fpAddBtn.innerHTML = `<span>➕</span> ${t("settings.fingerprint.addBtn")}`;
+
+    }
+
+});
+
+// =========================
+// RESET ALL FINGERPRINTS
+// Destructive, account-wide action -- the confirmation step (this
+// overlay) plus the server's own password/PIN re-auth (requireJwt
+// alone isn't enough) are both deliberate friction, not oversights.
+// =========================
+
+function fpOpenResetOverlay() {
+    fpResetCount.innerText = t("settings.fingerprint.deviceCount", { n: fpLastDeviceCount });
+    fpResetPassword.value = "";
+    fpResetPin.value = "";
+    fpResetStatus.innerText = "";
+    fpResetConfirmBtn.disabled = false;
+    fpResetOverlay.classList.add("show");
+    fpResetPassword.focus();
+}
+
+function fpCloseResetOverlay() {
+    fpResetOverlay.classList.remove("show");
+}
+
+fpResetAllBtn?.addEventListener("click", fpOpenResetOverlay);
+fpResetCancelBtn?.addEventListener("click", fpCloseResetOverlay);
+
+fpResetConfirmBtn?.addEventListener("click", async () => {
+
+    const password = fpResetPassword.value;
+    const pin = fpResetPin.value.trim();
+
+    if (!password && !pin) {
+        fpResetStatus.innerText = t("settings.fingerprint.resetAllMissingCreds");
+        return;
+    }
+
+    fpResetConfirmBtn.disabled = true;
+    fpResetStatus.innerText = "";
+
+    try {
+
+        await webauthnResetAllCredentials({ password, pin });
+
+        fpCloseResetOverlay();
+        notify(t("settings.fingerprint.resetAllSuccess"), "success");
+        fpCleanupNotice.hidden = false;
+        fpRefreshDevices();
+
+    } catch (err) {
+
+        console.error("[fingerprint] reset all failed:", err);
+        fpResetStatus.innerText = err.message || t("settings.fingerprint.resetAllFailed");
+
+        // A PIN lockout (err.locked) still leaves the password field
+        // in this same form usable -- no need to redirect anywhere,
+        // the server message already tells them to use it instead.
+        fpResetPin.value = "";
+
+    } finally {
+
+        fpResetConfirmBtn.disabled = false;
 
     }
 

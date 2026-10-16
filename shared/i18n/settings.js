@@ -87,6 +87,21 @@ CMI18n.register({
   "settings.fingerprint.registerSuccess": { km: "បានចុះឈ្មោះស្នាមម្រាមដៃ ឬ ផ្ទៃមុខដោយជោគជ័យ", en: "Fingerprint or Face registered successfully" },
   "settings.fingerprint.registerFailed": { km: "ចុះឈ្មោះបរាជ័យ", en: "Registration failed" },
 
+  // fingerprint.html — Reset All Fingerprints
+  "settings.fingerprint.deviceCount": { km: "ឧបករណ៍ដែលបានចុះឈ្មោះ: {n}", en: "{n} device(s) registered" },
+  "settings.fingerprint.resetAllBtn": { km: "លុបការចុះឈ្មោះស្នាមម្រាមដៃទាំងអស់", en: "Reset All Fingerprints" },
+  "settings.fingerprint.resetAllTitle": { km: "លុបការចុះឈ្មោះស្នាមម្រាមដៃទាំងអស់?", en: "Reset All Fingerprint Registrations?" },
+  "settings.fingerprint.resetAllWarning": { km: "សកម្មភាពនេះនឹងលុបឧបករណ៍ដែលបានចុះឈ្មោះទាំងអស់ចេញពីគណនីរបស់អ្នក។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។", en: "This will remove every registered device from your account. This cannot be undone." },
+  "settings.fingerprint.resetAllAuthHint": { km: "សូមបញ្ចូលពាក្យសម្ងាត់ ឬ លេខកូដ PIN ៦ខ្ទង់ ដើម្បីបញ្ជាក់អត្តសញ្ញាណ", en: "Enter your password or your 6-digit PIN to confirm your identity" },
+  "settings.fingerprint.resetAllPasswordPlaceholder": { km: "ពាក្យសម្ងាត់", en: "Password" },
+  "settings.fingerprint.resetAllOr": { km: "ឬ", en: "OR" },
+  "settings.fingerprint.resetAllPinPlaceholder": { km: "លេខកូដ PIN ៦ខ្ទង់", en: "6-digit PIN" },
+  "settings.fingerprint.resetAllConfirmBtn": { km: "លុបទាំងអស់", en: "Reset All" },
+  "settings.fingerprint.resetAllMissingCreds": { km: "សូមបញ្ចូលពាក្យសម្ងាត់ ឬ លេខកូដ PIN", en: "Please enter your password or PIN" },
+  "settings.fingerprint.resetAllSuccess": { km: "បានលុបឧបករណ៍ទាំងអស់នៅលើ Server ដោយជោគជ័យ", en: "All devices removed from the server successfully" },
+  "settings.fingerprint.resetAllFailed": { km: "លុបបរាជ័យ", en: "Reset failed" },
+  "settings.fingerprint.resetAllCleanupNotice": { km: "ប្រសិនបើអ្នកធ្លាប់រក្សាទុក Passkey ចាស់នៅលើទូរស័ព្ទនេះ សូមចូលទៅកាន់ Settings → Passwords លើទូរស័ព្ទរបស់អ្នក ហើយលុបវាដោយដៃផងដែរ — ជំហាននេះមិនអាចធ្វើពីគេហទំព័រនេះបានទេ។", en: "If you previously saved a passkey on this phone, please also go to Settings → Passwords on your device and delete it manually — that step can't be done from this website." },
+
   // about.html
   "settings.about.sectionAbout": { km: "អំពីកម្មវិធី", en: "About the App" },
   "settings.about.sectionAboutBody": {

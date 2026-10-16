@@ -192,6 +192,175 @@
     padding:20px 0;
 }
 
+/* =========================
+   Device count + Reset All
+========================= */
+
+.fp-device-count{
+    font-size:13px;
+    color:var(--fp-text-muted);
+    margin:0 4px 10px;
+}
+
+.fp-reset-all-btn{
+    width:100%;
+    height:48px;
+    border:1px solid #e08a8a;
+    border-radius:14px;
+    background:transparent;
+    color:#C0392B;
+    font-size:14.5px;
+    font-weight:700;
+    cursor:pointer;
+    margin-top:18px;
+}
+.fp-reset-all-btn:active{ transform:scale(.98); }
+.fp-reset-all-btn:disabled{
+    opacity:.45;
+    cursor:default;
+}
+
+/* =========================
+   Reset All overlay (full-screen, matches the App Lock / PIN overlay
+   navy palette elsewhere in the app rather than a generic native
+   confirm(), since this is a multi-step, destructive flow)
+========================= */
+
+.fp-reset-overlay{
+    position:fixed;
+    inset:0;
+    z-index:999999;
+    background:rgba(14,27,60,.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    box-sizing:border-box;
+}
+.fp-reset-overlay.show{ display:flex; }
+
+.fp-reset-sheet{
+    width:100%;
+    max-width:400px;
+    background:var(--fp-card-bg);
+    border:1px solid var(--fp-border);
+    border-radius:20px;
+    padding:24px 22px;
+    box-sizing:border-box;
+}
+
+.fp-reset-title{
+    font-size:17px;
+    font-weight:700;
+    color:var(--fp-text);
+    text-align:center;
+    margin-bottom:10px;
+}
+
+.fp-reset-count{
+    font-size:13.5px;
+    color:var(--fp-text-muted);
+    text-align:center;
+    margin-bottom:10px;
+}
+
+.fp-reset-warning{
+    font-size:13.5px;
+    color:#C0392B;
+    background:#FBE3E1;
+    border-radius:12px;
+    padding:12px 14px;
+    line-height:1.5;
+    margin-bottom:18px;
+}
+[data-theme="dark"] .fp-reset-warning{ background:#331512; }
+
+.fp-reset-hint{
+    font-size:13px;
+    color:var(--fp-text-muted);
+    text-align:center;
+    margin-bottom:14px;
+}
+
+.fp-reset-input{
+    width:100%;
+    height:50px;
+    border:1px solid var(--fp-border);
+    border-radius:12px;
+    background:transparent;
+    color:var(--fp-text);
+    padding:0 14px;
+    font-size:15px;
+    box-sizing:border-box;
+    margin-bottom:12px;
+}
+
+.fp-reset-or{
+    text-align:center;
+    font-size:12px;
+    font-weight:700;
+    color:var(--fp-text-muted);
+    margin:-2px 0 12px;
+}
+
+.fp-reset-status{
+    min-height:18px;
+    color:#C0392B;
+    font-size:13px;
+    font-weight:600;
+    text-align:center;
+    margin-bottom:10px;
+}
+
+.fp-reset-actions{
+    display:flex;
+    gap:10px;
+    margin-top:4px;
+}
+
+.fp-reset-cancel-btn{
+    flex:1;
+    height:48px;
+    border:1px solid var(--fp-border);
+    border-radius:14px;
+    background:transparent;
+    color:var(--fp-text);
+    font-size:14.5px;
+    font-weight:700;
+    cursor:pointer;
+}
+
+.fp-reset-confirm-btn{
+    flex:1;
+    height:48px;
+    border:none;
+    border-radius:14px;
+    background:#C0392B;
+    color:#fff;
+    font-size:14.5px;
+    font-weight:700;
+    cursor:pointer;
+}
+.fp-reset-confirm-btn:disabled{
+    opacity:.55;
+    cursor:default;
+}
+
+/* Shown after a successful reset -- separate from fp-reset-overlay so
+   it stays up until the user dismisses it rather than auto-closing
+   with the confirmation sheet (the iPhone Passwords cleanup step is
+   easy to miss if it's just a toast). */
+.fp-cleanup-notice{
+    font-size:13px;
+    color:var(--fp-text-muted);
+    background:rgba(212,175,55,.12);
+    border:1px solid var(--fp-border);
+    border-radius:12px;
+    padding:14px;
+    line-height:1.5;
+    margin-top:14px;
+}
+
 </style>
 
 </head>
@@ -225,12 +394,46 @@
 
 <div class="fp-section-label" data-i18n="settings.fingerprint.registeredDevices">ឧបករណ៍ដែលបានចុះឈ្មោះ</div>
 
+<div id="fpDeviceCount" class="fp-device-count"></div>
+
 <div id="fpDeviceList" class="fp-card">
 <div class="fp-empty" data-i18n="common.loading">កំពុងផ្ទុក...</div>
 </div>
 
+<button type="button" id="fpResetAllBtn" class="fp-reset-all-btn" hidden data-i18n="settings.fingerprint.resetAllBtn">លុបការចុះឈ្មោះស្នាមម្រាមដៃទាំងអស់</button>
+
+<div id="fpCleanupNotice" class="fp-cleanup-notice" hidden data-i18n="settings.fingerprint.resetAllCleanupNotice">
+ប្រសិនបើអ្នកធ្លាប់រក្សាទុក Passkey ចាស់នៅលើទូរស័ព្ទនេះ សូមចូលទៅកាន់ Settings → Passwords លើទូរស័ព្ទរបស់អ្នក ហើយលុបវាដោយដៃផងដែរ — ជំហាននេះមិនអាចធ្វើពីគេហទំព័រនេះបានទេ។
 </div>
 
+</div>
+
+</div>
+
+<!-- ===== Reset All confirmation overlay ===== -->
+<div id="fpResetOverlay" class="fp-reset-overlay">
+<div class="fp-reset-sheet">
+
+<div class="fp-reset-title" data-i18n="settings.fingerprint.resetAllTitle">លុបការចុះឈ្មោះស្នាមម្រាមដៃទាំងអស់?</div>
+<div id="fpResetCount" class="fp-reset-count"></div>
+<div class="fp-reset-warning" data-i18n="settings.fingerprint.resetAllWarning">សកម្មភាពនេះនឹងលុបឧបករណ៍ដែលបានចុះឈ្មោះទាំងអស់ចេញពីគណនីរបស់អ្នក។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។</div>
+
+<div class="fp-reset-hint" data-i18n="settings.fingerprint.resetAllAuthHint">សូមបញ្ចូលពាក្យសម្ងាត់ ឬ លេខកូដ PIN ៦ខ្ទង់ ដើម្បីបញ្ជាក់អត្តសញ្ញាណ</div>
+
+<input type="password" id="fpResetPassword" class="fp-reset-input" autocomplete="current-password" data-i18n-placeholder="settings.fingerprint.resetAllPasswordPlaceholder" placeholder="ពាក្យសម្ងាត់">
+
+<div class="fp-reset-or" data-i18n="settings.fingerprint.resetAllOr">ឬ</div>
+
+<input type="password" id="fpResetPin" class="fp-reset-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" data-i18n-placeholder="settings.fingerprint.resetAllPinPlaceholder" placeholder="លេខកូដ PIN ៦ខ្ទង់">
+
+<div id="fpResetStatus" class="fp-reset-status"></div>
+
+<div class="fp-reset-actions">
+<button type="button" id="fpResetCancelBtn" class="fp-reset-cancel-btn" data-i18n="common.cancel">បោះបង់</button>
+<button type="button" id="fpResetConfirmBtn" class="fp-reset-confirm-btn" data-i18n="settings.fingerprint.resetAllConfirmBtn">លុបទាំងអស់</button>
+</div>
+
+</div>
 </div>
 
 <div id="bottomnav-container"></div>

@@ -225,6 +225,34 @@ async function webauthnRemoveCredential(credentialId) {
     return true;
 }
 
+// ---- Reset ALL registered devices (Settings -> Manage Devices) ----
+// User-facing, explicit action distinct from webauthnRemoveAllCredentials
+// above (that one is a silent, internal self-heal step during
+// registration). This one requires re-proving the password or PIN —
+// the server re-checks it independently, this is just what sends it —
+// and surfaces the server's own error (wrong password/PIN, PIN
+// lockout) as a normal thrown Error for the caller to display.
+async function webauthnResetAllCredentials({ password, pin } = {}) {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+    const res = await fetch(`${API.BASE_URL}/api/webauthn/credentials`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ password: password || "", pin: pin || "" })
+    });
+    const data = await res.json();
+    if (!data.ok) {
+        const err = new Error(data.message || webauthnT("webauthn.removeDeviceFailed"));
+        err.locked = !!data.locked;
+        err.attemptsRemaining = data.attemptsRemaining;
+        throw err;
+    }
+    return data.removed || 0;
+}
+
 // ---- Login (login page — no token yet) ----
 async function webauthnLogin(username) {
     const optRes = await fetch(`${API.BASE_URL}/api/webauthn/login/options`, {
