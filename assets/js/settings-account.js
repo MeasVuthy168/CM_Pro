@@ -60,6 +60,38 @@ function fpSetStoredCredId(id) {
     }
 }
 
+// Reconciles the switch's checked state with the server: the stored
+// credential ID could be stale if the device was removed (or ALL
+// devices were reset) from fingerprint.html's management page since it
+// was stored here. Pulled out of initFingerprintQuickToggle() so it can
+// also run on its own from the pageshow listener below, without
+// re-attaching that function's event listeners a second time.
+async function fpSyncQuickToggleState() {
+
+    const toggle = document.getElementById("fpQuickToggle");
+    if (!toggle || toggle.disabled) return;
+
+    let storedId = fpStoredCredId();
+
+    if (storedId) {
+        try {
+            const devices = await webauthnListCredentials();
+            const stillExists = devices.some(d => d.id === storedId);
+            if (!stillExists) {
+                fpSetStoredCredId("");
+                storedId = "";
+            }
+        } catch {
+            // Listing failed (offline, etc.) — trust the stored value
+            // rather than flipping the switch off under the user.
+            return;
+        }
+    }
+
+    toggle.checked = !!storedId;
+
+}
+
 async function initFingerprintQuickToggle() {
 
     const row = document.getElementById("fpToggleRow");
@@ -83,27 +115,7 @@ async function initFingerprintQuickToggle() {
         return;
     }
 
-    // Reconcile local state with the server: the stored credential ID
-    // could be stale if the device was removed from fingerprint.html's
-    // own management list (or on another device) since it was stored
-    // here.
-    let storedId = fpStoredCredId();
-
-    if (storedId) {
-        try {
-            const devices = await webauthnListCredentials();
-            const stillExists = devices.some(d => d.id === storedId);
-            if (!stillExists) {
-                fpSetStoredCredId("");
-                storedId = "";
-            }
-        } catch {
-            // Listing failed (offline, etc.) — trust the stored value
-            // rather than flipping the switch off under the user.
-        }
-    }
-
-    toggle.checked = !!storedId;
+    await fpSyncQuickToggleState();
 
     toggle.addEventListener("click", (e) => e.stopPropagation());
 
@@ -373,4 +385,14 @@ window.addEventListener("load", () => {
     initFingerprintQuickToggle();
     initChangePasswordSheet();
     initAutoLockPicker();
+});
+
+// Returning to this page via the browser's back-forward cache (e.g.
+// tapping back after using "Reset All Fingerprints" on
+// fingerprint.html) restores the DOM/JS state frozen from before the
+// navigation rather than re-running this file — without this, the
+// switch would keep showing whatever it was checked to before the
+// user left, even though every credential was just removed.
+window.addEventListener("pageshow", (e) => {
+    if (e.persisted) fpSyncQuickToggleState();
 });

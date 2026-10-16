@@ -169,11 +169,32 @@ async function fpRefreshDevices() {
     }
 }
 
+// The Settings page's own quick on/off toggle (settings-account.js)
+// tracks "this device's" credential id separately in localStorage,
+// keyed by username — it has no way to know a device got removed from
+// THIS page, so without this the toggle would stay stuck on even after
+// its underlying credential is gone, until something else happened to
+// clear it.
+function fpDeviceCredKey() {
+    try {
+        const user = JSON.parse(localStorage.getItem("loggedInUser") || "{}");
+        return user.username ? `cm_webauthn_device_cred_${user.username}` : "";
+    } catch {
+        return "";
+    }
+}
+
 async function fpRemoveDevice(id) {
     if (!confirm(t("settings.fingerprint.confirmRemove"))) return;
 
     try {
         await webauthnRemoveCredential(id);
+
+        const key = fpDeviceCredKey();
+        if (key && localStorage.getItem(key) === id) {
+            localStorage.removeItem(key);
+        }
+
         notify(t("settings.fingerprint.removeSuccess"), "success");
         fpRefreshDevices();
     } catch (err) {
@@ -282,6 +303,12 @@ fpResetConfirmBtn?.addEventListener("click", async () => {
     try {
 
         await webauthnResetAllCredentials({ password, pin });
+
+        // Every credential is gone, so the quick toggle's locally-
+        // tracked "this device" id is now stale regardless of what it
+        // was (see fpDeviceCredKey() above).
+        const key = fpDeviceCredKey();
+        if (key) localStorage.removeItem(key);
 
         fpCloseResetOverlay();
         notify(t("settings.fingerprint.resetAllSuccess"), "success");
