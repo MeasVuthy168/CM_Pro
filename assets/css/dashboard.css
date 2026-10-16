@@ -1,18 +1,5 @@
-:root{
-    --dash-page-bg:#F5F7FA;
-}
-
-[data-theme="dark"]{
-    --dash-page-bg:#0B1220;
-}
-
-[data-theme="gold"]{
-    --dash-page-bg:#FFF8E7;
-}
-
-[data-theme="darkgray"]{
-    --dash-page-bg:#2B2E33;
-}
+:root{--dash-page-bg:#F5F7FA}
+.dashboard-container{color-scheme:light;--dash-page-bg:#F5F7FA;background:#F5F7FA;color:#0E1B3C}
 
 /* =========================
    Dashboard Layout
@@ -52,7 +39,7 @@
 
     box-sizing:border-box;
 
-    background:var(--dash-page-bg);
+    background:#F5F7FA;
 
     overflow:hidden;
 
