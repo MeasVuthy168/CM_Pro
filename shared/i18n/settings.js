@@ -131,7 +131,6 @@ CMI18n.register({
   "settings.contact.branchName": { km: "ធនាគារ ACLEDA សាខាខេត្តស្វាយរៀង", en: "ACLEDA Bank Svay Rieng Branch" },
   "settings.contact.roleSenior": { km: "ប្រធានក្រុមឥណទានសាខា", en: "Senior Branch Credit Manager" },
   "settings.contact.roleAssistant": { km: "ជំនួយការប្រធានឥណទានសាខា", en: "Assistant Branch Credit Manager" },
-  "settings.contact.telegramTitle": { km: "ទាក់ទងតាម Telegram", en: "Contact Us via Telegram" },
 
   // voicecommand.html
   "settings.voice.cardTitle": { km: "ពាក្យបញ្ជាសំឡេង", en: "Voice Command" },
