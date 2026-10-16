@@ -117,7 +117,15 @@ async function initFingerprintQuickToggle() {
 
             if (turningOn) {
 
-                const label = (prompt(t("settings.fingerprint.namePrompt"), "") || "").trim().slice(0, 60);
+                // The device-name prompt() runs AFTER the biometric
+                // check succeeds (webauthn.js calls this once
+                // navigator.credentials.create() resolves) rather than
+                // before — see the comment on webauthnRegister() for
+                // why: a blocking prompt() ahead of create() reliably
+                // burns through iOS Safari's short user-activation
+                // window while the person types, even though it's
+                // harmless on Android/Chrome.
+                const getLabel = () => (prompt(t("settings.fingerprint.namePrompt"), "") || "").trim().slice(0, 60);
 
                 // Self-heals the "already registered" dead end: if this
                 // authenticator already has a credential for this
@@ -127,7 +135,7 @@ async function initFingerprintQuickToggle() {
                 // plain webauthnRegister() would fail forever since
                 // there'd be no locally-tracked id to remove by
                 // toggling off and back on.
-                const credId = await webauthnRegisterWithRecovery(label);
+                const credId = await webauthnRegisterWithRecovery(getLabel);
 
                 fpSetStoredCredId(credId || "");
 

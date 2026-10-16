@@ -184,10 +184,15 @@ fpAddBtn?.addEventListener("click", async () => {
         // navigator.credentials.create() prompts the platform's own
         // fingerprint/Face ID UI — device label is just this app's
         // record of which device it was, not something the OS reports,
-        // so ask for a short one rather than guessing from the user agent.
-        const label = (prompt(t("settings.fingerprint.namePrompt"), "") || "").trim().slice(0, 60);
+        // so ask for a short one rather than guessing from the user
+        // agent. Passed as a function so webauthn.js asks for it AFTER
+        // the biometric check succeeds, not before: a blocking prompt()
+        // ahead of navigator.credentials.create() reliably burns
+        // through iOS Safari's short user-activation window while the
+        // person types, even though it's harmless on Android/Chrome.
+        const getLabel = () => (prompt(t("settings.fingerprint.namePrompt"), "") || "").trim().slice(0, 60);
 
-        await webauthnRegisterWithRecovery(label);
+        await webauthnRegisterWithRecovery(getLabel);
 
         notify(t("settings.fingerprint.registerSuccess"), "success");
 
