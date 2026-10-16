@@ -685,8 +685,14 @@ if(pinOverlay){
 
         if(typeof isWebAuthnAvailable!=="function" || !isWebAuthnAvailable()) return;
 
+        // cm_fp_login_disabled_<username>: Settings' own quick toggle
+        // sets this when the user turns "Login with Fingerprint or
+        // Face" off — a local "don't use it" preference that leaves
+        // the actual registration in place, so respect it here too or
+        // the toggle would do nothing from the user's perspective.
         const hasDeviceCred=!!localStorage.getItem(`cm_webauthn_device_cred_${username}`);
-        if(!hasDeviceCred) return;
+        const quickLoginDisabled=localStorage.getItem(`cm_fp_login_disabled_${username}`)==="1";
+        if(!hasDeviceCred || quickLoginDisabled) return;
 
         try{
 
