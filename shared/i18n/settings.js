@@ -86,6 +86,8 @@ CMI18n.register({
   "settings.fingerprint.removeFailed": { km: "លុបបរាជ័យ", en: "Remove failed" },
   "settings.fingerprint.namePrompt": { km: "ដាក់ឈ្មោះឧបករណ៍នេះ (ឧ. iPhone របស់ខ្ញុំ)", en: "Name this device (e.g. My iPhone)" },
   "settings.fingerprint.registerSuccess": { km: "បានចុះឈ្មោះស្នាមម្រាមដៃ ឬ ផ្ទៃមុខដោយជោគជ័យ", en: "Fingerprint or Face registered successfully" },
+  "settings.fingerprint.quickDisableSuccess": { km: "បានបិទការចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខនៅលើឧបករណ៍នេះ (ព័ត៌មានចុះឈ្មោះនៅតែរក្សាទុក)", en: "Fingerprint/Face login turned off on this device (registration kept)" },
+  "settings.fingerprint.quickEnableSuccess": { km: "បានបើកការចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខឡើងវិញ", en: "Fingerprint/Face login turned back on" },
   "settings.fingerprint.registerFailed": { km: "ចុះឈ្មោះបរាជ័យ", en: "Registration failed" },
 
   // fingerprint.html — Reset All Fingerprints

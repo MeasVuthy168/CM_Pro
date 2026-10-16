@@ -576,7 +576,19 @@ function cmBuildLockOverlay() {
 
     // ----- fingerprint -----
     const username = user.username || "";
-    fingerprintAvailable = !!(username && localStorage.getItem(`cm_webauthn_device_cred_${username}`));
+    // cm_fp_login_disabled_<username> is set by Settings' own quick
+    // toggle when the user turns "Login with Fingerprint or Face" off
+    // there — a local "don't use it" preference, deliberately separate
+    // from actually removing the registered credential, so the switch
+    // can be turned back on without a fresh enrollment. Still showing
+    // the fingerprint button (or auto-triggering it) here while that
+    // flag is set would make the toggle a no-op from the user's
+    // perspective.
+    fingerprintAvailable = !!(
+        username &&
+        localStorage.getItem(`cm_webauthn_device_cred_${username}`) &&
+        localStorage.getItem(`cm_fp_login_disabled_${username}`) !== "1"
+    );
     if (fingerprintAvailable) {
         const fpBtn = el.querySelector("#cmLockFpBtn");
         fpBtn.style.display = "flex";

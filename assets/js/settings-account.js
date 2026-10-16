@@ -44,6 +44,17 @@ function fpDeviceCredKey(username) {
     return `cm_webauthn_device_cred_${username}`;
 }
 
+// Separate from the credential id above on purpose: turning this
+// switch off is a local "don't use it for quick login right now"
+// preference, not a request to delete anything. The credential stays
+// registered (fpStoredCredId keeps tracking it) so switching back on
+// doesn't need a fresh Face ID/fingerprint enrollment — only an
+// explicit delete, here or on fingerprint.html's device list, removes
+// the actual registration.
+function fpQuickLoginDisabledKey(username) {
+    return `cm_fp_login_disabled_${username}`;
+}
+
 function fpStoredCredId() {
     const username = currentUsername();
     if (!username) return "";
@@ -57,6 +68,22 @@ function fpSetStoredCredId(id) {
         localStorage.setItem(fpDeviceCredKey(username), id);
     } else {
         localStorage.removeItem(fpDeviceCredKey(username));
+    }
+}
+
+function fpIsQuickLoginDisabled() {
+    const username = currentUsername();
+    if (!username) return false;
+    return localStorage.getItem(fpQuickLoginDisabledKey(username)) === "1";
+}
+
+function fpSetQuickLoginDisabled(disabled) {
+    const username = currentUsername();
+    if (!username) return;
+    if (disabled) {
+        localStorage.setItem(fpQuickLoginDisabledKey(username), "1");
+    } else {
+        localStorage.removeItem(fpQuickLoginDisabledKey(username));
     }
 }
 
@@ -88,7 +115,7 @@ async function fpSyncQuickToggleState() {
         }
     }
 
-    toggle.checked = !!storedId;
+    toggle.checked = !!storedId && !fpIsQuickLoginDisabled();
 
 }
 
@@ -129,47 +156,63 @@ async function initFingerprintQuickToggle() {
 
             if (turningOn) {
 
-                // The device-name prompt() runs AFTER the biometric
-                // check succeeds (webauthn.js calls this once
-                // navigator.credentials.create() resolves) rather than
-                // before — see the comment on webauthnRegister() for
-                // why: a blocking prompt() ahead of create() reliably
-                // burns through iOS Safari's short user-activation
-                // window while the person types, even though it's
-                // harmless on Android/Chrome.
-                const getLabel = () => (prompt(t("settings.fingerprint.namePrompt"), "") || "").trim().slice(0, 60);
+                // Re-enabling with a credential this device already
+                // has (just confirmed moments ago by the server
+                // reconciliation in fpSyncQuickToggleState) needs no
+                // new Face ID/fingerprint prompt at all — only clear
+                // the local "disabled" flag from the last time this
+                // was switched off.
+                const existingId = fpStoredCredId();
 
-                // Self-heals the "already registered" dead end: if this
-                // authenticator already has a credential for this
-                // account that this browser has no local record of
-                // (e.g. a prior attempt that errored out after the
-                // server had actually finished registering it), a
-                // plain webauthnRegister() would fail forever since
-                // there'd be no locally-tracked id to remove by
-                // toggling off and back on.
-                const credId = await webauthnRegisterWithRecovery(getLabel);
+                if (existingId) {
 
-                fpSetStoredCredId(credId || "");
+                    fpSetQuickLoginDisabled(false);
 
-                notify(t("settings.fingerprint.registerSuccess"), "success");
+                    notify(t("settings.fingerprint.quickEnableSuccess"), "success");
+
+                } else {
+
+                    // No credential registered yet — go through actual
+                    // enrollment. The device-name prompt() runs AFTER
+                    // the biometric check succeeds (webauthn.js calls
+                    // this once navigator.credentials.create()
+                    // resolves) rather than before — see the comment on
+                    // webauthnRegister() for why: a blocking prompt()
+                    // ahead of create() reliably burns through iOS
+                    // Safari's short user-activation window while the
+                    // person types, even though it's harmless on
+                    // Android/Chrome.
+                    const getLabel = () => (prompt(t("settings.fingerprint.namePrompt"), "") || "").trim().slice(0, 60);
+
+                    // Self-heals the "already registered" dead end: if
+                    // this authenticator already has a credential for
+                    // this account that this browser has no local
+                    // record of (e.g. a prior attempt that errored out
+                    // after the server had actually finished
+                    // registering it), a plain webauthnRegister() would
+                    // fail forever since there'd be no locally-tracked
+                    // id to remove by toggling off and back on.
+                    const credId = await webauthnRegisterWithRecovery(getLabel);
+
+                    fpSetStoredCredId(credId || "");
+                    fpSetQuickLoginDisabled(false);
+
+                    notify(t("settings.fingerprint.registerSuccess"), "success");
+
+                }
 
             } else {
 
-                const id = fpStoredCredId();
+                // Turning this off is a local "stop using it for quick
+                // login" preference, not a delete — the registration
+                // itself (here, and on every other device it's set up
+                // on) is left alone. Only fingerprint.html's device
+                // list (remove one, or "Reset All Fingerprints") or
+                // another device's own toggle-off actually removes a
+                // credential.
+                fpSetQuickLoginDisabled(true);
 
-                if (id) {
-                    await webauthnRemoveCredential(id);
-                } else {
-                    // No locally-tracked credential to target — fall
-                    // back to clearing everything the server has for
-                    // this account, since the user explicitly asked
-                    // for fingerprint login off.
-                    await webauthnRemoveAllCredentials();
-                }
-
-                fpSetStoredCredId("");
-
-                notify(t("settings.fingerprint.removeSuccess"), "success");
+                notify(t("settings.fingerprint.quickDisableSuccess"), "success");
 
             }
 
