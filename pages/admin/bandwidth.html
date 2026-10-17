@@ -57,7 +57,7 @@
       <!-- ========================= -->
       <div class="adm-header adm-bw-header">
         <div class="adm-title-block adm-bw-title-block">
-          <span class="adm-bw-title-icon" aria-hidden="true">📶</span>
+          <span class="adm-bw-title-icon" aria-hidden="true"><span class="adm-ico adm-ico-signal" aria-hidden="true"></span></span>
           <div>
             <h1 data-i18n="admin.bandwidth.title">Bandwidth Dashboard</h1>
             <p data-i18n="admin.bandwidth.subtitle">Realtime HTTP response bandwidth, by route — CM-backend (Render)</p>
@@ -74,7 +74,7 @@
           </div>
 
           <span class="adm-bw-updated" id="admLastUpdated">—</span>
-          <button class="adm-btn adm-btn-primary adm-bw-refresh" id="admRefreshBtn"><span class="adm-bw-refresh-icon">↻</span> <span data-i18n="admin.bandwidth.refresh">Refresh</span></button>
+          <button class="adm-btn adm-btn-primary adm-bw-refresh" id="admRefreshBtn"><span class="adm-bw-refresh-icon"><span class="adm-ico adm-ico-refresh" aria-hidden="true"></span></span> <span data-i18n="admin.bandwidth.refresh">Refresh</span></button>
           <div class="adm-topbar-actions" id="admTopbarActions"></div>
         </div>
       </div>
@@ -87,7 +87,7 @@
       <div class="adm-card adm-render-card" id="admRenderUsageCard">
         <div class="adm-render-card-top">
           <div class="adm-card-label adm-render-card-label">
-            <span class="adm-render-card-icon" aria-hidden="true">☁️</span>
+            <span class="adm-render-card-icon" aria-hidden="true"><span class="adm-ico adm-ico-cloud" aria-hidden="true"></span></span>
             <span data-i18n="admin.bandwidth.renderUsageTitle">Render Account Usage · This Billing Month</span>
           </div>
           <span class="adm-render-live-chip"><span class="adm-pulse-dot adm-render-live-dot"></span><span data-i18n="admin.bandwidth.liveFromRenderApi">Live from Render API</span></span>
@@ -101,7 +101,7 @@
             <span class="adm-card-sub" id="admRenderTotalSub"></span>
             <div class="adm-bar-track adm-render-bar-track"><div class="adm-bar-fill" id="admRenderBar"></div></div>
             <div class="adm-render-overage" id="admRenderOverage">
-              <span class="adm-render-overage-icon" aria-hidden="true">💳</span>
+              <span class="adm-render-overage-icon" aria-hidden="true"><span class="adm-ico adm-ico-card" aria-hidden="true"></span></span>
               <span id="admRenderOverageText">—</span>
               <span class="adm-info-asterisk" title="Estimated using Render's real Outgoing Bandwidth overage rate ($0.15/GB, confirmed off the account's own Billing page — Render's API has no billing/invoice endpoint to read this from directly). Still an estimate, not the actual invoice line: it's computed from the Metrics API, which can run a few minutes to tens of minutes behind Render's own billing engine, so this figure may read slightly LOWER than the real Billing page until the metrics catch up." data-i18n-title="admin.bandwidth.overageTooltip">*</span>
             </div>
@@ -125,7 +125,7 @@
       <div class="adm-kpi-grid">
 
         <div class="adm-card adm-kpi-card" data-accent="navy">
-          <span class="adm-kpi-icon" aria-hidden="true">📊</span>
+          <span class="adm-kpi-icon" aria-hidden="true"><span class="adm-ico adm-ico-barchart" aria-hidden="true"></span></span>
           <div class="adm-card-label"><span data-i18n="admin.bandwidth.todaysUsage">Today's Usage</span> <span class="adm-info-asterisk" title="Tracked HTTP routes (request-body + response bytes) + outbound calls + approximate DB-read bytes on bulk row endpoints — see note below" data-i18n-title="admin.bandwidth.trackedNote">*</span></div>
           <div class="adm-card-value" id="admKpiTodayGb">— GB</div>
           <div class="adm-bar-track"><div class="adm-bar-fill" id="admKpiTodayBar"></div></div>
@@ -133,21 +133,21 @@
         </div>
 
         <div class="adm-card adm-kpi-card" data-accent="green">
-          <span class="adm-kpi-icon" aria-hidden="true">⚡</span>
+          <span class="adm-kpi-icon" aria-hidden="true"><span class="adm-ico adm-ico-bolt" aria-hidden="true"></span></span>
           <div class="adm-card-label"><span class="adm-pulse-dot" id="admKpiLivePulse"></span><span data-i18n="admin.bandwidth.liveRate">Live Rate</span></div>
           <div class="adm-card-value" id="admKpiLiveRate">—</div>
           <div class="adm-card-sub" data-i18n="admin.bandwidth.liveRateSub">Server-measured, last ~2 min window</div>
         </div>
 
         <div class="adm-card adm-kpi-card" data-accent="gold">
-          <span class="adm-kpi-icon" aria-hidden="true">Σ</span>
+          <span class="adm-kpi-icon" aria-hidden="true"><span class="adm-ico adm-ico-sum" aria-hidden="true"></span></span>
           <div class="adm-card-label"><span data-i18n="admin.bandwidth.rangeTotal">Range Total</span> <span class="adm-info-asterisk" title="Tracked HTTP routes (request-body + response bytes) + outbound calls + approximate DB-read bytes on bulk row endpoints — see note below" data-i18n-title="admin.bandwidth.trackedNote">*</span></div>
           <div class="adm-card-value" id="admKpiRangeTotal">—</div>
           <div class="adm-card-sub" data-i18n="admin.bandwidth.rangeTotalSub">Sum of tracked HTTP (in + out) + outbound-call + approx. DB-read bytes, selected range</div>
         </div>
 
         <div class="adm-card adm-kpi-card" data-accent="violet">
-          <span class="adm-kpi-icon" aria-hidden="true">🏆</span>
+          <span class="adm-kpi-icon" aria-hidden="true"><span class="adm-ico adm-ico-trophy" aria-hidden="true"></span></span>
           <div class="adm-card-label" data-i18n="admin.bandwidth.topRoute">Top Route</div>
           <div class="adm-card-value adm-kpi-route-value" id="admKpiTopRoute">—</div>
           <div class="adm-card-sub" id="admKpiTopRouteMb"></div>
@@ -184,7 +184,7 @@
 
         <div class="adm-chart-card">
           <div class="adm-chart-card-head">
-            <h2><span class="adm-chart-card-icon" aria-hidden="true">📈</span><span data-i18n="admin.bandwidth.chartDailyBandwidth">Daily Bandwidth (MB)</span></h2>
+            <h2><span class="adm-chart-card-icon" aria-hidden="true"><span class="adm-ico adm-ico-trend" aria-hidden="true"></span></span><span data-i18n="admin.bandwidth.chartDailyBandwidth">Daily Bandwidth (MB)</span></h2>
             <span class="adm-chart-card-sub" data-i18n="admin.bandwidth.chartDailyBandwidthSub">Tracked total per day, with the free-tier limit marked</span>
           </div>
           <div class="adm-chart-wrap"><canvas id="admDailyChart"></canvas></div>
@@ -192,7 +192,7 @@
 
         <div class="adm-chart-card">
           <div class="adm-chart-card-head">
-            <h2><span class="adm-chart-card-icon" aria-hidden="true">📶</span><span data-i18n="admin.bandwidth.chartTopRoutes">Top 10 Routes (MB, selected range)</span></h2>
+            <h2><span class="adm-chart-card-icon" aria-hidden="true"><span class="adm-ico adm-ico-signal" aria-hidden="true"></span></span><span data-i18n="admin.bandwidth.chartTopRoutes">Top 10 Routes (MB, selected range)</span></h2>
             <span class="adm-chart-card-sub" data-i18n="admin.bandwidth.chartTopRoutesSub">Heaviest routes over the current range</span>
           </div>
           <div class="adm-chart-wrap"><canvas id="admRoutesChart"></canvas></div>
@@ -204,7 +204,7 @@
       <!-- TABLE -->
       <!-- ========================= -->
       <div class="adm-table-card">
-        <h2><span class="adm-chart-card-icon" aria-hidden="true">📋</span><span data-i18n="admin.bandwidth.allRoutesTitle">All Routes — Selected Range</span></h2>
+        <h2><span class="adm-chart-card-icon" aria-hidden="true"><span class="adm-ico adm-ico-list" aria-hidden="true"></span></span><span data-i18n="admin.bandwidth.allRoutesTitle">All Routes — Selected Range</span></h2>
         <div class="adm-table-scroll">
         <table class="adm-table">
           <thead>

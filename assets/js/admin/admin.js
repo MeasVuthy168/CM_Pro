@@ -396,7 +396,7 @@
         : isInbound
         ? ` <span class="adm-badge adm-badge-flow-in" title="${t("admin.bandwidth.requestBodyTitle")}">${t("admin.bandwidth.requestBodyBadge")}</span>`
         : isDbRead
-        ? ` <span class="adm-badge adm-badge-flow-db" title="${t("admin.bandwidth.dbReadTitle")}">${t("admin.bandwidth.dbReadBadge")}</span>`
+        ? ` <span class="adm-badge adm-badge-flow-db" title="${t("admin.bandwidth.dbReadTitle")}"><span class="adm-ico adm-ico-database" aria-hidden="true"></span> ${t("admin.bandwidth.dbReadBadge")}</span>`
         : "";
 
       const tr = document.createElement("tr");

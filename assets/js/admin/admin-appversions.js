@@ -169,9 +169,9 @@
         <td title="${escapeHtml(v.releasedAt)}">${timeAgo(v.releasedAt)}</td>
         <td>
           <div class="adm-row-actions">
-            <button type="button" class="adm-icon-btn" title="${t("admin.appversions.download")}" data-action="download">⬇️</button>
-            <button type="button" class="adm-icon-btn" title="${t("admin.appversions.edit")}" data-action="edit">✏️</button>
-            <button type="button" class="adm-icon-btn adm-icon-btn-danger" title="${t("admin.appversions.delete")}" data-action="delete">🗑️</button>
+            <button type="button" class="adm-icon-btn" title="${t("admin.appversions.download")}" data-action="download"><span class="adm-ico adm-ico-download" aria-hidden="true"></span></button>
+            <button type="button" class="adm-icon-btn" title="${t("admin.appversions.edit")}" data-action="edit"><span class="adm-ico adm-ico-edit" aria-hidden="true"></span></button>
+            <button type="button" class="adm-icon-btn adm-icon-btn-danger" title="${t("admin.appversions.delete")}" data-action="delete"><span class="adm-ico adm-ico-trash" aria-hidden="true"></span></button>
           </div>
         </td>
       `;

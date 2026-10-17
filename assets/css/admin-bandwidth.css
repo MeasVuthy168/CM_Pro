@@ -32,6 +32,10 @@
   background: linear-gradient(135deg, var(--adm-gold-500), var(--adm-gold-300));
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
 }
+/* Line icon (admin.css .adm-ico) on the badge: white on navy, navy on
+   the dark theme's gold badge. */
+.adm-bw-title-icon { color: #fff; }
+[data-theme="dark"] .adm-bw-title-icon { color: var(--adm-navy-900); }
 
 .adm-bw-title-block h1 {
   display: flex;
@@ -53,7 +57,16 @@
   align-items: center;
   gap: 4px;
 }
-.adm-bw-updated::before { content: "🕐"; font-size: 0.85em; }
+.adm-bw-updated::before {
+  /* Clock line icon, same style as the admin icon set (admin.css .adm-ico). */
+  content: "";
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3Cpath d='M12 7v5l3 2' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3Cpath d='M12 7v5l3 2' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3C/svg%3E") center / contain no-repeat;
+}
 
 .adm-bw-refresh {
   display: inline-flex;
