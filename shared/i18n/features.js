@@ -107,6 +107,21 @@ CMI18n.register({
   "customers.colEnglishName": { km: "ឈ្មោះអង់គ្លេស", en: "English Name" },
   "customers.colBalance": { km: "សមតុល្យ", en: "Balance" },
   "customers.pleaseSearch": { km: "សូមស្វែងរក", en: "Please search" },
+  "customers.searchHint": { km: "ស្វែងរកក្នុងទិន្នន័យ OS, Payroll និង WO", en: "Searches Outstanding, Payroll and Write-off data" },
+  "customers.clearAria": { km: "សម្អាត", en: "Clear" },
+  "customers.viewCardAria": { km: "បង្ហាញជាកាត", en: "Card view" },
+  "customers.viewListAria": { km: "បង្ហាញជាបញ្ជី", en: "List view" },
+  "customers.startTitle": { km: "ស្វែងរកអតិថិជន", en: "Search for a customer" },
+  "customers.startText": { km: "បញ្ចូល CIF ឈ្មោះ ឬលេខទូរស័ព្ទ", en: "Enter a CIF, name or phone number" },
+  "customers.noResultTitle": { km: "រកមិនឃើញអតិថិជន", en: "No customer found" },
+  "customers.noResultText": { km: "សូមពិនិត្យពាក្យគន្លឹះ ហើយសាកល្បងម្តងទៀត", en: "Check the keyword and try again" },
+  "customers.errorTitle": { km: "ស្វែងរកមិនបាន", en: "Search failed" },
+  "customers.errorText": { km: "សូមពិនិត្យការតភ្ជាប់អ៊ីនធឺណិត ហើយសាកល្បងម្តងទៀត", en: "Check your internet connection and try again" },
+  "customers.enterKeyword": { km: "សូមបញ្ចូលពាក្យគន្លឹះ", en: "Please enter a keyword" },
+  "customers.sessionExpired": { km: "សម័យប្រើប្រាស់បានផុតកំណត់។ សូមចូលម្តងទៀត", en: "Session expired. Please log in again." },
+  "customers.searching": { km: "កំពុងស្វែងរក...", en: "Searching customer data..." },
+  "customers.copied": { km: "បានចម្លង CIF", en: "CIF copied" },
+  "customers.copyCifAria": { km: "ចម្លង CIF", en: "Copy CIF" },
 
   // =========================================================
   // LOAN CALCULATE (pages/loanCalculate/index.html, assets/js/loanCalculate-loader.js)
