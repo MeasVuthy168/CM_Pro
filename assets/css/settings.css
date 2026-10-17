@@ -296,6 +296,11 @@
 
     align-items:center;
 
+    /* Space between a long label (e.g. the fingerprint row) and the
+       switch/arrow on the right, so the text wraps instead of running
+       into it. */
+    gap:12px;
+
     padding:18px 20px;
 
     min-height:72px;
@@ -375,6 +380,8 @@
 }
 
 .notify-right{
+
+    flex-shrink:0;
 
     display:flex;
 

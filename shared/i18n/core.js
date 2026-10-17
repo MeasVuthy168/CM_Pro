@@ -7,7 +7,7 @@
 CMI18n.register({
   // Bottom nav
   "nav.home": { km: "ទំព័រដើម", en: "Home" },
-  "nav.setting": { km: "ការកំណត់", en: "Setting" },
+  "nav.setting": { km: "ការកំណត់", en: "Settings" },
   "nav.notification": { km: "ការជូនដំណឹង", en: "Notification" },
 
   // Topbar

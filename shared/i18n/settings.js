@@ -8,7 +8,7 @@
 CMI18n.register({
   // Main Settings list
   "settings.myAccount": { km: "គណនីរបស់ខ្ញុំ", en: "My Account" },
-  "settings.fingerprintRow": { km: "ការចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃមុខ", en: "Login with Fingerprint or Face" },
+  "settings.fingerprintRow": { km: "ការចូលដោយស្នាមម្រាមដៃ ឬ ផ្ទៃ\u2060មុខ", en: "Login with Fingerprint or Face" },
   "settings.manageDevicesRow": { km: "គ្រប់គ្រងឧបករណ៍", en: "Manage Devices" },
   "settings.about": { km: "អំពីកម្មវិធី", en: "About" },
   "settings.contactRow": { km: "ទំនាក់ទំនង", en: "Contact" },
@@ -57,7 +57,7 @@ CMI18n.register({
   "settings.account.changing": { km: "កំពុងដំណើរការ...", en: "Changing..." },
 
   // Change Pin (pages/settings/change-pin.html)
-  "settings.account.changePin": { km: "ប្តូរកូដ PIN", en: "Change Pin" },
+  "settings.account.changePin": { km: "ប្តូរកូដ PIN", en: "Change PIN" },
   "settings.account.currentPassword": { km: "ពាក្យសម្ងាត់បច្ចុប្បន្ន", en: "Current Password" },
   "settings.account.newPin": { km: "កូដ PIN ថ្មី", en: "New PIN" },
   "settings.account.confirmPin": { km: "បញ្ជាក់កូដ PIN", en: "Confirm PIN" },
