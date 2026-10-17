@@ -1079,6 +1079,9 @@ function renderTable(rows) {
     if (arrViewMode === "card") {
         arrTableStale = true;
         renderCards(rows);
+    } else if (arrGroupMode === "cif") {
+        arrTableStale = true;
+        renderCifTable(rows);
     } else {
         renderTableView(rows);
     }
@@ -1192,7 +1195,7 @@ function renderCards(rows) {
 
 // More cards as the page (body) scrolls near the bottom.
 function arrCardScrollCheck() {
-    if (arrViewMode !== "card") return;
+    if (arrViewMode !== "card" && arrGroupMode !== "cif") return;
     const more = arrGroupMode === "cif"
         ? renderedGroupCount < arrGroups.length
         : renderedCardCount < currentRows.length;
@@ -1223,6 +1226,7 @@ arrCardList.addEventListener("click", (e) => {
     }
 
     // CIF mode: the group's header expands / collapses its LDs.
+// (Card view only — the CIF table has its own listener below.)
     const groupHead = e.target.closest(".arr-group-head");
     if (groupHead) {
         const groupEl = groupHead.closest(".arr-group");
@@ -1386,7 +1390,9 @@ function toggleGroup(groupEl) {
     if (!g) return;
     if (arrExpandedGroups.has(g.key)) arrExpandedGroups.delete(g.key);
     else arrExpandedGroups.add(g.key);
-    groupEl.replaceWith(buildGroupElement(g));
+    groupEl.replaceWith(groupEl.tagName === "TBODY"
+        ? buildGroupTbody(g, Number(groupEl.dataset.no))
+        : buildGroupElement(g));
 }
 
 // After a Reason Arrear save in CIF mode: recompute and redraw just the
@@ -1394,7 +1400,8 @@ function toggleGroup(groupEl) {
 function refreshGroupOf(row) {
     const key = groupKeyOf(row);
     const old = arrGroupByKey.get(key);
-    const el = arrCardList.querySelector(`.arr-group[data-key="${CSS.escape(key)}"]`);
+    const el = (arrViewMode === "card" ? arrCardList : arrCifTable)
+        .querySelector(`.arr-group[data-key="${CSS.escape(key)}"]`);
     if (!old || !el) return false;
     const fresh = buildGroups(old.rows.map(r => r)).find(x => x.key === key);
     if (!fresh) return false;
@@ -1402,7 +1409,9 @@ function refreshGroupOf(row) {
     fresh.totalLd = old.totalLd;
     arrGroupByKey.set(key, fresh);
     arrGroups[arrGroups.indexOf(old)] = fresh;
-    el.replaceWith(buildGroupElement(fresh));
+    el.replaceWith(el.tagName === "TBODY"
+        ? buildGroupTbody(fresh, Number(el.dataset.no))
+        : buildGroupElement(fresh));
     return true;
 }
 
@@ -1410,9 +1419,12 @@ function appendMoreGroups() {
     if (renderedGroupCount >= arrGroups.length) return;
     const start = renderedGroupCount;
     const end = Math.min(start + RENDER_BATCH_SIZE, arrGroups.length);
+    const inTable = arrViewMode !== "card";
     const frag = document.createDocumentFragment();
-    for (let i = start; i < end; i++) frag.appendChild(buildGroupElement(arrGroups[i]));
-    arrCardList.appendChild(frag);
+    for (let i = start; i < end; i++) {
+        frag.appendChild(inTable ? buildGroupTbody(arrGroups[i], i) : buildGroupElement(arrGroups[i]));
+    }
+    (inTable ? arrCifTable : arrCardList).appendChild(frag);
     renderedGroupCount = end;
 
     const note = document.getElementById("renderedCountNote");
@@ -1438,12 +1450,113 @@ function renderCifCards(rows) {
     appendMoreGroups();
 }
 
+// ---- CIF table (table view + CIF) ----
+const arrCifTable = document.getElementById("arrCifTable");
+
+function buildGroupTbody(g, no) {
+    const tbody = document.createElement("tbody");
+    tbody.className = "arr-group";
+    tbody.dataset.key = g.key;
+    tbody.dataset.no = no;
+    const open = arrExpandedGroups.has(g.key);
+    if (open) tbody.classList.add("is-open");
+    const classCss = classRowCssClass(g.worstClass);
+    const promiseCss = promiseCellCssClass(g.promise);
+    const ldText = g.totalLd > g.rows.length
+        ? `${g.rows.length.toLocaleString()} / ${g.totalLd.toLocaleString()}`
+        : g.rows.length.toLocaleString();
+
+    let html = `
+        <tr class="arr-cif-row ${g.pending ? "arr-card-pending" : ""}" aria-expanded="${open}">
+            <td class="arr-cif-no ${classCss}">${no + 1}</td>
+            <td class="arr-cif-name"><span class="arr-group-chevron" aria-hidden="true">›</span> ${escapeHtml(g.customer || "-")}</td>
+            <td>${escapeHtml(g.cif || "-")}</td>
+            <td class="arr-num"><span class="arr-ld-count">${escapeHtml(ldText)}</span></td>
+            <td class="arr-num"><strong>${escapeHtml(arrFormatAmount(g.osUsd))}</strong></td>
+            <td class="arr-num">${g.maxDay !== null ? g.maxDay.toLocaleString() : "-"}</td>
+            <td class="${classCss}">${escapeHtml(g.worstClass || "")}</td>
+            <td class="${promiseCss}">${escapeHtml(g.promise || "")}</td>
+            <td class="arr-cif-reason">${g.withReason.toLocaleString()} / ${g.rows.length.toLocaleString()}
+                <span class="arr-progress"><span style="width:${g.rows.length ? Math.round(g.withReason / g.rows.length * 100) : 0}%"></span></span></td>
+            <td>${escapeHtml(formatPhone(g.phone))}</td>
+            <td>${escapeHtml(g.coId || "")}</td>
+        </tr>`;
+
+    if (open) {
+        html += g.rows.map((row, i) => {
+            const idx = g.indexes[i];
+            const pCss = promiseCellCssClass(row.promiseStatus);
+            const followCss = (pCss || "cell-followup-default") + (row.__pendingSubmit ? " cell-pending-local" : "");
+            const hasReason = row.ajReason || row.akSolution || row.alFollowup;
+            return `
+            <tr class="arr-cif-ld" data-index="${idx}">
+                <td class="arr-cif-no ${classRowCssClass(row.class)}"></td>
+                <td class="arr-cif-ld-no">${escapeHtml(row.loanNumber || "-")}</td>
+                <td></td>
+                <td class="arr-num">${escapeHtml(row.ccy || "")}</td>
+                <td class="arr-num">${escapeHtml(arrFormatAmount(row.osUsd))}</td>
+                <td class="arr-num">${escapeHtml(row.day || "")}</td>
+                <td class="${classRowCssClass(row.class)}">${escapeHtml(row.class || "")}</td>
+                <td class="${pCss}">${escapeHtml(row.promiseStatus || "")}</td>
+                <td class="${hasReason ? followCss : "arr-cif-noreason"}" colspan="3">${hasReason
+                    ? escapeHtml([row.ajReason, row.akSolution].filter(Boolean).join(" · ")) + (row.alFollowup ? ` · ${escapeHtml(formatRowDateDMY(row.alFollowup))}` : "")
+                    : escapeHtml(t("arrears.cardNoReason"))}
+                    <div class="arr-cif-arrears">Arrears <strong class="${(parseFloat(row.arreas) || 0) > 0 ? "arr-amount-bad" : ""}">${escapeHtml(arrFormatAmount(row.arreas))}${row.ccy ? ` ${escapeHtml(row.ccy)}` : ""}</strong></div>
+                </td>
+            </tr>`;
+        }).join("");
+    }
+
+    tbody.innerHTML = html;
+    return tbody;
+}
+
+function renderCifTable(rows) {
+    arrCifTable.querySelectorAll("tbody").forEach(tb => tb.remove());
+    renderedGroupCount = 0;
+    arrGroups = buildGroups(rows);
+    arrGroupByKey = new Map(arrGroups.map(g => [g.key, g]));
+
+    if (!arrGroups.length) {
+        const tb = document.createElement("tbody");
+        tb.innerHTML = `<tr class="row-empty"><td colspan="11">${escapeHtml(t("arrears.cardNoData"))}</td></tr>`;
+        arrCifTable.appendChild(tb);
+        const note = document.getElementById("renderedCountNote");
+        if (note) note.textContent = "";
+        return;
+    }
+    appendMoreGroups();
+}
+
+arrCifTable?.addEventListener("click", (e) => {
+    const ldRow = e.target.closest("tr.arr-cif-ld[data-index]");
+    if (ldRow) {
+        const row = currentRows[Number(ldRow.dataset.index)];
+        const group = arrGroupByKey.get(ldRow.closest(".arr-group").dataset.key);
+        if (!row) return;
+        arrCifTable.querySelectorAll(".row-selected").forEach(r => r.classList.remove("row-selected"));
+        ldRow.classList.add("row-selected");
+        openReasonPanel(row).then(() => { reasonNavRows = group ? group.rows : null; updateReasonNav(); });
+        return;
+    }
+    const head = e.target.closest("tr.arr-cif-row");
+    if (head) toggleGroup(head.closest(".arr-group"));
+});
+
 function setArrearsGroupMode(mode) {
     if (mode === arrGroupMode) return;
     arrGroupMode = mode;
     try { localStorage.setItem("arr_group", mode); } catch (e) {}
     applyArrearsViewMode();
     if (arrViewMode === "card") renderCards(currentRows);
+    else if (mode === "cif") renderCifTable(currentRows);
+    else if (arrTableStale) renderTableView(currentRows);
+    else {
+        const note = document.getElementById("renderedCountNote");
+        if (note) note.textContent = renderedCount < currentRows.length
+            ? `កំពុងបង្ហាញ ${renderedCount.toLocaleString()} នៃ ${currentRows.length.toLocaleString()} — រំកិលចុះក្រោមដើម្បីមើលបន្ថែម`
+            : `បង្ហាញទាំងអស់ ${currentRows.length.toLocaleString()}`;
+    }
 }
 
 document.getElementById("arrGroupLdBtn")?.addEventListener("click", () => setArrearsGroupMode("ld"));
@@ -1451,6 +1564,7 @@ document.getElementById("arrGroupCifBtn")?.addEventListener("click", () => setAr
 
 function applyArrearsViewMode() {
     document.body.classList.toggle("arr-view-card", arrViewMode === "card");
+    document.body.classList.toggle("arr-group-cif", arrGroupMode === "cif");
     document.getElementById("arrGroupLdBtn")?.classList.toggle("active", arrGroupMode === "ld");
     document.getElementById("arrGroupCifBtn")?.classList.toggle("active", arrGroupMode === "cif");
     document.getElementById("arrViewCardBtn")?.classList.toggle("active", arrViewMode === "card");
@@ -1463,6 +1577,7 @@ function setArrearsViewMode(mode) {
     try { localStorage.setItem("arr_view", mode); } catch (e) {}
     applyArrearsViewMode();
     if (mode === "card") renderCards(currentRows);
+    else if (arrGroupMode === "cif") renderCifTable(currentRows);
     else if (arrTableStale) renderTableView(currentRows);
     else {
         // table DOM already current — just restore its count note
@@ -1477,6 +1592,7 @@ function setArrearsViewMode(mode) {
 // the one on screen (and up to date) first.
 function ensureTableView() {
     setArrearsViewMode("table");
+    setArrearsGroupMode("ld");
 }
 
 document.getElementById("arrViewCardBtn")?.addEventListener("click", () => setArrearsViewMode("card"));
@@ -1499,6 +1615,11 @@ applyArrearsViewMode();
 function updateRowInTable(row) {
     const idx = currentRows.indexOf(row);
     if (idx === -1) return false; // row isn't in the currently-filtered view — nothing on screen to update
+
+    if (arrViewMode !== "card" && arrGroupMode === "cif") {
+        arrTableStale = true;
+        return refreshGroupOf(row);
+    }
 
     if (arrViewMode === "card") {
         // The table isn't on screen; redraw just this one card, and

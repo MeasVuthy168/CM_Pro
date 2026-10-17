@@ -79,6 +79,8 @@ CMI18n.register({
   "arrears.groupOf": { km: "នៃ", en: "of" },
   "arrears.groupShow": { km: "មើល LD", en: "Show LDs" },
   "arrears.groupHide": { km: "លាក់ LD", en: "Hide LDs" },
+  "arrears.cifColCustomer": { km: "អតិថិជន", en: "Customer" },
+  "arrears.cifColMaxDay": { km: "ថ្ងៃយឺត", en: "Day" },
   "arrears.viewTableAria": { km: "បង្ហាញជាតារាង", en: "Table view" },
   "arrears.cardDays": { km: "ថ្ងៃ", en: "days" },
   "arrears.cardNoReason": { km: "មិនទាន់បំពេញ Reason Arrear — ចុចដើម្បីបំពេញ", en: "No Reason Arrear yet — tap to fill in" },
