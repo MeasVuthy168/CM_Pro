@@ -1166,6 +1166,11 @@ function appendMoreCards() {
 }
 
 function renderCards(rows) {
+    if (arrGroupMode === "cif") {
+        renderCifCards(rows);
+        return;
+    }
+
     arrCardList.innerHTML = "";
     renderedCardCount = 0;
 
@@ -1187,10 +1192,15 @@ function renderCards(rows) {
 
 // More cards as the page (body) scrolls near the bottom.
 function arrCardScrollCheck() {
-    if (arrViewMode !== "card" || renderedCardCount >= currentRows.length) return;
+    if (arrViewMode !== "card") return;
+    const more = arrGroupMode === "cif"
+        ? renderedGroupCount < arrGroups.length
+        : renderedCardCount < currentRows.length;
+    if (!more) return;
     const scroller = document.body.scrollHeight > window.innerHeight + 2 ? document.body : document.scrollingElement;
     if (scroller.scrollTop + window.innerHeight >= scroller.scrollHeight - 600) {
-        appendMoreCards();
+        if (arrGroupMode === "cif") appendMoreGroups();
+        else appendMoreCards();
     }
 }
 document.body.addEventListener("scroll", arrCardScrollCheck, { passive: true });
@@ -1198,6 +1208,29 @@ window.addEventListener("scroll", arrCardScrollCheck, { passive: true });
 
 arrCardList.addEventListener("click", (e) => {
     if (e.target.closest("[data-stop]")) return; // phone link dials instead
+
+    // CIF mode: an LD row inside an expanded group opens the Reason
+    // panel with ‹ › limited to that customer's LDs.
+    const ldRow = e.target.closest(".arr-group-ld[data-index]");
+    if (ldRow) {
+        const row = currentRows[Number(ldRow.dataset.index)];
+        const group = arrGroupByKey.get(ldRow.closest(".arr-group").dataset.key);
+        if (!row) return;
+        arrCardList.querySelectorAll(".is-selected").forEach(c => c.classList.remove("is-selected"));
+        ldRow.classList.add("is-selected");
+        openReasonPanel(row).then(() => { reasonNavRows = group ? group.rows : null; updateReasonNav(); });
+        return;
+    }
+
+    // CIF mode: the group's header expands / collapses its LDs.
+    const groupHead = e.target.closest(".arr-group-head");
+    if (groupHead) {
+        const groupEl = groupHead.closest(".arr-group");
+        toggleGroup(groupEl);
+        return;
+    }
+
+    reasonNavRows = null;
     const card = e.target.closest(".arr-card[data-index]");
     if (!card) return;
     const row = currentRows[Number(card.dataset.index)];
@@ -1207,8 +1240,219 @@ arrCardList.addEventListener("click", (e) => {
     openReasonPanel(row);
 });
 
+// ========================================
+// CIF GROUPING (card view)
+// "LD" shows one card per loan (above); "CIF" shows one card per
+// customer, grouping all of their LDs that match the current filters:
+// LD count (x of the customer's total), total OS in USD (OS_USD, so
+// USD and KHR loans add up correctly), the latest days late, the worst
+// class, the most urgent promise status and how many LDs already have
+// a Reason Arrear. Tapping the card lists its LDs; tapping an LD opens
+// the Reason Arrear panel with ‹ › limited to that customer's LDs.
+// Remembered in localStorage ("arr_group"). Table view stays per LD.
+// ========================================
+
+let arrGroupMode = localStorage.getItem("arr_group") === "cif" ? "cif" : "ld";
+let arrGroups = [];
+let arrGroupByKey = new Map();
+let renderedGroupCount = 0;
+const arrExpandedGroups = new Set(); // keys of open groups, kept across re-renders
+
+const CLASS_RANK = { "Loss": 5, "Doubtful": 4, "Sub Standard": 3, "Sub-Standard": 3, "Special Mention": 2 };
+function promiseRank(status) {
+    const css = promiseCellCssClass(status);
+    return css === "cell-promise-today" ? 3 : css === "cell-promise-expired" ? 2 : css === "cell-promise-upcoming" ? 1 : 0;
+}
+
+function groupKeyOf(row) {
+    return row.cif ? `cif:${row.cif}` : `name:${row.customer || row.concate}`;
+}
+
+function buildGroups(rows) {
+    // total LDs per customer in ALL loaded rows, for "x of y LD"
+    const totals = new Map();
+    allRows.forEach(r => {
+        const k = groupKeyOf(r);
+        totals.set(k, (totals.get(k) || 0) + 1);
+    });
+
+    const map = new Map();
+    rows.forEach((row, index) => {
+        const key = groupKeyOf(row);
+        let g = map.get(key);
+        if (!g) {
+            g = { key, cif: row.cif, customer: row.customer, rows: [], indexes: [],
+                  osUsd: 0, maxDay: null, worstClass: "", worstRank: 0,
+                  promise: "", promiseRank: 0, withReason: 0, phone: "", coId: "", pending: false };
+            map.set(key, g);
+        }
+        g.rows.push(row);
+        g.indexes.push(index);
+        g.osUsd += parseFloat(row.osUsd) || 0;
+        const day = parseInt(row.day, 10);
+        if (Number.isFinite(day) && (g.maxDay === null || day > g.maxDay)) g.maxDay = day;
+        const rank = CLASS_RANK[row.class] || 0;
+        if (rank > g.worstRank) { g.worstRank = rank; g.worstClass = row.class; }
+        const pr = promiseRank(row.promiseStatus);
+        if (pr > g.promiseRank) { g.promiseRank = pr; g.promise = row.promiseStatus; }
+        if (row.ajReason || row.akSolution || row.alFollowup) g.withReason++;
+        if (!g.phone && row.tell) g.phone = row.tell;
+        if (!g.coId && row.coId) g.coId = row.coId;
+        if (row.__pendingSubmit) g.pending = true;
+    });
+
+    const groups = [...map.values()];
+    groups.forEach(g => { g.totalLd = totals.get(g.key) || g.rows.length; });
+    // Highest risk first: latest days late, then largest OS.
+    groups.sort((a, b) => ((b.maxDay ?? -1) - (a.maxDay ?? -1)) || (b.osUsd - a.osUsd));
+    return groups;
+}
+
+function buildGroupLdRow(row, index) {
+    const promiseCss = promiseCellCssClass(row.promiseStatus);
+    const hasReason = row.ajReason || row.akSolution || row.alFollowup;
+    const day = parseInt(row.day, 10);
+    return `
+        <button type="button" class="arr-group-ld ${classRowCssClass(row.class)} ${row.__pendingSubmit ? "arr-card-pending" : ""}" data-index="${index}">
+            <div class="arr-group-ld-top">
+                <span class="arr-group-ld-no">${escapeHtml(row.loanNumber || "-")}</span>
+                ${Number.isFinite(day) ? `<span class="arr-day-badge">${day.toLocaleString()} <small>${escapeHtml(t("arrears.cardDays"))}</small></span>` : ""}
+            </div>
+            <div class="arr-group-ld-meta">
+                <span>Arrears <strong class="${(parseFloat(row.arreas) || 0) > 0 ? "arr-amount-bad" : ""}">${escapeHtml(arrFormatAmount(row.arreas))}${row.ccy ? ` ${escapeHtml(row.ccy)}` : ""}</strong></span>
+                <span>OS <strong>${escapeHtml(formatShortAmount(parseFloat(row.osUsd) || 0))} USD</strong></span>
+                ${row.promiseStatus ? `<span class="arr-promise ${promiseCss}">${escapeHtml(row.promiseStatus)}</span>` : ""}
+            </div>
+            <div class="arr-group-ld-reason ${hasReason ? "" : "arr-group-ld-reason-empty"}">
+                ${hasReason
+                    ? escapeHtml([row.ajReason, row.akSolution].filter(Boolean).join(" · ") || "-") + (row.alFollowup ? ` · ${escapeHtml(formatRowDateDMY(row.alFollowup))}` : "")
+                    : escapeHtml(t("arrears.cardNoReason"))}
+            </div>
+        </button>`;
+}
+
+function buildGroupElement(g) {
+    const el = document.createElement("div");
+    el.className = "arr-group";
+    el.dataset.key = g.key;
+    const classCss = classRowCssClass(g.worstClass);
+    if (classCss) el.classList.add(classCss);
+    const open = arrExpandedGroups.has(g.key);
+    if (open) el.classList.add("is-open");
+    const phone = formatPhone(g.phone);
+    const phoneDigits = String(g.phone || "").replace(/[^\d+]/g, "");
+    const promiseCss = promiseCellCssClass(g.promise);
+    const pct = g.rows.length ? Math.round(g.withReason / g.rows.length * 100) : 0;
+    const ldText = g.totalLd > g.rows.length
+        ? `${g.rows.length.toLocaleString()} ${t("arrears.groupOf")} ${g.totalLd.toLocaleString()} LD`
+        : `${g.rows.length.toLocaleString()} LD`;
+
+    el.innerHTML = `
+        <button type="button" class="arr-card arr-group-head ${g.pending ? "arr-card-pending" : ""}" aria-expanded="${open}">
+            <div class="arr-card-top">
+                <div class="arr-card-name">${escapeHtml(g.customer || "-")}</div>
+                ${g.maxDay !== null ? `<span class="arr-day-badge">${g.maxDay.toLocaleString()} <small>${escapeHtml(t("arrears.cardDays"))}</small></span>` : ""}
+            </div>
+            <div class="arr-card-ids">
+                <span>CIF ${escapeHtml(g.cif || "-")}</span>
+                <span class="arr-ld-count">${escapeHtml(ldText)}</span>
+                ${g.worstClass ? `<span class="arr-class-chip">${escapeHtml(g.worstClass)}</span>` : ""}
+            </div>
+            <div class="arr-card-amounts arr-group-amounts">
+                <div class="arr-amount">
+                    <span>OS (USD)</span><strong>${escapeHtml(arrFormatAmount(g.osUsd))}</strong>
+                </div>
+                <div class="arr-amount">
+                    <span>Reason Arrear</span>
+                    <strong>${g.withReason.toLocaleString()} / ${g.rows.length.toLocaleString()}</strong>
+                    <span class="arr-progress"><span style="width:${pct}%"></span></span>
+                </div>
+            </div>
+            <div class="arr-card-metas">
+                ${phone ? `<a class="arr-card-meta arr-card-phone" href="tel:${escapeHtml(phoneDigits)}" data-stop><span class="ui-ico ui-ico-phone" aria-hidden="true"></span>${escapeHtml(phone)}</a>` : ""}
+                ${g.coId ? `<span class="arr-card-meta">CO ${escapeHtml(g.coId)}</span>` : ""}
+                ${g.promise ? `<span class="arr-promise ${promiseCss}">${escapeHtml(g.promise)}</span>` : ""}
+                <span class="arr-group-toggle">${escapeHtml(t(open ? "arrears.groupHide" : "arrears.groupShow"))} <span class="arr-group-chevron" aria-hidden="true">›</span></span>
+            </div>
+        </button>
+        <div class="arr-group-lds" ${open ? "" : "hidden"}>
+            ${open ? g.rows.map((r, i) => buildGroupLdRow(r, g.indexes[i])).join("") : ""}
+        </div>`;
+    return el;
+}
+
+function toggleGroup(groupEl) {
+    const g = arrGroupByKey.get(groupEl.dataset.key);
+    if (!g) return;
+    if (arrExpandedGroups.has(g.key)) arrExpandedGroups.delete(g.key);
+    else arrExpandedGroups.add(g.key);
+    groupEl.replaceWith(buildGroupElement(g));
+}
+
+// After a Reason Arrear save in CIF mode: recompute and redraw just the
+// customer's card (keeping it open), instead of re-rendering the list.
+function refreshGroupOf(row) {
+    const key = groupKeyOf(row);
+    const old = arrGroupByKey.get(key);
+    const el = arrCardList.querySelector(`.arr-group[data-key="${CSS.escape(key)}"]`);
+    if (!old || !el) return false;
+    const fresh = buildGroups(old.rows.map(r => r)).find(x => x.key === key);
+    if (!fresh) return false;
+    fresh.indexes = old.indexes;          // indexes into currentRows stay the same
+    fresh.totalLd = old.totalLd;
+    arrGroupByKey.set(key, fresh);
+    arrGroups[arrGroups.indexOf(old)] = fresh;
+    el.replaceWith(buildGroupElement(fresh));
+    return true;
+}
+
+function appendMoreGroups() {
+    if (renderedGroupCount >= arrGroups.length) return;
+    const start = renderedGroupCount;
+    const end = Math.min(start + RENDER_BATCH_SIZE, arrGroups.length);
+    const frag = document.createDocumentFragment();
+    for (let i = start; i < end; i++) frag.appendChild(buildGroupElement(arrGroups[i]));
+    arrCardList.appendChild(frag);
+    renderedGroupCount = end;
+
+    const note = document.getElementById("renderedCountNote");
+    if (note) {
+        note.textContent = renderedGroupCount < arrGroups.length
+            ? `កំពុងបង្ហាញ ${renderedGroupCount.toLocaleString()} នៃ ${arrGroups.length.toLocaleString()} CIF — រំកិលចុះក្រោមដើម្បីមើលបន្ថែម`
+            : `បង្ហាញទាំងអស់ ${arrGroups.length.toLocaleString()} CIF (${currentRows.length.toLocaleString()} LD)`;
+    }
+}
+
+function renderCifCards(rows) {
+    arrCardList.innerHTML = "";
+    renderedGroupCount = 0;
+    arrGroups = buildGroups(rows);
+    arrGroupByKey = new Map(arrGroups.map(g => [g.key, g]));
+
+    if (!arrGroups.length) {
+        arrCardList.innerHTML = `<div class="arr-card-empty">${escapeHtml(t("arrears.cardNoData"))}</div>`;
+        const note = document.getElementById("renderedCountNote");
+        if (note) note.textContent = "";
+        return;
+    }
+    appendMoreGroups();
+}
+
+function setArrearsGroupMode(mode) {
+    if (mode === arrGroupMode) return;
+    arrGroupMode = mode;
+    try { localStorage.setItem("arr_group", mode); } catch (e) {}
+    applyArrearsViewMode();
+    if (arrViewMode === "card") renderCards(currentRows);
+}
+
+document.getElementById("arrGroupLdBtn")?.addEventListener("click", () => setArrearsGroupMode("ld"));
+document.getElementById("arrGroupCifBtn")?.addEventListener("click", () => setArrearsGroupMode("cif"));
+
 function applyArrearsViewMode() {
     document.body.classList.toggle("arr-view-card", arrViewMode === "card");
+    document.getElementById("arrGroupLdBtn")?.classList.toggle("active", arrGroupMode === "ld");
+    document.getElementById("arrGroupCifBtn")?.classList.toggle("active", arrGroupMode === "cif");
     document.getElementById("arrViewCardBtn")?.classList.toggle("active", arrViewMode === "card");
     document.getElementById("arrViewTableBtn")?.classList.toggle("active", arrViewMode === "table");
 }
@@ -1260,6 +1504,7 @@ function updateRowInTable(row) {
         // The table isn't on screen; redraw just this one card, and
         // rebuild the table from currentRows when it's next shown.
         arrTableStale = true;
+        if (arrGroupMode === "cif") return refreshGroupOf(row);
         const card = arrCardList.querySelector(`.arr-card[data-index="${idx}"]`);
         if (!card) return false;
         card.replaceWith(buildCardElement(row, idx));
@@ -1320,6 +1565,7 @@ function openReasonModal() {
 function closeReasonModal() {
     reasonBackdrop.classList.remove("show");
     selectedRow = null;
+    reasonNavRows = null;
 }
 
 // click on the dark backdrop itself (not the card) closes the modal
@@ -1956,14 +2202,22 @@ document.getElementById("btnGpsOpen")?.addEventListener("click", () => {
 // ---- record navigation ----
 // Walks currentRows, so it follows the active filter and sort rather
 // than the unfiltered set.
+// The rows ‹ › walks through: one customer's LDs when the panel was
+// opened from a CIF card, otherwise every row on screen. Reset when the
+// panel closes.
+let reasonNavRows = null;
+function reasonNavList() {
+    return reasonNavRows || currentRows;
+}
+
 function reasonNavIndex() {
     if (!selectedRow) return -1;
-    return currentRows.findIndex(r => r.concate === selectedRow.concate);
+    return reasonNavList().findIndex(r => r.concate === selectedRow.concate);
 }
 
 function updateReasonNav() {
     const i = reasonNavIndex();
-    const total = currentRows.length;
+    const total = reasonNavList().length;
 
     if (reasonNavPos) {
         reasonNavPos.textContent = i >= 0 ? `${i + 1} / ${total}` : "-";
@@ -2028,7 +2282,7 @@ async function reasonNavStep(delta) {
     const i = reasonNavIndex();
     if (i < 0) return;
 
-    const target = currentRows[i + delta];
+    const target = reasonNavList()[i + delta];
     if (!target) return;
 
     // Unsaved edits would otherwise vanish without a word. Ask rather

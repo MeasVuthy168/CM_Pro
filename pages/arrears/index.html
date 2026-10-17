@@ -584,6 +584,12 @@ No Internet Connection
      Spot Check / Customer Search, remembered in localStorage "arr_view") -->
 <div class="arr-results-bar">
 <div class="rendered-count-note" id="renderedCountNote"></div>
+<div class="arr-results-tools">
+<!-- LD = one card per loan, CIF = one card per customer (card view only) -->
+<div class="arr-group-switch" role="group" aria-label="LD / CIF">
+<button type="button" class="arr-group-btn" id="arrGroupLdBtn">LD</button>
+<button type="button" class="arr-group-btn" id="arrGroupCifBtn">CIF</button>
+</div>
 <div class="arr-view-toggle">
 <button type="button" class="arr-view-btn" id="arrViewCardBtn" data-view="card" aria-label="Card view" data-i18n-aria-label="customers.viewCardAria">
 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
@@ -591,6 +597,7 @@ No Internet Connection
 <button type="button" class="arr-view-btn" id="arrViewTableBtn" data-view="table" aria-label="Table view" data-i18n-aria-label="arrears.viewTableAria">
 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
 </button>
+</div>
 </div>
 </div>
 
