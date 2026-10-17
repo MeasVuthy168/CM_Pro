@@ -3828,3 +3828,45 @@ body.arr-group-cif:not(.arr-view-card) .table-card{ display:none; }
 .arr-cif-pdf td.row-class-doubtful{ background:#FF0000 !important; color:#fff; }
 .arr-cif-pdf td.row-class-substandard{ background:#FFA500 !important; color:#1C2333; }
 .arr-cif-pdf td.row-class-specialmention{ background:#FFFF00 !important; color:#1C2333; }
+
+/* ========================================
+   CIF TABLE — all LD columns + sort, Reason for every LD of a CIF
+   ======================================== */
+#arrCifHeadRow th[data-sort-key]{
+    cursor:pointer;
+    user-select:none;
+    -webkit-user-select:none;
+    padding-right:20px;
+}
+#arrCifHeadRow th[data-sort-key]::after{
+    content:"↕";
+    position:absolute;
+    right:6px;
+    opacity:.6;
+    font-size:10px;
+}
+#arrCifHeadRow th.arrears-sort-asc::after{ content:"▲"; opacity:1; color:#fff; }
+#arrCifHeadRow th.arrears-sort-desc::after{ content:"▼"; opacity:1; color:#fff; }
+.arr-cif-table td small{ font-size:10px; opacity:.7; }
+.arr-cif-table td.arr-num > div + div{ margin-top:2px; }
+.arr-cif-table td.cell-negative{ color:#C0392B; font-weight:600; }
+.arr-cif-ld-mark{ color:var(--arr-text-muted); text-align:right; }
+.arr-cif-table td.row-class-loss.arr-num,
+.arr-cif-table td.row-class-doubtful.arr-num{ color:#fff; }
+
+.reason-apply-all{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:-4px 0 14px;
+    padding:10px 12px;
+    border:1px solid rgba(212,175,55,.45);
+    border-radius:12px;
+    background:rgba(212,175,55,.10);
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+}
+.reason-apply-all[hidden]{ display:none; }
+.reason-apply-all input{ width:18px; height:18px; margin:0; accent-color:#1A2E57; flex:none; }
+[data-theme="dark"] .reason-apply-all input{ accent-color:#D4AF37; }

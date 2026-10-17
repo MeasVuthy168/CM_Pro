@@ -344,6 +344,13 @@ No Internet Connection
 <div class="reason-gps-hint" id="reasonGpsHint"></div>
 </div>
 
+<!-- Shown when the customer has more than one LD: Save writes the same
+     reason to every LD of the CIF. -->
+<label class="reason-apply-all" id="reasonApplyAllWrap" hidden>
+<input type="checkbox" id="reasonApplyAll">
+<span id="reasonApplyAllText"></span>
+</label>
+
 <div class="reason-meta" id="reasonMeta"></div>
 
 <div class="reason-pending-note" id="reasonPendingNote"></div>
@@ -609,18 +616,37 @@ No Internet Connection
 <div id="arrCifTableWrap" class="arr-cif-table-wrap">
 <table class="arr-cif-table" id="arrCifTable">
 <thead>
-<tr>
+<!-- Same columns as the LD table (+ OS (USD) after Loan Number). A
+     customer row shows totals / shared values; the click-to-sort cycle
+     (▲ ▼ default) sorts customers, and the LDs inside each customer. -->
+<tr id="arrCifHeadRow">
 <th>No</th>
-<th data-i18n="arrears.cifColCustomer">Customer</th>
-<th>CIF</th>
-<th>LD</th>
-<th class="arr-num">OS (USD)</th>
-<th class="arr-num" data-i18n="arrears.cifColMaxDay">Day</th>
-<th>Class</th>
-<th>Promise Status</th>
-<th>Reason Arrear</th>
-<th>Tell</th>
-<th>CO_ID</th>
+<th data-sort-key="customer" data-sort-type="text" data-i18n="arrears.cifColCustomer">Customer</th>
+<th data-sort-key="loanNumber" data-sort-type="text">Loan Number</th>
+<th class="arr-num" data-sort-key="osUsd" data-sort-type="number">OS (USD)</th>
+<th data-sort-key="location" data-sort-type="text">Location</th>
+<th data-sort-key="disDate" data-sort-type="date">DisDate</th>
+<th class="arr-num" data-sort-key="prnOS" data-sort-type="number">Prn.OS</th>
+<th class="arr-num" data-sort-key="intOS" data-sort-type="number">Int.OS</th>
+<th class="arr-num" data-sort-key="prnDue" data-sort-type="number">Prn.Due</th>
+<th class="arr-num" data-sort-key="intDue" data-sort-type="number">Int.Due</th>
+<th class="arr-num" data-sort-key="penalty" data-sort-type="number">Penalty</th>
+<th class="arr-num" data-sort-key="arreas" data-sort-type="number">Arreas</th>
+<th class="arr-num" data-sort-key="day" data-sort-type="number">Day</th>
+<th class="arr-num" data-sort-key="balance" data-sort-type="number">Balnce</th>
+<th data-sort-key="accountLoan" data-sort-type="text">Account Loan</th>
+<th data-sort-key="tell" data-sort-type="text">Tell</th>
+<th data-sort-key="cif" data-sort-type="text">CIF</th>
+<th data-sort-key="occu" data-sort-type="text">Occu</th>
+<th data-sort-key="ministry" data-sort-type="text">Ministry</th>
+<th data-sort-key="promiseStatus" data-sort-type="text">Promise Status</th>
+<th data-sort-key="coId" data-sort-type="text">CO_ID</th>
+<th data-sort-key="cifCoborrower" data-sort-type="text" data-i18n="arrears.colCifCoborrower">CIF_អ្នករួមខ្ចី</th>
+<th data-sort-key="ajReason" data-sort-type="text" data-i18n="arrears.reasonOccupationLabel">មុខរបរ</th>
+<th data-sort-key="akSolution" data-sort-type="text" data-i18n="arrears.reasonSolutionLabel">មូលហេតុ/ដំណោះស្រាយ</th>
+<th data-sort-key="alFollowup" data-sort-type="date" data-i18n="arrears.reasonPromiseDateLabel">ថ្ងៃសន្យាសង</th>
+<th data-sort-key="user" data-sort-type="text">User</th>
+<th data-sort-key="dateBackup" data-sort-type="date">DateBackUpReasonArrear</th>
 </tr>
 </thead>
 </table>

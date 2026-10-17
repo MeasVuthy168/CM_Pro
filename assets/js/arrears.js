@@ -1451,7 +1451,107 @@ function renderCifCards(rows) {
 }
 
 // ---- CIF table (table view + CIF) ----
+// Same columns as the LD table, plus OS (USD) after Loan Number. The
+// customer row shows what the LDs add up to (amounts summed per
+// currency, the latest Day, the most urgent promise) or what they share
+// (Location, Occu, …, the Reason Arrear when every LD has the same one);
+// its LD rows show each loan in full.
 const arrCifTable = document.getElementById("arrCifTable");
+const CIF_AMOUNT_KEYS = ["prnOS", "intOS", "prnDue", "intDue", "penalty", "arreas", "balance"];
+const CIF_COLS = 27;
+
+// Column header sort for the CIF table — same ▲ / ▼ / default cycle as
+// the LD table. Sorts the customers, and the LDs inside each customer.
+let cifSortState = { key: null, type: null, dir: 1 };
+
+function cifNumber(v) {
+    const n = parseFloat(String(v ?? "").replace(/,/g, ""));
+    return Number.isFinite(n) ? n : 0;
+}
+
+// The one value every LD shares, or "" when they differ.
+function cifSharedValue(rows, key) {
+    const first = rows[0] ? rows[0][key] ?? "" : "";
+    return rows.every(r => (r[key] ?? "") === first) ? first : "";
+}
+
+// Amount totals per currency, e.g. { USD: 1200, KHR: 4000000 }.
+function cifAmountTotals(rows, key) {
+    const totals = {};
+    rows.forEach(r => {
+        const ccy = r.ccy || "";
+        totals[ccy] = (totals[ccy] || 0) + cifNumber(r[key]);
+    });
+    return totals;
+}
+
+function cifAmountHtml(totals) {
+    const entries = Object.entries(totals);
+    if (entries.length === 1) return escapeHtml(arrFormatAmount(entries[0][1]));
+    return entries.map(([ccy, v]) =>
+        `<div>${escapeHtml(arrFormatAmount(v))}${ccy ? ` <small>${escapeHtml(ccy)}</small>` : ""}</div>`).join("");
+}
+
+function cifLatestRow(rows) {
+    let best = null, bestTime = -Infinity;
+    rows.forEach(r => {
+        const d = r.dateBackup ? parseFlexibleDate(r.dateBackup) : null;
+        const tm = d ? d.getTime() : -Infinity;
+        if (!best || tm > bestTime) { best = r; bestTime = tm; }
+    });
+    return best || {};
+}
+
+// One value per customer to sort by.
+function cifGroupSortValue(g, key, type) {
+    if (key === "customer") return g.customer;
+    if (key === "loanNumber") return g.rows.length;
+    if (key === "osUsd") return g.osUsd;
+    if (key === "day") return g.maxDay;
+    if (key === "promiseStatus") return g.promise;
+    if (key === "user" || key === "dateBackup") return cifLatestRow(g.rows)[key];
+    if (CIF_AMOUNT_KEYS.includes(key)) {
+        // Ordering only: one figure per customer even when its LDs mix
+        // currencies (KHR counted at an approximate 4,100 per USD).
+        const totals = cifAmountTotals(g.rows, key);
+        return Object.entries(totals).reduce((n, [ccy, v]) => n + (ccy === "KHR" ? v / 4100 : v), 0);
+    }
+    if (type === "date") {
+        const times = g.rows.map(r => (r[key] ? parseFlexibleDate(r[key]) : null)).filter(Boolean).map(d => d.getTime());
+        return times.length ? new Date(Math.max(...times)) : "";
+    }
+    return cifSharedValue(g.rows, key) || (g.rows.find(r => r[key]) || {})[key] || "";
+}
+
+function applyCifSort(groups) {
+    const { key, type, dir } = cifSortState;
+    if (!key) return groups;
+    groups.forEach(g => {
+        const pairs = g.rows.map((r, i) => [r, g.indexes[i]]);
+        pairs.sort((a, b) => dir * arrearsCompareForSort(a[0][key], b[0][key], type));
+        g.rows = pairs.map(p => p[0]);
+        g.indexes = pairs.map(p => p[1]);
+    });
+    const groupType = key === "loanNumber" ? "number" : type;
+    return groups.slice().sort((a, b) =>
+        dir * arrearsCompareForSort(cifGroupSortValue(a, key, type), cifGroupSortValue(b, key, type), groupType));
+}
+
+document.getElementById("arrCifHeadRow")?.addEventListener("click", (e) => {
+    const th = e.target.closest("th[data-sort-key]");
+    if (!th) return;
+    const key = th.dataset.sortKey;
+    const type = th.dataset.sortType || "text";
+    if (cifSortState.key !== key) cifSortState = { key, type, dir: 1 };
+    else if (cifSortState.dir === 1) cifSortState = { key, type, dir: -1 };
+    else cifSortState = { key: null, type: null, dir: 1 };
+
+    document.querySelectorAll("#arrCifHeadRow th[data-sort-key]").forEach(h =>
+        h.classList.remove("arrears-sort-asc", "arrears-sort-desc"));
+    if (cifSortState.key) th.classList.add(cifSortState.dir === 1 ? "arrears-sort-asc" : "arrears-sort-desc");
+
+    renderCifTable(currentRows);
+});
 
 function buildGroupTbody(g, no) {
     const tbody = document.createElement("tbody");
@@ -1463,46 +1563,89 @@ function buildGroupTbody(g, no) {
     const classCss = classRowCssClass(g.worstClass);
     const promiseCss = promiseCellCssClass(g.promise);
     const ldText = g.totalLd > g.rows.length
-        ? `${g.rows.length.toLocaleString()} / ${g.totalLd.toLocaleString()}`
-        : g.rows.length.toLocaleString();
+        ? `${g.rows.length.toLocaleString()} / ${g.totalLd.toLocaleString()} LD`
+        : `${g.rows.length.toLocaleString()} LD`;
+    const shared = key => escapeHtml(cifSharedValue(g.rows, key));
+    const amount = key => cifAmountHtml(cifAmountTotals(g.rows, key));
+    const arrearsBad = Object.values(cifAmountTotals(g.rows, "arreas")).some(v => v > 0) ? "cell-negative" : "";
+    const latest = cifLatestRow(g.rows);
+    const pct = g.rows.length ? Math.round(g.withReason / g.rows.length * 100) : 0;
+    const sameReason = cifSharedValue(g.rows, "ajReason") || cifSharedValue(g.rows, "akSolution") || cifSharedValue(g.rows, "alFollowup");
+    const followCss = (promiseCss || "cell-followup-default") + (g.pending ? " cell-pending-local" : "");
+    const reasonCells = sameReason
+        ? `<td class="${followCss}">${shared("ajReason")}</td>
+           <td class="${followCss}">${shared("akSolution")}</td>
+           <td class="${followCss}">${escapeHtml(formatRowDateDMY(cifSharedValue(g.rows, "alFollowup")))}</td>`
+        : `<td class="arr-cif-reason">${g.withReason.toLocaleString()} / ${g.rows.length.toLocaleString()} LD
+               <span class="arr-progress"><span style="width:${pct}%"></span></span></td><td></td><td></td>`;
 
     let html = `
         <tr class="arr-cif-row ${g.pending ? "arr-card-pending" : ""}" aria-expanded="${open}">
             <td class="arr-cif-no ${classCss}">${no + 1}</td>
             <td class="arr-cif-name"><span class="arr-group-chevron" aria-hidden="true">›</span> ${escapeHtml(g.customer || "-")}</td>
-            <td>${escapeHtml(g.cif || "-")}</td>
-            <td class="arr-num"><span class="arr-ld-count">${escapeHtml(ldText)}</span></td>
+            <td><span class="arr-ld-count">${escapeHtml(ldText)}</span></td>
             <td class="arr-num"><strong>${escapeHtml(arrFormatAmount(g.osUsd))}</strong></td>
-            <td class="arr-num">${g.maxDay !== null ? g.maxDay.toLocaleString() : "-"}</td>
-            <td class="${classCss}">${escapeHtml(g.worstClass || "")}</td>
-            <td class="${promiseCss}">${escapeHtml(g.promise || "")}</td>
-            <td class="arr-cif-reason">${g.withReason.toLocaleString()} / ${g.rows.length.toLocaleString()}
-                <span class="arr-progress"><span style="width:${g.rows.length ? Math.round(g.withReason / g.rows.length * 100) : 0}%"></span></span></td>
+            <td>${shared("location")}</td>
+            <td>${escapeHtml(formatRowDateDMY(cifSharedValue(g.rows, "disDate")))}</td>
+            <td class="arr-num">${amount("prnOS")}</td>
+            <td class="arr-num">${amount("intOS")}</td>
+            <td class="arr-num">${amount("prnDue")}</td>
+            <td class="arr-num">${amount("intDue")}</td>
+            <td class="arr-num">${amount("penalty")}</td>
+            <td class="arr-num ${arrearsBad}">${amount("arreas")}</td>
+            <td class="arr-num ${classCss}">${g.maxDay !== null ? g.maxDay.toLocaleString() : "-"}</td>
+            <td class="arr-num">${amount("balance")}</td>
+            <td>${shared("accountLoan")}</td>
             <td>${escapeHtml(formatPhone(g.phone))}</td>
+            <td>${escapeHtml(g.cif || "")}</td>
+            <td>${shared("occu")}</td>
+            <td>${shared("ministry")}</td>
+            <td class="${promiseCss}">${escapeHtml(g.promise || "")}</td>
             <td>${escapeHtml(g.coId || "")}</td>
+            <td>${shared("cifCoborrower")}</td>
+            ${reasonCells}
+            <td>${escapeHtml(latest.user || "")}</td>
+            <td>${escapeHtml(formatRowDateTime12h(latest.dateBackup || ""))}</td>
         </tr>`;
 
     if (open) {
         html += g.rows.map((row, i) => {
             const idx = g.indexes[i];
+            const rowClass = classRowCssClass(row.class);
             const pCss = promiseCellCssClass(row.promiseStatus);
-            const followCss = (pCss || "cell-followup-default") + (row.__pendingSubmit ? " cell-pending-local" : "");
-            const hasReason = row.ajReason || row.akSolution || row.alFollowup;
+            const followupCss = (pCss || "cell-followup-default") + (row.__pendingSubmit ? " cell-pending-local" : "");
+            const arreaClass = (parseFloat(row.arreas) || 0) > 0 ? "cell-negative" : "";
+            const balClass = (parseFloat(row.balance) || 0) < 0 ? "cell-negative" : "";
+            const balPdClass = row.pd === "Balanced_PD" ? "cell-balance-pd" : "";
             return `
             <tr class="arr-cif-ld" data-index="${idx}">
-                <td class="arr-cif-no ${classRowCssClass(row.class)}"></td>
-                <td class="arr-cif-ld-no">${escapeHtml(row.loanNumber || "-")}</td>
-                <td></td>
-                <td class="arr-num">${escapeHtml(row.ccy || "")}</td>
+                <td class="arr-cif-no ${rowClass}"></td>
+                <td class="arr-cif-ld-mark" aria-hidden="true">↳</td>
+                <td class="arr-cif-ld-no">${escapeHtml(row.loanNumber || "-")}${row.ccy ? ` <small>${escapeHtml(row.ccy)}</small>` : ""}</td>
                 <td class="arr-num">${escapeHtml(arrFormatAmount(row.osUsd))}</td>
-                <td class="arr-num">${escapeHtml(row.day || "")}</td>
-                <td class="${classRowCssClass(row.class)}">${escapeHtml(row.class || "")}</td>
-                <td class="${pCss}">${escapeHtml(row.promiseStatus || "")}</td>
-                <td class="${hasReason ? followCss : "arr-cif-noreason"}" colspan="3">${hasReason
-                    ? escapeHtml([row.ajReason, row.akSolution].filter(Boolean).join(" · ")) + (row.alFollowup ? ` · ${escapeHtml(formatRowDateDMY(row.alFollowup))}` : "")
-                    : escapeHtml(t("arrears.cardNoReason"))}
-                    <div class="arr-cif-arrears">Arrears <strong class="${(parseFloat(row.arreas) || 0) > 0 ? "arr-amount-bad" : ""}">${escapeHtml(arrFormatAmount(row.arreas))}${row.ccy ? ` ${escapeHtml(row.ccy)}` : ""}</strong></div>
-                </td>
+                <td>${escapeHtml(row.location)}</td>
+                <td>${escapeHtml(formatRowDateDMY(row.disDate))}</td>
+                <td class="arr-num">${escapeHtml(row.prnOS)}</td>
+                <td class="arr-num">${escapeHtml(row.intOS)}</td>
+                <td class="arr-num">${escapeHtml(row.prnDue)}</td>
+                <td class="arr-num">${escapeHtml(row.intDue)}</td>
+                <td class="arr-num">${escapeHtml(row.penalty)}</td>
+                <td class="arr-num ${arreaClass}">${escapeHtml(row.arreas)}</td>
+                <td class="arr-num ${rowClass}">${escapeHtml(row.day)}</td>
+                <td class="arr-num ${balClass} ${balPdClass}">${escapeHtml(row.balance)}</td>
+                <td>${escapeHtml(row.accountLoan)}</td>
+                <td>${escapeHtml(formatPhone(row.tell))}</td>
+                <td>${escapeHtml(row.cif)}</td>
+                <td>${escapeHtml(row.occu)}</td>
+                <td>${escapeHtml(row.ministry)}</td>
+                <td class="${pCss}">${escapeHtml(row.promiseStatus)}</td>
+                <td>${escapeHtml(row.coId)}</td>
+                <td>${escapeHtml(row.cifCoborrower)}</td>
+                <td class="${followupCss}">${escapeHtml(row.ajReason)}</td>
+                <td class="${followupCss}">${escapeHtml(row.akSolution)}</td>
+                <td class="${followupCss}">${escapeHtml(formatRowDateDMY(row.alFollowup))}</td>
+                <td>${escapeHtml(row.user)}</td>
+                <td>${escapeHtml(formatRowDateTime12h(row.dateBackup))}</td>
             </tr>`;
         }).join("");
     }
@@ -1514,12 +1657,12 @@ function buildGroupTbody(g, no) {
 function renderCifTable(rows) {
     arrCifTable.querySelectorAll("tbody").forEach(tb => tb.remove());
     renderedGroupCount = 0;
-    arrGroups = buildGroups(rows);
+    arrGroups = applyCifSort(buildGroups(rows));
     arrGroupByKey = new Map(arrGroups.map(g => [g.key, g]));
 
     if (!arrGroups.length) {
         const tb = document.createElement("tbody");
-        tb.innerHTML = `<tr class="row-empty"><td colspan="11">${escapeHtml(t("arrears.cardNoData"))}</td></tr>`;
+        tb.innerHTML = `<tr class="row-empty"><td colspan="${CIF_COLS}">${escapeHtml(t("arrears.cardNoData"))}</td></tr>`;
         arrCifTable.appendChild(tb);
         const note = document.getElementById("renderedCountNote");
         if (note) note.textContent = "";
@@ -2386,17 +2529,58 @@ function reasonIsDirty() {
 // once the person has confirmed they want to keep the edit.
 function commitReasonEdits() {
     if (!selectedRow || !selectedRow.concate) return;
+    writeReasonToRows(reasonTargetRows(), currentReasonValues());
+}
 
-    const { aj, ak, al, gps } = currentReasonValues();
+// ---- one reason for every LD of a CIF ----
+// A customer with several LDs usually has one reason for all of them,
+// so the panel offers to write it to every LD of the CIF (all loaded
+// LDs, not only the ones the current filter shows). On by default when
+// the panel is opened from the CIF view.
+const reasonApplyAllWrap = document.getElementById("reasonApplyAllWrap");
+const reasonApplyAll = document.getElementById("reasonApplyAll");
+let reasonApplyAllKey = null;
 
-    selectedRow.ajReason = aj;
-    selectedRow.akSolution = ak;
-    selectedRow.alFollowup = al ? formatRowDateDMY(al) : "";
-    selectedRow.promiseStatus = computeStatusFromDate(selectedRow.alFollowup);
-    selectedRow.__pendingSubmit = true;
+function reasonSiblingRows(row) {
+    const key = groupKeyOf(row);
+    return allRows.filter(r => r.concate && groupKeyOf(r) === key);
+}
 
-    setPendingReason(selectedRow.concate, aj, ak, al, gps);
-    updateRowInTable(selectedRow);
+function setupReasonApplyAll(row) {
+    if (!reasonApplyAllWrap || !reasonApplyAll) return;
+    const n = reasonSiblingRows(row).length;
+    const key = groupKeyOf(row);
+    reasonApplyAllWrap.hidden = n < 2;
+    // Moving between LDs of the same customer keeps the person's choice.
+    if (key !== reasonApplyAllKey) reasonApplyAll.checked = arrGroupMode === "cif";
+    reasonApplyAllKey = key;
+    document.getElementById("reasonApplyAllText").textContent = t("arrears.applyAllLd").replace("{n}", n.toLocaleString());
+}
+
+function reasonTargetRows() {
+    if (reasonApplyAll?.checked && !reasonApplyAllWrap?.hidden) return reasonSiblingRows(selectedRow);
+    return [selectedRow];
+}
+
+// Writes the values to each row and to the local pending store, then
+// redraws what changed.
+function writeReasonToRows(rows, { aj, ak, al, gps }) {
+    rows.forEach(row => {
+        row.ajReason = aj;
+        row.akSolution = ak;
+        row.alFollowup = al ? formatRowDateDMY(al) : "";
+        row.promiseStatus = computeStatusFromDate(row.alFollowup);
+        row.__pendingSubmit = true;
+        setPendingReason(row.concate, aj, ak, al, gps);
+    });
+
+    if (arrGroupMode === "cif") {
+        // the customer's card / table row covers all of its LDs
+        if (!updateRowInTable(selectedRow)) renderTable(currentRows);
+        return;
+    }
+    const allUpdated = rows.every(row => currentRows.indexOf(row) === -1 || updateRowInTable(row));
+    if (!allUpdated) renderTable(currentRows);
 }
 
 async function reasonNavStep(delta) {
@@ -2470,6 +2654,7 @@ async function loadReasonMetaOnly(concate) {
 
 async function openReasonPanel(row) {
     selectedRow = row;
+    setupReasonApplyAll(row);
 
     reasonSubtitle.textContent = "";
     renderReasonInfo(row);
@@ -2585,23 +2770,15 @@ document.getElementById("btnReasonSave").addEventListener("click", () => {
         return;
     }
 
-    const alValue = reasonAL.value ? `${reasonAL.value}T00:00:00.000Z` : "";
+    // Update the in-memory rows immediately so the table reflects the
+    // edit right away — just without the server round-trip. With
+    // "apply to all LDs" on, every LD of the CIF gets the same values.
+    const targets = reasonTargetRows();
+    writeReasonToRows(targets, currentReasonValues());
 
-    // Update in-memory row immediately so the table reflects the edit
-    // right away, same as before — just without the server round-trip.
-    selectedRow.ajReason = reasonAJ.value;
-    selectedRow.akSolution = reasonAK.value;
-    selectedRow.alFollowup = alValue ? formatRowDateDMY(alValue) : "";
-    selectedRow.promiseStatus = computeStatusFromDate(selectedRow.alFollowup);
-    selectedRow.__pendingSubmit = true;
-
-    setPendingReason(selectedRow.concate, reasonAJ.value, reasonAK.value, alValue, gpsRaw);
-
-    if (!updateRowInTable(selectedRow)) {
-        renderTable(currentRows);
-    }
-
-    notify("បានរក្សាទុកក្នុងម៉ាស៊ីន — ចុច \"ដាក់ស្នើមូលហេតុ\" នៅពេលរួចរាល់", "success");
+    notify(targets.length > 1
+        ? t("arrears.savedAllLd").replace("{n}", targets.length.toLocaleString())
+        : "បានរក្សាទុកក្នុងម៉ាស៊ីន — ចុច \"ដាក់ស្នើមូលហេតុ\" នៅពេលរួចរាល់", "success");
     closeReasonModal();
 });
 
@@ -3418,7 +3595,11 @@ function applyHiddenColumns() {
     }
     const rules = Array.from(hiddenColumns)
         .filter(n => !LOCKED_COLUMN_INDEXES.includes(n))
-        .map(n => `.table-card th:nth-child(${n}),.table-card td:nth-child(${n}){display:none}`)
+        .map(n => {
+            const c = n >= 4 ? n + 1 : n; // CIF table: OS (USD) is column 4
+            return `.table-card th:nth-child(${n}),.table-card td:nth-child(${n}),` +
+                `.arr-cif-table th:nth-child(${c}),.arr-cif-table td:nth-child(${c}){display:none}`;
+        })
         .join("");
     styleEl.textContent = rules;
 }
