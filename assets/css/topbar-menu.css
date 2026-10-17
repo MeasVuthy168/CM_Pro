@@ -5,8 +5,8 @@
    a <div class="topbar-menu" id="topbarMenu"> with one or more
    <button class="topbar-menu-item"> inside, pass
    actionText:"⋮", actionHandler:toggleTopbarMenu to initTopbar(), and
-   wire each item's own click handler. Shared across Credit Portfolio
-   Trends and the 4 Daily Monitoring report pages, per explicit
+   wire each item's own click handler. Shared across the 4 Daily
+   Monitoring report pages, per explicit
    request 2026-10-08 — same shape/behavior as the Notifications
    page's own #notificationMenu, just reusable instead of a one-off
    per-page copy.
