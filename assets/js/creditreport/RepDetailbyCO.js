@@ -566,14 +566,29 @@ function crRenderHistory() {
     requestAnimationFrame(crSetHeaderOffsets);
 }
 
+function crHistOfficerKey(officer) {
+    return `${officer.name ?? ""}\u0000${officer.branch ?? ""}`;
+}
+
 async function crFetchHistory() {
     const dateFrom = document.getElementById("crHistFromDate").value;
     const dateTo = document.getElementById("crHistToDate").value;
     if (!dateFrom || !dateTo) return;
 
+    // Ask only for the one officer this view ever shows — the full
+    // all-officer snapshot for a 2-week range is large enough to time out
+    // on the backend's throttled database link. Picking a different
+    // officer afterwards re-fetches (see crHistOfficerSearch's handler).
+    const officer = crResolveSelectedOfficer();
+    const params = new URLSearchParams({ dateFrom, dateTo });
+    if (officer) {
+        params.set("officerName", officer.name ?? "");
+        params.set("officerBranch", officer.branch ?? "");
+    }
+
     crShowLoading();
     try {
-        const url = `${API.BASE_URL}/api/creditreport/byco/history?dateFrom=${dateFrom}&dateTo=${dateTo}`;
+        const url = `${API.BASE_URL}/api/creditreport/byco/history?${params.toString()}`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
         const data = await res.json();
         crHideLoading();
@@ -583,6 +598,7 @@ async function crFetchHistory() {
             return;
         }
         crHistoryData = data;
+        crHistoryData.officerKey = officer ? crHistOfficerKey(officer) : null;
         crRenderHistory();
     } catch (e) {
         console.error(e);
@@ -1377,7 +1393,15 @@ document.getElementById("crHistOfficerSearch").addEventListener("input", (e) => 
     document.getElementById("crHistOfficerClear").hidden = !e.target.value;
     crUpdateHistRunButtonState();
     crUpdateChartButtonVisibility();
-    if (crHistoryData) crRenderHistory();
+    if (!crHistoryData) return;
+    // Loaded history only carries the officer it was fetched for, so a
+    // newly picked officer needs its own fetch.
+    const officer = crResolveSelectedOfficer();
+    if (officer && crHistoryData.officerKey && crHistOfficerKey(officer) !== crHistoryData.officerKey) {
+        crFetchHistory();
+    } else {
+        crRenderHistory();
+    }
 });
 document.getElementById("crHistOfficerSearch").addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
