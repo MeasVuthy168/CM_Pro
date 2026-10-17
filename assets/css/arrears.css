@@ -2656,6 +2656,7 @@ display:none !important;
     text-align:center !important;
 }
 .outarea-row-btn{
+    color:var(--arr-text, #1c2333);
     width:30px;
     height:30px;
     border-radius:8px;
@@ -2668,10 +2669,15 @@ display:none !important;
 .outarea-row-btn:active{ transform:scale(.95); }
 .outarea-row-btn-danger{
     border-color:#e08a8a;
+    color:#c0392b;
 }
 [data-theme="dark"] .outarea-row-btn{
+    color:#eaf0ff;
     background:#1c2333;
     border-color:#3a4258;
+}
+[data-theme="dark"] .outarea-row-btn-danger{
+    color:#ff8f8f;
 }
 
 /* Rows whose LD-CIF isn't in the currently-loaded arrears data AND is still

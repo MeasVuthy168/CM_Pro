@@ -1002,12 +1002,12 @@ function showEmpty(){
     if(currentFilter==="unread"){
 
         emptyTitle.innerText="No Unread Notifications";
-        emptySubtitle.innerText="You're all caught up 🎉";
+        emptySubtitle.innerText="You're all caught up";
 
     }else{
 
         emptyTitle.innerText="No Notifications";
-        emptySubtitle.innerText="Everything is up to date 🎉";
+        emptySubtitle.innerText="Everything is up to date";
 
     }
 

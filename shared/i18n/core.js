@@ -60,7 +60,7 @@ CMI18n.register({
   "login.hide": { km: "លាក់", en: "Hide" },
   "login.submit": { km: "ចូលប្រើប្រាស់", en: "Log In" },
   "login.forgotPassword": { km: "ភ្លេចពាក្យសម្ងាត់?", en: "Forgot Password?" },
-  "login.installTitle": { km: "📲 ដំឡើង CM_Pro", en: "📲 Install CM_Pro" },
+  "login.installTitle": { km: "ដំឡើង CM_Pro", en: "Install CM_Pro" },
   "login.installText": { km: "ចុច <b>Share</b> បន្ទាប់មក <b>Add to Home Screen</b>", en: "Tap <b>Share</b> then <b>Add to Home Screen</b>" },
   "login.installOk": { km: "យល់ព្រម", en: "OK" },
   "login.msg.missingFields": { km: "សូមបញ្ចូលឈ្មោះអ្នកប្រើប្រាស់/ពាក្យសម្ងាត់", en: "Please enter username/password" },

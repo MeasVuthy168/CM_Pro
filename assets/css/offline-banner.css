@@ -35,3 +35,27 @@
     box-shadow:0 4px 15px rgba(0,0,0,.2);
 
 }
+
+/* Warning line icon before the text (was a ⚠️ emoji in the text itself;
+   same look as base.css's .ui-ico-alert, kept here so the banner works
+   on pages that only load this file). */
+#offlineBanner::before{
+
+    content:"";
+
+    display:inline-block;
+
+    width:1.15em;
+
+    height:1.15em;
+
+    margin-right:6px;
+
+    vertical-align:-0.22em;
+
+    background-color:currentColor;
+
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10.3 3.9 2.4 17.6a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3Cpath d='M12 9.5v4M12 17h.01' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10.3 3.9 2.4 17.6a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3Cpath d='M12 9.5v4M12 17h.01' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3C/svg%3E") center / contain no-repeat;
+
+}

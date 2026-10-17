@@ -180,8 +180,8 @@ function mdRenderTable(list, rows) {
             ${mdIsAdmin ? `
             <td>
                 <div class="md-table-actions">
-                    <button type="button" class="md-icon-btn md-edit-btn" aria-label="${t("masterdata.location.editBtn")}">✏️</button>
-                    <button type="button" class="md-icon-btn md-danger md-delete-btn" aria-label="${t("masterdata.location.deleteBtn")}">🗑️</button>
+                    <button type="button" class="md-icon-btn md-edit-btn" aria-label="${t("masterdata.location.editBtn")}"><span class="ui-ico ui-ico-edit" aria-hidden="true"></span></button>
+                    <button type="button" class="md-icon-btn md-danger md-delete-btn" aria-label="${t("masterdata.location.deleteBtn")}"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span></button>
                 </div>
             </td>` : ""}
         </tr>
@@ -219,8 +219,8 @@ function mdRenderCards(list, rows) {
                 </div>
                 ${mdIsAdmin ? `
                 <div class="md-row-actions">
-                    <button type="button" class="md-icon-btn md-edit-btn" aria-label="${t("masterdata.location.editBtn")}">✏️</button>
-                    <button type="button" class="md-icon-btn md-danger md-delete-btn" aria-label="${t("masterdata.location.deleteBtn")}">🗑️</button>
+                    <button type="button" class="md-icon-btn md-edit-btn" aria-label="${t("masterdata.location.editBtn")}"><span class="ui-ico ui-ico-edit" aria-hidden="true"></span></button>
+                    <button type="button" class="md-icon-btn md-danger md-delete-btn" aria-label="${t("masterdata.location.deleteBtn")}"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span></button>
                 </div>` : ""}
             </div>
             <div class="md-row-tags">

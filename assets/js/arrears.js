@@ -2997,8 +2997,8 @@ function renderOutAreaRows(entries, totalCount, subtitleText, showActions, showC
             <td>${escapeHtml(entry.thirdCol)}</td>
             ${showActions ? `
             <td class="outarea-row-actions">
-                <button type="button" class="outarea-row-btn" data-action="edit" title="កែសម្រួល">✏️</button>
-                <button type="button" class="outarea-row-btn outarea-row-btn-danger" data-action="delete" title="លុប">🗑️</button>
+                <button type="button" class="outarea-row-btn" data-action="edit" title="កែសម្រួល"><span class="ui-ico ui-ico-edit" aria-hidden="true"></span></button>
+                <button type="button" class="outarea-row-btn outarea-row-btn-danger" data-action="delete" title="លុប"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span></button>
             </td>` : ""}
         `;
         tr.addEventListener("click", () => selectOutAreaCustomer(entry.row));
