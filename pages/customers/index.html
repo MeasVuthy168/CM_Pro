@@ -101,168 +101,123 @@ No Internet Connection
 
 <div class="page-container">
 
-<div class="form-card">
+<!-- SEARCH -->
 
-<div class="form-group">
+<div class="cst-search-card">
 
-<label for="inputKeyword" data-i18n="customers.keywordLabel">
+<label for="inputKeyword" class="cst-search-label" data-i18n="customers.keywordLabel">Input Keyword</label>
 
-Input Keyword
+<div class="cst-search-row">
 
-</label>
+<div class="cst-search-field">
+
+<span class="ui-ico ui-ico-search cst-search-ico" aria-hidden="true"></span>
 
 <input
-
-type="text"
-
+type="search"
 id="inputKeyword"
-
 placeholder="CIF, Name, Phone..."
-
 data-i18n-placeholder="customers.keywordPlaceholder"
-
 autocomplete="off"
-
+enterkeyhint="search"
 >
 
-</div>
-
-<div class="button-row">
-
-<button id="btnSearch" data-i18n="common.search">
-
-Search
-
+<button type="button" id="btnClearKeyword" class="cst-clear-btn" aria-label="Clear" data-i18n-aria-label="customers.clearAria" hidden>
+<span class="ui-ico ui-ico-close" aria-hidden="true"></span>
 </button>
 
 </div>
 
-<div class="result-row">
+<button type="button" id="btnSearch" class="cst-search-btn" data-i18n="common.search">Search</button>
 
-<span class="result-label" data-i18n="customers.resultLabel">Result</span>
+</div>
 
-<span id="resultCount" class="result-value">0</span>
+<div class="cst-search-hint" data-i18n="customers.searchHint">Searches Outstanding, Payroll and Write-off data</div>
 
+</div>
+
+<!-- RESULTS TOOLBAR (card / list toggle — same pattern as Spot Check) -->
+
+<div class="cst-toolbar" id="cstToolbar" hidden>
+
+<div class="cst-result-count">
+<span data-i18n="customers.resultLabel">Result</span>
+<span id="resultCount" class="cst-result-value">0</span>
+</div>
+
+<div class="cst-view-toggle">
+
+<button type="button" class="cst-view-btn" id="cstViewCardBtn" data-view="card" aria-label="Card view" data-i18n-aria-label="customers.viewCardAria">
+<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+</button>
+
+<button type="button" class="cst-view-btn" id="cstViewListBtn" data-view="list" aria-label="List view" data-i18n-aria-label="customers.viewListAria">
+<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+</button>
+
+</div>
+
+</div>
+
+<!-- RESULTS -->
+
+<div id="cstResults" class="cst-results"></div>
+
+<!-- STATES -->
+
+<div id="cstStateStart" class="cst-state">
+<div class="cst-state-ico"><span class="ui-ico ui-ico-search" aria-hidden="true"></span></div>
+<div class="cst-state-title" data-i18n="customers.startTitle">Search for a customer</div>
+<div class="cst-state-text" data-i18n="customers.startText">Enter a CIF, name or phone number</div>
+</div>
+
+<div id="cstStateEmpty" class="cst-state" hidden>
+<div class="cst-state-ico"><span class="ui-ico ui-ico-users" aria-hidden="true"></span></div>
+<div class="cst-state-title" data-i18n="customers.noResultTitle">No customer found</div>
+<div class="cst-state-text" data-i18n="customers.noResultText">Check the keyword and try again</div>
+</div>
+
+<div id="cstStateError" class="cst-state" hidden>
+<div class="cst-state-ico cst-state-ico-error"><span class="ui-ico ui-ico-alert" aria-hidden="true"></span></div>
+<div class="cst-state-title" data-i18n="customers.errorTitle">Search failed</div>
+<div class="cst-state-text" data-i18n="customers.errorText">Check your internet connection and try again</div>
+<button type="button" id="btnRetrySearch" class="cst-retry-btn" data-i18n="common.retry">Retry</button>
 </div>
 
 </div>
 
 <!-- ========================= -->
-<!-- CUSTOMER INFORMATION -->
+<!-- CUSTOMER DETAIL SHEET -->
 <!-- ========================= -->
 
-<div id="infoCard" class="info-card">
+<div id="cstSheet" class="cst-sheet" aria-hidden="true">
 
-<div class="info-title" data-i18n="customers.infoTitle">
+<div class="cst-sheet-backdrop" data-close></div>
 
-Customer Information
+<div class="cst-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="cstSheetName">
+
+<div class="cst-sheet-handle"></div>
+
+<div class="cst-sheet-head">
+
+<div class="cst-sheet-head-text">
+<span id="cstSheetSource" class="cst-source"></span>
+<div id="cstSheetName" class="cst-sheet-name"></div>
+<div id="cstSheetEngName" class="cst-sheet-eng"></div>
+</div>
+
+<button type="button" class="cst-sheet-close" data-close aria-label="Close" data-i18n-aria-label="common.close">
+<span class="ui-ico ui-ico-close" aria-hidden="true"></span>
+</button>
 
 </div>
 
-<div class="info-row">
-
-<div class="info-label">CIF</div>
-
-<div id="infoCIF" class="info-value">-</div>
-
+<div class="cst-sheet-balance">
+<span data-i18n="customers.colBalance">Balance</span>
+<strong id="cstSheetBalance"></strong>
 </div>
 
-<div class="info-row">
-
-<div class="info-label" data-i18n="customers.khNameLabel">Khmer Name</div>
-
-<div id="infoKhName" class="info-value">-</div>
-
-</div>
-
-<div class="info-row">
-
-<div class="info-label" data-i18n="customers.dobLabel">DOB</div>
-
-<div id="infoDOB" class="info-value">-</div>
-
-</div>
-
-<div class="info-row">
-
-<div class="info-label" data-i18n="customers.legalIdLabel">Legal ID</div>
-
-<div id="infoLegalID" class="info-value">-</div>
-
-</div>
-
-<div class="info-row">
-
-<div class="info-label" data-i18n="customers.telephoneLabel">Telephone</div>
-
-<div id="infoTelephone" class="info-value">-</div>
-
-</div>
-
-<div class="info-row">
-
-<div class="info-label" data-i18n="customers.addressLabel">Address</div>
-
-<div id="infoAddress" class="info-value">-</div>
-
-</div>
-
-<div class="info-row">
-
-<div class="info-label" data-i18n="customers.coBorrowerLabel">Co-Borrower</div>
-
-<div id="infoCoBorrower" class="info-value">-</div>
-
-</div>
-
-</div>
-
-<!-- ========================= -->
-<!-- TABLE -->
-<!-- ========================= -->
-
-<div class="table-card">
-
-<div class="table-scroll">
-
-<table id="customerTable">
-
-<thead>
-
-<tr>
-
-<th data-i18n="customers.colSource">Source</th>
-<th>CIF</th>
-<th data-i18n="customers.colEnglishName">English Name</th>
-<th data-i18n="customers.khNameLabel">Khmer Name</th>
-<th data-i18n="customers.dobLabel">DOB</th>
-<th data-i18n="customers.legalIdLabel">Legal ID</th>
-<th data-i18n="customers.colBalance">Balance</th>
-<th data-i18n="customers.telephoneLabel">Telephone</th>
-<th data-i18n="customers.addressLabel">Address</th>
-<th data-i18n="customers.coBorrowerLabel">Co-Borrower</th>
-
-</tr>
-
-</thead>
-
-<tbody id="tbodyCustomers">
-
-<tr class="row-empty">
-
-<td colspan="10" data-i18n="customers.pleaseSearch">
-
-Please search
-
-</td>
-
-</tr>
-
-</tbody>
-
-</table>
-
-</div>
+<div id="cstSheetRows" class="cst-sheet-rows"></div>
 
 </div>
 

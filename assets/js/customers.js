@@ -1,26 +1,87 @@
 // ========================================
 // Customer Combined Search
 // Mirrors the VBA UserForm's RunCombinedSearch — searches
-// OS + AccPayroll + WO via /api/customers/search and shows
-// results in a table, with a Customer Information card that
-// populates on row tap (same as the VBA listbox click).
+// OS + AccPayroll + WO via /api/customers/search.
+//
+// Results show as cards (default) or a full table, toggled like the
+// Spot Check page and remembered in localStorage ("cst_view").
+// Tapping a card/row opens a bottom sheet with the full Customer
+// Information (same as the VBA listbox click).
 // ========================================
 
 // ========================================
-// MESSAGE HELPER
+// HELPERS
 // ========================================
 
+const t=(key)=>window.CMI18n ? CMI18n.t(key) : key;
+
+// Same toast as the rest of the app (toast.js). There is no global
+// showToast(), so the old check always fell through to alert().
 function notify(message,type="info"){
 
-    if(typeof showToast==="function"){
+    if(typeof CMToast!=="undefined" && CMToast.show){
 
-        showToast(message,type);
+        CMToast.show({type,title:message,message:"",duration:2500});
 
     }else{
 
         alert(message);
 
     }
+
+}
+
+function escapeHtml(text){
+
+    const div=document.createElement("div");
+
+    div.textContent=text == null ? "" : String(text);
+
+    // textContent->innerHTML escapes & < > but not quotes — needed here
+    // since some values go into attributes (href, data-*).
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+}
+
+function ico(name){
+
+    return `<span class="ui-ico ui-ico-${name}" aria-hidden="true"></span>`;
+
+}
+
+// "12500.5" -> "12,500.50"; anything that isn't a number is shown as is.
+function formatBalance(value){
+
+    const raw=String(value ?? "").trim();
+
+    if(raw==="") return "-";
+
+    const n=Number(raw.replace(/,/g,""));
+
+    if(!Number.isFinite(n)) return raw;
+
+    return n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+
+}
+
+// Badge class per data source (OS / Payroll / WO).
+function sourceClass(source){
+
+    const s=String(source || "").toLowerCase();
+
+    if(s==="wo") return "cst-source-wo";
+
+    if(s==="payroll") return "cst-source-payroll";
+
+    return "cst-source-os";
+
+}
+
+function telLink(phone){
+
+    const digits=String(phone || "").replace(/[^\d+]/g,"");
+
+    return digits ? `tel:${digits}` : "";
 
 }
 
@@ -42,27 +103,41 @@ const inputKeyword=document.getElementById("inputKeyword");
 
 const btnSearch=document.getElementById("btnSearch");
 
-const tbodyCustomers=document.getElementById("tbodyCustomers");
+const btnClearKeyword=document.getElementById("btnClearKeyword");
+
+const resultsBox=document.getElementById("cstResults");
+
+const toolbar=document.getElementById("cstToolbar");
 
 const resultCount=document.getElementById("resultCount");
 
-const infoCard=document.getElementById("infoCard");
+const stateStart=document.getElementById("cstStateStart");
+
+const stateEmpty=document.getElementById("cstStateEmpty");
+
+const stateError=document.getElementById("cstStateError");
+
+const sheet=document.getElementById("cstSheet");
 
 // ========================================
-// SAFE HTML
+// STATE
 // ========================================
 
-function escapeHtml(text){
+let lastResults=[];
 
-    const div=document.createElement("div");
+let cstViewMode=localStorage.getItem("cst_view")==="list" ? "list" : "card";
 
-    div.textContent=text == null ? "" : String(text);
+function showState(which){
 
-    // textContent->innerHTML escapes & < > but not quotes — harmless for
-    // today's text-node-only callers, but keeps this consistent with the
-    // other escapeHtml() copies in this codebase in case an attribute
-    // usage gets added here later.
-    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    stateStart.hidden=which!=="start";
+
+    stateEmpty.hidden=which!=="empty";
+
+    stateError.hidden=which!=="error";
+
+    toolbar.hidden=which!=="results";
+
+    if(which!=="results") resultsBox.innerHTML="";
 
 }
 
@@ -70,15 +145,15 @@ function escapeHtml(text){
 // SEARCH
 // ========================================
 
-let lastResults=[];
-
 async function runCustomerSearch(){
 
     const keyword=inputKeyword.value.trim();
 
     if(!keyword){
 
-        notify("Please input value to find!","warning");
+        notify(t("customers.enterKeyword"),"warning");
+
+        inputKeyword.focus();
 
         return;
 
@@ -86,15 +161,18 @@ async function runCustomerSearch(){
 
     if(!customerSearchToken){
 
-        notify("Session expired. Please log in again.","error");
+        notify(t("customers.sessionExpired"),"error");
 
         return;
 
     }
 
+    // Close the on-screen keyboard so the results are visible.
+    inputKeyword.blur();
+
     if(typeof showAppLoading==="function"){
 
-        showAppLoading("Searching customer data...");
+        showAppLoading(t("customers.searching"));
 
     }
 
@@ -132,17 +210,15 @@ async function runCustomerSearch(){
 
         lastResults=data.items || [];
 
-        renderResults(lastResults);
+        renderResults();
 
     }catch(err){
 
         console.error(err);
 
-        notify(err.message || "Search failed.","error");
-
         lastResults=[];
 
-        renderResults([]);
+        showState("error");
 
     }finally{
 
@@ -160,111 +236,317 @@ async function runCustomerSearch(){
 // RENDER RESULTS
 // ========================================
 
-function renderResults(items){
+function renderResults(){
 
-    tbodyCustomers.innerHTML="";
+    resultCount.textContent=lastResults.length;
 
-    resultCount.textContent=items.length;
+    if(!lastResults.length){
 
-    infoCard.classList.remove("show");
-
-    if(!items.length){
-
-        tbodyCustomers.innerHTML=`
-
-            <tr class="row-empty">
-
-                <td colspan="10">
-
-                    No data found
-
-                </td>
-
-            </tr>
-
-        `;
+        showState("empty");
 
         return;
 
     }
 
-    items.forEach((item,index)=>{
+    showState("results");
 
-        const tr=document.createElement("tr");
+    applyViewModeButtons();
 
-        tr.dataset.index=index;
+    resultsBox.classList.toggle("cst-results-list",cstViewMode==="list");
 
-        tr.innerHTML=`
+    resultsBox.innerHTML=cstViewMode==="list"
 
-            <td>${escapeHtml(item.source)}</td>
+        ? buildTable(lastResults)
+
+        : lastResults.map(buildCard).join("");
+
+}
+
+function buildCard(item,index){
+
+    const name=item.khName || item.engName || "-";
+
+    const eng=item.khName && item.engName ? item.engName : "";
+
+    const phone=item.telephone ? `
+
+        <a class="cst-card-meta cst-card-phone" href="${escapeHtml(telLink(item.telephone))}" data-stop>
+
+            ${ico("phone")}<span>${escapeHtml(item.telephone)}</span>
+
+        </a>` : "";
+
+    const legal=item.legalId ? `
+
+        <span class="cst-card-meta">${ico("idcard")}<span>${escapeHtml(item.legalId)}</span></span>` : "";
+
+    const dob=item.dob ? `
+
+        <span class="cst-card-meta">${ico("calendar")}<span>${escapeHtml(item.dob)}</span></span>` : "";
+
+    const address=item.address ? `
+
+        <div class="cst-card-address">${ico("pin")}<span>${escapeHtml(item.address)}</span></div>` : "";
+
+    return `
+
+        <button type="button" class="cst-card" data-index="${index}">
+
+            <div class="cst-card-top">
+
+                <span class="cst-source ${sourceClass(item.source)}">${escapeHtml(item.source)}</span>
+
+                <span class="cst-card-cif">CIF ${escapeHtml(item.cif || "-")}</span>
+
+            </div>
+
+            <div class="cst-card-name">${escapeHtml(name)}</div>
+
+            ${eng ? `<div class="cst-card-eng">${escapeHtml(eng)}</div>` : ""}
+
+            <div class="cst-card-balance">
+
+                <span>${escapeHtml(t("customers.colBalance"))}</span>
+
+                <strong>${escapeHtml(formatBalance(item.balance))}</strong>
+
+            </div>
+
+            <div class="cst-card-metas">${phone}${legal}${dob}</div>
+
+            ${address}
+
+        </button>
+
+    `;
+
+}
+
+function buildTable(items){
+
+    const rows=items.map((item,index)=>`
+
+        <tr data-index="${index}">
+
+            <td><span class="cst-source ${sourceClass(item.source)}">${escapeHtml(item.source)}</span></td>
 
             <td>${escapeHtml(item.cif)}</td>
 
+            <td>${escapeHtml(item.khName)}</td>
+
             <td>${escapeHtml(item.engName)}</td>
 
-            <td>${escapeHtml(item.khName)}</td>
+            <td class="cst-num">${escapeHtml(formatBalance(item.balance))}</td>
+
+            <td>${escapeHtml(item.telephone)}</td>
 
             <td>${escapeHtml(item.dob)}</td>
 
             <td>${escapeHtml(item.legalId)}</td>
 
-            <td>${escapeHtml(item.balance)}</td>
-
-            <td>${escapeHtml(item.telephone)}</td>
-
-            <td>${escapeHtml(item.address)}</td>
+            <td class="cst-td-wrap">${escapeHtml(item.address)}</td>
 
             <td>${escapeHtml(item.coBorrower)}</td>
 
-        `;
+        </tr>
 
-        tbodyCustomers.appendChild(tr);
+    `).join("");
 
-    });
+    return `
+
+        <div class="cst-table-wrap">
+
+            <table class="cst-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>${escapeHtml(t("customers.colSource"))}</th>
+                        <th>CIF</th>
+                        <th>${escapeHtml(t("customers.khNameLabel"))}</th>
+                        <th>${escapeHtml(t("customers.colEnglishName"))}</th>
+                        <th class="cst-num">${escapeHtml(t("customers.colBalance"))}</th>
+                        <th>${escapeHtml(t("customers.telephoneLabel"))}</th>
+                        <th>${escapeHtml(t("customers.dobLabel"))}</th>
+                        <th>${escapeHtml(t("customers.legalIdLabel"))}</th>
+                        <th>${escapeHtml(t("customers.addressLabel"))}</th>
+                        <th>${escapeHtml(t("customers.coBorrowerLabel"))}</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>${rows}</tbody>
+
+            </table>
+
+        </div>
+
+    `;
 
 }
 
 // ========================================
-// ROW CLICK -> CUSTOMER INFORMATION
+// VIEW TOGGLE (card / list) — same pattern as Spot Check
 // ========================================
 
-tbodyCustomers.addEventListener("click",(e)=>{
+function applyViewModeButtons(){
 
-    const tr=e.target.closest("tr[data-index]");
+    document.getElementById("cstViewCardBtn").classList.toggle("active",cstViewMode==="card");
 
-    if(!tr) return;
+    document.getElementById("cstViewListBtn").classList.toggle("active",cstViewMode==="list");
 
-    const idx=Number(tr.dataset.index);
+}
 
-    const item=lastResults[idx];
+function setViewMode(mode){
+
+    if(mode===cstViewMode) return;
+
+    cstViewMode=mode;
+
+    try{ localStorage.setItem("cst_view",mode); }catch(e){}
+
+    renderResults();
+
+}
+
+document.getElementById("cstViewCardBtn").addEventListener("click",()=>setViewMode("card"));
+
+document.getElementById("cstViewListBtn").addEventListener("click",()=>setViewMode("list"));
+
+// ========================================
+// CARD / ROW TAP -> CUSTOMER INFORMATION SHEET
+// ========================================
+
+resultsBox.addEventListener("click",(e)=>{
+
+    // The phone link dials directly instead of opening the sheet.
+    if(e.target.closest("[data-stop]")) return;
+
+    const el=e.target.closest("[data-index]");
+
+    if(!el) return;
+
+    const item=lastResults[Number(el.dataset.index)];
 
     if(!item) return;
 
-    document
+    resultsBox.querySelectorAll(".is-selected").forEach(n=>n.classList.remove("is-selected"));
 
-        .querySelectorAll("#tbodyCustomers tr")
+    el.classList.add("is-selected");
 
-        .forEach(row=>row.classList.remove("row-selected"));
+    openSheet(item);
 
-    tr.classList.add("row-selected");
+});
 
-    document.getElementById("infoCIF").textContent=item.cif || "-";
+function sheetRow(icon,labelKey,value,extra=""){
 
-    document.getElementById("infoKhName").textContent=item.khName || "-";
+    return `
 
-    document.getElementById("infoDOB").textContent=item.dob || "-";
+        <div class="cst-sheet-row">
 
-    document.getElementById("infoLegalID").textContent=item.legalId || "-";
+            <span class="cst-sheet-row-ico">${ico(icon)}</span>
 
-    document.getElementById("infoTelephone").textContent=item.telephone || "-";
+            <div class="cst-sheet-row-text">
 
-    document.getElementById("infoAddress").textContent=item.address || "-";
+                <div class="cst-sheet-label">${labelKey ? escapeHtml(t(labelKey)) : "CIF"}</div>
 
-    document.getElementById("infoCoBorrower").textContent=item.coBorrower || "-";
+                <div class="cst-sheet-value">${value ? escapeHtml(value) : "-"}</div>
 
-    infoCard.classList.add("show");
+            </div>
 
-    infoCard.scrollIntoView({behavior:"smooth",block:"nearest"});
+            ${extra}
+
+        </div>
+
+    `;
+
+}
+
+function openSheet(item){
+
+    const source=document.getElementById("cstSheetSource");
+
+    source.textContent=item.source || "";
+
+    source.className=`cst-source ${sourceClass(item.source)}`;
+
+    document.getElementById("cstSheetName").textContent=item.khName || item.engName || "-";
+
+    document.getElementById("cstSheetEngName").textContent=item.khName ? (item.engName || "") : "";
+
+    document.getElementById("cstSheetBalance").textContent=formatBalance(item.balance);
+
+    const copyBtn=item.cif ? `
+
+        <button type="button" class="cst-sheet-action" data-copy="${escapeHtml(item.cif)}" aria-label="${escapeHtml(t("customers.copyCifAria"))}">${ico("copy")}</button>` : "";
+
+    const callBtn=item.telephone ? `
+
+        <a class="cst-sheet-action" href="${escapeHtml(telLink(item.telephone))}" aria-label="${escapeHtml(t("customers.telephoneLabel"))}">${ico("phone")}</a>` : "";
+
+    document.getElementById("cstSheetRows").innerHTML=
+
+        sheetRow("idcard","",item.cif,copyBtn)+
+
+        sheetRow("idcard","customers.legalIdLabel",item.legalId)+
+
+        sheetRow("calendar","customers.dobLabel",item.dob)+
+
+        sheetRow("phone","customers.telephoneLabel",item.telephone,callBtn)+
+
+        sheetRow("pin","customers.addressLabel",item.address)+
+
+        sheetRow("users","customers.coBorrowerLabel",item.coBorrower);
+
+    sheet.classList.add("show");
+
+    sheet.setAttribute("aria-hidden","false");
+
+}
+
+function closeSheet(){
+
+    sheet.classList.remove("show");
+
+    sheet.setAttribute("aria-hidden","true");
+
+}
+
+sheet.addEventListener("click",async(e)=>{
+
+    if(e.target.closest("[data-close]")){
+
+        closeSheet();
+
+        return;
+
+    }
+
+    const copy=e.target.closest("[data-copy]");
+
+    if(copy){
+
+        try{
+
+            await navigator.clipboard.writeText(copy.dataset.copy);
+
+            notify(t("customers.copied"),"success");
+
+        }catch(err){
+
+            console.error("Copy failed:",err);
+
+        }
+
+    }
+
+});
+
+document.addEventListener("keydown",(e)=>{
+
+    if(e.key==="Escape" && sheet.classList.contains("show")) closeSheet();
 
 });
 
@@ -273,6 +555,8 @@ tbodyCustomers.addEventListener("click",(e)=>{
 // ========================================
 
 btnSearch.addEventListener("click",runCustomerSearch);
+
+document.getElementById("btnRetrySearch").addEventListener("click",runCustomerSearch);
 
 inputKeyword.addEventListener("keydown",function(e){
 
@@ -286,20 +570,36 @@ inputKeyword.addEventListener("keydown",function(e){
 
 inputKeyword.addEventListener("input",function(){
 
-    if(this.value.trim()===""){
+    const empty=this.value.trim()==="";
+
+    btnClearKeyword.hidden=this.value==="";
+
+    if(empty){
 
         lastResults=[];
 
-        renderResults([]);
-
         resultCount.textContent="0";
 
+        showState("start");
+
     }
+
+});
+
+btnClearKeyword.addEventListener("click",()=>{
+
+    inputKeyword.value="";
+
+    inputKeyword.dispatchEvent(new Event("input"));
+
+    inputKeyword.focus();
 
 });
 
 // ========================================
 // PAGE READY
 // ========================================
+
+applyViewModeButtons();
 
 console.log("Customer Search Ready.");
