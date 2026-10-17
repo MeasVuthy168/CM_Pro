@@ -71,6 +71,13 @@
     justify-content:center;
 }
 
+/* Short phones: a more compact assistant box leaves the card grid
+   (cards.css, same breakpoint) enough height for all 3 rows. */
+@media (max-width:767px) and (max-height:760px){
+    .assistant-box{padding:10px 14px 10px 8px}
+    .assistant-icon-wrap{width:76px;height:86px}
+}
+
 /* =========================
    ROBOT ICON
    #assistantRobotSlot — the robot is inlined by assets/js/robot-embed.js
