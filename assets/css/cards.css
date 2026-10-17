@@ -75,6 +75,35 @@
     overflow-wrap:break-word;
 }
 
+/* Short phones (iPhone SE/8, or any screen where the 3 rows of square
+   cards + the assistant box don't fit between the topbar and bottom
+   nav): the grid is a flex item that can shrink (flex-shrink:1 above),
+   so give it 3 equal rows of whatever height it gets and let each card
+   take that row height, keeping its square shape via aspect-ratio and
+   centring in its column. All 9 cards then stay on screen instead of
+   the third row (Credit Report / Loan Calculator / Retirement Left)
+   hiding behind the assistant box, reachable only by scrolling inside
+   the grid. On screens tall enough the rows resolve to the cards'
+   natural size, so nothing changes there. */
+@media (max-width:767px) and (max-height:760px){
+    .dashboard-grid{
+        grid-template-rows:repeat(3,minmax(0,1fr));
+        gap:10px;
+        padding:6px 4px;
+    }
+    .dashboard-card{
+        height:100%;
+        width:auto;
+        max-width:100%;
+        min-height:0;
+        justify-self:center;
+        padding:6px 4px;
+        border-radius:20px;
+    }
+    .dashboard-card-icon{margin-bottom:4px}
+    .dashboard-card-title{min-height:0;font-size:11px}
+}
+
 @media (min-width:768px){
     .dashboard-grid{gap:22px;padding:22px}
     .dashboard-card{border-radius:20px}
