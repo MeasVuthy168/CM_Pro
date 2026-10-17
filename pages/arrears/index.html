@@ -103,7 +103,11 @@ No Internet Connection
 
 <div class="filter-group filter-group-wide">
 <label for="fKeyword" data-i18n="arrears.filterKeywordLabel">ស្វែងរកឈ្មោះ</label>
-<input type="text" id="fKeyword" placeholder="វាយឈ្មោះអតិថិជន..." data-i18n-placeholder="arrears.filterKeywordPlaceholder" autocomplete="off">
+<div class="arr-search-field">
+<span class="ui-ico ui-ico-search arr-search-ico" aria-hidden="true"></span>
+<input type="search" id="fKeyword" placeholder="វាយឈ្មោះអតិថិជន..." data-i18n-placeholder="arrears.filterKeywordPlaceholder" autocomplete="off" enterkeyhint="search">
+<button type="button" id="btnClearKeyword" class="arr-clear-btn" aria-label="Clear" data-i18n-aria-label="customers.clearAria" hidden><span class="ui-ico ui-ico-close" aria-hidden="true"></span></button>
+</div>
 </div>
 
 <div class="filter-group">
@@ -231,19 +235,34 @@ No Internet Connection
 </div>
 </div>
 
-<div class="summary-row" id="summaryRow">
-<span>LD: <span class="num" id="sumLD">0</span></span>
-<span>OS: <span class="num" id="sumOS">0</span></span>
+<!-- SUMMARY TILES — LD / CIF / OS for the current filter, with the
+     Gov / Worker / Other split under them (renderSummary() fills these) -->
+<div class="arr-summary" id="summaryRow">
+
+<div class="arr-kpis">
+<div class="arr-kpi"><span class="arr-kpi-label">LD</span><span class="arr-kpi-value" id="sumLD">0</span></div>
+<div class="arr-kpi"><span class="arr-kpi-label">CIF</span><span class="arr-kpi-value" id="sumCIF">0</span></div>
+<div class="arr-kpi arr-kpi-os"><span class="arr-kpi-label">OS</span><span class="arr-kpi-value" id="sumOS">0</span></div>
 </div>
 
-<div class="summary-row upload-meta" id="uploadMetaRow">
+<div class="arr-split" id="sumSplit"></div>
+
+</div>
+
+<div class="arr-meta-row">
+
+<div class="arr-meta">
+<span class="ui-ico ui-ico-calendar" aria-hidden="true"></span>
 <span><span data-i18n="arrears.lastUploadAtLabel">ទិន្នន័យចុងក្រោយនៅ</span> <span class="num" id="lastUploadAt">-</span></span>
+<span class="arr-meta-sep">·</span>
+<span><span data-i18n="arrears.lastUploadByLabel">ដោយៈ</span> <span class="num" id="lastUploadBy">-</span></span>
 </div>
 
-<div class="summary-row upload-meta button-row">
-<span><span data-i18n="arrears.lastUploadByLabel">ដោយៈ</span> <span class="num" id="lastUploadBy">-</span></span>
-<button id="btnRefresh" data-i18n="common.refresh">Refresh</button>
+<div class="button-row arr-actions">
+<button id="btnRefresh"><span class="ui-ico ui-ico-refresh" aria-hidden="true"></span> <span data-i18n="common.refresh">Refresh</span></button>
 <button id="btnClear" data-i18n="arrears.clearBtn">Clear</button>
+</div>
+
 </div>
 
 <div class="summary-row pending-row" id="pendingRow" style="display:none;">
@@ -560,7 +579,22 @@ No Internet Connection
 <!-- TABLE -->
 <!-- ========================= -->
 
+<!-- RESULTS TOOLBAR — count + card / table toggle (same pattern as
+     Spot Check / Customer Search, remembered in localStorage "arr_view") -->
+<div class="arr-results-bar">
 <div class="rendered-count-note" id="renderedCountNote"></div>
+<div class="arr-view-toggle">
+<button type="button" class="arr-view-btn" id="arrViewCardBtn" data-view="card" aria-label="Card view" data-i18n-aria-label="customers.viewCardAria">
+<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+</button>
+<button type="button" class="arr-view-btn" id="arrViewTableBtn" data-view="table" aria-label="Table view" data-i18n-aria-label="arrears.viewTableAria">
+<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+</button>
+</div>
+</div>
+
+<!-- CARD VIEW (arrears.js renderCards) -->
+<div id="arrCardList" class="arr-card-list"></div>
 
 <div class="table-card">
 
