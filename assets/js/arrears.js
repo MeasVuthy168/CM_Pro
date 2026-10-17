@@ -3059,15 +3059,10 @@ async function fetchOutAreaEditedItems(searchTerm) {
 async function renderOutAreaList() {
     const searchTerm = document.getElementById("outAreaSearch").value;
     const tbody = document.getElementById("outAreaTbody");
-    const colThree = document.getElementById("outAreaColThree");
-    const colFour = document.getElementById("outAreaColFour");
 
     if (outAreaViewMode === "candidates") {
-        colThree.textContent = "សាខាបច្ចុប្បន្ន";
-        if (colFour) colFour.hidden = true;
-        document.getElementById("outAreaColCheck").hidden = true;
+        document.getElementById("outAreaSelectBar").hidden = true;
         document.getElementById("outAreaBulkBar").hidden = true;
-        document.getElementById("btnOutAreaSelectPaidOff").hidden = true;
         outAreaSelectedForDelete.clear();
         const rows = getOutAreaCandidates(searchTerm);
         renderOutAreaRows(
@@ -3088,11 +3083,8 @@ async function renderOutAreaList() {
     }
 
     // "edited" mode
-    colThree.textContent = "សាខាថ្មី";
-    if (colFour) colFour.hidden = false;
-    document.getElementById("outAreaColCheck").hidden = false;
-    document.getElementById("btnOutAreaSelectPaidOff").hidden = false;
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">កំពុងផ្ទុក...</td></tr>`;
+    document.getElementById("outAreaSelectBar").hidden = false;
+    tbody.innerHTML = `<div class="oa-empty">កំពុងផ្ទុក...</div>`;
     document.getElementById("outAreaListSubtitle").textContent = "";
 
     try {
@@ -3156,7 +3148,7 @@ async function renderOutAreaList() {
         renderOutAreaRows(mapped, mapped.length, buildEditedSubtitle(mapped), true, true);
     } catch (err) {
         console.error("[outArea] fetch edited list failed:", err);
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">មិនអាចផ្ទុកទិន្នន័យបានទេ</td></tr>`;
+        tbody.innerHTML = `<div class="oa-empty">មិនអាចផ្ទុកទិន្នន័យបានទេ</div>`;
     }
 }
 
@@ -3208,29 +3200,43 @@ let outAreaSelectedForDelete = new Set(); // LD-CIFs currently checked for bulk 
 let outAreaPaidOffLdCifs = new Set();     // LD-CIFs marked "Paid off" in the current render — powers the quick "select all Paid off" action
 
 function renderOutAreaRows(entries, totalCount, subtitleText, showActions, showCheckbox) {
-    const tbody = document.getElementById("outAreaTbody");
-    tbody.innerHTML = "";
+    const list = document.getElementById("outAreaTbody");
+    list.innerHTML = "";
 
+    // One card per customer: name + LD-CIF on the left, branch chip on
+    // the right (current branch in "To edit", new branch in "Edited"),
+    // checkbox + edit/delete only in the "Edited" view.
     entries.forEach(entry => {
-        const tr = document.createElement("tr");
-        tr.style.cursor = "pointer";
-        if (entry.isPaidOff) tr.classList.add("outarea-row-paidoff");
-        tr.innerHTML = `
+        const item = document.createElement("div");
+        item.className = "oa-item" + (entry.isPaidOff ? " oa-item-paidoff" : "");
+        item.setAttribute("role", "button");
+        item.tabIndex = 0;
+        item.innerHTML = `
             ${showCheckbox ? `
-            <td class="outarea-row-check"><input type="checkbox" class="outarea-row-checkbox" data-ldcif="${escapeHtml(entry.ldCif)}" ${outAreaSelectedForDelete.has(entry.ldCif) ? "checked" : ""}></td>` : ""}
-            <td>${escapeHtml(entry.customer)}</td>
-            <td>${escapeHtml(entry.ldCif)}</td>
-            <td>${escapeHtml(entry.thirdCol)}</td>
-            ${showActions ? `
-            <td class="outarea-row-actions">
-                <button type="button" class="outarea-row-btn" data-action="edit" title="កែសម្រួល"><span class="ui-ico ui-ico-edit" aria-hidden="true"></span></button>
-                <button type="button" class="outarea-row-btn outarea-row-btn-danger" data-action="delete" title="លុប"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span></button>
-            </td>` : ""}
+            <label class="oa-item-check" data-stop><input type="checkbox" class="outarea-row-checkbox" data-ldcif="${escapeHtml(entry.ldCif)}" ${outAreaSelectedForDelete.has(entry.ldCif) ? "checked" : ""}></label>` : ""}
+            <div class="oa-item-main">
+                <div class="oa-item-name">${escapeHtml(entry.customer)}</div>
+                <div class="oa-item-sub">${escapeHtml(entry.ldCif)}</div>
+            </div>
+            <div class="oa-item-side">
+                ${entry.thirdCol ? `<span class="oa-branch-chip">${escapeHtml(entry.thirdCol)}</span>` : ""}
+                ${showActions ? `
+                <div class="outarea-row-actions">
+                    <button type="button" class="outarea-row-btn" data-action="edit" title="កែសម្រួល"><span class="ui-ico ui-ico-edit" aria-hidden="true"></span></button>
+                    <button type="button" class="outarea-row-btn outarea-row-btn-danger" data-action="delete" title="លុប"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span></button>
+                </div>` : `<span class="oa-item-chevron" aria-hidden="true">›</span>`}
+            </div>
         `;
-        tr.addEventListener("click", () => selectOutAreaCustomer(entry.row));
+        item.addEventListener("click", (e) => {
+            if (e.target.closest("[data-stop]")) return;
+            selectOutAreaCustomer(entry.row);
+        });
+        item.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") selectOutAreaCustomer(entry.row);
+        });
 
         if (showCheckbox) {
-            const checkbox = tr.querySelector(".outarea-row-checkbox");
+            const checkbox = item.querySelector(".outarea-row-checkbox");
             checkbox.addEventListener("click", (e) => e.stopPropagation());
             checkbox.addEventListener("change", () => {
                 if (checkbox.checked) outAreaSelectedForDelete.add(entry.ldCif);
@@ -3240,22 +3246,21 @@ function renderOutAreaRows(entries, totalCount, subtitleText, showActions, showC
         }
 
         if (showActions) {
-            tr.querySelector('[data-action="edit"]').addEventListener("click", (e) => {
+            item.querySelector('[data-action="edit"]').addEventListener("click", (e) => {
                 e.stopPropagation();
                 selectOutAreaCustomer(entry.row);
             });
-            tr.querySelector('[data-action="delete"]').addEventListener("click", (e) => {
+            item.querySelector('[data-action="delete"]').addEventListener("click", (e) => {
                 e.stopPropagation();
                 deleteWrongAddressRecord(entry.ldCif);
             });
         }
 
-        tbody.appendChild(tr);
+        list.appendChild(item);
     });
 
-    const colCount = (showCheckbox ? 1 : 0) + (showActions ? 4 : 3);
     if (!entries.length) {
-        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;">គ្មានទិន្នន័យ</td></tr>`;
+        list.innerHTML = `<div class="oa-empty">គ្មានទិន្នន័យ</div>`;
     }
 
     document.getElementById("outAreaListSubtitle").textContent = subtitleText;
@@ -3270,18 +3275,25 @@ function renderOutAreaRows(entries, totalCount, subtitleText, showActions, showC
     updateOutAreaBulkBar();
 }
 
-document.getElementById("btnOutAreaToggleView")?.addEventListener("click", (e) => {
-    outAreaViewMode = outAreaViewMode === "candidates" ? "edited" : "candidates";
-    e.target.textContent = outAreaViewMode === "candidates"
-        ? "មើលកំណត់ត្រាដែលបានកែសម្រួល"
-        : "មើលអតិថិជនត្រូវកែសម្រួល";
+function setOutAreaTab(mode) {
+    outAreaViewMode = mode;
+    document.querySelectorAll(".oa-tab").forEach(tab => {
+        const active = tab.dataset.view === mode;
+        tab.classList.toggle("active", active);
+        tab.setAttribute("aria-selected", active ? "true" : "false");
+    });
+}
+
+document.querySelectorAll(".oa-tab").forEach(tab => tab.addEventListener("click", () => {
+    if (tab.dataset.view === outAreaViewMode) return;
+    setOutAreaTab(tab.dataset.view);
     document.getElementById("outAreaSearch").value = "";
     outAreaSelectedForDelete.clear();
     document.getElementById("outAreaBulkBar").hidden = true;
     const selectAll = document.getElementById("outAreaSelectAll");
     if (selectAll) selectAll.checked = false;
     renderOutAreaList();
-});
+}));
 
 function populateOutAreaCoOptions(branch, preselect) {
     const coSelect = document.getElementById("outAreaNewCO");
@@ -3315,6 +3327,49 @@ function populateOutAreaCoOptions(branch, preselect) {
     }
 }
 
+// Officer ID -> English name, from the Master Data officer list
+// (/api/creditofficer/list), so the detail screen can show the current
+// officer as "11088-Neth CheaChanto" instead of a bare code. Loaded once
+// on first use; a failed load just leaves the bare code.
+let outAreaOfficerNames = null;
+let outAreaOfficerNamesLoading = null;
+
+function normalizeOfficerId(id) {
+    return String(id || "").trim().replace(/^0+/, "");
+}
+
+function loadOutAreaOfficerNames() {
+    if (outAreaOfficerNames) return Promise.resolve(outAreaOfficerNames);
+    if (!outAreaOfficerNamesLoading) {
+        outAreaOfficerNamesLoading = fetch(`${API.BASE_URL}/api/creditofficer/list`, {
+            headers: { Authorization: `Bearer ${arrearsToken}` }
+        })
+            .then(res => res.json())
+            .then(data => {
+                const map = new Map();
+                (data.ok ? data.items || [] : []).forEach(o => {
+                    const id = normalizeOfficerId(o.officerId);
+                    if (id) map.set(id, o.name || o.nameKh || "");
+                });
+                outAreaOfficerNames = map;
+                return map;
+            })
+            .catch(err => {
+                console.error("[outArea] officer list failed:", err);
+                outAreaOfficerNamesLoading = null; // retry next time
+                return new Map();
+            });
+    }
+    return outAreaOfficerNamesLoading;
+}
+
+function officerLabel(coId, names) {
+    const code = String(coId || "").trim();
+    if (!code) return "-";
+    const name = names && names.get(normalizeOfficerId(code));
+    return name ? `${code}-${name}` : code;
+}
+
 let outAreaHasSavedRecord = false; // tracks whether the currently viewed customer has a real WrongAddress record to delete
 
 async function selectOutAreaCustomer(row) {
@@ -3325,15 +3380,31 @@ async function selectOutAreaCustomer(row) {
     document.getElementById("outAreaDetailScreen").style.display = "block";
     document.getElementById("btnOutAreaDelete").style.display = "none";
 
+    document.getElementById("outAreaDetailName").textContent = row.customer || "-";
     document.getElementById("outAreaDetailSubtitle").textContent = row.concate;
-    document.getElementById("outAreaInfo").innerHTML = `
-        <div class="outarea-info-row"><strong>ឈ្មោះ:</strong> ${escapeHtml(row.customer)}</div>
-        <div class="outarea-info-row"><strong>អាសយដ្ឋាន:</strong> ${escapeHtml(row.location)}</div>
-        <div class="outarea-info-row"><strong>គណនីកម្ចី:</strong> ${escapeHtml(row.accountLoan)}</div>
-        <div class="outarea-info-row"><strong>សាខាបច្ចុប្បន្ន:</strong> ${escapeHtml(row.branch)}</div>
-        ${row.branchCode ? `<div class="outarea-info-row"><strong>លេខកូដសាខា:</strong> ${escapeHtml(row.branchCode)}</div>` : ""}
-        <div class="outarea-info-row"><strong>ភ្នាក់ងារបច្ចុប្បន្ន:</strong> ${escapeHtml(row.coId)}</div>
-    `;
+
+    const infoRow = (icon, label, value, id = "") => `
+        <div class="oa-info-row">
+            <span class="oa-info-ico"><span class="ui-ico ui-ico-${icon}" aria-hidden="true"></span></span>
+            <div class="oa-info-text">
+                <div class="oa-info-label">${label}</div>
+                <div class="oa-info-value"${id ? ` id="${id}"` : ""}>${escapeHtml(value || "-")}</div>
+            </div>
+        </div>`;
+    document.getElementById("outAreaInfo").innerHTML =
+        infoRow("pin", "អាសយដ្ឋាន", row.location) +
+        infoRow("idcard", "គណនីកម្ចី", row.accountLoan) +
+        infoRow("map", "សាខាបច្ចុប្បន្ន", row.branch + (row.branchCode ? ` (${row.branchCode})` : "")) +
+        infoRow("officer", "ភ្នាក់ងារបច្ចុប្បន្ន", officerLabel(row.coId, outAreaOfficerNames), "outAreaCurrentCO");
+
+    // Fill in the officer's name once the list arrives (first open only).
+    if (!outAreaOfficerNames && row.coId) {
+        loadOutAreaOfficerNames().then(names => {
+            if (outAreaSelectedRow !== row) return;
+            const el = document.getElementById("outAreaCurrentCO");
+            if (el) el.textContent = officerLabel(row.coId, names);
+        });
+    }
 
     const branchSelect = document.getElementById("outAreaNewBranch");
     const metaEl = document.getElementById("outAreaMeta");
@@ -3411,7 +3482,8 @@ function openOutAreaModal() {
     outAreaSelectedForDelete.clear();
     outAreaPaidOffLdCifs.clear();
     document.getElementById("outAreaSearch").value = "";
-    document.getElementById("btnOutAreaToggleView").textContent = "មើលកំណត់ត្រាដែលបានកែសម្រួល";
+    setOutAreaTab("candidates");
+    loadOutAreaOfficerNames(); // warm the officer-name lookup for the detail screen
     document.getElementById("outAreaListScreen").style.display = "block";
     document.getElementById("outAreaDetailScreen").style.display = "none";
     document.getElementById("outAreaBulkBar").hidden = true;
@@ -3428,7 +3500,7 @@ document.getElementById("btnOutArea")?.addEventListener("click", () => {
     document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
 });
 
-document.getElementById("btnOutAreaClose")?.addEventListener("click", closeOutAreaModal);
+document.getElementById("btnOutAreaCloseX2")?.addEventListener("click", closeOutAreaModal);
 document.getElementById("btnOutAreaCloseX")?.addEventListener("click", closeOutAreaModal);
 document.getElementById("outAreaBackdrop")?.addEventListener("click", (e) => {
     if (e.target.id === "outAreaBackdrop") closeOutAreaModal();
@@ -3503,6 +3575,10 @@ document.getElementById("btnOutAreaBulkDelete")?.addEventListener("click", async
 document.getElementById("outAreaSearch")?.addEventListener("input", () => {
     clearTimeout(window.__outAreaSearchDebounce);
     window.__outAreaSearchDebounce = setTimeout(renderOutAreaList, 200);
+});
+
+document.getElementById("btnOutAreaBackTop")?.addEventListener("click", () => {
+    document.getElementById("btnOutAreaBack").click();
 });
 
 document.getElementById("btnOutAreaBack")?.addEventListener("click", () => {
