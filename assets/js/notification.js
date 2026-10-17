@@ -361,7 +361,7 @@ data-id="${escapeHtml(item._id)}"
 data-url="${escapeHtml(item.url || '')}"
 >
 
-<div class="notify-icon">
+<div class="notify-icon notify-icon-${getTypeIconName(item.type)}">
 
 ${icon}
 
@@ -1051,29 +1051,20 @@ show ? "flex" : "none";
 // TYPE ICON
 // =========================================================
 
-function getTypeIcon(type){
+// Same line icons as the toast (cm-type-ico set in toast.css). The
+// returned name also picks the icon box's color (notify-icon-<name>
+// in notification.css).
+function getTypeIconName(type){
 
-switch(type){
+const known=["backup","upload","warning","error","success","update","delete","system"];
 
-case "upload":
-return "📤";
-
-case "warning":
-return "⚠️";
-
-case "update":
-return "⬆️";
-
-case "delete":
-return "🗑";
-
-case "system":
-return "🖥️";
-
-default:
-return "🔔";
+return known.includes(type) ? type : "bell";
 
 }
+
+function getTypeIcon(type){
+
+return `<span class="cm-type-ico cm-type-ico-${getTypeIconName(type)}" aria-hidden="true"></span>`;
 
 }
 
