@@ -21,6 +21,7 @@
     btnReset: document.getElementById("nfBtnReset"),
     btnSend: document.getElementById("nfBtnSend"),
     btnPrune: document.getElementById("nfBtnPrune"),
+    btnPruneLabel: document.getElementById("nfBtnPruneLabel"),
 
     kpiTotal: document.getElementById("nfKpiTotal"),
     kpiToday: document.getElementById("nfKpiToday"),
@@ -160,8 +161,8 @@
         <td>${escapeHtml(n.createdBy || t("admin.notifications.systemFallback"))}</td>
         <td>
           <div class="adm-row-actions">
-            <button type="button" class="adm-icon-btn" title="${t("admin.notifications.view")}" data-action="view">👁️</button>
-            <button type="button" class="adm-icon-btn adm-icon-btn-danger" title="${t("admin.notifications.delete")}" data-action="delete">🗑️</button>
+            <button type="button" class="adm-icon-btn" title="${t("admin.notifications.view")}" data-action="view"><span class="adm-ico adm-ico-eye" aria-hidden="true"></span></button>
+            <button type="button" class="adm-icon-btn adm-icon-btn-danger" title="${t("admin.notifications.delete")}" data-action="delete"><span class="adm-ico adm-ico-trash" aria-hidden="true"></span></button>
           </div>
         </td>
       `;
@@ -305,7 +306,7 @@
     if (!ok) return;
 
     el.btnPrune.disabled = true;
-    el.btnPrune.textContent = t("admin.notifications.pruning");
+    el.btnPruneLabel.textContent = t("admin.notifications.pruning");
 
     try {
       const res = await fetch(`${API_BASE}/api/admin/notifications/prune-subscriptions`, {
@@ -327,7 +328,7 @@
       AdminUI.toast(t("admin.notifications.pruneFailedServer"), "error");
     } finally {
       el.btnPrune.disabled = false;
-      el.btnPrune.textContent = t("admin.notifications.pruneDeadSubs");
+      el.btnPruneLabel.textContent = t("admin.notifications.pruneDeadSubs");
     }
   }
 
