@@ -9,14 +9,14 @@
    page's sidebar updates automatically, no per-page edits.
    ===================================================== */
 const CM_ADMIN_TOOLS = [
-  { key: "hub",       label: "Overview",        labelKey: "admin.nav.hub",           icon: "🏠", href: "/CM_Pro/pages/admin/index.html",      status: "live" },
-  { key: "bandwidth", label: "Bandwidth Stats",  labelKey: "admin.nav.bandwidth",     icon: "📶", href: "/CM_Pro/pages/admin/bandwidth.html",  status: "live" },
-  { key: "users",     label: "User Management",  labelKey: "admin.nav.users",        icon: "👥", href: "/CM_Pro/pages/admin/users.html",       status: "live" },
-  { key: "logs",      label: "Activity Logs",    labelKey: "admin.nav.logs",         icon: "🧾", href: "/CM_Pro/pages/admin/activitylogs.html",status: "live" },
-  { key: "notifications", label: "Notifications", labelKey: "admin.nav.notifications", icon: "🔔", href: "/CM_Pro/pages/admin/notifications.html", status: "live" },
-  { key: "wallpaper", label: "Wallpaper",        labelKey: "admin.nav.wallpaper",     icon: "🖼️", href: "/CM_Pro/pages/admin/wallpaper.html",   status: "live" },
-  { key: "versions",  label: "App Versions",     labelKey: "admin.nav.versions",     icon: "📦", href: "/CM_Pro/pages/admin/appversions.html", status: "live" },
-  { key: "maintenance", label: "Storage Cleanup", labelKey: "admin.nav.maintenance", icon: "🧹", href: "/CM_Pro/pages/admin/maintenance.html", status: "live" }
+  { key: "hub",       label: "Overview",        labelKey: "admin.nav.hub",           icon: "home", href: "/CM_Pro/pages/admin/index.html",      status: "live" },
+  { key: "bandwidth", label: "Bandwidth Stats",  labelKey: "admin.nav.bandwidth",     icon: "signal", href: "/CM_Pro/pages/admin/bandwidth.html",  status: "live" },
+  { key: "users",     label: "User Management",  labelKey: "admin.nav.users",        icon: "users", href: "/CM_Pro/pages/admin/users.html",       status: "live" },
+  { key: "logs",      label: "Activity Logs",    labelKey: "admin.nav.logs",         icon: "logs", href: "/CM_Pro/pages/admin/activitylogs.html",status: "live" },
+  { key: "notifications", label: "Notifications", labelKey: "admin.nav.notifications", icon: "bell", href: "/CM_Pro/pages/admin/notifications.html", status: "live" },
+  { key: "wallpaper", label: "Wallpaper",        labelKey: "admin.nav.wallpaper",     icon: "image", href: "/CM_Pro/pages/admin/wallpaper.html",   status: "live" },
+  { key: "versions",  label: "App Versions",     labelKey: "admin.nav.versions",     icon: "package", href: "/CM_Pro/pages/admin/appversions.html", status: "live" },
+  { key: "maintenance", label: "Storage Cleanup", labelKey: "admin.nav.maintenance", icon: "broom", href: "/CM_Pro/pages/admin/maintenance.html", status: "live" }
 ];
 
 // t(): small helper so this file's hardcoded UI strings go through the
@@ -40,7 +40,7 @@ function cmRenderAdminNav(activeKey) {
     const hrefAttr = isSoon ? "" : `href="${tool.href}"`;
 
     return `<${tag} ${hrefAttr} class="${classes.join(" ")}">
-      <span class="adm-nav-icon">${tool.icon}</span>
+      <span class="adm-nav-icon"><span class="adm-ico adm-ico-${tool.icon}" aria-hidden="true"></span></span>
       <span class="adm-nav-text" data-i18n="${tool.labelKey}">${t(tool.labelKey)}</span>
       ${isSoon ? `<span class="adm-nav-badge" data-i18n="admin.nav.soonBadge">${t("admin.nav.soonBadge")}</span>` : ""}
     </${tag}>`;
@@ -59,7 +59,7 @@ function cmRenderToolCards(containerId, excludeKey) {
     const hrefAttr = isSoon ? "" : `href="${tool.href}"`;
 
     return `<${tag} ${hrefAttr} class="adm-tool-card${isSoon ? " adm-tool-soon" : ""}">
-      <div class="adm-tool-icon">${tool.icon}</div>
+      <div class="adm-tool-icon"><span class="adm-ico adm-ico-${tool.icon}" aria-hidden="true"></span></div>
       <div class="adm-tool-label" data-i18n="${tool.labelKey}">${t(tool.labelKey)}</div>
       ${isSoon
         ? `<span class="adm-nav-badge" data-i18n="admin.nav.comingSoonBadge">${t("admin.nav.comingSoonBadge")}</span>`
@@ -93,10 +93,10 @@ function renderTopbarActions() {
 
   container.innerHTML = `
     <a href="/CM_Pro/index.html" class="adm-btn adm-topbar-btn" title="${t("admin.nav.backToApp")}" data-i18n-title="admin.nav.backToApp">
-      <span>⬅️</span><span class="adm-topbar-btn-text" data-i18n="admin.nav.backToApp">${t("admin.nav.backToApp")}</span>
+      <span class="adm-ico adm-ico-back" aria-hidden="true"></span><span class="adm-topbar-btn-text" data-i18n="admin.nav.backToApp">${t("admin.nav.backToApp")}</span>
     </a>
     <button type="button" class="adm-btn adm-topbar-btn adm-topbar-logout" id="admLogoutBtn" title="${t("admin.nav.logout")}" data-i18n-title="admin.nav.logout">
-      <span>🚪</span><span class="adm-topbar-btn-text" data-i18n="admin.nav.logout">${t("admin.nav.logout")}</span>
+      <span class="adm-ico adm-ico-logout" aria-hidden="true"></span><span class="adm-topbar-btn-text" data-i18n="admin.nav.logout">${t("admin.nav.logout")}</span>
     </button>
   `;
 
