@@ -1534,6 +1534,75 @@ function crRenderChartMetricTabs(section, metricOptions) {
     ).join("");
 }
 
+
+/**
+ * Daily History growth dashboard.
+ * Uses the already-fetched crHistoryData.days; deliberately makes no API calls.
+ * Each metric is aggregated across the active section's groups so grouped
+ * portfolios (e.g. NBC overdue classes) produce one comparable KPI.
+ */
+function crRenderGrowthDashboard(section, metricOptions, getItemForDay) {
+    const root = document.getElementById("crGrowthDashboard");
+    if (!root) return;
+
+    const days = crHistoryData?.days || [];
+    if (!days.length || !metricOptions.length) {
+        root.innerHTML = "";
+        root.hidden = true;
+        return;
+    }
+
+    const cards = metricOptions.map(metric => {
+        const points = [];
+        for (const day of days) {
+            const item = getItemForDay(day);
+            if (!item) continue;
+            let total = 0;
+            let found = false;
+            for (const group of section.groups) {
+                const field = group.fields.find(f => f.label === metric.label);
+                if (!field) continue;
+                const raw = crGetByPath(item, field.key);
+                if (raw == null || raw === "") continue;
+                const value = Number(raw);
+                if (!Number.isFinite(value)) continue;
+                total += value;
+                found = true;
+            }
+            if (found) points.push({ date: day.date, value: total });
+        }
+
+        if (!points.length) return "";
+        const current = points[points.length - 1];
+        const previous = points.length > 1 ? points[points.length - 2] : null;
+        const delta = previous ? current.value - previous.value : null;
+        const direction = delta == null || Math.abs(delta) < 0.000001
+            ? "flat" : delta > 0 ? "up" : "down";
+        const arrow = direction === "up" ? "▲" : direction === "down" ? "▼" : "—";
+        const formatted = value => metric.pct ? crFmtPct(value) : crFmtNum(value);
+        const deltaText = delta == null ? "—" :
+            (delta > 0 ? "+" : delta < 0 ? "−" : "") + formatted(Math.abs(delta));
+        const previousText = previous ? formatted(previous.value) : "—";
+
+        return `
+            <article class="cr-growth-card">
+                <div class="cr-growth-label">${crEscapeHtml(metric.label)}</div>
+                <div class="cr-growth-current">${crEscapeHtml(formatted(current.value))}</div>
+                <div class="cr-growth-previous">${crEscapeHtml(previousText)} <span>${crEscapeHtml(t("creditreport.detail.previous") || "Previous")}</span></div>
+                <div class="cr-growth-change ${direction}">
+                    <span class="cr-growth-arrow">${arrow}</span>
+                    <span>${crEscapeHtml(deltaText)}</span>
+                </div>
+                <div class="cr-growth-dates">${crEscapeHtml(crFmtDateDMY(current.date))}${previous ? " · " + crEscapeHtml(crFmtDateDMY(previous.date)) : ""}</div>
+            </article>`;
+    }).filter(Boolean);
+
+    root.innerHTML = cards.length
+        ? `<div class="cr-growth-grid">${cards.join("")}</div>`
+        : "";
+    root.hidden = !cards.length;
+}
+
 function crRenderChart(section) {
     const metricOptions = crChartMetricOptions(section);
     if (!metricOptions.length) return;
@@ -1547,6 +1616,10 @@ function crRenderChart(section) {
     const branchFilter = document.getElementById("crHistBranch").value;
     const teamFilter = document.getElementById("crHistTeam").value;
     const days = crHistoryData.days;
+    crRenderGrowthDashboard(section, metricOptions, day => {
+        const raw = branchFilter ? day.items.find(it => it.branch === branchFilter) : day.total;
+        return crResolveHistoryItem(raw, teamFilter);
+    });
     // Balance Loan at Risk (T24) is never date-filtered — it always
     // reflects whichever ArreasT24ByCO data was live at snapshot time,
     // which can carry its own "as of" moment different from each row's
