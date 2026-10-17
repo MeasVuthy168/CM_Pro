@@ -3531,3 +3531,166 @@ body:not(.arr-view-card) .arr-card-list{ display:none; }
     border:1.5px solid var(--arr-outline-btn-border);
     color:var(--arr-outline-btn-text);
 }
+
+/* ==========================================
+   LD / CIF grouping (card view)
+========================================== */
+
+.arr-results-tools{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex:0 0 auto;
+}
+.arr-group-switch{
+    display:flex;
+    padding:3px;
+    gap:2px;
+    border-radius:10px;
+    background:rgba(26,46,87,.07);
+}
+[data-theme="dark"] .arr-group-switch{ background:rgba(255,255,255,.07); }
+/* LD / CIF only applies to the card view */
+body:not(.arr-view-card) .arr-group-switch{ display:none; }
+.arr-group-btn{
+    min-width:40px;
+    height:28px;
+    padding:0 8px;
+    border:none;
+    border-radius:8px;
+    background:transparent;
+    color:var(--arr-text-muted);
+    font-size:12.5px;
+    font-weight:800;
+    cursor:pointer;
+}
+.arr-group-btn.active{
+    background:var(--arr-card-bg);
+    color:var(--arr-text);
+    box-shadow:0 1px 4px rgba(0,0,0,.12);
+}
+[data-theme="dark"] .arr-group-btn.active{ background:#FFD700; color:#0E1B3C; }
+
+/* Group card */
+.arr-group{
+    border-radius:14px;
+    min-width:0;
+}
+.arr-group .arr-group-head{ border-left-color:inherit; }
+.arr-group.row-class-loss .arr-group-head{ border-left-color:#8B0000; }
+.arr-group.row-class-doubtful .arr-group-head{ border-left-color:#FF0000; }
+.arr-group.row-class-substandard .arr-group-head{ border-left-color:#FFA500; }
+.arr-group.row-class-specialmention .arr-group-head{ border-left-color:#E6D200; }
+.arr-group.is-open .arr-group-head{
+    border-bottom-left-radius:0;
+    border-bottom-right-radius:0;
+}
+
+.arr-ld-count{
+    padding:1px 8px;
+    border-radius:999px;
+    background:rgba(212,175,55,.18);
+    color:var(--arr-text);
+    font-weight:700;
+}
+
+.arr-progress{
+    display:block;
+    height:5px;
+    margin-top:4px;
+    border-radius:999px;
+    background:rgba(26,46,87,.1);
+    overflow:hidden;
+}
+[data-theme="dark"] .arr-progress{ background:rgba(255,255,255,.1); }
+.arr-progress span{
+    display:block;
+    height:100%;
+    border-radius:inherit;
+    background:linear-gradient(90deg,#16A34A,#22C55E);
+}
+
+.arr-group-toggle{
+    margin-left:auto;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--arr-navy, #1A2E57);
+}
+[data-theme="dark"] .arr-group-toggle{ color:#FFD700; }
+.arr-group-chevron{
+    display:inline-block;
+    font-size:18px;
+    line-height:1;
+    transition:transform .2s;
+}
+.arr-group.is-open .arr-group-chevron{ transform:rotate(90deg); }
+
+/* The group's LDs */
+.arr-group-lds{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    padding:8px;
+    border:1px solid var(--arr-border);
+    border-top:none;
+    border-radius:0 0 14px 14px;
+    background:rgba(26,46,87,.035);
+}
+[data-theme="dark"] .arr-group-lds{ background:rgba(255,255,255,.03); }
+.arr-group-lds[hidden]{ display:none; }
+
+.arr-group-ld{
+    display:block;
+    width:100%;
+    text-align:left;
+    font:inherit;
+    color:var(--arr-text);
+    background:var(--arr-card-bg);
+    border:1px solid var(--arr-border);
+    border-left:4px solid var(--arr-border);
+    border-radius:10px;
+    padding:9px 10px;
+    cursor:pointer;
+}
+.arr-group-ld.is-selected{ box-shadow:0 0 0 2px #D4AF37; }
+.arr-group-ld.row-class-loss{ border-left-color:#8B0000; }
+.arr-group-ld.row-class-doubtful{ border-left-color:#FF0000; }
+.arr-group-ld.row-class-substandard{ border-left-color:#FFA500; }
+.arr-group-ld.row-class-specialmention{ border-left-color:#E6D200; }
+.arr-group-ld-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+}
+.arr-group-ld-no{
+    font-size:13.5px;
+    font-weight:700;
+    font-variant-numeric:tabular-nums;
+}
+.arr-group-ld-meta{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:4px 12px;
+    margin-top:4px;
+    font-size:12px;
+    color:var(--arr-text-muted);
+}
+.arr-group-ld-meta strong{ color:var(--arr-text); font-variant-numeric:tabular-nums; }
+.arr-group-ld-meta .arr-amount-bad{ color:#C0392B; }
+[data-theme="dark"] .arr-group-ld-meta .arr-amount-bad{ color:#FF8A8A; }
+.arr-group-ld-reason{
+    margin-top:5px;
+    font-size:12px;
+    line-height:1.4;
+    color:var(--arr-text);
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+}
+.arr-group-ld-reason-empty{ color:var(--arr-text-muted); font-style:italic; }
