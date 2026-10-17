@@ -238,7 +238,12 @@ function showInstallButton(){
 
     btn.id="installBtn";
 
-    btn.innerHTML='<span class="ui-ico ui-ico-install" aria-hidden="true"></span> Install App';
+    // data-i18n keeps the label in step with a later language switch;
+    // CMI18n.t() fills it now (the button is created after the page's
+    // own translation pass has already run).
+    const label=window.CMI18n ? CMI18n.t("login.installBtn") : "Install App";
+
+    btn.innerHTML=`<span class="ui-ico ui-ico-install" aria-hidden="true"></span> <span data-i18n="login.installBtn">${label}</span>`;
 
     document.body.appendChild(btn);
 
