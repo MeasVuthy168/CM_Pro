@@ -80,17 +80,17 @@
 }
 
 .cr-hub-icon{
-    font-size:26px;
     width:44px;
     height:44px;
     flex:0 0 44px;
     display:flex;
     align-items:center;
     justify-content:center;
-    border-radius:12px;
-    background:rgba(26, 46, 87,.08);
+    color:var(--cr-text);
 }
-[data-theme="dark"] .cr-hub-icon{ background:rgba(255,255,255,.1); }
+/* Inline SVG icons drawn in currentColor, so they follow each theme's
+   own text color (navy/black in light, white in dark). */
+.cr-hub-icon svg{ width:34px; height:34px; display:block; }
 
 .cr-hub-text{ flex:1; min-width:0; }
 .cr-hub-card-title{
@@ -105,10 +105,11 @@
 }
 
 .cr-hub-arrow{
-    font-size:22px;
-    color:var(--cr-navy-dark);
+    color:#E8B400;
     flex:0 0 auto;
+    display:flex;
 }
+.cr-hub-arrow svg{ width:22px; height:22px; display:block; }
 [data-theme="dark"] .cr-hub-arrow{ color:var(--cr-gold-light); }
 
 .cr-hub-link:active{ opacity:.85; transform:scale(.99); }
@@ -140,7 +141,8 @@
     justify-content:center;
     gap:10px;
 }
-.cr-hub-snapshot-btn-icon{ font-size:16px; line-height:1; }
+.cr-hub-snapshot-btn-icon{ display:inline-flex; line-height:1; }
+.cr-hub-snapshot-btn-icon svg{ width:22px; height:22px; display:block; }
 [data-theme="dark"] .cr-hub-snapshot-btn{
     background:linear-gradient(135deg,#D4AF37,#FFD700);
     color:#0E1B3C;
