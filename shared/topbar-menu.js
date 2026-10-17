@@ -7,8 +7,8 @@
 // actionHandler:toggleTopbarMenu to initTopbar(), and wires each
 // item's own click handler itself — this file only owns the
 // show/hide/outside-click toggle, shared across every page that opts
-// in (Credit Portfolio Trends and the 4 Daily Monitoring report
-// pages, per explicit request 2026-10-08).
+// in (the 4 Daily Monitoring report pages, per explicit request
+// 2026-10-08).
 // =========================
 window.toggleTopbarMenu = function(){
 

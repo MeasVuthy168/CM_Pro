@@ -2,10 +2,8 @@
 // Credit Report hub — "Snapshot All" admin control.
 // Consolidates the 4 per-report "Snapshot Now" buttons (Branch/Officer/
 // Product/Location, each on its own Daily Monitoring page) into one
-// button here, per explicit request 2026-10-07 — and, per explicit
-// request 2026-10-08, also absorbed Report Comparison's own standalone
-// "Snapshot Now" button, so there is exactly one snapshot control in
-// the whole Credit Report section. Runs all 5 reports' existing
+// button here, per explicit request 2026-10-07, so there is exactly one
+// snapshot control in the whole Credit Report section. Runs all 4 reports' existing
 // /snapshot/run endpoints in parallel (each report already knows its
 // own current date internally — see crGridMergeDateKey() in each
 // lib/creditreport-*.js) and shows one combined result.
@@ -25,18 +23,11 @@ const CR_HUB_SNAPSHOT_TARGETS = [
     { label: () => t("creditreport.hub.targetBranch"), url: "/api/creditreport/summary/snapshot/run" },
     { label: () => t("creditreport.hub.targetOfficer"), url: "/api/creditreport/byco/snapshot/run" },
     { label: () => t("creditreport.hub.targetProduct"), url: "/api/creditreport/byproduct/snapshot/run" },
-    { label: () => t("creditreport.hub.targetLocation"), url: "/api/creditreport/bylocation/snapshot/run" },
-    // The combined OS/Disburse/WO/Overdue/T24 snapshot Report Comparison
-    // reads both sides of a compare from — formerly its own page-local
-    // "Snapshot Now" button, absorbed here 2026-10-08.
-    { label: () => t("creditreport.hub.targetCompare"), url: "/api/creditreport/snapshot/run" }
+    { label: () => t("creditreport.hub.targetLocation"), url: "/api/creditreport/bylocation/snapshot/run" }
 ];
 
 // "Refresh All T24" targets — just the 4 Daily History reports, each
-// with a per-date T24 freeze (see lib/creditreport-*.js). Report
-// Comparison's own combined snapshot isn't part of that freeze system,
-// so it's deliberately left out here (unlike CR_HUB_SNAPSHOT_TARGETS
-// above, which does include it).
+// with a per-date T24 freeze (see lib/creditreport-*.js).
 const CR_HUB_T24_REFRESH_TARGETS = [
     { label: () => t("creditreport.hub.targetBranch"), url: "/api/creditreport/summary/snapshot/refresh-t24-all" },
     { label: () => t("creditreport.hub.targetOfficer"), url: "/api/creditreport/byco/snapshot/refresh-t24-all" },

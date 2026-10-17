@@ -1,7 +1,7 @@
 // shared/i18n/creditreport.js
 //
 // Strings for the Credit Report section: the hub (pages/creditreport/
-// index.html), Credit Portfolio Trends / Report Comparison, the 4 Daily
+// index.html), the 4 Daily
 // Monitoring detail reports (by Officer/Branch/Product/Location), and the
 // 4 Productivity/Performance pages (Officer/Branch/Product/Location).
 // Load alongside shared/i18n/common.js and shared/i18n/core.js on every
@@ -21,8 +21,6 @@ CMI18n.register({
   "creditreport.hub.byProductSub": { km: "ត្រួតពិនិត្យប្រចាំថ្ងៃតាមផលិតផល", en: "Daily monitoring, by product" },
   "creditreport.hub.byLocation": { km: "ការត្រួតពិនិត្យប្រចាំថ្ងៃតាមទីតាំង", en: "Daily Monitoring by Location" },
   "creditreport.hub.byLocationSub": { km: "ត្រួតពិនិត្យប្រចាំថ្ងៃតាមទីតាំង", en: "Daily monitoring, by location" },
-  "creditreport.hub.portfolioTrends": { km: "និន្នាការផលប័ត្រឥណទាន", en: "Credit Portfolio Trends" },
-  "creditreport.hub.portfolioTrendsSub": { km: "ប្រៀបធៀបរបាយការណ៍ប្រចាំថ្ងៃ", en: "Compare daily reports" },
 
   "creditreport.hub.snapshotAll": { km: "រក្សាទុករូបថតទាំងអស់", en: "Snapshot All" },
   "creditreport.hub.dismiss": { km: "បិទ", en: "Dismiss" },
@@ -36,7 +34,6 @@ CMI18n.register({
   "creditreport.hub.targetOfficer": { km: "មន្ត្រី", en: "Officer" },
   "creditreport.hub.targetProduct": { km: "ផលិតផល", en: "Product" },
   "creditreport.hub.targetLocation": { km: "ទីតាំង", en: "Location" },
-  "creditreport.hub.targetCompare": { km: "ប្រៀបធៀប", en: "Compare" },
 
   // "Refresh All T24" — admin escape hatch for the per-date T24 freeze
   // (see each lib/creditreport-*.js's own comment): re-pulls live T24
@@ -53,8 +50,7 @@ CMI18n.register({
   "creditreport.loadingReportData": { km: "កំពុងផ្ទុកទិន្នន័យរបាយការណ៍...", en: "Loading Report Data..." },
 
   // ==================================================================
-  // "..." MENU — shared by the 4 Daily Monitoring detail pages and
-  // Report Comparison's topbar menu.
+  // "..." MENU — shared by the 4 Daily Monitoring detail pages.
   // ==================================================================
   "creditreport.menu.snapshot": { km: "ថតរក្សាទុក", en: "Snapshot" },
   "creditreport.menu.deleteSnapshot": { km: "លុបរូបថតរក្សាទុក", en: "Delete Snapshot" },
@@ -68,68 +64,18 @@ CMI18n.register({
   "creditreport.menu.landscapeHint": { km: "ចុចអេក្រង់ដើម្បីបង្ហាញ/លាក់ម៉ឺនុយ", en: "Tap the screen to show/hide the menu" },
 
   // ==================================================================
-  // REPORT COMPARISON / CREDIT PORTFOLIO TRENDS (ReportCompare.html/js)
+  // SHARED SNAPSHOT / CALENDAR / COLUMN STRINGS — used by the Daily
+  // Monitoring and Productivity/Performance pages. (The "compare" prefix
+  // is historical: these came from the removed Credit Portfolio Trends
+  // page.)
   // ==================================================================
-  "creditreport.compare.title": { km: "និន្នាការផលប័ត្រឥណទាន", en: "Credit Portfolio Trends" },
-  "creditreport.compare.deleteCalHint": { km: "ជ្រើសរើសកាលបរិច្ឆេទដែលបានបន្លិចដើម្បីលុបរូបថតរក្សាទុករបស់វា។", en: "Pick a highlighted date to delete its saved snapshot." },
-  "creditreport.compare.fromDate": { km: "ពីកាលបរិច្ឆេទ", en: "From Date" },
-  "creditreport.compare.toDate": { km: "ដល់កាលបរិច្ឆេទ", en: "To Date" },
-  "creditreport.compare.compareBtn": { km: "ប្រៀបធៀប", en: "Compare" },
-
-  "creditreport.compare.tabOs": { km: "សមតុល្យ​ឥណទាន", en: "OS" },
-  "creditreport.compare.tabDisburse": { km: "​ការបញ្ចេញឥណទាន", en: "Disb" },
-  "creditreport.compare.tabT24": { km: "យឺតយ៉ាវT24", en: "T24 OV" },
-  "creditreport.compare.tabOverdue": { km: "យឺតយ៉ាវNBC", en: "NBC OV" },
-  "creditreport.compare.tabWo": { km: "លុបចេញ​ពីបញ្ជី", en: "WO" },
-
-  "creditreport.compare.sectionOsFull": { km: "សមតុល្យ​ឥណទាន​", en: "Loan Outstanding" },
-  "creditreport.compare.sectionDisburseFull": { km: "ការបញ្ចេញឥណទាន", en: "Loan Disburse" },
-  "creditreport.compare.sectionT24Full": { km: "សមតុល្យ​ឥណទានយឺតយ៉ាវ (T24)", en: "Balance Loan at Risk (T24)" },
-  "creditreport.compare.sectionOverdueFull": { km: "សមតុល្យ​ឥណទានយឺតយ៉ាវ (NBC Overdue)", en: "Balance Loan at Risk (NBC Overdue)" },
-  "creditreport.compare.sectionWoFull": { km: "បំណុលលុបចេញីបញ្ជី", en: "Write Off" },
-
   "creditreport.compare.dimOfficer": { km: "មន្ត្រី", en: "Officer" },
-  "creditreport.compare.dimBranch": { km: "សាខា", en: "Branch" },
   "creditreport.compare.dimProduct": { km: "ផលិតផល", en: "Product" },
   "creditreport.compare.dimLocation": { km: "ទីតាំង", en: "Location" },
-  "creditreport.compare.allOfDim": { km: "{dim} ទាំងអស់", en: "All {dim}s" },
-  "creditreport.compare.notTrackedForWo": { km: "មិនបានកត់ត្រាសម្រាប់ឥណទានលុបចាក់បញ្ជី", en: "Not tracked for Write Off" },
 
-  "creditreport.compare.noRows": { km: "មិនមានជួរទិន្នន័យ។", en: "No rows." },
-  "creditreport.compare.noRowsCategory": { km: "មិនមានជួរទិន្នន័យក្នុងប្រភេទនេះទេ។", en: "No rows in this category." },
-
-  "creditreport.compare.colLoan": { km: "# កម្ចី", en: "# Loan" },
-  "creditreport.compare.colEntered": { km: "ចូល", en: "Entered" },
-  "creditreport.compare.colExited": { km: "ចេញ", en: "Exited" },
-  "creditreport.compare.colUpgrade": { km: "ឡើងកម្រិត", en: "Upgrade" },
-  "creditreport.compare.colDowngrade": { km: "ចុះកម្រិត", en: "Downgrade" },
   "creditreport.compare.colCif": { km: "CIF", en: "CIF" },
   "creditreport.compare.colName": { km: "ឈ្មោះ", en: "Name" },
-  "creditreport.compare.colBranch": { km: "សាខា", en: "Branch" },
-  "creditreport.compare.colOfficer": { km: "មន្ត្រី", en: "Officer" },
-  "creditreport.compare.colInt": { km: "ការប្រាក់", en: "Int" },
-  "creditreport.compare.colPrn": { km: "ប្រាក់ដើម", en: "Prn" },
-  "creditreport.compare.colLoanNo": { km: "លេខកម្ចី", en: "Loan #" },
   "creditreport.compare.colClass": { km: "ចំណាត់ថ្នាក់", en: "Class" },
-  "creditreport.compare.colValue": { km: "តម្លៃ", en: "Value" },
-
-  "creditreport.compare.valueLabelOs": { km: "ប្រាក់នៅសល់ (USD)", en: "OS (USD)" },
-  "creditreport.compare.valueLabelDisburse": { km: "ប្រាក់ផ្តល់ឱ្យខ្ចី (USD)", en: "Disbursed (USD)" },
-
-  "creditreport.compare.subEntered": { km: "✅ ចូល ({count})", en: "Entered ({count})" },
-  "creditreport.compare.subExited": { km: "↩️ ចេញ ({count})", en: "Exited ({count})" },
-  "creditreport.compare.subChanged": { km: "🔀 ផ្លាស់ប្តូរ ({count})", en: "Changed ({count})" },
-  "creditreport.compare.subNewOverdue": { km: "ថ្មីយឺតយ៉ាវ ({count})", en: "New Overdue ({count})" },
-  "creditreport.compare.subResolved": { km: "បានដោះស្រាយ ({count})", en: "Resolved ({count})" },
-
-  "creditreport.compare.kpiLoan": { km: "# កម្ចី", en: "# Loan" },
-  "creditreport.compare.kpiClient": { km: "# អតិថិជន", en: "# Client" },
-  "creditreport.compare.kpiValueUsd": { km: "តម្លៃ (USD)", en: "Value (USD)" },
-  "creditreport.compare.kpiPar": { km: "PAR", en: "PAR" },
-  "creditreport.compare.kpiCif": { km: "# (CIF)", en: "# (CIF)" },
-  "creditreport.compare.kpiInt": { km: "ការប្រាក់", en: "Int" },
-  "creditreport.compare.kpiPrn": { km: "ប្រាក់ដើម", en: "Prn" },
-  "creditreport.compare.was": { km: "ពីមុន {value}", en: "was {value}" },
 
   "creditreport.compare.dowSun": { km: "អា", en: "Sun" },
   "creditreport.compare.dowMon": { km: "ច", en: "Mon" },
@@ -139,16 +85,8 @@ CMI18n.register({
   "creditreport.compare.dowFri": { km: "សុ", en: "Fri" },
   "creditreport.compare.dowSat": { km: "ស", en: "Sat" },
 
-  "creditreport.compare.noSnapshotsYet": { km: "មិនទាន់មានរូបថតរក្សាទុកនៅឡើយទេ។", en: "No snapshots saved yet." },
-  "creditreport.compare.legendHasSnapshot": { km: "មានរូបថតរក្សាទុក — ចុចដើម្បីលុប", en: "Has saved snapshot — tap to delete" },
   "creditreport.compare.prevMonth": { km: "ខែមុន", en: "Previous month" },
   "creditreport.compare.nextMonth": { km: "ខែបន្ទាប់", en: "Next month" },
-
-  "creditreport.compare.failedLoadDates": { km: "បរាជ័យក្នុងការផ្ទុកកាលបរិច្ឆេទរូបថតរក្សាទុក។", en: "Failed to load snapshot dates." },
-  "creditreport.compare.failedCompare": { km: "បរាជ័យក្នុងការប្រៀបធៀប។", en: "Failed to compare." },
-  "creditreport.compare.serverErrorCompare": { km: "មានបញ្ហាម៉ាស៊ីនមេពេលប្រៀបធៀប។", en: "Server error while comparing." },
-  "creditreport.compare.noBackupAdmin": { km: "មិនទាន់មានទិន្នន័យបម្រុងទុកនៅឡើយទេ — សូមប្រើ \"Snapshot All\" នៅទំព័រ Credit Report ដើម្បីចាប់ផ្តើម។", en: "No backup yet — use Snapshot All on the Credit Report hub to start." },
-  "creditreport.compare.noBackupNonAdmin": { km: "មិនទាន់មានទិន្នន័យបម្រុងទុកនៅឡើយទេ — សូមសួរអ្នកគ្រប់គ្រងឱ្យដំណើរការ \"Snapshot All\" នៅទំព័រ Credit Report។", en: "No backup yet — ask an admin to run Snapshot All on the Credit Report hub." },
 
   "creditreport.compare.confirmDeleteSnapshot": { km: "លុបរូបថតរក្សាទុកសម្រាប់ {date}? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។", en: "Delete the saved snapshot for {date}? This cannot be undone." },
   "creditreport.compare.snapshotDeletedFor": { km: "បានលុបរូបថតរក្សាទុកសម្រាប់ {date}", en: "Snapshot deleted for {date}" },
