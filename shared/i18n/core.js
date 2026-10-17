@@ -63,6 +63,7 @@ CMI18n.register({
   "login.installTitle": { km: "ដំឡើង CM_Pro", en: "Install CM_Pro" },
   "login.installText": { km: "ចុច <b>Share</b> បន្ទាប់មក <b>Add to Home Screen</b>", en: "Tap <b>Share</b> then <b>Add to Home Screen</b>" },
   "login.installOk": { km: "យល់ព្រម", en: "OK" },
+  "login.installBtn": { km: "ដំឡើង App", en: "Install App" },
   "login.msg.missingFields": { km: "សូមបញ្ចូលឈ្មោះអ្នកប្រើប្រាស់/ពាក្យសម្ងាត់", en: "Please enter username/password" },
   "login.msg.loginFailed": { km: "ការចូលប្រើប្រាស់បានបរាជ័យ", en: "Login failed" },
   "login.msg.success": { km: "ចូលប្រើប្រាស់ជោគជ័យ", en: "Login successful" },
