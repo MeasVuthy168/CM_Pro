@@ -725,9 +725,18 @@ async function crFetchHistory() {
     const dateTo = document.getElementById("crHistToDate").value;
     if (!dateFrom || !dateTo) return;
 
+    // History only ever shows one row-stream: the picked branch's own
+    // rows, or the All Branch total — so ask for just that part of each
+    // day instead of every branch. Switching the Branch filter afterwards
+    // re-fetches (see crHistBranch's handler).
+    const branchFilter = document.getElementById("crHistBranch").value;
+    const params = new URLSearchParams({ dateFrom, dateTo });
+    if (branchFilter) params.set("branch", branchFilter);
+    else params.set("totalOnly", "1");
+
     crShowLoading();
     try {
-        const url = `${API.BASE_URL}/api/creditreport/summary/history?dateFrom=${dateFrom}&dateTo=${dateTo}`;
+        const url = `${API.BASE_URL}/api/creditreport/summary/history?${params.toString()}`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
         const data = await res.json();
         crHideLoading();
@@ -737,6 +746,7 @@ async function crFetchHistory() {
             return;
         }
         crHistoryData = data;
+        crHistoryData.branchFilter = branchFilter;
         crRenderHistory();
     } catch (e) {
         console.error(e);
@@ -1694,7 +1704,13 @@ document.getElementById("crModeHistoryBtn").addEventListener("click", () => crSe
 document.getElementById("btnCrHistRun").addEventListener("click", crFetchHistory);
 document.getElementById("crHistBranch").addEventListener("change", () => {
     crUpdateHistRunButtonState();
-    crRenderHistory();
+    // Loaded history only carries the branch (or All Branch total) it was
+    // fetched for, so a different pick needs its own fetch.
+    if (crHistoryData && crHistoryData.branchFilter !== document.getElementById("crHistBranch").value) {
+        crFetchHistory();
+    } else {
+        crRenderHistory();
+    }
 });
 document.getElementById("crHistTeam").addEventListener("change", () => {
     crUpdateHistRunButtonState();
