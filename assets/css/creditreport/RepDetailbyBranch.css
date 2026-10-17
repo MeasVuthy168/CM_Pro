@@ -983,21 +983,3 @@ body.cr-force-landscape .landscape-bar.hidden{
     }
     .cr-par-high{ color:#000 !important; text-decoration:underline; }
 }
-
-
-/* ===== Daily History Growth / Decline dashboard ===== */
-.cr-growth-dashboard{margin:14px 0 18px;}
-.cr-growth-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
-.cr-growth-card{min-width:0;padding:14px 12px 12px;border:1px solid var(--cr-border);border-top:4px solid var(--cr-series-1);border-radius:14px;background:var(--cr-card-bg);text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04);}
-.cr-growth-label{min-height:22px;color:var(--cr-text-muted);font-size:12px;font-weight:700;line-height:1.45;overflow-wrap:anywhere;}
-.cr-growth-current{margin-top:4px;color:var(--cr-text);font-size:clamp(17px,3.8vw,25px);font-weight:800;line-height:1.25;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;}
-.cr-growth-previous{margin-top:5px;color:var(--cr-text-muted);font-size:11px;line-height:1.4;overflow-wrap:anywhere;}
-.cr-growth-previous span{opacity:.8;}
-.cr-growth-change{display:inline-flex;align-items:center;justify-content:center;gap:5px;margin-top:9px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:800;line-height:1.3;max-width:100%;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;}
-.cr-growth-change.up{color:#218653;background:rgba(45,170,105,.13);}
-.cr-growth-change.down{color:#b23a3a;background:rgba(210,65,65,.13);}
-.cr-growth-change.flat{color:var(--cr-text-muted);background:var(--cr-row-alt);}
-.cr-growth-arrow{flex:0 0 auto;}
-.cr-growth-dates{margin-top:7px;color:var(--cr-text-muted);font-size:10px;line-height:1.35;}
-@media(max-width:560px){.cr-growth-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}.cr-growth-card{padding:11px 8px 10px;border-radius:11px;}.cr-growth-current{font-size:clamp(16px,4.2vw,21px);}}
-@media(max-width:350px){.cr-growth-grid{grid-template-columns:1fr;}}
