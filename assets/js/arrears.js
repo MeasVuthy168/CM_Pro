@@ -57,6 +57,8 @@ const COL = {
     TOTAL_BALANCE: 40
 };
 
+const t = (key) => (window.CMI18n ? CMI18n.t(key) : key);
+
 const DIGITAL_PRODUCTS = [
     "Advance Salary Loan",
     "By Now Pay Later",
@@ -86,6 +88,8 @@ let arrearsScopeMode = "";
 const tbodyArrears = document.getElementById("tbodyArrears");
 const summaryLD = document.getElementById("sumLD");
 const summaryOS = document.getElementById("sumOS");
+const summaryCIF = document.getElementById("sumCIF");
+const summarySplit = document.getElementById("sumSplit");
 const lastUploadAtEl = document.getElementById("lastUploadAt");
 const lastUploadByEl = document.getElementById("lastUploadBy");
 
@@ -368,9 +372,11 @@ filterEls.branch.addEventListener("change", () => {
 // MESSAGE HELPER
 // ========================================
 
+// Same toast as the rest of the app (toast.js). There is no global
+// showToast(), so the old check always fell through to alert().
 function notify(message, type = "info") {
-    if (typeof showToast === "function") {
-        showToast(message, type);
+    if (typeof CMToast !== "undefined" && CMToast.show) {
+        CMToast.show({ type, title: message, message: "", duration: 3000 });
     } else {
         alert(message);
     }
@@ -633,8 +639,21 @@ function applyFilters() {
     updateAdvancedFilterBadge();
 }
 
+// Show the search box's x button only while it has text.
+const btnClearKeyword = document.getElementById("btnClearKeyword");
+function syncKeywordClearButton() {
+    if (btnClearKeyword) btnClearKeyword.hidden = !filterEls.keyword.value;
+}
+filterEls.keyword.addEventListener("input", syncKeywordClearButton);
+btnClearKeyword?.addEventListener("click", () => {
+    filterEls.keyword.value = "";
+    filterEls.keyword.dispatchEvent(new Event("input"));
+    filterEls.keyword.focus();
+});
+
 function clearFilters() {
     Object.values(filterEls).forEach(el => { el.value = ""; });
+    syncKeywordClearButton();
     populateOfficerOptions();
     applyFilters();
 }
@@ -848,11 +867,21 @@ function renderSummary(rows) {
         else { otherCnt++; otherOS += amt; }
     });
 
-    summaryLD.textContent =
-        `${rows.length.toLocaleString()} CIF:${uniqueCifs.size.toLocaleString()} (Gov:${govCnt.toLocaleString()}, Worker:${workerCnt.toLocaleString()}, Other:${otherCnt.toLocaleString()})`;
+    summaryLD.textContent = rows.length.toLocaleString();
+    summaryCIF.textContent = uniqueCifs.size.toLocaleString();
+    summaryOS.textContent = formatShortAmount(totalOS);
 
-    summaryOS.textContent =
-        `${formatShortAmount(totalOS)} (Gov:${formatShortAmount(govOS)}, Worker:${formatShortAmount(workerOS)}, Other:${formatShortAmount(otherOS)})`;
+    // Gov / Worker / Other split: count + OS per occupation group.
+    summarySplit.innerHTML = [
+        ["Gov", govCnt, govOS],
+        ["Worker", workerCnt, workerOS],
+        ["Other", otherCnt, otherOS]
+    ].map(([label, cnt, os]) => `
+        <div class="arr-split-item">
+            <span class="arr-split-label">${label}</span>
+            <span class="arr-split-value">${cnt.toLocaleString()}</span>
+            <span class="arr-split-os">${formatShortAmount(os)}</span>
+        </div>`).join("");
 }
 
 // ========================================
@@ -976,7 +1005,8 @@ document.querySelector(".table-scroll")?.addEventListener("scroll", () => {
     }
 });
 
-function renderTable(rows) {
+function renderTableView(rows) {
+    arrTableStale = false;
     tbodyArrears.innerHTML = "";
     renderedCount = 0;
 
@@ -1030,6 +1060,186 @@ function renderTable(rows) {
 }
 
 // ========================================
+// CARD VIEW
+// Phone-friendly alternative to the 26-column table: one card per
+// loan with the fields an officer acts on (who, how late, how much,
+// phone, promise status, reason). Same data (currentRows), same
+// batching (RENDER_BATCH_SIZE, more on scroll) and same tap ->
+// Reason Arrear panel as the table rows. Toggle state is remembered
+// in localStorage ("arr_view"); Print / Export PDF / Landscape work on
+// the table, so they switch back to it first (ensureTableView()).
+// ========================================
+
+const arrCardList = document.getElementById("arrCardList");
+let arrViewMode = localStorage.getItem("arr_view") === "table" ? "table" : "card";
+let arrTableStale = true;   // table DOM is out of date with currentRows (rebuilt when shown)
+let renderedCardCount = 0;
+
+function renderTable(rows) {
+    if (arrViewMode === "card") {
+        arrTableStale = true;
+        renderCards(rows);
+    } else {
+        renderTableView(rows);
+    }
+}
+
+function arrFormatAmount(value) {
+    const n = parseFloat(String(value ?? "").replace(/,/g, ""));
+    if (!Number.isFinite(n)) return value || "-";
+    return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function buildCardElement(row, index) {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "arr-card";
+    card.dataset.index = index;
+
+    const classCss = classRowCssClass(row.class);
+    if (classCss) card.classList.add(classCss);
+    if (row.__pendingSubmit) card.classList.add("arr-card-pending");
+    if (selectedRow === row) card.classList.add("is-selected");
+
+    const dup = (customerCountsForRender.get(row.customer) || 0) > 1;
+    const arrears = parseFloat(row.arreas) || 0;
+    const day = parseInt(row.day, 10);
+    const promiseCss = promiseCellCssClass(row.promiseStatus);
+    const phone = formatPhone(row.tell);
+    const phoneDigits = String(row.tell || "").replace(/[^\d+]/g, "");
+    const hasReason = row.ajReason || row.akSolution || row.alFollowup;
+
+    card.innerHTML = `
+        <div class="arr-card-top">
+            <div class="arr-card-name ${dup ? "arr-card-dup" : ""}">${escapeHtml(row.customer || "-")}</div>
+            ${Number.isFinite(day) ? `<span class="arr-day-badge">${day.toLocaleString()} <small>${escapeHtml(t("arrears.cardDays"))}</small></span>` : ""}
+        </div>
+        <div class="arr-card-ids">
+            <span>${escapeHtml(row.loanNumber || "-")}</span>
+            <span>CIF ${escapeHtml(row.cif || "-")}</span>
+            ${row.class ? `<span class="arr-class-chip">${escapeHtml(row.class)}</span>` : ""}
+        </div>
+        <div class="arr-card-amounts">
+            <div class="arr-amount ${arrears > 0 ? "arr-amount-bad" : ""}">
+                <span>Arrears</span><strong>${escapeHtml(arrFormatAmount(row.arreas))}</strong>
+            </div>
+            <div class="arr-amount">
+                <span>Prn.OS${row.ccy ? ` · ${escapeHtml(row.ccy)}` : ""}</span><strong>${escapeHtml(arrFormatAmount(row.prnOS))}</strong>
+            </div>
+        </div>
+        <div class="arr-card-metas">
+            ${phone ? `<a class="arr-card-meta arr-card-phone" href="tel:${escapeHtml(phoneDigits)}" data-stop><span class="ui-ico ui-ico-phone" aria-hidden="true"></span>${escapeHtml(phone)}</a>` : ""}
+            ${row.occu ? `<span class="arr-card-meta">${escapeHtml(row.occu)}</span>` : ""}
+            ${row.coId ? `<span class="arr-card-meta">CO ${escapeHtml(row.coId)}</span>` : ""}
+            ${row.promiseStatus ? `<span class="arr-promise ${promiseCss}">${escapeHtml(row.promiseStatus)}</span>` : ""}
+        </div>
+        ${row.location ? `<div class="arr-card-location"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span><span>${escapeHtml(row.location)}</span></div>` : ""}
+        <div class="arr-card-reason ${hasReason ? (promiseCss || "cell-followup-default") : "arr-card-reason-empty"}">
+            ${hasReason
+                ? `<div class="arr-reason-text">${escapeHtml([row.ajReason, row.akSolution].filter(Boolean).join(" · ") || "-")}</div>
+                   ${row.alFollowup ? `<div class="arr-reason-date"><span class="ui-ico ui-ico-calendar" aria-hidden="true"></span>${escapeHtml(formatRowDateDMY(row.alFollowup))}</div>` : ""}`
+                : `<span class="ui-ico ui-ico-edit" aria-hidden="true"></span> ${escapeHtml(t("arrears.cardNoReason"))}`}
+        </div>
+    `;
+    return card;
+}
+
+function appendMoreCards() {
+    if (renderedCardCount >= currentRows.length) return;
+
+    const start = renderedCardCount;
+    const end = Math.min(start + RENDER_BATCH_SIZE, currentRows.length);
+
+    const frag = document.createDocumentFragment();
+    for (let i = start; i < end; i++) {
+        frag.appendChild(buildCardElement(currentRows[i], i));
+    }
+    arrCardList.appendChild(frag);
+    renderedCardCount = end;
+
+    const note = document.getElementById("renderedCountNote");
+    if (note) {
+        note.textContent = renderedCardCount < currentRows.length
+            ? `កំពុងបង្ហាញ ${renderedCardCount.toLocaleString()} នៃ ${currentRows.length.toLocaleString()} — រំកិលចុះក្រោមដើម្បីមើលបន្ថែម`
+            : `បង្ហាញទាំងអស់ ${currentRows.length.toLocaleString()}`;
+    }
+}
+
+function renderCards(rows) {
+    arrCardList.innerHTML = "";
+    renderedCardCount = 0;
+
+    if (!rows.length) {
+        arrCardList.innerHTML = `<div class="arr-card-empty">${escapeHtml(t("arrears.cardNoData"))}</div>`;
+        const note = document.getElementById("renderedCountNote");
+        if (note) note.textContent = "";
+        return;
+    }
+
+    customerCountsForRender = new Map();
+    rows.forEach(row => {
+        if (!row.customer) return;
+        customerCountsForRender.set(row.customer, (customerCountsForRender.get(row.customer) || 0) + 1);
+    });
+
+    appendMoreCards();
+}
+
+// More cards as the page (body) scrolls near the bottom.
+function arrCardScrollCheck() {
+    if (arrViewMode !== "card" || renderedCardCount >= currentRows.length) return;
+    const scroller = document.body.scrollHeight > window.innerHeight + 2 ? document.body : document.scrollingElement;
+    if (scroller.scrollTop + window.innerHeight >= scroller.scrollHeight - 600) {
+        appendMoreCards();
+    }
+}
+document.body.addEventListener("scroll", arrCardScrollCheck, { passive: true });
+window.addEventListener("scroll", arrCardScrollCheck, { passive: true });
+
+arrCardList.addEventListener("click", (e) => {
+    if (e.target.closest("[data-stop]")) return; // phone link dials instead
+    const card = e.target.closest(".arr-card[data-index]");
+    if (!card) return;
+    const row = currentRows[Number(card.dataset.index)];
+    if (!row) return;
+    arrCardList.querySelectorAll(".arr-card.is-selected").forEach(c => c.classList.remove("is-selected"));
+    card.classList.add("is-selected");
+    openReasonPanel(row);
+});
+
+function applyArrearsViewMode() {
+    document.body.classList.toggle("arr-view-card", arrViewMode === "card");
+    document.getElementById("arrViewCardBtn")?.classList.toggle("active", arrViewMode === "card");
+    document.getElementById("arrViewTableBtn")?.classList.toggle("active", arrViewMode === "table");
+}
+
+function setArrearsViewMode(mode) {
+    if (mode === arrViewMode) return;
+    arrViewMode = mode;
+    try { localStorage.setItem("arr_view", mode); } catch (e) {}
+    applyArrearsViewMode();
+    if (mode === "card") renderCards(currentRows);
+    else if (arrTableStale) renderTableView(currentRows);
+    else {
+        // table DOM already current — just restore its count note
+        const note = document.getElementById("renderedCountNote");
+        if (note) note.textContent = renderedCount < currentRows.length
+            ? `កំពុងបង្ហាញ ${renderedCount.toLocaleString()} នៃ ${currentRows.length.toLocaleString()} — រំកិលចុះក្រោមដើម្បីមើលបន្ថែម`
+            : `បង្ហាញទាំងអស់ ${currentRows.length.toLocaleString()}`;
+    }
+}
+
+// Print / Export PDF / Landscape capture the table, so make sure it's
+// the one on screen (and up to date) first.
+function ensureTableView() {
+    setArrearsViewMode("table");
+}
+
+document.getElementById("arrViewCardBtn")?.addEventListener("click", () => setArrearsViewMode("card"));
+document.getElementById("arrViewTableBtn")?.addEventListener("click", () => setArrearsViewMode("table"));
+applyArrearsViewMode();
+
+// ========================================
 // SURGICAL SINGLE-ROW UPDATE
 // After saving a Reason Arrear, only 6 cells on ONE row can have
 // actually changed (Promise Status, មុខរបរ, មូលហេតុ/ដំណោះស្រាយ,
@@ -1045,6 +1255,16 @@ function renderTable(rows) {
 function updateRowInTable(row) {
     const idx = currentRows.indexOf(row);
     if (idx === -1) return false; // row isn't in the currently-filtered view — nothing on screen to update
+
+    if (arrViewMode === "card") {
+        // The table isn't on screen; redraw just this one card, and
+        // rebuild the table from currentRows when it's next shown.
+        arrTableStale = true;
+        const card = arrCardList.querySelector(`.arr-card[data-index="${idx}"]`);
+        if (!card) return false;
+        card.replaceWith(buildCardElement(row, idx));
+        return true;
+    }
 
     const tr = tbodyArrears.querySelector(`tr[data-index="${idx}"]`);
     if (!tr) return false;
@@ -2041,6 +2261,7 @@ async function refreshArrears() {
         console.error(err);
         notify(err.message || "Failed to load arrears data.", "error");
         tbodyArrears.innerHTML = `<tr class="row-empty"><td colspan="26">Failed to load data</td></tr>`;
+        arrCardList.innerHTML = `<div class="arr-card-empty">Failed to load data</div>`;
         if (typeof hideAppLoading === "function") hideAppLoading();
         return;
     }
@@ -2323,11 +2544,15 @@ async function exportToPdf() {
 }
 
 document.getElementById("btnExportPdf")?.addEventListener("click", () => {
+    ensureTableView();
     exportToPdf();
     document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
 });
 
-document.getElementById("btnPrint").addEventListener("click", () => window.print());
+document.getElementById("btnPrint").addEventListener("click", () => {
+    ensureTableView();
+    window.print();
+});
 
 // ========================================
 // NO REASON ARREAR SUMMARY
@@ -2579,6 +2804,7 @@ function hideLandscapeBars() {
 
 if (btnLandscape) {
     btnLandscape.addEventListener("click", () => {
+        ensureTableView();
         document.body.classList.add("arrears-force-landscape");
         if (landscapeRowCount) {
             landscapeRowCount.textContent = `${currentRows.length.toLocaleString()} rows`;
