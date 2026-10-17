@@ -604,6 +604,28 @@ No Internet Connection
 <!-- CARD VIEW (arrears.js renderCards) -->
 <div id="arrCardList" class="arr-card-list"></div>
 
+<!-- CIF TABLE (table view + CIF switch) — one <tbody> per customer:
+     a summary row, plus the customer's LD rows when expanded -->
+<div id="arrCifTableWrap" class="arr-cif-table-wrap">
+<table class="arr-cif-table" id="arrCifTable">
+<thead>
+<tr>
+<th>No</th>
+<th data-i18n="arrears.cifColCustomer">Customer</th>
+<th>CIF</th>
+<th>LD</th>
+<th class="arr-num">OS (USD)</th>
+<th class="arr-num" data-i18n="arrears.cifColMaxDay">Day</th>
+<th>Class</th>
+<th>Promise Status</th>
+<th>Reason Arrear</th>
+<th>Tell</th>
+<th>CO_ID</th>
+</tr>
+</thead>
+</table>
+</div>
+
 <div class="table-card">
 
 <div id="landscapeTopBar" class="landscape-bar landscape-top-bar">

@@ -3694,3 +3694,108 @@ body:not(.arr-view-card) .arr-group-switch{ display:none; }
     overflow:hidden;
 }
 .arr-group-ld-reason-empty{ color:var(--arr-text-muted); font-style:italic; }
+
+/* ==========================================
+   CIF table (table view + CIF switch)
+========================================== */
+
+/* LD | CIF now applies to both views */
+body:not(.arr-view-card) .arr-group-switch{ display:flex; }
+
+/* Which list is on screen */
+.arr-cif-table-wrap{ display:none; }
+body.arr-group-cif:not(.arr-view-card) .arr-cif-table-wrap{ display:block; }
+body.arr-group-cif:not(.arr-view-card) .table-card{ display:none; }
+
+.arr-cif-table-wrap{
+    background:var(--arr-card-bg);
+    border:1px solid var(--arr-border);
+    border-radius:16px;
+    box-shadow:var(--arr-shadow);
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+}
+.arr-cif-table{
+    width:100%;
+    /* separate (not collapse) so the frozen columns keep their borders */
+    border-collapse:separate;
+    border-spacing:0;
+    font-size:12px;
+    white-space:nowrap;
+    color:var(--arr-text);
+}
+.arr-cif-table thead th{
+    position:sticky;
+    top:0;
+    z-index:2;
+    background:#1A2E57;
+    color:#FFD700;
+    padding:10px 8px;
+    border-right:1px solid #2f4670;
+    text-align:left;
+    font-weight:700;
+}
+.arr-cif-table td{
+    padding:8px;
+    border-right:1px solid var(--arr-border);
+    border-bottom:1px solid var(--arr-border);
+    vertical-align:middle;
+}
+.arr-cif-table .arr-num{ text-align:right; font-variant-numeric:tabular-nums; }
+
+/* Customer summary row */
+.arr-cif-row{ cursor:pointer; background:var(--arr-card-bg); }
+.arr-cif-row:hover td{ box-shadow:inset 0 0 0 9999px rgba(212,175,55,.08); }
+.arr-cif-name{ font-weight:700; }
+.arr-cif-name .arr-group-chevron{ color:#D4AF37; margin-right:2px; }
+.arr-cif-no{ width:36px; text-align:center; font-weight:700; }
+.arr-cif-reason{ min-width:96px; }
+.arr-cif-reason .arr-progress{ width:80px; }
+
+/* Freeze No + Customer while scrolling sideways (same as the LD table) */
+.arr-cif-table th:first-child,
+.arr-cif-table td:first-child{
+    position:sticky;
+    left:0;
+    z-index:1;
+    background-color:var(--arr-card-bg);
+}
+.arr-cif-table th:nth-child(2),
+.arr-cif-table td:nth-child(2){
+    position:sticky;
+    left:36px;
+    z-index:1;
+    background-color:var(--arr-card-bg);
+    box-shadow:2px 0 4px rgba(0,0,0,.12);
+}
+.arr-cif-table thead th:first-child,
+.arr-cif-table thead th:nth-child(2){
+    z-index:3;
+    background-color:#1A2E57;
+}
+.arr-cif-ld td:first-child,
+.arr-cif-ld td:nth-child(2){ background-color:#EEF1F6; }
+[data-theme="dark"] .arr-cif-ld td:first-child,
+[data-theme="dark"] .arr-cif-ld td:nth-child(2){ background-color:#18223A; }
+.arr-cif-no{ min-width:36px; max-width:36px; box-sizing:border-box; }
+
+/* Class colours on the No / Class cells — same as the LD table */
+.arr-cif-table td.row-class-loss{ background:#8B0000; color:#fff; }
+.arr-cif-table td.row-class-doubtful{ background:#FF0000; color:#fff; }
+.arr-cif-table td.row-class-substandard{ background:#FFA500; color:#1C2333; }
+.arr-cif-table td.row-class-specialmention{ background:#FFFF00; color:#1C2333; }
+.arr-cif-table td.cell-promise-today,
+.arr-cif-table td.cell-promise-upcoming,
+.arr-cif-table td.cell-followup-default{ color:#1C2333; }
+
+/* The customer's LD rows (expanded) */
+.arr-cif-ld{ cursor:pointer; background:rgba(26,46,87,.035); }
+[data-theme="dark"] .arr-cif-ld{ background:rgba(255,255,255,.03); }
+.arr-cif-ld:hover td{ box-shadow:inset 0 0 0 9999px rgba(212,175,55,.08); }
+.arr-cif-ld.row-selected td{ box-shadow:inset 0 0 0 9999px rgba(212,175,55,.18); }
+.arr-cif-ld-no{ padding-left:22px !important; font-weight:600; font-variant-numeric:tabular-nums; }
+.arr-cif-ld td[colspan="3"]{ white-space:normal; min-width:220px; }
+.arr-cif-table td:nth-child(2){ min-width:120px; }
+.arr-cif-noreason{ color:var(--arr-text-muted); font-style:italic; }
+.arr-cif-arrears{ margin-top:2px; font-size:11px; color:inherit; opacity:.85; }
+.arr-cif-arrears .arr-amount-bad{ color:#C0392B; }
