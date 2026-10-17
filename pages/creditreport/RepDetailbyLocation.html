@@ -29,6 +29,7 @@ href="../../assets/css/main.css">
 <link
 rel="stylesheet"
 href="../../assets/css/creditreport/RepDetailbyLocation.css">
+<link rel="stylesheet" href="../../assets/css/creditreport/growth-dashboard.css">
 
 <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
 
@@ -324,10 +325,10 @@ data-i18n-placeholder="creditreport.byLocation.searchPlaceholder">
 <button type="button" id="btnCrChartClose" class="cr-chart-close" aria-label="Close chart" data-i18n-aria-label="creditreport.detail.closeChartAria">✕</button>
 </div>
 <div class="cr-chart-metric-row" id="crChartMetricRow"></div>
-<div class="cr-growth-dashboard" id="crGrowthDashboard" aria-live="polite" hidden></div>
 <div class="cr-chart-canvas-wrap">
 <canvas id="crChartCanvas"></canvas>
 </div>
+<div class="cr-growth-dashboard" id="crGrowthDashboard" aria-live="polite" hidden></div>
 </div>
 </div>
 
@@ -341,6 +342,7 @@ data-i18n-placeholder="creditreport.byLocation.searchPlaceholder">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 
+<script src="../../assets/js/creditreport/growth-dashboard.js"></script>
 <script src="../../assets/js/creditreport/RepDetailbyLocation.js"></script>
 <script src="../../assets/js/creditreport/RepDetailbyLocation-loader.js"></script>
 

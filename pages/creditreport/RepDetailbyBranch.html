@@ -31,6 +31,7 @@ href="../../assets/css/main.css">
 <link
 rel="stylesheet"
 href="../../assets/css/creditreport/RepDetailbyBranch.css">
+<link rel="stylesheet" href="../../assets/css/creditreport/growth-dashboard.css">
 
 <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
 
@@ -317,10 +318,10 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 <button type="button" id="btnCrChartClose" class="cr-chart-close" aria-label="Close chart" data-i18n-aria-label="creditreport.detail.closeChartAria">✕</button>
 </div>
 <div class="cr-chart-metric-row" id="crChartMetricRow"></div>
-<div class="cr-growth-dashboard" id="crGrowthDashboard" aria-live="polite" hidden></div>
 <div class="cr-chart-canvas-wrap">
 <canvas id="crChartCanvas"></canvas>
 </div>
+<div class="cr-growth-dashboard" id="crGrowthDashboard" aria-live="polite" hidden></div>
 </div>
 </div>
 
@@ -344,6 +345,7 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 
 <!-- CREDIT REPORT LOGIC -->
+<script src="../../assets/js/creditreport/growth-dashboard.js"></script>
 <script src="../../assets/js/creditreport/RepDetailbyBranch.js"></script>
 
 <!-- PAGE LOADER (component loader, offline, notification badge) -->

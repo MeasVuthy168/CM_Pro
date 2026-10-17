@@ -100,6 +100,15 @@ CMI18n.register({
   "creditreport.compare.t24RefreshFailed": { km: "ការទាញយក T24 ថ្មីបានបរាជ័យ", en: "T24 refresh failed" },
 
   // ==================================================================
+  // GROWTH / DECLINE DASHBOARD under the Daily History chart
+  // (assets/js/creditreport/growth-dashboard.js)
+  // ==================================================================
+  "creditreport.growth.title": { km: "កំណើន / ការថយចុះ", en: "Growth / Decline" },
+  "creditreport.growth.previous": { km: "ពីមុន {value}", en: "Was {value}" },
+  "creditreport.growth.noChange": { km: "គ្មានការប្រៀបធៀប", en: "No comparison" },
+  "creditreport.growth.rangeHint": { km: "ថ្ងៃចាប់ផ្តើមដែលបានជ្រើសរើស → ថ្ងៃចុងក្រោយ", en: "Start of selected range → latest day" },
+
+  // ==================================================================
   // SHARED ACROSS THE 4 "DAILY MONITORING" DETAIL REPORTS (by Location /
   // Product / Officer / Branch) — filter card info rows, view controls,
   // section/class/product selects, search, landscape, chart.
