@@ -1613,17 +1613,13 @@ function crRenderChart(section) {
     }
     crRenderChartMetricTabs(section, metricOptions);
 
-    const getItemForDay = day => {
-        const branchFilter = document.getElementById("crHistBranch").value;
-        const teamFilter = document.getElementById("crHistTeam").value;
-        const raw = branchFilter ? day.items.find(it => it.branch === branchFilter) : day.total;
-        return crResolveHistoryItem(raw, teamFilter);
-    };
-    crRenderGrowthDashboard(section, metricOptions, getItemForDay);
-
     const branchFilter = document.getElementById("crHistBranch").value;
     const teamFilter = document.getElementById("crHistTeam").value;
     const days = crHistoryData.days;
+    crRenderGrowthDashboard(section, metricOptions, day => {
+        const raw = branchFilter ? day.items.find(it => it.branch === branchFilter) : day.total;
+        return crResolveHistoryItem(raw, teamFilter);
+    });
     // Balance Loan at Risk (T24) is never date-filtered — it always
     // reflects whichever ArreasT24ByCO data was live at snapshot time,
     // which can carry its own "as of" moment different from each row's
