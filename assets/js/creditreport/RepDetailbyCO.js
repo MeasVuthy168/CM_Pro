@@ -1607,9 +1607,7 @@ function crRenderChart(section) {
     }
     crRenderChartMetricTabs(section, metricOptions);
 
-    const officer = crResolveSelectedOfficer();
-    const getItemForDay = day => day.items.find(it => it.name === officer.name && it.branch === officer.branch);
-    crRenderGrowthDashboard(section, metricOptions, getItemForDay);
+    crRenderGrowthDashboard(section, metricOptions, day => day.items.find(it => it.name === officer.name && it.branch === officer.branch));
 
     const days = crHistoryData.days;
     // Balance Loan at Risk (T24)_Own/_Area is never date-filtered — it
