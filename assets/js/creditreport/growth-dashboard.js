@@ -70,13 +70,15 @@
         return /^(parT24|nbcOverdue)/.test(key) || /^writeOff\w*\.(balanceWO|wo)\./.test(key);
     }
 
+    // Icon markup from the shared Credit Report icon set (cr-icons.css).
     function crGrowthIcon(key) {
-        if (/^loanOutstanding/.test(key)) return "💰";
-        if (/^loanDisburse/.test(key)) return "💵";
-        if (/^parT24/.test(key)) return "⚠️";
-        if (/^nbcOverdue/.test(key)) return "⏰";
-        if (/^writeOff/.test(key)) return "🧾";
-        return "📊";
+        const name = /^loanOutstanding/.test(key) ? "money-bag"
+            : /^loanDisburse/.test(key) ? "money"
+            : /^parT24/.test(key) ? "warning"
+            : /^nbcOverdue/.test(key) ? "stopwatch-alert"
+            : /^writeOff/.test(key) ? "writeoff"
+            : "barchart";
+        return `<span class="cr-ico cr-ico-${name}" aria-hidden="true"></span>`;
     }
 
     function crGrowthPoints(days, getItemForDay, getByPath, key) {
@@ -132,7 +134,7 @@
             const firstKey = group.fields[0]?.key || "";
             // Single-group sections already name the group in the header.
             const cardTitle = section.groups.length > 1
-                ? `<div class="cr-growth-card-title">${esc(crGrowthIcon(firstKey))} ${esc(group.label)}</div>`
+                ? `<div class="cr-growth-card-title">${crGrowthIcon(firstKey)} ${esc(group.label)}</div>`
                 : "";
             return `
                 <article class="cr-growth-card">
@@ -155,7 +157,7 @@
                 : fmtShortDate(rangeEnd || "");
             headerRoot.innerHTML = `
                 <div class="cr-growth-head">
-                    <div class="cr-growth-icon" aria-hidden="true">${esc(icon)}</div>
+                    <div class="cr-growth-icon" aria-hidden="true">${icon}</div>
                     <div class="cr-growth-head-text">
                         <div class="cr-growth-title">${esc(groupLabel)}</div>
                         <div class="cr-growth-scope">${esc(scope)}</div>

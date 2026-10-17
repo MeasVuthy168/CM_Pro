@@ -515,13 +515,13 @@ function crBuildHistoryRow(dateKey, item, section, isTotal, t24AsOfText) {
     // (e.g. one filed under an unexpected date — see crGridMergeDateKey's
     // own comment in the backend).
     const delBtn = crIsAdmin
-        ? `<button type="button" class="cr-row-delete-btn" data-hist-del="${crEscapeHtml(dateKey)}" title="${t("creditreport.detail.deleteDaySnapshotTitle")}">🗑</button>`
+        ? `<button type="button" class="cr-row-delete-btn" data-hist-del="${crEscapeHtml(dateKey)}" title="${t("creditreport.detail.deleteDaySnapshotTitle")}"><span class="cr-ico cr-ico-trash" aria-hidden="true"></span></button>`
         : "";
     // Admin-only — re-pulls currently-live T24 into this date's saved
     // snapshot (T24 is otherwise frozen once a date is first saved).
     // Harmless no-op on today's own row — shown uniformly on every row.
     const refreshBtn = crIsAdmin
-        ? `<button type="button" class="cr-row-refresh-btn" data-hist-refresh="${crEscapeHtml(dateKey)}" title="${t("creditreport.detail.refreshT24Title")}">🔄</button>`
+        ? `<button type="button" class="cr-row-refresh-btn" data-hist-refresh="${crEscapeHtml(dateKey)}" title="${t("creditreport.detail.refreshT24Title")}"><span class="cr-ico cr-ico-refresh" aria-hidden="true"></span></button>`
         : "";
     return `
       <tr${isTotal ? ' class="cr-total-row"' : ""}>

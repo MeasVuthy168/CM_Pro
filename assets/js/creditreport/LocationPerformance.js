@@ -62,7 +62,7 @@ function lpCategories() {
     return [
     {
         key: "outstanding",
-        icon: "📊",
+        icon: '<span class="cr-ico cr-ico-barchart" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionOutstanding"),
         chart: false,
         statGroups: [
@@ -91,7 +91,7 @@ function lpCategories() {
     },
     {
         key: "disburse",
-        icon: "💵",
+        icon: '<span class="cr-ico cr-ico-money" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionDisburse"),
         chart: true,
         statGroups: [
@@ -116,7 +116,7 @@ function lpCategories() {
     },
     {
         key: "parT24",
-        icon: "📈",
+        icon: '<span class="cr-ico cr-ico-trend-up" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionT24"),
         chart: false,
         statGroups: [
@@ -145,7 +145,7 @@ function lpCategories() {
     },
     {
         key: "nbcOverdue",
-        icon: "⚠️",
+        icon: '<span class="cr-ico cr-ico-warning" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionNbcOverdue"),
         chart: false,
         statGroups: [
@@ -177,7 +177,7 @@ function lpCategories() {
     // same change made to Product Performance/Branch/Officer Productivity.
     {
         key: "writeOff",
-        icon: "✂️",
+        icon: '<span class="cr-ico cr-ico-writeoff" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionWriteOff"),
         chart: false,
         statGroups: [
@@ -340,11 +340,11 @@ function lpCardStatsHtml(cat, data) {
 
 function lpCardMarkup(cat, data) {
     const listTabsHtml = cat.clientLists.map((cl, i) =>
-        `<button type="button" class="op-mode-tab${i === 0 ? " active" : ""}" data-mode="list:${cl.bucket}">👥 List of Client ${lpEscapeHtml(cl.label)}</button>`
+        `<button type="button" class="op-mode-tab${i === 0 ? " active" : ""}" data-mode="list:${cl.bucket}"><span class="cr-ico cr-ico-users" aria-hidden="true"></span> List of Client ${lpEscapeHtml(cl.label)}</button>`
     ).join("");
 
     const chartTabHtml = cat.chart
-        ? `<button type="button" class="op-mode-tab" data-mode="chart">📈 Chart</button>`
+        ? `<button type="button" class="op-mode-tab" data-mode="chart"><span class="cr-ico cr-ico-trend-up" aria-hidden="true"></span> Chart</button>`
         : "";
 
     return `
@@ -623,7 +623,7 @@ function lpRenderClientListInto(container, rows, { arrears = false, showDate = t
         const displayRows = getDisplayRows();
         const visibleRows = displayRows.slice(0, visibleCount);
         const exportBtnHtml = rows.length
-            ? `<div class="op-list-actions"><button type="button" class="op-list-export-btn">⬇ ${t("creditreport.menu.exportExcel")}</button></div>`
+            ? `<div class="op-list-actions"><button type="button" class="op-list-export-btn"><span class="cr-ico cr-ico-download" aria-hidden="true"></span> ${t("creditreport.menu.exportExcel")}</button></div>`
             : "";
         const countHtml = rows.length
             ? `<div class="op-list-count">${t("creditreport.productivity.showingXOfY", { shown: visibleRows.length.toLocaleString(), total: rows.length.toLocaleString() })}</div>`
@@ -923,7 +923,7 @@ function lpRenderDisburseHeatmapInto(container, fullscreen) {
     const { dates, values, counts } = lpDisburseChartData;
     const btnHtml = fullscreen
         ? ""
-        : `<button type="button" class="op-chart-fullscreen-btn" aria-label="${t("creditreport.productivity.fullscreenChartAria")}">⛶</button>`;
+        : `<button type="button" class="op-chart-fullscreen-btn" aria-label="${t("creditreport.productivity.fullscreenChartAria")}"><span class="cr-ico cr-ico-fullscreen" aria-hidden="true"></span></button>`;
     container.innerHTML = btnHtml + lpBuildDisburseHeatmapHtml(dates, values, counts, lpState.location, lpState.meta, lpState.data?.total);
 
     lpWireHeatmapTooltips(container);
