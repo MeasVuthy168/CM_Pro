@@ -517,13 +517,13 @@ function crBuildHistoryRow(dateKey, item, section, opts = {}) {
     // sub-rows — they share the same saved snapshot document as their
     // parent date's main row.
     const delBtn = (crIsAdmin && !isDetail)
-        ? `<button type="button" class="cr-row-delete-btn" data-hist-del="${crEscapeHtml(dateKey)}" title="${t("creditreport.detail.deleteDaySnapshotTitle")}">🗑</button>`
+        ? `<button type="button" class="cr-row-delete-btn" data-hist-del="${crEscapeHtml(dateKey)}" title="${t("creditreport.detail.deleteDaySnapshotTitle")}"><span class="cr-ico cr-ico-trash" aria-hidden="true"></span></button>`
         : "";
     // Admin-only — re-pulls currently-live T24 into this date's saved
     // snapshot (T24 is otherwise frozen once a date is first saved).
     // Same exclusion as delBtn: never on the "Other Address" detail rows.
     const refreshBtn = (crIsAdmin && !isDetail)
-        ? `<button type="button" class="cr-row-refresh-btn" data-hist-refresh="${crEscapeHtml(dateKey)}" title="${t("creditreport.detail.refreshT24Title")}">🔄</button>`
+        ? `<button type="button" class="cr-row-refresh-btn" data-hist-refresh="${crEscapeHtml(dateKey)}" title="${t("creditreport.detail.refreshT24Title")}"><span class="cr-ico cr-ico-refresh" aria-hidden="true"></span></button>`
         : "";
 
     const rowClass = isTotal ? ' class="cr-total-row"' : isOtherAddress ? ' class="cr-other-row"' : isDetail ? ' class="cr-other-detail-row"' : "";

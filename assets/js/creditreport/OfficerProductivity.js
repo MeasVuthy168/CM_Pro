@@ -94,7 +94,7 @@ function opCategories() {
     return [
     {
         key: "outstanding",
-        icon: "📊",
+        icon: '<span class="cr-ico cr-ico-barchart" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionOutstanding"),
         chart: false,
         statGroups: [
@@ -138,7 +138,7 @@ function opCategories() {
     },
     {
         key: "disburse",
-        icon: "💵",
+        icon: '<span class="cr-ico cr-ico-money" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionDisburse"),
         chart: true,
         statGroups: [
@@ -171,7 +171,7 @@ function opCategories() {
     },
     {
         key: "parT24",
-        icon: "📈",
+        icon: '<span class="cr-ico cr-ico-trend-up" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionT24"),
         chart: false,
         statGroups: [
@@ -212,7 +212,7 @@ function opCategories() {
     },
     {
         key: "nbcOverdue",
-        icon: "⚠️",
+        icon: '<span class="cr-ico cr-ico-warning" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionNbcOverdue"),
         chart: false,
         // Own/Area render as two stacked lines (see opCardMarkup) rather
@@ -264,7 +264,7 @@ function opCategories() {
     // Location/Product Performance/Branch Productivity.
     {
         key: "writeOff",
-        icon: "✂️",
+        icon: '<span class="cr-ico cr-ico-writeoff" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionWriteOff"),
         chart: false,
         statGroups: [
@@ -496,12 +496,12 @@ function opAreaTreeHtml(areaGroup, cat, officer) {
 function opCardMarkup(cat, officer) {
     const listTabsHtml = cat.clientLists
         ? cat.clientLists.map((cl, i) =>
-            `<button type="button" class="op-mode-tab${i === 0 ? " active" : ""}" data-mode="list:${cl.section}">👥 ${t("creditreport.productivity.listOfClient")} ${opEscapeHtml(cl.label)}</button>`
+            `<button type="button" class="op-mode-tab${i === 0 ? " active" : ""}" data-mode="list:${cl.section}"><span class="cr-ico cr-ico-users" aria-hidden="true"></span> ${t("creditreport.productivity.listOfClient")} ${opEscapeHtml(cl.label)}</button>`
           ).join("")
-        : `<button type="button" class="op-mode-tab active" data-mode="list">👥 ${t("creditreport.productivity.listOfClient")}</button>`;
+        : `<button type="button" class="op-mode-tab active" data-mode="list"><span class="cr-ico cr-ico-users" aria-hidden="true"></span> ${t("creditreport.productivity.listOfClient")}</button>`;
 
     const chartTabHtml = cat.chart
-        ? `<button type="button" class="op-mode-tab" data-mode="chart">📈 ${t("creditreport.detail.chart")}</button>`
+        ? `<button type="button" class="op-mode-tab" data-mode="chart"><span class="cr-ico cr-ico-trend-up" aria-hidden="true"></span> ${t("creditreport.detail.chart")}</button>`
         : "";
 
     return `
@@ -864,7 +864,7 @@ function opRenderClientListInto(container, rows, { arrears = false, showDate = t
     const buildTableHtml = arrears ? opArrearsTableHtml : (rs => opClientTableHtml(rs, { showDate }));
 
     const exportBtnHtml = rows.length
-        ? `<div class="op-list-actions"><button type="button" class="op-list-export-btn">⬇ ${t("creditreport.menu.exportExcel")}</button></div>`
+        ? `<div class="op-list-actions"><button type="button" class="op-list-export-btn"><span class="cr-ico cr-ico-download" aria-hidden="true"></span> ${t("creditreport.menu.exportExcel")}</button></div>`
         : "";
     container.innerHTML = exportBtnHtml + buildTableHtml(rows);
 
@@ -1204,7 +1204,7 @@ function opRenderDisburseHeatmapInto(container, fullscreen) {
     const { dates, values, counts } = opDisburseChartData;
     const btnHtml = fullscreen
         ? ""
-        : `<button type="button" class="op-chart-fullscreen-btn" aria-label="${t("creditreport.productivity.fullscreenChartAria")}">⛶</button>`;
+        : `<button type="button" class="op-chart-fullscreen-btn" aria-label="${t("creditreport.productivity.fullscreenChartAria")}"><span class="cr-ico cr-ico-fullscreen" aria-hidden="true"></span></button>`;
     container.innerHTML = btnHtml + opBuildDisburseHeatmapHtml(dates, values, counts, opState.officer, opState.meta);
 
     opWireHeatmapTooltips(container);

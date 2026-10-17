@@ -30,6 +30,7 @@ href="../../assets/css/main.css">
 rel="stylesheet"
 href="../../assets/css/creditreport/RepDetailbyLocation.css">
 <link rel="stylesheet" href="../../assets/css/creditreport/growth-dashboard.css">
+<link rel="stylesheet" href="../../assets/css/creditreport/cr-icons.css">
 
 <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
 
@@ -76,32 +77,32 @@ href="../../assets/css/creditreport/RepDetailbyLocation.css">
 <div class="cr-info-block">
 
 <div class="cr-info-row">
-<span class="cr-info-label"><span class="cr-info-icon">💵</span><span data-i18n="creditreport.detail.loanDisbFrom">Loan Disbursement from</span></span>
+<span class="cr-info-label"><span class="cr-info-icon cr-ico cr-ico-money" aria-hidden="true"></span><span data-i18n="creditreport.detail.loanDisbFrom">Loan Disbursement from</span></span>
 <span class="cr-info-value" id="crDisbPeriod">-</span>
 </div>
 
 <div class="cr-info-row">
-<span class="cr-info-label"><span class="cr-info-icon">✂️</span><span data-i18n="creditreport.detail.writeOffFrom">Write Off from</span></span>
+<span class="cr-info-label"><span class="cr-info-icon cr-ico cr-ico-writeoff" aria-hidden="true"></span><span data-i18n="creditreport.detail.writeOffFrom">Write Off from</span></span>
 <span class="cr-info-value" id="crWoPeriod">-</span>
 </div>
 
 <div class="cr-info-row">
-<span class="cr-info-label"><span class="cr-info-icon">📊</span><span data-i18n="creditreport.detail.osGridMerge">NBC Loan Outstanding Grid Merge</span></span>
+<span class="cr-info-label"><span class="cr-info-icon cr-ico cr-ico-barchart" aria-hidden="true"></span><span data-i18n="creditreport.detail.osGridMerge">NBC Loan Outstanding Grid Merge</span></span>
 <span class="cr-info-value" id="crOsGridMerge">-</span>
 </div>
 
 <div class="cr-info-row">
-<span class="cr-info-label"><span class="cr-info-icon">⚠️</span><span data-i18n="creditreport.detail.overdueGridMerge">NBC Overdue Loan Grid Merge</span></span>
+<span class="cr-info-label"><span class="cr-info-icon cr-ico cr-ico-warning" aria-hidden="true"></span><span data-i18n="creditreport.detail.overdueGridMerge">NBC Overdue Loan Grid Merge</span></span>
 <span class="cr-info-value" id="crOverdueGridMerge">-</span>
 </div>
 
 <div class="cr-info-row">
-<span class="cr-info-label"><span class="cr-info-icon">⏱️</span><span data-i18n="creditreport.detail.arrearsPenalty">Payment in Arears with Penalty</span></span>
+<span class="cr-info-label"><span class="cr-info-icon cr-ico cr-ico-stopwatch-alert" aria-hidden="true"></span><span data-i18n="creditreport.detail.arrearsPenalty">Payment in Arears with Penalty</span></span>
 <span class="cr-info-value" id="crArrearsPenalty">-</span>
 </div>
 
 <div class="cr-info-row">
-<span class="cr-info-label"><span class="cr-info-icon">📍</span><span data-i18n="creditreport.byLocation.locationsCount">Locations</span></span>
+<span class="cr-info-label"><span class="cr-info-icon cr-ico cr-ico-map-pin" aria-hidden="true"></span><span data-i18n="creditreport.byLocation.locationsCount">Locations</span></span>
 <span class="cr-info-value" id="crLocationCount">-</span>
 </div>
 
@@ -238,7 +239,7 @@ href="../../assets/css/creditreport/RepDetailbyLocation.css">
 
 <button id="btnCrHistRun" class="cr-run-btn" disabled style="display:none" data-i18n="creditreport.detail.viewHistory">View History</button>
 
-<button type="button" id="btnCrHistChart" class="cr-run-btn cr-chart-btn" style="display:none">📊 <span data-i18n="creditreport.detail.chart">Chart</span></button>
+<button type="button" id="btnCrHistChart" class="cr-run-btn cr-chart-btn" style="display:none"><span class="cr-ico cr-ico-barchart" aria-hidden="true"></span> <span data-i18n="creditreport.detail.chart">Chart</span></button>
 
 </div>
 
@@ -252,7 +253,7 @@ href="../../assets/css/creditreport/RepDetailbyLocation.css">
 <div id="crMenuDropdown" class="arrears-menu-dropdown">
 <!-- Admin only — shown via JS (crIsAdmin), per explicit request
      2026-10-08, mirroring the Credit Report hub's own "Snapshot All". -->
-<button id="btnCrSnapshot" style="display:none"><span class="menu-icon" aria-hidden="true">📸</span><span data-i18n="creditreport.menu.snapshot">Snapshot</span></button>
+<button id="btnCrSnapshot" style="display:none"><span class="menu-icon cr-ico cr-ico-camera" aria-hidden="true"></span><span data-i18n="creditreport.menu.snapshot">Snapshot</span></button>
 <button id="btnCrExport"><img src="/CM_Pro/assets/icons/arrear/export_excel.png" alt="" class="menu-icon"><span data-i18n="creditreport.menu.exportExcel">Export Excel</span></button>
 <button id="btnCrExportPdf"><img src="/CM_Pro/assets/icons/arrear/export_pdf.png" alt="" class="menu-icon"><span data-i18n="creditreport.menu.exportPdf">Export PDF</span></button>
 <button id="btnCrPrint"><img src="/CM_Pro/assets/icons/arrear/print.png" alt="" class="menu-icon"><span data-i18n="creditreport.menu.print">Print</span></button>
@@ -288,7 +289,7 @@ href="../../assets/css/creditreport/RepDetailbyLocation.css">
      crApplySearchFilter() in RepDetailbyLocation.js. Shown/hidden
      alongside #crTableScroll below. -->
 <div class="cr-search-wrap" id="crSearchWrap" style="display:none">
-<span class="cr-search-icon">🔍</span>
+<span class="cr-search-icon cr-ico cr-ico-search" aria-hidden="true"></span>
 <input
 type="text"
 class="cr-search-input"
