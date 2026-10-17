@@ -584,9 +584,17 @@ async function crFetchHistory() {
     const dateTo = document.getElementById("crHistToDate").value;
     if (!dateFrom || !dateTo) return;
 
+    // Ask only for the one location this view ever shows — the full
+    // all-location snapshot for a 2-week range is large enough to time out
+    // on the backend's throttled database link. Picking a different
+    // location afterwards re-fetches (see crHistLocationSearch's handler).
+    const location = crResolveSelectedLocation();
+    const params = new URLSearchParams({ dateFrom, dateTo });
+    if (location) params.set("location", location);
+
     crShowLoading();
     try {
-        const url = `${API.BASE_URL}/api/creditreport/bylocation/history?dateFrom=${dateFrom}&dateTo=${dateTo}`;
+        const url = `${API.BASE_URL}/api/creditreport/bylocation/history?${params.toString()}`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
         const data = await res.json();
         crHideLoading();
@@ -596,6 +604,7 @@ async function crFetchHistory() {
             return;
         }
         crHistoryData = data;
+        crHistoryData.location = location;
         crRenderHistory();
     } catch (e) {
         console.error(e);
@@ -1483,7 +1492,15 @@ document.getElementById("crHistLocationSearch").addEventListener("input", (e) =>
     document.getElementById("crHistLocationClear").hidden = !e.target.value;
     crUpdateHistRunButtonState();
     crUpdateChartButtonVisibility();
-    if (crHistoryData) crRenderHistory();
+    if (!crHistoryData) return;
+    // Loaded history only carries the location it was fetched for, so a
+    // newly picked location needs its own fetch.
+    const location = crResolveSelectedLocation();
+    if (location && crHistoryData.location && location !== crHistoryData.location) {
+        crFetchHistory();
+    } else {
+        crRenderHistory();
+    }
 });
 document.getElementById("crHistLocationSearch").addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
