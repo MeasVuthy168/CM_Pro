@@ -994,22 +994,24 @@ function updateBadgeDisplay(count){
 // EMPTY
 // =========================================================
 
+function setEmptyText(el,key){
+
+    el.setAttribute("data-i18n",key);
+    el.textContent=window.CMI18n ? CMI18n.t(key) : key;
+
+}
+
 function showEmpty(){
 
     notifyList.innerHTML="";
     emptyBox.style.display="flex";
 
-    if(currentFilter==="unread"){
+    // Swap the data-i18n keys too (not just the text) so a later
+    // CMI18n.apply() pass or language switch keeps the right message.
+    const unread=currentFilter==="unread";
 
-        emptyTitle.innerText="No Unread Notifications";
-        emptySubtitle.innerText="You're all caught up";
-
-    }else{
-
-        emptyTitle.innerText="No Notifications";
-        emptySubtitle.innerText="Everything is up to date";
-
-    }
+    setEmptyText(emptyTitle, unread ? "notifications.emptyUnreadTitle" : "notifications.emptyTitle");
+    setEmptyText(emptySubtitle, unread ? "notifications.emptyUnreadSubtitle" : "notifications.emptySubtitle");
 
 }
 
@@ -1078,7 +1080,15 @@ if(!date) return "";
 
 const d=new Date(date);
 
-return d.toLocaleString();
+if(isNaN(d)) return "";
+
+// D-MMM-YY HH:mm (e.g. 17-Oct-26 12:30) — same style as the Credit
+// Report charts. toLocaleString() was long (seconds, AM/PM) and changed
+// with the phone's region settings, squeezing the card title.
+const months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const pad=n=>String(n).padStart(2,"0");
+
+return `${d.getDate()}-${months[d.getMonth()]}-${String(d.getFullYear()).slice(2)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
 }
 

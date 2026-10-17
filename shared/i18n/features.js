@@ -131,6 +131,8 @@ CMI18n.register({
   "notifications.unread": { km: "មិនទាន់អាន", en: "Unread" },
   "notifications.emptyTitle": { km: "មិនមានការជូនដំណឹង", en: "No Notifications" },
   "notifications.emptySubtitle": { km: "អ្វីៗគ្រប់យ៉ាងទាន់សម័យ", en: "Everything is up to date" },
+  "notifications.emptyUnreadTitle": { km: "មិនមានការជូនដំណឹងមិនទាន់អាន", en: "No Unread Notifications" },
+  "notifications.emptyUnreadSubtitle": { km: "អ្នកបានអានទាំងអស់ហើយ", en: "You're all caught up" },
   "notifications.errorTitle": { km: "មិនអាចផ្ទុកបានទេ", en: "Could not load" },
   "notifications.errorSubtitle": { km: "សូមពិនិត្យការតភ្ជាប់អ៊ីនធឺណិត ហើយសាកល្បងម្តងទៀត", en: "Please check your internet connection and try again" },
   "notifications.deleteAllConfirm": { km: "តើអ្នកពិតជាចង់លុបការជូនដំណឹងទាំងអស់មែនទេ?", en: "Are you sure you want to delete all notifications?" },
