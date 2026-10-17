@@ -3270,3 +3270,264 @@ body:not(.arr-view-card) .arr-card-list{ display:none; }
 @media (max-width:480px){
     .arr-card-list{ grid-template-columns:1fr; }
 }
+
+/* ==========================================
+   OUT-OF-AREA ARREARS — UX refresh
+   Tabs (To edit / Edited), search with icon, card list, detail
+   header + info grid, themed selects, gold Save button.
+========================================== */
+
+.outarea-close-x .ui-ico{ font-size:16px; }
+.oa-back-arrow{ font-size:18px; line-height:1; }
+.oa-detail-header{ justify-content:flex-start; }
+.oa-detail-title{ flex:1; min-width:0; }
+
+/* Tabs */
+.oa-tabs{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:4px;
+    padding:4px;
+    margin-bottom:10px;
+    border-radius:12px;
+    background:rgba(26,46,87,.07);
+}
+[data-theme="dark"] .oa-tabs{ background:rgba(255,255,255,.06); }
+.oa-tab{
+    height:38px;
+    border:none;
+    border-radius:9px;
+    background:transparent;
+    color:var(--arr-text-muted);
+    font-family:'KRASAR',sans-serif;
+    font-size:13.5px;
+    font-weight:700;
+    cursor:pointer;
+}
+.oa-tab.active{
+    background:linear-gradient(180deg,#FFD700,#D4AF37);
+    color:#0E1B3C;
+    box-shadow:0 2px 6px rgba(0,0,0,.12);
+}
+
+/* Search */
+.oa-search{
+    position:relative;
+    margin-bottom:8px;
+}
+.oa-search input{
+    width:100%;
+    box-sizing:border-box;
+    height:42px;
+    padding:0 12px 0 36px;
+    border:1px solid var(--arr-border);
+    border-radius:11px;
+    background:var(--arr-card-bg);
+    color:var(--arr-text);
+    font-size:14px;
+    outline:none;
+    -webkit-appearance:none;
+    appearance:none;
+}
+.oa-search input:focus{ border-color:#D4AF37; }
+.oa-search-ico{
+    position:absolute;
+    left:11px;
+    top:50%;
+    transform:translateY(-50%);
+    color:var(--arr-text-muted);
+    font-size:16px;
+    pointer-events:none;
+}
+.oa-count{ margin:2px 2px 8px !important; }
+
+/* Select bar (Edited tab) */
+.oa-select-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:8px;
+}
+.oa-select-bar[hidden]{ display:none; }
+.oa-check-all{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    color:var(--arr-text);
+    cursor:pointer;
+}
+.oa-check-all input,
+.oa-item-check input{
+    width:20px;
+    height:20px;
+    accent-color:#D4AF37;
+}
+.oa-chip-btn{
+    height:32px;
+    padding:0 12px;
+    border-radius:999px;
+    border:1px solid var(--arr-border);
+    background:transparent;
+    color:var(--arr-text);
+    font-family:'KRASAR',sans-serif;
+    font-size:12px;
+    cursor:pointer;
+}
+
+/* Card list */
+.oa-list{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+.oa-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:11px 12px;
+    border:1px solid var(--arr-border);
+    border-radius:12px;
+    background:var(--arr-card-bg);
+    cursor:pointer;
+    transition:border-color .15s, transform .15s;
+}
+.oa-item:active{ transform:scale(.99); }
+.oa-item:hover{ border-color:#D4AF37; }
+.oa-item-check{ display:flex; align-items:center; }
+.oa-item-main{ flex:1; min-width:0; }
+.oa-item-name{
+    font-size:14.5px;
+    font-weight:700;
+    color:var(--arr-text);
+    overflow-wrap:anywhere;
+}
+.oa-item-sub{
+    margin-top:1px;
+    font-size:12px;
+    color:var(--arr-text-muted);
+    font-variant-numeric:tabular-nums;
+    overflow-wrap:anywhere;
+}
+.oa-item-side{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex:0 0 auto;
+}
+.oa-branch-chip{
+    padding:3px 9px;
+    border-radius:999px;
+    background:rgba(26,46,87,.07);
+    color:var(--arr-text);
+    font-size:11.5px;
+    font-weight:600;
+    white-space:nowrap;
+}
+[data-theme="dark"] .oa-branch-chip{ background:rgba(255,255,255,.08); }
+.oa-item-chevron{
+    font-size:22px;
+    line-height:1;
+    color:#D4AF37;
+}
+.oa-item-paidoff{
+    border-style:dashed;
+    background:rgba(22,163,74,.06);
+}
+.oa-item-paidoff .oa-item-name{ color:#15803D; }
+[data-theme="dark"] .oa-item-paidoff .oa-item-name{ color:#86EFAC; }
+.oa-item .outarea-row-actions{ display:flex; gap:4px; }
+.oa-empty{
+    padding:28px 10px;
+    text-align:center;
+    color:var(--arr-text-muted);
+    font-size:13px;
+}
+
+/* Detail: customer header + info grid */
+.oa-hero{
+    padding:4px 2px 12px;
+}
+.oa-hero-name{
+    font-size:19px;
+    font-weight:800;
+    color:var(--arr-text);
+    line-height:1.3;
+    overflow-wrap:anywhere;
+}
+.oa-hero-sub{
+    margin-top:2px;
+    font-size:13px;
+    color:var(--arr-text-muted);
+    font-variant-numeric:tabular-nums;
+}
+.oa-info{
+    border:1px solid var(--arr-border);
+    border-radius:14px;
+    padding:2px 12px;
+    margin-bottom:14px;
+}
+.oa-info-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:10px 0;
+    border-bottom:1px solid var(--arr-border);
+}
+.oa-info-row:last-child{ border-bottom:none; }
+.oa-info-ico{
+    flex:0 0 auto;
+    width:32px;
+    height:32px;
+    border-radius:9px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:16px;
+    color:var(--arr-navy, #1A2E57);
+    background:rgba(26,46,87,.07);
+}
+[data-theme="dark"] .oa-info-ico{ color:#FFD700; background:rgba(255,215,0,.1); }
+.oa-info-text{ flex:1; min-width:0; }
+.oa-info-label{
+    font-size:11.5px;
+    color:var(--arr-text-muted);
+}
+.oa-info-value{
+    font-size:14px;
+    font-weight:600;
+    color:var(--arr-text);
+    overflow-wrap:anywhere;
+}
+
+/* Form: themed selects (were white with yellow text in dark mode) */
+#outAreaCard .oa-form select{
+    width:100%;
+    box-sizing:border-box;
+    height:46px;
+    padding:0 12px;
+    border:1px solid var(--arr-border);
+    border-radius:11px;
+    background-color:var(--arr-card-bg);
+    color:var(--arr-text);
+    font-size:14px;
+    font-weight:600;
+}
+[data-theme="dark"] #outAreaCard .oa-form select{
+    background-color:#16223F;
+    color:#EAF0FF;
+}
+#outAreaCard .oa-form select:focus{ border-color:#D4AF37; outline:none; }
+
+/* Actions: Save is the primary (gold) action, Back is outlined */
+#outAreaCard .oa-actions button{ height:46px; border-radius:12px; }
+#btnOutAreaSave{
+    background:linear-gradient(180deg,#FFD700,#D4AF37);
+    color:#0E1B3C;
+}
+#btnOutAreaBack{
+    background:transparent;
+    border:1.5px solid var(--arr-outline-btn-border);
+    color:var(--arr-outline-btn-text);
+}

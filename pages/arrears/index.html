@@ -463,82 +463,83 @@ No Internet Connection
 
     <div class="outarea-sticky-header">
       <div class="reason-title" style="margin:0;" data-i18n="arrears.menuOutArea">កែសម្រួលArrearក្រៅតំបន់</div>
-      <button type="button" id="btnOutAreaCloseX" class="outarea-close-x" aria-label="បិទ" data-i18n-aria-label="common.close">✕</button>
+      <button type="button" id="btnOutAreaCloseX" class="outarea-close-x" aria-label="បិទ" data-i18n-aria-label="common.close"><span class="ui-ico ui-ico-close" aria-hidden="true"></span></button>
     </div>
 
-    <div class="reason-subtitle" id="outAreaListSubtitle">-</div>
-
-    <div class="reason-group">
-      <label for="outAreaSearch" data-i18n="common.search">ស្វែងរក</label>
-      <input type="text" id="outAreaSearch" placeholder="ឈ្មោះ / LD-CIF / សាខា..." data-i18n-placeholder="arrears.outAreaSearchPlaceholder" autocomplete="off">
+    <!-- To edit (NoCoRespone) / Edited (saved reassignments) -->
+    <div class="oa-tabs" role="tablist">
+      <button type="button" class="oa-tab active" id="oaTabCandidates" data-view="candidates" role="tab" data-i18n="arrears.oaTabCandidates">ត្រូវកែសម្រួល</button>
+      <button type="button" class="oa-tab" id="oaTabEdited" data-view="edited" role="tab" data-i18n="arrears.oaTabEdited">បានកែសម្រួល</button>
     </div>
 
-    <button type="button" id="btnOutAreaToggleView" class="outarea-toggle-view-btn" data-i18n="arrears.viewEditedRecordsBtn">
-      មើលកំណត់ត្រាដែលបានកែសម្រួល
-    </button>
+    <div class="oa-search">
+      <span class="ui-ico ui-ico-search oa-search-ico" aria-hidden="true"></span>
+      <input type="search" id="outAreaSearch" placeholder="ឈ្មោះ / LD-CIF / សាខា..." data-i18n-placeholder="arrears.outAreaSearchPlaceholder" autocomplete="off" aria-label="ស្វែងរក" data-i18n-aria-label="common.search">
+    </div>
 
-    <button type="button" id="btnOutAreaSelectPaidOff" class="outarea-toggle-view-btn" hidden data-i18n="arrears.selectAllPaidOffBtn">
-      ជ្រើសរើសទាំងអស់ (Paid off)
-    </button>
+    <div class="reason-subtitle oa-count" id="outAreaListSubtitle">-</div>
+
+    <!-- Edited tab only: select all / select Paid off / bulk delete -->
+    <div class="oa-select-bar" id="outAreaSelectBar" hidden>
+      <label class="oa-check-all"><input type="checkbox" id="outAreaSelectAll"> <span data-i18n="arrears.oaSelectAll">ជ្រើសទាំងអស់</span></label>
+      <button type="button" id="btnOutAreaSelectPaidOff" class="oa-chip-btn" data-i18n="arrears.selectAllPaidOffBtn">ជ្រើសរើសទាំងអស់ (Paid off)</button>
+    </div>
 
     <div id="outAreaBulkBar" class="outarea-bulk-bar" hidden>
       <span id="outAreaBulkCount">0</span>
       <button type="button" id="btnOutAreaBulkDelete" class="outarea-bulk-delete-btn"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span> <span data-i18n="arrears.deleteSelectedBtn">លុបដែលបានជ្រើសរើស</span></button>
     </div>
 
-    <table class="noreason-table">
-      <thead>
-        <tr>
-          <th id="outAreaColCheck" hidden><input type="checkbox" id="outAreaSelectAll"></th>
-          <th data-i18n="arrears.colName">ឈ្មោះ</th>
-          <th>LD-CIF</th>
-          <th id="outAreaColThree" data-i18n="arrears.colCurrentBranch">សាខាបច្ចុប្បន្ន</th>
-          <th id="outAreaColFour" hidden data-i18n="arrears.colAction">សកម្មភាព</th>
-        </tr>
-      </thead>
-      <tbody id="outAreaTbody"></tbody>
-    </table>
-
-    <div class="reason-actions">
-      <button id="btnOutAreaClose" data-i18n="common.close">Close</button>
-    </div>
+    <div id="outAreaTbody" class="oa-list"></div>
 
   </div>
 
   <!-- DETAIL / REASSIGN SCREEN -->
   <div id="outAreaDetailScreen" style="display:none;">
 
-    <div class="reason-title" data-i18n="arrears.menuOutArea">កែសម្រួលArrearក្រៅតំបន់</div>
-    <div class="reason-subtitle" id="outAreaDetailSubtitle">-</div>
-
-    <div class="reason-info" id="outAreaInfo"></div>
-
-    <div class="reason-group">
-      <label for="outAreaNewBranch" data-i18n="arrears.newBranchLabel">សាខាថ្មី</label>
-      <select id="outAreaNewBranch">
-        <option value="" data-i18n="arrears.selectBranchOption">— ជ្រើសសាខា —</option>
-        <option value="Svay Rieng">Svay Rieng</option>
-        <option value="Romeas Haek">Romeas Haek</option>
-        <option value="Kraol Kou">Kraol Kou</option>
-        <option value="Nhor">Nhor</option>
-        <option value="Rumduol">Rumduol</option>
-        <option value="Svay Chrom">Svay Chrom</option>
-        <option value="Svay Teab">Svay Teab</option>
-      </select>
+    <div class="outarea-sticky-header oa-detail-header">
+      <button type="button" id="btnOutAreaBackTop" class="outarea-close-x" aria-label="ត្រឡប់ក្រោយ" data-i18n-aria-label="arrears.backAria"><span class="oa-back-arrow" aria-hidden="true">←</span></button>
+      <div class="reason-title oa-detail-title" style="margin:0;" data-i18n="arrears.menuOutArea">កែសម្រួលArrearក្រៅតំបន់</div>
+      <button type="button" id="btnOutAreaCloseX2" class="outarea-close-x" aria-label="បិទ" data-i18n-aria-label="common.close"><span class="ui-ico ui-ico-close" aria-hidden="true"></span></button>
     </div>
 
-    <div class="reason-group">
-      <label for="outAreaNewCO" data-i18n="arrears.newOfficerLabel">ភ្នាក់ងារឥណទានថ្មី</label>
-      <select id="outAreaNewCO">
-        <option value="" data-i18n="arrears.selectBranchFirstOption">— ជ្រើសសាខាមុន —</option>
-      </select>
+    <div class="oa-hero">
+      <div class="oa-hero-name" id="outAreaDetailName">-</div>
+      <div class="oa-hero-sub" id="outAreaDetailSubtitle">-</div>
+    </div>
+
+    <div class="oa-info" id="outAreaInfo"></div>
+
+    <div class="oa-form">
+
+      <div class="reason-group">
+        <label for="outAreaNewBranch" data-i18n="arrears.newBranchLabel">សាខាថ្មី</label>
+        <select id="outAreaNewBranch">
+          <option value="" data-i18n="arrears.selectBranchOption">— ជ្រើសសាខា —</option>
+          <option value="Svay Rieng">Svay Rieng</option>
+          <option value="Romeas Haek">Romeas Haek</option>
+          <option value="Kraol Kou">Kraol Kou</option>
+          <option value="Nhor">Nhor</option>
+          <option value="Rumduol">Rumduol</option>
+          <option value="Svay Chrom">Svay Chrom</option>
+          <option value="Svay Teab">Svay Teab</option>
+        </select>
+      </div>
+
+      <div class="reason-group">
+        <label for="outAreaNewCO" data-i18n="arrears.newOfficerLabel">ភ្នាក់ងារឥណទានថ្មី</label>
+        <select id="outAreaNewCO">
+          <option value="" data-i18n="arrears.selectBranchFirstOption">— ជ្រើសសាខាមុន —</option>
+        </select>
+      </div>
+
     </div>
 
     <div class="reason-meta" id="outAreaMeta"></div>
 
     <button id="btnOutAreaDelete" type="button" class="outarea-delete-btn" style="display:none;"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span> <span data-i18n="arrears.deleteThisRecordBtn">លុបកំណត់ត្រានេះ</span></button>
 
-    <div class="reason-actions">
+    <div class="reason-actions oa-actions">
       <button id="btnOutAreaBack" data-i18n="arrears.backArrowBtn">← Back</button>
       <button id="btnOutAreaSave" data-i18n="common.save">រក្សាទុក</button>
     </div>
