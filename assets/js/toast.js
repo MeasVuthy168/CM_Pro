@@ -119,38 +119,15 @@ const CMToast = {
   // ICON
   // =====================================
 
+  // Line icon per type from the shared set in toast.css (also used by
+  // the Notifications page cards). Unknown types get the bell.
   getIcon(type) {
 
-    switch (type) {
+    const known = ["backup", "upload", "warning", "error", "success", "update", "delete", "system"];
 
-      case "backup":
-        return "💾";
+    const name = known.includes(type) ? type : "bell";
 
-      case "upload":
-        return "📤";
-
-      case "warning":
-        return "⚠️";
-
-      case "error":
-        return "❌";
-
-      case "success":
-        return "✅";
-
-      case "update":
-        return "⬆️";
-
-      case "delete":
-        return "🗑️";
-
-      case "system":
-        return "🖥️";
-
-      default:
-        return "🔔";
-
-    }
+    return `<span class="cm-type-ico cm-type-ico-${name}" aria-hidden="true"></span>`;
 
   },
 

@@ -360,7 +360,14 @@ only holds styles specific to the notifications page.
 
     border-radius:10px;
 
+    /* --notify-ico is set per type below; the box is a light tint of it. */
+    --notify-ico:#B8901E;
+
+    color:var(--notify-ico);
+
     background:rgba(255,215,0,.12);
+
+    background:color-mix(in srgb, var(--notify-ico) 14%, transparent);
 
     display:flex;
 
@@ -368,7 +375,7 @@ only holds styles specific to the notifications page.
 
     justify-content:center;
 
-    font-size:16px;
+    font-size:19px;
 
     flex-shrink:0;
 
@@ -557,6 +564,36 @@ only holds styles specific to the notifications page.
 .nt-ico-read-all{ -webkit-mask-image:var(--nt-ico-read-all); mask-image:var(--nt-ico-read-all); }
 .nt-ico-delete{ -webkit-mask-image:var(--nt-ico-delete); mask-image:var(--nt-ico-delete); }
 .nt-ico-delete-all{ -webkit-mask-image:var(--nt-ico-delete-all); mask-image:var(--nt-ico-delete-all); }
+
+/* Type colors for the card's icon box — same hues as the toast types
+   (toast.css), lifted a little in dark themes so they stay readable. */
+.notify-icon-upload{ --notify-ico:#2563EB; }
+.notify-icon-backup{ --notify-ico:#7C3AED; }
+.notify-icon-warning{ --notify-ico:#D97706; }
+.notify-icon-error,
+.notify-icon-delete{ --notify-ico:#DC2626; }
+.notify-icon-success{ --notify-ico:#16A34A; }
+.notify-icon-update{ --notify-ico:#0284C7; }
+.notify-icon-system{ --notify-ico:#475569; }
+
+[data-theme="dark"] .notify-icon-bell,
+[data-theme="darkgray"] .notify-icon-bell{ --notify-ico:#FFD54A; }
+[data-theme="dark"] .notify-icon-upload,
+[data-theme="darkgray"] .notify-icon-upload{ --notify-ico:#60A5FA; }
+[data-theme="dark"] .notify-icon-backup,
+[data-theme="darkgray"] .notify-icon-backup{ --notify-ico:#A78BFA; }
+[data-theme="dark"] .notify-icon-warning,
+[data-theme="darkgray"] .notify-icon-warning{ --notify-ico:#FBBF24; }
+[data-theme="dark"] .notify-icon-error,
+[data-theme="dark"] .notify-icon-delete,
+[data-theme="darkgray"] .notify-icon-error,
+[data-theme="darkgray"] .notify-icon-delete{ --notify-ico:#F87171; }
+[data-theme="dark"] .notify-icon-success,
+[data-theme="darkgray"] .notify-icon-success{ --notify-ico:#4ADE80; }
+[data-theme="dark"] .notify-icon-update,
+[data-theme="darkgray"] .notify-icon-update{ --notify-ico:#38BDF8; }
+[data-theme="dark"] .notify-icon-system,
+[data-theme="darkgray"] .notify-icon-system{ --notify-ico:#CBD5E1; }
 
 /* =========================
    Swipe actions
