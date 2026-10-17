@@ -47,7 +47,7 @@ href="../../assets/css/arrears.css">
 <!-- ========================= -->
 
 <div id="offlineBanner" data-i18n="common.offline">
-⚠️ No Internet Connection
+No Internet Connection
 </div>
 
 <!-- ========================= -->
@@ -281,7 +281,7 @@ href="../../assets/css/arrears.css">
 <div class="map-foot">
 <span class="map-coords" id="mapCoords">-</span>
 <div class="map-foot-actions">
-<button type="button" id="btnMapHere" class="map-btn" data-i18n="arrears.mapMyLocation">📍 ទីតាំងខ្ញុំ</button>
+<button type="button" id="btnMapHere" class="map-btn"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span> <span data-i18n="arrears.mapMyLocation">ទីតាំងខ្ញុំ</span></button>
 <button type="button" id="btnMapConfirm" class="map-btn map-btn-primary" data-i18n="common.ok">យល់ព្រម</button>
 </div>
 </div>
@@ -318,9 +318,9 @@ href="../../assets/css/arrears.css">
 <label for="reasonGPS" data-i18n="arrears.reasonGpsLabel">និយាមការ (GPS)</label>
 <input type="text" id="reasonGPS" placeholder="មិនទាន់កំណត់ទីតាំង" data-i18n-placeholder="arrears.gpsNotSetPlaceholder" inputmode="decimal" autocomplete="off">
 <div class="reason-gps-row">
-<button type="button" id="btnGpsHere" class="reason-gps-btn"><span>📍</span> <span data-i18n="arrears.gpsCurrentBtn">កំណត់ទីតាំងបច្ចុប្បន្ន</span></button>
-<button type="button" id="btnGpsPick" class="reason-gps-btn"><span>🗺️</span> <span data-i18n="arrears.gpsPickBtn">ជ្រើសលើផែនទី</span></button>
-<button type="button" id="btnGpsOpen" class="reason-gps-btn"><span>🧭</span> <span data-i18n="arrears.gpsViewBtn">មើលលើផែនទី</span></button>
+<button type="button" id="btnGpsHere" class="reason-gps-btn"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span> <span data-i18n="arrears.gpsCurrentBtn">កំណត់ទីតាំងបច្ចុប្បន្ន</span></button>
+<button type="button" id="btnGpsPick" class="reason-gps-btn"><span class="ui-ico ui-ico-map" aria-hidden="true"></span> <span data-i18n="arrears.gpsPickBtn">ជ្រើសលើផែនទី</span></button>
+<button type="button" id="btnGpsOpen" class="reason-gps-btn"><span class="ui-ico ui-ico-compass" aria-hidden="true"></span> <span data-i18n="arrears.gpsViewBtn">មើលលើផែនទី</span></button>
 </div>
 <div class="reason-gps-hint" id="reasonGpsHint"></div>
 </div>
@@ -464,7 +464,7 @@ href="../../assets/css/arrears.css">
 
     <div id="outAreaBulkBar" class="outarea-bulk-bar" hidden>
       <span id="outAreaBulkCount">0</span>
-      <button type="button" id="btnOutAreaBulkDelete" class="outarea-bulk-delete-btn" data-i18n="arrears.deleteSelectedBtn">🗑️ លុបដែលបានជ្រើសរើស</button>
+      <button type="button" id="btnOutAreaBulkDelete" class="outarea-bulk-delete-btn"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span> <span data-i18n="arrears.deleteSelectedBtn">លុបដែលបានជ្រើសរើស</span></button>
     </div>
 
     <table class="noreason-table">
@@ -517,9 +517,7 @@ href="../../assets/css/arrears.css">
 
     <div class="reason-meta" id="outAreaMeta"></div>
 
-    <button id="btnOutAreaDelete" type="button" class="outarea-delete-btn" style="display:none;" data-i18n="arrears.deleteThisRecordBtn">
-      🗑️ លុបកំណត់ត្រានេះ
-    </button>
+    <button id="btnOutAreaDelete" type="button" class="outarea-delete-btn" style="display:none;"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span> <span data-i18n="arrears.deleteThisRecordBtn">លុបកំណត់ត្រានេះ</span></button>
 
     <div class="reason-actions">
       <button id="btnOutAreaBack" data-i18n="arrears.backArrowBtn">← Back</button>

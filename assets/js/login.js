@@ -238,7 +238,7 @@ function showInstallButton(){
 
     btn.id="installBtn";
 
-    btn.innerText="📲 Install App";
+    btn.innerHTML='<span class="ui-ico ui-ico-install" aria-hidden="true"></span> Install App';
 
     document.body.appendChild(btn);
 

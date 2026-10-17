@@ -155,7 +155,7 @@ function fpRenderDevices(devices) {
                 <div class="fp-device-name">${escapeHtml(d.deviceLabel)}</div>
                 <div class="fp-device-date">${escapeHtml(t("settings.fingerprint.addedOn", { date: fpFormatDate(d.createdAt) }))}</div>
             </div>
-            <button type="button" class="fp-device-remove" data-id="${escapeHtml(d.id)}" title="${t("common.delete")}">🗑️</button>
+            <button type="button" class="fp-device-remove" data-id="${escapeHtml(d.id)}" title="${t("common.delete")}"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span></button>
         </div>
     `).join("");
 
@@ -254,7 +254,7 @@ fpAddBtn?.addEventListener("click", async () => {
     } finally {
 
         fpAddBtn.disabled = false;
-        fpAddBtn.innerHTML = `<span>➕</span> ${t("settings.fingerprint.addBtn")}`;
+        fpAddBtn.innerHTML = `<span class="ui-ico ui-ico-plus" aria-hidden="true"></span> <span data-i18n="settings.fingerprint.addBtn">${t("settings.fingerprint.addBtn")}</span>`;
 
     }
 
