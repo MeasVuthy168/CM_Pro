@@ -1442,9 +1442,7 @@ function crRenderChart(section) {
     }
     crRenderChartMetricTabs(section, metricOptions);
 
-    const product = crResolveSelectedProduct();
-    const getItemForDay = day => day.items.find(it => it.product === product);
-    crRenderGrowthDashboard(section, metricOptions, getItemForDay);
+    crRenderGrowthDashboard(section, metricOptions, day => day.items.find(it => it.product === product));
 
     const days = crHistoryData.days;
     // Balance Loan at Risk (T24) is never date-filtered — it always
