@@ -410,7 +410,7 @@
 
     for (const [username, u] of byUsername) {
       if (u.count < SUSPICIOUS_FAILED_LOGIN_THRESHOLD) continue;
-      items.push(t("admin.activitylogs.suspiciousUserLine", {
+      items.push('<span class="adm-ico adm-ico-lock" aria-hidden="true"></span> ' + t("admin.activitylogs.suspiciousUserLine", {
         username: escapeHtml(username), count: u.count, ip: escapeHtml(u.lastIp), timeAgo: timeAgo(u.lastAt)
       }));
     }
@@ -421,7 +421,7 @@
     // multi-account pattern the per-username view can't show.
     for (const [ip, i] of byIp) {
       if (i.count < SUSPICIOUS_FAILED_LOGIN_THRESHOLD || i.usernames.size < 2) continue;
-      items.push(t("admin.activitylogs.suspiciousIpLine", {
+      items.push('<span class="adm-ico adm-ico-globe" aria-hidden="true"></span> ' + t("admin.activitylogs.suspiciousIpLine", {
         ip: escapeHtml(ip), count: i.count, accounts: i.usernames.size, timeAgo: timeAgo(i.lastAt)
       }));
     }

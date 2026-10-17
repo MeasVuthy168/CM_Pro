@@ -96,9 +96,9 @@
         <td>${escapeHtml(u.branch || "—")}</td>
         <td>
           <div class="adm-row-actions">
-            <button type="button" class="adm-icon-btn" title="${t("admin.users.edit")}" data-action="edit">✏️</button>
-            <button type="button" class="adm-icon-btn" title="${t("admin.users.resetPassword")}" data-action="reset">🔑</button>
-            <button type="button" class="adm-icon-btn adm-icon-btn-danger" title="${t("admin.users.delete")}" data-action="delete">🗑️</button>
+            <button type="button" class="adm-icon-btn" title="${t("admin.users.edit")}" data-action="edit"><span class="adm-ico adm-ico-edit" aria-hidden="true"></span></button>
+            <button type="button" class="adm-icon-btn" title="${t("admin.users.resetPassword")}" data-action="reset"><span class="adm-ico adm-ico-key" aria-hidden="true"></span></button>
+            <button type="button" class="adm-icon-btn adm-icon-btn-danger" title="${t("admin.users.delete")}" data-action="delete"><span class="adm-ico adm-ico-trash" aria-hidden="true"></span></button>
           </div>
         </td>
       `;

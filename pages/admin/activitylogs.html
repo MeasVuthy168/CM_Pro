@@ -107,7 +107,7 @@
            logs actually contain a repeated-failed-login pattern) -->
       <!-- ========================= -->
       <div class="adm-card adm-suspicious-card" id="alSuspiciousCard" hidden>
-        <div class="adm-card-label" data-i18n="admin.activitylogs.suspiciousActivity">🚨 Suspicious Activity — repeated failed logins in the loaded range</div>
+        <div class="adm-card-label"><span class="adm-ico adm-ico-alert" aria-hidden="true"></span> <span data-i18n="admin.activitylogs.suspiciousActivity">Suspicious Activity — repeated failed logins in the loaded range</span></div>
         <ul id="alSuspiciousList" class="adm-suspicious-list"></ul>
       </div>
 
@@ -120,15 +120,15 @@
           <div class="adm-card-value" id="alKpiTotal">0</div>
         </div>
         <div class="adm-card">
-          <div class="adm-card-label" data-i18n="admin.activitylogs.kpiSuccess">✅ Success</div>
+          <div class="adm-card-label"><span class="adm-ico adm-ico-check-circle" aria-hidden="true"></span> <span data-i18n="admin.activitylogs.kpiSuccess">Success</span></div>
           <div class="adm-card-value" id="alKpiSuccess">0</div>
         </div>
         <div class="adm-card">
-          <div class="adm-card-label" data-i18n="admin.activitylogs.kpiFailed">❌ Failed</div>
+          <div class="adm-card-label"><span class="adm-ico adm-ico-x-circle" aria-hidden="true"></span> <span data-i18n="admin.activitylogs.kpiFailed">Failed</span></div>
           <div class="adm-card-value" id="alKpiFailed">0</div>
         </div>
         <div class="adm-card">
-          <div class="adm-card-label" data-i18n="admin.activitylogs.kpiUniqueUsers">👥 Unique Users</div>
+          <div class="adm-card-label"><span class="adm-ico adm-ico-users" aria-hidden="true"></span> <span data-i18n="admin.activitylogs.kpiUniqueUsers">Unique Users</span></div>
           <div class="adm-card-value" id="alKpiUsers">0</div>
         </div>
       </div>
@@ -163,7 +163,7 @@
       <!-- ========================= -->
       <div class="adm-toolbar" style="margin-top:0;">
         <div class="adm-toolbar-spacer"></div>
-        <button type="button" class="adm-btn" id="alBtnExport" data-i18n="admin.activitylogs.exportCsv">⬇️ Export CSV</button>
+        <button type="button" class="adm-btn adm-btn-with-ico" id="alBtnExport"><span class="adm-ico adm-ico-download" aria-hidden="true"></span><span data-i18n="admin.activitylogs.exportCsv">Export CSV</span></button>
       </div>
 
       <!-- ========================= -->
