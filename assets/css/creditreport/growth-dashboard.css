@@ -4,15 +4,17 @@
    (assets/js/creditreport/growth-dashboard.js). Uses each page's own
    --cr-* theme tokens, so light/dark themes follow automatically.
 ======================================== */
-.cr-growth-dashboard{
+.cr-growth-dashboard,
+.cr-growth-head{
     --cr-growth-good:#218653;
     --cr-growth-good-bg:rgba(45,170,105,.13);
     --cr-growth-bad:#b23a3a;
     --cr-growth-bad-bg:rgba(210,65,65,.13);
     --cr-growth-accent:#2f6b34;
-    margin-top:16px;
 }
-[data-theme="dark"] .cr-growth-dashboard{
+.cr-growth-dashboard{ margin-top:16px; }
+[data-theme="dark"] .cr-growth-dashboard,
+[data-theme="dark"] .cr-growth-head{
     --cr-growth-good:#5fd394;
     --cr-growth-good-bg:rgba(95,211,148,.16);
     --cr-growth-bad:#ff8a8a;
@@ -21,11 +23,13 @@
 }
 .cr-growth-dashboard[hidden]{ display:none; }
 
+/* The header sits in the chart popup's title (#crChartTitle), next to
+   its close button. */
+.cr-chart-header .cr-chart-title{ flex:1 1 auto; min-width:0; }
 .cr-growth-head{
     display:flex;
     align-items:center;
     gap:12px;
-    margin-bottom:12px;
 }
 .cr-growth-icon{
     flex:0 0 auto;
@@ -55,8 +59,9 @@
     overflow-wrap:anywhere;
 }
 .cr-growth-range{
-    flex:0 1 auto;
-    padding:7px 12px;
+    display:inline-block;
+    margin-top:6px;
+    padding:5px 11px;
     border-radius:999px;
     background:var(--cr-row-alt);
     color:var(--cr-text-muted);
@@ -137,11 +142,7 @@
 
 @media (max-width:420px){
     .cr-growth-icon{ width:42px; height:42px; font-size:21px; }
-    .cr-growth-range{ padding:6px 9px; font-size:11px; }
+    .cr-growth-range{ padding:4px 9px; font-size:11px; }
     .cr-growth-col{ padding:12px 4px; }
     .cr-growth-change{ padding:5px 8px; font-size:12px; }
-}
-@media (max-width:340px){
-    .cr-growth-head{ flex-wrap:wrap; }
-    .cr-growth-range{ flex-basis:100%; }
 }
