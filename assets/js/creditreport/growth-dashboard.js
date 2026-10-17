@@ -11,10 +11,19 @@
 //
 // Uses only the already-fetched history days; makes no API calls.
 //
+// The section header (icon, section name, branch/team scope, date range)
+// is drawn into the chart popup's own title (headerRoot), so the chart and
+// the cards under it share one title instead of repeating it.
+//
 // Usage (from a page's crRenderChart):
 //   CRGrowthDashboard.render(document.getElementById("crGrowthDashboard"), {
+//     headerRoot: document.getElementById("crChartTitle"),
 //     section, days, scope, getItemForDay, getByPath, fmtNum, fmtPct
 //   });
+//
+// Also exposes the chart's short formats: fmtShortDate("2026-09-30") ->
+// "30-Sep-26", fmtShortDateTime("16/10/2026 08:20") -> "16-Oct-26 08:20",
+// fmtCompact(132000000) -> "132.00M".
 // ========================================
 (function () {
     const tr = (key, vars, fallback) => {
@@ -26,6 +35,32 @@
         const div = document.createElement("div");
         div.textContent = text == null ? "" : String(text);
         return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    // "2026-09-30" -> "30-Sep-26" (D-MMM-YY); anything else is returned as is.
+    function fmtShortDate(dateKey) {
+        const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dateKey || ""));
+        if (!m) return dateKey || "";
+        return `${Number(m[3])}-${MONTHS[Number(m[2]) - 1]}-${m[1].slice(2)}`;
+    }
+
+    // T24 "as of" text "16/10/2026 08:20" -> "16-Oct-26 08:20".
+    function fmtShortDateTime(text) {
+        const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})(.*)$/.exec(String(text || "").trim());
+        if (!m) return text || "";
+        return `${Number(m[1])}-${MONTHS[Number(m[2]) - 1]}-${m[3].slice(2)}${m[4]}`;
+    }
+
+    // 132000000 -> "132.00M", 132000 -> "132.00K", 1200000000 -> "1.20B".
+    function fmtCompact(n) {
+        n = Number(n) || 0;
+        const abs = Math.abs(n);
+        if (abs >= 1e9) return (n / 1e9).toFixed(2) + "B";
+        if (abs >= 1e6) return (n / 1e6).toFixed(2) + "M";
+        if (abs >= 1e3) return (n / 1e3).toFixed(2) + "K";
+        return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
     }
 
     // A rise is bad news for these (overdue, PAR, write-off balance/new
@@ -80,7 +115,7 @@
 
     function render(root, opts) {
         if (!root) return;
-        const { section, days = [], scope = "", getItemForDay, getByPath, fmtNum, fmtPct } = opts;
+        const { headerRoot, section, days = [], scope = "", getItemForDay, getByPath, fmtNum, fmtPct } = opts;
 
         let rangeStart = null;
         let rangeEnd = null;
@@ -106,28 +141,32 @@
                 </article>`;
         }).filter(Boolean);
 
-        if (!cards.length) {
-            root.innerHTML = "";
-            root.hidden = true;
-            return;
+        // Header in the chart title: falls back to the loaded days' own range
+        // when no field has data, so the title is never left blank.
+        if (!rangeStart && days.length) {
+            rangeStart = days[0].date;
+            rangeEnd = days[days.length - 1].date;
+        }
+        if (headerRoot) {
+            const groupLabel = section.groups.length === 1 ? section.groups[0].label : tr("creditreport.growth.title", null, "Growth / Decline");
+            const icon = crGrowthIcon(section.groups[0]?.fields[0]?.key || "");
+            const range = rangeStart && rangeEnd && rangeStart !== rangeEnd
+                ? `${fmtShortDate(rangeStart)} → ${fmtShortDate(rangeEnd)}`
+                : fmtShortDate(rangeEnd || "");
+            headerRoot.innerHTML = `
+                <div class="cr-growth-head">
+                    <div class="cr-growth-icon" aria-hidden="true">${esc(icon)}</div>
+                    <div class="cr-growth-head-text">
+                        <div class="cr-growth-title">${esc(groupLabel)}</div>
+                        <div class="cr-growth-scope">${esc(scope)}</div>
+                        ${range ? `<div class="cr-growth-range" title="${esc(tr("creditreport.growth.rangeHint", null, "Start of selected range → latest day"))}">${esc(range)}</div>` : ""}
+                    </div>
+                </div>`;
         }
 
-        const groupLabel = section.groups.length === 1 ? section.groups[0].label : tr("creditreport.growth.title", null, "Growth / Decline");
-        const icon = crGrowthIcon(section.groups[0]?.fields[0]?.key || "");
-        const range = rangeStart && rangeEnd && rangeStart !== rangeEnd ? `${rangeStart} → ${rangeEnd}` : (rangeEnd || "");
-
-        root.innerHTML = `
-            <div class="cr-growth-head">
-                <div class="cr-growth-icon" aria-hidden="true">${esc(icon)}</div>
-                <div class="cr-growth-head-text">
-                    <div class="cr-growth-title">${esc(groupLabel)}</div>
-                    <div class="cr-growth-scope">${esc(scope)}</div>
-                </div>
-                <div class="cr-growth-range" title="${esc(tr("creditreport.growth.rangeHint", null, "Start of selected range → latest day"))}">${esc(range)}</div>
-            </div>
-            ${cards.join("")}`;
-        root.hidden = false;
+        root.innerHTML = cards.join("");
+        root.hidden = !cards.length;
     }
 
-    window.CRGrowthDashboard = { render };
+    window.CRGrowthDashboard = { render, fmtShortDate, fmtShortDateTime, fmtCompact };
 })();

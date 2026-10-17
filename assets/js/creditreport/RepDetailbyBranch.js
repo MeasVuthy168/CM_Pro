@@ -1559,6 +1559,7 @@ function crRenderChart(section) {
     const teamFilter = document.getElementById("crHistTeam").value;
     const days = crHistoryData.days;
     CRGrowthDashboard.render(document.getElementById("crGrowthDashboard"), {
+        headerRoot: document.getElementById("crChartTitle"),
         section,
         days: crHistoryData.days,
         scope: crChartTitle(),
@@ -1577,7 +1578,9 @@ function crRenderChart(section) {
     // note under Date for this section). The chart's own X axis follows
     // that same T24 "as of" moment instead of the row Date whenever
     // Showing is T24, per explicit request 2026-10-05.
-    const labels = days.map(d => crSectionHasT24(section) && d.t24AsOfText ? d.t24AsOfText : crFmtDateDMY(d.date));
+    const labels = days.map(d => crSectionHasT24(section) && d.t24AsOfText
+        ? CRGrowthDashboard.fmtShortDateTime(d.t24AsOfText)
+        : CRGrowthDashboard.fmtShortDate(d.date));
     const colors = crChartSeriesColors();
     const activeField = metricOptions.find(f => f.label === crChartMetricLabel);
 
@@ -1606,7 +1609,6 @@ function crRenderChart(section) {
         });
     });
 
-    document.getElementById("crChartTitle").textContent = `${crChartTitle()} — ${section.groups.length === 1 ? section.groups[0].label : t("creditreport.detail.showing")}`;
 
     const isPct = !!activeField?.pct;
     // A slow-moving aggregate (e.g. Loan Outstanding) barely changes day to
@@ -1644,8 +1646,10 @@ function crRenderChart(section) {
                     max: isPct ? undefined : crChartMax + crChartPad,
                     ticks: {
                         color: textMuted,
-                        callback: (v) => isPct ? crFmtPct(v) : crFmtNum(v)
+                        // Money axis in short form (132.00M); the tooltip keeps the full figure.
+                        callback: (v) => isPct ? crFmtPct(v) : activeField?.money ? CRGrowthDashboard.fmtCompact(v) : crFmtNum(v)
                     },
+                    title: { display: !!activeField?.money, text: "USD", color: textMuted },
                     grid: { color: grid }
                 },
                 x: {

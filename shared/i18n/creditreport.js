@@ -129,7 +129,7 @@ CMI18n.register({
 
   "creditreport.detail.showing": { km: "កំពុងបង្ហាញ", en: "Showing" },
   "creditreport.detail.allSections": { km: "គ្រប់ផ្នែកទាំងអស់", en: "All Sections" },
-  "creditreport.detail.sectionOutstanding": { km: "សមតុល្យ​ឥណទាន​", en: "Loan Outstanding" },
+  "creditreport.detail.sectionOutstanding": { km: "សមតុល្យឥណទានសរុប", en: "Loan Outstanding" },
   "creditreport.detail.sectionDisburse": { km: "ការបញ្ចេញឥណទាន", en: "Loan Disburse" },
   "creditreport.detail.sectionT24": { km: "សមតុល្យ​ឥណទានយឺតយ៉ាវ (T24)", en: "Balance Loan at Risk (T24)" },
   "creditreport.detail.sectionNbcOverdue": { km: "សមតុល្យ​ឥណទានយឺតយ៉ាវ (NBC Overdue)", en: "Balance Loan at Risk (NBC Overdue)" },
