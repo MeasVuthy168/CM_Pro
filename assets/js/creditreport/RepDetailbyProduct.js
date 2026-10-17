@@ -481,9 +481,16 @@ async function crFetchHistory() {
     const dateTo = document.getElementById("crHistToDate").value;
     if (!dateFrom || !dateTo) return;
 
+    // Ask only for the one product this view ever shows, same as the
+    // Officer/Location pages. Picking a different product afterwards
+    // re-fetches (see crHistProductSearch's handler).
+    const product = crResolveSelectedProduct();
+    const params = new URLSearchParams({ dateFrom, dateTo });
+    if (product) params.set("product", product);
+
     crShowLoading();
     try {
-        const url = `${API.BASE_URL}/api/creditreport/byproduct/history?dateFrom=${dateFrom}&dateTo=${dateTo}`;
+        const url = `${API.BASE_URL}/api/creditreport/byproduct/history?${params.toString()}`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
         const data = await res.json();
         crHideLoading();
@@ -493,6 +500,7 @@ async function crFetchHistory() {
             return;
         }
         crHistoryData = data;
+        crHistoryData.product = product;
         crRenderHistory();
     } catch (e) {
         console.error(e);
@@ -1213,7 +1221,15 @@ document.getElementById("crHistProductSearch").addEventListener("input", (e) => 
     document.getElementById("crHistProductClear").hidden = !e.target.value;
     crUpdateHistRunButtonState();
     crUpdateChartButtonVisibility();
-    if (crHistoryData) crRenderHistory();
+    if (!crHistoryData) return;
+    // Loaded history only carries the product it was fetched for, so a
+    // newly picked product needs its own fetch.
+    const product = crResolveSelectedProduct();
+    if (product && crHistoryData.product && product !== crHistoryData.product) {
+        crFetchHistory();
+    } else {
+        crRenderHistory();
+    }
 });
 document.getElementById("crHistProductSearch").addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
