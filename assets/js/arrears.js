@@ -2793,44 +2793,11 @@ function extractPrintCss() {
     return css;
 }
 
-async function exportToPdf() {
-    if (typeof html2canvas === "undefined" || typeof window.jspdf === "undefined") {
-        notify("PDF export library failed to load — check your connection and try again.", "error");
-        return;
-    }
-
-    if (typeof showAppLoading === "function") {
-        showAppLoading("កំពុងបង្កើតឯកសារ PDF...");
-    }
-
-    const tempStyleEl = document.createElement("style");
-    tempStyleEl.id = "pdf-export-temp-style";
-    // Real print engines auto-reflow wide content to fit the physical
-    // page — html2canvas does NOT do this, it just captures whatever
-    // width the container is laid out at on screen right now (the
-    // narrow mobile viewport). Without forcing every level of
-    // container to its full natural content width here, only the
-    // columns visible without horizontal scrolling get captured —
-    // exactly the "lost columns 5-19" bug reported.
-    tempStyleEl.textContent = extractPrintCss() + `
-        html, body { overflow-x: visible !important; width: max-content !important; }
-        .page-container { width: max-content !important; min-width: 100%; overflow: visible !important; }
-        .table-card { width: max-content !important; overflow: visible !important; }
-        .table-scroll { width: max-content !important; max-width: none !important; overflow: visible !important; }
-        .table-card table { width: max-content !important; }
-    `;
-    document.head.appendChild(tempStyleEl);
-
-    // Let the browser actually apply the injected styles and reflow
-    // (sticky→static, columns 20+ hidden, colors changed, full-width
-    // table) before html2canvas reads the resulting layout.
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-
-    try {
-        const container = document.querySelector(".page-container");
-        const thead = document.querySelector(".table-card thead");
-        const rows = Array.from(document.querySelectorAll(".table-card tbody tr"));
-
+// Shared by the LD and CIF exports: captures `container` with
+// html2canvas, slices it into A4-landscape pages at row boundaries
+// (`rows`), repeats `thead` at the top of every page after the first,
+// and saves it as `filename`.
+async function captureToPdf(container, thead, rows, filename) {
         const SCALE = 2; // retina-quality capture
         const fullCanvas = await html2canvas(container, { scale: SCALE, backgroundColor: "#ffffff" });
 
@@ -2905,7 +2872,48 @@ async function exportToPdf() {
             pdf.addImage(imgData, "JPEG", marginMm, marginMm, usablePageWidthMm, imgHeightMm);
         });
 
-        pdf.save(`${buildExportPdfFilename()}.pdf`);
+        pdf.save(filename);
+}
+
+async function exportToPdf() {
+    if (typeof html2canvas === "undefined" || typeof window.jspdf === "undefined") {
+        notify("PDF export library failed to load — check your connection and try again.", "error");
+        return;
+    }
+
+    if (typeof showAppLoading === "function") {
+        showAppLoading("កំពុងបង្កើតឯកសារ PDF...");
+    }
+
+    const tempStyleEl = document.createElement("style");
+    tempStyleEl.id = "pdf-export-temp-style";
+    // Real print engines auto-reflow wide content to fit the physical
+    // page — html2canvas does NOT do this, it just captures whatever
+    // width the container is laid out at on screen right now (the
+    // narrow mobile viewport). Without forcing every level of
+    // container to its full natural content width here, only the
+    // columns visible without horizontal scrolling get captured —
+    // exactly the "lost columns 5-19" bug reported.
+    tempStyleEl.textContent = extractPrintCss() + `
+        html, body { overflow-x: visible !important; width: max-content !important; }
+        .page-container { width: max-content !important; min-width: 100%; overflow: visible !important; }
+        .table-card { width: max-content !important; overflow: visible !important; }
+        .table-scroll { width: max-content !important; max-width: none !important; overflow: visible !important; }
+        .table-card table { width: max-content !important; }
+    `;
+    document.head.appendChild(tempStyleEl);
+
+    // Let the browser actually apply the injected styles and reflow
+    // (sticky→static, columns 20+ hidden, colors changed, full-width
+    // table) before html2canvas reads the resulting layout.
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    try {
+        const container = document.querySelector(".page-container");
+        const thead = document.querySelector(".table-card thead");
+        const rows = Array.from(document.querySelectorAll(".table-card tbody tr"));
+        await captureToPdf(container, thead, rows, `${buildExportPdfFilename()}.pdf`);
+
     } catch (err) {
         console.error("[export pdf] failed:", err);
         notify("មិនអាចបង្កើតឯកសារ PDF បានទេ", "error");
@@ -2918,7 +2926,110 @@ async function exportToPdf() {
     }
 }
 
+
+// ========================================
+// EXPORT PDF — CIF (step 3 of the CIF grouping)
+// When the LD | CIF switch is on CIF, Export PDF exports one row per
+// customer (same grouping, order and OS_USD totals as the CIF card and
+// table views) for ALL customers in the current filter — not just the
+// rows rendered on screen. Built in an off-screen, always-light
+// element so the PDF looks the same whatever theme is on screen.
+// ========================================
+
+function buildCifPdfElement(groups) {
+    const el = document.createElement("div");
+    el.id = "arrCifPdf";
+    el.className = "arr-cif-pdf";
+
+    const ldCount = groups.reduce((n, g) => n + g.rows.length, 0);
+    const osTotal = groups.reduce((n, g) => n + g.osUsd, 0);
+    const filters = [
+        ["Branch", filterEls.branch.value],
+        ["Officer", filterEls.officerResponse.value],
+        ["Team", filterEls.teamLeader.value],
+        ["Keyword", filterEls.keyword.value.trim()]
+    ].filter(([, v]) => v).map(([k, v]) => `${k}: ${escapeHtml(v)}`).join(" · ");
+
+    const rowsHtml = groups.map((g, i) => {
+        const classCss = classRowCssClass(g.worstClass);
+        const promiseCss = promiseCellCssClass(g.promise);
+        const ld = g.totalLd > g.rows.length ? `${g.rows.length} / ${g.totalLd}` : `${g.rows.length}`;
+        return `
+            <tr>
+                <td class="${classCss}">${i + 1}</td>
+                <td>${escapeHtml(g.customer || "-")}</td>
+                <td>${escapeHtml(g.cif || "-")}</td>
+                <td class="num">${escapeHtml(ld)}</td>
+                <td class="num">${escapeHtml(arrFormatAmount(g.osUsd))}</td>
+                <td class="num">${g.maxDay !== null ? g.maxDay : "-"}</td>
+                <td class="${classCss}">${escapeHtml(g.worstClass || "")}</td>
+                <td class="${promiseCss}">${escapeHtml(g.promise || "")}</td>
+                <td class="num">${g.withReason} / ${g.rows.length}</td>
+                <td>${escapeHtml(formatPhone(g.phone))}</td>
+                <td>${escapeHtml(g.coId || "")}</td>
+            </tr>`;
+    }).join("");
+
+    el.innerHTML = `
+        <div class="arr-cif-pdf-head">
+            <div class="arr-cif-pdf-title">Daily Arrears — CIF</div>
+            <div class="arr-cif-pdf-sub">
+                ${escapeHtml(lastUploadAtEl.textContent || "")}
+                · CIF: ${groups.length.toLocaleString()} · LD: ${ldCount.toLocaleString()}
+                · OS (USD): ${escapeHtml(arrFormatAmount(osTotal))}
+            </div>
+            ${filters ? `<div class="arr-cif-pdf-sub">${filters}</div>` : ""}
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>No</th><th>Customer</th><th>CIF</th><th>LD</th><th>OS (USD)</th><th>Day</th>
+                    <th>Class</th><th>Promise Status</th><th>Reason Arrear</th><th>Tell</th><th>CO_ID</th>
+                </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+        </table>`;
+    return el;
+}
+
+async function exportCifPdf() {
+    if (typeof html2canvas === "undefined" || typeof window.jspdf === "undefined") {
+        notify("PDF export library failed to load — check your connection and try again.", "error");
+        return;
+    }
+
+    const groups = buildGroups(currentRows);
+    if (!groups.length) {
+        notify(t("arrears.cardNoData"), "warning");
+        return;
+    }
+
+    if (typeof showAppLoading === "function") showAppLoading("កំពុងបង្កើតឯកសារ PDF...");
+
+    const el = buildCifPdfElement(groups);
+    document.body.appendChild(el);
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    try {
+        const thead = el.querySelector("thead");
+        const rows = Array.from(el.querySelectorAll("tbody tr"));
+        await captureToPdf(el, thead, rows, `${buildExportPdfFilename().replace(/^Arrear_/, "Arrear_CIF_")}.pdf`);
+    } catch (err) {
+        console.error("[export cif pdf] failed:", err);
+        notify("មិនអាចបង្កើតឯកសារ PDF បានទេ", "error");
+    } finally {
+        el.remove();
+        if (typeof hideAppLoading === "function") hideAppLoading();
+    }
+}
+
 document.getElementById("btnExportPdf")?.addEventListener("click", () => {
+    // CIF switch on -> one row per customer; otherwise the per-LD table.
+    if (arrGroupMode === "cif") {
+        exportCifPdf();
+        document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
+        return;
+    }
     ensureTableView();
     exportToPdf();
     document.getElementById("arrearsMenuDropdown")?.classList.remove("show");

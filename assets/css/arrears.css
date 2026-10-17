@@ -3799,3 +3799,32 @@ body.arr-group-cif:not(.arr-view-card) .table-card{ display:none; }
 .arr-cif-noreason{ color:var(--arr-text-muted); font-style:italic; }
 .arr-cif-arrears{ margin-top:2px; font-size:11px; color:inherit; opacity:.85; }
 .arr-cif-arrears .arr-amount-bad{ color:#C0392B; }
+
+/* ========================================
+   EXPORT PDF — CIF
+   Off-screen, always-light element captured by html2canvas. No
+   horizontal padding on the root so the repeated <thead> lines up
+   with the table on every page after the first.
+   ======================================== */
+.arr-cif-pdf{
+    position:absolute; left:-10000px; top:0;
+    width:max-content; min-width:1100px;
+    background:#fff; color:#1C2333;
+    font-family:"Krasar",Arial,sans-serif;
+    font-size:12px; line-height:1.35;
+}
+.arr-cif-pdf-head{ padding:0 0 10px; }
+.arr-cif-pdf-title{ font-size:18px; font-weight:700; color:#1A2E57; }
+.arr-cif-pdf-sub{ margin-top:3px; color:#4A5568; }
+.arr-cif-pdf table{ width:100%; border-collapse:collapse; }
+.arr-cif-pdf th{
+    background:#1A2E57; color:#FFD700; font-weight:700;
+    padding:7px 8px; border:1px solid #1A2E57; text-align:left; white-space:nowrap;
+}
+.arr-cif-pdf td{ padding:6px 8px; border:1px solid #e0e0e0; white-space:nowrap; }
+.arr-cif-pdf tbody tr:nth-child(even) td{ background-color:#F7F8FB; }
+.arr-cif-pdf td.num{ text-align:right; font-variant-numeric:tabular-nums; }
+.arr-cif-pdf td.row-class-loss{ background:#8B0000 !important; color:#fff; }
+.arr-cif-pdf td.row-class-doubtful{ background:#FF0000 !important; color:#fff; }
+.arr-cif-pdf td.row-class-substandard{ background:#FFA500 !important; color:#1C2333; }
+.arr-cif-pdf td.row-class-specialmention{ background:#FFFF00 !important; color:#1C2333; }
