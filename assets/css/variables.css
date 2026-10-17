@@ -1,13 +1,3 @@
-@font-face {
-
-    font-family: 'KRASAR';
-
-    src:
-        url('../fonts/KRASAR.ttf')
-        format('truetype');
-
-}
-
 :root {
 
     /* Colors */

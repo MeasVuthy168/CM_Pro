@@ -49,6 +49,21 @@ body{
 
 }
 
+/* Form controls don't inherit the page font by default — browsers give
+   button/input/select/textarea their own system font (Arial), which is
+   why only buttons with a page-specific font-family showed Krasar.
+   inherit picks up the Krasar set on body above; any control that sets
+   its own font-family elsewhere (e.g. a monospace code field) keeps it. */
+button,
+input,
+select,
+textarea,
+optgroup{
+
+    font-family:inherit;
+
+}
+
 /* =========================
    TOUCH POLISH
    Makes taps feel like a native app, not a web page:
