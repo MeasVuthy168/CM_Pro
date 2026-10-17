@@ -791,7 +791,16 @@ console.error(error);
 
     function atTop(){
 
-        return (window.scrollY || document.documentElement.scrollTop || 0) <= 0;
+        // This page scrolls inside <body>, not the window (base.css gives
+        // html/body height:100% + overflow-x:hidden), so window.scrollY
+        // is always 0 here — without body.scrollTop every downward drag
+        // anywhere in the list counted as a pull and was blocked, which
+        // is what made the list impossible to scroll back up.
+        return Math.max(
+            window.scrollY || 0,
+            document.documentElement.scrollTop || 0,
+            document.body.scrollTop || 0
+        ) <= 0;
 
     }
 

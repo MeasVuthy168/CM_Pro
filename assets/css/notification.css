@@ -516,6 +516,49 @@ only holds styles specific to the notifications page.
 }
 
 /* =========================
+   Icons — read / read all / delete / delete all.
+   24x24 line SVGs used as a CSS mask over currentColor (same approach
+   as assets/css/creditreport/cr-icons.css), so one definition serves
+   both the white icon on a card's swipe action and the colored icon
+   in the ⋮ menu. Use: <span class="nt-ico nt-ico-read-all" aria-hidden="true"></span>
+========================= */
+
+:root{
+
+    --nt-ico-read:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 10 12 4l9 6v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 19Z' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3Cpath d='m3.5 10.5 8.5 5.8 8.5-5.8' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3C/svg%3E");
+    --nt-ico-read-all:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M17 6 6.5 16.5 2 12' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.2'/%3E%3Cpath d='m22 9.5-7.5 7.5-1.8-1.8' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.2'/%3E%3C/svg%3E");
+    --nt-ico-delete:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.5 6h17M9 6V3.8h6V6' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3Cpath d='M5.5 6l1 14.2A2 2 0 0 0 8.5 22h7a2 2 0 0 0 2-1.8L18.5 6M10 10.5v7M14 10.5v7' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3C/svg%3E");
+    --nt-ico-delete-all:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.5 6h17M9 6V3.8h6V6' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3Cpath d='M5.5 6l1 14.2A2 2 0 0 0 8.5 22h7a2 2 0 0 0 2-1.8L18.5 6' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3Cpath d='m9.6 11 4.8 4.8M14.4 11l-4.8 4.8' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3C/svg%3E");
+
+}
+
+.nt-ico{
+
+    display:inline-block;
+
+    flex:0 0 auto;
+
+    width:1.25em;
+
+    height:1.25em;
+
+    background-color:currentColor;
+
+    -webkit-mask-repeat:no-repeat;
+    mask-repeat:no-repeat;
+    -webkit-mask-position:center;
+    mask-position:center;
+    -webkit-mask-size:contain;
+    mask-size:contain;
+
+}
+
+.nt-ico-read{ -webkit-mask-image:var(--nt-ico-read); mask-image:var(--nt-ico-read); }
+.nt-ico-read-all{ -webkit-mask-image:var(--nt-ico-read-all); mask-image:var(--nt-ico-read-all); }
+.nt-ico-delete{ -webkit-mask-image:var(--nt-ico-delete); mask-image:var(--nt-ico-delete); }
+.nt-ico-delete-all{ -webkit-mask-image:var(--nt-ico-delete-all); mask-image:var(--nt-ico-delete-all); }
+
+/* =========================
    Swipe actions
 ========================= */
 
@@ -553,17 +596,26 @@ only holds styles specific to the notifications page.
 
 .notify-card::after{
 
+    content:"";
+
     position:absolute;
 
     top:50%;
 
     transform:translateY(-50%);
 
-    font-size:26px;
+    width:28px;
 
-    font-weight:bold;
+    height:28px;
 
-    color:#fff;
+    background-color:#fff;
+
+    -webkit-mask-repeat:no-repeat;
+    mask-repeat:no-repeat;
+    -webkit-mask-position:center;
+    mask-position:center;
+    -webkit-mask-size:contain;
+    mask-size:contain;
 
     opacity:0;
 
@@ -575,7 +627,8 @@ only holds styles specific to the notifications page.
 
 .notify-card.read-action::after{
 
-    content:"✓";
+    -webkit-mask-image:var(--nt-ico-read);
+    mask-image:var(--nt-ico-read);
 
     left:20px;
 
@@ -585,7 +638,8 @@ only holds styles specific to the notifications page.
 
 .notify-card.delete-action::after{
 
-    content:"🗑";
+    -webkit-mask-image:var(--nt-ico-delete);
+    mask-image:var(--nt-ico-delete);
 
     right:20px;
 
@@ -830,17 +884,17 @@ only holds styles specific to the notifications page.
 
 }
 
-.notification-menu-item .menu-icon{
+.notification-menu-item .nt-ico{
 
     width:20px;
 
     height:20px;
 
-    object-fit:contain;
-
-    flex-shrink:0;
-
 }
+
+/* Same green/red as the swipe actions on each card. */
+#menuReadAll .nt-ico{ color:#28a745; }
+#menuDeleteAll .nt-ico{ color:#dc3545; }
 
 .notification-menu-item:hover,
 .notification-menu-item:active{
