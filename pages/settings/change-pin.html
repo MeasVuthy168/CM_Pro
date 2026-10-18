@@ -189,6 +189,46 @@
     cursor:default;
 }
 
+.pin-status-wrap{ display:flex; justify-content:center; margin:-12px 0 18px; }
+.pin-status{ font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; }
+.pin-status:empty{ display:none; }
+.pin-status.set{ background:rgba(39,174,96,.14); color:#1E8A52; }
+.pin-status.none{ background:rgba(107,114,128,.14); color:var(--pin-text-muted); }
+[data-theme="dark"] .pin-status.set,[data-theme="darkgray"] .pin-status.set{ color:#6FDCA0; }
+
+.pin-del-card{ margin-top:14px; }
+.pin-del-card[hidden]{ display:none; }
+.pin-del-row{ display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.pin-del-ic{ width:42px; height:42px; border-radius:12px; flex:none; display:flex; align-items:center; justify-content:center; background:rgba(214,69,53,.12); color:#D64535; }
+.pin-del-title{ font-size:15.5px; font-weight:700; color:var(--pin-text); }
+.pin-del-sub{ font-size:12.5px; color:var(--pin-text-muted); margin-top:2px; line-height:1.45; }
+.pin-del-btn{ width:100%; height:48px; border-radius:14px; border:1.5px solid rgba(214,69,53,.45); background:transparent; color:#D64535; font-size:15px; font-weight:700; font-family:inherit; cursor:pointer; }
+.pin-del-btn:active{ transform:scale(.98); background:rgba(214,69,53,.08); }
+[data-theme="dark"] .pin-del-btn,[data-theme="darkgray"] .pin-del-btn,
+[data-theme="dark"] .pin-del-ic,[data-theme="darkgray"] .pin-del-ic{ color:#FF8A7E; }
+
+.pin-sheet-dim{ position:fixed; inset:0; z-index:2000; background:rgba(10,16,35,.55); display:flex; align-items:flex-end; justify-content:center; animation:pinDimIn .2s ease; }
+.pin-sheet-dim[hidden]{ display:none; }
+.pin-sheet{ width:100%; max-width:520px; background:#fff; color:#1C2333; border-radius:22px 22px 0 0; padding:10px 18px calc(22px + env(safe-area-inset-bottom)); box-sizing:border-box; animation:pinSheetUp .25s ease; }
+.pin-sheet-grab{ width:42px; height:5px; border-radius:3px; background:#D5DAE3; margin:0 auto 14px; }
+.pin-sheet-ic{ width:60px; height:60px; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; background:#FDECEA; color:#D64535; }
+.pin-sheet-title{ text-align:center; font-size:19px; margin:0 0 4px; }
+.pin-sheet-text{ text-align:center; font-size:13px; color:#6B7280; margin-bottom:12px; }
+.pin-sheet-list{ margin:0 0 14px; padding-left:20px; font-size:13px; line-height:1.6; color:#3A4356; }
+.pin-sheet .pin-input-wrap input{ background:#FFFDF5; border-color:#E2C766; color:#1C2333; font-size:15px; letter-spacing:0; }
+.pin-sheet-confirm{ width:100%; height:50px; margin-top:14px; border:none; border-radius:14px; background:#D64535; color:#fff; font-size:16px; font-weight:700; font-family:inherit; cursor:pointer; }
+.pin-sheet-confirm:disabled{ opacity:.5; cursor:default; }
+.pin-sheet-cancel{ width:100%; height:46px; margin-top:6px; border:none; background:transparent; color:#0E1B3C; font-size:15px; font-weight:600; font-family:inherit; cursor:pointer; }
+[data-theme="dark"] .pin-sheet,[data-theme="darkgray"] .pin-sheet{ background:#16223F; color:#fff; }
+[data-theme="darkgray"] .pin-sheet{ background:#363A41; }
+[data-theme="dark"] .pin-sheet-text,[data-theme="darkgray"] .pin-sheet-text{ color:#9AA8C7; }
+[data-theme="dark"] .pin-sheet-list,[data-theme="darkgray"] .pin-sheet-list{ color:#cdd9ef; }
+[data-theme="dark"] .pin-sheet-ic,[data-theme="darkgray"] .pin-sheet-ic{ background:rgba(214,69,53,.18); color:#FF8A7E; }
+[data-theme="dark"] .pin-sheet .pin-input-wrap input,[data-theme="darkgray"] .pin-sheet .pin-input-wrap input{ background:#0F1A36; border-color:#3A4C78; color:#fff; }
+[data-theme="dark"] .pin-sheet-cancel,[data-theme="darkgray"] .pin-sheet-cancel{ color:#fff; }
+[data-theme="dark"] .pin-sheet-grab,[data-theme="darkgray"] .pin-sheet-grab{ background:#33456F; }
+@keyframes pinDimIn{ from{ opacity:0; } to{ opacity:1; } }
+@keyframes pinSheetUp{ from{ transform:translateY(40px); opacity:.6; } to{ transform:none; opacity:1; } }
 </style>
 
 </head>
@@ -212,7 +252,8 @@ No Internet Connection
 <path d="M13.5 8.5 16 11"/>
 </svg>
 </div>
-<div class="pin-intro-title" data-i18n="settings.account.changePin">ប្តូរកូដ PIN</div>
+<div class="pin-intro-title" id="pinIntroTitle" data-i18n="settings.account.changePin">ប្តូរកូដ PIN</div>
+<div class="pin-status-wrap"><span class="pin-status" id="pinStatus"></span></div>
 
 <div class="pin-field">
 <label data-i18n="settings.account.currentPassword">ពាក្យសម្ងាត់បច្ចុប្បន្ន</label>
@@ -247,6 +288,37 @@ No Internet Connection
 
 </div>
 
+
+<div class="pin-card pin-del-card" id="pinDeleteCard" hidden>
+<div class="pin-del-row">
+<span class="pin-del-ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></svg></span>
+<div class="pin-del-text">
+<div class="pin-del-title" data-i18n="settings.account.deletePin.title">លុបលេខកូដ PIN</div>
+<div class="pin-del-sub" data-i18n="settings.account.deletePin.subtitle">បិទការចូលដោយ PIN លើគ្រប់ឧបករណ៍</div>
+</div>
+</div>
+<button type="button" class="pin-del-btn" id="pinDeleteOpen" data-i18n="settings.account.deletePin.btn">លុប PIN</button>
+</div>
+</div>
+
+<div class="pin-sheet-dim" id="pinDeleteSheet" hidden>
+<div class="pin-sheet" role="dialog" aria-modal="true" aria-labelledby="pinDelSheetTitle">
+<div class="pin-sheet-grab"></div>
+<div class="pin-sheet-ic" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg></div>
+<h3 class="pin-sheet-title" id="pinDelSheetTitle" data-i18n="settings.account.deletePin.confirmTitle">លុបលេខកូដ PIN?</h3>
+<div class="pin-sheet-text" data-i18n="settings.account.deletePin.confirmText">ការលុបនេះមានឥទ្ធិពលលើគ្រប់ឧបករណ៍របស់អ្នក</div>
+<ul class="pin-sheet-list">
+<li data-i18n="settings.account.deletePin.point1">មិនអាចចូលដោយ PIN បានទៀតទេ</li>
+<li data-i18n="settings.account.deletePin.point2">អេក្រង់ចាក់សោ ប្រើស្នាមម្រាមដៃជំនួស (បើបានចុះឈ្មោះ)</li>
+<li data-i18n="settings.account.deletePin.point3">អាចបង្កើត PIN ថ្មីវិញនៅពេលណាក៏បាន</li>
+</ul>
+<div class="pin-input-wrap">
+<input type="password" id="pinDeletePassword" autocomplete="current-password" placeholder="បញ្ចូលពាក្យសម្ងាត់ ដើម្បីបញ្ជាក់" data-i18n-placeholder="settings.account.deletePin.passwordPh">
+<button type="button" class="pin-eye" data-target="pinDeletePassword"><span class="ui-ico ui-ico-eye" aria-hidden="true"></span></button>
+</div>
+<button type="button" class="pin-sheet-confirm" id="pinDeleteConfirm" disabled data-i18n="settings.account.deletePin.btn">លុប PIN</button>
+<button type="button" class="pin-sheet-cancel" id="pinDeleteCancel" data-i18n="common.cancel">បោះបង់</button>
+</div>
 </div>
 
 <div id="bottomnav-container"></div>

@@ -122,5 +122,6 @@ CMI18n.register({
   // Own copy of "Log Out" rather than reusing settings.logout — that
   // key only loads on Settings pages (shared/i18n/settings.js), but
   // this overlay can appear on every protected page.
+  "applock.useFingerprint": { km: "ប្រើស្នាមម្រាមដៃ ឬផ្ទៃមុខ ដើម្បីបើក", en: "Use your fingerprint or face to unlock" },
   "applock.logout": { km: "ចាកចេញ", en: "Log Out" }
 });
