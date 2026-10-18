@@ -35,6 +35,16 @@ const CR_HUB_T24_REFRESH_TARGETS = [
     { label: () => t("creditreport.hub.targetLocation"), url: "/api/creditreport/bylocation/snapshot/refresh-t24-all" }
 ];
 
+// toast.js declares CMToast with a top-level const (so not on window);
+// the old showToast() call never existed, so
+// the success / failure toast after Snapshot All / Refresh All T24
+// silently never appeared.
+function crHubToast(message, type) {
+    if (typeof CMToast !== "undefined" && typeof CMToast.show === "function") {
+        CMToast.show({ type, title: message, message: "", duration: 3500 });
+    }
+}
+
 function crHubEscapeHtml(text) {
     const div = document.createElement("div");
     div.textContent = text == null ? "" : String(text);
@@ -136,12 +146,8 @@ if (crHubIsAdmin) {
             const results = await Promise.all(CR_HUB_SNAPSHOT_TARGETS.map(crHubRunOneSnapshot));
             crHubRenderResults(results);
             const allOk = results.every(r => r.ok);
-            if (typeof showToast === "function") {
-                showToast(
-                    allOk ? t("creditreport.hub.snapshotAllSaved") : t("creditreport.hub.snapshotSomeFailed"),
-                    allOk ? "success" : "error"
-                );
-            }
+            crHubToast(allOk ? t("creditreport.hub.snapshotAllSaved") : t("creditreport.hub.snapshotSomeFailed"),
+                    allOk ? "success" : "error");
         } finally {
             btn.disabled = false;
             label.setAttribute("data-i18n", "creditreport.hub.snapshotAll");
@@ -171,12 +177,8 @@ if (crHubIsAdmin) {
             const results = await Promise.all(CR_HUB_T24_REFRESH_TARGETS.map(crHubRunOneT24Refresh));
             crHubRenderT24Results(results);
             const allOk = results.every(r => r.ok);
-            if (typeof showToast === "function") {
-                showToast(
-                    allOk ? t("creditreport.hub.t24RefreshAllDone") : t("creditreport.hub.t24RefreshSomeFailed"),
-                    allOk ? "success" : "error"
-                );
-            }
+            crHubToast(allOk ? t("creditreport.hub.t24RefreshAllDone") : t("creditreport.hub.t24RefreshSomeFailed"),
+                    allOk ? "success" : "error");
         } finally {
             btn.disabled = false;
             label.setAttribute("data-i18n", "creditreport.hub.refreshAllT24");
