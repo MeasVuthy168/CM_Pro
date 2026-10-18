@@ -152,9 +152,6 @@ CMI18n.register({
 
   // contact.html
   "settings.contact.branchName": { km: "ធនាគារអេស៊ីលីដាសាខាខេត្តស្វាយរៀង", en: "ACLEDA Bank Svay Rieng Branch" },
-  "settings.contact.branchSub": { km: "ACLEDA Bank Svay Rieng Branch", en: "ធនាគារអេស៊ីលីដាសាខាខេត្តស្វាយរៀង" },
-  "settings.contact.email": { km: "អ៊ីមែលសាខា", en: "Branch email" },
-  "settings.contact.team": { km: "ក្រុមឥណទានសាខា", en: "BRANCH CREDIT TEAM" },
   "settings.contact.roleSenior": { km: "ប្រធានឥណទានជាន់ខ្ពស់សាខា\"ក\"", en: "Senior Branch Credit Manager" },
   "settings.contact.roleAssistant": { km: "អនុប្រធានឥណទានសាខា\"ក\"", en: "Assistant Branch Credit Manager" },
 
