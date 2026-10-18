@@ -3870,3 +3870,145 @@ body.arr-group-cif:not(.arr-view-card) .table-card{ display:none; }
 .reason-apply-all[hidden]{ display:none; }
 .reason-apply-all input{ width:18px; height:18px; margin:0; accent-color:#1A2E57; flex:none; }
 [data-theme="dark"] .reason-apply-all input{ accent-color:#D4AF37; }
+
+/* ========================================
+   NO REASON ARREAR SUMMARY — refresh
+   Header with close, three totals, branch + team tabs, search, sort,
+   officer cards (count + filled bar) and client cards (days late,
+   arrears, phone). Reuses the out-of-area .oa-* building blocks.
+   ======================================== */
+.noreason-card{ max-width:560px; }
+.nr-updated{
+    margin-top:2px;
+    font-size:12px;
+    color:var(--arr-text-muted);
+    overflow-wrap:anywhere;
+}
+
+.nr-stats{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:8px;
+    margin:4px 0 12px;
+}
+.nr-stat{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    padding:10px 12px;
+    border:1px solid var(--arr-border);
+    border-radius:12px;
+    background:var(--arr-card-bg);
+    min-width:0;
+}
+.nr-stat-label{ font-size:11.5px; color:var(--arr-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.nr-stat strong{ font-size:20px; line-height:1.2; color:var(--arr-text); font-variant-numeric:tabular-nums; }
+.nr-stat-unit{ font-size:11px; color:var(--arr-text-muted); }
+.nr-stat-bad{ background:rgba(220,38,38,.07); border-color:rgba(220,38,38,.25); }
+.nr-stat-bad strong{ color:#B91C1C; }
+[data-theme="dark"] .nr-stat-bad strong{ color:#FCA5A5; }
+.nr-stat-good strong{ color:#15803D; }
+[data-theme="dark"] .nr-stat-good strong{ color:#86EFAC; }
+.nr-stat .arr-progress{ width:100%; margin-top:4px; }
+
+.nr-filters{
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) minmax(0, 1.2fr);
+    gap:8px;
+    align-items:center;
+    margin-bottom:8px;
+}
+.nr-branch{
+    height:44px;
+    width:100%;
+    min-width:0;
+    padding:0 10px;
+    border:1px solid var(--arr-border);
+    border-radius:12px;
+    background:var(--arr-card-bg);
+    color:var(--arr-text);
+    font-family:'KRASAR',sans-serif;
+    font-size:13.5px;
+}
+.nr-team-tabs{ grid-template-columns:repeat(3, 1fr); margin-bottom:0; }
+.nr-team-tabs .oa-tab{ height:36px; font-size:13px; }
+
+.nr-toolbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:8px;
+}
+.nr-toolbar .oa-count{ margin:0 !important; }
+.nr-sort{ display:flex; gap:6px; }
+.nr-sort .oa-chip-btn.active{
+    background:#1A2E57;
+    border-color:#1A2E57;
+    color:#FFD700;
+}
+[data-theme="dark"] .nr-sort .oa-chip-btn.active{ background:#D4AF37; border-color:#D4AF37; color:#0E1B3C; }
+
+.nr-list{ margin-bottom:4px; }
+.nr-list .oa-item{
+    width:100%;
+    font-family:inherit;
+    text-align:left;
+    color:inherit;
+}
+.nr-avatar{
+    flex:0 0 auto;
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#1A2E57;
+    color:#FFD700;
+    font-size:13px;
+    font-weight:800;
+    letter-spacing:.5px;
+}
+.nr-list .oa-item-name,
+.nr-list .oa-item-sub{ display:block; }
+.nr-item .oa-item-sub{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; margin-top:3px; }
+.nr-item-bar{ display:block; width:100%; max-width:220px; margin-top:6px; }
+.nr-count{
+    flex:0 0 auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    min-width:48px;
+    padding:5px 8px;
+    border-radius:10px;
+    background:rgba(220,38,38,.10);
+    color:#B91C1C;
+    line-height:1.1;
+}
+.nr-count strong{ font-size:17px; font-variant-numeric:tabular-nums; }
+.nr-count small{ font-size:10.5px; font-weight:600; }
+[data-theme="dark"] .nr-count{ background:rgba(248,113,113,.16); color:#FCA5A5; }
+
+/* client cards: class colour as a left stripe */
+.nr-client{ border-left-width:5px; }
+.nr-client.row-class-loss{ border-left-color:#8B0000; }
+.nr-client.row-class-doubtful{ border-left-color:#FF0000; }
+.nr-client.row-class-substandard{ border-left-color:#FFA500; }
+.nr-client.row-class-specialmention{ border-left-color:#E6C200; }
+.nr-client-meta{ display:flex; flex-wrap:wrap; gap:4px 10px; margin-top:4px; }
+.nr-client-meta .ui-ico{ font-size:12px; vertical-align:-2px; }
+.nr-client-meta .arr-amount-bad{ color:#C0392B; font-weight:700; }
+.nr-client-draft{ font-style:italic; }
+.nr-hint{ margin:0 2px 8px !important; font-size:12px; }
+
+/* sticky footer; the negative margin covers the card's bottom padding
+   so list items don't show through underneath */
+.nr-actions{ position:sticky; bottom:-14px; margin-bottom:-14px; padding:10px 0 14px; background:var(--arr-card-bg); z-index:2; }
+.nr-actions button .ui-ico{ font-size:15px; vertical-align:-3px; }
+
+@media (max-width:420px){
+    .nr-filters{ grid-template-columns:1fr; }
+    .nr-stat strong{ font-size:18px; }
+}

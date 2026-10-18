@@ -385,71 +385,88 @@ No Internet Connection
 <!-- LIST SCREEN: officers, each with their unfilled-reason count -->
 <div id="noReasonListScreen">
 
-<div class="reason-title" data-i18n="arrears.menuNoReasonSummary">មិនទាន់បានបំពេញ Reason Arrear</div>
-<div class="reason-subtitle" id="noReasonSubtitle">-</div>
-<div class="reason-subtitle noreason-last-upload"><span data-i18n="arrears.lastUploadAtLabel">ទិន្នន័យចុងក្រោយនៅ</span> <span id="noReasonLastUpload">-</span></div>
-
-<div class="filter-group noreason-branch-filter">
-<label for="noReasonBranchFilter" data-i18n="arrears.filterBranchLabel">សាខា</label>
-<select id="noReasonBranchFilter">
-<option value="" data-i18n="arrears.optionAll">All</option>
-</select>
+<div class="outarea-sticky-header">
+<div class="oa-detail-title">
+<div class="reason-title" style="margin:0;" data-i18n="arrears.menuNoReasonSummary">មិនទាន់បំពេញ Reason Arrear</div>
+<div class="nr-updated"><span data-i18n="arrears.lastUploadAtLabel">ទិន្នន័យចុងក្រោយនៅ</span> <span id="noReasonLastUpload">-</span></div>
+</div>
+<button type="button" id="btnNoReasonCloseX" class="outarea-close-x" aria-label="បិទ" data-i18n-aria-label="common.close"><span class="ui-ico ui-ico-close" aria-hidden="true"></span></button>
 </div>
 
-<div class="filter-group noreason-team-filter">
-<label for="noReasonTeamFilter" data-i18n="arrears.teamLabel">ក្រុម</label>
-<select id="noReasonTeamFilter">
-<option value="" data-i18n="arrears.optionAll">All</option>
-<option value="Credit Officer">Credit Officer</option>
-<option value="FSRO">FSRO</option>
-</select>
+<!-- Totals for the current Branch / Team choice -->
+<div class="nr-stats">
+<div class="nr-stat nr-stat-bad">
+<span class="nr-stat-label" data-i18n="arrears.nrStatMissing">មិនទាន់បំពេញ</span>
+<strong id="nrStatMissing">0</strong>
+<span class="nr-stat-unit">LD</span>
+</div>
+<div class="nr-stat">
+<span class="nr-stat-label" data-i18n="arrears.nrStatOfficers">ភ្នាក់ងារ</span>
+<strong id="nrStatOfficers">0</strong>
+<span class="nr-stat-unit" data-i18n="arrears.nrStatOfficersUnit">នាក់</span>
+</div>
+<div class="nr-stat nr-stat-good">
+<span class="nr-stat-label" data-i18n="arrears.nrStatFilled">បានបំពេញ</span>
+<strong id="nrStatPct">0%</strong>
+<span class="arr-progress"><span id="nrStatBar"></span></span>
+</div>
 </div>
 
-<table class="noreason-table">
-<thead>
-<tr>
-<th data-i18n="arrears.colOfficerName">ឈ្មោះភ្នាក់ងារ</th>
-<th data-i18n="arrears.colUnfilledCount">មិនទាន់បំពេញReason Arrear</th>
-</tr>
-</thead>
-<tbody id="noReasonTbody"></tbody>
-</table>
+<div class="nr-filters">
+<select id="noReasonBranchFilter" class="nr-branch" aria-label="សាខា" data-i18n-aria-label="arrears.filterBranchLabel">
+<option value="" data-i18n="arrears.nrAllBranches">សាខាទាំងអស់</option>
+</select>
+<div class="oa-tabs nr-team-tabs" role="tablist" aria-label="ក្រុម" data-i18n-aria-label="arrears.teamLabel">
+<button type="button" class="oa-tab active" data-nr-team="" role="tab" data-i18n="arrears.optionAll">ទាំងអស់</button>
+<button type="button" class="oa-tab" data-nr-team="Credit Officer" role="tab">CO</button>
+<button type="button" class="oa-tab" data-nr-team="FSRO" role="tab">FSRO</button>
+</div>
+</div>
 
-<div class="reason-actions">
-<button id="btnNoReasonClose" data-i18n="common.close">Close</button>
+<div class="oa-search">
+<span class="ui-ico ui-ico-search oa-search-ico" aria-hidden="true"></span>
+<input type="search" id="noReasonSearch" placeholder="ស្វែងរកភ្នាក់ងារ..." data-i18n-placeholder="arrears.nrSearchOfficer" autocomplete="off">
+</div>
+
+<div class="nr-toolbar">
+<span class="reason-subtitle oa-count" id="noReasonSubtitle">-</span>
+<div class="nr-sort" role="group">
+<button type="button" class="oa-chip-btn active" data-nr-sort="count" data-i18n="arrears.nrSortCount">ច្រើនបំផុត</button>
+<button type="button" class="oa-chip-btn" data-nr-sort="name" data-i18n="arrears.nrSortName">ឈ្មោះ A-Z</button>
+</div>
+</div>
+
+<div id="noReasonTbody" class="oa-list nr-list"></div>
+
+<div class="reason-actions nr-actions">
+<button type="button" id="btnNoReasonCopy"><span class="ui-ico ui-ico-copy" aria-hidden="true"></span> <span data-i18n="arrears.nrCopy">ចម្លងសង្ខេប</span></button>
+<button type="button" id="btnNoReasonClose" data-i18n="common.close">Close</button>
 </div>
 
 </div>
 
 <!-- CLIENTS SCREEN: the selected officer's own unfilled-reason loans.
-     Tapping a client closes this modal and opens the real Reason
-     Arrear panel for that loan, same as tapping a row in the main
-     table would. -->
+     Tapping a client opens the Reason Arrear panel for that loan (‹ ›
+     walks this officer's list); closing it comes back here. -->
 <div id="noReasonClientsScreen" style="display:none;">
 
-<div class="outarea-sticky-header">
+<div class="outarea-sticky-header oa-detail-header">
+<button type="button" id="btnNoReasonClientsBack" class="outarea-close-x" aria-label="ត្រឡប់ក្រោយ" data-i18n-aria-label="arrears.backAria"><span class="oa-back-arrow" aria-hidden="true">←</span></button>
+<div class="oa-detail-title">
 <div class="reason-title" style="margin:0;" id="noReasonClientsTitle">-</div>
-<button type="button" id="btnNoReasonClientsCloseX" class="outarea-close-x" aria-label="បិទ" data-i18n-aria-label="common.close">✕</button>
+<div class="nr-updated" id="noReasonClientsSubtitle">-</div>
+</div>
+<button type="button" id="btnNoReasonClientsCloseX" class="outarea-close-x" aria-label="បិទ" data-i18n-aria-label="common.close"><span class="ui-ico ui-ico-close" aria-hidden="true"></span></button>
 </div>
 
-<div class="reason-subtitle" id="noReasonClientsSubtitle">-</div>
-
-<table class="noreason-table">
-<thead>
-<tr>
-<th data-i18n="arrears.colNo">No</th>
-<th data-i18n="arrears.colCustomer">អតិថិជន</th>
-<th data-i18n="arrears.colLoanNumber">លេខកិច្ចសន្យា</th>
-<th>CIF</th>
-<th data-i18n="arrears.colDaysLate">ថ្ងៃយឺត</th>
-</tr>
-</thead>
-<tbody id="noReasonClientsTbody"></tbody>
-</table>
-
-<div class="reason-actions">
-<button id="btnNoReasonClientsBack" data-i18n="arrears.backArrowBtn">← ត្រឡប់ក្រោយ</button>
+<div class="oa-search">
+<span class="ui-ico ui-ico-search oa-search-ico" aria-hidden="true"></span>
+<input type="search" id="noReasonClientSearch" placeholder="ស្វែងរកអតិថិជន, LD, CIF..." data-i18n-placeholder="arrears.nrSearchClient" autocomplete="off">
 </div>
+
+<div class="reason-subtitle oa-count nr-hint" data-i18n="arrears.nrTapHint">ចុចលើអតិថិជន ដើម្បីបំពេញ Reason Arrear</div>
+
+<div id="noReasonClientsTbody" class="oa-list nr-list"></div>
 
 </div>
 

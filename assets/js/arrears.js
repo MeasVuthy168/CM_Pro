@@ -1830,6 +1830,7 @@ function closeReasonModal() {
     reasonBackdrop.classList.remove("show");
     selectedRow = null;
     reasonNavRows = null;
+    returnToNoReasonSummary();
 }
 
 // click on the dark backdrop itself (not the card) closes the modal
@@ -3234,6 +3235,7 @@ function getTeamCategory(row) {
 
 function buildNoReasonRows(sourceRows, branchFilter, teamFilter) {
     const map = new Map();
+    const stats = { total: 0, missing: 0 };
     sourceRows.forEach(row => {
         // Mirrors the VBA COUNTIFS: W=officer, AK blank, Q>0, U=branch.
         // Q is the CIF column, so the guard is simply "this is a real
@@ -3242,8 +3244,7 @@ function buildNoReasonRows(sourceRows, branchFilter, teamFilter) {
         // arrears cell was blank, zero or "-", hiding officers who did
         // have unfilled reasons.
         const hasCif = String(row.cif ?? "").trim() !== "";
-        const solutionFilled = String(row.akSolution ?? "").trim() !== "";
-        if (!hasCif || solutionFilled) return;
+        if (!hasCif) return;
 
         const branch = row.branch || "";
         if (branchFilter && branch !== branchFilter) return;
@@ -3258,13 +3259,22 @@ function buildNoReasonRows(sourceRows, branchFilter, teamFilter) {
         // (not copies) — clicking a client in the drill-down screen
         // hands one of these straight to openReasonPanel(), same object
         // the main table's own row click uses, so nav/save behave
-        // identically.
-        if (!map.has(key)) map.set(key, { name, branch, team, count: 0, rows: [] });
+        // identically. total counts every LD of the officer in scope,
+        // for the "filled x/y" bar.
+        if (!map.has(key)) map.set(key, { key, name, branch, team, count: 0, total: 0, rows: [] });
         const entry = map.get(key);
+        entry.total++;
+        stats.total++;
+
+        const solutionFilled = String(row.akSolution ?? "").trim() !== "";
+        if (solutionFilled) return;
         entry.count++;
         entry.rows.push(row);
+        stats.missing++;
     });
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+    const groups = Array.from(map.values()).filter(g => g.count > 0);
+    groups.stats = stats;
+    return groups;
 }
 
 function populateNoReasonBranchFilter() {
@@ -3275,128 +3285,251 @@ function populateNoReasonBranchFilter() {
 
 // Holds the officer groups from the most recent showNoReasonSummary()
 // call, so the click handler on #noReasonTbody can look one up by the
-// index stashed on its <tr> without re-filtering currentRows.
+// index stashed on its item without re-filtering currentRows.
 let noReasonGroups = [];
+let noReasonTeam = "";          // "" | "Credit Officer" | "FSRO"
+let noReasonSort = "count";     // "count" (most unfilled first) | "name"
 
 // Whichever officer's client list is currently open in the drill-down
-// screen, so its own row-click handler can resolve a tapped row back
-// to the real arrears row object.
+// screen, so its own click handler can resolve a tapped item back to
+// the real arrears row object.
 let noReasonClientRows = [];
+let noReasonOpenKey = null;
+
+// Set while the Reason Arrear panel was opened from this summary, so
+// closing the panel comes back to the officer's (refreshed) list.
+let noReasonReturnKey = null;
+
+function noReasonInitials(name) {
+    const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+    return ((parts[0] || "?")[0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
+}
+
+function noReasonFill(template, values) {
+    return Object.entries(values).reduce((str, [k, v]) => str.replace(`{${k}}`, v), template);
+}
 
 function showNoReasonSummary() {
     populateNoReasonBranchFilter();
 
-    const branchFilterEl = document.getElementById("noReasonBranchFilter");
-    const teamFilterEl = document.getElementById("noReasonTeamFilter");
-    const branchFilter = branchFilterEl ? branchFilterEl.value : "";
-    const teamFilter = teamFilterEl ? teamFilterEl.value : "";
+    const branchFilter = document.getElementById("noReasonBranchFilter")?.value || "";
+    noReasonGroups = buildNoReasonRows(currentRows, branchFilter, noReasonTeam);
 
-    const rows = buildNoReasonRows(currentRows, branchFilter, teamFilter);
-    noReasonGroups = rows;
+    const { total, missing } = noReasonGroups.stats;
+    const pct = total ? Math.round((total - missing) / total * 100) : 100;
+    document.getElementById("nrStatMissing").textContent = missing.toLocaleString();
+    document.getElementById("nrStatOfficers").textContent = noReasonGroups.length.toLocaleString();
+    document.getElementById("nrStatPct").textContent = `${pct}%`;
+    document.getElementById("nrStatBar").style.width = `${pct}%`;
 
-    const tbody = document.getElementById("noReasonTbody");
-    tbody.innerHTML = "";
+    document.getElementById("noReasonLastUpload").textContent =
+        document.getElementById("lastUploadAt")?.textContent || "-";
 
-    let total = 0;
-    rows.forEach((r, i) => {
-        total += r.count;
-        const tr = document.createElement("tr");
-        tr.dataset.groupIndex = i;
-        tr.innerHTML = `<td>${escapeHtml(r.name)}</td><td>${r.count}</td>`;
-        tbody.appendChild(tr);
-    });
+    document.querySelectorAll("[data-nr-team]").forEach(b =>
+        b.classList.toggle("active", b.dataset.nrTeam === noReasonTeam));
+    document.querySelectorAll("[data-nr-sort]").forEach(b =>
+        b.classList.toggle("active", b.dataset.nrSort === noReasonSort));
 
-    if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="2" style="text-align:center;">គ្មានទិន្នន័យ</td></tr>`;
-    }
-
-    document.getElementById("noReasonSubtitle").textContent =
-        `សរុប ${total} LD  •  ${rows.length} ភ្នាក់ងារ`;
-
-    const lastUploadText = document.getElementById("lastUploadAt")?.textContent || "-";
-    document.getElementById("noReasonLastUpload").textContent = lastUploadText;
-
+    renderNoReasonOfficers();
     showNoReasonListScreen();
     document.getElementById("noReasonBackdrop").classList.add("show");
+}
+
+function renderNoReasonOfficers() {
+    const q = (document.getElementById("noReasonSearch")?.value || "").trim().toLowerCase();
+    const list = noReasonGroups
+        .map((g, i) => ({ g, i }))
+        .filter(({ g }) => !q || g.name.toLowerCase().includes(q) || g.branch.toLowerCase().includes(q))
+        .sort((a, b) => noReasonSort === "name"
+            ? a.g.name.localeCompare(b.g.name)
+            : (b.g.count - a.g.count) || a.g.name.localeCompare(b.g.name));
+
+    const el = document.getElementById("noReasonTbody");
+    if (!list.length) {
+        el.innerHTML = `<div class="oa-empty">${escapeHtml(t(noReasonGroups.length ? "arrears.nrNoMatch" : "arrears.nrAllDone"))}</div>`;
+    } else {
+        el.innerHTML = list.map(({ g, i }) => {
+            const filled = g.total - g.count;
+            const pct = g.total ? Math.round(filled / g.total * 100) : 0;
+            return `
+            <button type="button" class="oa-item nr-item" data-group-index="${i}">
+                <span class="nr-avatar" aria-hidden="true">${escapeHtml(noReasonInitials(g.name))}</span>
+                <span class="oa-item-main">
+                    <span class="oa-item-name">${escapeHtml(g.name)}</span>
+                    <span class="oa-item-sub">
+                        ${g.branch ? `<span class="oa-branch-chip">${escapeHtml(g.branch)}</span>` : ""}
+                        <span>${escapeHtml(g.team === "FSRO" ? "FSRO" : "CO")}</span>
+                        <span>· ${escapeHtml(noReasonFill(t("arrears.nrFilledOf"), { f: filled.toLocaleString(), t: g.total.toLocaleString() }))}</span>
+                    </span>
+                    <span class="arr-progress nr-item-bar"><span style="width:${pct}%"></span></span>
+                </span>
+                <span class="nr-count"><strong>${g.count.toLocaleString()}</strong><small>LD</small></span>
+                <span class="oa-item-chevron" aria-hidden="true">›</span>
+            </button>`;
+        }).join("");
+    }
+
+    const { missing } = noReasonGroups.stats;
+    document.getElementById("noReasonSubtitle").textContent = noReasonFill(t("arrears.nrCount"), {
+        n: missing.toLocaleString(), o: noReasonGroups.length.toLocaleString()
+    });
 }
 
 function showNoReasonListScreen() {
     document.getElementById("noReasonClientsScreen").style.display = "none";
     document.getElementById("noReasonListScreen").style.display = "block";
+    noReasonOpenKey = null;
 }
 
-// Drill-down: the officer's own unfilled-reason loans, so staff can
-// jump straight to a specific client instead of hunting for them in
-// the full table.
+function closeNoReasonSummary() {
+    document.getElementById("noReasonBackdrop").classList.remove("show");
+    showNoReasonListScreen();
+}
+
+// Drill-down: the officer's own unfilled-reason loans (latest days late
+// first), so staff can jump straight to a specific client instead of
+// hunting for them in the full table.
 function showNoReasonClients(group) {
-    noReasonClientRows = group.rows;
+    noReasonClientRows = group.rows.slice().sort((a, b) =>
+        (parseInt(b.day, 10) || 0) - (parseInt(a.day, 10) || 0));
+    noReasonOpenKey = group.key;
 
-    const tbody = document.getElementById("noReasonClientsTbody");
-    tbody.innerHTML = "";
-
-    group.rows.forEach((row, i) => {
-        const tr = document.createElement("tr");
-        tr.dataset.rowIndex = i;
-        tr.innerHTML = `
-            <td>${i + 1}</td>
-            <td>${escapeHtml(row.customer)}</td>
-            <td>${escapeHtml(row.loanNumber)}</td>
-            <td>${escapeHtml(row.cif)}</td>
-            <td>${escapeHtml(row.day ? row.day + "ថ្ងៃ" : "")}</td>
-        `;
-        tbody.appendChild(tr);
-    });
+    const search = document.getElementById("noReasonClientSearch");
+    if (search) search.value = "";
+    renderNoReasonClients();
 
     document.getElementById("noReasonClientsTitle").textContent = group.name;
     document.getElementById("noReasonClientsSubtitle").textContent =
-        `${group.branch || "-"}  •  ${group.team}  •  ${group.count} LD`;
+        `${group.branch || "-"} · ${group.team} · ${group.count.toLocaleString()} LD`;
 
     document.getElementById("noReasonListScreen").style.display = "none";
     document.getElementById("noReasonClientsScreen").style.display = "block";
+    document.getElementById("noReasonCard").scrollTop = 0;
+}
+
+function renderNoReasonClients() {
+    const q = (document.getElementById("noReasonClientSearch")?.value || "").trim().toLowerCase();
+    const el = document.getElementById("noReasonClientsTbody");
+    const items = noReasonClientRows
+        .map((row, i) => ({ row, i }))
+        .filter(({ row }) => !q || [row.customer, row.loanNumber, row.cif, row.tell]
+            .some(v => String(v || "").toLowerCase().includes(q)));
+
+    if (!items.length) {
+        el.innerHTML = `<div class="oa-empty">${escapeHtml(t(noReasonClientRows.length ? "arrears.nrNoMatch" : "arrears.nrAllDone"))}</div>`;
+        return;
+    }
+    el.innerHTML = items.map(({ row, i }) => {
+        const day = parseInt(row.day, 10);
+        const arrears = parseFloat(row.arreas) || 0;
+        const draft = row.ajReason || row.alFollowup;
+        return `
+        <button type="button" class="oa-item nr-client ${classRowCssClass(row.class)}" data-row-index="${i}">
+            <span class="oa-item-main">
+                <span class="oa-item-name">${escapeHtml(row.customer || "-")}</span>
+                <span class="oa-item-sub">${escapeHtml(row.loanNumber || "-")} · CIF ${escapeHtml(row.cif || "-")}</span>
+                <span class="oa-item-sub nr-client-meta">
+                    ${arrears > 0 ? `<span class="arr-amount-bad">Arrears ${escapeHtml(arrFormatAmount(row.arreas))}${row.ccy ? ` ${escapeHtml(row.ccy)}` : ""}</span>` : ""}
+                    ${row.tell ? `<span><span class="ui-ico ui-ico-phone" aria-hidden="true"></span> ${escapeHtml(formatPhone(row.tell))}</span>` : ""}
+                    ${draft ? `<span class="nr-client-draft">${escapeHtml(row.ajReason || formatRowDateDMY(row.alFollowup))}</span>` : ""}
+                </span>
+            </span>
+            ${Number.isFinite(day) ? `<span class="arr-day-badge">${day.toLocaleString()} <small>${escapeHtml(t("arrears.cardDays"))}</small></span>` : ""}
+            <span class="oa-item-chevron" aria-hidden="true">›</span>
+        </button>`;
+    }).join("");
+}
+
+// Called by closeReasonModal(): back to the officer's list when the
+// panel was opened from here, with the list rebuilt so a client whose
+// reason was just saved drops off it.
+function returnToNoReasonSummary() {
+    const key = noReasonReturnKey;
+    noReasonReturnKey = null;
+    if (!key) return;
+    showNoReasonSummary();
+    const group = noReasonGroups.find(g => g.key === key);
+    if (group) showNoReasonClients(group);
 }
 
 document.getElementById("noReasonTbody")?.addEventListener("click", (e) => {
-    const tr = e.target.closest("tr[data-group-index]");
-    if (!tr) return;
-    const group = noReasonGroups[Number(tr.dataset.groupIndex)];
+    const item = e.target.closest("[data-group-index]");
+    if (!item) return;
+    const group = noReasonGroups[Number(item.dataset.groupIndex)];
     if (group) showNoReasonClients(group);
 });
 
 document.getElementById("noReasonClientsTbody")?.addEventListener("click", (e) => {
-    const tr = e.target.closest("tr[data-row-index]");
-    if (!tr) return;
-    const row = noReasonClientRows[Number(tr.dataset.rowIndex)];
+    const item = e.target.closest("[data-row-index]");
+    if (!item) return;
+    const row = noReasonClientRows[Number(item.dataset.rowIndex)];
     if (!row) return;
 
-    document.getElementById("noReasonBackdrop").classList.remove("show");
-    showNoReasonListScreen(); // reset for next time this modal opens
-    openReasonPanel(row);
+    const navRows = noReasonClientRows.slice();
+    const returnKey = noReasonOpenKey;
+    closeNoReasonSummary();
+    openReasonPanel(row).then(() => { reasonNavRows = navRows; updateReasonNav(); });
+    noReasonReturnKey = returnKey;
+});
+
+document.getElementById("noReasonSearch")?.addEventListener("input", renderNoReasonOfficers);
+document.getElementById("noReasonClientSearch")?.addEventListener("input", renderNoReasonClients);
+
+document.querySelectorAll("[data-nr-team]").forEach(btn => btn.addEventListener("click", () => {
+    noReasonTeam = btn.dataset.nrTeam;
+    showNoReasonSummary();
+}));
+document.querySelectorAll("[data-nr-sort]").forEach(btn => btn.addEventListener("click", () => {
+    noReasonSort = btn.dataset.nrSort;
+    document.querySelectorAll("[data-nr-sort]").forEach(b => b.classList.toggle("active", b === btn));
+    renderNoReasonOfficers();
+}));
+
+// Plain-text summary for pasting into Telegram / chat.
+document.getElementById("btnNoReasonCopy")?.addEventListener("click", async () => {
+    const branch = document.getElementById("noReasonBranchFilter")?.value || t("arrears.nrAllBranches");
+    const team = noReasonTeam || t("arrears.optionAll");
+    const sorted = noReasonGroups.slice().sort((a, b) => (b.count - a.count) || a.name.localeCompare(b.name));
+    const lines = [
+        `${t("arrears.menuNoReasonSummary")} — ${branch} · ${team}`,
+        `${t("arrears.lastUploadAtLabel")} ${document.getElementById("noReasonLastUpload").textContent}`,
+        "",
+        ...sorted.map((g, i) => `${i + 1}. ${g.name}${g.branch ? ` (${g.branch})` : ""} — ${g.count} LD`),
+        "",
+        document.getElementById("noReasonSubtitle").textContent
+    ];
+    const text = lines.join("\n");
+    try {
+        await navigator.clipboard.writeText(text);
+    } catch (err) {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+    }
+    notify(t("arrears.nrCopied"), "success");
 });
 
 document.getElementById("btnNoReasonClientsBack")?.addEventListener("click", showNoReasonListScreen);
-
-document.getElementById("btnNoReasonClientsCloseX")?.addEventListener("click", () => {
-    document.getElementById("noReasonBackdrop").classList.remove("show");
-    showNoReasonListScreen();
-});
+document.getElementById("btnNoReasonClientsCloseX")?.addEventListener("click", closeNoReasonSummary);
+document.getElementById("btnNoReasonCloseX")?.addEventListener("click", closeNoReasonSummary);
+document.getElementById("btnNoReasonClose")?.addEventListener("click", closeNoReasonSummary);
 
 document.getElementById("btnNoReasonSummary")?.addEventListener("click", () => {
+    const search = document.getElementById("noReasonSearch");
+    if (search) search.value = "";
     showNoReasonSummary();
     document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
 });
 
 document.getElementById("noReasonBranchFilter")?.addEventListener("change", showNoReasonSummary);
-document.getElementById("noReasonTeamFilter")?.addEventListener("change", showNoReasonSummary);
-
-document.getElementById("btnNoReasonClose")?.addEventListener("click", () => {
-    document.getElementById("noReasonBackdrop").classList.remove("show");
-});
 
 document.getElementById("noReasonBackdrop")?.addEventListener("click", (e) => {
-    if (e.target.id === "noReasonBackdrop") {
-        e.currentTarget.classList.remove("show");
-        showNoReasonListScreen();
-    }
+    if (e.target.id === "noReasonBackdrop") closeNoReasonSummary();
 });
 
 // ========================================
@@ -3944,14 +4077,14 @@ function renderOutAreaRows(entries, totalCount, subtitleText, showActions, showC
 
 function setOutAreaTab(mode) {
     outAreaViewMode = mode;
-    document.querySelectorAll(".oa-tab").forEach(tab => {
+    document.querySelectorAll(".oa-tab[data-view]").forEach(tab => {
         const active = tab.dataset.view === mode;
         tab.classList.toggle("active", active);
         tab.setAttribute("aria-selected", active ? "true" : "false");
     });
 }
 
-document.querySelectorAll(".oa-tab").forEach(tab => tab.addEventListener("click", () => {
+document.querySelectorAll(".oa-tab[data-view]").forEach(tab => tab.addEventListener("click", () => {
     if (tab.dataset.view === outAreaViewMode) return;
     setOutAreaTab(tab.dataset.view);
     document.getElementById("outAreaSearch").value = "";
