@@ -70,7 +70,7 @@ No Internet Connection
       <p class="sc-header-sub" data-i18n="spotcheck.pageSubtitle">Facilities Spot Check</p>
     </div>
     <button id="btnAddNew" class="sc-btn sc-btn-gold">
-      <span class="sc-icon">+</span> <span data-i18n="spotcheck.addNewBtn">បញ្ចូលថ្មី</span>
+      <span class="ui-ico ui-ico-plus" aria-hidden="true"></span> <span data-i18n="spotcheck.addNewBtn">បញ្ចូលថ្មី</span>
     </button>
   </div>
 
@@ -86,26 +86,51 @@ No Internet Connection
   </div>
 
   <!-- ============ SUMMARY STRIP ============ -->
+  <!-- Tap a tile to filter: all / this month / needs follow-up -->
   <div class="sc-summary">
-    <div class="sc-summary-item">
+    <button type="button" class="sc-summary-item" data-sc-stat="total">
       <span class="sc-summary-value" id="statTotal">—</span>
       <span class="sc-summary-label" data-i18n="spotcheck.statTotalLabel">សរុបទាំងអស់</span>
-    </div>
-    <div class="sc-summary-item">
+    </button>
+    <button type="button" class="sc-summary-item" data-sc-stat="month">
       <span class="sc-summary-value" id="statMonth">—</span>
       <span class="sc-summary-label" data-i18n="spotcheck.statMonthLabel">ខែនេះ</span>
-    </div>
+    </button>
+    <button type="button" class="sc-summary-item sc-summary-risk" data-sc-stat="risk">
+      <span class="sc-summary-value" id="statRisk">—</span>
+      <span class="sc-summary-label" data-i18n="spotcheck.statRiskLabel">ត្រូវតាមដាន</span>
+    </button>
   </div>
 
   <!-- ============ SEARCH / FILTER ============ -->
   <div class="sc-toolbar">
     <div class="sc-search">
-      <span class="sc-search-icon">⌕</span>
+      <span class="sc-search-icon ui-ico ui-ico-search" aria-hidden="true"></span>
       <input type="text" id="searchInput" placeholder="ស្វែងរកតាម CIF ឬ ឈ្មោះអតិថិជន..." data-i18n-placeholder="spotcheck.searchPlaceholder">
-      <button type="button" id="searchClear" class="sc-search-clear" aria-label="Clear search" data-i18n-aria-label="spotcheck.searchClearAria" style="display:none">&times;</button>
+      <button type="button" id="searchClear" class="sc-search-clear" aria-label="Clear search" data-i18n-aria-label="spotcheck.searchClearAria" style="display:none"><span class="ui-ico ui-ico-close" aria-hidden="true"></span></button>
     </div>
   </div>
 
+  <!-- Filters fold away behind one button (badge = how many are set);
+       sort stays visible next to it. -->
+  <div class="sc-filter-bar">
+    <button type="button" id="btnScFilterToggle" class="sc-filter-toggle" aria-expanded="false" aria-controls="scFilterPanel">
+      <span data-i18n="spotcheck.filtersBtn">តម្រង</span>
+      <span class="sc-filter-badge" id="scFilterBadge" hidden>0</span>
+      <span class="sc-filter-chevron" aria-hidden="true">▾</span>
+    </button>
+    <select id="sortSelect" class="sc-select-filter sc-select-sort">
+      <option value="name_asc" data-i18n="spotcheck.sortNameAsc">ឈ្មោះ (A-Z)</option>
+      <option value="name_desc" data-i18n="spotcheck.sortNameDesc">ឈ្មោះ (Z-A)</option>
+      <option value="officer_asc" data-i18n="spotcheck.sortOfficerAsc">មន្ត្រីឥណទាន (A-Z)</option>
+      <option value="officer_desc" data-i18n="spotcheck.sortOfficerDesc">មន្ត្រីឥណទាន (Z-A)</option>
+      <option value="checkdate_desc" data-i18n="spotcheck.sortCheckDateDesc">ថ្ងៃត្រួតពិនិត្យ (ថ្មី➝ចាស់)</option>
+      <option value="checkdate_asc" data-i18n="spotcheck.sortCheckDateAsc">ថ្ងៃត្រួតពិនិត្យ (ចាស់➝ថ្មី)</option>
+      <option value="bookdate_desc" data-i18n="spotcheck.sortBookDateDesc">ថ្ងៃបញ្ចេញកម្ចី (ថ្មី➝ចាស់)</option>
+      <option value="bookdate_asc" data-i18n="spotcheck.sortBookDateAsc">ថ្ងៃបញ្ចេញកម្ចី (ចាស់➝ថ្មី)</option>
+    </select>
+  </div>
+  <div class="sc-filter-panel" id="scFilterPanel" hidden>
   <div class="sc-filter-row">
     <select id="filterMonth" class="sc-select-filter">
       <option value="" data-i18n="spotcheck.filterMonthAll">ខែត្រួតពិនិត្យ — ទាំងអស់</option>
@@ -122,17 +147,6 @@ No Internet Connection
       <option value="" data-i18n="spotcheck.filterProductAll">ប្រភេទឥណទាន — ទាំងអស់</option>
     </select>
   </div>
-  <div class="sc-filter-row">
-    <select id="sortSelect" class="sc-select-filter sc-select-sort">
-      <option value="name_asc" data-i18n="spotcheck.sortNameAsc">ឈ្មោះ (A-Z)</option>
-      <option value="name_desc" data-i18n="spotcheck.sortNameDesc">ឈ្មោះ (Z-A)</option>
-      <option value="officer_asc" data-i18n="spotcheck.sortOfficerAsc">មន្ត្រីឥណទាន (A-Z)</option>
-      <option value="officer_desc" data-i18n="spotcheck.sortOfficerDesc">មន្ត្រីឥណទាន (Z-A)</option>
-      <option value="checkdate_desc" data-i18n="spotcheck.sortCheckDateDesc">ថ្ងៃត្រួតពិនិត្យ (ថ្មី➝ចាស់)</option>
-      <option value="checkdate_asc" data-i18n="spotcheck.sortCheckDateAsc">ថ្ងៃត្រួតពិនិត្យ (ចាស់➝ថ្មី)</option>
-      <option value="bookdate_desc" data-i18n="spotcheck.sortBookDateDesc">ថ្ងៃបញ្ចេញកម្ចី (ថ្មី➝ចាស់)</option>
-      <option value="bookdate_asc" data-i18n="spotcheck.sortBookDateAsc">ថ្ងៃបញ្ចេញកម្ចី (ចាស់➝ថ្មី)</option>
-    </select>
   </div>
   <div class="sc-filter-actions">
     <div class="sc-view-toggle" id="scViewToggle">
@@ -173,8 +187,8 @@ No Internet Connection
     </div>
 
     <div class="sc-tabs">
-      <button type="button" class="sc-tab-btn active" data-tab="tab1" data-i18n="spotcheck.tab1Label">I. ព័ត៌មានឥណទាន</button>
-      <button type="button" class="sc-tab-btn" data-tab="tab2" data-i18n="spotcheck.tab2Label">II. ការត្រួតពិនិត្យផ្ទាល់</button>
+      <button type="button" class="sc-tab-btn active" data-tab="tab1"><span data-i18n="spotcheck.tab1Label">I. ព័ត៌មានឥណទាន</span> <span class="sc-tab-badge" data-tab-badge="tab1" hidden></span></button>
+      <button type="button" class="sc-tab-btn" data-tab="tab2"><span data-i18n="spotcheck.tab2Label">II. ការត្រួតពិនិត្យផ្ទាល់</span> <span class="sc-tab-badge" data-tab-badge="tab2" hidden></span></button>
     </div>
 
     <form id="spotCheckForm" class="sc-form">

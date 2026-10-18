@@ -106,6 +106,32 @@ let scCurrentRows = [];     // whatever's currently displayed (post-filter, post
 let scViewMode = localStorage.getItem("sc_view") === "list" ? "list" : "card";
 let scOriginalCycle = null; // the cycle value a record was opened with, while editing — see the cboCycle change listener
 let scLastSavedCif = null;  // most recently saved/updated CIF — pinned to the top of the list/card view
+let scRiskOnly = false;     // "ត្រូវតាមដាន" tile: only records whose conclusion flags a risk
+
+const scT = (key) => (window.CMI18n ? CMI18n.t(key) : key);
+
+// Toast instead of a blocking alert() (falls back to alert if toast.js
+// didn't load).
+function scNotify(message, type = "error") {
+  if (window.CMToast && typeof CMToast.show === "function") {
+    CMToast.show({ type, title: message, message: "", duration: 3500 });
+  } else {
+    alert(message);
+  }
+}
+
+// A conclusion other than the two "no risk" presets means the officer
+// wrote something to follow up on.
+function scIsRisk(rec) {
+  const c = String(rec.conclusion || "").trim();
+  return !!c && !SC_CONCLUSION_OPTIONS.includes(c);
+}
+
+// ទៀងទាត់ / យឺតយ៉ាវក្នុងខែ / យឺតយ៉ាវ -> good / warn / bad colour
+function scRepaymentTone(value) {
+  const i = SC_OPTION_LISTS.cboRepaymentHistory.indexOf(value);
+  return i === 0 ? "good" : i === 1 ? "warn" : i === 2 ? "bad" : "";
+}
 
 // ---------------------------------------------------------
 // Bootstrapping — independent of the component loader; only
@@ -168,7 +194,7 @@ async function scRefreshList() {
     scRenderList();
   } catch (err) {
     console.error(err);
-    alert("មិនអាចទាញយកទិន្នន័យបានទេ");
+    scNotify("មិនអាចទាញយកទិន្នន័យបានទេ");
   }
 }
 
@@ -281,6 +307,37 @@ function scRenderSummary() {
   const currentMonthKey = scCurrentMonthKey();
   const thisMonth = scAllRecords.filter((r) => scMonthKey(scRecordToObj(r)) === currentMonthKey).length;
   document.getElementById("statMonth").textContent = thisMonth;
+  document.getElementById("statRisk").textContent =
+    scAllRecords.filter((r) => scIsRisk(scRecordToObj(r))).length;
+}
+
+// Highlights the tile matching the current filter, counts active filters
+// on the Filters button, and shows Clear only when something is set.
+function scSyncFilterUi() {
+  const month = document.getElementById("filterMonth").value;
+  const active = ["filterMonth", "filterBranch", "filterOfficer", "filterProductType"]
+    .filter((id) => document.getElementById(id).value).length;
+  const badge = document.getElementById("scFilterBadge");
+  badge.textContent = active;
+  badge.hidden = !active;
+  const anyFilter = active > 0 || scRiskOnly || !!document.getElementById("searchInput").value.trim();
+  document.getElementById("btnClearFilter").hidden = !anyFilter;
+  document.querySelectorAll("[data-sc-stat]").forEach((tile) => {
+    const kind = tile.dataset.scStat;
+    tile.classList.toggle("active",
+      kind === "risk" ? scRiskOnly :
+      kind === "month" ? (!scRiskOnly && month === scCurrentMonthKey() && active === 1) :
+      !anyFilter);
+  });
+}
+
+function scClearFilters() {
+  document.getElementById("filterMonth").value = "";
+  document.getElementById("filterBranch").value = "";
+  document.getElementById("filterProductType").value = "";
+  scPopulateOfficerOptions(); // branch reset -> officer list reverts to unscoped
+  document.getElementById("filterOfficer").value = "";
+  scRiskOnly = false;
 }
 
 // Empty/invalid dates always sort to the end, regardless of direction.
@@ -321,7 +378,8 @@ function scRenderList() {
       const matchesBranch = !branchFilter || rec.branch === branchFilter;
       const matchesOfficer = !officerFilter || rec.creditOfficer === officerFilter;
       const matchesProduct = !productFilter || rec.loanType === productFilter;
-      return matchesSearch && matchesMonth && matchesBranch && matchesOfficer && matchesProduct;
+      const matchesRisk = !scRiskOnly || scIsRisk(rec);
+      return matchesSearch && matchesMonth && matchesBranch && matchesOfficer && matchesProduct && matchesRisk;
     })
     .sort(SC_SORTERS[sortBy] || SC_SORTERS.checkdate_desc);
 
@@ -337,6 +395,7 @@ function scRenderList() {
 
   scCurrentRows = filtered;
   document.getElementById("scResultCount").textContent = `${filtered.length} ករណី`;
+  scSyncFilterUi();
 
   const container = document.getElementById("listContainer");
   const emptyState = document.getElementById("emptyState");
@@ -507,7 +566,7 @@ const SC_EXPORT_LABELS = {
 
 function scExportExcel() {
   if (!scCurrentRows.length) {
-    alert("មិនមានទិន្នន័យសម្រាប់នាំចេញទេ");
+    scNotify("មិនមានទិន្នន័យសម្រាប់នាំចេញទេ", "warning");
     return;
   }
 
@@ -539,35 +598,37 @@ function scExportExcel() {
 
 function scBuildCard(rec) {
   const card = document.createElement("div");
-  card.className = "sc-card";
+  card.className = "sc-card" + (scIsRisk(rec) ? " sc-card-risk" : "");
+  card.setAttribute("role", "button");
+  card.tabIndex = 0;
+  const tone = scRepaymentTone(rec.repaymentHistory);
+  const chips = [
+    rec.branch && `<span class="sc-chip"><span class="ui-ico ui-ico-map" aria-hidden="true"></span>${scEscapeHtml(rec.branch)}</span>`,
+    rec.creditOfficer && `<span class="sc-chip"><span class="ui-ico ui-ico-officer" aria-hidden="true"></span>${scEscapeHtml(rec.creditOfficer)}</span>`,
+    rec.cycle && `<span class="sc-chip">${scEscapeHtml(scT("spotcheck.cycleChip"))} ${scEscapeHtml(rec.cycle)}</span>`,
+    rec.repaymentHistory && `<span class="sc-chip sc-chip-${tone}">${scEscapeHtml(rec.repaymentHistory)}</span>`,
+  ].filter(Boolean).join("");
+  // Tapping the card edits; download / delete sit in the footer.
   card.innerHTML = `
     <div class="sc-card-top">
       <div class="sc-card-id">
-        <div class="sc-card-cif">${scEscapeHtml(rec.cif)}</div>
         <div class="sc-card-name">${scEscapeHtml(rec.customerName || "—")}</div>
+        <div class="sc-card-cif">CIF ${scEscapeHtml(rec.cif)}${rec.loanId ? ` · ${scEscapeHtml(rec.loanId)}` : ""}</div>
       </div>
-      <div class="sc-card-actions">
-        <button class="sc-action-btn sc-export-btn" aria-label="ទាញយកទម្រង់">
-          <img src="/CM_Pro/assets/icons/spotcheck/download.png" alt=""><span>ទាញយក</span>
-        </button>
-        <button class="sc-action-btn sc-edit-btn" aria-label="កែសម្រួល">
-          <img src="/CM_Pro/assets/icons/spotcheck/edit.png" alt=""><span>កែប្រែ</span>
-        </button>
-        <button class="sc-action-btn sc-delete-btn" aria-label="លុប">
-          <img src="/CM_Pro/assets/icons/spotcheck/delete.png" alt=""><span>លុប</span>
-        </button>
-      </div>
+      <span class="sc-card-date"><span class="ui-ico ui-ico-calendar" aria-hidden="true"></span>${scEscapeHtml(scDisplayDate(rec.spotCheckDate))}</span>
     </div>
-    <div class="sc-card-meta">
-      <span>${scEscapeHtml(rec.branch || "—")}</span>
-      <span>${scEscapeHtml(scDisplayDate(rec.spotCheckDate))}</span>
-      ${rec.conclusion ? `<span class="sc-badge">${scEscapeHtml(rec.conclusion)}</span>` : ""}
+    ${chips ? `<div class="sc-card-meta">${chips}</div>` : ""}
+    ${rec.conclusion ? `<div class="sc-badge ${scIsRisk(rec) ? "sc-badge-risk" : ""}">${scIsRisk(rec) ? `<span class="ui-ico ui-ico-alert" aria-hidden="true"></span>` : ""}<span class="sc-badge-text">${scEscapeHtml(rec.conclusion)}</span></div>` : ""}
+    <div class="sc-card-actions">
+      <button type="button" class="sc-action-btn sc-export-btn" aria-label="ទាញយកទម្រង់">
+        <span class="ui-ico ui-ico-install" aria-hidden="true"></span><span>${scEscapeHtml(scT("spotcheck.downloadBtn"))}</span>
+      </button>
+      <button type="button" class="sc-action-btn sc-delete-btn" aria-label="លុប">
+        <span class="ui-ico ui-ico-trash" aria-hidden="true"></span><span>${scEscapeHtml(scT("spotcheck.deleteBtn"))}</span>
+      </button>
+      <span class="sc-card-open" aria-hidden="true"><span class="ui-ico ui-ico-edit"></span>›</span>
     </div>
   `;
-  card.querySelector(".sc-edit-btn").addEventListener("click", (e) => {
-    e.stopPropagation();
-    scOpenForm(rec);
-  });
   card.querySelector(".sc-delete-btn").addEventListener("click", (e) => {
     e.stopPropagation();
     scOpenDeleteConfirm(rec.cif);
@@ -577,6 +638,7 @@ function scBuildCard(rec) {
     scExportForm(rec.cif, e.currentTarget);
   });
   card.addEventListener("click", () => scOpenForm(rec));
+  card.addEventListener("keydown", (e) => { if (e.key === "Enter") scOpenForm(rec); });
   return card;
 }
 
@@ -606,7 +668,7 @@ async function scExportForm(cif, btn) {
     URL.revokeObjectURL(url);
   } catch (err) {
     console.error("Export failed:", err);
-    alert(`មិនអាចទាញយកទម្រង់បានទេ — ${err.message || ""}`);
+    scNotify(`មិនអាចទាញយកទម្រង់បានទេ — ${err.message || ""}`);
   } finally {
     label.textContent = original;
     btn.disabled = false;
@@ -815,6 +877,7 @@ function scOpenForm(rec) {
   }
 
   scUpdateSaveButtonMode();
+  scUpdateTabBadges();
   overlay.hidden = false;
   document.body.style.overflow = "hidden";
 }
@@ -877,7 +940,7 @@ async function scSaveRecord(e) {
   const isNew = !scEditingCIF;
 
   if (isNew && scAllRecords.some((r) => r.k === cif)) {
-    alert("CIF នេះមានរួចហើយ");
+    scNotify("CIF នេះមានរួចហើយ", "warning");
     return;
   }
 
@@ -899,7 +962,7 @@ async function scSaveRecord(e) {
     await scRefreshList();
   } catch (err) {
     console.error(err);
-    alert("មិនអាចរក្សាទុកបានទេ");
+    scNotify("មិនអាចរក្សាទុកបានទេ");
   } finally {
     btn.disabled = false;
   }
@@ -942,7 +1005,7 @@ async function scConfirmDelete() {
     if (scEditingCIF === scDeleteTargetCIF) scCloseForm();
   } catch (err) {
     console.error(err);
-    alert("មិនអាចលុបបានទេ");
+    scNotify("មិនអាចលុបបានទេ");
   } finally {
     btn.disabled = false;
   }
@@ -1123,13 +1186,36 @@ function scBindEvents() {
   document.getElementById("sortSelect").addEventListener("change", scRenderList);
 
   document.getElementById("btnClearFilter").addEventListener("click", () => {
-    document.getElementById("filterMonth").value = "";
-    document.getElementById("filterBranch").value = "";
-    document.getElementById("filterProductType").value = "";
-    scPopulateOfficerOptions(); // branch reset -> officer list reverts to unscoped
-    document.getElementById("filterOfficer").value = "";
+    scClearFilters();
+    searchInput.value = "";
+    scUpdateSearchClearVisibility();
     scRenderList();
   });
+
+  const filterToggle = document.getElementById("btnScFilterToggle");
+  filterToggle.addEventListener("click", () => {
+    const panel = document.getElementById("scFilterPanel");
+    panel.hidden = !panel.hidden;
+    filterToggle.setAttribute("aria-expanded", String(!panel.hidden));
+    filterToggle.classList.toggle("open", !panel.hidden);
+  });
+
+  // Summary tiles double as quick filters.
+  document.querySelectorAll("[data-sc-stat]").forEach((tile) => tile.addEventListener("click", () => {
+    const kind = tile.dataset.scStat;
+    if (kind === "risk") {
+      scRiskOnly = !scRiskOnly;
+    } else {
+      scClearFilters();
+      if (kind === "month") document.getElementById("filterMonth").value = scCurrentMonthKey();
+    }
+    scRenderList();
+  }));
+
+  // Missing-required count on each form tab.
+  const scForm = document.getElementById("spotCheckForm");
+  scForm.addEventListener("input", scUpdateTabBadges);
+  scForm.addEventListener("change", scUpdateTabBadges);
 
   document.getElementById("scViewCardBtn").addEventListener("click", () => scSetViewMode("card"));
   document.getElementById("scViewListBtn").addEventListener("click", () => scSetViewMode("list"));
@@ -1216,6 +1302,22 @@ function scBindEvents() {
   });
 }
 
+function scUpdateTabBadges() {
+  ["tab1", "tab2"].forEach((tabId) => {
+    const panel = document.getElementById(tabId);
+    const missing = SC_REQUIRED_IDS.filter((id) => {
+      const el = document.getElementById(id);
+      return el && panel.contains(el) && !String(el.value || "").trim();
+    }).length;
+    const badge = document.querySelector(`[data-tab-badge="${tabId}"]`);
+    if (!badge) return;
+    badge.hidden = false;
+    badge.classList.toggle("done", missing === 0);
+    badge.textContent = missing === 0 ? "✓" : String(missing);
+    badge.title = missing === 0 ? "" : scT("spotcheck.tabMissing").replace("{n}", missing);
+  });
+}
+
 function scSwitchTab(tabId) {
   document.querySelectorAll(".sc-tab-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.tab === tabId);
@@ -1224,6 +1326,7 @@ function scSwitchTab(tabId) {
     panel.hidden = panel.id !== tabId;
   });
   scUpdateSaveButtonMode();
+  scUpdateTabBadges();
 }
 
 // Tab I complete + still viewing Tab I -> button becomes "បន្ទាប់" (Next),
