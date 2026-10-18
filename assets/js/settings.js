@@ -186,7 +186,15 @@ async function loadProfilePhoto(username){
 
     const myToken=++photoLoadToken;
 
-    img.classList.add("photo-loading");
+    // Show the on-device copy (config/session.js keeps it fresh)
+    // straight away, so the page doesn't paint a placeholder first.
+    let cached="";
+    try{ cached=localStorage.getItem(`cm_user_photo_${username}`) || ""; }catch{}
+    if(cached){
+        img.src=cached;
+    }else{
+        img.classList.add("photo-loading");
+    }
 
     async function attempt(isRetry){
 
@@ -254,7 +262,9 @@ async function loadProfilePhoto(username){
 
             img.classList.remove("photo-loading");
 
-            img.src=fallback;
+            // Offline / server hiccup: keep the on-device copy if we
+            // showed one rather than swapping to the default avatar.
+            if(!cached) img.src=fallback;
 
         }
 

@@ -346,6 +346,13 @@ window.loadTopbarPhoto = async function(){
 
         if(!img) return;
 
+        // On-device copy first (config/session.js), so the header
+        // doesn't flash the default avatar before the real one.
+        try{
+            const cached = localStorage.getItem(`cm_user_photo_${user.username}`);
+            if(cached) img.src = cached;
+        }catch{}
+
         const token = API.getToken();
 
         const response = await fetch(
