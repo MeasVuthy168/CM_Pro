@@ -30,202 +30,69 @@ href="../../assets/css/main.css">
 
 <style>
 
-/* main.css (via base.css) hardcodes navy on html/body — that's
-   outside this page's control, so .wrapper explicitly overrides it
-   with the theme-aware page background instead, same as every other
-   page's .page-container does. */
+/* main.css (via base.css) hardcodes navy on html/body — .wrapper
+   overrides it with the theme-aware page background. */
 
 :root{
-    --about-page-bg:#F5F7FA;
-    --about-card-bg:#FFFFFF;
-    --about-border:#E2E6ED;
-    --about-text:#1C2333;
-    --about-text-muted:#6B7280;
-    --about-navy-dark:#0E1B3C;
-    --about-logo-bg:#EAF0FB;
+    --ab-page-bg:#F5F7FA;
+    --ab-card-bg:#FFFFFF;
+    --ab-border:#E2E6ED;
+    --ab-title:#0E1B3C;
+    --ab-text:#3A4356;
+    --ab-muted:#6B7280;
+    --ab-gold:#B8860B;
+    --ab-shadow:0 4px 14px rgba(14,27,60,.06);
 }
-
 [data-theme="dark"]{
-    --about-page-bg:#0B1220;
-    --about-card-bg:#131C2E;
-    --about-border:#223055;
-    --about-text:#EAF0FF;
-    --about-text-muted:#8FA0C7;
-    --about-logo-bg:#16223F;
+    --ab-page-bg:#0B1220;
+    --ab-card-bg:#131C2E;
+    --ab-border:#223055;
+    --ab-title:#EAF0FF;
+    --ab-text:#C9D3EA;
+    --ab-muted:#8FA0C7;
+    --ab-gold:#FFD700;
+    --ab-shadow:0 2px 14px rgba(0,0,0,.4);
 }
-
 [data-theme="gold"]{
-    --about-page-bg:#FFF8E7;
-    --about-card-bg:#FFFDF6;
-    --about-border:#C9971F;
-    --about-navy-dark:#6B4500;
-    --about-logo-bg:#FFF6DC;
+    --ab-page-bg:#FFF8E7;
+    --ab-card-bg:#FFFDF6;
+    --ab-border:#E6CF8E;
+    --ab-title:#6B4500;
 }
-
 [data-theme="darkgray"]{
-    --about-page-bg:#2B2E33;
-    --about-card-bg:#363A41;
-    --about-border:#474C55;
-    --about-text:#F0F1F3;
-    --about-text-muted:#A9AEB6;
-    --about-navy-dark:#D8DAE0;
-    --about-logo-bg:#40454D;
+    --ab-page-bg:#2B2E33;
+    --ab-card-bg:#363A41;
+    --ab-border:#474C55;
+    --ab-title:#F0F1F3;
+    --ab-text:#DADDE2;
+    --ab-muted:#A9AEB6;
+    --ab-gold:#E8C766;
+    --ab-shadow:0 2px 14px rgba(0,0,0,.35);
 }
 
-.wrapper{
-
-width:100%;
-min-height:100vh;
-
-background:var(--about-page-bg);
-
-display:flex;
-justify-content:center;
-align-items:flex-start;
-
-padding:24px;
-
-box-sizing:border-box;
-
-}
-
-.card{
-
-width:100%;
-max-width:430px;
-
-background:var(--about-card-bg);
-
-border:1px solid var(--about-border);
-
-border-radius:24px;
-
-padding:24px;
-
-box-shadow:0 10px 30px rgba(0,0,0,.2);
-
-}
-
-[data-theme="dark"] .card{
-
-box-shadow:0 10px 30px rgba(0,0,0,.35);
-
-}
-
-.about-header{
-
-display:flex;
-align-items:center;
-gap:18px;
-
-margin-bottom:18px;
-
-background:transparent;
-
-}
-
-.logo{
-
-width:74px;
-height:74px;
-
-border-radius:18px;
-
-border:1px solid var(--about-border);
-
-background:var(--about-logo-bg);
-
-object-fit:cover;
-
-flex-shrink:0;
-
-}
-
-.header-right{
-
-flex:1;
-min-width:0;
-
-}
-
-.appName{
-
-font-size:22px;
-font-weight:bold;
-
-color:var(--about-text);
-
-margin-bottom:2px;
-
-}
-
-.version{
-
-font-size:16px;
-font-weight:bold;
-
-color:var(--about-navy-dark);
-
-}
-
-[data-theme="dark"] .version{
-
-color:#FFD700;
-
-}
-
-.line{
-
-height:3px;
-
-background:#D4AF37;
-
-border-radius:20px;
-
-margin:18px 0 20px;
-
-}
-
-.section{
-
-margin-bottom:20px;
-
-}
-
-.sectionTitle{
-
-font-size:16px;
-font-weight:bold;
-
-color:var(--about-navy-dark);
-
-margin-bottom:8px;
-
-}
-
-[data-theme="dark"] .sectionTitle{
-
-color:#FFD700;
-
-}
-
-.sectionBody{
-
-font-size:14px;
-
-line-height:1.6;
-
-color:var(--about-text-muted);
-
-text-align:justify;
-
-}
-
-.sectionBody b{
-
-color:var(--about-text);
-
-}
+.wrapper{ width:100%; min-height:100vh; background:var(--ab-page-bg); display:flex; justify-content:center; align-items:flex-start; padding:16px 16px 100px; box-sizing:border-box; }
+.inner{ width:100%; max-width:480px; }
+
+/* ----- hero ----- */
+.hero{ position:relative; overflow:hidden; text-align:center; padding:26px 18px 22px; margin-bottom:14px; border-radius:22px; color:#fff; background:radial-gradient(120% 90% at 50% 0%,#22396E 0%,#0E1B3C 70%); box-shadow:0 10px 26px rgba(14,27,60,.25); }
+.hero::after{ content:""; position:absolute; left:0; right:0; bottom:0; height:4px; background:linear-gradient(90deg,transparent,#D4AF37,transparent); }
+.hero-logo{ width:84px; height:84px; border-radius:22px; box-shadow:0 6px 18px rgba(0,0,0,.35),0 0 0 3px rgba(212,175,55,.45); }
+.hero-name{ margin-top:12px; font-size:24px; font-weight:800; letter-spacing:.02em; }
+.hero-sub{ margin-top:2px; font-size:15px; color:#FFD700; font-weight:600; }
+.hero-branch{ margin-top:2px; font-size:13px; color:#B9C6E0; }
+.hero-version{ display:inline-block; margin-top:12px; padding:4px 12px; border-radius:999px; font-size:12.5px; font-weight:700; background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.18); }
+
+/* ----- cards ----- */
+.card{ background:var(--ab-card-bg); border:1px solid var(--ab-border); border-radius:18px; box-shadow:var(--ab-shadow); padding:16px; margin-bottom:14px; }
+.card-head{ display:flex; align-items:center; gap:10px; font-size:16px; font-weight:700; color:var(--ab-title); margin-bottom:10px; }
+.card-ic{ width:34px; height:34px; flex:none; border-radius:10px; display:flex; align-items:center; justify-content:center; background:rgba(212,175,55,.14); color:var(--ab-gold); }
+.card-ic svg{ width:19px; height:19px; }
+.card-body{ margin:0; font-size:14.5px; line-height:1.85; color:var(--ab-text); }
+
+
+#versionHistory b{ display:inline-block; margin-bottom:4px; color:var(--ab-title); }
+
+.about-foot{ text-align:center; font-size:12px; color:var(--ab-muted); margin:6px 0 4px; }
 
 </style>
 
@@ -237,89 +104,32 @@ color:var(--about-text);
 
 <div class="wrapper">
 
+<div class="inner">
+
+<div class="hero">
+<img id="aboutLogo" class="hero-logo" src="/CM_Pro/assets/images/icon-192.png" alt="" onerror="this.onerror=null;this.style.display='none';">
+<div class="hero-name">CM_Pro</div>
+<div class="hero-sub" data-i18n="login.title">ប្រព័ន្ធត្រួតពិនិត្យឥណទាន</div>
+<div class="hero-branch" data-i18n="settings.contact.branchName">ធនាគារអេស៊ីលីដាសាខាខេត្តស្វាយរៀង</div>
+<span id="appVersion" class="hero-version" data-i18n="common.loading">Loading...</span>
+</div>
+
 <div class="card">
-
-<div class="about-header">
-
-<img
-id="aboutLogo"
-class="logo"
-src="/CM_Pro/assets/images/icon-192.png"
-onerror="this.onerror=null;this.style.display='none';">
-
-<div class="header-right">
-
-<div class="appName">
-
-CM_Pro
-
+<div class="card-head"><span class="card-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg></span><span data-i18n="settings.about.sectionAbout">អំពីកម្មវិធី</span></div>
+<p class="card-body" data-i18n="settings.about.sectionAboutBody"></p>
 </div>
 
-<div
-id="appVersion"
-class="version"
-data-i18n="common.loading">
-
-Loading...
-
+<div class="card">
+<div class="card-head"><span class="card-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></span><span data-i18n="settings.about.sectionTerms">លក្ខខណ្ឌប្រើប្រាស់</span></div>
+<p class="card-body" data-i18n="settings.about.sectionTermsBody"></p>
 </div>
 
+<div class="card">
+<div class="card-head"><span class="card-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="8" cy="8" r="1.5"/></svg></span><span data-i18n="settings.about.sectionVersion">ប្រវត្តិកំណែ</span></div>
+<div id="versionHistory" class="card-body" data-i18n="common.loading">Loading...</div>
 </div>
 
-</div>
-
-<div class="line"></div>
-
-<div class="section">
-
-<div class="sectionTitle" data-i18n="settings.about.sectionAbout">
-
-អំពីកម្មវិធី
-
-</div>
-
-<div class="sectionBody" data-i18n="settings.about.sectionAboutBody">
-
-CM_Pro គឺជាប្រព័ន្ធតាមដានឥណទាន (Credit Monitoring System) ដែលត្រូវបានបង្កើតឡើងសម្រាប់បុគ្គលិកឥណទានរបស់ ACLEDA Bank ដើម្បីស្វែងរកព័ត៌មានអតិថិជន តាមដានបំណុលយឺត ពិនិត្យ Average Turnover, Spot Check និងព័ត៌មានឥណទានផ្សេងៗបានគ្រប់ពេលវេលា និងគ្រប់ទីកន្លែង។
-
-</div>
-
-</div>
-
-<div class="section">
-
-<div class="sectionTitle" data-i18n="settings.about.sectionTerms">
-
-លក្ខខណ្ឌប្រើប្រាស់
-
-</div>
-
-<div class="sectionBody" data-i18n="settings.about.sectionTermsBody">
-
-CM_Pro ប្រើប្រាស់ព័ត៌មានអ្នកប្រើប្រាស់ ដូចជា ឈ្មោះ អត្តលេខ និងសិទ្ធិប្រើប្រាស់ សម្រាប់ការផ្ទៀងផ្ទាត់អត្តសញ្ញាណ ការកំណត់សិទ្ធិប្រើប្រាស់ និងការពារសុវត្ថិភាពប្រព័ន្ធ។ ព័ត៌មានទាំងអស់ត្រូវបានរក្សាទុក និងបញ្ជូនដោយសុវត្ថិភាព។
-
-</div>
-
-</div>
-
-<div class="section">
-
-<div class="sectionTitle" data-i18n="settings.about.sectionVersion">
-
-ប្រវត្តិកំណែ
-
-</div>
-
-<div
-id="versionHistory"
-class="sectionBody"
-data-i18n="common.loading">
-
-Loading...
-
-</div>
-
-</div>
+<div class="about-foot" data-i18n="settings.about.footer">សម្រាប់ប្រើប្រាស់ផ្ទៃក្នុង · ACLEDA Bank Svay Rieng Branch</div>
 
 </div>
 
@@ -409,8 +219,7 @@ document.getElementById(
 ).innerHTML=
 
 `
-<b>${t("settings.about.versionPrefix")} ${data.latestVersion}</b>
-<br><br>
+<b>${t("settings.about.versionPrefix")} ${data.latestVersion}</b><br>
 
 ${data.notes||
 
