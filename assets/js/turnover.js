@@ -525,6 +525,14 @@ function renderTable(items){
 
             effectiveDate,
 
+            // raw values for the Excel export (real numbers, not text)
+
+            debitN:debit,
+
+            currentODN:currentOD,
+
+            turnoverN:turnover,
+
             noData:false
 
         });
@@ -574,24 +582,36 @@ function renderTable(items){
 
         "-";
 
+    // TURNOVER average = the latest 3 months that have data (rows are
+    // newest-first; "No Data" months are skipped).
+
+    const recent3 = capturedRows.filter(r=>!r.noData).slice(0,3);
+
+    const avgTurnover3N = recent3.length
+
+        ? recent3.reduce((a,r)=>a+r.turnoverN,0)/recent3.length
+
+        : null;
+
     const avgTurnoverText =
 
-        totalCount
+        avgTurnover3N===null ? "-" : (avgTurnover3N*100).toFixed(2)+"%";
 
-        ?
+    // Largest CURRENT_OD across the table, with its month.
 
-        ((totalTurnover/totalCount)*100)
-        .toFixed(2)+"%"
+    const maxODRow = capturedRows
 
-        :
+        .filter(r=>!r.noData)
 
-        "-";
+        .reduce((best,r)=>(!best || r.currentODN>best.currentODN) ? r : best,null);
 
     document.getElementById("avgDebit").innerHTML = avgDebitText;
 
     document.getElementById("avgOD").innerHTML = avgODText;
 
-    document.getElementById("avgTurnover").innerHTML = avgTurnoverText;
+    document.getElementById("avgTurnover").innerHTML =
+
+        avgTurnover3N===null ? "-" : `${avgTurnoverText} <small class="tvr-3m">3M</small>`;
 
     // --------------------------
     // Save for export (PDF/Excel read from here instead of
@@ -607,6 +627,20 @@ function renderTable(items){
         avgOD:avgODText,
 
         avgTurnover:avgTurnoverText,
+
+        avgDebitN:totalCount ? totalDebit/totalCount : null,
+
+        avgODN:totalCount ? totalOD/totalCount : null,
+
+        avgTurnoverN:avgTurnover3N,
+
+        avgTurnoverMonths:recent3.map(r=>r.month),
+
+        maxOD:maxODRow ? maxODRow.currentOD : "-",
+
+        maxODN:maxODRow ? maxODRow.currentODN : null,
+
+        maxODMonth:maxODRow ? maxODRow.month : "",
 
         customerName
 
@@ -656,11 +690,13 @@ function renderSummary(withData,total){
 
     document.getElementById("tvrCoverage").classList.toggle("is-none",!withData);
 
-    document.getElementById("kpiDebit").textContent=d.avgDebit;
-
-    document.getElementById("kpiOD").textContent=d.avgOD;
-
     document.getElementById("kpiTurnover").textContent=d.avgTurnover;
+
+    document.getElementById("kpiTurnoverNote").textContent=d.avgTurnoverMonths.join(" · ");
+
+    document.getElementById("kpiMaxOD").textContent=d.maxOD;
+
+    document.getElementById("kpiMaxODNote").textContent=d.maxODMonth;
 
     document.getElementById("btnExcel").disabled=!withData;
 
@@ -853,757 +889,511 @@ input.focus();
 
 );
 // ========================================
-// EXPORT PDF
+// EXPORT META (shared by PDF + Excel)
 // ========================================
-async function exportPDF(){
 
-    // ==========================
-    // Load logo and convert to Base64
-    // ==========================
+function turnoverExportMeta(){
 
-    async function loadLogo(){
+    const d=lastTurnoverData;
 
-        try{
+    const prepared=document.getElementById("preparedDate").value;
 
-            const response = await fetch("../../assets/images/acleda-logo-whiteBG.png");
+    const preparedDt=new Date(prepared+"T00:00:00");
 
-            const blob = await response.blob();
+    const preparedText=isNaN(preparedDt) ? prepared : CMExport.printedDate(preparedDt);
 
-            return await new Promise(resolve=>{
+    const cif=document.getElementById("inputCIF").value.trim();
 
-                const reader = new FileReader();
+    const withData=d.rows.filter(r=>!r.noData).length;
 
-                reader.onloadend = ()=>resolve(reader.result);
+    return {
 
-                reader.readAsDataURL(blob);
+        cif,
 
-            });
+        customer:(d.customerName||document.getElementById("customerName").value||"-"),
 
-        }catch{
+        preparedText,
 
-            return "";
+        preparedBy:CMExport.preparedBy(),
 
-        }
+        printed:CMExport.printedDate(),
+
+        withData,
+
+        total:d.rows.length,
+
+        fileBase:`Average_Debit_Turnover_${CMExport.safeFilePart(cif,"CIF")}_${prepared||new Date().toISOString().slice(0,10)}`
+
+    };
+
+}
+
+function requireTurnoverData(){
+
+    if(!lastTurnoverData.rows.length || !lastTurnoverData.rows.some(r=>!r.noData)){
+
+        notify(tr_("turnover.noResult","No data found for this CIF."),"warning");
+
+        return false;
 
     }
 
-    const logo = await loadLogo();
+    return true;
 
-    // ==========================
+}
 
-    const user =
-    JSON.parse(
-        localStorage.getItem("loggedInUser") || "{}"
-    );
+// ========================================
+// EXPORT PDF
+// A4 portrait (jsPDF + autoTable): title + logo, customer/CIF block,
+// summary box of the three averages, monthly table with "No Data"
+// rows spanned, Average footer row, prepared-by + page x/y footer.
+// ========================================
 
-    const preparedBy =
-    (
-        user.fullname ||
-        user.username ||
-        "Unknown"
-    ).toUpperCase();
+async function exportPDF(){
 
-    const prepared =
-    document.getElementById("preparedDate").value;
+    if(!requireTurnoverData()) return;
 
-    const preparedText =
-    new Date(prepared)
-    .toLocaleDateString(
-        "en-GB",
-        {
-            day:"2-digit",
-            month:"short",
-            year:"numeric"
+    const d=lastTurnoverData;
+
+    const m=turnoverExportMeta();
+
+    const {jsPDF}=window.jspdf;
+
+    const doc=new jsPDF("p","pt","a4");
+
+    const pageW=doc.internal.pageSize.getWidth();
+
+    const M=40;
+
+    const NAVY=[14,27,60];
+
+    const GOLD=[212,175,55];
+
+    const MUTED=[107,114,128];
+
+    // ---- header ----
+
+    const logo=await CMExport.logo();
+
+    if(logo){
+
+        const lw=120;
+
+        doc.addImage(logo.data,logo.type,pageW-M-lw,28,lw,lw*logo.ratio);
+
+    }
+
+    doc.setFont("helvetica","bold");
+
+    doc.setFontSize(16);
+
+    doc.setTextColor(...NAVY);
+
+    doc.text("YEARLY AVERAGE OF DEBIT TURNOVER",M,52);
+
+    doc.setFont("helvetica","normal");
+
+    doc.setFontSize(10);
+
+    doc.setTextColor(...MUTED);
+
+    doc.text("Last 12 month-ends",M,68);
+
+    doc.setDrawColor(...GOLD);
+
+    doc.setLineWidth(1.5);
+
+    doc.line(M,82,pageW-M,82);
+
+    // ---- customer ----
+
+    let y=100;
+
+    doc.setFontSize(9);
+
+    doc.setTextColor(...MUTED);
+
+    doc.text("CUSTOMER NAME",M,y);
+
+    doc.text("CIF",pageW-M-140,y);
+
+    const name=CMExport.textToImage(m.customer,{size:14});
+
+    doc.addImage(name.data,"PNG",M,y+4,Math.min(name.w,pageW-2*M-160),name.h*Math.min(1,(pageW-2*M-160)/name.w));
+
+    doc.setFont("helvetica","bold");
+
+    doc.setFontSize(13);
+
+    doc.setTextColor(...NAVY);
+
+    doc.text(m.cif||"-",pageW-M-140,y+18);
+
+    y+=4+name.h+10;
+
+    // ---- summary box ----
+
+    const boxH=52;
+
+    doc.setFillColor(246,248,252);
+
+    doc.setDrawColor(226,230,237);
+
+    doc.setLineWidth(.8);
+
+    doc.roundedRect(M,y,pageW-2*M,boxH,6,6,"FD");
+
+    const cells=[
+
+        ["Average TURNOVER (latest 3 months)",d.avgTurnover,d.avgTurnoverMonths.join(", "),true],
+
+        ["Largest CURRENT_OD",d.maxOD,d.maxODMonth,false],
+
+        ["Months with data",`${m.withData} / ${m.total}`,"",false]
+
+    ];
+
+    // First tile gets more room for its longer label.
+    const colX=[0,.42,.75].map(f=>M+14+f*(pageW-2*M));
+
+    cells.forEach(([label,value,note,main],i)=>{
+
+        const cx=colX[i];
+
+        doc.setFont("helvetica","normal");
+
+        doc.setFontSize(8.5);
+
+        doc.setTextColor(...MUTED);
+
+        doc.text(label.toUpperCase(),cx,y+18);
+
+        doc.setFont("helvetica","bold");
+
+        doc.setFontSize(main?15:13);
+
+        doc.setTextColor(...(main?[184,144,30]:NAVY));
+
+        doc.text(String(value),cx,y+36);
+
+        if(note){
+
+            doc.setFont("helvetica","normal");
+
+            doc.setFontSize(8);
+
+            doc.setTextColor(...MUTED);
+
+            doc.text(note,cx,y+47);
+
         }
-    );
 
-    const cif =
-    document.getElementById("inputCIF").value;
+    });
 
-    const customer =
-    document
-    .getElementById("customerName")
-    .value
-    .toUpperCase();
+    y+=boxH+18;
 
-    const avgDebit = lastTurnoverData.avgDebit;
+    // ---- table ----
 
-    const avgOD = lastTurnoverData.avgOD;
+    const body=d.rows.map(r=>r.noData
 
-    const avgTurnover = lastTurnoverData.avgTurnover;
+        ? [r.month,{content:"No Data",colSpan:4,styles:{halign:"center",fontStyle:"italic",textColor:[154,116,0],fillColor:[255,248,225]}}]
 
-    // ==========================
-    // Table
-    // Built from lastTurnoverData (captured when the table was
-    // rendered) rather than re-reading the live DOM — scraping
-    // proved unreliable across browsers/WebViews.
-    // ==========================
+        : [r.month,r.debit,r.currentOD,r.turnover,r.effectiveDate]);
 
-    let rows="";
+    const numW=(pageW-2*M-80-90)/3;
 
-    if(!lastTurnoverData.rows.length){
+    doc.autoTable({
 
-        rows=`
+        startY:y,
 
-        <tr>
+        margin:{left:M,right:M,bottom:50},
 
-        <td colspan="5" style="border:1px solid #999;padding:6px;text-align:center;">
+        head:[["Month","AMT_IN","CURRENT_OD","TURNOVER","Effective Date"]],
 
-        No Data
+        body,
 
-        </td>
+        foot:[["Average",d.avgDebit,d.avgOD,`${d.avgTurnover} *`,""]],
 
-        </tr>
+        theme:"grid",
 
-        `;
+        styles:{fontSize:10,cellPadding:{top:5,bottom:5,left:6,right:6},halign:"right",lineColor:[226,230,237],lineWidth:.5,textColor:[28,35,51]},
 
-    }else{
+        headStyles:{fillColor:NAVY,textColor:[255,215,0],fontStyle:"bold",halign:"right"},
 
-        lastTurnoverData.rows.forEach(r=>{
+        footStyles:{fillColor:[248,240,214],textColor:NAVY,fontStyle:"bold",halign:"right"},
 
-            if(r.noData){
+        alternateRowStyles:{fillColor:[246,248,252]},
 
-                rows+=`
+        columnStyles:{0:{halign:"left",cellWidth:80,fontStyle:"bold"},1:{cellWidth:numW},2:{cellWidth:numW},3:{cellWidth:numW},4:{halign:"center",cellWidth:90}},
 
-                <tr>
+        didParseCell:data=>{
 
-                <td style="border:1px solid #999;padding:6px;text-align:center;">${r.month}</td>
+            if(data.section!=="body"){
 
-                <td colspan="4" style="border:1px solid #999;padding:6px;text-align:center;">No Data</td>
+                if(data.column.index===0) data.cell.styles.halign="left";
 
-                </tr>
-
-                `;
-
-                return;
+                if(data.column.index===4) data.cell.styles.halign="center";
 
             }
 
-            rows+=`
-
-            <tr>
-
-            <td style="border:1px solid #999;padding:6px;text-align:center;">${r.month}</td>
-
-            <td style="border:1px solid #999;padding:6px;text-align:center;">${r.debit}</td>
-
-            <td style="border:1px solid #999;padding:6px;text-align:center;">${r.currentOD}</td>
-
-            <td style="border:1px solid #999;padding:6px;text-align:center;">${r.turnover}</td>
-
-            <td style="border:1px solid #999;padding:6px;text-align:center;">${r.effectiveDate}</td>
-
-            </tr>
-
-            `;
-
-        });
-
-    }
-
-    // ==========================
-    // HTML
-    // ==========================
-
-    const html = `
-
-<div
-style="
-width:100%;
-height:1030px;
-padding:25px;
-box-sizing:border-box;
-font-family:Arial,sans-serif;
-display:flex;
-flex-direction:column;
-">
-
-<!-- HEADER -->
-
-<div
-style="
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:18px;
-">
-
-<div
-style="
-flex:1;
-text-align:left;
-font-size:18px;
-font-weight:bold;
-color:#0e1b3c;
-padding-top:18px;
-letter-spacing:.3px;
-">
-YEARLY AVERAGE OF DEBIT TURNOVER
-</div>
-
-<div
-style="
-width:180px;
-text-align:right;
-">
-
-<img
-src="${logo}"
-style="
-width:150px;
-height:auto;
-display:block;
-margin-left:auto;
-">
-
-</div>
-
-</div>
-
-<!-- INFORMATION -->
-
-<div
-style="
-font-size:14px;
-margin-bottom:20px;
-line-height:30px;
-">
-
-<div>
-
-<span
-style="
-display:inline-block;
-width:150px;
-font-weight:bold;
-">
-
-Prepared Date
-
-</span>
-
-<span
-style="
-display:inline-block;
-width:20px;
-">
-
-:
-
-</span>
-
-<span
-style="
-text-align:left;
-">
-
-${preparedText}
-
-</span>
-
-</div>
-
-<div>
-
-<span
-style="
-display:inline-block;
-width:150px;
-font-weight:bold;
-">
-
-CIF
-
-</span>
-
-<span
-style="
-display:inline-block;
-width:20px;
-">
-
-:
-
-</span>
-
-<span>
-
-${cif}
-
-</span>
-
-</div>
-
-<div>
-
-<span
-style="
-display:inline-block;
-width:150px;
-font-weight:bold;
-">
-
-Customer Name
-
-</span>
-
-<span
-style="
-display:inline-block;
-width:20px;
-">
-
-:
-
-</span>
-
-<span>
-
-${customer}
-
-</span>
-
-</div>
-
-</div>
-
-<!-- TABLE -->
-
-<table
-style="
-width:100%;
-border-collapse:collapse;
-font-size:12px;
-">
-
-<thead>
-
-<tr
-style="
-background:#0e1b3c;
-color:white;
-">
-
-<th style="padding:7px;border:1px solid #999;">Month</th>
-
-<th style="padding:7px;border:1px solid #999;">AMT_IN</th>
-
-<th style="padding:7px;border:1px solid #999;">CURRENT_OD</th>
-
-<th style="padding:7px;border:1px solid #999;">TURNOVER</th>
-
-<th style="padding:7px;border:1px solid #999;">EFFECTIVE DATE</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-${rows}
-
-</tbody>
-
-<tfoot>
-
-<tr
-style="
-background:#eeeeee;
-font-weight:bold;
-">
-
-<td style="border:1px solid #999;padding:7px;">Average</td>
-
-<td style="border:1px solid #999;padding:7px;">${avgDebit}</td>
-
-<td style="border:1px solid #999;padding:7px;">${avgOD}</td>
-
-<td style="border:1px solid #999;padding:7px;">${avgTurnover}</td>
-
-<td style="border:1px solid #999;"></td>
-
-</tr>
-
-</tfoot>
-
-</table>
-
-<!-- Prepared By -->
-
-<div
-style="
-margin-top:12px;
-font-size:13px;
-text-align:right;
-">
-
-<b>Prepared By :</b>
-
-${preparedBy.toUpperCase()}
-
-</div>
-
-<!-- Footer -->
-
-<div
-style="
-margin-top:auto;
-padding-top:8px;
-border-top:2px solid #999;
-font-size:11px;
-color:#666;
-">
-
-CM_Pro Credit Monitoring System
-
-</div>
-
-</div>
-
-`;
-
-    const div=document.createElement("div");
-
-    div.innerHTML=html;
-
-    html2pdf()
-    .from(div)
-    .set({
-
-        margin:0.3,
-
-        filename:`Average_Debit_Turnover_${cif}.pdf`,
-
-        image:{
-            type:"jpeg",
-            quality:1
-        },
-
-        html2canvas:{
-            scale:2,
-            useCORS:true,
-            allowTaint:true
-        },
-
-        jsPDF:{
-            unit:"in",
-            format:"a4",
-            orientation:"portrait"
         }
 
-    })
-    .save();
+    });
+
+    doc.setFont("helvetica","normal");
+
+    doc.setFontSize(8.5);
+
+    doc.setTextColor(...MUTED);
+
+    let ny=doc.lastAutoTable.finalY+16;
+
+    doc.text("Averages use months with data only.",M,ny);
+
+    doc.text(`* TURNOVER average = latest 3 months with data (${d.avgTurnoverMonths.join(", ")}).`,M,ny+12);
+
+    // ---- signature block (bottom-right of the table) ----
+    // Prepared Date, Prepared By, "Signature", blank space for the
+    // handwritten signature, then the line.
+
+    const sigW=190, sigX=pageW-M-sigW;
+
+    let sy=ny+30;
+
+    const pageH=doc.internal.pageSize.getHeight();
+
+    if(sy+95>pageH-50){ doc.addPage(); sy=60; }
+
+    doc.setFont("helvetica","normal");
+
+    doc.setFontSize(10);
+
+    doc.setTextColor(...NAVY);
+
+    doc.text(`Prepared Date : ${m.preparedText}`,sigX,sy);
+
+    doc.setFont("helvetica","bold");
+
+    doc.text(`Prepared By : ${m.preparedBy}`,sigX,sy+16);
+
+    doc.setFont("helvetica","normal");
+
+    doc.text("Signature :",sigX,sy+32);
+
+    doc.setDrawColor(120,120,120);
+
+    doc.setLineWidth(.6);
+
+    doc.line(sigX,sy+85,sigX+sigW,sy+85);
+
+    CMExport.pdfFooter(doc,{margin:M,showPreparedBy:false,printed:m.printed});
+
+    doc.save(`${m.fileBase}.pdf`);
 
 }
+
 // ========================================
 // EXPORT EXCEL
+// xlsx-js-style (SheetJS fork that writes cell styles): title bar,
+// info block, styled header, numeric cells with number/percent
+// formats, "No Data" rows merged, AVERAGE() formulas in the footer.
 // ========================================
 
 function exportExcel(){
 
-const wb=XLSX.utils.book_new();
+    if(!requireTurnoverData()) return;
 
-const ws={};
+    const d=lastTurnoverData;
 
-const prepared=
+    const m=turnoverExportMeta();
 
-document.getElementById(
-"preparedDate"
-).value;
+    const NAVY="0E1B3C", GOLD="D4AF37", LIGHT="F6F8FC", BORDER="D9DEE7";
 
-const cif=
+    const thin={style:"thin",color:{rgb:BORDER}};
 
-document.getElementById(
-"inputCIF"
-).value;
+    const box={top:thin,bottom:thin,left:thin,right:thin};
 
-const customer=
+    const money="#,##0.00", pct="0.00%";
 
-document.getElementById(
-"customerName"
-).value;
+    const ws={};
 
-const data=[];
+    const merges=[];
 
-// Title
+    const put=(r,col,v,s,extra={})=>{
 
-data.push([
-"Average Debit Turnover"
-]);
+        const cell={v,t:typeof v==="number"?"n":"s",s,...extra};
 
-// Information
+        if(cell.f) cell.t="n";
 
-data.push([
-"Prepared Date",
-prepared
-]);
+        ws[XLSX.utils.encode_cell({r,c:col})]=cell;
 
-data.push([
-"CIF",
-cif
-]);
+    };
 
-data.push([
-"Customer Name",
-customer
-]);
+    // Title + subtitle
 
-data.push([]);
+    put(0,0,"YEARLY AVERAGE OF DEBIT TURNOVER",{font:{bold:true,sz:15,color:{rgb:"FFFFFF"}},fill:{fgColor:{rgb:NAVY}},alignment:{horizontal:"center",vertical:"center"}});
 
-data.push([
+    for(let col=1;col<5;col++) put(0,col,"",{fill:{fgColor:{rgb:NAVY}}});
 
-"Month",
+    merges.push({s:{r:0,c:0},e:{r:0,c:4}});
 
-"AMT_IN",
+    put(1,0,"Last 12 month-ends",{font:{italic:true,sz:10,color:{rgb:"6B7280"}},alignment:{horizontal:"center"}});
 
-"CURRENT_OD",
+    merges.push({s:{r:1,c:0},e:{r:1,c:4}});
 
-"TURNOVER",
+    // Info block
 
-"EFFECTIVE_DATE"
+    const labelS={font:{bold:true,sz:10,color:{rgb:"374151"}},fill:{fgColor:{rgb:LIGHT}},border:box};
 
-]);
+    const valS={font:{sz:10,color:{rgb:NAVY}},border:box,alignment:{horizontal:"left"}};
 
-// Table
-// Built from lastTurnoverData (captured when the table was
-// rendered) rather than re-reading the live DOM.
+    const info=[
 
-if(!lastTurnoverData.rows.length){
+        ["Customer Name",m.customer,"Avg TURNOVER (latest 3M)",d.avgTurnoverN],
 
-data.push(["No Data"]);
+        ["CIF",m.cif||"-","Largest CURRENT_OD",d.maxODN],
 
-}else{
+        ["Months with data",`${m.withData} / ${m.total}`,"Printed",m.printed]
 
-lastTurnoverData.rows.forEach(r=>{
+    ];
 
-if(r.noData){
+    info.forEach((row,i)=>{
 
-data.push([r.month,"No Data","","",""]);
+        const r=3+i;
 
-}else{
+        put(r,0,row[0],labelS);
 
-data.push([
+        put(r,1,row[1],{...valS,font:{bold:i<2,sz:10,color:{rgb:NAVY}}});
 
-r.month,
+        put(r,2,row[2],labelS);
 
-r.debit,
+        const v3=row[3]??"-";
 
-r.currentOD,
+        const isPct=i===0, isNum=typeof v3==="number";
 
-r.turnover,
+        put(r,3,v3,isNum?{...valS,numFmt:isPct?pct:money,font:{bold:true,sz:10,color:{rgb:isPct?"B8901E":NAVY}},alignment:{horizontal:"left"}}:valS);
 
-r.effectiveDate
+        put(r,4,"",valS);
 
-]);
+        merges.push({s:{r,c:3},e:{r,c:4}});
 
-}
+    });
 
-});
+    // Header
 
-}
+    const hr=3+info.length+1;
 
-// Average
+    const headS={font:{bold:true,sz:10,color:{rgb:"FFD700"}},fill:{fgColor:{rgb:NAVY}},border:box,alignment:{horizontal:"center",vertical:"center"}};
 
-data.push([]);
+    ["Month","AMT_IN","CURRENT_OD","TURNOVER","Effective Date"].forEach((h,col)=>put(hr,col,h,headS));
 
-data.push([
+    // Rows
 
-"Average",
+    d.rows.forEach((row,i)=>{
 
-lastTurnoverData.avgDebit,
+        const r=hr+1+i;
 
-lastTurnoverData.avgOD,
+        const fill=i%2 ? {fill:{fgColor:{rgb:LIGHT}}} : {};
 
-lastTurnoverData.avgTurnover,
+        put(r,0,row.month,{border:box,font:{bold:true,sz:10,color:{rgb:NAVY}},...fill});
 
-""
+        if(row.noData){
 
-]);
+            const nd={border:box,font:{italic:true,sz:10,color:{rgb:"9A7400"}},fill:{fgColor:{rgb:"FFF8E1"}},alignment:{horizontal:"center"}};
 
-const sheet=
+            put(r,1,"No Data",nd);
 
-XLSX.utils.aoa_to_sheet(data);
+            for(let col=2;col<5;col++) put(r,col,"",nd);
 
-// Column Width
+            merges.push({s:{r,c:1},e:{r,c:4}});
 
-sheet["!cols"]=[
+            return;
 
-{wch:14},
+        }
 
-{wch:16},
+        put(r,1,row.debitN,{border:box,numFmt:money,font:{sz:10},...fill});
 
-{wch:16},
+        put(r,2,row.currentODN,{border:box,numFmt:money,font:{sz:10},...fill});
 
-{wch:14},
+        put(r,3,row.turnoverN,{border:box,numFmt:pct,font:{sz:10},...fill});
 
-{wch:18}
+        put(r,4,row.effectiveDate,{border:box,alignment:{horizontal:"center"},font:{sz:10},...fill});
 
-];
+    });
 
-// Merge title
+    // Average row: AVERAGE() skips the merged "No Data" text cells, same
+    // as the on-screen average (months with data only).
 
-sheet["!merges"]=[
+    const first=hr+2, last=hr+1+d.rows.length;
 
-{
+    const ar=hr+1+d.rows.length;
 
-s:{r:0,c:0},
+    const avS={font:{bold:true,sz:10,color:{rgb:NAVY}},fill:{fgColor:{rgb:"F8F0D6"}},alignment:{horizontal:"right"},border:{...box,top:{style:"medium",color:{rgb:GOLD}}}};
 
-e:{r:0,c:4}
+    put(ar,0,"Average",{...avS,alignment:{horizontal:"left"}});
 
-}
+    put(ar,1,d.avgDebitN??0,{...avS,numFmt:money},{f:`AVERAGE(B${first}:B${last})`});
 
-];
+    put(ar,2,d.avgODN??0,{...avS,numFmt:money},{f:`AVERAGE(C${first}:C${last})`});
 
-// Style Title
+    // TURNOVER average = latest 3 months with data → average exactly those cells.
 
-applyTitleStyle(sheet);
+    const recentRefs=d.rows.map((row,i)=>row.noData?null:`D${hr+2+i}`).filter(Boolean).slice(0,3);
 
-// Style Header
+    put(ar,3,d.avgTurnoverN??0,{...avS,numFmt:pct},recentRefs.length?{f:`AVERAGE(${recentRefs.join(",")})`}:{});
 
-applyHeaderStyle(sheet);
+    put(ar,4,"",avS);
 
-// Style Average
+    const noteS={font:{italic:true,sz:9,color:{rgb:"6B7280"}}};
 
-applyAverageStyle(sheet,data.length);
+    put(ar+1,0,"Averages use months with data only.",noteS);
 
-XLSX.utils.book_append_sheet(
+    merges.push({s:{r:ar+1,c:0},e:{r:ar+1,c:4}});
 
-wb,
+    put(ar+2,0,`TURNOVER average = latest 3 months with data (${d.avgTurnoverMonths.join(", ")}).`,noteS);
 
-sheet,
+    merges.push({s:{r:ar+2,c:0},e:{r:ar+2,c:4}});
 
-"Turnover"
+    // Signature block, bottom-right (D:E): Prepared Date, Prepared By,
+    // "Signature", blank rows for the handwritten signature, then a line.
 
-);
+    const sr=ar+4;
 
-XLSX.writeFile(
+    put(sr,3,`Prepared Date : ${m.preparedText}`,{font:{sz:10,color:{rgb:NAVY}}});
 
-wb,
+    merges.push({s:{r:sr,c:3},e:{r:sr,c:4}});
 
-`Average_Debit_Turnover_${cif}.xlsx`
+    put(sr+1,3,`Prepared By : ${m.preparedBy}`,{font:{bold:true,sz:10,color:{rgb:NAVY}}});
 
-);
+    merges.push({s:{r:sr+1,c:3},e:{r:sr+1,c:4}});
 
-}
-// ========================================
-// TITLE STYLE
-// ========================================
+    put(sr+2,3,"Signature :",{font:{sz:10,color:{rgb:NAVY}}});
 
-function applyTitleStyle(ws){
+    merges.push({s:{r:sr+2,c:3},e:{r:sr+2,c:4}});
 
-if(ws.A1){
+    const lineRow=sr+5;
 
-ws.A1.s={
+    put(lineRow,3,"",{border:{bottom:{style:"thin",color:{rgb:"888888"}}}});
 
-font:{
+    put(lineRow,4,"",{border:{bottom:{style:"thin",color:{rgb:"888888"}}}});
 
-bold:true,
+    ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lineRow,c:4}});
 
-sz:16,
+    ws["!merges"]=merges;
 
-color:{rgb:"FFFFFF"}
+    ws["!cols"]=[{wch:18},{wch:24},{wch:18},{wch:18},{wch:18}];
 
-},
+    ws["!rows"]=[{hpt:28},{hpt:18}];
 
-fill:{
+    for(let r=sr+3;r<=lineRow;r++) ws["!rows"][r]={hpt:20};
 
-fgColor:{rgb:"0E1B3C"}
+    ws["!margins"]={left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.2,footer:0.2};
 
-},
+    const wb=XLSX.utils.book_new();
 
-alignment:{
+    XLSX.utils.book_append_sheet(wb,ws,"Turnover");
 
-horizontal:"center"
-
-}
-
-};
-
-}
-
-}
-
-// ========================================
-// HEADER STYLE
-// ========================================
-
-function applyHeaderStyle(ws){
-
-const row=6;
-
-["A","B","C","D","E"]
-
-.forEach(col=>{
-
-const cell=ws[col+row];
-
-if(cell){
-
-cell.s={
-
-font:{
-
-bold:true,
-
-color:{rgb:"FFFFFF"}
-
-},
-
-fill:{
-
-fgColor:{rgb:"0E1B3C"}
-
-},
-
-alignment:{
-
-horizontal:"center"
-
-}
-
-};
-
-}
-
-});
-
-}
-
-// ========================================
-// AVERAGE STYLE
-// ========================================
-
-function applyAverageStyle(ws,lastRow){
-
-const r=lastRow;
-
-["A","B","C","D","E"]
-
-.forEach(col=>{
-
-const cell=ws[col+r];
-
-if(cell){
-
-cell.s={
-
-font:{
-
-bold:true
-
-},
-
-fill:{
-
-fgColor:{rgb:"FFF2CC"}
-
-}
-
-};
-
-}
-
-});
+    XLSX.writeFile(wb,`${m.fileBase}.xlsx`);
 
 }
 

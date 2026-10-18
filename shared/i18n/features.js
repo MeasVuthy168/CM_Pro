@@ -374,6 +374,8 @@ CMI18n.register({
   "turnover.emptyTitle": { km: "ស្វែងរកតាម CIF", en: "Search by CIF" },
   "turnover.emptyText": { km: "បញ្ចូល CIF ដើម្បីមើលចរាចរឥណពន្ធ ១២ ខែចុងក្រោយ។", en: "Enter a CIF to see the last 12 months of debit turnover." },
   "turnover.monthsWithData": { km: "ខែមានទិន្នន័យ", en: "months with data" },
+  "turnover.kpiAvgTurnover3": { km: "មធ្យម TURNOVER (៣ ខែចុងក្រោយ)", en: "Avg TURNOVER (latest 3 months)" },
+  "turnover.kpiMaxOD": { km: "ទឹកប្រាក់ដកសល់ធំជាងគេ", en: "Largest Current OD" },
   "turnover.avgShort": { km: "មធ្យម", en: "avg" },
   "turnover.monthlyDetail": { km: "លម្អិតប្រចាំខែ", en: "Monthly detail" },
   "turnover.noData": { km: "គ្មានទិន្នន័យ", en: "No Data" },

@@ -542,21 +542,15 @@ function exportMeta(){
 
     const c=lastCalc;
 
-    let user={};
-
-    try{ user=JSON.parse(localStorage.getItem("loggedInUser")||"{}"); }catch(e){}
-
-    const preparedBy=(user.fullname||user.username||"-").toUpperCase();
+    const preparedBy=CMExport.preparedBy();
 
     const now=new Date();
 
-    const printed=now.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+    const printed=CMExport.printedDate(now);
 
     const stamp=now.toISOString().slice(0,10);
 
-    // ASCII only: some browsers/WebViews reject non-Latin download
-    // names and fall back to a bare "download" file.
-    const safeName=(c.customerName||"").replace(/[^A-Za-z0-9 _-]+/g,"").trim().replace(/\s+/g,"_").slice(0,40)||"Customer";
+    const safeName=CMExport.safeFilePart(c.customerName,"Customer");
 
     const firstPay=c.rows.length ? c.rows[0].payment : c.payVal;
 
@@ -577,101 +571,6 @@ function exportMeta(){
         lastPay
 
     };
-
-}
-
-// Renders text with the page's own fonts onto a canvas and returns a
-// PNG data URL. jsPDF's built-in fonts can't shape Khmer, so the
-// customer name is drawn as an image to keep Khmer names readable.
-function textToImage(text,{size=13,weight="700",color="#0E1B3C"}={}){
-
-    const scale=3;
-
-    const font=`${weight} ${size*scale}px Krasar, "Noto Sans Khmer", Arial, sans-serif`;
-
-    const canvas=document.createElement("canvas");
-
-    const ctx=canvas.getContext("2d");
-
-    ctx.font=font;
-
-    const w=Math.ceil(ctx.measureText(text).width)+4;
-
-    const h=Math.ceil(size*scale*1.6);
-
-    canvas.width=Math.max(w,1);
-
-    canvas.height=h;
-
-    ctx.font=font;
-
-    ctx.fillStyle=color;
-
-    ctx.textBaseline="middle";
-
-    ctx.fillText(text,2,h/2);
-
-    return { data:canvas.toDataURL("image/png"), w:canvas.width/scale, h:h/scale };
-
-}
-
-async function loadLogoDataUrl(){
-
-    try{
-
-        const res=await fetch("../../assets/images/acleda-logo-whiteBG.png");
-
-        if(!res.ok) return null;
-
-        const blob=await res.blob();
-
-        const dataUrl=await new Promise(resolve=>{
-
-            const r=new FileReader();
-
-            r.onloadend=()=>resolve(r.result);
-
-            r.readAsDataURL(blob);
-
-        });
-
-        const img=await new Promise((resolve,reject)=>{
-
-            const i=new Image();
-
-            i.onload=()=>resolve(i);
-
-            i.onerror=reject;
-
-            i.src=dataUrl;
-
-        });
-
-        // The source PNG is ~1700px wide; embedding it as-is makes a
-        // multi-MB PDF. Downscale to 480px JPEG on white (~20KB).
-        const w=480, h=Math.round(w*img.naturalHeight/img.naturalWidth);
-
-        const canvas=document.createElement("canvas");
-
-        canvas.width=w;
-
-        canvas.height=h;
-
-        const ctx=canvas.getContext("2d");
-
-        ctx.fillStyle="#FFFFFF";
-
-        ctx.fillRect(0,0,w,h);
-
-        ctx.drawImage(img,0,0,w,h);
-
-        return { data:canvas.toDataURL("image/jpeg",0.9), ratio:h/w, type:"JPEG" };
-
-    }catch(e){
-
-        return null;
-
-    }
 
 }
 
@@ -707,7 +606,7 @@ async function exportToPDF(){
 
     // ---- header ----
 
-    const logo=await loadLogoDataUrl();
+    const logo=await CMExport.logo();
 
     if(logo){
 
@@ -749,7 +648,7 @@ async function exportToPDF(){
 
     doc.text("CUSTOMER NAME",M,y);
 
-    const name=textToImage(c.customerName||"-",{size:14});
+    const name=CMExport.textToImage(c.customerName||"-",{size:14});
 
     doc.addImage(name.data,"PNG",M,y+4,name.w,name.h);
 
@@ -857,31 +756,7 @@ async function exportToPDF(){
 
     });
 
-    // ---- footer on every page ----
-
-    const pages=doc.internal.getNumberOfPages();
-
-    for(let p=1;p<=pages;p++){
-
-        doc.setPage(p);
-
-        doc.setDrawColor(226,230,237);
-
-        doc.setLineWidth(.6);
-
-        doc.line(M,pageH-36,pageW-M,pageH-36);
-
-        doc.setFont("helvetica","normal");
-
-        doc.setFontSize(8.5);
-
-        doc.setTextColor(...MUTED);
-
-        doc.text(`Prepared by: ${m.preparedBy}   •   Printed: ${m.printed}`,M,pageH-22);
-
-        doc.text(`Page ${p} of ${pages}`,pageW-M,pageH-22,{align:"right"});
-
-    }
+    CMExport.pdfFooter(doc,{margin:M,preparedBy:m.preparedBy,printed:m.printed});
 
     doc.save(`${m.fileBase}.pdf`);
 
