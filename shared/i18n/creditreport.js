@@ -11,8 +11,6 @@ CMI18n.register({
   // ==================================================================
   // HUB (pages/creditreport/index.html, creditreport-hub.js)
   // ==================================================================
-  "creditreport.hub.dailyArrearsByCO": { km: "ការយឺតយ៉ាវប្រចាំថ្ងៃតាមមន្ត្រីឥណទាន", en: "Daily Arrears by Credit Officer" },
-  "creditreport.hub.dailyArrearsByCOSub": { km: "បញ្ជី LD យឺតយ៉ាវ និងបំពេញ Reason Arrear", en: "Overdue loans and Reason Arrear" },
   "creditreport.hub.byOfficer": { km: "ការត្រួតពិនិត្យប្រចាំថ្ងៃតាមមន្ត្រី", en: "Daily Monitoring by Officer" },
   "creditreport.hub.byOfficerSub": { km: "សមតុល្យ និងការយឺតយ៉ាវ តាមមន្ត្រីនីមួយៗ", en: "Outstanding and arrears per officer" },
   "creditreport.hub.byBranch": { km: "ការត្រួតពិនិត្យប្រចាំថ្ងៃតាមសាខា", en: "Daily Monitoring by Branch" },
@@ -22,7 +20,6 @@ CMI18n.register({
   "creditreport.hub.byLocation": { km: "ការត្រួតពិនិត្យប្រចាំថ្ងៃតាមទីតាំង", en: "Daily Monitoring by Location" },
   "creditreport.hub.byLocationSub": { km: "សមតុល្យ និងការយឺតយ៉ាវ តាមទីតាំងនីមួយៗ", en: "Outstanding and arrears per location" },
 
-  "creditreport.hub.sectionArrears": { km: "ការយឺតយ៉ាវ", en: "Arrears" },
   "creditreport.hub.sectionDaily": { km: "ការត្រួតពិនិត្យប្រចាំថ្ងៃ", en: "Daily Monitoring" },
   "creditreport.hub.adminTools": { km: "ឧបករណ៍ Admin", en: "Admin tools" },
   "creditreport.hub.tileOfficer": { km: "តាមមន្ត្រី", en: "By Officer" },

@@ -274,13 +274,10 @@
     color:var(--cr-navy);
 }
 .cr-hub-icon svg{ width:26px; height:26px; }
-.cr-tone-red .cr-hub-icon{ background:rgba(220,38,38,.10); color:#C0392B; }
 .cr-tone-navy .cr-hub-icon{ background:rgba(26,46,87,.10); color:#1A2E57; }
 .cr-tone-gold .cr-hub-icon{ background:rgba(212,175,55,.18); color:#A67C00; }
 .cr-tone-teal .cr-hub-icon{ background:rgba(13,148,136,.12); color:#0F766E; }
 .cr-tone-violet .cr-hub-icon{ background:rgba(124,58,237,.11); color:#6D28D9; }
-[data-theme="dark"] .cr-tone-red .cr-hub-icon,
-[data-theme="darkgray"] .cr-tone-red .cr-hub-icon{ background:rgba(248,113,113,.14); color:#FCA5A5; }
 [data-theme="dark"] .cr-tone-navy .cr-hub-icon,
 [data-theme="darkgray"] .cr-tone-navy .cr-hub-icon{ background:rgba(147,197,253,.12); color:#BFDBFE; }
 [data-theme="dark"] .cr-tone-gold .cr-hub-icon,
