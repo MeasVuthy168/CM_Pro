@@ -521,7 +521,7 @@ function renderSchedule(){
 }
 
 // =========================
-// Export PDF
+// Export helpers (shared by PDF + Excel)
 // =========================
 
 function requireCalc(){
@@ -538,82 +538,359 @@ function requireCalc(){
 
 }
 
+function exportMeta(){
+
+    const c=lastCalc;
+
+    let user={};
+
+    try{ user=JSON.parse(localStorage.getItem("loggedInUser")||"{}"); }catch(e){}
+
+    const preparedBy=(user.fullname||user.username||"-").toUpperCase();
+
+    const now=new Date();
+
+    const printed=now.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+
+    const stamp=now.toISOString().slice(0,10);
+
+    // ASCII only: some browsers/WebViews reject non-Latin download
+    // names and fall back to a bare "download" file.
+    const safeName=(c.customerName||"").replace(/[^A-Za-z0-9 _-]+/g,"").trim().replace(/\s+/g,"_").slice(0,40)||"Customer";
+
+    const firstPay=c.rows.length ? c.rows[0].payment : c.payVal;
+
+    const lastPay=c.rows.length ? c.rows[c.rows.length-1].payment : c.payVal;
+
+    return {
+
+        preparedBy,
+
+        printed,
+
+        fileBase:`Repayment_Schedule_${safeName}_${stamp}`,
+
+        methodText:c.method==="Annuity" ? "Fixed (Annuity)" : "Declining (Linear)",
+
+        firstPay,
+
+        lastPay
+
+    };
+
+}
+
+// Renders text with the page's own fonts onto a canvas and returns a
+// PNG data URL. jsPDF's built-in fonts can't shape Khmer, so the
+// customer name is drawn as an image to keep Khmer names readable.
+function textToImage(text,{size=13,weight="700",color="#0E1B3C"}={}){
+
+    const scale=3;
+
+    const font=`${weight} ${size*scale}px Krasar, "Noto Sans Khmer", Arial, sans-serif`;
+
+    const canvas=document.createElement("canvas");
+
+    const ctx=canvas.getContext("2d");
+
+    ctx.font=font;
+
+    const w=Math.ceil(ctx.measureText(text).width)+4;
+
+    const h=Math.ceil(size*scale*1.6);
+
+    canvas.width=Math.max(w,1);
+
+    canvas.height=h;
+
+    ctx.font=font;
+
+    ctx.fillStyle=color;
+
+    ctx.textBaseline="middle";
+
+    ctx.fillText(text,2,h/2);
+
+    return { data:canvas.toDataURL("image/png"), w:canvas.width/scale, h:h/scale };
+
+}
+
+async function loadLogoDataUrl(){
+
+    try{
+
+        const res=await fetch("../../assets/images/acleda-logo-whiteBG.png");
+
+        if(!res.ok) return null;
+
+        const blob=await res.blob();
+
+        const dataUrl=await new Promise(resolve=>{
+
+            const r=new FileReader();
+
+            r.onloadend=()=>resolve(r.result);
+
+            r.readAsDataURL(blob);
+
+        });
+
+        const img=await new Promise((resolve,reject)=>{
+
+            const i=new Image();
+
+            i.onload=()=>resolve(i);
+
+            i.onerror=reject;
+
+            i.src=dataUrl;
+
+        });
+
+        // The source PNG is ~1700px wide; embedding it as-is makes a
+        // multi-MB PDF. Downscale to 480px JPEG on white (~20KB).
+        const w=480, h=Math.round(w*img.naturalHeight/img.naturalWidth);
+
+        const canvas=document.createElement("canvas");
+
+        canvas.width=w;
+
+        canvas.height=h;
+
+        const ctx=canvas.getContext("2d");
+
+        ctx.fillStyle="#FFFFFF";
+
+        ctx.fillRect(0,0,w,h);
+
+        ctx.drawImage(img,0,0,w,h);
+
+        return { data:canvas.toDataURL("image/jpeg",0.9), ratio:h/w, type:"JPEG" };
+
+    }catch(e){
+
+        return null;
+
+    }
+
+}
+
+// =========================
+// Export PDF
+// A4 portrait: header (title + logo), summary box, schedule table with
+// repeating header and a total row, footer with prepared-by + page x/y.
+// =========================
+
 async function exportToPDF(){
 
     if(!requireCalc()) return;
 
     const c=lastCalc;
 
+    const m=exportMeta();
+
     const {jsPDF}=window.jspdf;
 
-    const doc=new jsPDF('p','pt','a4');
+    const doc=new jsPDF("p","pt","a4");
 
-    doc.setFontSize(15);
+    const pageW=doc.internal.pageSize.getWidth();
 
-    doc.setFont(undefined,'bold');
+    const pageH=doc.internal.pageSize.getHeight();
 
-    doc.text("Repayment Schedule",40,40);
+    const M=40;
 
-    doc.setFont(undefined,'normal');
+    const NAVY=[14,27,60];
 
-    doc.setFontSize(11);
+    const GOLD=[212,175,55];
 
-    doc.setTextColor(40,40,40);
+    const MUTED=[107,114,128];
 
-    doc.text(`Customer Name : ${c.customerName||"-"}`,40,62);
+    // ---- header ----
 
-    doc.autoTable({
+    const logo=await loadLogoDataUrl();
 
-        startY:80,
+    if(logo){
 
-        head:[["Item","Value"]],
+        const lw=120;
 
-        body:[
+        doc.addImage(logo.data,logo.type,pageW-M-lw,28,lw,lw*logo.ratio);
 
-            ["Loan Amount",format(c.loanVal)],
+    }
 
-            ["Periodic Repayment",format(c.payVal)],
+    doc.setFont("helvetica","bold");
 
-            ["Loan Term (months)",String(c.months)],
+    doc.setFontSize(17);
 
-            ["Annual Interest Rate",`${c.interestRate}%`],
+    doc.setTextColor(...NAVY);
 
-            ["Repayment Method",c.method==="Annuity"?"Annuity":"Linear"]
+    doc.text("LOAN REPAYMENT SCHEDULE",M,52);
 
-        ],
+    doc.setFont("helvetica","normal");
 
-        showHead:false,
+    doc.setFontSize(10);
 
-        styles:{fontSize:10,halign:'left'},
+    doc.setTextColor(...MUTED);
 
-        columnStyles:{0:{fontStyle:'bold',fillColor:[13,45,92],textColor:255}}
+    doc.text(`${m.methodText}  •  ${c.interestRate}% per year  •  ${c.months} months`,M,68);
+
+    doc.setDrawColor(...GOLD);
+
+    doc.setLineWidth(1.5);
+
+    doc.line(M,82,pageW-M,82);
+
+    // ---- customer + summary box ----
+
+    let y=100;
+
+    doc.setFontSize(9);
+
+    doc.setTextColor(...MUTED);
+
+    doc.text("CUSTOMER NAME",M,y);
+
+    const name=textToImage(c.customerName||"-",{size:14});
+
+    doc.addImage(name.data,"PNG",M,y+4,name.w,name.h);
+
+    y+=4+name.h+10;
+
+    const boxH=78;
+
+    doc.setFillColor(246,248,252);
+
+    doc.setDrawColor(226,230,237);
+
+    doc.setLineWidth(.8);
+
+    doc.roundedRect(M,y,pageW-2*M,boxH,6,6,"FD");
+
+    const repaymentLabel=c.method==="Annuity" ? "Monthly Repayment" : "1st / Last Repayment";
+
+    const repaymentValue=c.method==="Annuity" ? format(c.payVal) : `${format(m.firstPay)} / ${format(m.lastPay)}`;
+
+    const cells=[
+
+        ["Loan Amount",format(c.loanVal)],
+
+        ["Loan Term",`${c.months} months`],
+
+        ["Annual Interest Rate",`${c.interestRate}%`],
+
+        [repaymentLabel,repaymentValue],
+
+        ["Total Interest",format(c.totalInterest)],
+
+        ["Total Payment",format(c.totalPayment)]
+
+    ];
+
+    const colW=(pageW-2*M)/3;
+
+    cells.forEach(([label,value],i)=>{
+
+        const cx=M+14+(i%3)*colW;
+
+        const cy=y+22+Math.floor(i/3)*34;
+
+        doc.setFont("helvetica","normal");
+
+        doc.setFontSize(8.5);
+
+        doc.setTextColor(...MUTED);
+
+        doc.text(label.toUpperCase(),cx,cy);
+
+        doc.setFont("helvetica","bold");
+
+        doc.setFontSize(12);
+
+        doc.setTextColor(...NAVY);
+
+        doc.text(value,cx,cy+15);
 
     });
 
+    y+=boxH+18;
+
+    // ---- schedule ----
+
     doc.autoTable({
 
-        startY:doc.lastAutoTable.finalY+20,
+        startY:y,
+
+        margin:{left:M,right:M,bottom:50},
 
         head:[["No","Principal","Interest","Total Payment","Balance"]],
 
         body:c.rows.map(r=>[r.no,format(r.principal),format(r.interest),format(r.payment),format(r.balance)]),
 
-        foot:[["Total",format(c.totalPrincipal),format(c.totalInterest),format(c.totalPayment),"-"]],
+        foot:[["Total",format(c.totalPrincipal),format(c.totalInterest),format(c.totalPayment),""]],
 
-        styles:{fontSize:10,halign:'center'},
+        showHead:"everyPage",
 
-        headStyles:{fillColor:[13,45,92],textColor:255},
+        showFoot:"lastPage",
 
-        footStyles:{fillColor:[248,240,214],textColor:[14,27,60]}
+        theme:"grid",
+
+        styles:{fontSize:9.5,cellPadding:{top:3.5,bottom:3.5,left:6,right:6},halign:"right",lineColor:[226,230,237],lineWidth:.5,textColor:[28,35,51]},
+
+        headStyles:{fillColor:NAVY,textColor:[255,215,0],fontStyle:"bold",halign:"right"},
+
+        footStyles:{fillColor:[248,240,214],textColor:NAVY,fontStyle:"bold",halign:"right"},
+
+        alternateRowStyles:{fillColor:[246,248,252]},
+
+        columnStyles:(()=>{
+
+            const numW=(pageW-2*M-40)/4;
+
+            return {0:{halign:"center",cellWidth:40},1:{cellWidth:numW},2:{cellWidth:numW},3:{cellWidth:numW},4:{cellWidth:numW}};
+
+        })(),
+
+        didParseCell:data=>{
+
+            if(data.column.index===0 && data.section!=="body") data.cell.styles.halign="center";
+
+        }
 
     });
 
-    doc.save("Repayment_Schedule.pdf");
+    // ---- footer on every page ----
+
+    const pages=doc.internal.getNumberOfPages();
+
+    for(let p=1;p<=pages;p++){
+
+        doc.setPage(p);
+
+        doc.setDrawColor(226,230,237);
+
+        doc.setLineWidth(.6);
+
+        doc.line(M,pageH-36,pageW-M,pageH-36);
+
+        doc.setFont("helvetica","normal");
+
+        doc.setFontSize(8.5);
+
+        doc.setTextColor(...MUTED);
+
+        doc.text(`Prepared by: ${m.preparedBy}   •   Printed: ${m.printed}`,M,pageH-22);
+
+        doc.text(`Page ${p} of ${pages}`,pageW-M,pageH-22,{align:"right"});
+
+    }
+
+    doc.save(`${m.fileBase}.pdf`);
 
 }
 
 // =========================
 // Export Excel
+// Uses xlsx-js-style (SheetJS fork that writes cell styles): colored
+// title/header, bordered table, number formats, SUM totals, print setup.
 // =========================
 
 function exportToExcel(){
@@ -622,73 +899,152 @@ function exportToExcel(){
 
     const c=lastCalc;
 
-    const rows=[];
+    const m=exportMeta();
 
-    rows.push(["Repayment Schedule"]);
+    const NAVY="0E1B3C", GOLD="D4AF37", LIGHT="F6F8FC", BORDER="D9DEE7";
 
-    rows.push([`Customer Name : ${c.customerName||"-"}`]);
+    const thin={style:"thin",color:{rgb:BORDER}};
 
-    rows.push([]);
+    const box={top:thin,bottom:thin,left:thin,right:thin};
 
-    rows.push(["Loan Amount",c.loanVal]);
+    const money="#,##0.00";
 
-    rows.push(["Periodic Repayment",c.payVal]);
+    const ws={};
 
-    rows.push(["Loan Term (months)",c.months]);
+    const merges=[];
 
-    rows.push(["Annual Interest Rate",`${c.interestRate}%`]);
+    const put=(r,col,v,s,extra={})=>{
 
-    rows.push(["Repayment Method",c.method==="Annuity"?"Annuity":"Linear"]);
+        const cell={v,t:typeof v==="number"?"n":"s",s,...extra};
 
-    rows.push([]);
+        if(cell.f) cell.t="n";
 
-    rows.push(["No","Principal","Interest","Total Payment","Balance"]);
+        ws[XLSX.utils.encode_cell({r,c:col})]=cell;
 
-    c.rows.forEach(r=>rows.push([r.no,r.principal,r.interest,r.payment,r.balance]));
+    };
 
-    rows.push(["Total",c.totalPrincipal,c.totalInterest,c.totalPayment,""]);
+    // Title + subtitle
 
-    const ws=XLSX.utils.aoa_to_sheet(rows);
+    put(0,0,"LOAN REPAYMENT SCHEDULE",{font:{bold:true,sz:15,color:{rgb:"FFFFFF"}},fill:{fgColor:{rgb:NAVY}},alignment:{horizontal:"center",vertical:"center"}});
 
-    ws["!merges"]=[
+    for(let col=1;col<5;col++) put(0,col,"",{fill:{fgColor:{rgb:NAVY}}});
 
-        {s:{r:0,c:0},e:{r:0,c:4}},
+    merges.push({s:{r:0,c:0},e:{r:0,c:4}});
 
-        {s:{r:1,c:0},e:{r:1,c:4}}
+    put(1,0,`${m.methodText}  •  ${c.interestRate}% per year  •  ${c.months} months`,{font:{italic:true,sz:10,color:{rgb:"6B7280"}},alignment:{horizontal:"center"}});
+
+    merges.push({s:{r:1,c:0},e:{r:1,c:4}});
+
+    // Info block (label | value) x 2 columns
+
+    const labelS={font:{bold:true,sz:10,color:{rgb:"374151"}},fill:{fgColor:{rgb:LIGHT}},border:box,alignment:{vertical:"center"}};
+
+    const valS={font:{sz:10,color:{rgb:NAVY}},border:box,alignment:{horizontal:"right",vertical:"center"}};
+
+    const valMoney={...valS,numFmt:money,font:{bold:true,sz:10,color:{rgb:NAVY}}};
+
+    const info=[
+
+        ["Customer Name",c.customerName||"-","Prepared By",m.preparedBy],
+
+        ["Loan Amount",c.loanVal,"Printed",m.printed],
+
+        ["Loan Term (months)",c.months,"Repayment Method",m.methodText],
+
+        ["Annual Interest Rate",`${c.interestRate}%`,c.method==="Annuity"?"Monthly Repayment":"1st Repayment",c.method==="Annuity"?c.payVal:m.firstPay],
+
+        ["Total Interest",c.totalInterest,"Total Payment",c.totalPayment]
 
     ];
 
-    ws["!cols"]=[{wch:20},{wch:16},{wch:16},{wch:16},{wch:16}];
+    // Layout: A=label, B=value, C=spacer-less label, D:E merged value
 
-    // Thousand separator + 2 decimals on every amount cell.
+    info.forEach((row,i)=>{
 
-    const numberFormat="#,##0.00";
+        const r=3+i;
 
-    for(let r=10;r<rows.length;r++){
+        put(r,0,row[0],labelS);
 
-        for(let col=1;col<=4;col++){
+        // Customer name reads left; every other value is a number/rate → right.
+        put(r,1,row[1],typeof row[1]==="number"&&row[0]!=="Loan Term (months)"?valMoney:{...valS,alignment:{horizontal:i===0?"left":"right"}});
 
-            const ref=XLSX.utils.encode_cell({r,c:col});
+        put(r,2,row[2],labelS);
 
-            if(ws[ref] && typeof ws[ref].v==="number") ws[ref].z=numberFormat;
+        put(r,3,row[3],typeof row[3]==="number"?valMoney:{...valS,alignment:{horizontal:"left"}});
 
-        }
+        put(r,4,"",valS);
 
-    }
-
-    [3,4].forEach(r=>{
-
-        const ref=XLSX.utils.encode_cell({r,c:1});
-
-        if(ws[ref] && typeof ws[ref].v==="number") ws[ref].z=numberFormat;
+        merges.push({s:{r,c:3},e:{r,c:4}});
 
     });
+
+    // Schedule header
+
+    const hr=3+info.length+1;
+
+    const headS={font:{bold:true,sz:10,color:{rgb:"FFD700"}},fill:{fgColor:{rgb:NAVY}},border:box,alignment:{horizontal:"center",vertical:"center"}};
+
+    ["No","Principal","Interest","Total Payment","Balance"].forEach((h,col)=>put(hr,col,h,headS));
+
+    // Rows
+
+    c.rows.forEach((row,i)=>{
+
+        const r=hr+1+i;
+
+        const fill=i%2 ? {fill:{fgColor:{rgb:LIGHT}}} : {};
+
+        const numS={border:box,numFmt:money,font:{sz:10},...fill};
+
+        put(r,0,row.no,{border:box,alignment:{horizontal:"center"},font:{sz:10,color:{rgb:"6B7280"}},...fill});
+
+        put(r,1,row.principal,numS);
+
+        put(r,2,row.interest,numS);
+
+        put(r,3,row.payment,numS);
+
+        put(r,4,row.balance,numS);
+
+    });
+
+    // Total row with live SUM formulas
+
+    const first=hr+2, last=hr+1+c.rows.length;   // 1-based Excel rows
+
+    const tr=hr+1+c.rows.length;
+
+    const totS={font:{bold:true,sz:10,color:{rgb:NAVY}},fill:{fgColor:{rgb:"F8F0D6"}},numFmt:money,alignment:{horizontal:"right"},border:{...box,top:{style:"medium",color:{rgb:GOLD}}}};
+
+    put(tr,0,"Total",{...totS,alignment:{horizontal:"center"}});
+
+    put(tr,1,c.totalPrincipal,totS,{f:`SUM(B${first}:B${last})`});
+
+    put(tr,2,c.totalInterest,totS,{f:`SUM(C${first}:C${last})`});
+
+    put(tr,3,c.totalPayment,totS,{f:`SUM(D${first}:D${last})`});
+
+    put(tr,4,"",totS);
+
+    ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:tr,c:4}});
+
+    ws["!merges"]=merges;
+
+    ws["!cols"]=[{wch:22},{wch:18},{wch:20},{wch:18},{wch:18}];
+
+    ws["!rows"]=[{hpt:28},{hpt:18}];
+
+    // Print: fit to one page wide, repeat header row on every printed page.
+
+    ws["!margins"]={left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.2,footer:0.2};
 
     const wb=XLSX.utils.book_new();
 
     XLSX.utils.book_append_sheet(wb,ws,"Repayment Schedule");
 
-    XLSX.writeFile(wb,"Repayment_Schedule.xlsx");
+    wb.Workbook={ Names:[{ Name:"_xlnm.Print_Titles", Sheet:0, Ref:`'Repayment Schedule'!$${hr+1}:$${hr+1}` }] };
+
+    XLSX.writeFile(wb,`${m.fileBase}.xlsx`);
 
 }
 
