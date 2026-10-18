@@ -143,7 +143,7 @@ CMI18n.register({
   "settings.voice.openPage": { km: "I. បើកទំព័រ", en: "I. Open a page" },
   "settings.voice.openPageList": {
     km: `<li>បើក <b>ស្វែងរកអតិថិជន</b></li>
-<li>បើក <b>ការយឺតយ៉ាវប្រចាំថ្ងៃ</b></li>
+<li>បើក <b>ឥណទានយឺតយ៉ាវប្រចាំថ្ងៃ</b></li>
 <li>បើក <b>ការបង្វិលជុំមធ្យម</b></li>
 <li>បើក <b>ត្រួតពិនិត្យភ្លាមៗ</b></li>
 <li>បើក <b>កិច្ចការមន្ត្រី</b></li>

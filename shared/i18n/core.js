@@ -15,7 +15,7 @@ CMI18n.register({
 
   // Dashboard cards
   "dashboard.customerSearch": { km: "ស្វែងរកអតិថិជន", en: "Customer Search" },
-  "dashboard.dailyArrears": { km: "ការយឺតយ៉ាវប្រចាំ\u2060ថ្ងៃ", en: "Daily Arrears" },
+  "dashboard.dailyArrears": { km: "ឥណទានយឺតយ៉ាវប្រចាំ\u2060ថ្ងៃ", en: "Daily Arrears" },
   // Kept in English in both languages — these are the feature's actual
   // names, not translatable labels (same reasoning as "E-Proxy" staying
   // untranslated in the reference app).
