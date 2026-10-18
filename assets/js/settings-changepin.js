@@ -393,6 +393,15 @@ deleteConfirmBtn.addEventListener("click", async () => {
         saveLocalHasPin(false);
         try { localStorage.setItem(pinPromptOffKey(), "1"); } catch {}
 
+        // The server removed every fingerprint/face device with the PIN
+        // (fingerprint needs a PIN to fall back on) — forget this
+        // device's marker too, so login and Settings stop offering it.
+        try {
+            const u = currentUsername();
+            localStorage.removeItem(`cm_webauthn_device_cred_${u}`);
+            localStorage.removeItem(`cm_fp_login_disabled_${u}`);
+        } catch {}
+
         notify(t("settings.account.deletePin.success"), "success");
 
         setTimeout(() => {
