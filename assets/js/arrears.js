@@ -138,7 +138,16 @@ let selectedRow = null;  // row object behind the open Reason Arrear panel
 // place (currentRows is only ever reassigned wholesale, never pushed/
 // spliced into).
 // ========================================
-let arrearsSortState = { key: null, dir: 1 };
+// Remembered per device ("arr_sort_ld"), shared by the LD table header
+// and the card-view Sort sheet.
+function loadSortState(storageKey) {
+    try {
+        const v = JSON.parse(localStorage.getItem(storageKey) || "null");
+        if (v && typeof v.key === "string" && (v.dir === 1 || v.dir === -1)) return { key: v.key, type: v.type || "text", dir: v.dir };
+    } catch (e) {}
+    return { key: null, type: null, dir: 1 };
+}
+let arrearsSortState = loadSortState("arr_sort_ld");
 
 function arrearsCompareForSort(a, b, type) {
     const blank = v => v === "" || v == null;
@@ -171,24 +180,33 @@ document.getElementById("arrearsHeadRow")?.addEventListener("click", (e) => {
 
     const key = th.dataset.sortKey;
     const type = th.dataset.sortType || "text";
-    if (arrearsSortState.key !== key) {
-        arrearsSortState = { key, type, dir: 1 };
-    } else if (arrearsSortState.dir === 1) {
-        arrearsSortState = { key, type, dir: -1 };
-    } else {
-        arrearsSortState = { key: null, type: null, dir: 1 };
-    }
+    if (arrearsSortState.key !== key) setLdSort({ key, type, dir: 1 });
+    else if (arrearsSortState.dir === 1) setLdSort({ key, type, dir: -1 });
+    else setLdSort(null);
+});
 
-    document.querySelectorAll("#arrearsHeadRow th[data-sort-key]").forEach(h => {
+// ▲ / ▼ on whichever header matches the state (the card Sort sheet can
+// set a key the table has no column for, e.g. OS (USD) — then none).
+function syncSortHeader(headRowId, state) {
+    document.querySelectorAll(`#${headRowId} th[data-sort-key]`).forEach(h => {
         h.classList.remove("arrears-sort-asc", "arrears-sort-desc");
+        if (state.key && h.dataset.sortKey === state.key) {
+            h.classList.add(state.dir === 1 ? "arrears-sort-asc" : "arrears-sort-desc");
+        }
     });
-    if (arrearsSortState.key) {
-        th.classList.add(arrearsSortState.dir === 1 ? "arrears-sort-asc" : "arrears-sort-desc");
-    }
+}
 
+function setLdSort(state) {
+    arrearsSortState = state || { key: null, type: null, dir: 1 };
+    try {
+        if (arrearsSortState.key) localStorage.setItem("arr_sort_ld", JSON.stringify(arrearsSortState));
+        else localStorage.removeItem("arr_sort_ld");
+    } catch (e) {}
+    syncSortHeader("arrearsHeadRow", arrearsSortState);
     currentRows = applyArrearsSort(arrearsUnsortedRows);
     renderTable(currentRows);
-});
+    updateSortUi();
+}
 
 attachSuggestions(reasonAJ, () => distinctSorted(allRows, "ajReason"));
 attachSuggestions(reasonAK, () => distinctSorted(allRows, "akSolution"));
@@ -1438,7 +1456,7 @@ function appendMoreGroups() {
 function renderCifCards(rows) {
     arrCardList.innerHTML = "";
     renderedGroupCount = 0;
-    arrGroups = buildGroups(rows);
+    arrGroups = applyCifSort(buildGroups(rows));
     arrGroupByKey = new Map(arrGroups.map(g => [g.key, g]));
 
     if (!arrGroups.length) {
@@ -1462,7 +1480,7 @@ const CIF_COLS = 27;
 
 // Column header sort for the CIF table — same ▲ / ▼ / default cycle as
 // the LD table. Sorts the customers, and the LDs inside each customer.
-let cifSortState = { key: null, type: null, dir: 1 };
+let cifSortState = loadSortState("arr_sort_cif");
 
 function cifNumber(v) {
     const n = parseFloat(String(v ?? "").replace(/,/g, ""));
@@ -1509,6 +1527,8 @@ function cifGroupSortValue(g, key, type) {
     if (key === "osUsd") return g.osUsd;
     if (key === "day") return g.maxDay;
     if (key === "promiseStatus") return g.promise;
+    if (key === "promiseRank") return g.promiseRank;
+    if (key === "reasonPct") return g.rows.length ? g.withReason / g.rows.length : 0;
     if (key === "user" || key === "dateBackup") return cifLatestRow(g.rows)[key];
     if (CIF_AMOUNT_KEYS.includes(key)) {
         // Ordering only: one figure per customer even when its LDs mix
@@ -1542,16 +1562,21 @@ document.getElementById("arrCifHeadRow")?.addEventListener("click", (e) => {
     if (!th) return;
     const key = th.dataset.sortKey;
     const type = th.dataset.sortType || "text";
-    if (cifSortState.key !== key) cifSortState = { key, type, dir: 1 };
-    else if (cifSortState.dir === 1) cifSortState = { key, type, dir: -1 };
-    else cifSortState = { key: null, type: null, dir: 1 };
-
-    document.querySelectorAll("#arrCifHeadRow th[data-sort-key]").forEach(h =>
-        h.classList.remove("arrears-sort-asc", "arrears-sort-desc"));
-    if (cifSortState.key) th.classList.add(cifSortState.dir === 1 ? "arrears-sort-asc" : "arrears-sort-desc");
-
-    renderCifTable(currentRows);
+    if (cifSortState.key !== key) setCifSort({ key, type, dir: 1 });
+    else if (cifSortState.dir === 1) setCifSort({ key, type, dir: -1 });
+    else setCifSort(null);
 });
+
+function setCifSort(state) {
+    cifSortState = state || { key: null, type: null, dir: 1 };
+    try {
+        if (cifSortState.key) localStorage.setItem("arr_sort_cif", JSON.stringify(cifSortState));
+        else localStorage.removeItem("arr_sort_cif");
+    } catch (e) {}
+    syncSortHeader("arrCifHeadRow", cifSortState);
+    renderTable(currentRows);
+    updateSortUi();
+}
 
 function buildGroupTbody(g, no) {
     const tbody = document.createElement("tbody");
@@ -1712,7 +1737,119 @@ function applyArrearsViewMode() {
     document.getElementById("arrGroupCifBtn")?.classList.toggle("active", arrGroupMode === "cif");
     document.getElementById("arrViewCardBtn")?.classList.toggle("active", arrViewMode === "card");
     document.getElementById("arrViewTableBtn")?.classList.toggle("active", arrViewMode === "table");
+    updateSortUi();
 }
+
+// ========================================
+// CARD SORT
+// The tables sort from their headers; the card views get a ⇅ button
+// that opens a sheet with the fields a card shows. Same state as the
+// table of the same mode (LD -> arrearsSortState, CIF -> cifSortState),
+// so switching views keeps the order, and ‹ › in the Reason panel
+// follows it. A chip under the toolbar shows the active sort.
+// ========================================
+
+function cardSortOptions() {
+    // [key, type, default direction, label]
+    return arrGroupMode === "cif"
+        ? [
+            ["day", "number", -1, t("arrears.sortDay")],
+            ["osUsd", "number", -1, "OS (USD)"],
+            ["loanNumber", "number", -1, t("arrears.sortLdCount")],
+            ["reasonPct", "number", 1, "Reason Arrear", t("arrears.sortReasonHint")],
+            ["promiseRank", "number", -1, "Promise Status"],
+            ["customer", "text", 1, t("arrears.sortCustomer")]
+        ]
+        : [
+            ["day", "number", -1, t("arrears.sortDay")],
+            ["arreas", "number", -1, "Arrears"],
+            ["osUsd", "number", -1, "OS (USD)"],
+            ["akSolution", "text", 1, "Reason Arrear", t("arrears.sortReasonHint")],
+            ["alFollowup", "date", 1, t("arrears.sortPromiseDate")],
+            ["customer", "text", 1, t("arrears.sortCustomer")]
+        ];
+}
+
+function currentCardSort() {
+    return arrGroupMode === "cif" ? cifSortState : arrearsSortState;
+}
+
+function setCardSort(state) {
+    if (arrGroupMode === "cif") setCifSort(state);
+    else setLdSort(state);
+}
+
+function sortLabelFor(key) {
+    const opt = cardSortOptions().find(o => o[0] === key);
+    if (opt) return opt[3];
+    // set from a table header the sheet doesn't list
+    const th = document.querySelector(`#${arrGroupMode === "cif" ? "arrCifHeadRow" : "arrearsHeadRow"} th[data-sort-key="${CSS.escape(key)}"]`);
+    return th ? th.textContent.trim() : key;
+}
+
+function updateSortUi() {
+    const state = currentCardSort();
+    document.getElementById("arrSortBtn")?.classList.toggle("is-sorted", !!state.key);
+    const row = document.getElementById("arrSortChipRow");
+    const chip = document.getElementById("arrSortChip");
+    if (row && chip) {
+        row.hidden = !state.key;
+        if (state.key) chip.textContent = `${t("arrears.sortChip")} ${sortLabelFor(state.key)} ${state.dir === 1 ? "▲" : "▼"}`;
+    }
+    if (document.getElementById("arrSortBackdrop")?.classList.contains("show")) renderSortSheet();
+}
+
+function renderSortSheet() {
+    const state = currentCardSort();
+    const list = document.getElementById("arrSortOptions");
+    list.innerHTML = cardSortOptions().map(([key, , , label, hint]) => `
+        <button type="button" role="radio" aria-checked="${state.key === key}"
+            class="arr-sort-option ${state.key === key ? "active" : ""}" data-sort-key="${key}">
+            <span class="arr-sort-radio" aria-hidden="true"></span>
+            <span class="arr-sort-label">${escapeHtml(label)}${hint ? `<small>${escapeHtml(hint)}</small>` : ""}</span>
+            ${state.key === key ? `<span class="arr-sort-arrow">${state.dir === 1 ? "▲" : "▼"}</span>` : ""}
+        </button>`).join("");
+    document.querySelectorAll("[data-sort-dir]").forEach(b => {
+        b.classList.toggle("active", !!state.key && Number(b.dataset.sortDir) === state.dir);
+        b.disabled = !state.key;
+    });
+}
+
+function openSortSheet() {
+    renderSortSheet();
+    document.getElementById("arrSortBackdrop").classList.add("show");
+}
+
+function closeSortSheet() {
+    document.getElementById("arrSortBackdrop").classList.remove("show");
+}
+
+document.getElementById("arrSortBtn")?.addEventListener("click", openSortSheet);
+document.getElementById("arrSortChip")?.addEventListener("click", openSortSheet);
+document.getElementById("arrSortChipX")?.addEventListener("click", () => setCardSort(null));
+document.getElementById("btnArrSortDefault")?.addEventListener("click", () => setCardSort(null));
+document.getElementById("btnArrSortDone")?.addEventListener("click", closeSortSheet);
+document.getElementById("btnArrSortCloseX")?.addEventListener("click", closeSortSheet);
+document.getElementById("arrSortBackdrop")?.addEventListener("click", (e) => {
+    if (e.target.id === "arrSortBackdrop") closeSortSheet();
+});
+
+document.getElementById("arrSortOptions")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-sort-key]");
+    if (!btn) return;
+    const opt = cardSortOptions().find(o => o[0] === btn.dataset.sortKey);
+    if (!opt) return;
+    const state = currentCardSort();
+    // picking the active field again flips the direction
+    const dir = state.key === opt[0] ? -state.dir : opt[2];
+    setCardSort({ key: opt[0], type: opt[1], dir });
+});
+
+document.querySelectorAll("[data-sort-dir]").forEach(btn => btn.addEventListener("click", () => {
+    const state = currentCardSort();
+    if (!state.key) return;
+    setCardSort({ ...state, dir: Number(btn.dataset.sortDir) });
+}));
 
 function setArrearsViewMode(mode) {
     if (mode === arrViewMode) return;
@@ -1737,6 +1874,9 @@ function ensureTableView() {
     setArrearsViewMode("table");
     setArrearsGroupMode("ld");
 }
+
+syncSortHeader("arrearsHeadRow", arrearsSortState);
+syncSortHeader("arrCifHeadRow", cifSortState);
 
 document.getElementById("arrViewCardBtn")?.addEventListener("click", () => setArrearsViewMode("card"));
 document.getElementById("arrViewTableBtn")?.addEventListener("click", () => setArrearsViewMode("table"));

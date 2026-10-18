@@ -605,6 +605,33 @@ No Internet Connection
 </div>
 
 <!-- ========================= -->
+<!-- CARD SORT (bottom sheet) -->
+<!-- ========================= -->
+
+<div id="arrSortBackdrop" class="reason-backdrop arr-sort-backdrop">
+<div class="reason-card arr-sort-card" role="dialog" aria-labelledby="arrSortTitle">
+
+<div class="outarea-sticky-header">
+<div class="reason-title" style="margin:0;" id="arrSortTitle" data-i18n="arrears.sortTitle">តម្រៀបតាម</div>
+<button type="button" id="btnArrSortCloseX" class="outarea-close-x" aria-label="បិទ" data-i18n-aria-label="common.close"><span class="ui-ico ui-ico-close" aria-hidden="true"></span></button>
+</div>
+
+<div class="arr-sort-options" id="arrSortOptions" role="radiogroup"></div>
+
+<div class="oa-tabs arr-sort-dir" role="group">
+<button type="button" class="oa-tab" data-sort-dir="-1">▼ <span data-i18n="arrears.sortDesc">ច្រើន → តិច</span></button>
+<button type="button" class="oa-tab" data-sort-dir="1">▲ <span data-i18n="arrears.sortAsc">តិច → ច្រើន</span></button>
+</div>
+
+<div class="reason-actions">
+<button type="button" id="btnArrSortDefault" data-i18n="arrears.sortDefault">លំនាំដើម</button>
+<button type="button" id="btnArrSortDone" data-i18n="arrears.sortDone">រួចរាល់</button>
+</div>
+
+</div>
+</div>
+
+<!-- ========================= -->
 <!-- TABLE -->
 <!-- ========================= -->
 
@@ -618,6 +645,10 @@ No Internet Connection
 <button type="button" class="arr-group-btn" id="arrGroupLdBtn">LD</button>
 <button type="button" class="arr-group-btn" id="arrGroupCifBtn">CIF</button>
 </div>
+<!-- Sort for the card views (the tables sort from their headers) -->
+<button type="button" class="arr-view-btn arr-sort-btn" id="arrSortBtn" aria-label="តម្រៀប" data-i18n-aria-label="arrears.sortBtn">
+<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M3.5 7.5 7 4l3.5 3.5"/><path d="M17 20V4M13.5 16.5 17 20l3.5-3.5"/></svg>
+</button>
 <div class="arr-view-toggle">
 <button type="button" class="arr-view-btn" id="arrViewCardBtn" data-view="card" aria-label="Card view" data-i18n-aria-label="customers.viewCardAria">
 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
@@ -627,6 +658,12 @@ No Internet Connection
 </button>
 </div>
 </div>
+</div>
+
+<!-- Active card sort: tap the label to change it, ✕ for default order -->
+<div class="arr-sort-chip-row" id="arrSortChipRow" hidden>
+<button type="button" class="arr-sort-chip" id="arrSortChip"></button>
+<button type="button" class="arr-sort-chip-x" id="arrSortChipX" aria-label="លំនាំដើម" data-i18n-aria-label="arrears.sortDefault"><span class="ui-ico ui-ico-close" aria-hidden="true"></span></button>
 </div>
 
 <!-- CARD VIEW (arrears.js renderCards) -->
