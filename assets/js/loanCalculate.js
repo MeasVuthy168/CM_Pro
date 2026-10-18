@@ -8,97 +8,323 @@ function format(num){
 
 }
 
+function lt(key,vars,fallback){
+
+    if(window.CMI18n && typeof CMI18n.t==="function"){
+
+        const v=CMI18n.t(key,vars);
+
+        if(v && v!==key) return v;
+
+    }
+
+    return fallback;
+
+}
+
+function escapeHtml(text){
+
+    return String(text==null?"":text)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;");
+
+}
+
+// toast.js declares CMToast as a top-level const (not on window), so
+// check it with typeof; fall back to alert() only if it's missing.
+function lcNotify(message,type="warning"){
+
+    if(typeof CMToast!=="undefined" && typeof CMToast.show==="function"){
+
+        CMToast.show({ type, title:message, message:"", duration:3500 });
+
+    }else{
+
+        alert(message);
+
+    }
+
+}
+
+// =========================
+// State
+// =========================
+
+// Which of the three linked fields is computed from the other two.
+let solveFor="periodicRepayment";
+
+// Last successful calculation — the on-screen schedule and both
+// exports are built from this, never by re-reading the DOM table.
+let lastCalc=null;
+
+const SOLVE_FIELDS=["periodicRepayment","loanAmount","term"];
+
+const SCHEDULE_PREVIEW_ROWS=12;
+
+let scheduleExpanded=false;
+
+// =========================
+// Solve-for / method controls
+// =========================
+
+function setSolveFor(field){
+
+    solveFor=field;
+
+    document.querySelectorAll("#solveFor .seg-btn").forEach(b=>{
+
+        const on=b.dataset.field===field;
+
+        b.classList.toggle("active",on);
+
+        b.setAttribute("aria-pressed",on?"true":"false");
+
+    });
+
+    SOLVE_FIELDS.forEach(id=>{
+
+        const input=document.getElementById(id);
+
+        const group=input.closest(".form-group");
+
+        const solved=id===field;
+
+        input.readOnly=solved;
+
+        input.tabIndex=solved?-1:0;
+
+        group.classList.toggle("is-solved",solved);
+
+        if(solved){
+
+            input.value="";
+
+            input.placeholder=lt("loanCalculate.autoPlaceholder",null,"Calculated automatically");
+
+        }else{
+
+            input.placeholder="";
+
+        }
+
+    });
+
+    if(lastCalc) calculateLoan({silent:true});
+
+}
+
+function setMethod(method){
+
+    document.getElementById("paymentMethod").value=method;
+
+    document.querySelectorAll("#methodSeg .seg-btn").forEach(b=>{
+
+        const on=b.dataset.method===method;
+
+        b.classList.toggle("active",on);
+
+        b.setAttribute("aria-pressed",on?"true":"false");
+
+    });
+
+    if(lastCalc) calculateLoan({silent:true});
+
+}
+
+function methodLabel(method){
+
+    return method==="Annuity"
+
+        ? lt("loanCalculate.methodAnnuity",null,"Fixed (Annuity)")
+
+        : lt("loanCalculate.methodLinear",null,"Declining (Linear)");
+
+}
+
 // =========================
 // Calculate
 // =========================
 
-function calculateLoan(){
+function readNum(id){
+
+    const v=document.getElementById(id).value;
+
+    return v==="" ? NaN : parseFloat(v);
+
+}
+
+// Live recalcs (opts.silent) don't toast; if the inputs stop forming a
+// valid loan, the previous result is dimmed and exports are disabled
+// so a stale schedule can't be mistaken for the current one.
+function calculateLoan(opts={}){
+
+    const ok=computeLoan(opts);
+
+    const card=document.getElementById("resultCard");
+
+    if(lastCalc){
+
+        card.classList.toggle("is-stale",!ok);
+
+        document.getElementById("scheduleCard").classList.toggle("is-stale",!ok);
+
+        document.getElementById("btnPDF").disabled=!ok;
+
+        document.getElementById("btnExcel").disabled=!ok;
+
+    }
+
+    return ok;
+
+}
+
+function computeLoan(opts={}){
+
+    const silent=!!opts.silent;
 
     const customerName=document.getElementById("customerName").value.trim();
 
-    const loan=parseFloat(document.getElementById("loanAmount").value);
-
-    const repayment=parseFloat(document.getElementById("periodicRepayment").value);
-
-    const term=parseFloat(document.getElementById("term").value);
-
-    const interestRate=parseFloat(document.getElementById("interestRate").value);
-
     const method=document.getElementById("paymentMethod").value;
 
-    const rate=(interestRate/100)/12;
+    const interestRate=readNum("interestRate");
 
-    let loanVal=loan, payVal=repayment, months=term;
+    let loanVal=solveFor==="loanAmount" ? NaN : readNum("loanAmount");
 
-    const missing=[isNaN(loan),isNaN(repayment),isNaN(term)].filter(Boolean).length;
+    let payVal=solveFor==="periodicRepayment" ? NaN : readNum("periodicRepayment");
 
-    if(missing!==1){
+    let months=solveFor==="term" ? NaN : readNum("term");
 
-        if(typeof showToast==="function"){
+    // ---- validation ----
 
-            showToast("សូមទុកប្រអប់មួយ ដើម្បីគណនា។","warning");
+    const need=[];
 
-        }else{
+    if(solveFor!=="loanAmount" && !(loanVal>0)) need.push(lt("loanCalculate.loanAmountLabel",null,"Loan Amount"));
 
-            alert("សូមទុកប្រអប់មួយ ដើម្បីគណនា។");
+    if(solveFor!=="periodicRepayment" && !(payVal>0)) need.push(lt("loanCalculate.periodicRepaymentLabel",null,"Periodic Repayment"));
+
+    if(solveFor!=="term" && !(months>0)) need.push(lt("loanCalculate.termLabel",null,"Loan Term (months)"));
+
+    if(isNaN(interestRate) || interestRate<0) need.push(lt("loanCalculate.interestRateLabel",null,"Annual Interest Rate (%)"));
+
+    if(need.length){
+
+        if(!silent){
+
+            lcNotify(lt("loanCalculate.needFields",{fields:need.join(", ")},`Please fill in: ${need.join(", ")}`));
 
         }
 
-        return;
+        return false;
 
     }
 
-    if(isNaN(loanVal)){
+    if(solveFor!=="term") months=Math.round(months);
 
-        loanVal=method==="Annuity"
+    const rate=(interestRate/100)/12;
 
-            ? payVal*(1-Math.pow(1+rate,-months))/rate
+    // ---- solve the missing value ----
 
-            : payVal/((1/months)+rate);
+    if(solveFor==="loanAmount"){
 
-    }else if(isNaN(payVal)){
+        if(rate===0){
 
-        payVal=method==="Annuity"
+            loanVal=payVal*months;
 
-            ? (loanVal*rate)/(1-Math.pow(1+rate,-months))
+        }else{
 
-            : (loanVal/months)+(loanVal*rate);
+            loanVal=method==="Annuity"
 
-    }else if(isNaN(months)){
+                ? payVal*(1-Math.pow(1+rate,-months))/rate
 
-        months=Math.ceil(Math.log(payVal/(payVal-loanVal*rate))/Math.log(1+rate));
+                : payVal/((1/months)+rate);
+
+        }
+
+    }else if(solveFor==="periodicRepayment"){
+
+        if(rate===0){
+
+            payVal=loanVal/months;
+
+        }else{
+
+            payVal=method==="Annuity"
+
+                ? (loanVal*rate)/(1-Math.pow(1+rate,-months))
+
+                : (loanVal/months)+(loanVal*rate);
+
+        }
+
+    }else{
+
+        if(rate===0){
+
+            months=Math.ceil(loanVal/payVal);
+
+        }else if(method==="Annuity"){
+
+            if(payVal<=loanVal*rate){
+
+                if(!silent) lcNotify(lt("loanCalculate.payTooSmall",{min:format(loanVal*rate)},`Repayment must be more than ${format(loanVal*rate)} (the first month's interest).`),"error");
+
+                return false;
+
+            }
+
+            months=Math.ceil(Math.log(payVal/(payVal-loanVal*rate))/Math.log(1+rate));
+
+        }else{
+
+            // Linear: first payment = P/n + P*r  →  n = P / (pay - P*r)
+
+            if(payVal<=loanVal*rate){
+
+                if(!silent) lcNotify(lt("loanCalculate.payTooSmall",{min:format(loanVal*rate)},`Repayment must be more than ${format(loanVal*rate)} (the first month's interest).`),"error");
+
+                return false;
+
+            }
+
+            months=Math.ceil(loanVal/(payVal-loanVal*rate));
+
+        }
 
     }
+
+    if(!isFinite(loanVal) || !isFinite(payVal) || !(months>0) || months>600){
+
+        if(!silent) lcNotify(lt("loanCalculate.invalidResult",null,"These values can't produce a valid schedule."),"error");
+
+        return false;
+
+    }
+
+    // ---- build schedule ----
 
     let balance=loanVal;
 
     let totalPrincipal=0, totalInterest=0, totalPayment=0;
 
-    let html=`<div class="pdf-wrapper"><div class="pdf-title">តារាងកាលវិភាគសងប្រាក់</div><div class="pdf-customer">ឈ្មោះអតិថិជន : <span>${customerName||"-"}</span></div>`;
-
-    html+=`<table class="info-table">
-        <tr><th>ទំហំឥណទាន</th><td>${format(loanVal)}</td></tr>
-        <tr><th>ប្រាក់សំណងខួប</th><td>${format(payVal)}</td></tr>
-        <tr><th>រយៈពេលខ្ចី (ខែ)</th><td>${months}</td></tr>
-        <tr><th>អត្រា​ការ​ប្រាក់​ប្រចាំឆ្នាំ</th><td>${interestRate}%</td></tr>
-        <tr><th>របៀបសងប្រាក់</th><td>${method==="Annuity"?"បង់ថេរ":"បង់ថយ"}</td></tr>
-    </table>`;
-
-    html+=`<div class="table-scroll"><table class="schedule-table"><thead><tr>
-        <th>ល.រ</th><th>ប្រាក់ដើម</th><th>ការប្រាក់</th><th>សរុបបង់</th><th>សមតុល្យ</th>
-        </tr></thead><tbody>`;
+    const rows=[];
 
     for(let i=1;i<=months;i++){
 
         const interest=balance*rate;
 
-        const principal=method==="Annuity" ? payVal-interest : loanVal/months;
+        let principal=method==="Annuity" ? payVal-interest : loanVal/months;
 
-        const payment=method==="Annuity" ? payVal : principal+interest;
+        // Last instalment clears whatever is left (a solved term is
+        // rounded up, so the final payment is usually smaller).
+        if(i===months || principal>balance) principal=balance;
+
+        const payment=principal+interest;
 
         balance-=principal;
 
-        if(balance<0) balance=0;
+        if(balance<0.005) balance=0;
 
         totalPrincipal+=principal;
 
@@ -106,25 +332,191 @@ function calculateLoan(){
 
         totalPayment+=payment;
 
-        html+=`<tr>
-            <td>${i}</td>
-            <td>${format(principal)}</td>
-            <td>${format(interest)}</td>
-            <td>${format(payment)}</td>
-            <td>${format(balance)}</td>
-        </tr>`;
+        rows.push({no:i,principal,interest,payment,balance});
 
     }
 
-    html+=`<tr class="total-row">
-        <td>សរុប</td>
-        <td>${format(totalPrincipal)}</td>
-        <td>${format(totalInterest)}</td>
-        <td>${format(totalPayment)}</td>
+    lastCalc={
+
+        customerName,
+
+        method,
+
+        interestRate,
+
+        loanVal,
+
+        payVal,
+
+        months,
+
+        rows,
+
+        totalPrincipal,
+
+        totalInterest,
+
+        totalPayment
+
+    };
+
+    // Show the solved value in its (read-only) field.
+
+    const solvedEl=document.getElementById(solveFor);
+
+    solvedEl.value=solveFor==="term" ? String(months) : (Math.round((solveFor==="loanAmount"?loanVal:payVal)*100)/100).toString();
+
+    renderResult();
+
+    if(!silent){
+
+        document.getElementById("resultCard").scrollIntoView({behavior:"smooth",block:"start"});
+
+    }
+
+    return true;
+
+}
+
+// =========================
+// Render result + schedule
+// =========================
+
+function renderResult(){
+
+    const c=lastCalc;
+
+    if(!c) return;
+
+    const card=document.getElementById("resultCard");
+
+    card.hidden=false;
+
+    document.getElementById("scheduleCard").hidden=false;
+
+    document.getElementById("resName").textContent=c.customerName||"-";
+
+    document.getElementById("resMethod").textContent=methodLabel(c.method)+" • "+c.interestRate+"%";
+
+    // Hero = whatever was solved.
+
+    let heroLabel, heroValue, heroNote="";
+
+    if(solveFor==="loanAmount"){
+
+        heroLabel=lt("loanCalculate.loanAmountLabel",null,"Loan Amount");
+
+        heroValue=format(c.loanVal);
+
+    }else if(solveFor==="term"){
+
+        heroLabel=lt("loanCalculate.termLabel",null,"Loan Term (months)");
+
+        heroValue=lt("loanCalculate.monthsValue",{n:c.months},`${c.months} months`);
+
+    }else{
+
+        heroLabel=lt("loanCalculate.periodicRepaymentLabel",null,"Periodic Repayment");
+
+        heroValue=format(c.payVal);
+
+    }
+
+    if(c.method==="Linear" && c.rows.length){
+
+        heroNote=lt("loanCalculate.linearNote",{first:format(c.rows[0].payment),last:format(c.rows[c.rows.length-1].payment)},`1st ${format(c.rows[0].payment)} → last ${format(c.rows[c.rows.length-1].payment)}`);
+
+    }
+
+    document.getElementById("resHeroLabel").textContent=heroLabel;
+
+    document.getElementById("resHeroValue").textContent=heroValue;
+
+    document.getElementById("resHeroNote").textContent=heroNote;
+
+    document.getElementById("kpiLoan").textContent=format(c.loanVal);
+
+    document.getElementById("kpiTerm").textContent=lt("loanCalculate.monthsValue",{n:c.months},`${c.months} months`);
+
+    document.getElementById("kpiInterest").textContent=format(c.totalInterest);
+
+    document.getElementById("kpiTotal").textContent=format(c.totalPayment);
+
+    const pPct=c.totalPayment>0 ? (c.totalPrincipal/c.totalPayment)*100 : 100;
+
+    document.getElementById("splitPrincipal").style.width=pPct.toFixed(1)+"%";
+
+    document.getElementById("splitPrincipalPct").textContent=pPct.toFixed(1)+"%";
+
+    document.getElementById("splitInterestPct").textContent=(100-pPct).toFixed(1)+"%";
+
+    document.getElementById("btnPDF").disabled=false;
+
+    document.getElementById("btnExcel").disabled=false;
+
+    renderSchedule();
+
+}
+
+function renderSchedule(){
+
+    const c=lastCalc;
+
+    const showAll=scheduleExpanded || c.rows.length<=SCHEDULE_PREVIEW_ROWS+3;
+
+    const visible=showAll ? c.rows : c.rows.slice(0,SCHEDULE_PREVIEW_ROWS);
+
+    let html=`<div class="table-scroll"><table class="schedule-table"><thead><tr>
+        <th>${escapeHtml(lt("loanCalculate.colNo",null,"No"))}</th>
+        <th>${escapeHtml(lt("loanCalculate.colPrincipal",null,"Principal"))}</th>
+        <th>${escapeHtml(lt("loanCalculate.colInterest",null,"Interest"))}</th>
+        <th>${escapeHtml(lt("loanCalculate.colPayment",null,"Total Payment"))}</th>
+        <th>${escapeHtml(lt("loanCalculate.colBalance",null,"Balance"))}</th>
+        </tr></thead><tbody>`;
+
+    visible.forEach(r=>{
+
+        html+=`<tr>
+            <td>${r.no}</td>
+            <td>${format(r.principal)}</td>
+            <td>${format(r.interest)}</td>
+            <td>${format(r.payment)}</td>
+            <td>${format(r.balance)}</td>
+        </tr>`;
+
+    });
+
+    html+=`</tbody><tfoot><tr class="total-row">
+        <td>${escapeHtml(lt("loanCalculate.total",null,"Total"))}</td>
+        <td>${format(c.totalPrincipal)}</td>
+        <td>${format(c.totalInterest)}</td>
+        <td>${format(c.totalPayment)}</td>
         <td>-</td>
-    </tr></tbody></table></div></div>`;
+    </tr></tfoot></table></div>`;
+
+    if(!showAll){
+
+        html+=`<button type="button" class="show-all-btn" id="btnShowAll">${escapeHtml(lt("loanCalculate.showAll",{n:c.rows.length},`Show all ${c.rows.length} months`))}</button>`;
+
+    }
 
     document.getElementById("exportSection").innerHTML=html;
+
+    document.getElementById("scheduleCount").textContent=lt("loanCalculate.monthsValue",{n:c.rows.length},`${c.rows.length} months`);
+
+    const btn=document.getElementById("btnShowAll");
+
+    if(btn){
+
+        btn.addEventListener("click",()=>{
+
+            scheduleExpanded=true;
+
+            renderSchedule();
+
+        });
+
+    }
 
 }
 
@@ -132,69 +524,29 @@ function calculateLoan(){
 // Export PDF
 // =========================
 
+function requireCalc(){
+
+    if(!lastCalc){
+
+        lcNotify(lt("loanCalculate.calcFirst",null,"Please calculate before exporting."));
+
+        return false;
+
+    }
+
+    return true;
+
+}
+
 async function exportToPDF(){
+
+    if(!requireCalc()) return;
+
+    const c=lastCalc;
 
     const {jsPDF}=window.jspdf;
 
     const doc=new jsPDF('p','pt','a4');
-
-    const exportSection=document.getElementById("exportSection");
-
-    if(!exportSection||exportSection.innerHTML.trim()===""){
-
-        if(typeof showToast==="function"){
-
-            showToast("សូមគណនាមុននឹងនាំចេញ។","warning");
-
-        }else{
-
-            alert("សូមគណនាមុននឹងនាំចេញ។");
-
-        }
-
-        return;
-
-    }
-
-    const customerName=document.getElementById("customerName").value.trim()||"-";
-
-    const translatedSection=exportSection.cloneNode(true);
-
-    translatedSection.querySelectorAll("th, td").forEach(cell=>{
-
-        cell.textContent=cell.textContent
-
-            .replace("ល.រ","No")
-
-            .replace("ប្រាក់ដើម","Principal")
-
-            .replace("ការប្រាក់","Interest")
-
-            .replace("សរុបបង់","Total Payment")
-
-            .replace("សមតុល្យ","Balance")
-
-            .replace("ទំហំឥណទាន","Loan Amount")
-
-            .replace("ប្រាក់សំណងខួប","Periodic Repayment")
-
-            .replace("រយៈពេលខ្ចី (ខែ)","Loan Term (months)")
-
-            .replace("អត្រា​ការ​ប្រាក់​ប្រចាំឆ្នាំ","Annual Interest Rate")
-
-            .replace("របៀបសងប្រាក់","Repayment Method")
-
-            .replace("បង់ថេរ","Annuity")
-
-            .replace("បង់ថយ","Linear")
-
-            .replace("សរុប","Total");
-
-    });
-
-    // Print customer name + title as real PDF text at the very top —
-    // the old version built these as <div>s but autoTable only ever
-    // reads <table> elements, so they never actually appeared in the PDF.
 
     doc.setFontSize(15);
 
@@ -208,31 +560,51 @@ async function exportToPDF(){
 
     doc.setTextColor(40,40,40);
 
-    doc.text(`Customer Name : ${customerName}`,40,62);
+    doc.text(`Customer Name : ${c.customerName||"-"}`,40,62);
 
-    const tables=translatedSection.querySelectorAll("table");
+    doc.autoTable({
 
-    let finalY=80;
+        startY:80,
 
-    tables.forEach(table=>{
+        head:[["Item","Value"]],
 
-        const isInfoTable=table.classList.contains("info-table");
+        body:[
 
-        doc.autoTable({
+            ["Loan Amount",format(c.loanVal)],
 
-            html:table,
+            ["Periodic Repayment",format(c.payVal)],
 
-            startY:finalY,
+            ["Loan Term (months)",String(c.months)],
 
-            styles:{fontSize:10,halign:isInfoTable ? 'left' : 'center'},
+            ["Annual Interest Rate",`${c.interestRate}%`],
 
-            headStyles:{fillColor:[13,45,92],textColor:255},
+            ["Repayment Method",c.method==="Annuity"?"Annuity":"Linear"]
 
-            columnStyles:isInfoTable ? {0:{halign:'left'},1:{halign:'left'}} : {}
+        ],
 
-        });
+        showHead:false,
 
-        finalY=doc.lastAutoTable.finalY+20;
+        styles:{fontSize:10,halign:'left'},
+
+        columnStyles:{0:{fontStyle:'bold',fillColor:[13,45,92],textColor:255}}
+
+    });
+
+    doc.autoTable({
+
+        startY:doc.lastAutoTable.finalY+20,
+
+        head:[["No","Principal","Interest","Total Payment","Balance"]],
+
+        body:c.rows.map(r=>[r.no,format(r.principal),format(r.interest),format(r.payment),format(r.balance)]),
+
+        foot:[["Total",format(c.totalPrincipal),format(c.totalInterest),format(c.totalPayment),"-"]],
+
+        styles:{fontSize:10,halign:'center'},
+
+        headStyles:{fillColor:[13,45,92],textColor:255},
+
+        footStyles:{fillColor:[248,240,214],textColor:[14,27,60]}
 
     });
 
@@ -246,117 +618,37 @@ async function exportToPDF(){
 
 function exportToExcel(){
 
-    const exportSection=document.getElementById("exportSection");
+    if(!requireCalc()) return;
 
-    if(!exportSection||exportSection.innerHTML.trim()===""){
-
-        if(typeof showToast==="function"){
-
-            showToast("សូមគណនាមុននឹងនាំចេញ។","warning");
-
-        }else{
-
-            alert("សូមគណនាមុននឹងនាំចេញ។");
-
-        }
-
-        return;
-
-    }
-
-    const customerName=document.getElementById("customerName").value.trim()||"-";
-
-    const interestRate=document.getElementById("interestRate").value;
-
-    const methodLabel=document.getElementById("paymentMethod").value==="Annuity" ? "Annuity" : "Linear";
-
-    // ===== Header block: title, customer name, loan info =====
+    const c=lastCalc;
 
     const rows=[];
 
     rows.push(["Repayment Schedule"]);
 
-    rows.push([`Customer Name : ${customerName}`]);
+    rows.push([`Customer Name : ${c.customerName||"-"}`]);
 
     rows.push([]);
 
-    rows.push(["Loan Amount",Number(document.getElementById("loanAmount").value)||0]);
+    rows.push(["Loan Amount",c.loanVal]);
 
-    rows.push(["Periodic Repayment",Number(document.getElementById("periodicRepayment").value)||0]);
+    rows.push(["Periodic Repayment",c.payVal]);
 
-    rows.push(["Loan Term (months)",Number(document.getElementById("term").value)||""]);
+    rows.push(["Loan Term (months)",c.months]);
 
-    rows.push(["Annual Interest Rate",`${interestRate}%`]);
+    rows.push(["Annual Interest Rate",`${c.interestRate}%`]);
 
-    rows.push(["Repayment Method",methodLabel]);
+    rows.push(["Repayment Method",c.method==="Annuity"?"Annuity":"Linear"]);
 
     rows.push([]);
-
-    // ===== Schedule table header =====
 
     rows.push(["No","Principal","Interest","Total Payment","Balance"]);
 
-    const dataTable=exportSection.querySelector(".schedule-table");
+    c.rows.forEach(r=>rows.push([r.no,r.principal,r.interest,r.payment,r.balance]));
 
-    if(!dataTable){
-
-        if(typeof showToast==="function"){
-
-            showToast("មិនអាចរកតារាងទិន្នន័យបានទេ។","error");
-
-        }else{
-
-            alert("មិនអាចរកតារាងទិន្នន័យបានទេ។");
-
-        }
-
-        return;
-
-    }
-
-    const bodyRows=dataTable.querySelectorAll("tbody tr");
-
-    bodyRows.forEach(tr=>{
-
-        const cells=Array.from(tr.querySelectorAll("td")).map(td=>td.textContent.trim());
-
-        const isTotal=tr.classList.contains("total-row");
-
-        if(isTotal){
-
-            rows.push(["Total",
-
-                parseFloat(cells[1].replace(/,/g,""))||0,
-
-                parseFloat(cells[2].replace(/,/g,""))||0,
-
-                parseFloat(cells[3].replace(/,/g,""))||0,
-
-                ""]);
-
-        }else{
-
-            rows.push([
-
-                parseInt(cells[0],10),
-
-                parseFloat(cells[1].replace(/,/g,""))||0,
-
-                parseFloat(cells[2].replace(/,/g,""))||0,
-
-                parseFloat(cells[3].replace(/,/g,""))||0,
-
-                parseFloat(cells[4].replace(/,/g,""))||0
-
-            ]);
-
-        }
-
-    });
+    rows.push(["Total",c.totalPrincipal,c.totalInterest,c.totalPayment,""]);
 
     const ws=XLSX.utils.aoa_to_sheet(rows);
-
-    // Merge the title and customer-name rows across all 5 columns
 
     ws["!merges"]=[
 
@@ -366,49 +658,19 @@ function exportToExcel(){
 
     ];
 
-    // Reasonable column widths so it reads like the PDF table
+    ws["!cols"]=[{wch:20},{wch:16},{wch:16},{wch:16},{wch:16}];
 
-    ws["!cols"]=[
-
-        {wch:10},
-
-        {wch:16},
-
-        {wch:16},
-
-        {wch:16},
-
-        {wch:16}
-
-    ];
-
-    // Apply number formatting (thousand separator, 2 decimals) to numeric
-
-    // amount cells, same style as the PDF/on-screen figures.
+    // Thousand separator + 2 decimals on every amount cell.
 
     const numberFormat="#,##0.00";
 
-    const dataStartRow=9;
+    for(let r=10;r<rows.length;r++){
 
-    for(let r=dataStartRow;r<rows.length;r++){
+        for(let col=1;col<=4;col++){
 
-        for(let c=1;c<=3;c++){
+            const ref=XLSX.utils.encode_cell({r,c:col});
 
-            const cellRef=XLSX.utils.encode_cell({r,c});
-
-            if(ws[cellRef] && typeof ws[cellRef].v==="number"){
-
-                ws[cellRef].z=numberFormat;
-
-            }
-
-        }
-
-        const balCellRef=XLSX.utils.encode_cell({r,c:4});
-
-        if(ws[balCellRef] && typeof ws[balCellRef].v==="number"){
-
-            ws[balCellRef].z=numberFormat;
+            if(ws[ref] && typeof ws[ref].v==="number") ws[ref].z=numberFormat;
 
         }
 
@@ -416,13 +678,9 @@ function exportToExcel(){
 
     [3,4].forEach(r=>{
 
-        const cellRef=XLSX.utils.encode_cell({r,c:1});
+        const ref=XLSX.utils.encode_cell({r,c:1});
 
-        if(ws[cellRef] && typeof ws[cellRef].v==="number"){
-
-            ws[cellRef].z=numberFormat;
-
-        }
+        if(ws[ref] && typeof ws[ref].v==="number") ws[ref].z=numberFormat;
 
     });
 
@@ -440,10 +698,74 @@ function exportToExcel(){
 
 window.addEventListener("DOMContentLoaded",()=>{
 
-    document.getElementById("btnCalculate").addEventListener("click",calculateLoan);
+    document.getElementById("btnCalculate").addEventListener("click",()=>calculateLoan());
 
     document.getElementById("btnPDF").addEventListener("click",exportToPDF);
 
     document.getElementById("btnExcel").addEventListener("click",exportToExcel);
+
+    document.querySelectorAll("#solveFor .seg-btn").forEach(b=>{
+
+        b.addEventListener("click",()=>setSolveFor(b.dataset.field));
+
+    });
+
+    document.querySelectorAll("#methodSeg .seg-btn").forEach(b=>{
+
+        b.addEventListener("click",()=>setMethod(b.dataset.method));
+
+    });
+
+    document.querySelectorAll(".term-chip").forEach(chip=>{
+
+        chip.addEventListener("click",()=>{
+
+            if(solveFor==="term") return;
+
+            document.getElementById("term").value=chip.dataset.term;
+
+            if(lastCalc) calculateLoan({silent:true});
+
+        });
+
+    });
+
+    // Once there's a result, keep it in sync as the inputs change.
+
+    ["customerName","loanAmount","periodicRepayment","term","interestRate"].forEach(id=>{
+
+        const el=document.getElementById(id);
+
+        el.addEventListener("input",()=>{
+
+            if(el.readOnly) return;
+
+            if(lastCalc){
+
+                scheduleExpanded=false;
+
+                calculateLoan({silent:true});
+
+            }
+
+        });
+
+        el.addEventListener("keydown",e=>{
+
+            if(e.key==="Enter"){
+
+                e.preventDefault();
+
+                calculateLoan();
+
+            }
+
+        });
+
+    });
+
+    setSolveFor(solveFor);
+
+    setMethod(document.getElementById("paymentMethod").value||"Linear");
 
 });
