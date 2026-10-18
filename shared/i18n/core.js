@@ -57,6 +57,7 @@ CMI18n.register({
   "login.welcomeBack": { km: "សូមស្វាគមន៍មកវិញ", en: "Welcome back" },
   "login.or": { km: "ឬចូលដោយ", en: "or log in with" },
   "login.withBiometric": { km: "ស្នាមម្រាមដៃ / ផ្ទៃមុខ", en: "Fingerprint / Face" },
+  "login.pin.usePassword": { km: "ប្រើពាក្យសម្ងាត់", en: "Use password" },
   "login.withPin": { km: "លេខកូដ PIN", en: "PIN code" },
   "login.usernamePlaceholder": { km: "ឈ្មោះអ្នកប្រើប្រាស់", en: "Username" },
   "login.passwordPlaceholder": { km: "ពាក្យសម្ងាត់", en: "Password" },

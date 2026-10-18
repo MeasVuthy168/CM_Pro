@@ -579,6 +579,12 @@ function cmBuildLockOverlay() {
     }
 
     // ----- profile photo (best-effort, same pattern as settings.js) -----
+    const cachedPhoto = user.username ? cmCachedPhoto(user.username) : "";
+    if (cachedPhoto) {
+        const img = el.querySelector("#cmLockPhoto");
+        img.src = cachedPhoto;
+        img.style.display = "block";
+    }
     if (user.username) {
         (async () => {
             try {
@@ -752,7 +758,69 @@ document.addEventListener("visibilitychange", () => {
 
 });
 
+// =========================
+// PROFILE PHOTO CACHE
+// The photo endpoint needs a login token, so the login page and its PIN
+// screen (logged out / token expired) can't fetch it. While logged in,
+// keep a small (160px JPEG, ~10KB) copy on this device, refreshed at
+// most once a day, for those screens to show.
+// =========================
+
+const CM_PHOTO_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+function cmCachedPhoto(username) {
+    try { return localStorage.getItem(`cm_user_photo_${username}`) || ""; } catch { return ""; }
+}
+
+async function cmRefreshPhotoCache() {
+    const token = cmGetToken();
+    const username = cmGetStoredUser().username;
+    if (!token || !username || !window.API) return;
+
+    let at = 0;
+    try { at = Number(localStorage.getItem(`cm_user_photo_at_${username}`)) || 0; } catch {}
+    if (Date.now() - at < CM_PHOTO_MAX_AGE_MS) return;
+
+    try {
+        const res = await fetch(`${API.BASE_URL}/assets/user-photo/${username}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) {
+            // No photo on file: remember that we checked, and drop any old copy.
+            if (res.status === 404) {
+                localStorage.removeItem(`cm_user_photo_${username}`);
+                localStorage.setItem(`cm_user_photo_at_${username}`, String(Date.now()));
+            }
+            return;
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const img = await new Promise((resolve, reject) => {
+            const i = new Image();
+            i.onload = () => resolve(i);
+            i.onerror = reject;
+            i.src = url;
+        });
+        const size = 160;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        // centre-crop to a square
+        const side = Math.min(img.naturalWidth, img.naturalHeight);
+        const sx = (img.naturalWidth - side) / 2;
+        const sy = (img.naturalHeight - side) / 2;
+        canvas.getContext("2d").drawImage(img, sx, sy, side, side, 0, 0, size, size);
+        URL.revokeObjectURL(url);
+        localStorage.setItem(`cm_user_photo_${username}`, canvas.toDataURL("image/jpeg", 0.82));
+        localStorage.setItem(`cm_user_photo_at_${username}`, String(Date.now()));
+    } catch {
+        // best-effort only
+    }
+}
+
 window.addEventListener("load", () => {
+
+    setTimeout(cmRefreshPhotoCache, 4000);
 
     if (cmNeedsImmediateLock) {
         cmShowLock();

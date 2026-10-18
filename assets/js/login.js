@@ -316,8 +316,7 @@ function showLoginStep2(){
 
     usernameSummaryText.innerText=username;
 
-    const avatarEl=document.getElementById("userAvatar");
-    if(avatarEl) avatarEl.innerText=username.charAt(0).toUpperCase();
+    cmSetAvatar(document.getElementById("userAvatar"),username);
 
     updateAltLogin(username);
 
@@ -431,6 +430,22 @@ function cmUserHasPin(username){
 
     return (remembered.username===username && !!remembered.hasPin) ||
         (cached.username===username && !!cached.hasPin);
+
+}
+
+// Real profile photo when this device has a cached copy (saved by
+// config/session.js while logged in), else the first letter.
+function cmSetAvatar(el,username,label){
+
+    if(!el) return;
+
+    let photo="";
+    try{ photo=localStorage.getItem(`cm_user_photo_${username}`) || ""; }catch{}
+
+    el.innerText="";
+    el.classList.toggle("has-photo",!!photo);
+    el.style.backgroundImage=photo ? `url("${photo}")` : "";
+    if(!photo) el.innerText=(label || username || "?").charAt(0).toUpperCase();
 
 }
 
@@ -843,7 +858,7 @@ if(pinOverlay){
         let cached={};
         try{ cached=JSON.parse(localStorage.getItem("loggedInUser") || "{}") || {}; }catch{}
         const name=(cached.username===username && cached.fullname) || username;
-        document.getElementById("pinAvatar").innerText=name.charAt(0).toUpperCase();
+        cmSetAvatar(document.getElementById("pinAvatar"),username,name);
         document.getElementById("pinGreeting").innerText=`${t("login.welcomeBack")}, ${name}`;
         document.getElementById("pinBioKey").hidden=!cmDeviceHasBiometric(username);
 
