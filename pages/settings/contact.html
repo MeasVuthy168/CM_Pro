@@ -36,181 +36,87 @@ href="../../assets/css/main.css">
     --ct-border:#E2E6ED;
     --ct-text:#1C2333;
     --ct-text-muted:#6B7280;
-    --ct-navy-dark:#0E1B3C;
+    --ct-navy:#0E1B3C;
     --ct-gold:#D4AF37;
-    --ct-divider:#E2E6ED;
+    --ct-gold-text:#9A7410;
+    --ct-gold-soft:#FFF6D6;
+    --ct-chip:#F1F3F7;
+    --ct-shadow:0 4px 14px rgba(14,27,60,.07);
 }
-
 [data-theme="dark"]{
     --ct-page-bg:#0B1220;
     --ct-card-bg:#131C2E;
     --ct-border:#223055;
     --ct-text:#EAF0FF;
     --ct-text-muted:#8FA0C7;
-    --ct-navy-dark:#EAF0FF;
-    --ct-divider:rgba(255,255,255,.08);
+    --ct-navy:#EAF0FF;
+    --ct-gold-text:#FFD700;
+    --ct-gold-soft:rgba(255,215,0,.10);
+    --ct-chip:#1A2540;
+    --ct-shadow:0 2px 14px rgba(0,0,0,.4);
 }
-
 [data-theme="gold"]{
     --ct-page-bg:#FFF8E7;
     --ct-card-bg:#FFFDF6;
-    --ct-border:#C9971F;
-    --ct-navy-dark:#6B4500;
+    --ct-border:#E6CF8E;
+    --ct-navy:#6B4500;
+    --ct-chip:#FBF1D6;
 }
-
 [data-theme="darkgray"]{
     --ct-page-bg:#2B2E33;
     --ct-card-bg:#363A41;
     --ct-border:#474C55;
     --ct-text:#F0F1F3;
     --ct-text-muted:#A9AEB6;
-    --ct-navy-dark:#D8DAE0;
-    --ct-gold:#D8DAE0;
-    --ct-divider:rgba(255,255,255,.08);
+    --ct-navy:#F0F1F3;
+    --ct-gold-text:#E8C766;
+    --ct-gold-soft:rgba(232,199,102,.10);
+    --ct-chip:#2F3238;
+    --ct-shadow:0 2px 14px rgba(0,0,0,.35);
 }
 
-.wrapper{
+.wrapper{ width:100%; min-height:100vh; background:var(--ct-page-bg); display:flex; justify-content:center; align-items:flex-start; padding:16px 16px 100px; box-sizing:border-box; }
+.inner{ width:100%; max-width:460px; }
 
-width:100%;
-min-height:100vh;
+/* ----- branch card ----- */
+.branch-card{ background:var(--ct-card-bg); border:1px solid var(--ct-border); border-radius:18px; box-shadow:var(--ct-shadow); padding:16px; margin-bottom:20px; position:relative; overflow:hidden; }
+.branch-card::before{ content:""; position:absolute; left:0; right:0; top:0; height:4px; background:linear-gradient(90deg,#0E1B3C,#D4AF37); }
+.branch-top{ display:flex; align-items:center; gap:14px; }
+.branch-logo{ width:54px; height:54px; flex:none; border-radius:50%; background:#fff; padding:2px; box-shadow:0 0 0 1px var(--ct-border); }
+.branch-name{ font-size:16.5px; font-weight:700; color:var(--ct-navy); line-height:1.45; }
+.branch-sub{ font-size:12.5px; color:var(--ct-text-muted); margin-top:1px; }
+.branch-mail{ display:flex; align-items:center; gap:8px; margin-top:14px; padding:10px 10px 10px 12px; border-radius:14px; background:var(--ct-chip); }
+.mail-link{ flex:1; min-width:0; display:flex; align-items:center; gap:12px; text-decoration:none; color:var(--ct-text); }
+.mail-ic{ width:38px; height:38px; flex:none; border-radius:11px; display:flex; align-items:center; justify-content:center; background:var(--ct-gold-soft); color:var(--ct-gold-text); }
+.mail-text{ display:flex; flex-direction:column; min-width:0; }
+.mail-label{ font-size:11.5px; color:var(--ct-text-muted); }
+.mail-addr{ font-size:14.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mail-copy{ width:38px; height:38px; flex:none; border:none; border-radius:11px; background:var(--ct-card-bg); color:var(--ct-text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 0 0 1px var(--ct-border); }
+.mail-copy:active{ transform:scale(.94); }
+.mail-copy.copied{ color:#1E8A52; }
 
-background:var(--ct-page-bg);
-
-display:flex;
-justify-content:center;
-align-items:flex-start;
-
-padding:24px;
-padding-bottom:100px;
-
-box-sizing:border-box;
-
-}
-
-.inner{
-
-width:100%;
-max-width:430px;
-
-}
-
-.branch-header{
-
-text-align:center;
-
-font-size:17px;
-font-weight:bold;
-
-color:var(--ct-navy-dark);
-
-background:var(--ct-card-bg);
-border:1px solid var(--ct-border);
-border-radius:16px;
-
-padding:18px;
-
-margin-bottom:16px;
-
-box-shadow:0 4px 14px rgba(0,0,0,.08);
-
-}
-
-[data-theme="dark"] .branch-header{
-
-box-shadow:0 2px 14px rgba(0,0,0,.4);
-
-}
-
-.staff-list{
-
-background:var(--ct-card-bg);
-
-border:1px solid var(--ct-border);
-
-border-radius:16px;
-
-overflow:hidden;
-
-box-shadow:0 4px 14px rgba(0,0,0,.08);
-
-}
-
-[data-theme="dark"] .staff-list{
-
-box-shadow:0 2px 14px rgba(0,0,0,.4);
-
-}
-
-.staff-block{
-
-padding:18px 20px;
-
-border-bottom:1px solid var(--ct-divider);
-
-}
-
-.staff-block:last-child{
-
-border-bottom:none;
-
-}
-
-.staff-name{
-
-font-size:16px;
-font-weight:700;
-
-color:var(--ct-text);
-
-margin-bottom:2px;
-
-}
-
-.staff-role{
-
-font-size:13px;
-
-color:var(--ct-text-muted);
-
-margin-bottom:12px;
-
-}
-
-.staff-row{
-
-display:flex;
-align-items:center;
-gap:10px;
-
-padding:6px 0;
-
-font-size:14.5px;
-
-color:var(--ct-text);
-
-text-decoration:none;
-
-}
-
-.staff-row .icon{
-
-width:20px;
-height:20px;
-flex-shrink:0;
-
-color:var(--ct-gold);
-
-display:flex;
-align-items:center;
-justify-content:center;
-
-}
-
-.staff-row.telegram .icon{
-
-color:#29A9EB;
-
-}
+/* ----- staff ----- */
+.section-label{ font-size:12.5px; font-weight:700; letter-spacing:.04em; color:var(--ct-text-muted); margin:0 4px 10px; }
+.staff-list{ display:flex; flex-direction:column; gap:12px; }
+.staff-card{ background:var(--ct-card-bg); border:1px solid var(--ct-border); border-radius:16px; box-shadow:var(--ct-shadow); padding:14px; }
+.staff-card.senior{ border-color:rgba(212,175,55,.6); }
+.staff-head{ display:flex; align-items:center; gap:12px; }
+.staff-avatar{ width:46px; height:46px; flex:none; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:Arial,sans-serif; font-size:16px; font-weight:700; letter-spacing:.5px; background:#0E1B3C; color:#FFD700; }
+.senior .staff-avatar{ background:linear-gradient(180deg,#FFD700,#D4AF37); color:#0E1B3C; box-shadow:0 0 0 3px rgba(212,175,55,.25); }
+[data-theme="dark"] .staff-avatar,[data-theme="darkgray"] .staff-avatar{ background:#22305A; }
+[data-theme="dark"] .senior .staff-avatar,[data-theme="darkgray"] .senior .staff-avatar{ background:linear-gradient(180deg,#FFD700,#D4AF37); }
+.staff-id{ min-width:0; }
+.staff-name{ font-size:15.5px; font-weight:700; color:var(--ct-text); }
+.staff-role{ font-size:12.5px; color:var(--ct-text-muted); margin-top:2px; line-height:1.4; }
+.senior .staff-role{ color:var(--ct-gold-text); font-weight:600; }
+.staff-actions{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+.act{ height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; gap:8px; font-size:14px; font-weight:600; text-decoration:none; transition:transform .1s; }
+.act:active{ transform:scale(.97); }
+.act-call{ background:var(--ct-chip); color:var(--ct-text); }
+.act-call svg{ color:#1E8A52; }
+[data-theme="dark"] .act-call svg,[data-theme="darkgray"] .act-call svg{ color:#6FDCA0; }
+.act-tg{ background:rgba(34,158,217,.12); color:#1C88C7; }
+[data-theme="dark"] .act-tg,[data-theme="darkgray"] .act-tg{ background:rgba(34,158,217,.18); color:#5EC2F2; }
 
 </style>
 
@@ -224,95 +130,94 @@ color:#29A9EB;
 
 <div class="inner">
 
-<div class="branch-header" data-i18n="settings.contact.branchName">
-ACLEDA Bank Svay Rieng Branch
+<div class="branch-card">
+<div class="branch-top">
+<img class="branch-logo" src="/CM_Pro/assets/images/LogoAC.png" alt="">
+<div>
+<div class="branch-name" data-i18n="settings.contact.branchName">ធនាគារអេស៊ីលីដាសាខាខេត្តស្វាយរៀង</div>
+<div class="branch-sub" data-i18n="settings.contact.branchSub">ACLEDA Bank Svay Rieng Branch</div>
 </div>
+</div>
+<div class="branch-mail">
+<a class="mail-link" href="mailto:svg@acledabank.com.kh">
+<span class="mail-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg></span>
+<span class="mail-text">
+<span class="mail-label" data-i18n="settings.contact.email">អ៊ីមែលសាខា</span>
+<span class="mail-addr">svg@acledabank.com.kh</span>
+</span>
+</a>
+<button type="button" class="mail-copy" id="mailCopy" aria-label="Copy"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></button>
+</div>
+</div>
+
+<div class="section-label" data-i18n="settings.contact.team">ក្រុមឥណទានសាខា</div>
 
 <div class="staff-list">
 
-<div class="staff-block">
+<div class="staff-card senior">
+<div class="staff-head">
+<div class="staff-avatar" aria-hidden="true">CS</div>
+<div class="staff-id">
 <div class="staff-name">Mr. Chann Sokong</div>
-<div class="staff-role" data-i18n="settings.contact.roleSenior">Senior Branch Credit Manager</div>
-<a class="staff-row" href="tel:015400568">
-<span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5c0-1 .8-1.8 1.8-1.8h2.1c.5 0 .9.3 1 .8l.9 3a1.1 1.1 0 0 1-.3 1.1L8.1 10c1 2.1 2.7 3.8 4.8 4.8l1.4-1.4a1.1 1.1 0 0 1 1.1-.3l3 .9c.5.1.8.5.8 1v2.1c0 1-.8 1.8-1.8 1.8C10.6 19 5 13.4 4 6.6c0-.4 0-.7 0-1.1z"/></svg></span>
-<span>015 400 568</span>
-</a>
-<a class="staff-row telegram" href="https://t.me/Chann_Sokong" target="_blank" rel="noopener">
-<span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21.2 3.2 2.7 10.6c-1 .4-1 1 .1 1.3l4.8 1.5 1.9 6c.2.7.5.8 1 .4l2.7-2.1 4.7 3.5c.7.5 1.2.3 1.4-.6l2.8-13.3c.3-1.2-.3-1.7-1.9-1.1zM8.6 13l9-5.7c.4-.3.8-.1.5.2L10.5 15l-.3 3.2-1.6-5.2z"/></svg></span>
-<span>t.me/Chann_Sokong</span>
-</a>
-<a class="staff-row" href="mailto:svg@acledabank.com.kh">
-<span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg></span>
-<span>svg@acledabank.com.kh</span>
-</a>
+<div class="staff-role" data-i18n="settings.contact.roleSenior">ប្រធានឥណទានជាន់ខ្ពស់សាខា"ក"</div>
 </div>
-
-<div class="staff-block">
+</div>
+<div class="staff-actions">
+<a class="act act-call" href="tel:015400568"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5c0-1 .8-1.8 1.8-1.8h2.1c.5 0 .9.3 1 .8l.9 3a1.1 1.1 0 0 1-.3 1.1L8.1 10c1 2.1 2.7 3.8 4.8 4.8l1.4-1.4a1.1 1.1 0 0 1 1.1-.3l3 .9c.5.1.8.5.8 1v2.1c0 1-.8 1.8-1.8 1.8C10.6 19 5 13.4 4 6.6c0-.4 0-.7 0-1.1z"/></svg><span>015 400 568</span></a>
+<a class="act act-tg" href="https://t.me/Chann_Sokong" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.2 3.2 2.7 10.6c-1 .4-1 1 .1 1.3l4.8 1.5 1.9 6c.2.7.5.8 1 .4l2.7-2.1 4.7 3.5c.7.5 1.2.3 1.4-.6l2.8-13.3c.3-1.2-.3-1.7-1.9-1.1zM8.6 13l9-5.7c.4-.3.8-.1.5.2L10.5 15l-.3 3.2-1.6-5.2z"/></svg><span>Telegram</span></a>
+</div>
+</div>
+<div class="staff-card">
+<div class="staff-head">
+<div class="staff-avatar" aria-hidden="true">MV</div>
+<div class="staff-id">
 <div class="staff-name">Mr. Meas Vuthy</div>
-<div class="staff-role" data-i18n="settings.contact.roleAssistant">Assistant Branch Credit Manager</div>
-<a class="staff-row" href="tel:015400568">
-<span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5c0-1 .8-1.8 1.8-1.8h2.1c.5 0 .9.3 1 .8l.9 3a1.1 1.1 0 0 1-.3 1.1L8.1 10c1 2.1 2.7 3.8 4.8 4.8l1.4-1.4a1.1 1.1 0 0 1 1.1-.3l3 .9c.5.1.8.5.8 1v2.1c0 1-.8 1.8-1.8 1.8C10.6 19 5 13.4 4 6.6c0-.4 0-.7 0-1.1z"/></svg></span>
-<span>015 400 568</span>
-</a>
-<a class="staff-row telegram" href="https://t.me/MeasVuthy_Acleda" target="_blank" rel="noopener">
-<span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21.2 3.2 2.7 10.6c-1 .4-1 1 .1 1.3l4.8 1.5 1.9 6c.2.7.5.8 1 .4l2.7-2.1 4.7 3.5c.7.5 1.2.3 1.4-.6l2.8-13.3c.3-1.2-.3-1.7-1.9-1.1zM8.6 13l9-5.7c.4-.3.8-.1.5.2L10.5 15l-.3 3.2-1.6-5.2z"/></svg></span>
-<span>t.me/MeasVuthy_Acleda</span>
-</a>
-<a class="staff-row" href="mailto:svg@acledabank.com.kh">
-<span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg></span>
-<span>svg@acledabank.com.kh</span>
-</a>
+<div class="staff-role" data-i18n="settings.contact.roleAssistant">អនុប្រធានឥណទានសាខា"ក"</div>
 </div>
-
-<div class="staff-block">
+</div>
+<div class="staff-actions">
+<a class="act act-call" href="tel:015400568"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5c0-1 .8-1.8 1.8-1.8h2.1c.5 0 .9.3 1 .8l.9 3a1.1 1.1 0 0 1-.3 1.1L8.1 10c1 2.1 2.7 3.8 4.8 4.8l1.4-1.4a1.1 1.1 0 0 1 1.1-.3l3 .9c.5.1.8.5.8 1v2.1c0 1-.8 1.8-1.8 1.8C10.6 19 5 13.4 4 6.6c0-.4 0-.7 0-1.1z"/></svg><span>015 400 568</span></a>
+<a class="act act-tg" href="https://t.me/MeasVuthy_Acleda" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.2 3.2 2.7 10.6c-1 .4-1 1 .1 1.3l4.8 1.5 1.9 6c.2.7.5.8 1 .4l2.7-2.1 4.7 3.5c.7.5 1.2.3 1.4-.6l2.8-13.3c.3-1.2-.3-1.7-1.9-1.1zM8.6 13l9-5.7c.4-.3.8-.1.5.2L10.5 15l-.3 3.2-1.6-5.2z"/></svg><span>Telegram</span></a>
+</div>
+</div>
+<div class="staff-card">
+<div class="staff-head">
+<div class="staff-avatar" aria-hidden="true">SC</div>
+<div class="staff-id">
 <div class="staff-name">Mr. Soum Chansreyvoan</div>
-<div class="staff-role" data-i18n="settings.contact.roleAssistant">Assistant Branch Credit Manager</div>
-<a class="staff-row" href="tel:015700397">
-<span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5c0-1 .8-1.8 1.8-1.8h2.1c.5 0 .9.3 1 .8l.9 3a1.1 1.1 0 0 1-.3 1.1L8.1 10c1 2.1 2.7 3.8 4.8 4.8l1.4-1.4a1.1 1.1 0 0 1 1.1-.3l3 .9c.5.1.8.5.8 1v2.1c0 1-.8 1.8-1.8 1.8C10.6 19 5 13.4 4 6.6c0-.4 0-.7 0-1.1z"/></svg></span>
-<span>015 700 397</span>
-</a>
-<a class="staff-row telegram" href="https://t.me/SoumChansereyvoan" target="_blank" rel="noopener">
-<span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21.2 3.2 2.7 10.6c-1 .4-1 1 .1 1.3l4.8 1.5 1.9 6c.2.7.5.8 1 .4l2.7-2.1 4.7 3.5c.7.5 1.2.3 1.4-.6l2.8-13.3c.3-1.2-.3-1.7-1.9-1.1zM8.6 13l9-5.7c.4-.3.8-.1.5.2L10.5 15l-.3 3.2-1.6-5.2z"/></svg></span>
-<span>t.me/SoumChansereyvoan</span>
-</a>
-<a class="staff-row" href="mailto:svg@acledabank.com.kh">
-<span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg></span>
-<span>svg@acledabank.com.kh</span>
-</a>
+<div class="staff-role" data-i18n="settings.contact.roleAssistant">អនុប្រធានឥណទានសាខា"ក"</div>
 </div>
-
-<div class="staff-block">
+</div>
+<div class="staff-actions">
+<a class="act act-call" href="tel:015700397"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5c0-1 .8-1.8 1.8-1.8h2.1c.5 0 .9.3 1 .8l.9 3a1.1 1.1 0 0 1-.3 1.1L8.1 10c1 2.1 2.7 3.8 4.8 4.8l1.4-1.4a1.1 1.1 0 0 1 1.1-.3l3 .9c.5.1.8.5.8 1v2.1c0 1-.8 1.8-1.8 1.8C10.6 19 5 13.4 4 6.6c0-.4 0-.7 0-1.1z"/></svg><span>015 700 397</span></a>
+<a class="act act-tg" href="https://t.me/SoumChansereyvoan" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.2 3.2 2.7 10.6c-1 .4-1 1 .1 1.3l4.8 1.5 1.9 6c.2.7.5.8 1 .4l2.7-2.1 4.7 3.5c.7.5 1.2.3 1.4-.6l2.8-13.3c.3-1.2-.3-1.7-1.9-1.1zM8.6 13l9-5.7c.4-.3.8-.1.5.2L10.5 15l-.3 3.2-1.6-5.2z"/></svg><span>Telegram</span></a>
+</div>
+</div>
+<div class="staff-card">
+<div class="staff-head">
+<div class="staff-avatar" aria-hidden="true">TD</div>
+<div class="staff-id">
 <div class="staff-name">Mr. Theum Dany</div>
-<div class="staff-role" data-i18n="settings.contact.roleAssistant">Assistant Branch Credit Manager</div>
-<a class="staff-row" href="tel:015500466">
-<span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5c0-1 .8-1.8 1.8-1.8h2.1c.5 0 .9.3 1 .8l.9 3a1.1 1.1 0 0 1-.3 1.1L8.1 10c1 2.1 2.7 3.8 4.8 4.8l1.4-1.4a1.1 1.1 0 0 1 1.1-.3l3 .9c.5.1.8.5.8 1v2.1c0 1-.8 1.8-1.8 1.8C10.6 19 5 13.4 4 6.6c0-.4 0-.7 0-1.1z"/></svg></span>
-<span>015 500 466</span>
-</a>
-<a class="staff-row telegram" href="https://t.me/Theumdany" target="_blank" rel="noopener">
-<span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21.2 3.2 2.7 10.6c-1 .4-1 1 .1 1.3l4.8 1.5 1.9 6c.2.7.5.8 1 .4l2.7-2.1 4.7 3.5c.7.5 1.2.3 1.4-.6l2.8-13.3c.3-1.2-.3-1.7-1.9-1.1zM8.6 13l9-5.7c.4-.3.8-.1.5.2L10.5 15l-.3 3.2-1.6-5.2z"/></svg></span>
-<span>t.me/Theumdany</span>
-</a>
-<a class="staff-row" href="mailto:svg@acledabank.com.kh">
-<span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg></span>
-<span>svg@acledabank.com.kh</span>
-</a>
+<div class="staff-role" data-i18n="settings.contact.roleAssistant">អនុប្រធានឥណទានសាខា"ក"</div>
 </div>
-
-<div class="staff-block">
+</div>
+<div class="staff-actions">
+<a class="act act-call" href="tel:015500466"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5c0-1 .8-1.8 1.8-1.8h2.1c.5 0 .9.3 1 .8l.9 3a1.1 1.1 0 0 1-.3 1.1L8.1 10c1 2.1 2.7 3.8 4.8 4.8l1.4-1.4a1.1 1.1 0 0 1 1.1-.3l3 .9c.5.1.8.5.8 1v2.1c0 1-.8 1.8-1.8 1.8C10.6 19 5 13.4 4 6.6c0-.4 0-.7 0-1.1z"/></svg><span>015 500 466</span></a>
+<a class="act act-tg" href="https://t.me/Theumdany" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.2 3.2 2.7 10.6c-1 .4-1 1 .1 1.3l4.8 1.5 1.9 6c.2.7.5.8 1 .4l2.7-2.1 4.7 3.5c.7.5 1.2.3 1.4-.6l2.8-13.3c.3-1.2-.3-1.7-1.9-1.1zM8.6 13l9-5.7c.4-.3.8-.1.5.2L10.5 15l-.3 3.2-1.6-5.2z"/></svg><span>Telegram</span></a>
+</div>
+</div>
+<div class="staff-card">
+<div class="staff-head">
+<div class="staff-avatar" aria-hidden="true">SD</div>
+<div class="staff-id">
 <div class="staff-name">Mr. Sok Danel</div>
-<div class="staff-role" data-i18n="settings.contact.roleAssistant">Assistant Branch Credit Manager</div>
-<a class="staff-row" href="tel:010400209">
-<span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5c0-1 .8-1.8 1.8-1.8h2.1c.5 0 .9.3 1 .8l.9 3a1.1 1.1 0 0 1-.3 1.1L8.1 10c1 2.1 2.7 3.8 4.8 4.8l1.4-1.4a1.1 1.1 0 0 1 1.1-.3l3 .9c.5.1.8.5.8 1v2.1c0 1-.8 1.8-1.8 1.8C10.6 19 5 13.4 4 6.6c0-.4 0-.7 0-1.1z"/></svg></span>
-<span>010 400 209</span>
-</a>
-<a class="staff-row telegram" href="https://t.me/Sok_Danel" target="_blank" rel="noopener">
-<span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21.2 3.2 2.7 10.6c-1 .4-1 1 .1 1.3l4.8 1.5 1.9 6c.2.7.5.8 1 .4l2.7-2.1 4.7 3.5c.7.5 1.2.3 1.4-.6l2.8-13.3c.3-1.2-.3-1.7-1.9-1.1zM8.6 13l9-5.7c.4-.3.8-.1.5.2L10.5 15l-.3 3.2-1.6-5.2z"/></svg></span>
-<span>t.me/Sok_Danel</span>
-</a>
-<a class="staff-row" href="mailto:svg@acledabank.com.kh">
-<span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg></span>
-<span>svg@acledabank.com.kh</span>
-</a>
+<div class="staff-role" data-i18n="settings.contact.roleAssistant">អនុប្រធានឥណទានសាខា"ក"</div>
+</div>
+</div>
+<div class="staff-actions">
+<a class="act act-call" href="tel:010400209"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5c0-1 .8-1.8 1.8-1.8h2.1c.5 0 .9.3 1 .8l.9 3a1.1 1.1 0 0 1-.3 1.1L8.1 10c1 2.1 2.7 3.8 4.8 4.8l1.4-1.4a1.1 1.1 0 0 1 1.1-.3l3 .9c.5.1.8.5.8 1v2.1c0 1-.8 1.8-1.8 1.8C10.6 19 5 13.4 4 6.6c0-.4 0-.7 0-1.1z"/></svg><span>010 400 209</span></a>
+<a class="act act-tg" href="https://t.me/Sok_Danel" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.2 3.2 2.7 10.6c-1 .4-1 1 .1 1.3l4.8 1.5 1.9 6c.2.7.5.8 1 .4l2.7-2.1 4.7 3.5c.7.5 1.2.3 1.4-.6l2.8-13.3c.3-1.2-.3-1.7-1.9-1.1zM8.6 13l9-5.7c.4-.3.8-.1.5.2L10.5 15l-.3 3.2-1.6-5.2z"/></svg><span>Telegram</span></a>
+</div>
 </div>
 
 </div>
@@ -334,6 +239,16 @@ ACLEDA Bank Svay Rieng Branch
 <script src="/CM_Pro/shared/i18n/settings.js"></script>
 
 <script>
+
+document.getElementById("mailCopy").addEventListener("click", async function(){
+    try{
+        await navigator.clipboard.writeText("svg@acledabank.com.kh");
+        this.classList.add("copied");
+        this.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+    }catch(err){
+        location.href = "mailto:svg@acledabank.com.kh";
+    }
+});
 
 (async function loadTopbar(){
 try{

@@ -151,9 +151,12 @@ CMI18n.register({
   "settings.about.versionLoadFailed": { km: "មិនអាចទាញយកព័ត៌មាន Version បាន។", en: "Could not load version information." },
 
   // contact.html
-  "settings.contact.branchName": { km: "ធនាគារ ACLEDA សាខាខេត្តស្វាយរៀង", en: "ACLEDA Bank Svay Rieng Branch" },
-  "settings.contact.roleSenior": { km: "ប្រធានក្រុមឥណទានសាខា", en: "Senior Branch Credit Manager" },
-  "settings.contact.roleAssistant": { km: "ជំនួយការប្រធានឥណទានសាខា", en: "Assistant Branch Credit Manager" },
+  "settings.contact.branchName": { km: "ធនាគារអេស៊ីលីដាសាខាខេត្តស្វាយរៀង", en: "ACLEDA Bank Svay Rieng Branch" },
+  "settings.contact.branchSub": { km: "ACLEDA Bank Svay Rieng Branch", en: "ធនាគារអេស៊ីលីដាសាខាខេត្តស្វាយរៀង" },
+  "settings.contact.email": { km: "អ៊ីមែលសាខា", en: "Branch email" },
+  "settings.contact.team": { km: "ក្រុមឥណទានសាខា", en: "BRANCH CREDIT TEAM" },
+  "settings.contact.roleSenior": { km: "ប្រធានឥណទានជាន់ខ្ពស់សាខា\"ក\"", en: "Senior Branch Credit Manager" },
+  "settings.contact.roleAssistant": { km: "អនុប្រធានឥណទានសាខា\"ក\"", en: "Assistant Branch Credit Manager" },
 
   // voicecommand.html
   "settings.voice.cardTitle": { km: "ពាក្យបញ្ជាសំឡេង", en: "Voice Command" },
