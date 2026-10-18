@@ -32,19 +32,39 @@ let lastTurnoverData={
 // MESSAGE HELPER
 // Prefer the app's toast system (already loaded via toast.js
 // on this page); fall back to alert() only if it's missing.
+// toast.js declares CMToast as a top-level const, so it is NOT a
+// window property — check it with typeof.
 // ========================================
 
 function notify(message,type="info"){
 
-    if(typeof showToast==="function"){
+    if(typeof CMToast!=="undefined" && typeof CMToast.show==="function"){
 
-        showToast(message,type);
+        CMToast.show({ type, title:message, message:"", duration:3500 });
 
     }else{
 
         alert(message);
 
     }
+
+}
+
+function tr_(key,fallback){
+
+    try{
+
+        if(window.CMI18n && typeof CMI18n.t==="function"){
+
+            const v=CMI18n.t(key);
+
+            if(v && v!==key) return v;
+
+        }
+
+    }catch(e){}
+
+    return fallback;
 
 }
 
@@ -82,7 +102,9 @@ async function searchTurnover(){
 
     if(!cif){
 
-        notify("Please input CIF.","warning");
+        notify(tr_("turnover.needCif","Please input CIF."),"warning");
+
+        document.getElementById("inputCIF").focus();
 
         return;
 
@@ -95,7 +117,7 @@ async function searchTurnover(){
 
     if(!preparedDate){
 
-        notify("Please select Prepared Date.","warning");
+        notify(tr_("turnover.needDate","Please select Prepared Date."),"warning");
 
         return;
 
@@ -131,7 +153,7 @@ async function searchTurnover(){
 
                 result.message ||
 
-                "Unable to load data."
+                tr_("turnover.loadFailed","Unable to load data.")
 
             );
 
@@ -145,7 +167,7 @@ async function searchTurnover(){
 
         console.error(err);
 
-        notify(err.message,"error");
+        notify(err.message || tr_("turnover.loadFailed","Unable to load data."),"error");
 
     }
 
@@ -364,7 +386,7 @@ function renderTable(items){
                 <td>${escapeHtml(item.requestText)}</td>
 
                 <td colspan="4">
-                    No Data
+                    ${escapeHtml(tr_("turnover.noData","No Data"))}
                 </td>
 
             `;
@@ -473,9 +495,11 @@ function renderTable(items){
 
             </td>
 
-            <td>
+            <td class="tvr-td-turnover">
 
-                ${(turnover*100).toFixed(2)}%
+                <span class="tvr-bar"><i style="width:${Math.max(0,Math.min(100,turnover*100)).toFixed(1)}%"></i></span>
+
+                <b>${(turnover*100).toFixed(2)}%</b>
 
             </td>
 
@@ -587,6 +611,66 @@ function renderTable(items){
         customerName
 
     };
+
+    renderSummary(totalCount,items.length);
+
+    if(!totalCount){
+
+        notify(tr_("turnover.noResult","No data found for this CIF."),"warning");
+
+    }
+
+}
+
+// ========================================
+// RESULT SUMMARY
+// Name / CIF / date + average KPIs above the table. Exports stay
+// disabled until there's at least one month with data.
+// ========================================
+
+function renderSummary(withData,total){
+
+    const d=lastTurnoverData;
+
+    const prepared=document.getElementById("preparedDate").value;
+
+    let preparedText=prepared;
+
+    if(prepared){
+
+        const dt=new Date(prepared+"T00:00:00");
+
+        if(!isNaN(dt)) preparedText=dt.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+
+    }
+
+    document.getElementById("tvrSumName").textContent=d.customerName || "-";
+
+    document.getElementById("tvrSumCif").textContent=document.getElementById("inputCIF").value.trim() || "-";
+
+    document.getElementById("tvrSumDate").textContent=preparedText || "-";
+
+    document.getElementById("tvrCoverageNum").textContent=withData+"/"+total;
+
+    document.getElementById("tvrCoverage").classList.toggle("is-partial",withData<total);
+
+    document.getElementById("tvrCoverage").classList.toggle("is-none",!withData);
+
+    document.getElementById("kpiDebit").textContent=d.avgDebit;
+
+    document.getElementById("kpiOD").textContent=d.avgOD;
+
+    document.getElementById("kpiTurnover").textContent=d.avgTurnover;
+
+    document.getElementById("btnExcel").disabled=!withData;
+
+    document.getElementById("btnPDF").disabled=!withData;
+
+    document.getElementById("tvrSummary").hidden=false;
+
+    document.getElementById("tvrTableCard").hidden=false;
+
+    document.getElementById("tvrEmpty").hidden=true;
 
 }
 
@@ -707,6 +791,16 @@ lastTurnoverData = {
 
 };
 
+document.getElementById("tvrSummary").hidden=true;
+
+document.getElementById("tvrTableCard").hidden=true;
+
+document.getElementById("tvrEmpty").hidden=false;
+
+document.getElementById("btnExcel").disabled=true;
+
+document.getElementById("btnPDF").disabled=true;
+
 }
 
 // ========================================
@@ -721,11 +815,39 @@ document
 
 function(){
 
+document.getElementById("btnClearCIF").hidden=this.value==="";
+
 if(this.value.trim()===""){
 
 clearTable();
 
 }
+
+}
+
+);
+
+// ========================================
+// CLEAR CIF (x button inside the input)
+// ========================================
+
+document
+.getElementById("btnClearCIF")
+.addEventListener(
+
+"click",
+
+function(){
+
+const input=document.getElementById("inputCIF");
+
+input.value="";
+
+this.hidden=true;
+
+clearTable();
+
+input.focus();
 
 }
 

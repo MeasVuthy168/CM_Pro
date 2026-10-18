@@ -97,88 +97,126 @@ No Internet Connection
 
 <div class="page-container">
 
+<!-- SEARCH -->
+
 <div class="form-card">
 
-<div class="form-group">
-
-<label data-i18n="turnover.preparedDateLabel">
-
-Prepared Date
-
-</label>
-
-<input
-
-type="date"
-
-id="preparedDate"
-
->
-
-</div>
+<div class="form-grid">
 
 <div class="form-group">
 
-<label>
+<label for="inputCIF">CIF</label>
 
-CIF
+<div class="tvr-input-wrap">
 
-</label>
+<span class="ui-ico ui-ico-search tvr-input-ico" aria-hidden="true"></span>
 
 <input
-
 type="text"
-
 id="inputCIF"
-
 placeholder="Input CIF"
-
 data-i18n-placeholder="turnover.inputCifPlaceholder"
+inputmode="numeric"
+enterkeyhint="search"
+autocomplete="off">
 
-autocomplete="off"
+<button type="button" id="btnClearCIF" class="tvr-clear" aria-label="Clear" hidden>
+<span class="ui-ico ui-ico-close" aria-hidden="true"></span>
+</button>
 
->
+</div>
 
 </div>
 
 <div class="form-group">
 
-<label data-i18n="turnover.customerNameLabel">
+<label for="preparedDate" data-i18n="turnover.preparedDateLabel">Prepared Date</label>
 
-Customer Name
+<input type="date" id="preparedDate">
 
-</label>
+</div>
 
-<input
+</div>
 
-type="text"
+<!-- Kept as a hidden field: the PDF/Excel exports read the
+     customer name from here. It's shown in the summary card. -->
+<input type="hidden" id="customerName">
 
-id="customerName"
+<button type="button" id="btnSearch" class="tvr-search-btn">
+<span class="ui-ico ui-ico-search" aria-hidden="true"></span>
+<span data-i18n="common.search">Search</span>
+</button>
 
-readonly
+</div>
 
->
+<!-- EMPTY STATE (before search) -->
+
+<div id="tvrEmpty" class="tvr-empty">
+
+<div class="tvr-empty-ico"><span class="ui-ico ui-ico-search" aria-hidden="true"></span></div>
+
+<div class="tvr-empty-title" data-i18n="turnover.emptyTitle">Search by CIF</div>
+
+<div class="tvr-empty-text" data-i18n="turnover.emptyText">Enter a CIF to see 12 months of debit turnover.</div>
+
+</div>
+
+<!-- RESULT SUMMARY -->
+
+<div id="tvrSummary" class="tvr-summary" hidden>
+
+<div class="tvr-sum-head">
+
+<div class="tvr-sum-who">
+
+<div class="tvr-sum-name" id="tvrSumName">-</div>
+
+<div class="tvr-sum-meta">
+<span class="ui-ico ui-ico-idcard" aria-hidden="true"></span>
+<span id="tvrSumCif">-</span>
+<span class="tvr-dot">•</span>
+<span class="ui-ico ui-ico-calendar" aria-hidden="true"></span>
+<span id="tvrSumDate">-</span>
+</div>
+
+</div>
+
+<div class="tvr-coverage" id="tvrCoverage">
+<b id="tvrCoverageNum">0/12</b>
+<span data-i18n="turnover.monthsWithData">months with data</span>
+</div>
+
+</div>
+
+<div class="tvr-kpis">
+
+<div class="tvr-kpi">
+<div class="tvr-kpi-label">AMT_IN <small data-i18n="turnover.avgShort">avg</small></div>
+<div class="tvr-kpi-value" id="kpiDebit">-</div>
+</div>
+
+<div class="tvr-kpi">
+<div class="tvr-kpi-label">CURRENT_OD <small data-i18n="turnover.avgShort">avg</small></div>
+<div class="tvr-kpi-value" id="kpiOD">-</div>
+</div>
+
+<div class="tvr-kpi tvr-kpi-main">
+<div class="tvr-kpi-label">TURNOVER <small data-i18n="turnover.avgShort">avg</small></div>
+<div class="tvr-kpi-value" id="kpiTurnover">-</div>
+</div>
 
 </div>
 
 <div class="button-row">
 
-<button id="btnSearch" data-i18n="common.search">
-
-Search
-
+<button type="button" id="btnExcel" class="tvr-export tvr-export-xls" disabled>
+<span class="tvr-file-badge">XLS</span>
+<span data-i18n="turnover.excelBtn">Excel</span>
 </button>
 
-<button id="btnExcel" data-i18n="turnover.excelBtn">
-
-Excel
-
-</button>
-
-<button id="btnPDF" data-i18n="turnover.pdfBtn">
-
-PDF
-
+<button type="button" id="btnPDF" class="tvr-export tvr-export-pdf" disabled>
+<span class="tvr-file-badge">PDF</span>
+<span data-i18n="turnover.pdfBtn">PDF</span>
 </button>
 
 </div>
@@ -189,7 +227,14 @@ PDF
 <!-- TABLE -->
 <!-- ========================= -->
 
-<div class="table-card">
+<div class="table-card" id="tvrTableCard" hidden>
+
+<div class="tvr-table-head">
+<span data-i18n="turnover.monthlyDetail">Monthly detail</span>
+<span class="tvr-legend"><i class="tvr-legend-nd"></i><span data-i18n="turnover.noData">No Data</span></span>
+</div>
+
+<div class="table-scroll">
 
 <table id="turnoverTable">
 
@@ -225,29 +270,13 @@ Please Search
 
 <tr>
 
-<td data-i18n="turnover.averageLabel">
+<td data-i18n="turnover.averageLabel">Average</td>
 
-Average
+<td id="avgDebit">-</td>
 
-</td>
+<td id="avgOD">-</td>
 
-<td id="avgDebit">
-
--
-
-</td>
-
-<td id="avgOD">
-
--
-
-</td>
-
-<td id="avgTurnover">
-
--
-
-</td>
+<td id="avgTurnover">-</td>
 
 <td></td>
 
@@ -256,6 +285,8 @@ Average
 </tfoot>
 
 </table>
+
+</div>
 
 </div>
 
