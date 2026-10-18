@@ -6,7 +6,7 @@ console.log("🔥 SERVICE WORKER LOADED");
    CM_Pro – Production Service Worker
 ========================================================= */
 
-const SW_VERSION = "v529";
+const SW_VERSION = "v530";
 
 const CACHE_NAME = `cm-pro-cache-${SW_VERSION}`;
 
@@ -169,9 +169,21 @@ self.addEventListener(
             !event.request.url.startsWith("http")
         ) return;
 
+        // Same-origin files: revalidate with the server every time
+        // (cache:"no-cache" → conditional request, a cheap 304 when
+        // unchanged). Without this, the browser's HTTP cache honours
+        // GitHub Pages' max-age=600 and keeps serving the previous
+        // deploy's JS/CSS/HTML for up to 10 minutes after an update.
+        // Cross-origin (CDN libraries) keep normal HTTP caching.
+
+        const sameOrigin =
+            new URL(event.request.url).origin === self.location.origin;
+
         event.respondWith(
 
-            fetch(event.request)
+            (sameOrigin
+                ? fetch(event.request,{ cache:"no-cache" })
+                : fetch(event.request))
 
                 .then(response=>{
 
