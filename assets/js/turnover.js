@@ -597,13 +597,15 @@ function renderTable(items){
 
         avgTurnover3N===null ? "-" : (avgTurnover3N*100).toFixed(2)+"%";
 
-    // Largest CURRENT_OD across the table, with its month.
+    // Largest CURRENT_OD = the biggest overdrawn amount, i.e. the largest
+    // by absolute value (OD balances are negative, so this is the most
+    // negative one), with its month.
 
     const maxODRow = capturedRows
 
         .filter(r=>!r.noData)
 
-        .reduce((best,r)=>(!best || r.currentODN>best.currentODN) ? r : best,null);
+        .reduce((best,r)=>(!best || Math.abs(r.currentODN)>Math.abs(best.currentODN)) ? r : best,null);
 
     document.getElementById("avgDebit").innerHTML = avgDebitText;
 
@@ -1164,21 +1166,23 @@ async function exportPDF(){
 
     if(sy+95>pageH-50){ doc.addPage(); sy=60; }
 
+    const sigMid=sigX+sigW/2;
+
     doc.setFont("helvetica","normal");
 
     doc.setFontSize(10);
 
     doc.setTextColor(...NAVY);
 
-    doc.text(`Prepared Date : ${m.preparedText}`,sigX,sy);
+    doc.text(`Prepared Date: ${m.preparedText.replace(/ /g,"-")}`,sigMid,sy,{align:"center"});
 
     doc.setFont("helvetica","bold");
 
-    doc.text(`Prepared By : ${m.preparedBy}`,sigX,sy+16);
+    doc.text("Prepared By",sigMid,sy+18,{align:"center"});
 
     doc.setFont("helvetica","normal");
 
-    doc.text("Signature :",sigX,sy+32);
+    doc.text("Signature",sigMid,sy+34,{align:"center"});
 
     doc.setDrawColor(120,120,120);
 
@@ -1186,7 +1190,7 @@ async function exportPDF(){
 
     doc.line(sigX,sy+85,sigX+sigW,sy+85);
 
-    CMExport.pdfFooter(doc,{margin:M,showPreparedBy:false,printed:m.printed});
+    CMExport.pdfFooter(doc,{margin:M,leftText:`Data from CM_Pro, ${CMExport.userName()}`});
 
     doc.save(`${m.fileBase}.pdf`);
 
@@ -1253,7 +1257,7 @@ function exportExcel(){
 
         ["CIF",m.cif||"-","Largest CURRENT_OD",d.maxODN],
 
-        ["Months with data",`${m.withData} / ${m.total}`,"Printed",m.printed]
+        ["Months with data",`${m.withData} / ${m.total}`,"Source",`Data from CM_Pro, ${CMExport.userName()}`]
 
     ];
 
@@ -1359,15 +1363,15 @@ function exportExcel(){
 
     const sr=ar+4;
 
-    put(sr,3,`Prepared Date : ${m.preparedText}`,{font:{sz:10,color:{rgb:NAVY}}});
+    put(sr,3,`Prepared Date: ${m.preparedText.replace(/ /g,"-")}`,{font:{sz:10,color:{rgb:NAVY}},alignment:{horizontal:"center"}});
 
     merges.push({s:{r:sr,c:3},e:{r:sr,c:4}});
 
-    put(sr+1,3,`Prepared By : ${m.preparedBy}`,{font:{bold:true,sz:10,color:{rgb:NAVY}}});
+    put(sr+1,3,"Prepared By",{font:{bold:true,sz:10,color:{rgb:NAVY}},alignment:{horizontal:"center"}});
 
     merges.push({s:{r:sr+1,c:3},e:{r:sr+1,c:4}});
 
-    put(sr+2,3,"Signature :",{font:{sz:10,color:{rgb:NAVY}}});
+    put(sr+2,3,"Signature",{font:{sz:10,color:{rgb:NAVY}},alignment:{horizontal:"center"}});
 
     merges.push({s:{r:sr+2,c:3},e:{r:sr+2,c:4}});
 
