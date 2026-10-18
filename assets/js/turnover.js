@@ -1153,8 +1153,8 @@ async function exportPDF(){
     doc.text(`* TURNOVER average = latest 3 months with data (${d.avgTurnoverMonths.join(", ")}).`,M,ny+12);
 
     // ---- signature block (bottom-right of the table) ----
-    // Prepared By/Date, then blank space and a line for a handwritten
-    // signature.
+    // Prepared Date, Prepared By, "Signature", blank space for the
+    // handwritten signature, then the line.
 
     const sigW=190, sigX=pageW-M-sigW;
 
@@ -1176,19 +1176,15 @@ async function exportPDF(){
 
     doc.text(`Prepared By : ${m.preparedBy}`,sigX,sy+16);
 
-    doc.setDrawColor(150,150,150);
+    doc.setFont("helvetica","normal");
+
+    doc.text("Signature :",sigX,sy+32);
+
+    doc.setDrawColor(120,120,120);
 
     doc.setLineWidth(.6);
 
-    doc.line(sigX,sy+70,sigX+sigW,sy+70);
-
-    doc.setFont("helvetica","normal");
-
-    doc.setFontSize(9);
-
-    doc.setTextColor(...MUTED);
-
-    doc.text("Signature",sigX+sigW/2,sy+82,{align:"center"});
+    doc.line(sigX,sy+85,sigX+sigW,sy+85);
 
     CMExport.pdfFooter(doc,{margin:M,showPreparedBy:false,printed:m.printed});
 
@@ -1358,8 +1354,8 @@ function exportExcel(){
 
     merges.push({s:{r:ar+2,c:0},e:{r:ar+2,c:4}});
 
-    // Signature block, bottom-right (D:E): Prepared Date / Prepared By,
-    // then blank rows and a line for a handwritten signature.
+    // Signature block, bottom-right (D:E): Prepared Date, Prepared By,
+    // "Signature", blank rows for the handwritten signature, then a line.
 
     const sr=ar+4;
 
@@ -1371,17 +1367,17 @@ function exportExcel(){
 
     merges.push({s:{r:sr+1,c:3},e:{r:sr+1,c:4}});
 
+    put(sr+2,3,"Signature :",{font:{sz:10,color:{rgb:NAVY}}});
+
+    merges.push({s:{r:sr+2,c:3},e:{r:sr+2,c:4}});
+
     const lineRow=sr+5;
 
     put(lineRow,3,"",{border:{bottom:{style:"thin",color:{rgb:"888888"}}}});
 
     put(lineRow,4,"",{border:{bottom:{style:"thin",color:{rgb:"888888"}}}});
 
-    put(lineRow+1,3,"Signature",{font:{sz:9,color:{rgb:"6B7280"}},alignment:{horizontal:"center"}});
-
-    merges.push({s:{r:lineRow+1,c:3},e:{r:lineRow+1,c:4}});
-
-    ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lineRow+1,c:4}});
+    ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lineRow,c:4}});
 
     ws["!merges"]=merges;
 
@@ -1389,7 +1385,7 @@ function exportExcel(){
 
     ws["!rows"]=[{hpt:28},{hpt:18}];
 
-    for(let r=sr+2;r<=lineRow;r++) ws["!rows"][r]={hpt:20};
+    for(let r=sr+3;r<=lineRow;r++) ws["!rows"][r]={hpt:20};
 
     ws["!margins"]={left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.2,footer:0.2};
 
