@@ -63,48 +63,136 @@ No Internet Connection
 <!-- PAGE -->
 <!-- ========================= -->
 <div class="page-container">
+
 <div class="form-card">
+
 <div class="form-group">
 <label for="customerName" data-i18n="loanCalculate.customerNameLabel">ឈ្មោះអតិថិជន</label>
-<input type="text" id="customerName" placeholder="ឧ. ACB" data-i18n-placeholder="loanCalculate.customerNamePlaceholder">
+<input type="text" id="customerName" placeholder="ឧ. ACB" data-i18n-placeholder="loanCalculate.customerNamePlaceholder" autocomplete="off">
 </div>
+
+<div class="form-group">
+<span class="group-label" data-i18n="loanCalculate.solveForLabel">គណនារក</span>
+<div class="seg" id="solveFor" role="group">
+<button type="button" class="seg-btn" data-field="periodicRepayment" data-i18n="loanCalculate.solveRepayment">ប្រាក់សំណង</button>
+<button type="button" class="seg-btn" data-field="loanAmount" data-i18n="loanCalculate.solveLoan">ទំហំឥណទាន</button>
+<button type="button" class="seg-btn" data-field="term" data-i18n="loanCalculate.solveTerm">រយៈពេល</button>
+</div>
+</div>
+
 <div class="form-group">
 <label for="loanAmount" data-i18n="loanCalculate.loanAmountLabel">ទំហំឥណទាន</label>
-<input type="number" id="loanAmount">
+<div class="input-wrap">
+<input type="number" id="loanAmount" inputmode="decimal" min="0" step="any">
+<span class="auto-tag" data-i18n="loanCalculate.autoTag">ស្វ័យប្រវត្តិ</span>
 </div>
+</div>
+
 <div class="form-group">
 <label for="periodicRepayment" data-i18n="loanCalculate.periodicRepaymentLabel">ប្រាក់សំណងខួប</label>
-<input type="number" id="periodicRepayment">
+<div class="input-wrap">
+<input type="number" id="periodicRepayment" inputmode="decimal" min="0" step="any">
+<span class="auto-tag" data-i18n="loanCalculate.autoTag">ស្វ័យប្រវត្តិ</span>
 </div>
+</div>
+
+<div class="form-row">
+
 <div class="form-group">
 <label for="term" data-i18n="loanCalculate.termLabel">រយៈពេលខ្ចី (ខែ)</label>
-<input type="number" id="term">
+<div class="input-wrap">
+<input type="number" id="term" inputmode="numeric" min="1" step="1">
+<span class="auto-tag" data-i18n="loanCalculate.autoTag">ស្វ័យប្រវត្តិ</span>
 </div>
+</div>
+
 <div class="form-group">
 <label for="interestRate" data-i18n="loanCalculate.interestRateLabel">អត្រាការប្រាក់ប្រចាំឆ្នាំ (%)</label>
-<input type="number" id="interestRate">
+<div class="input-wrap has-suffix">
+<input type="number" id="interestRate" inputmode="decimal" min="0" step="any">
+<span class="suffix">%</span>
 </div>
+</div>
+
+</div>
+
+<div class="term-chips" id="termChips">
+<button type="button" class="term-chip" data-term="12">12</button>
+<button type="button" class="term-chip" data-term="24">24</button>
+<button type="button" class="term-chip" data-term="36">36</button>
+<button type="button" class="term-chip" data-term="48">48</button>
+<button type="button" class="term-chip" data-term="60">60</button>
+<span class="term-chip-unit" data-i18n="loanCalculate.monthsUnit">ខែ</span>
+</div>
+
 <div class="form-group">
-<label for="paymentMethod" data-i18n="loanCalculate.paymentMethodLabel">របៀបសងប្រាក់</label>
-<select id="paymentMethod">
-<option value="Linear" data-i18n="loanCalculate.methodLinear">បង់ថយ</option>
-<option value="Annuity" data-i18n="loanCalculate.methodAnnuity">បង់ថេរ</option>
-</select>
+<span class="group-label" data-i18n="loanCalculate.paymentMethodLabel">របៀបសងប្រាក់</span>
+<div class="seg" id="methodSeg" role="group">
+<button type="button" class="seg-btn" data-method="Linear" data-i18n="loanCalculate.methodLinear">បង់ថយ</button>
+<button type="button" class="seg-btn" data-method="Annuity" data-i18n="loanCalculate.methodAnnuity">បង់ថេរ</button>
 </div>
-<button class="calculate-btn" id="btnCalculate" data-i18n="loanCalculate.calculateBtn">
-គណនា
-</button>
+<input type="hidden" id="paymentMethod" value="Linear">
+</div>
+
+<button type="button" class="calculate-btn" id="btnCalculate" data-i18n="loanCalculate.calculateBtn">គណនា</button>
+
+</div>
+
+<!-- RESULT -->
+
+<div class="result-card" id="resultCard" hidden>
+
+<div class="res-head">
+<div class="res-name" id="resName">-</div>
+<div class="res-method" id="resMethod"></div>
+</div>
+
+<div class="res-hero">
+<div class="res-hero-label" id="resHeroLabel"></div>
+<div class="res-hero-value" id="resHeroValue">-</div>
+<div class="res-hero-note" id="resHeroNote"></div>
+</div>
+
+<div class="res-kpis">
+<div class="res-kpi"><span data-i18n="loanCalculate.loanAmountLabel">ទំហំឥណទាន</span><b id="kpiLoan">-</b></div>
+<div class="res-kpi"><span data-i18n="loanCalculate.kpiTerm">រយៈពេល</span><b id="kpiTerm">-</b></div>
+<div class="res-kpi"><span data-i18n="loanCalculate.kpiInterest">ការប្រាក់សរុប</span><b id="kpiInterest">-</b></div>
+<div class="res-kpi"><span data-i18n="loanCalculate.kpiTotal">ប្រាក់បង់សរុប</span><b id="kpiTotal">-</b></div>
+</div>
+
+<div class="split">
+<div class="split-bar"><i id="splitPrincipal"></i></div>
+<div class="split-legend">
+<span><i class="dot dot-p"></i><span data-i18n="loanCalculate.colPrincipal">ប្រាក់ដើម</span> <b id="splitPrincipalPct">-</b></span>
+<span><i class="dot dot-i"></i><span data-i18n="loanCalculate.colInterest">ការប្រាក់</span> <b id="splitInterestPct">-</b></span>
+</div>
+</div>
+
 <div class="export-buttons">
-<button id="btnPDF">
-<img src="https://img.icons8.com/color/48/pdf.png" alt="PDF" width="32">
+<button type="button" id="btnExcel" class="export-btn" disabled>
+<span class="file-badge xls">XLS</span>
+<span>Excel</span>
 </button>
-<button id="btnExcel">
-<img src="https://img.icons8.com/color/48/ms-excel.png" alt="Excel" width="32">
+<button type="button" id="btnPDF" class="export-btn" disabled>
+<span class="file-badge pdf">PDF</span>
+<span>PDF</span>
 </button>
 </div>
+
+</div>
+
+<!-- SCHEDULE -->
+
+<div class="schedule-card" id="scheduleCard" hidden>
+<div class="schedule-head">
+<span data-i18n="loanCalculate.scheduleTitle">តារាងកាលវិភាគសងប្រាក់</span>
+<span class="schedule-count" id="scheduleCount"></span>
 </div>
 <div id="exportSection"></div>
 </div>
+
+</div>
+
 <!-- ========================= -->
 <!-- LOADING -->
 <!-- ========================= -->
