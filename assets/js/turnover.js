@@ -1174,7 +1174,7 @@ async function exportPDF(){
 
     doc.setTextColor(...NAVY);
 
-    doc.text(`Prepared Date: ${m.preparedText.replace(/ /g,"-")}`,sigX,sy);
+    doc.text(`Prepared Date: ${m.preparedText.replace(/ /g,"-")}`,sigMid,sy,{align:"center"});
 
     doc.setFont("helvetica","bold");
 
@@ -1363,7 +1363,7 @@ function exportExcel(){
 
     const sr=ar+4;
 
-    put(sr,3,`Prepared Date: ${m.preparedText.replace(/ /g,"-")}`,{font:{sz:10,color:{rgb:NAVY}}});
+    put(sr,3,`Prepared Date: ${m.preparedText.replace(/ /g,"-")}`,{font:{sz:10,color:{rgb:NAVY}},alignment:{horizontal:"center"}});
 
     merges.push({s:{r:sr,c:3},e:{r:sr,c:4}});
 
