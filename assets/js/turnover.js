@@ -597,13 +597,15 @@ function renderTable(items){
 
         avgTurnover3N===null ? "-" : (avgTurnover3N*100).toFixed(2)+"%";
 
-    // Largest CURRENT_OD across the table, with its month.
+    // Largest CURRENT_OD = the biggest overdrawn amount, i.e. the largest
+    // by absolute value (OD balances are negative, so this is the most
+    // negative one), with its month.
 
     const maxODRow = capturedRows
 
         .filter(r=>!r.noData)
 
-        .reduce((best,r)=>(!best || r.currentODN>best.currentODN) ? r : best,null);
+        .reduce((best,r)=>(!best || Math.abs(r.currentODN)>Math.abs(best.currentODN)) ? r : best,null);
 
     document.getElementById("avgDebit").innerHTML = avgDebitText;
 
@@ -1174,7 +1176,7 @@ async function exportPDF(){
 
     doc.setFont("helvetica","bold");
 
-    doc.text(`Prepared By : ${m.preparedBy}`,sigX,sy+16);
+    doc.text("Prepared By : ..............................",sigX,sy+16);
 
     doc.setFont("helvetica","normal");
 
@@ -1186,7 +1188,7 @@ async function exportPDF(){
 
     doc.line(sigX,sy+85,sigX+sigW,sy+85);
 
-    CMExport.pdfFooter(doc,{margin:M,showPreparedBy:false,printed:m.printed});
+    CMExport.pdfFooter(doc,{margin:M,leftText:`Data from CM_Pro, ${CMExport.userName()}`});
 
     doc.save(`${m.fileBase}.pdf`);
 
@@ -1253,7 +1255,7 @@ function exportExcel(){
 
         ["CIF",m.cif||"-","Largest CURRENT_OD",d.maxODN],
 
-        ["Months with data",`${m.withData} / ${m.total}`,"Printed",m.printed]
+        ["Months with data",`${m.withData} / ${m.total}`,"Source",`Data from CM_Pro, ${CMExport.userName()}`]
 
     ];
 
@@ -1363,7 +1365,7 @@ function exportExcel(){
 
     merges.push({s:{r:sr,c:3},e:{r:sr,c:4}});
 
-    put(sr+1,3,`Prepared By : ${m.preparedBy}`,{font:{bold:true,sz:10,color:{rgb:NAVY}}});
+    put(sr+1,3,"Prepared By : ..............................",{font:{bold:true,sz:10,color:{rgb:NAVY}}});
 
     merges.push({s:{r:sr+1,c:3},e:{r:sr+1,c:4}});
 

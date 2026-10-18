@@ -16,6 +16,17 @@
 
     }
 
+    // Logged-in user's name as typed (e.g. "System Admin").
+    function userName(){
+
+        let user={};
+
+        try{ user=JSON.parse(localStorage.getItem("loggedInUser")||"{}"); }catch(e){}
+
+        return user.fullname||user.username||"-";
+
+    }
+
     function printedDate(d){
 
         return (d||new Date()).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
@@ -120,7 +131,8 @@
     }
 
     // "Prepared by … • Printed …" + "Page x of y" on every page.
-    function pdfFooter(doc,{margin=40,preparedBy:by,printed,showPreparedBy=true}={}){
+    // leftText overrides the left-hand footer text when given.
+    function pdfFooter(doc,{margin=40,preparedBy:by,printed,showPreparedBy=true,leftText}={}){
 
         const pageW=doc.internal.pageSize.getWidth();
 
@@ -144,7 +156,7 @@
 
             doc.setTextColor(107,114,128);
 
-            doc.text(showPreparedBy
+            doc.text(leftText ? leftText : showPreparedBy
 
                 ? `Prepared by: ${by||preparedBy()}   •   Printed: ${printed||printedDate()}`
 
@@ -156,6 +168,6 @@
 
     }
 
-    window.CMExport={ preparedBy, printedDate, safeFilePart, textToImage, logo, pdfFooter };
+    window.CMExport={ preparedBy, userName, printedDate, safeFilePart, textToImage, logo, pdfFooter };
 
 })();
