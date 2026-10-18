@@ -67,54 +67,163 @@ function monthDiffDetailed(from,to){
 }
 
 // =========================
+// i18n / toast helpers
+// =========================
+
+function rt(key,vars,fallback){
+
+    if(window.CMI18n && typeof CMI18n.t==="function"){
+
+        const v=CMI18n.t(key,vars);
+
+        if(v && v!==key) return v;
+
+    }
+
+    return fallback;
+
+}
+
+// toast.js declares CMToast as a top-level const (not on window).
+function retNotify(message,type="success"){
+
+    if(typeof CMToast!=="undefined" && typeof CMToast.show==="function"){
+
+        CMToast.show({ type, title:message, message:"", duration:2500 });
+
+    }
+
+}
+
+function fmtDate(d){
+
+    return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+
+}
+
+function pad2(n){ return String(n).padStart(2,"0"); }
+
+// =========================
 // Calculate + render
 // =========================
 
+let lastMonthsLeft=null;
+
 function calculateMonthsLeft(){
 
-    const dob=new Date(document.getElementById("dob").value);
+    const dobVal=document.getElementById("dob").value;
+
+    const curVal=document.getElementById("currentDate").value;
 
     const age=parseInt(document.getElementById("ageInput").value||"0",10);
 
-    const current=new Date(document.getElementById("currentDate").value);
+    const card=document.getElementById("resultCard");
 
-    if(!dob||isNaN(dob.getTime())) return;
+    const monthsBox=document.getElementById("monthsLeft");
 
-    if(!current||isNaN(current.getTime())) return;
+    const desc=document.getElementById("description");
+
+    const badge=document.getElementById("resultBadge");
+
+    const dob=new Date(dobVal+"T00:00:00");
+
+    const current=new Date(curVal+"T00:00:00");
+
+    if(!dobVal||isNaN(dob.getTime())||!curVal||isNaN(current.getTime())){
+
+        card.dataset.state="empty";
+
+        monthsBox.textContent="—";
+
+        desc.textContent=rt("retirement.needDob",null,"Enter date of birth");
+
+        badge.textContent="";
+
+        ["ymdY","ymdM","ymdD"].forEach(id=>document.getElementById(id).textContent="0");
+
+        document.getElementById("ageNow").textContent="—";
+
+        document.getElementById("retireDate").textContent="—";
+
+        document.getElementById("progressFill").style.width="0%";
+
+        lastMonthsLeft=null;
+
+        return;
+
+    }
 
     const retirementDate=new Date(dob);
 
     retirementDate.setFullYear(retirementDate.getFullYear()+age);
 
-    const desc=document.getElementById("description");
+    const retired=current>=retirementDate;
 
-    const monthsBox=document.getElementById("monthsLeft");
+    const d=retired
 
-    if(current>=retirementDate){
+        ? monthDiffDetailed(retirementDate,current)
 
-        const d=monthDiffDetailed(retirementDate,current);
+        : monthDiffDetailed(current,retirementDate);
 
-        monthsBox.textContent="មិនមានចំនួនខែដែលនៅសល់";
+    const vars={
 
-        desc.classList.add("retired");
+        y:`<span class="num">${pad2(d.years)}</span>`,
 
-        desc.innerHTML=`បានចូលនិវត្តន៍ចំនួន <span class="num">${String(d.years).padStart(2,'0')}</span> ឆ្នាំ
-            <span class="num">${String(d.months).padStart(2,'0')}</span> ខែ
-            និង <span class="num">${String(d.days).padStart(2,'0')}</span> ថ្ងៃ ហើយ`;
+        m:`<span class="num">${pad2(d.months)}</span>`,
+
+        d:`<span class="num">${pad2(d.days)}</span>`
+
+    };
+
+    if(retired){
+
+        card.dataset.state="retired";
+
+        monthsBox.textContent=rt("retirement.noMonthsLeft",null,"No months left");
+
+        desc.innerHTML=rt("retirement.descRetired",vars,`Retired ${vars.y} years, ${vars.m} months and ${vars.d} days ago`);
+
+        badge.textContent=rt("retirement.badgeRetired",null,"Retired");
+
+        lastMonthsLeft=0;
 
     }else{
 
-        const d=monthDiffDetailed(current,retirementDate);
+        card.dataset.state=d.totalMonths<12?"soon":"ok";
 
-        monthsBox.textContent=`${d.totalMonths} ខែ`;
+        monthsBox.textContent=rt("retirement.monthsValue",{n:d.totalMonths},`${d.totalMonths} months`);
 
-        desc.classList.remove("retired");
+        desc.innerHTML=rt("retirement.descLeft",vars,`${vars.y} years, ${vars.m} months and ${vars.d} days remaining`);
 
-        desc.innerHTML=`នៅសល់ <span class="num">${String(d.years).padStart(2,'0')}</span> ឆ្នាំ
-            <span class="num">${String(d.months).padStart(2,'0')}</span> ខែ
-            និង <span class="num">${String(d.days).padStart(2,'0')}</span> ថ្ងៃទៀត`;
+        badge.textContent=d.totalMonths<12
+
+            ? rt("retirement.badgeSoon",null,"Under 12 months")
+
+            : rt("retirement.badgeOk",null,"Eligible");
+
+        lastMonthsLeft=d.totalMonths;
 
     }
+
+    document.getElementById("ymdY").textContent=d.years;
+
+    document.getElementById("ymdM").textContent=d.months;
+
+    document.getElementById("ymdD").textContent=d.days;
+
+    // Current age + how far through the working life (birth → retirement)
+
+    const ageNow=current>dob ? monthDiffDetailed(dob,current) : {years:0,months:0,totalMonths:0};
+
+    document.getElementById("ageNow").textContent=
+
+        rt("retirement.ageValue",{y:ageNow.years,m:ageNow.months},`${ageNow.years}y ${ageNow.months}m`);
+
+    document.getElementById("retireDate").textContent=fmtDate(retirementDate);
+
+    const pct=age>0 ? clamp(ageNow.totalMonths/(age*12)*100,0,100) : 100;
+
+    document.getElementById("progressFill").style.width=pct.toFixed(1)+"%";
 
 }
 
@@ -150,11 +259,44 @@ function initAgeControls(){
 
     }
 
-    slider.addEventListener("input",()=>setVal(slider.value));
+    function syncChips(){
 
-    input.addEventListener("input",()=>setVal(input.value));
+        document.querySelectorAll(".age-chip").forEach(c=>{
+
+            c.classList.toggle("active",c.dataset.age===String(slider.value));
+
+        });
+
+    }
+
+    slider.addEventListener("input",()=>{ setVal(slider.value); syncChips(); });
+
+    // Typing: allow an empty box mid-edit; clamp once the user leaves it.
+    input.addEventListener("input",()=>{ if(input.value!==""){ setVal(input.value); syncChips(); } });
+
+    input.addEventListener("blur",()=>{ setVal(input.value); syncChips(); });
+
+    document.querySelectorAll(".age-step").forEach(btn=>{
+
+        btn.addEventListener("click",()=>{
+
+            setVal(parseInt(input.value||"0",10)+parseInt(btn.dataset.step,10));
+
+            syncChips();
+
+        });
+
+    });
+
+    document.querySelectorAll(".age-chip").forEach(chip=>{
+
+        chip.addEventListener("click",()=>{ setVal(chip.dataset.age); syncChips(); });
+
+    });
 
     setVal(slider.value);
+
+    syncChips();
 
 }
 
@@ -172,7 +314,33 @@ window.addEventListener("DOMContentLoaded",()=>{
 
     ["dob","currentDate"].forEach(id=>{
 
-        document.getElementById(id).addEventListener("change",calculateMonthsLeft);
+        const el=document.getElementById(id);
+
+        el.addEventListener("change",calculateMonthsLeft);
+
+        el.addEventListener("input",calculateMonthsLeft);
+
+    });
+
+    document.getElementById("btnToday").addEventListener("click",()=>{
+
+        document.getElementById("currentDate").value=new Date().toISOString().split("T")[0];
+
+        calculateMonthsLeft();
+
+    });
+
+    document.getElementById("btnCopyMonths").addEventListener("click",async()=>{
+
+        if(lastMonthsLeft===null) return;
+
+        try{
+
+            await navigator.clipboard.writeText(String(lastMonthsLeft));
+
+            retNotify(rt("retirement.copied",{n:lastMonthsLeft},`Copied ${lastMonthsLeft} months`));
+
+        }catch(e){}
 
     });
 
