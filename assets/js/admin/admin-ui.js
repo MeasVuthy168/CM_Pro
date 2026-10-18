@@ -64,8 +64,8 @@
   }
 
   function toast(message, type = "success", duration = 3500) {
-    if (window.CMToast && typeof window.CMToast.show === "function") {
-      window.CMToast.show({
+    if (typeof CMToast !== "undefined" && typeof CMToast.show === "function") {
+      CMToast.show({
         type,
         title: toastTitles()[type] || t("admin.ui.toastInfo"),
         message,

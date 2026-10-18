@@ -236,3 +236,103 @@
     text-align:right;
 }
 .cr-hub-snapshot-row.fail .cr-hub-snapshot-detail{ color:#C0392B; }
+
+/* ===== Hub refresh — side padding, sections, coloured icon tiles,
+   2-up Daily Monitoring grid, compact admin tools ===== */
+.page-container > .cr-hub-admin-toolbar,
+.page-container > .cr-hub-section-title,
+.page-container > .cr-hub-list,
+.page-container > .cr-hub-grid{
+    max-width:760px;
+    margin-left:auto;
+    margin-right:auto;
+    padding-left:16px;
+    padding-right:16px;
+}
+.cr-hub-section-title{
+    margin-top:6px;
+    margin-bottom:8px;
+    font-size:13px;
+    font-weight:700;
+    color:var(--cr-text-muted);
+}
+.cr-hub-list + .cr-hub-section-title,
+.cr-hub-admin-toolbar + .cr-hub-section-title{ margin-top:18px; }
+.cr-hub-admin-toolbar .cr-hub-section-title{ padding:0; }
+
+.cr-hub-card{ padding:14px 16px; }
+.cr-hub-card-title{ font-size:15px; }
+.cr-hub-card-sub{ font-size:12px; line-height:1.45; margin-top:3px; }
+
+/* tinted icon tiles, one colour per report */
+.cr-hub-icon{
+    width:46px;
+    height:46px;
+    flex:0 0 46px;
+    border-radius:13px;
+    background:rgba(26,46,87,.08);
+    color:var(--cr-navy);
+}
+.cr-hub-icon svg{ width:26px; height:26px; }
+.cr-tone-red .cr-hub-icon{ background:rgba(220,38,38,.10); color:#C0392B; }
+.cr-tone-navy .cr-hub-icon{ background:rgba(26,46,87,.10); color:#1A2E57; }
+.cr-tone-gold .cr-hub-icon{ background:rgba(212,175,55,.18); color:#A67C00; }
+.cr-tone-teal .cr-hub-icon{ background:rgba(13,148,136,.12); color:#0F766E; }
+.cr-tone-violet .cr-hub-icon{ background:rgba(124,58,237,.11); color:#6D28D9; }
+[data-theme="dark"] .cr-tone-red .cr-hub-icon,
+[data-theme="darkgray"] .cr-tone-red .cr-hub-icon{ background:rgba(248,113,113,.14); color:#FCA5A5; }
+[data-theme="dark"] .cr-tone-navy .cr-hub-icon,
+[data-theme="darkgray"] .cr-tone-navy .cr-hub-icon{ background:rgba(147,197,253,.12); color:#BFDBFE; }
+[data-theme="dark"] .cr-tone-gold .cr-hub-icon,
+[data-theme="darkgray"] .cr-tone-gold .cr-hub-icon{ background:rgba(255,215,0,.12); color:#FFD700; }
+[data-theme="dark"] .cr-tone-teal .cr-hub-icon,
+[data-theme="darkgray"] .cr-tone-teal .cr-hub-icon{ background:rgba(45,212,191,.12); color:#5EEAD4; }
+[data-theme="dark"] .cr-tone-violet .cr-hub-icon,
+[data-theme="darkgray"] .cr-tone-violet .cr-hub-icon{ background:rgba(196,181,253,.12); color:#C4B5FD; }
+/* the product / location icons punch holes with the card colour */
+.cr-hub-icon svg [style*="--cr-card-bg"]{ stroke:transparent; }
+
+/* Daily Monitoring tiles */
+.cr-hub-grid{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:12px;
+}
+.cr-hub-tile{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:4px;
+    padding:14px;
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:14px;
+    box-shadow:var(--cr-shadow);
+    text-decoration:none;
+    color:var(--cr-text);
+    min-width:0;
+}
+.cr-hub-tile .cr-hub-icon{ margin-bottom:6px; }
+.cr-hub-tile-title{
+    font-size:15px;
+    font-weight:700;
+    color:var(--cr-text);
+}
+.cr-hub-link{ transition:border-color .15s, transform .15s; }
+.cr-hub-link:hover{ border-color:var(--cr-gold); }
+
+/* admin tools: two buttons side by side */
+.cr-hub-admin-buttons{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+}
+.cr-hub-admin-buttons .cr-hub-snapshot-btn,
+.cr-hub-admin-buttons .cr-hub-refresh-btn{
+    margin:0;
+    padding:11px 8px;
+    font-size:13px;
+    gap:6px;
+}
+.cr-hub-admin-buttons .cr-hub-snapshot-btn-icon svg{ width:18px; height:18px; }
+.cr-hub-snapshot-card{ padding:12px; }

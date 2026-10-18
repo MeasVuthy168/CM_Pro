@@ -113,7 +113,7 @@ const scT = (key) => (window.CMI18n ? CMI18n.t(key) : key);
 // Toast instead of a blocking alert() (falls back to alert if toast.js
 // didn't load).
 function scNotify(message, type = "error") {
-  if (window.CMToast && typeof CMToast.show === "function") {
+  if (typeof CMToast !== "undefined" && typeof CMToast.show === "function") {
     CMToast.show({ type, title: message, message: "", duration: 3500 });
   } else {
     alert(message);
