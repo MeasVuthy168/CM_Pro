@@ -81,6 +81,8 @@ CMI18n.register({
   "arrears.groupHide": { km: "លាក់ LD", en: "Hide LDs" },
   "arrears.cifColCustomer": { km: "អតិថិជន", en: "Customer" },
   "arrears.cifColMaxDay": { km: "ថ្ងៃយឺត", en: "Day" },
+  "arrears.applyAllLd": { km: "បំពេញដូចគ្នាទៅ LD ទាំង {n} របស់ CIF នេះ", en: "Apply to all {n} LDs of this CIF" },
+  "arrears.savedAllLd": { km: "បានរក្សាទុកក្នុងម៉ាស៊ីនសម្រាប់ LD ទាំង {n} — ចុច \"ដាក់ស្នើមូលហេតុ\" នៅពេលរួចរាល់", en: "Saved locally for all {n} LDs — tap \"Submit\" when ready" },
   "arrears.viewTableAria": { km: "បង្ហាញជាតារាង", en: "Table view" },
   "arrears.cardDays": { km: "ថ្ងៃ", en: "days" },
   "arrears.cardNoReason": { km: "មិនទាន់បំពេញ Reason Arrear — ចុចដើម្បីបំពេញ", en: "No Reason Arrear yet — tap to fill in" },
