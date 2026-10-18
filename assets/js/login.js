@@ -316,6 +316,11 @@ function showLoginStep2(){
 
     usernameSummaryText.innerText=username;
 
+    const avatarEl=document.getElementById("userAvatar");
+    if(avatarEl) avatarEl.innerText=username.charAt(0).toUpperCase();
+
+    updateAltLogin(username);
+
     loginStep1.hidden=true;
     loginStep2.hidden=false;
     showMessage("","");
@@ -386,7 +391,7 @@ if(rememberedLogin && rememberedLogin.username){
 
             "remember_login",
 
-            JSON.stringify({username:rememberedLogin.username || ""})
+            JSON.stringify({username:rememberedLogin.username || "",hasPin:!!rememberedLogin.hasPin})
 
         );
 
@@ -401,6 +406,108 @@ if(rememberedLogin && rememberedLogin.username){
 }
 
 // =========================
+// OTHER WAYS IN (fingerprint/face, PIN)
+// Shown under the password button for a known username. Fingerprint /
+// face needs this device's own registration for that user (same key
+// the PIN screen and Settings use); PIN needs the account to have one
+// (remembered from the last login, so it still works after a logout).
+// =========================
+
+function cmDeviceHasBiometric(username){
+
+    if(typeof isWebAuthnAvailable!=="function" || !isWebAuthnAvailable()) return false;
+
+    return !!localStorage.getItem(`cm_webauthn_device_cred_${username}`) &&
+        localStorage.getItem(`cm_fp_login_disabled_${username}`)!=="1";
+
+}
+
+function cmUserHasPin(username){
+
+    let remembered={};
+    let cached={};
+    try{ remembered=JSON.parse(localStorage.getItem("remember_login") || "{}") || {}; }catch{}
+    try{ cached=JSON.parse(localStorage.getItem("loggedInUser") || "{}") || {}; }catch{}
+
+    return (remembered.username===username && !!remembered.hasPin) ||
+        (cached.username===username && !!cached.hasPin);
+
+}
+
+function updateAltLogin(username){
+
+    const box=document.getElementById("altLogin");
+    if(!box) return;
+
+    const bio=cmDeviceHasBiometric(username);
+    const pin=cmUserHasPin(username) && typeof window.cmOpenPinOverlay==="function";
+
+    document.getElementById("btnBioLogin").hidden=!bio;
+    document.getElementById("btnPinLogin").hidden=!pin;
+    box.hidden=!(bio || pin);
+
+}
+
+document.getElementById("btnBioLogin")?.addEventListener("click",async()=>{
+
+    const username=usernameInput.value.trim();
+    if(!username) return;
+
+    showMessage("","");
+    setLoading(true);
+
+    try{
+
+        const data=await webauthnLogin(username);
+        completeLogin(data);
+
+    }catch(err){
+
+        console.error("[login] biometric login failed:",err);
+        setLoading(false);
+        // Backing out of the system prompt isn't an error worth shouting about.
+        if(!(err && err.name==="NotAllowedError")){
+            showMessage(err.message || t("login.msg.fingerprintFailed"),"error");
+        }
+
+    }
+
+});
+
+document.getElementById("btnPinLogin")?.addEventListener("click",()=>{
+
+    if(typeof window.cmOpenPinOverlay==="function") window.cmOpenPinOverlay();
+
+});
+
+// =========================
+// LANGUAGE SWITCH (top-right)
+// =========================
+
+(function(){
+
+    const box=document.getElementById("loginLangSwitch");
+    if(!box || !window.CMLanguage) return;
+
+    function sync(){
+        const cur=CMLanguage.get();
+        box.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.lang===cur));
+        document.documentElement.lang=cur==="km" ? "km" : "en";
+    }
+
+    box.querySelectorAll("button").forEach(b=>{
+        b.addEventListener("click",()=>{
+            CMLanguage.set(b.dataset.lang);
+            sync();
+        });
+    });
+
+    window.addEventListener("cm-language-changed",sync);
+    sync();
+
+})();
+
+// =========================
 // SHOW PASSWORD
 // =========================
 
@@ -410,13 +517,15 @@ togglePassword.addEventListener("click",()=>{
 
         passwordInput.type="text";
 
-        togglePassword.innerText=t("login.hide");
+        togglePassword.classList.add("on");
+        togglePassword.setAttribute("aria-label",t("login.hide"));
 
     }else{
 
         passwordInput.type="password";
 
-        togglePassword.innerText=t("login.show");
+        togglePassword.classList.remove("on");
+        togglePassword.setAttribute("aria-label",t("login.show"));
 
     }
 
@@ -501,11 +610,16 @@ function completeLogin(data,knownPassword){
     // malicious extension, a shared machine) would get the real
     // account password, not just a scoped/expiring token.
 
+    // hasPin rides along with the username: every logout path removes
+    // loggedInUser, and without this the PIN screen (and the
+    // fingerprint/face prompt it opens) never came back after logging
+    // out — the device registration was still there, it just looked
+    // deleted.
     localStorage.setItem(
 
         "remember_login",
 
-        JSON.stringify({username:userData.username || ""})
+        JSON.stringify({username:userData.username || "",hasPin:!!userData.hasPin})
 
     );
 
@@ -726,6 +840,13 @@ if(pinOverlay){
         resetPinEntry();
         pinOverlay.hidden=false;
 
+        let cached={};
+        try{ cached=JSON.parse(localStorage.getItem("loggedInUser") || "{}") || {}; }catch{}
+        const name=(cached.username===username && cached.fullname) || username;
+        document.getElementById("pinAvatar").innerText=name.charAt(0).toUpperCase();
+        document.getElementById("pinGreeting").innerText=`${t("login.welcomeBack")}, ${name}`;
+        document.getElementById("pinBioKey").hidden=!cmDeviceHasBiometric(username);
+
         maybeTryBiometricLogin(username);
 
     }
@@ -809,6 +930,20 @@ if(pinOverlay){
 
     }
 
+    window.cmOpenPinOverlay=openPinOverlay;
+
+    // Step 2 may already be showing (remembered username) from before
+    // this block ran — refresh its "or log in with" options now that
+    // the PIN screen can be opened.
+    if(!loginStep2.hidden) updateAltLogin(usernameInput.value.trim());
+
+    document.getElementById("pinBioKey").addEventListener("click",()=>{
+
+        const username=document.getElementById("username").value.trim();
+        if(username) maybeTryBiometricLogin(username);
+
+    });
+
     pinBackBtn.addEventListener("click",closePinOverlay);
 
     pinForgotBtn.addEventListener("click",closePinOverlay);
@@ -872,8 +1007,8 @@ if(pinOverlay){
 
         if(
 
-            cachedUser.username===rememberedLogin.username &&
-            cachedUser.hasPin
+            (cachedUser.username===rememberedLogin.username && cachedUser.hasPin) ||
+            rememberedLogin.hasPin
 
         ){
 

@@ -15,8 +15,10 @@
   const STORAGE_KEY = "cm_language";
 
   const CM_LANGUAGE_LIST = [
-    { id: "en", label: "English", flag: "🇬🇧" },
-    { id: "km", label: "Khmer", flag: "🇰🇭" }
+    // flagIcon: real SVG flags — emoji flags only render as flags on
+    // some platforms (Android/Windows often show "GB"/"KH" letters).
+    { id: "en", label: "English", flag: "🇬🇧", flagIcon: "/CM_Pro/assets/icons/flags/gb.svg" },
+    { id: "km", label: "Khmer", flag: "🇰🇭", flagIcon: "/CM_Pro/assets/icons/flags/kh.svg" }
   ];
   const VALID_LANGUAGE_IDS = CM_LANGUAGE_LIST.map(l => l.id);
 

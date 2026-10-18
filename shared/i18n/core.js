@@ -52,8 +52,12 @@ CMI18n.register({
   "voice.startFailed": { km: "មិនអាចចាប់ផ្តើមស្តាប់បានទេ", en: "Couldn't start listening" },
 
   // Login page
-  "login.title": { km: "ត្រួតពិនិត្យ​ឥណទានស្វាយរៀង​", en: "Svay Rieng Credit Monitoring" },
-  "login.subtitle": { km: "ប្រព័ន្ធត្រួតពិនិត្យឥណទាន SVG", en: "SVG Credit Monitoring System" },
+  "login.title": { km: "ប្រព័ន្ធត្រួតពិនិត្យឥណទាន", en: "Credit Monitoring System" },
+  "login.subtitle": { km: "សាខាខេត្តស្វាយរៀង", en: "Svay Rieng Provincial Branch" },
+  "login.welcomeBack": { km: "សូមស្វាគមន៍មកវិញ", en: "Welcome back" },
+  "login.or": { km: "ឬចូលដោយ", en: "or log in with" },
+  "login.withBiometric": { km: "ស្នាមម្រាមដៃ / ផ្ទៃមុខ", en: "Fingerprint / Face" },
+  "login.withPin": { km: "លេខកូដ PIN", en: "PIN code" },
   "login.usernamePlaceholder": { km: "ឈ្មោះអ្នកប្រើប្រាស់", en: "Username" },
   "login.passwordPlaceholder": { km: "ពាក្យសម្ងាត់", en: "Password" },
   "login.show": { km: "បង្ហាញ", en: "Show" },

@@ -413,7 +413,9 @@ function initAccordionPicker(toggleId,chevronId,optionsId,list,get,set,withFlag)
                 <span class="acc-option-radio${item.id===current ? " checked" : ""}">
                     <span class="acc-option-radio-dot"></span>
                 </span>
-                ${withFlag ? `<span class="acc-option-flag">${item.flag}</span>` : ""}
+                ${withFlag ? (item.flagIcon
+                    ? `<img class="acc-option-flag-img" src="${item.flagIcon}" alt="">`
+                    : `<span class="acc-option-flag">${item.flag}</span>`) : ""}
                 <span class="acc-option-label">${labelFor(item)}</span>
             </div>
         `).join("");
