@@ -47,6 +47,15 @@ rel="apple-touch-icon"
 href="/CM_Pro/assets/images/icon-192.png"
 >
 
+<!-- theme flash-prevention (same as every other page): light or dark
+     login screen to match the app theme -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
+  );
+</script>
+
 <script src="./config/api.js"></script>
 <script src="/CM_Pro/shared/touch-polish.js"></script>
 <script src="/CM_Pro/shared/language.js"></script>
