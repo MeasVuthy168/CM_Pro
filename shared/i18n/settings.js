@@ -58,6 +58,12 @@ CMI18n.register({
 
   // Change Pin (pages/settings/change-pin.html)
   "settings.account.changePin": { km: "ប្តូរកូដ PIN", en: "Change PIN" },
+  "settings.account.managePin": { km: "គ្រប់គ្រងកូដ PIN", en: "Manage PIN" },
+  "settings.pinRequired.title": { km: "ត្រូវបង្កើតកូដ PIN ជាមុនសិន", en: "Create a PIN first" },
+  "settings.pinRequired.text": { km: "ដើម្បីបើកការចូលដោយស្នាមម្រាមដៃ ឬផ្ទៃមុខ អ្នកត្រូវមានកូដ PIN សម្រាប់ប្រើជំនួស ពេលស្កេនមិនជាប់។", en: "To turn on fingerprint or face login, you need a PIN to fall back on when scanning doesn't work." },
+  "settings.pinRequired.create": { km: "បង្កើតកូដ PIN", en: "Create PIN" },
+  "settings.pinRequired.note": { km: "បង្កើតកូដ PIN ជាមុនសិន បន្ទាប់មកអាចបើកការចូលដោយស្នាមម្រាមដៃ ឬផ្ទៃមុខបាន។", en: "Create your PIN first, then you can turn on fingerprint or face login." },
+  "settings.pinRequired.done": { km: "ឥឡូវអាចបើកការចូលដោយស្នាមម្រាមដៃ ឬផ្ទៃមុខបានហើយ", en: "You can now turn on fingerprint or face login" },
   "settings.account.currentPassword": { km: "ពាក្យសម្ងាត់បច្ចុប្បន្ន", en: "Current Password" },
   "settings.account.newPin": { km: "កូដ PIN ថ្មី", en: "New PIN" },
   "settings.account.confirmPin": { km: "បញ្ជាក់កូដ PIN", en: "Confirm PIN" },

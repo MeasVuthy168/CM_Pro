@@ -38,7 +38,7 @@ async function loadComponent(id, file) {
         if (id === "topbar-container") {
 
             initTopbar({
-                titleKey: "settings.account.changePin",
+                titleKey: "settings.account.managePin",
                 showBack: true,
                 showLogo: false,
                 showProfile: false
@@ -173,6 +173,7 @@ function renderPinStatus() {
     status.textContent = t(statusKey);
     status.className = "pin-status " + (hasPin ? "set" : "none");
     document.getElementById("pinDeleteCard").hidden = !hasPin;
+    document.getElementById("pinReasonNote").hidden = !(fromFingerprint && !hasPin);
 }
 
 async function refreshPinStatus() {
@@ -191,6 +192,14 @@ async function refreshPinStatus() {
         // offline — keep the local guess
     }
 }
+
+// Arriving from the fingerprint switch (shared/pin-required.js):
+// ?reason=fingerprint&next=<settings page>. Shows why a PIN is needed
+// and returns there once it's created. next is limited to a plain
+// page name in this folder so it can't redirect anywhere else.
+const pageParams = new URLSearchParams(location.search);
+const fromFingerprint = pageParams.get("reason") === "fingerprint";
+const nextPage = /^[a-z0-9-]+\.html$/.test(pageParams.get("next") || "") ? pageParams.get("next") : "index.html";
 
 const currentPasswordInput = document.getElementById("pinCurrentPassword");
 const newInput = document.getElementById("pinNew");
@@ -285,13 +294,18 @@ submitBtn.addEventListener("click", async () => {
             throw new Error(data.message || t("settings.account.changePinFailed"));
         }
 
-        notify(t(hasPin ? "settings.account.changePinSuccess" : "settings.account.createPinSuccess"), "success");
+        notify(
+            fromFingerprint && !hasPin
+                ? t("settings.account.createPinSuccess") + " — " + t("settings.pinRequired.done")
+                : t(hasPin ? "settings.account.changePinSuccess" : "settings.account.createPinSuccess"),
+            "success"
+        );
         saveLocalHasPin(true);
         try { localStorage.removeItem(pinPromptOffKey()); } catch {}
 
         setTimeout(() => {
-            location.href = "index.html";
-        }, 600);
+            location.href = nextPage;
+        }, fromFingerprint ? 1400 : 600);
 
     } catch (err) {
 
