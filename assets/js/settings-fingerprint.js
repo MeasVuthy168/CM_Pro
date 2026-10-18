@@ -224,6 +224,10 @@ function notify(message, type) {
 
 fpAddBtn?.addEventListener("click", async () => {
 
+    // Same rule as Settings' quick toggle: no fingerprint/face without a
+    // PIN on the account (shared/pin-required.js).
+    if (window.CMPinRequired && !CMPinRequired.check()) return;
+
     fpAddBtn.disabled = true;
     fpAddBtn.textContent = t("settings.fingerprint.registering");
 

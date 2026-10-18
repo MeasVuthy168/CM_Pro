@@ -189,11 +189,8 @@ function cmIsMarkedLocked() {
     return localStorage.getItem(LOCK_ACTIVE_KEY) === "1";
 }
 
-// The lock screen needs something to unlock with: the account's PIN,
-// or this device's registered fingerprint/face (not switched off in
-// Settings). With neither — e.g. right after Delete PIN on a device
-// without fingerprint — locking would leave only "Log Out", so the app
-// simply doesn't lock.
+// This device's registered fingerprint/face, unless switched off in
+// Settings.
 function cmDeviceHasFingerprint(username) {
     try {
         return !!(
@@ -206,9 +203,12 @@ function cmDeviceHasFingerprint(username) {
     }
 }
 
+// The lock screen needs a PIN to unlock with (fingerprint/face is only
+// allowed alongside a PIN — Delete PIN removes it too). Without one —
+// never set, or deleted — locking would leave only "Log Out", so the
+// app simply doesn't lock.
 function cmCanUnlock() {
-    const user = cmGetStoredUser();
-    return !!user.hasPin || cmDeviceHasFingerprint(user.username);
+    return !!cmGetStoredUser().hasPin;
 }
 
 function cmShouldBeLocked() {
@@ -387,10 +387,6 @@ function cmInjectStyles() {
 .cm-lock-fp-btn{width:72px;height:72px;border-radius:50%;border:1.5px solid #FFD700;background:transparent;color:#FFD700;font-size:24px;cursor:pointer;}
 .cm-lock-fp-btn svg{width:30px;height:30px;}
 .cm-lock-fp-btn:active{background:rgba(255,215,0,.12);}
-.cm-lock-nopin .cm-lock-dots,.cm-lock-nopin .cm-lock-key,.cm-lock-nopin #cmLockForgot{display:none;}
-.cm-lock-nopin .cm-lock-keypad{display:flex;justify-content:center;margin:28px 0 18px;}
-.cm-lock-nopin .cm-lock-fp-btn{width:104px;height:104px;border-width:2px;}
-.cm-lock-nopin .cm-lock-fp-btn svg{width:46px;height:46px;}
 .cm-lock-links{display:flex;gap:22px;margin-top:26px;}
 .cm-lock-link{color:#b9c6e0;font-size:13.5px;font-weight:600;cursor:pointer;}
 .cm-lock-link:active{opacity:.7;}
@@ -656,7 +652,6 @@ function cmBuildLockOverlay() {
     // keypad with Num Lock off (read from e.code).
     document.addEventListener("keydown", (e) => {
         if (!el.classList.contains("show")) return;
-        if (el.classList.contains("cm-lock-nopin")) return;
         if (e.ctrlKey || e.metaKey || e.altKey) return;
         const k = e.key || "";
         let d = null;
@@ -692,12 +687,6 @@ function cmBuildLockOverlay() {
     // perspective.
     fingerprintAvailable = cmDeviceHasFingerprint(username);
 
-    // No PIN on the account (deleted, or never set): fingerprint/face is
-    // the only way in, so drop the keypad that couldn't work anyway.
-    if (!user.hasPin) {
-        el.classList.add("cm-lock-nopin");
-        el.querySelector(".cm-lock-title").innerText = t("applock.useFingerprint");
-    }
     if (fingerprintAvailable) {
         const fpBtn = el.querySelector("#cmLockFpBtn");
         fpBtn.style.display = "flex";

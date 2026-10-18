@@ -150,6 +150,14 @@ async function initFingerprintQuickToggle() {
 
         const turningOn = this.checked;
 
+        // Fingerprint/Face needs a PIN on the account first (the fallback
+        // when the biometric prompt fails) — shared/pin-required.js shows
+        // the "create a PIN first" sheet and we leave the switch off.
+        if (turningOn && window.CMPinRequired && !CMPinRequired.check()) {
+            this.checked = false;
+            return;
+        }
+
         this.disabled = true;
 
         try {
