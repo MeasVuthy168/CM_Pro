@@ -951,7 +951,7 @@ body{
 .pin-dot.filled{ transform:scale(1.15); }
 .pin-key{ font-size:30px; font-family:Arial,sans-serif; }
 .pin-key .ico{ width:28px; height:28px; margin:auto; }
-.pin-key-back{ color:inherit; }
+.pin-key-back{ color:#fff; }
 .pin-slot{ display:flex; align-items:center; justify-content:center; }
 .pin-key-bio{
     background:transparent !important;
@@ -992,3 +992,46 @@ body{ align-items:flex-start; }
 .alt-btn{ flex:1 1 140px; padding:0 12px; white-space:nowrap; font-size:14px; }
 /* scroll away with the page rather than float over the card */
 .lang-switch{ position:absolute; }
+
+/* real profile photo in the avatars */
+.user-avatar.has-photo,
+.pin-avatar.has-photo{
+    background-size:cover;
+    background-position:center;
+    background-color:#16223F;
+}
+.pin-avatar:empty:not(.has-photo){ display:none; }
+.pin-avatar.has-photo{ display:flex; width:88px; height:88px; border:2px solid #D4AF37; }
+
+/* bottom links on the PIN screen: Forgot PIN? + Use password */
+.pin-links{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:14px;
+    margin-top:22px;
+}
+@media (max-height:700px){
+    .pin-keypad{ gap:14px; }
+    .pin-avatar.has-photo{ width:76px; height:76px; }
+}
+.pin-links .pin-forgot{ margin-top:0; }
+.pin-pw-btn{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    height:40px;
+    padding:0 16px;
+    border-radius:999px;
+    border:1.5px solid rgba(255,215,0,.55);
+    background:transparent;
+    color:#FFD700;
+    font-family:'Krasar',sans-serif;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+}
+.pin-pw-btn .ico{ width:18px; height:18px; }
+.pin-pw-btn:active{ transform:scale(.97); background:rgba(255,215,0,.12); }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-pw-btn{ border-color:#E2E6ED; background:#fff; color:#0E1B3C; box-shadow:0 1px 3px rgba(14,27,60,.08); }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-pw-btn .ico{ color:#B8860B; }

@@ -240,7 +240,14 @@ fpAddBtn?.addEventListener("click", async () => {
         // person types, even though it's harmless on Android/Chrome.
         const getLabel = () => (prompt(t("settings.fingerprint.namePrompt"), "") || "").trim().slice(0, 60);
 
-        await webauthnRegisterWithRecovery(getLabel);
+        const credId = await webauthnRegisterWithRecovery(getLabel);
+
+        // Same marker Settings' quick toggle saves: the login page, its
+        // PIN screen and the App Lock only offer fingerprint/face when
+        // THIS device has it. Without it, a device added from this page
+        // was registered on the server but never offered at login.
+        const key = fpDeviceCredKey();
+        if (key && credId) localStorage.setItem(key, credId);
 
         notify(t("settings.fingerprint.registerSuccess"), "success");
 
