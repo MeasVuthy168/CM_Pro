@@ -126,11 +126,57 @@ const emptySubtitle=document.getElementById("emptySubtitle");
 // LOAD
 // =========================================================
 
+// Last list seen this app session, so opening the page (bottom-bar tab
+// switch especially) paints the list straight away instead of a
+// full-screen spinner fading in — the fetch below then refreshes it.
+// sessionStorage, not localStorage: it goes away with the app session.
+function notifCacheKey(){
+    try{
+        const u=JSON.parse(localStorage.getItem("loggedInUser") || "{}").username || "";
+        return u ? `cm_notif_cache_${u}` : "";
+    }catch{
+        return "";
+    }
+}
+
+function readNotifCache(){
+    const key=notifCacheKey();
+    if(!key) return null;
+    try{
+        const list=JSON.parse(sessionStorage.getItem(key) || "null");
+        return Array.isArray(list) ? list : null;
+    }catch{
+        return null;
+    }
+}
+
+function writeNotifCache(list){
+    const key=notifCacheKey();
+    if(!key) return;
+    try{ sessionStorage.setItem(key, JSON.stringify(list.slice(0,100))); }catch{}
+}
+
+let loadingDelayTimer=null;
+
 async function loadNotifications(){
+
+    if(!hasLoadedOnce){
+        const cached=readNotifCache();
+        if(cached){
+            allNotifications=cached;
+            hasLoadedOnce=true;
+            renderList();
+        }
+    }
 
     try{
 
-        showLoading(!hasLoadedOnce);
+        // Nothing on screen yet: only bring up the spinner if the
+        // request is actually slow, so a quick load never flashes it.
+        if(!hasLoadedOnce){
+            clearTimeout(loadingDelayTimer);
+            loadingDelayTimer=setTimeout(()=>showLoading(true),400);
+        }
 
         const response = await fetch(
 
@@ -168,6 +214,7 @@ async function loadNotifications(){
 
         allNotifications=notifications;
         hasLoadedOnce=true;
+        writeNotifCache(notifications);
 
         hideError();
         renderList();
@@ -202,6 +249,7 @@ async function loadNotifications(){
 
     }finally{
 
+        clearTimeout(loadingDelayTimer);
         showLoading(false);
 
     }
