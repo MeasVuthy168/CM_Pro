@@ -63,42 +63,90 @@ No Internet Connection
 <!-- PAGE -->
 <!-- ========================= -->
 <div class="page-container">
+
+<!-- RESULT (top, so every change is visible without scrolling) -->
+
+<div class="result-card" id="resultCard" data-state="ok">
+
+<div class="result-top">
+<div class="result-title" data-i18n="retirement.monthsLeftTitle">ចំនួនខែដែលនៅសល់</div>
+<span class="result-badge" id="resultBadge"></span>
+</div>
+
+<div class="months-row">
+<div id="monthsLeft" class="months-big">—</div>
+<button type="button" class="copy-btn" id="btnCopyMonths" aria-label="Copy" data-i18n-aria-label="retirement.copy">
+<span class="ui-ico ui-ico-copy" aria-hidden="true"></span>
+</button>
+</div>
+
+<div class="ymd" id="ymd">
+<div class="ymd-cell"><b id="ymdY">0</b><span data-i18n="retirement.unitYears">ឆ្នាំ</span></div>
+<div class="ymd-cell"><b id="ymdM">0</b><span data-i18n="retirement.unitMonths">ខែ</span></div>
+<div class="ymd-cell"><b id="ymdD">0</b><span data-i18n="retirement.unitDays">ថ្ងៃ</span></div>
+</div>
+
+<div id="description" class="desc"></div>
+
+<div class="progress" aria-hidden="true">
+<div class="progress-bar"><i id="progressFill"></i></div>
+<div class="progress-legend">
+<span><span data-i18n="retirement.ageNow">អាយុបច្ចុប្បន្ន</span> <b id="ageNow">—</b></span>
+<span><span data-i18n="retirement.retireOn">ចូលនិវត្តន៍</span> <b id="retireDate">—</b></span>
+</div>
+</div>
+
+</div>
+
+<!-- INPUTS -->
+
 <div class="form-card">
+
 <div class="form-group">
 <label for="dob" data-i18n="retirement.dobLabel">ថ្ងៃខែឆ្នាំកំណើត</label>
 <div class="box">
+<span class="ui-ico ui-ico-calendar box-ico" aria-hidden="true"></span>
 <input type="date" id="dob">
 </div>
 </div>
+
 <div class="form-group">
 <label for="retirementAge" data-i18n="retirement.retirementAgeLabel">អាយុចូលនិវត្តន៍</label>
 <div class="age-wrap">
 <input id="retirementAge" class="age-slider" type="range" min="0" max="60" value="55" step="1">
 <div class="age-num">
-<input type="number" id="ageInput" min="0" max="60" value="55"> <span data-i18n="retirement.yearsSuffix">ឆ្នាំ</span>
+<button type="button" class="age-step" data-step="-1" aria-label="-1">−</button>
+<input type="number" id="ageInput" min="0" max="60" value="55" inputmode="numeric">
+<button type="button" class="age-step" data-step="1" aria-label="+1">+</button>
 </div>
 </div>
-<div class="units">(0–60)</div>
+<div class="age-presets">
+<button type="button" class="age-chip" data-age="55">55</button>
+<button type="button" class="age-chip" data-age="58">58</button>
+<button type="button" class="age-chip" data-age="60">60</button>
+<span class="units"><span data-i18n="retirement.yearsSuffix">ឆ្នាំ</span> (0–60)</span>
 </div>
+</div>
+
 <div class="form-group">
+<div class="label-row">
 <label for="currentDate" data-i18n="retirement.currentDateLabel">ថ្ងៃខែឆ្នាំបច្ចុប្បន្ន</label>
+<button type="button" class="today-btn" id="btnToday" data-i18n="retirement.today">ថ្ងៃនេះ</button>
+</div>
 <div class="box">
+<span class="ui-ico ui-ico-calendar box-ico" aria-hidden="true"></span>
 <input type="date" id="currentDate">
 </div>
 </div>
+
 </div>
-<div class="result-card">
-<div class="result-icon"><span class="ui-ico ui-ico-calendar" aria-hidden="true"></span></div>
-<div class="result-body">
-<div class="result-title" data-i18n="retirement.monthsLeftTitle">ចំនួនខែដែលនៅសល់</div>
-<div id="monthsLeft" class="months-big">—</div>
-<div id="description" class="desc"></div>
-</div>
-</div>
+
 <div class="foot-note"><span class="ui-ico ui-ico-bulb" aria-hidden="true"></span> <span data-i18n="retirement.footNote">គោលបំណង៖ កំណត់រយៈពេលផ្តល់ឥណទានឲ្យបានត្រឹមត្រូវតាមគោលការណ៍
 សម្រាប់ឥណទានប្រើប្រាស់ផ្ទាល់ខ្លួន ដែលធានាដោយប្រាក់បៀវត្ស៕</span>
 </div>
+
 </div>
+
 <!-- ========================= -->
 <!-- LOADING -->
 <!-- ========================= -->
