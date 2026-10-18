@@ -4257,12 +4257,8 @@ async function selectOutAreaCustomer(row) {
                 <div class="oa-info-value"${id ? ` id="${id}"` : ""}>${escapeHtml(value || "-")}</div>
             </div>
         </div>`;
-    const mapUrl = row.location
-        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(row.location)}`
-        : "";
     document.getElementById("outAreaInfo").innerHTML =
         infoRow("pin", "អាសយដ្ឋាន", row.location) +
-        (mapUrl ? `<a class="oa-map-link" href="${mapUrl}" target="_blank" rel="noopener"><span class="ui-ico ui-ico-map" aria-hidden="true"></span> ${escapeHtml(t("arrears.oaOpenMap"))}</a>` : "") +
         infoRow("idcard", "គណនីកម្ចី", row.accountLoan) +
         infoRow("map", "សាខាបច្ចុប្បន្ន", row.branch + (row.branchCode ? ` (${row.branchCode})` : "")) +
         infoRow("officer", "ភ្នាក់ងារបច្ចុប្បន្ន", officerLabel(row.coId, outAreaOfficerNames), "outAreaCurrentCO");
@@ -4280,7 +4276,6 @@ async function selectOutAreaCustomer(row) {
     const metaEl = document.getElementById("outAreaMeta");
     branchSelect.value = "";
     populateOutAreaCoOptions("", "");
-    renderOutAreaBranchChips();
     updateOutAreaMove();
     metaEl.textContent = "កំពុងពិនិត្យកំណត់ត្រាចាស់...";
 
@@ -4296,8 +4291,7 @@ async function selectOutAreaCustomer(row) {
         if (data.ok && data.found) {
             branchSelect.value = data.newBranch;
             populateOutAreaCoOptions(data.newBranch, data.newCoResponse);
-            renderOutAreaBranchChips();
-            updateOutAreaMove();
+                    updateOutAreaMove();
             metaEl.textContent = `មានកំណត់ត្រារួចហើយ — ធ្វើបច្ចុប្បន្នភាពដោយ ${data.uploadedBy || "-"}` +
                 (data.updatedAt ? ` · ${formatRowDateTime12h(data.updatedAt)}` : "");
             outAreaHasSavedRecord = true;
@@ -4350,35 +4344,10 @@ async function deleteWrongAddressRecord(ldCif) {
 
 document.getElementById("outAreaNewBranch")?.addEventListener("change", (e) => {
     populateOutAreaCoOptions(e.target.value, "");
-    renderOutAreaBranchChips();
     updateOutAreaMove();
 });
 
 document.getElementById("outAreaNewCO")?.addEventListener("change", updateOutAreaMove);
-
-// Branch chips — one tap instead of a dropdown for the 7 branches; the
-// hidden <select> stays the value everything else reads.
-function renderOutAreaBranchChips() {
-    const select = document.getElementById("outAreaNewBranch");
-    const wrap = document.getElementById("outAreaBranchChips");
-    if (!select || !wrap) return;
-    const current = outAreaSelectedRow ? outAreaSelectedRow.branch : "";
-    wrap.innerHTML = [...select.options].filter(o => o.value).map(o => `
-        <button type="button" role="radio" aria-checked="${select.value === o.value}"
-            class="oa-branch-option ${select.value === o.value ? "active" : ""}" data-value="${escapeHtml(o.value)}">
-            ${escapeHtml(o.textContent)}
-            ${o.value === current ? `<small>${escapeHtml(t("arrears.oaCurrentTag"))}</small>` : ""}
-        </button>`).join("");
-}
-
-document.getElementById("outAreaBranchChips")?.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-value]");
-    if (!btn) return;
-    const select = document.getElementById("outAreaNewBranch");
-    if (select.value === btn.dataset.value) return;
-    select.value = btn.dataset.value;
-    select.dispatchEvent(new Event("change"));
-});
 
 // "Current branch · officer -> new branch · officer" preview above Save.
 function updateOutAreaMove() {
