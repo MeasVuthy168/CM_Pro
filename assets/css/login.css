@@ -1095,3 +1095,24 @@ body{ align-items:flex-start; }
     .pin-setup-skip{ margin-top:16px; }
     #pinSetupEntryStep .pin-keypad{ gap:12px; }
 }
+
+/* ===== PIN screen: top-left back to the password login ===== */
+.pin-top-back{
+    position:absolute;
+    top:calc(14px + env(safe-area-inset-top));
+    left:14px;
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.08);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    z-index:2;
+}
+.pin-top-back svg{ width:22px; height:22px; }
+.pin-top-back:active{ transform:scale(.94); background:rgba(255,215,0,.16); }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-top-back{ background:#fff; border-color:#E2E6ED; color:#0E1B3C; box-shadow:0 1px 3px rgba(14,27,60,.08); }

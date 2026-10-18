@@ -967,6 +967,8 @@ if(pinOverlay){
 
     pinBackBtn.addEventListener("click",closePinOverlay);
 
+    document.getElementById("pinTopBackBtn")?.addEventListener("click",closePinOverlay);
+
     pinForgotBtn.addEventListener("click",closePinOverlay);
 
     pinOverlay.querySelectorAll(".pin-key[data-digit]").forEach(key=>{

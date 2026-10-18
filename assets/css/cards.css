@@ -52,10 +52,10 @@
 
 .dashboard-card-icon{
     display:block;
-    width:72%;
-    height:68%;
-    max-width:180px;
-    max-height:180px;
+    width:36%;
+    height:34%;
+    max-width:90px;
+    max-height:90px;
     object-fit:contain;
     margin:0 0 8px;
     flex-shrink:0;
@@ -107,7 +107,7 @@
 @media (min-width:768px){
     .dashboard-grid{gap:22px;padding:22px}
     .dashboard-card{border-radius:20px}
-    .dashboard-card-icon{width:72%;height:68%;max-width:180px;max-height:180px}
+    .dashboard-card-icon{width:36%;height:34%;max-width:90px;max-height:90px}
     .dashboard-card-title{font-size:18px;min-height:44px}
 }
 @media (min-width:1200px){
