@@ -4,7 +4,9 @@
 // CM_Pro pages animates instead of hard-cutting.
 //   forward  → new page slides in from the right, old one drifts left
 //   back     → current page slides out to the right, previous one returns
-//   tab      → bottom-nav switch between the 3 root pages: quick crossfade
+//   tab      → bottom-nav switch between the 3 root pages: content swaps
+//              with a short fade and the gold active-tab indicator slides
+//              over to the new tab
 // Browsers without cross-document view transitions (or with "reduce
 // motion" on) simply navigate as before.
 //
@@ -44,9 +46,23 @@
         "  html:active-view-transition-type(back)::view-transition-old(root) { animation: 280ms cubic-bezier(.2,.8,.2,1) both cmPtOutRight; z-index: 2; box-shadow: -8px 0 24px rgba(0,0,0,.18); }",
         "  html:active-view-transition-type(back)::view-transition-new(root) { animation: 280ms cubic-bezier(.2,.8,.2,1) both cmPtInLeft; z-index: 1; box-shadow: none; }",
         // tab switch
-        "  html:active-view-transition-type(tab)::view-transition-old(root) { animation: 180ms ease both cmPtFadeOut; }",
-        "  html:active-view-transition-type(tab)::view-transition-new(root) { animation: 220ms ease both cmPtFadeIn; box-shadow: none; }",
+        "  html:active-view-transition-type(tab)::view-transition-old(root) { animation: 140ms ease both cmPtFadeOut; }",
+        "  html:active-view-transition-type(tab)::view-transition-new(root) { animation: 140ms ease both cmPtFadeIn; box-shadow: none; }",
+        // plus-lighter: pixels that are the same on both pages (the
+        // bottom bar, the header background) stay fully solid through
+        // the crossfade instead of dipping — only what changed fades.
+        "  html:active-view-transition-type(tab)::view-transition-image-pair(root) { isolation: isolate; }",
+        "  html:active-view-transition-type(tab)::view-transition-old(root), html:active-view-transition-type(tab)::view-transition-new(root) { mix-blend-mode: plus-lighter; }",
+        // the active-tab indicator is its own layer and glides to its
+        // new spot. (The bottom bar itself must NOT get a
+        // view-transition-name: pages re-render it from their loader
+        // mid-transition, and Chrome then cuts the whole transition.)
+        "  ::view-transition-group(cm-tabind) { animation-duration: 380ms; animation-timing-function: cubic-bezier(.3,1.25,.5,1); }",
+        "  ::view-transition-old(cm-tabind), ::view-transition-new(cm-tabind) { animation: none; }",
+        "  ::view-transition-old(cm-tabind) { opacity: 0; }",
         "}",
+        
+        "#cmTabInd { position: fixed; z-index: 1000; height: 3px; width: 44px; border-radius: 0 0 4px 4px; background: #FFD700; box-shadow: 0 0 10px 1px rgba(255,215,0,.55); pointer-events: none; display: none; view-transition-name: cm-tabind; }",
         "@keyframes cmPtInRight { from { transform: translateX(100%); } to { transform: none; } }",
         "@keyframes cmPtOutLeft { from { transform: none; filter: none; } to { transform: translateX(-28%); filter: brightness(.82); } }",
         "@keyframes cmPtOutRight { from { transform: none; } to { transform: translateX(100%); } }",
@@ -121,9 +137,9 @@
     // blanked (the page's own loader writes the real one moments later)
     // and a bottom bar with no tab highlighted. Root/tab pages have
     // their own distinct headers, so they only use their own copy.
-    if (!snap && !isTabRoot(location.href)) {
+    if (!snap) {
         try {
-            var gTop = sessionStorage.getItem(GENERIC_KEY + "top");
+            var gTop = isTabRoot(location.href) ? null : sessionStorage.getItem(GENERIC_KEY + "top");
             var gNav = sessionStorage.getItem(GENERIC_KEY + "nav");
             if (gTop || gNav) {
                 snap = {};
@@ -135,12 +151,77 @@
         } catch (e) {}
     }
 
+    // ----- bottom bar highlight -----
+    // A gold bar on the top edge of the active tab. It lives outside the
+    // bottom bar (its own fixed element, #cmTabInd) because most pages
+    // re-render the bar from their own loader while the transition is
+    // still running — an indicator inside it would be swapped out
+    // mid-slide and jump. With its own view-transition-name it glides
+    // from the old tab's position to the new one between pages.
+    var tabInd = null;
+
+    function placeTabInd() {
+        var nav = document.querySelector(".bottom-nav");
+        var item = nav && nav.querySelector(".bottom-nav-item.active");
+        if (!item) {
+            if (tabInd) tabInd.style.display = "none";
+            return;
+        }
+        if (!tabInd) {
+            tabInd = document.createElement("div");
+            tabInd.id = "cmTabInd";
+            tabInd.setAttribute("aria-hidden", "true");
+            (document.body || root).appendChild(tabInd);
+        }
+        var r = item.getBoundingClientRect();
+        var n = nav.getBoundingClientRect();
+        if (!r.width) return;
+        tabInd.style.left = Math.round(r.left + r.width / 2 - 22) + "px";
+        tabInd.style.top = Math.round(n.top) + "px";
+        tabInd.style.display = "block";
+    }
+
+    // A root page's own tab is highlighted in the copy straight away, so
+    // the indicator is already in place for the transition's new frame.
+    function markActiveTab(container) {
+        if (!isTabRoot(location.href)) return;
+        var here = new URL(location.href).pathname;
+        if (here === "/CM_Pro/") here = "/CM_Pro/index.html";
+        var links = container.querySelectorAll(".bottom-nav-item");
+        for (var i = 0; i < links.length; i++) {
+            var path = "";
+            try { path = new URL(links[i].getAttribute("href"), location.href).pathname; } catch (e) {}
+            links[i].classList.toggle("active", path === here);
+        }
+    }
+
+    if (window.MutationObserver) {
+        // The bar (and which tab is active) is set by each page's own
+        // loader; follow it whenever it is (re)rendered.
+        new MutationObserver(function (list) {
+            for (var i = 0; i < list.length; i++) {
+                var t = list[i].target;
+                if (t.id === "bottomnav-container" || (t.closest && t.closest(".bottom-nav"))) {
+                    placeTabInd();
+                    return;
+                }
+            }
+        }).observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+    }
+    window.addEventListener("resize", placeTabInd);
+    window.addEventListener("load", placeTabInd);
+    window.addEventListener("pageshow", placeTabInd);
+
     if (snap && window.MutationObserver) {
         var pending = IDS.filter(function (id) { return snap[id]; });
         var fill = function (el) {
             if (el.innerHTML.trim()) return;
             // blob: photo URLs die with the page that made them.
             el.innerHTML = snap[el.id].replace(/src="blob:[^"]*"/g, 'src="' + photoSrc() + '"');
+            if (el.id === IDS[1]) {
+                markActiveTab(el);
+                placeTabInd();
+            }
         };
         var mo = new MutationObserver(function () {
             pending = pending.filter(function (id) {
