@@ -674,7 +674,13 @@ function completeLogin(data,knownPassword){
     // never stored) so setup can call change-pin without asking again;
     // fingerprint/PIN-login don't have it, so that flow asks for it as
     // its first step instead.
-    if(!userData.hasPin && typeof maybePromptPinSetup==="function"){
+    // A user who deleted their PIN on purpose (Settings -> Change PIN ->
+    // Delete PIN) isn't asked again on every login; creating a PIN from
+    // Settings clears this flag.
+    let pinPromptOff=false;
+    try{ pinPromptOff=localStorage.getItem(`cm_pin_prompt_off_${userData.username}`)==="1"; }catch{}
+
+    if(!userData.hasPin && !pinPromptOff && typeof maybePromptPinSetup==="function"){
 
         maybePromptPinSetup(knownPassword).finally(goToDestination);
 
