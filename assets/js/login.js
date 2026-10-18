@@ -854,6 +854,7 @@ if(pinOverlay){
 
         resetPinEntry();
         pinOverlay.hidden=false;
+        if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
 
         let cached={};
         try{ cached=JSON.parse(localStorage.getItem("loggedInUser") || "{}") || {}; }catch{}
@@ -993,6 +994,34 @@ if(pinOverlay){
 
     });
 
+    // Handled at document level (not on an input) so it works whatever
+    // has focus — e.g. the username box behind the overlay keeps focus
+    // when the PIN screen auto-opens.
+    document.addEventListener("keydown",(e)=>{
+
+        if(pinOverlay.hidden) return;
+
+        const setup=document.getElementById("pinSetupOverlay");
+        if(setup && !setup.hidden) return;
+
+        if(e.key==="Escape"){
+            e.preventDefault();
+            closePinOverlay();
+            return;
+        }
+
+        const k=cmPinKeyFromEvent(e);
+        if(!k) return;
+
+        e.preventDefault();
+        if(e.repeat && k!=="back") return;
+
+        cmPressPinKey(k==="back"
+            ? document.getElementById("pinBackspace")
+            : pinOverlay.querySelector(`.pin-key[data-digit="${k}"]`));
+
+    });
+
     // ===== SKIP STRAIGHT TO PIN FOR A RETURNING, PIN-ENABLED USER =====
     // Matches the "log in with your password once, then unlock with a
     // PIN after that" pattern from other banking apps. The AUTO LOGIN
@@ -1038,6 +1067,44 @@ if(pinOverlay){
 }
 
 // =========================
+// PHYSICAL KEYBOARD ON THE PIN KEYPADS (desktop)
+// Maps a keydown to "0"-"9" or "back". Besides the plain digit keys it
+// accepts Khmer digits (a Windows keyboard set to Khmer types ០-៩, not
+// 0-9) and the numeric keypad with Num Lock off (e.key is then
+// "Home"/"End"/arrows, so read e.code instead).
+// =========================
+
+function cmPinKeyFromEvent(e){
+
+    if(e.ctrlKey || e.metaKey || e.altKey) return null;
+
+    const k=e.key || "";
+
+    if(k==="Backspace" || k==="Delete") return "back";
+    if(/^[0-9]$/.test(k)) return k;
+
+    const c=k.length===1 ? k.charCodeAt(0) : 0;
+    if(c>=0x17E0 && c<=0x17E9) return String(c-0x17E0);
+
+    const m=/^(?:Numpad|Digit)([0-9])$/.exec(e.code || "");
+    if(m && !e.shiftKey) return m[1];
+
+    return null;
+
+}
+
+// Clicks the on-screen key so typing and tapping share one code path,
+// with a short pressed look so the user sees which key registered.
+function cmPressPinKey(btn){
+
+    if(!btn) return;
+    btn.classList.add("kbd-press");
+    setTimeout(()=>btn.classList.remove("kbd-press"),130);
+    btn.click();
+
+}
+
+// =========================
 // FIRST-LOGIN PIN SETUP (skippable)
 // Shown from completeLogin() whenever hasPin is false, on whatever
 // method the user just logged in with. Never blocks reaching the
@@ -1056,6 +1123,8 @@ function maybePromptPinSetup(knownPassword){
         if(!overlay){ resolve(); return; }
 
         const titleEl=document.getElementById("pinSetupTitle");
+        const headingEl=document.getElementById("pinSetupHeading");
+        const stepsEl=document.getElementById("pinSetupSteps");
         const passwordStep=document.getElementById("pinSetupPasswordStep");
         const passwordInput2=document.getElementById("pinSetupPassword");
         const passwordNextBtn=document.getElementById("pinSetupPasswordNext");
@@ -1075,8 +1144,25 @@ function maybePromptPinSetup(knownPassword){
         let phase=password ? "create" : "password";
 
         function finish(){
+            document.removeEventListener("keydown",onSetupKey);
             overlay.hidden=true;
             resolve();
+        }
+
+        function onSetupKey(e){
+
+            if(overlay.hidden || entryStep.hidden) return;
+
+            const k=cmPinKeyFromEvent(e);
+            if(!k) return;
+
+            e.preventDefault();
+            if(e.repeat && k!=="back") return;
+
+            cmPressPinKey(k==="back"
+                ? backspaceBtn
+                : overlay.querySelector(`.pin-key[data-setup-digit="${k}"]`));
+
         }
 
         function showStep(name){
@@ -1085,13 +1171,26 @@ function maybePromptPinSetup(knownPassword){
             entryStep.hidden = name!=="create" && name!=="confirm";
             biometricStep.hidden = name!=="biometric";
 
-            if(name==="create"){
-                titleEl.innerText=t("login.pinSetup.createTitle");
-            }else if(name==="confirm"){
-                titleEl.innerText=t("login.pinSetup.confirmTitle");
-            }else{
-                titleEl.innerText="";
-            }
+            const heading={
+                password:"login.pinSetup.passwordHeading",
+                create:"login.pinSetup.heading",
+                confirm:"login.pinSetup.confirmHeading",
+                biometric:"login.pinSetup.biometricHeading"
+            }[name];
+            const sub={
+                password:"login.pinSetup.enterPassword",
+                create:"login.pinSetup.createSub",
+                confirm:"login.pinSetup.confirmSub"
+            }[name];
+
+            headingEl.innerText=heading ? t(heading) : "";
+            titleEl.innerText=sub ? t(sub) : "";
+
+            stepsEl.hidden = name!=="create" && name!=="confirm";
+            stepsEl.querySelectorAll(".pin-setup-step").forEach(step=>{
+                step.classList.toggle("active",step.dataset.step===name);
+                step.classList.toggle("done",name==="confirm" && step.dataset.step==="create");
+            });
 
         }
 
@@ -1164,6 +1263,7 @@ function maybePromptPinSetup(knownPassword){
 
                 if(digits.length>=6) return;
 
+                if(!digits) statusEl.innerText="";
                 digits+=key.dataset.setupDigit;
                 renderDots();
 
@@ -1241,10 +1341,18 @@ function maybePromptPinSetup(knownPassword){
 
         skipBtn.addEventListener("click",finish);
 
+        passwordInput2.addEventListener("keydown",(e)=>{
+            if(e.key==="Enter"){ e.preventDefault(); passwordNextBtn.click(); }
+        });
+
+        document.addEventListener("keydown",onSetupKey);
+
         // ----- open -----
 
         overlay.hidden=false;
+        if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
         showStep(phase);
+        if(phase==="password") passwordInput2.focus();
         renderDots();
 
     });
