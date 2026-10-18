@@ -6,7 +6,7 @@ console.log("🔥 SERVICE WORKER LOADED");
    CM_Pro – Production Service Worker
 ========================================================= */
 
-const SW_VERSION = "v552";
+const SW_VERSION = "v553";
 
 const CACHE_NAME = `cm-pro-cache-${SW_VERSION}`;
 
@@ -39,6 +39,15 @@ const STATIC_ASSETS = [
     "/CM_Pro/assets/icons/menu/credit-report.png",
     "/CM_Pro/assets/icons/menu/loan-calculator.png",
     "/CM_Pro/assets/icons/menu/retirement-left.png",
+    "/CM_Pro/assets/icons/menu/customer-search-dark.png",
+    "/CM_Pro/assets/icons/menu/daily-arrears-dark.png",
+    "/CM_Pro/assets/icons/menu/average-turnover-dark.png",
+    "/CM_Pro/assets/icons/menu/spot-check-dark.png",
+    "/CM_Pro/assets/icons/menu/master-data-dark.png",
+    "/CM_Pro/assets/icons/menu/land-classification-dark.png",
+    "/CM_Pro/assets/icons/menu/credit-report-dark.png",
+    "/CM_Pro/assets/icons/menu/loan-calculator-dark.png",
+    "/CM_Pro/assets/icons/menu/retirement-left-dark.png",
 
 ];
 
