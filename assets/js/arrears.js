@@ -1343,6 +1343,7 @@ function buildGroupLdRow(row, index) {
             <div class="arr-group-ld-meta">
                 <span>Arrears <strong class="${(parseFloat(row.arreas) || 0) > 0 ? "arr-amount-bad" : ""}">${escapeHtml(arrFormatAmount(row.arreas))}${row.ccy ? ` ${escapeHtml(row.ccy)}` : ""}</strong></span>
                 <span>OS <strong>${escapeHtml(formatShortAmount(parseFloat(row.osUsd) || 0))} USD</strong></span>
+                ${row.disDate ? `<span>DisDate <strong>${escapeHtml(formatRowDateDMY(row.disDate))}</strong></span>` : ""}
                 ${row.promiseStatus ? `<span class="arr-promise ${promiseCss}">${escapeHtml(row.promiseStatus)}</span>` : ""}
             </div>
             <div class="arr-group-ld-reason ${hasReason ? "" : "arr-group-ld-reason-empty"}">
