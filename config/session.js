@@ -224,13 +224,21 @@ function cmShouldBeLocked() {
 // overlay once the page finishes loading.
 // =========================================================
 
+// The lock screen follows the app theme: dark for the dark themes,
+// light otherwise (the theme script in <head> has already set
+// data-theme by the time this runs).
+function cmLockIsDark() {
+    const theme = document.documentElement.getAttribute("data-theme");
+    return theme === "dark" || theme === "darkgray";
+}
+
 function cmShowImmediateBlock() {
 
     const el = document.createElement("div");
     el.id = "cmLockImmediateBlock";
     el.setAttribute(
         "style",
-        "position:fixed;inset:0;z-index:2147483647;background:#0E1B3C;"
+        `position:fixed;inset:0;z-index:2147483647;background:${cmLockIsDark() ? "#0E1B3C" : "#F5F7FA"};`
     );
     (document.body || document.documentElement).appendChild(el);
 
@@ -355,6 +363,19 @@ function cmInjectStyles() {
 .cm-lock-link:active{opacity:.7;}
 @keyframes cmLockShake{0%,100%{transform:translateX(0);}20%{transform:translateX(-8px);}40%{transform:translateX(8px);}60%{transform:translateX(-6px);}80%{transform:translateX(6px);}}
 .cm-lock-dots.shake{animation:cmLockShake .4s ease;}
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) #cmLockOverlay{background:#F5F7FA;}
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-photo{background:#E8ECF3;}
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-greeting{color:#0E1B3C;}
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-title{color:#5A6478;}
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-dot{border-color:#D4AF37;}
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-dot.filled{background:#D4AF37;}
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-dot.error{border-color:#C0392B;background:#C0392B;}
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-status{color:#C0392B;}
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-key{background:#fff;color:#0E1B3C;box-shadow:0 1px 3px rgba(14,27,60,.10);border:1px solid #E2E6ED;}
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-key:active{background:rgba(212,175,55,.18);}
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-key-back{background:transparent;box-shadow:none;border:none;}
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-fp-btn{border-color:#D4AF37;color:#B8860B;}
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-link{color:#1A2E57;}
 `;
     document.head.appendChild(style);
 

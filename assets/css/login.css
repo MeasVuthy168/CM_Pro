@@ -696,3 +696,51 @@ body{
     box-shadow:0 4px 15px rgba(0,0,0,.25);
 
 }
+
+/* =========================
+   Themes
+   Light (light / gold): light page, white card, light PIN screens.
+   Dark (dark / dark gray): the original navy card and PIN screens on a
+   dark page.
+========================= */
+[data-theme="dark"] body,
+[data-theme="darkgray"] body{ background:#0B1220; }
+[data-theme="dark"] .login-card,
+[data-theme="darkgray"] .login-card{ border:1px solid #223055; }
+
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) body{ background:#F5F7FA; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .login-card{
+    background:#FFFFFF;
+    border:1px solid #E2E6ED;
+    box-shadow:0 10px 30px rgba(14,27,60,.08);
+}
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .title{ color:#0E1B3C; font-weight:600; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .subtitle{ color:#5A6478; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .input-box{ background:#F2F4F8; border:1px solid #E2E6ED; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .input-box:focus{ border-color:#D4AF37; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .username-summary{ color:#1C2333; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .username-change-link{ color:#B8860B; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .forgot-password-link{ color:#1A2E57; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .success{ color:#15803D; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .error{ color:#C0392B; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .info{ color:#5A6478; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .loading{ border-color:rgba(14,27,60,.15); border-top-color:#D4AF37; }
+
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-overlay{ background:#F5F7FA; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-back-btn{ background:#FFFFFF; color:#0E1B3C; border:1px solid #E2E6ED; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-overlay-title{ color:#0E1B3C; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-dot{ border-color:#D4AF37; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-dot.filled{ background:#D4AF37; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-dot.error{ border-color:#C0392B; background:#C0392B; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-overlay-status{ color:#C0392B; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) #pinSetupBiometricStatus{ color:#5A6478 !important; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-key{
+    background:#FFFFFF;
+    color:#0E1B3C;
+    border:1px solid #E2E6ED;
+    box-shadow:0 1px 3px rgba(14,27,60,.10);
+}
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-key:active{ background:rgba(212,175,55,.18); }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-key-back{ background:transparent; border:none; box-shadow:none; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-forgot{ color:#1A2E57; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .logo{ border-radius:26px; box-shadow:0 6px 16px rgba(14,27,60,.18); }
