@@ -40,6 +40,11 @@ href="../../assets/css/masterdata/officer.css">
 
 <link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
 
+<!-- Hold the first paint until the whole page is parsed (its scripts,
+     translations and header), so a page transition slides in a finished
+     page instead of one still filling itself in. No element has this id:
+     the hold simply ends when parsing does. -->
+<link rel="expect" href="#cm-pt-parsed" blocking="render">
 <script src="/CM_Pro/shared/page-transition.js"></script>
 </head>
 
