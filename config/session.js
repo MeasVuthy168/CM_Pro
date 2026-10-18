@@ -344,19 +344,21 @@ function cmInjectStyles() {
 #cmLockOverlay{position:fixed;inset:0;z-index:2147483647;background:#0E1B3C;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;overflow-y:auto;}
 #cmLockOverlay.show{display:flex;}
 .cm-lock-inner{width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;}
-.cm-lock-photo{width:84px;height:84px;border-radius:50%;object-fit:cover;border:2px solid #D4AF37;background:#16223F;margin-bottom:14px;}
+.cm-lock-photo{width:88px;height:88px;box-shadow:0 0 0 4px rgba(212,175,55,.22);border-radius:50%;object-fit:cover;border:2px solid #D4AF37;background:#16223F;margin-bottom:14px;}
 .cm-lock-greeting{color:#fff;font-size:17px;font-weight:600;text-align:center;margin-bottom:4px;}
 .cm-lock-title{color:#b9c6e0;font-size:14px;text-align:center;margin-bottom:22px;}
-.cm-lock-dots{display:flex;gap:16px;margin-bottom:10px;}
-.cm-lock-dot{width:16px;height:16px;border-radius:50%;border:2px solid #FFD700;box-sizing:border-box;transition:background .15s;}
-.cm-lock-dot.filled{background:#FFD700;}
+.cm-lock-dots{display:flex;gap:18px;margin-bottom:10px;}
+.cm-lock-dot{width:15px;height:15px;border-radius:50%;border:2px solid #FFD700;box-sizing:border-box;transition:background .15s,transform .15s;}
+.cm-lock-dot.filled{background:#FFD700;transform:scale(1.15);}
 .cm-lock-dot.error{border-color:#ff6b6b;background:#ff6b6b;}
 .cm-lock-status{min-height:20px;color:#ff6b6b;font-size:13.5px;font-weight:600;text-align:center;margin-bottom:8px;}
 .cm-lock-keypad{width:100%;max-width:320px;display:grid;grid-template-columns:repeat(3,1fr);justify-items:center;gap:18px;margin-top:6px;}
-.cm-lock-key{width:72px;height:72px;border:none;border-radius:50%;background:rgba(255,255,255,.06);color:#fff;font-size:28px;font-weight:500;cursor:pointer;}
+.cm-lock-key{width:72px;height:72px;border:none;border-radius:50%;background:rgba(255,255,255,.06);color:#fff;font-size:30px;font-weight:500;font-family:Arial,sans-serif;cursor:pointer;transition:background .15s,transform .1s;}
 .cm-lock-key:active{background:rgba(255,215,0,.18);transform:scale(.94);}
-.cm-lock-key-back{font-size:18px;background:transparent;}
-.cm-lock-fp-btn{margin-top:18px;width:56px;height:56px;border-radius:50%;border:1.5px solid #FFD700;background:transparent;color:#FFD700;font-size:24px;cursor:pointer;}
+.cm-lock-key-back{background:transparent;display:flex;align-items:center;justify-content:center;}
+.cm-lock-slot{display:flex;align-items:center;justify-content:center;}
+.cm-lock-fp-btn{width:72px;height:72px;border-radius:50%;border:1.5px solid #FFD700;background:transparent;color:#FFD700;font-size:24px;cursor:pointer;}
+.cm-lock-fp-btn svg{width:30px;height:30px;}
 .cm-lock-fp-btn:active{background:rgba(255,215,0,.12);}
 .cm-lock-links{display:flex;gap:22px;margin-top:26px;}
 .cm-lock-link{color:#b9c6e0;font-size:13.5px;font-weight:600;cursor:pointer;}
@@ -373,7 +375,7 @@ function cmInjectStyles() {
 :root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-status{color:#C0392B;}
 :root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-key{background:#fff;color:#0E1B3C;box-shadow:0 1px 3px rgba(14,27,60,.10);border:1px solid #E2E6ED;}
 :root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-key:active{background:rgba(212,175,55,.18);}
-:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-key-back{background:transparent;box-shadow:none;border:none;}
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-key-back{background:transparent;box-shadow:none;border:none;color:#0E1B3C;}
 :root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-fp-btn{border-color:#D4AF37;color:#B8860B;}
 :root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-link{color:#1A2E57;}
 `;
@@ -493,7 +495,11 @@ async function cmTryBiometricUnlock() {
     } catch (err) {
 
         console.error("[app-lock] biometric unlock failed:", err);
-        statusEl.innerText = err.message || t("login.msg.fingerprintFailed");
+        // Backing out of (or timing out) the system prompt just leaves the
+        // keypad ready — no red "Cancelled or timed out." under the dots.
+        statusEl.innerText = (err && err.name === "NotAllowedError")
+            ? ""
+            : (err.message || t("login.msg.fingerprintFailed"));
 
     }
 
@@ -533,22 +539,23 @@ function cmBuildLockOverlay() {
                 <button type="button" class="cm-lock-key" data-digit="7">7</button>
                 <button type="button" class="cm-lock-key" data-digit="8">8</button>
                 <button type="button" class="cm-lock-key" data-digit="9">9</button>
-                <span></span>
+                <span class="cm-lock-slot">
+                    <button type="button" class="cm-lock-fp-btn" id="cmLockFpBtn" style="display:none;" aria-label="Fingerprint">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 7V5a1 1 0 0 1 1-1h2"/>
+                            <path d="M17 4h2a1 1 0 0 1 1 1v2"/>
+                            <path d="M20 17v2a1 1 0 0 1-1 1h-2"/>
+                            <path d="M7 20H5a1 1 0 0 1-1-1v-2"/>
+                            <path d="M12 11c.8 0 1.5.7 1.5 1.5v2c0 1-.3 2-.8 2.8"/>
+                            <path d="M9.5 16.5c.3-1 .5-2.1.5-3.2a3 3 0 0 1 6 0c0 .4 0 .8-.1 1.2"/>
+                            <path d="M7.5 17.5c.5-1.5.8-3 .8-4.7a4.7 4.7 0 0 1 9.2-1.3"/>
+                            <path d="M5.5 18.3c.8-2 1.3-4.1 1.3-6.3a6.2 6.2 0 0 1 11-3.9"/>
+                        </svg>
+                    </button>
+                </span>
                 <button type="button" class="cm-lock-key" data-digit="0">0</button>
-                <button type="button" class="cm-lock-key cm-lock-key-back" id="cmLockBackspace">⌫</button>
+                <button type="button" class="cm-lock-key cm-lock-key-back" id="cmLockBackspace" aria-label="Backspace"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 5H9l-6 7 6 7h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><path d="M17 9.5l-5 5M12 9.5l5 5"/></svg></button>
             </div>
-            <button type="button" class="cm-lock-fp-btn" id="cmLockFpBtn" style="display:none;" aria-label="Fingerprint">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 7V5a1 1 0 0 1 1-1h2"/>
-                    <path d="M17 4h2a1 1 0 0 1 1 1v2"/>
-                    <path d="M20 17v2a1 1 0 0 1-1 1h-2"/>
-                    <path d="M7 20H5a1 1 0 0 1-1-1v-2"/>
-                    <path d="M12 11c.8 0 1.5.7 1.5 1.5v2c0 1-.3 2-.8 2.8"/>
-                    <path d="M9.5 16.5c.3-1 .5-2.1.5-3.2a3 3 0 0 1 6 0c0 .4 0 .8-.1 1.2"/>
-                    <path d="M7.5 17.5c.5-1.5.8-3 .8-4.7a4.7 4.7 0 0 1 9.2-1.3"/>
-                    <path d="M5.5 18.3c.8-2 1.3-4.1 1.3-6.3a6.2 6.2 0 0 1 11-3.9"/>
-                </svg>
-            </button>
             <div class="cm-lock-links">
                 <span class="cm-lock-link" id="cmLockForgot"></span>
                 <span class="cm-lock-link" id="cmLockLogout"></span>

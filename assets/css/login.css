@@ -744,3 +744,251 @@ body{
 :root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-key-back{ background:transparent; border:none; box-shadow:none; }
 :root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-forgot{ color:#1A2E57; }
 :root:not([data-theme="dark"]):not([data-theme="darkgray"]) .logo{ border-radius:26px; box-shadow:0 6px 16px rgba(14,27,60,.18); }
+
+/* =========================
+   Refresh (2026-10): language switch, field icons, welcome-back
+   header, eye toggle, other ways in, PIN screen polish.
+========================= */
+
+body{
+    overflow-y:auto;
+    overflow-x:hidden;
+    padding:64px 20px 40px;
+    box-sizing:border-box;
+}
+
+.ico{ width:22px; height:22px; display:block; }
+
+/* language switch */
+.lang-switch{
+    position:fixed;
+    top:calc(env(safe-area-inset-top,0px) + 14px);
+    right:14px;
+    z-index:10;
+    display:flex;
+    gap:2px;
+    padding:3px;
+    border-radius:999px;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.14);
+}
+.lang-switch button{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    height:32px;
+    padding:0 11px 0 6px;
+    border:0;
+    border-radius:999px;
+    background:transparent;
+    color:#b9c6e0;
+    font-family:'Krasar',sans-serif;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+}
+.lang-switch img{
+    width:24px;
+    height:16px;
+    border-radius:3px;
+    object-fit:cover;
+    box-shadow:0 0 0 1px rgba(0,0,0,.12);
+}
+.lang-switch button.on{
+    background:#FFD700;
+    color:#0E1B3C;
+}
+
+/* title */
+.title{ font-size:21px; font-weight:700; margin-bottom:6px; }
+.subtitle{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:5px;
+    margin-bottom:30px;
+}
+.subtitle-pin svg{ width:15px; height:15px; display:block; color:#D4AF37; }
+
+/* fields with a leading icon */
+.field{ position:relative; }
+.field .field-ico{
+    position:absolute;
+    left:16px;
+    top:18px;
+    width:24px;
+    height:24px;
+    color:#8a94a6;
+    pointer-events:none;
+}
+.field .field-ico svg{ width:24px; height:24px; display:block; }
+.field .input-box{
+    padding-left:52px;
+    box-sizing:border-box;
+    border:1.5px solid transparent;
+    transition:border-color .2s, box-shadow .2s;
+}
+.field .input-box:focus{
+    border-color:#D4AF37;
+    box-shadow:0 0 0 4px rgba(212,175,55,.15);
+}
+.password-wrapper .input-box{ padding-right:56px; }
+
+/* eye toggle */
+.show-password{
+    top:8px;
+    right:8px;
+    width:44px;
+    height:44px;
+    border:0;
+    border-radius:12px;
+    background:transparent;
+    color:#5A6478;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.show-password svg{ width:22px; height:22px; }
+.show-password .eye-closed{ display:none; }
+.show-password.on .eye-open{ display:none; }
+.show-password.on .eye-closed{ display:block; }
+.show-password:active{ background:rgba(127,127,127,.12); }
+
+/* welcome-back header (step 2) */
+.username-summary{
+    gap:12px;
+    justify-content:flex-start;
+    padding:10px 12px;
+    border-radius:16px;
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.1);
+}
+.user-avatar{
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(135deg,#FFD700,#D4AF37);
+    color:#0E1B3C;
+    font-weight:800;
+    font-size:18px;
+    font-family:Arial,sans-serif;
+}
+.user-meta{ display:flex; flex-direction:column; min-width:0; line-height:1.35; }
+.user-welcome{ font-size:12.5px; color:#b9c6e0; }
+.user-name{ font-size:16px; font-weight:700; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.username-change-link{
+    margin-left:auto;
+    padding:6px 12px;
+    border-radius:999px;
+    border:1px solid rgba(255,215,0,.5);
+    font-size:13px;
+}
+
+/* other ways in */
+.alt-login{ margin-top:18px; }
+.alt-or{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:#8a94a6;
+    font-size:13px;
+    margin-bottom:12px;
+}
+.alt-or::before,.alt-or::after{ content:""; flex:1; height:1px; background:rgba(255,255,255,.14); }
+.alt-btns{ display:flex; gap:10px; }
+.alt-btn{
+    flex:1;
+    height:52px;
+    border-radius:16px;
+    border:1.5px solid rgba(255,215,0,.55);
+    background:transparent;
+    color:#FFD700;
+    font-family:'Krasar',sans-serif;
+    font-size:14.5px;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    cursor:pointer;
+}
+.alt-btn[hidden]{ display:none; }
+.alt-btn:active{ background:rgba(255,215,0,.12); transform:scale(.98); }
+
+/* login button */
+.login-btn{
+    height:60px;
+    font-size:20px;
+    box-shadow:0 8px 20px rgba(212,175,55,.3);
+}
+.login-btn:active{ transform:scale(.99); }
+
+/* PIN screens */
+.pin-back-btn{ display:flex; align-items:center; justify-content:center; }
+.pin-avatar{
+    width:72px;
+    height:72px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(135deg,#FFD700,#D4AF37);
+    color:#0E1B3C;
+    font:800 30px Arial,sans-serif;
+    margin:-6px 0 12px;
+    box-shadow:0 0 0 4px rgba(212,175,55,.25);
+}
+.pin-avatar:empty{ display:none; }
+.pin-greeting{ color:#fff; font-size:17px; font-weight:700; text-align:center; margin-bottom:4px; }
+.pin-greeting:empty{ display:none; }
+.pin-overlay-title{ font-size:15px; font-weight:500; color:#b9c6e0; }
+.pin-dots{ gap:18px; }
+.pin-dot{ width:15px; height:15px; transition:background .15s, transform .15s; }
+.pin-dot.filled{ transform:scale(1.15); }
+.pin-key{ font-size:30px; font-family:Arial,sans-serif; }
+.pin-key .ico{ width:28px; height:28px; margin:auto; }
+.pin-key-back{ color:inherit; }
+.pin-slot{ display:flex; align-items:center; justify-content:center; }
+.pin-key-bio{
+    background:transparent !important;
+    border:1.5px solid #D4AF37 !important;
+    color:#FFD700;
+    box-shadow:none !important;
+}
+.pin-key-bio[hidden]{ display:none; }
+
+/* light theme */
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .lang-switch{ background:#fff; border-color:#E2E6ED; box-shadow:0 2px 8px rgba(14,27,60,.08); }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .lang-switch button{ color:#5A6478; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .lang-switch button.on{ background:#0E1B3C; color:#FFD700; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .title{ font-weight:700; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .field .input-box{ border-color:#E2E6ED; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .field .input-box:focus{ border-color:#D4AF37; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .username-summary{ background:#F5F7FA; border-color:#E2E6ED; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .user-welcome{ color:#5A6478; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .user-name{ color:#0E1B3C; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .username-change-link{ border-color:rgba(184,134,11,.45); }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .alt-or::before,
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .alt-or::after{ background:#E2E6ED; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .alt-btn{ border-color:#E2E6ED; background:#fff; color:#0E1B3C; box-shadow:0 1px 3px rgba(14,27,60,.06); }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .alt-btn .ico{ color:#B8860B; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-greeting{ color:#0E1B3C; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-overlay-title{ color:#5A6478; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-key-bio{ color:#B8860B; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-key-back{ color:#0E1B3C; }
+
+/* Center when there's room, scroll from the top when there isn't —
+   align-items:center alone pushes a tall card/keypad above the
+   viewport on small phones, under the language switch. */
+body{ align-items:flex-start; }
+.login-card{ margin:auto; }
+.pin-overlay{ align-items:flex-start; overflow-y:auto; }
+.pin-overlay-inner{ margin:auto; }
+.alt-btns{ flex-wrap:wrap; }
+.alt-btn{ flex:1 1 140px; padding:0 12px; white-space:nowrap; font-size:14px; }
+/* scroll away with the page rather than float over the card */
+.lang-switch{ position:absolute; }
