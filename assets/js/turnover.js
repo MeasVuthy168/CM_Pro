@@ -1166,21 +1166,23 @@ async function exportPDF(){
 
     if(sy+95>pageH-50){ doc.addPage(); sy=60; }
 
+    const sigMid=sigX+sigW/2;
+
     doc.setFont("helvetica","normal");
 
     doc.setFontSize(10);
 
     doc.setTextColor(...NAVY);
 
-    doc.text(`Prepared Date : ${m.preparedText}`,sigX,sy);
+    doc.text(`Prepared Date: ${m.preparedText.replace(/ /g,"-")}`,sigX,sy);
 
     doc.setFont("helvetica","bold");
 
-    doc.text("Prepared By : ..............................",sigX,sy+16);
+    doc.text("Prepared By",sigMid,sy+18,{align:"center"});
 
     doc.setFont("helvetica","normal");
 
-    doc.text("Signature :",sigX,sy+32);
+    doc.text("Signature",sigMid,sy+34,{align:"center"});
 
     doc.setDrawColor(120,120,120);
 
@@ -1361,15 +1363,15 @@ function exportExcel(){
 
     const sr=ar+4;
 
-    put(sr,3,`Prepared Date : ${m.preparedText}`,{font:{sz:10,color:{rgb:NAVY}}});
+    put(sr,3,`Prepared Date: ${m.preparedText.replace(/ /g,"-")}`,{font:{sz:10,color:{rgb:NAVY}}});
 
     merges.push({s:{r:sr,c:3},e:{r:sr,c:4}});
 
-    put(sr+1,3,"Prepared By : ..............................",{font:{bold:true,sz:10,color:{rgb:NAVY}}});
+    put(sr+1,3,"Prepared By",{font:{bold:true,sz:10,color:{rgb:NAVY}},alignment:{horizontal:"center"}});
 
     merges.push({s:{r:sr+1,c:3},e:{r:sr+1,c:4}});
 
-    put(sr+2,3,"Signature :",{font:{sz:10,color:{rgb:NAVY}}});
+    put(sr+2,3,"Signature",{font:{sz:10,color:{rgb:NAVY}},alignment:{horizontal:"center"}});
 
     merges.push({s:{r:sr+2,c:3},e:{r:sr+2,c:4}});
 
