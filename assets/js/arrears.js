@@ -3856,6 +3856,55 @@ async function fetchOutAreaEditedItems(searchTerm) {
     return data;
 }
 
+let outAreaBranchFilter = ""; // quick branch chip on the list ("" = all)
+
+// "LD2400000|1000000" -> "LD2400000 · CIF 1000000"
+function formatLdCif(ldCif) {
+    const [ld, cif] = String(ldCif || "").split("|");
+    return cif ? `${ld} · CIF ${cif}` : String(ldCif || "");
+}
+
+// The Edited tab's count, without waiting for the tab to be opened.
+function refreshOutAreaEditedCount() {
+    fetchOutAreaEditedItems("").then(d => setOutAreaTabCount("edited", (d.items || []).length)).catch(() => {});
+}
+
+function setOutAreaTabCount(view, n) {
+    const el = document.getElementById(view === "edited" ? "oaTabEditedCount" : "oaTabCandidatesCount");
+    if (el) el.textContent = Number.isFinite(n) ? n.toLocaleString() : "";
+}
+
+// Branch chips with a count each; tapping one narrows the list.
+function renderOutAreaBranchFilter(entries) {
+    const wrap = document.getElementById("outAreaBranchFilter");
+    if (!wrap) return;
+    const counts = new Map();
+    entries.forEach(e => {
+        const b = e.thirdCol || "-";
+        counts.set(b, (counts.get(b) || 0) + 1);
+    });
+    if (outAreaBranchFilter && !counts.has(outAreaBranchFilter)) outAreaBranchFilter = "";
+    if (counts.size < 2 && !outAreaBranchFilter) { wrap.innerHTML = ""; return; }
+    const chip = (value, label, n) => `
+        <button type="button" class="oa-filter-chip ${outAreaBranchFilter === value ? "active" : ""}" data-branch="${escapeHtml(value)}">
+            ${escapeHtml(label)} <span>${n.toLocaleString()}</span>
+        </button>`;
+    wrap.innerHTML = chip("", t("arrears.optionAll"), entries.length) +
+        [...counts.entries()].sort((x, y) => x[0].localeCompare(y[0])).map(([b, n]) => chip(b, b, n)).join("");
+}
+
+function applyOutAreaBranchFilter(entries) {
+    renderOutAreaBranchFilter(entries);
+    return outAreaBranchFilter ? entries.filter(e => (e.thirdCol || "-") === outAreaBranchFilter) : entries;
+}
+
+document.getElementById("outAreaBranchFilter")?.addEventListener("click", (e) => {
+    const chip = e.target.closest("[data-branch]");
+    if (!chip) return;
+    outAreaBranchFilter = chip.dataset.branch;
+    renderOutAreaList();
+});
+
 async function renderOutAreaList() {
     const searchTerm = document.getElementById("outAreaSearch").value;
     const tbody = document.getElementById("outAreaTbody");
@@ -3864,14 +3913,16 @@ async function renderOutAreaList() {
         document.getElementById("outAreaSelectBar").hidden = true;
         document.getElementById("outAreaBulkBar").hidden = true;
         outAreaSelectedForDelete.clear();
-        const rows = getOutAreaCandidates(searchTerm);
+        if (!searchTerm.trim()) setOutAreaTabCount("candidates", getOutAreaCandidates("").length);
+        const all = getOutAreaCandidates(searchTerm).map(row => ({
+            customer: row.customer,
+            ldCif: row.concate,
+            thirdCol: row.branch,
+            row // full row object, ready for selectOutAreaCustomer as-is
+        }));
+        const rows = applyOutAreaBranchFilter(all);
         renderOutAreaRows(
-            rows.slice(0, 300).map(row => ({
-                customer: row.customer,
-                ldCif: row.concate,
-                thirdCol: row.branch,
-                row // full row object, ready for selectOutAreaCustomer as-is
-            })),
+            rows.slice(0, 300),
             rows.length,
             (rows.length > 300)
                 ? `NoCoRespone: ${rows.length.toLocaleString()} នាក់ (បង្ហាញ 300 ដំបូង — ស្វែងរកដើម្បីតូចចង្អៀត)`
@@ -3890,6 +3941,7 @@ async function renderOutAreaList() {
     try {
         const data = await fetchOutAreaEditedItems(searchTerm);
         const items = data.items || [];
+        if (!searchTerm.trim()) setOutAreaTabCount("edited", items.length);
 
         // For anything not in currently-loaded arrears data, batch-lookup
         // the REAL data from OS — exactly what the VBA's own VLOOKUP does.
@@ -3939,13 +3991,17 @@ async function renderOutAreaList() {
                 customer: row.customer,
                 ldCif: item.ldCif,
                 thirdCol: item.newBranch,
+                newCo: item.newCoResponse,
+                uploadedBy: item.uploadedBy,
+                updatedAt: item.updatedAt,
                 isPaidOff,
                 row
             };
         });
 
         outAreaPaidOffLdCifs = new Set(mapped.filter(m => m.isPaidOff).map(m => m.ldCif));
-        renderOutAreaRows(mapped, mapped.length, buildEditedSubtitle(mapped), true, true);
+        const shown = applyOutAreaBranchFilter(mapped);
+        renderOutAreaRows(shown, shown.length, buildEditedSubtitle(shown), true, true);
     } catch (err) {
         console.error("[outArea] fetch edited list failed:", err);
         tbody.innerHTML = `<div class="oa-empty">មិនអាចផ្ទុកទិន្នន័យបានទេ</div>`;
@@ -4008,23 +4064,31 @@ function renderOutAreaRows(entries, totalCount, subtitleText, showActions, showC
     // checkbox + edit/delete only in the "Edited" view.
     entries.forEach(entry => {
         const item = document.createElement("div");
-        item.className = "oa-item" + (entry.isPaidOff ? " oa-item-paidoff" : "");
+        const row = entry.row || {};
+        const day = parseInt(row.day, 10);
+        item.className = "oa-item" + (entry.isPaidOff ? " oa-item-paidoff" : "") +
+            (classRowCssClass(row.class) ? ` oa-item-${classRowCssClass(row.class)}` : "");
         item.setAttribute("role", "button");
         item.tabIndex = 0;
+        // To edit: address + days late (what decides the move).
+        // Edited: new branch -> new officer, and who saved it when.
+        const detail = showActions
+            ? `<div class="oa-item-move"><span class="ui-ico ui-ico-officer" aria-hidden="true"></span> ${escapeHtml(entry.thirdCol || "-")} · ${escapeHtml(entry.newCo || "-")}</div>
+               ${entry.uploadedBy || entry.updatedAt ? `<div class="oa-item-by">${escapeHtml(entry.uploadedBy || "")}${entry.updatedAt ? ` · ${escapeHtml(formatRowDateTime12h(entry.updatedAt))}` : ""}</div>` : ""}`
+            : (row.location ? `<div class="oa-item-addr"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span> ${escapeHtml(row.location)}</div>` : "");
         item.innerHTML = `
             ${showCheckbox ? `
             <label class="oa-item-check" data-stop><input type="checkbox" class="outarea-row-checkbox" data-ldcif="${escapeHtml(entry.ldCif)}" ${outAreaSelectedForDelete.has(entry.ldCif) ? "checked" : ""}></label>` : ""}
             <div class="oa-item-main">
-                <div class="oa-item-name">${escapeHtml(entry.customer)}</div>
-                <div class="oa-item-sub">${escapeHtml(entry.ldCif)}</div>
+                <div class="oa-item-name">${escapeHtml(entry.customer)}${entry.isPaidOff ? ` <span class="oa-paidoff-chip">Paid off</span>` : ""}</div>
+                <div class="oa-item-sub">${escapeHtml(formatLdCif(entry.ldCif))}</div>
+                ${detail}
             </div>
             <div class="oa-item-side">
-                ${entry.thirdCol ? `<span class="oa-branch-chip">${escapeHtml(entry.thirdCol)}</span>` : ""}
+                ${!showActions && entry.thirdCol ? `<span class="oa-branch-chip">${escapeHtml(entry.thirdCol)}</span>` : ""}
+                ${!showActions && Number.isFinite(day) ? `<span class="arr-day-badge">${day.toLocaleString()} <small>${escapeHtml(t("arrears.cardDays"))}</small></span>` : ""}
                 ${showActions ? `
-                <div class="outarea-row-actions">
-                    <button type="button" class="outarea-row-btn" data-action="edit" title="កែសម្រួល"><span class="ui-ico ui-ico-edit" aria-hidden="true"></span></button>
-                    <button type="button" class="outarea-row-btn outarea-row-btn-danger" data-action="delete" title="លុប"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span></button>
-                </div>` : `<span class="oa-item-chevron" aria-hidden="true">›</span>`}
+                <button type="button" class="outarea-row-btn outarea-row-btn-danger" data-action="delete" title="លុប" aria-label="លុប" data-i18n-title="common.delete"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span></button>` : `<span class="oa-item-chevron" aria-hidden="true">›</span>`}
             </div>
         `;
         item.addEventListener("click", (e) => {
@@ -4046,10 +4110,6 @@ function renderOutAreaRows(entries, totalCount, subtitleText, showActions, showC
         }
 
         if (showActions) {
-            item.querySelector('[data-action="edit"]').addEventListener("click", (e) => {
-                e.stopPropagation();
-                selectOutAreaCustomer(entry.row);
-            });
             item.querySelector('[data-action="delete"]').addEventListener("click", (e) => {
                 e.stopPropagation();
                 deleteWrongAddressRecord(entry.ldCif);
@@ -4087,6 +4147,7 @@ function setOutAreaTab(mode) {
 document.querySelectorAll(".oa-tab[data-view]").forEach(tab => tab.addEventListener("click", () => {
     if (tab.dataset.view === outAreaViewMode) return;
     setOutAreaTab(tab.dataset.view);
+    outAreaBranchFilter = "";
     document.getElementById("outAreaSearch").value = "";
     outAreaSelectedForDelete.clear();
     document.getElementById("outAreaBulkBar").hidden = true;
@@ -4181,7 +4242,12 @@ async function selectOutAreaCustomer(row) {
     document.getElementById("btnOutAreaDelete").style.display = "none";
 
     document.getElementById("outAreaDetailName").textContent = row.customer || "-";
-    document.getElementById("outAreaDetailSubtitle").textContent = row.concate;
+    const heroDay = parseInt(row.day, 10);
+    const heroArrears = parseFloat(row.arreas) || 0;
+    document.getElementById("outAreaDetailSubtitle").innerHTML = `
+        <span>${escapeHtml(formatLdCif(row.concate))}</span>
+        ${Number.isFinite(heroDay) ? `<span class="arr-day-badge">${heroDay.toLocaleString()} <small>${escapeHtml(t("arrears.cardDays"))}</small></span>` : ""}
+        ${heroArrears > 0 ? `<span class="oa-hero-arrears">Arrears ${escapeHtml(arrFormatAmount(row.arreas))}${row.ccy ? ` ${escapeHtml(row.ccy)}` : ""}</span>` : ""}`;
 
     const infoRow = (icon, label, value, id = "") => `
         <div class="oa-info-row">
@@ -4191,8 +4257,12 @@ async function selectOutAreaCustomer(row) {
                 <div class="oa-info-value"${id ? ` id="${id}"` : ""}>${escapeHtml(value || "-")}</div>
             </div>
         </div>`;
+    const mapUrl = row.location
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(row.location)}`
+        : "";
     document.getElementById("outAreaInfo").innerHTML =
         infoRow("pin", "អាសយដ្ឋាន", row.location) +
+        (mapUrl ? `<a class="oa-map-link" href="${mapUrl}" target="_blank" rel="noopener"><span class="ui-ico ui-ico-map" aria-hidden="true"></span> ${escapeHtml(t("arrears.oaOpenMap"))}</a>` : "") +
         infoRow("idcard", "គណនីកម្ចី", row.accountLoan) +
         infoRow("map", "សាខាបច្ចុប្បន្ន", row.branch + (row.branchCode ? ` (${row.branchCode})` : "")) +
         infoRow("officer", "ភ្នាក់ងារបច្ចុប្បន្ន", officerLabel(row.coId, outAreaOfficerNames), "outAreaCurrentCO");
@@ -4210,6 +4280,8 @@ async function selectOutAreaCustomer(row) {
     const metaEl = document.getElementById("outAreaMeta");
     branchSelect.value = "";
     populateOutAreaCoOptions("", "");
+    renderOutAreaBranchChips();
+    updateOutAreaMove();
     metaEl.textContent = "កំពុងពិនិត្យកំណត់ត្រាចាស់...";
 
     // Check whether this customer already has a saved reassignment, and
@@ -4224,7 +4296,10 @@ async function selectOutAreaCustomer(row) {
         if (data.ok && data.found) {
             branchSelect.value = data.newBranch;
             populateOutAreaCoOptions(data.newBranch, data.newCoResponse);
-            metaEl.textContent = `មានកំណត់ត្រារួចហើយ — ធ្វើបច្ចុប្បន្នភាពដោយ ${data.uploadedBy || "-"}`;
+            renderOutAreaBranchChips();
+            updateOutAreaMove();
+            metaEl.textContent = `មានកំណត់ត្រារួចហើយ — ធ្វើបច្ចុប្បន្នភាពដោយ ${data.uploadedBy || "-"}` +
+                (data.updatedAt ? ` · ${formatRowDateTime12h(data.updatedAt)}` : "");
             outAreaHasSavedRecord = true;
             document.getElementById("btnOutAreaDelete").style.display = "block";
         } else {
@@ -4257,6 +4332,7 @@ async function deleteWrongAddressRecord(ldCif) {
         if (!data.ok) throw new Error(data.message || "Delete failed.");
 
         notify("បានលុបដោយជោគជ័យ", "success");
+        if (outAreaViewMode !== "edited") refreshOutAreaEditedCount();
 
         // Back to the list, refreshed — same pattern as a successful Save.
         renderOutAreaList();
@@ -4274,12 +4350,66 @@ async function deleteWrongAddressRecord(ldCif) {
 
 document.getElementById("outAreaNewBranch")?.addEventListener("change", (e) => {
     populateOutAreaCoOptions(e.target.value, "");
+    renderOutAreaBranchChips();
+    updateOutAreaMove();
 });
+
+document.getElementById("outAreaNewCO")?.addEventListener("change", updateOutAreaMove);
+
+// Branch chips — one tap instead of a dropdown for the 7 branches; the
+// hidden <select> stays the value everything else reads.
+function renderOutAreaBranchChips() {
+    const select = document.getElementById("outAreaNewBranch");
+    const wrap = document.getElementById("outAreaBranchChips");
+    if (!select || !wrap) return;
+    const current = outAreaSelectedRow ? outAreaSelectedRow.branch : "";
+    wrap.innerHTML = [...select.options].filter(o => o.value).map(o => `
+        <button type="button" role="radio" aria-checked="${select.value === o.value}"
+            class="oa-branch-option ${select.value === o.value ? "active" : ""}" data-value="${escapeHtml(o.value)}">
+            ${escapeHtml(o.textContent)}
+            ${o.value === current ? `<small>${escapeHtml(t("arrears.oaCurrentTag"))}</small>` : ""}
+        </button>`).join("");
+}
+
+document.getElementById("outAreaBranchChips")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-value]");
+    if (!btn) return;
+    const select = document.getElementById("outAreaNewBranch");
+    if (select.value === btn.dataset.value) return;
+    select.value = btn.dataset.value;
+    select.dispatchEvent(new Event("change"));
+});
+
+// "Current branch · officer -> new branch · officer" preview above Save.
+function updateOutAreaMove() {
+    const el = document.getElementById("outAreaMove");
+    const row = outAreaSelectedRow;
+    if (!el || !row) return;
+    const newBranch = document.getElementById("outAreaNewBranch").value;
+    const newCo = document.getElementById("outAreaNewCO").value;
+    if (!newBranch) { el.hidden = true; return; }
+    el.hidden = false;
+    el.innerHTML = `
+        <div class="oa-move-side">
+            <span class="oa-move-label">${escapeHtml(t("arrears.oaFrom"))}</span>
+            <strong>${escapeHtml(row.branch || "-")}</strong>
+            <span>${escapeHtml(officerLabel(row.coId, outAreaOfficerNames))}</span>
+        </div>
+        <span class="oa-move-arrow" aria-hidden="true">→</span>
+        <div class="oa-move-side oa-move-to">
+            <span class="oa-move-label">${escapeHtml(t("arrears.oaTo"))}</span>
+            <strong>${escapeHtml(newBranch)}</strong>
+            <span>${escapeHtml(newCo || t("arrears.oaPickOfficer"))}</span>
+        </div>`;
+}
 
 function openOutAreaModal() {
     outAreaSelectedRow = null;
     outAreaViewMode = "candidates";
+    outAreaBranchFilter = "";
     outAreaSelectedForDelete.clear();
+    setOutAreaTabCount("edited", NaN);
+    refreshOutAreaEditedCount();
     outAreaPaidOffLdCifs.clear();
     document.getElementById("outAreaSearch").value = "";
     setOutAreaTab("candidates");
@@ -4362,6 +4492,7 @@ document.getElementById("btnOutAreaBulkDelete")?.addEventListener("click", async
         if (!data.ok) throw new Error(data.message || "Bulk delete failed.");
 
         notify(`បានលុប ${data.deletedCount} កំណត់ត្រា`, "success");
+        if (outAreaViewMode !== "edited") refreshOutAreaEditedCount();
         outAreaSelectedForDelete.clear();
         renderOutAreaList();
     } catch (err) {
@@ -4378,10 +4509,6 @@ document.getElementById("outAreaSearch")?.addEventListener("input", () => {
 });
 
 document.getElementById("btnOutAreaBackTop")?.addEventListener("click", () => {
-    document.getElementById("btnOutAreaBack").click();
-});
-
-document.getElementById("btnOutAreaBack")?.addEventListener("click", () => {
     document.getElementById("outAreaListScreen").style.display = "block";
     document.getElementById("outAreaDetailScreen").style.display = "none";
 });
@@ -4428,6 +4555,7 @@ document.getElementById("btnOutAreaSave")?.addEventListener("click", async () =>
         outAreaSelectedRow.coResponse = newCoResponse;
 
         notify("បានរក្សាទុកដោយជោគជ័យ", "success");
+        if (outAreaViewMode !== "edited") refreshOutAreaEditedCount();
 
         // Back to the list instead of closing — lets the admin pick the
         // next customer without having to reopen the whole modal each time.
