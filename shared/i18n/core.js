@@ -53,7 +53,7 @@ CMI18n.register({
 
   // Login page
   "login.title": { km: "ប្រព័ន្ធត្រួតពិនិត្យឥណទាន", en: "Credit Monitoring System" },
-  "login.subtitle": { km: "សាខាខេត្តស្វាយរៀង", en: "Svay Rieng Provincial Branch" },
+  "login.subtitle": { km: "សាខាខេត្តស្វាយរៀង", en: "Svay Rieng Branch" },
   "login.welcomeBack": { km: "សូមស្វាគមន៍មកវិញ", en: "Welcome back" },
   "login.or": { km: "ឬចូលដោយ", en: "or log in with" },
   "login.withBiometric": { km: "ស្នាមម្រាមដៃ / ផ្ទៃមុខ", en: "Fingerprint / Face" },
