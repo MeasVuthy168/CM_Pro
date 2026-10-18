@@ -14,7 +14,12 @@
 
     font-style:normal;
 
-    font-display:swap;
+    /* fallback, not swap: a page transition shows the new page's very
+       first frame, and swap painted it in the system font for a moment
+       (Khmer visibly re-flowing mid-animation). The font is preloaded
+       in every page's <head>, so it is normally ready well within
+       fallback's ~100ms block period. */
+    font-display:fallback;
 
 }
 
