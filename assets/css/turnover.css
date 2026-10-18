@@ -292,7 +292,7 @@
 
 .tvr-kpis{
     display:grid;
-    grid-template-columns:repeat(3,minmax(0,1fr));
+    grid-template-columns:repeat(2,minmax(0,1fr));
     gap:8px;
 }
 
@@ -325,6 +325,28 @@
     overflow:hidden;
     text-overflow:ellipsis;
     font-variant-numeric:tabular-nums;
+}
+
+.tvr-kpi-note{
+    margin-top:3px;
+    font-size:10.5px;
+    line-height:1.4;
+    color:var(--tvr-text-muted);
+}
+
+.tvr-kpi-main .tvr-kpi-note{ color:rgba(255,255,255,.65); }
+
+.tvr-kpi .tvr-kpi-label{ white-space:normal; line-height:1.35; }
+
+.tvr-3m{
+    font-size:9.5px;
+    font-weight:800;
+    padding:1px 4px;
+    margin-left:3px;
+    border-radius:4px;
+    background:#D4AF37;
+    color:#0E1B3C;
+    vertical-align:middle;
 }
 
 .tvr-kpi-main{

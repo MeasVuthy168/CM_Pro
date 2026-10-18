@@ -582,24 +582,36 @@ function renderTable(items){
 
         "-";
 
+    // TURNOVER average = the latest 3 months that have data (rows are
+    // newest-first; "No Data" months are skipped).
+
+    const recent3 = capturedRows.filter(r=>!r.noData).slice(0,3);
+
+    const avgTurnover3N = recent3.length
+
+        ? recent3.reduce((a,r)=>a+r.turnoverN,0)/recent3.length
+
+        : null;
+
     const avgTurnoverText =
 
-        totalCount
+        avgTurnover3N===null ? "-" : (avgTurnover3N*100).toFixed(2)+"%";
 
-        ?
+    // Largest CURRENT_OD across the table, with its month.
 
-        ((totalTurnover/totalCount)*100)
-        .toFixed(2)+"%"
+    const maxODRow = capturedRows
 
-        :
+        .filter(r=>!r.noData)
 
-        "-";
+        .reduce((best,r)=>(!best || r.currentODN>best.currentODN) ? r : best,null);
 
     document.getElementById("avgDebit").innerHTML = avgDebitText;
 
     document.getElementById("avgOD").innerHTML = avgODText;
 
-    document.getElementById("avgTurnover").innerHTML = avgTurnoverText;
+    document.getElementById("avgTurnover").innerHTML =
+
+        avgTurnover3N===null ? "-" : `${avgTurnoverText} <small class="tvr-3m">3M</small>`;
 
     // --------------------------
     // Save for export (PDF/Excel read from here instead of
@@ -620,7 +632,15 @@ function renderTable(items){
 
         avgODN:totalCount ? totalOD/totalCount : null,
 
-        avgTurnoverN:totalCount ? totalTurnover/totalCount : null,
+        avgTurnoverN:avgTurnover3N,
+
+        avgTurnoverMonths:recent3.map(r=>r.month),
+
+        maxOD:maxODRow ? maxODRow.currentOD : "-",
+
+        maxODN:maxODRow ? maxODRow.currentODN : null,
+
+        maxODMonth:maxODRow ? maxODRow.month : "",
 
         customerName
 
@@ -670,11 +690,13 @@ function renderSummary(withData,total){
 
     document.getElementById("tvrCoverage").classList.toggle("is-none",!withData);
 
-    document.getElementById("kpiDebit").textContent=d.avgDebit;
-
-    document.getElementById("kpiOD").textContent=d.avgOD;
-
     document.getElementById("kpiTurnover").textContent=d.avgTurnover;
+
+    document.getElementById("kpiTurnoverNote").textContent=d.avgTurnoverMonths.join(" · ");
+
+    document.getElementById("kpiMaxOD").textContent=d.maxOD;
+
+    document.getElementById("kpiMaxODNote").textContent=d.maxODMonth;
 
     document.getElementById("btnExcel").disabled=!withData;
 
@@ -975,7 +997,7 @@ async function exportPDF(){
 
     doc.setTextColor(...MUTED);
 
-    doc.text(`Last 12 month-ends  •  Prepared date ${m.preparedText}`,M,68);
+    doc.text("Last 12 month-ends",M,68);
 
     doc.setDrawColor(...GOLD);
 
@@ -1023,21 +1045,20 @@ async function exportPDF(){
 
     const cells=[
 
-        ["Average AMT_IN",d.avgDebit],
+        ["Average TURNOVER (latest 3 months)",d.avgTurnover,d.avgTurnoverMonths.join(", "),true],
 
-        ["Average CURRENT_OD",d.avgOD],
+        ["Largest CURRENT_OD",d.maxOD,d.maxODMonth,false],
 
-        ["Average TURNOVER",d.avgTurnover],
-
-        ["Months with data",`${m.withData} / ${m.total}`]
+        ["Months with data",`${m.withData} / ${m.total}`,"",false]
 
     ];
 
-    const colW=(pageW-2*M)/4;
+    // First tile gets more room for its longer label.
+    const colX=[0,.42,.75].map(f=>M+14+f*(pageW-2*M));
 
-    cells.forEach(([label,value],i)=>{
+    cells.forEach(([label,value,note,main],i)=>{
 
-        const cx=M+14+i*colW;
+        const cx=colX[i];
 
         doc.setFont("helvetica","normal");
 
@@ -1045,15 +1066,27 @@ async function exportPDF(){
 
         doc.setTextColor(...MUTED);
 
-        doc.text(label.toUpperCase(),cx,y+20);
+        doc.text(label.toUpperCase(),cx,y+18);
 
         doc.setFont("helvetica","bold");
 
-        doc.setFontSize(i===2?14:12);
+        doc.setFontSize(main?15:13);
 
-        doc.setTextColor(...(i===2?[184,144,30]:NAVY));
+        doc.setTextColor(...(main?[184,144,30]:NAVY));
 
-        doc.text(String(value),cx,y+38);
+        doc.text(String(value),cx,y+36);
+
+        if(note){
+
+            doc.setFont("helvetica","normal");
+
+            doc.setFontSize(8);
+
+            doc.setTextColor(...MUTED);
+
+            doc.text(note,cx,y+47);
+
+        }
 
     });
 
@@ -1079,7 +1112,7 @@ async function exportPDF(){
 
         body,
 
-        foot:[["Average",d.avgDebit,d.avgOD,d.avgTurnover,""]],
+        foot:[["Average",d.avgDebit,d.avgOD,`${d.avgTurnover} *`,""]],
 
         theme:"grid",
 
@@ -1113,9 +1146,48 @@ async function exportPDF(){
 
     doc.setTextColor(...MUTED);
 
-    doc.text("Average is calculated over months with data only.",M,doc.lastAutoTable.finalY+16);
+    let ny=doc.lastAutoTable.finalY+16;
 
-    CMExport.pdfFooter(doc,{margin:M,preparedBy:m.preparedBy,printed:m.printed});
+    doc.text("Averages use months with data only.",M,ny);
+
+    doc.text(`* TURNOVER average = latest 3 months with data (${d.avgTurnoverMonths.join(", ")}).`,M,ny+12);
+
+    // ---- signature block (bottom-right of the table) ----
+    // Blank space for a handwritten signature, then Prepared By/Date.
+
+    const sigW=190, sigX=pageW-M-sigW;
+
+    let sy=ny+30;
+
+    const pageH=doc.internal.pageSize.getHeight();
+
+    if(sy+95>pageH-50){ doc.addPage(); sy=60; }
+
+    doc.setFontSize(9);
+
+    doc.setTextColor(...MUTED);
+
+    doc.text("Signature",sigX+sigW/2,sy,{align:"center"});
+
+    doc.setDrawColor(150,150,150);
+
+    doc.setLineWidth(.6);
+
+    doc.line(sigX,sy+50,sigX+sigW,sy+50);
+
+    doc.setFont("helvetica","bold");
+
+    doc.setFontSize(10);
+
+    doc.setTextColor(...NAVY);
+
+    doc.text(`Prepared By : ${m.preparedBy}`,sigX,sy+68);
+
+    doc.setFont("helvetica","normal");
+
+    doc.text(`Prepared Date : ${m.preparedText}`,sigX,sy+84);
+
+    CMExport.pdfFooter(doc,{margin:M,showPreparedBy:false,printed:m.printed});
 
     doc.save(`${m.fileBase}.pdf`);
 
@@ -1166,7 +1238,7 @@ function exportExcel(){
 
     merges.push({s:{r:0,c:0},e:{r:0,c:4}});
 
-    put(1,0,`Last 12 month-ends  •  Prepared date ${m.preparedText}`,{font:{italic:true,sz:10,color:{rgb:"6B7280"}},alignment:{horizontal:"center"}});
+    put(1,0,"Last 12 month-ends",{font:{italic:true,sz:10,color:{rgb:"6B7280"}},alignment:{horizontal:"center"}});
 
     merges.push({s:{r:1,c:0},e:{r:1,c:4}});
 
@@ -1178,11 +1250,11 @@ function exportExcel(){
 
     const info=[
 
-        ["Customer Name",m.customer,"Prepared By",m.preparedBy],
+        ["Customer Name",m.customer,"Avg TURNOVER (latest 3M)",d.avgTurnoverN],
 
-        ["CIF",m.cif||"-","Printed",m.printed],
+        ["CIF",m.cif||"-","Largest CURRENT_OD",d.maxODN],
 
-        ["Prepared Date",m.preparedText,"Months with data",`${m.withData} / ${m.total}`]
+        ["Months with data",`${m.withData} / ${m.total}`,"Printed",m.printed]
 
     ];
 
@@ -1196,7 +1268,11 @@ function exportExcel(){
 
         put(r,2,row[2],labelS);
 
-        put(r,3,row[3],valS);
+        const v3=row[3]??"-";
+
+        const isPct=i===0, isNum=typeof v3==="number";
+
+        put(r,3,v3,isNum?{...valS,numFmt:isPct?pct:money,font:{bold:true,sz:10,color:{rgb:isPct?"B8901E":NAVY}},alignment:{horizontal:"left"}}:valS);
 
         put(r,4,"",valS);
 
@@ -1261,21 +1337,56 @@ function exportExcel(){
 
     put(ar,2,d.avgODN??0,{...avS,numFmt:money},{f:`AVERAGE(C${first}:C${last})`});
 
-    put(ar,3,d.avgTurnoverN??0,{...avS,numFmt:pct},{f:`AVERAGE(D${first}:D${last})`});
+    // TURNOVER average = latest 3 months with data → average exactly those cells.
+
+    const recentRefs=d.rows.map((row,i)=>row.noData?null:`D${hr+2+i}`).filter(Boolean).slice(0,3);
+
+    put(ar,3,d.avgTurnoverN??0,{...avS,numFmt:pct},recentRefs.length?{f:`AVERAGE(${recentRefs.join(",")})`}:{});
 
     put(ar,4,"",avS);
 
-    put(ar+1,0,"Average is calculated over months with data only.",{font:{italic:true,sz:9,color:{rgb:"6B7280"}}});
+    const noteS={font:{italic:true,sz:9,color:{rgb:"6B7280"}}};
+
+    put(ar+1,0,"Averages use months with data only.",noteS);
 
     merges.push({s:{r:ar+1,c:0},e:{r:ar+1,c:4}});
 
-    ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:ar+1,c:4}});
+    put(ar+2,0,`TURNOVER average = latest 3 months with data (${d.avgTurnoverMonths.join(", ")}).`,noteS);
+
+    merges.push({s:{r:ar+2,c:0},e:{r:ar+2,c:4}});
+
+    // Signature block, bottom-right (D:E): blank rows for a handwritten
+    // signature, a line, then Prepared By / Prepared Date.
+
+    const sr=ar+4;
+
+    put(sr,3,"Signature",{font:{sz:9,color:{rgb:"6B7280"}},alignment:{horizontal:"center"}});
+
+    merges.push({s:{r:sr,c:3},e:{r:sr,c:4}});
+
+    const lineRow=sr+4;
+
+    put(lineRow,3,"",{border:{bottom:{style:"thin",color:{rgb:"888888"}}}});
+
+    put(lineRow,4,"",{border:{bottom:{style:"thin",color:{rgb:"888888"}}}});
+
+    put(lineRow+1,3,`Prepared By : ${m.preparedBy}`,{font:{bold:true,sz:10,color:{rgb:NAVY}}});
+
+    merges.push({s:{r:lineRow+1,c:3},e:{r:lineRow+1,c:4}});
+
+    put(lineRow+2,3,`Prepared Date : ${m.preparedText}`,{font:{sz:10,color:{rgb:NAVY}}});
+
+    merges.push({s:{r:lineRow+2,c:3},e:{r:lineRow+2,c:4}});
+
+    ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lineRow+2,c:4}});
 
     ws["!merges"]=merges;
 
     ws["!cols"]=[{wch:18},{wch:24},{wch:18},{wch:18},{wch:18}];
 
     ws["!rows"]=[{hpt:28},{hpt:18}];
+
+    for(let r=sr+1;r<lineRow;r++) ws["!rows"][r]={hpt:20};
 
     ws["!margins"]={left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.2,footer:0.2};
 

@@ -120,7 +120,7 @@
     }
 
     // "Prepared by … • Printed …" + "Page x of y" on every page.
-    function pdfFooter(doc,{margin=40,preparedBy:by,printed}={}){
+    function pdfFooter(doc,{margin=40,preparedBy:by,printed,showPreparedBy=true}={}){
 
         const pageW=doc.internal.pageSize.getWidth();
 
@@ -144,7 +144,11 @@
 
             doc.setTextColor(107,114,128);
 
-            doc.text(`Prepared by: ${by||preparedBy()}   •   Printed: ${printed||printedDate()}`,margin,pageH-22);
+            doc.text(showPreparedBy
+
+                ? `Prepared by: ${by||preparedBy()}   •   Printed: ${printed||printedDate()}`
+
+                : `Printed: ${printed||printedDate()}`,margin,pageH-22);
 
             doc.text(`Page ${p} of ${pages}`,pageW-margin,pageH-22,{align:"right"});
 
