@@ -151,12 +151,6 @@ function saveLocalHasPin(value) {
     }
 }
 
-// Set when the user deletes their PIN on purpose: the login page then
-// stops offering "Create a PIN" on every login. Cleared again as soon
-// as a PIN is created.
-function pinPromptOffKey() {
-    return `cm_pin_prompt_off_${currentUsername()}`;
-}
 
 function renderPinStatus() {
     const key = hasPin ? "settings.account.changePin" : "settings.account.createPin";
@@ -301,7 +295,6 @@ submitBtn.addEventListener("click", async () => {
             "success"
         );
         saveLocalHasPin(true);
-        try { localStorage.removeItem(pinPromptOffKey()); } catch {}
 
         setTimeout(() => {
             location.href = nextPage;
@@ -391,7 +384,6 @@ deleteConfirmBtn.addEventListener("click", async () => {
 
         hasPin = false;
         saveLocalHasPin(false);
-        try { localStorage.setItem(pinPromptOffKey(), "1"); } catch {}
 
         // The server removed every fingerprint/face device with the PIN
         // (fingerprint needs a PIN to fall back on) — forget this
