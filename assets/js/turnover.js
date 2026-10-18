@@ -1153,7 +1153,8 @@ async function exportPDF(){
     doc.text(`* TURNOVER average = latest 3 months with data (${d.avgTurnoverMonths.join(", ")}).`,M,ny+12);
 
     // ---- signature block (bottom-right of the table) ----
-    // Blank space for a handwritten signature, then Prepared By/Date.
+    // Prepared By/Date, then blank space and a line for a handwritten
+    // signature.
 
     const sigW=190, sigX=pageW-M-sigW;
 
@@ -1163,29 +1164,31 @@ async function exportPDF(){
 
     if(sy+95>pageH-50){ doc.addPage(); sy=60; }
 
-    doc.setFontSize(9);
-
-    doc.setTextColor(...MUTED);
-
-    doc.text("Signature",sigX+sigW/2,sy,{align:"center"});
-
-    doc.setDrawColor(150,150,150);
-
-    doc.setLineWidth(.6);
-
-    doc.line(sigX,sy+50,sigX+sigW,sy+50);
-
-    doc.setFont("helvetica","bold");
+    doc.setFont("helvetica","normal");
 
     doc.setFontSize(10);
 
     doc.setTextColor(...NAVY);
 
-    doc.text(`Prepared By : ${m.preparedBy}`,sigX,sy+68);
+    doc.text(`Prepared Date : ${m.preparedText}`,sigX,sy);
+
+    doc.setFont("helvetica","bold");
+
+    doc.text(`Prepared By : ${m.preparedBy}`,sigX,sy+16);
+
+    doc.setDrawColor(150,150,150);
+
+    doc.setLineWidth(.6);
+
+    doc.line(sigX,sy+70,sigX+sigW,sy+70);
 
     doc.setFont("helvetica","normal");
 
-    doc.text(`Prepared Date : ${m.preparedText}`,sigX,sy+84);
+    doc.setFontSize(9);
+
+    doc.setTextColor(...MUTED);
+
+    doc.text("Signature",sigX+sigW/2,sy+82,{align:"center"});
 
     CMExport.pdfFooter(doc,{margin:M,showPreparedBy:false,printed:m.printed});
 
@@ -1355,30 +1358,30 @@ function exportExcel(){
 
     merges.push({s:{r:ar+2,c:0},e:{r:ar+2,c:4}});
 
-    // Signature block, bottom-right (D:E): blank rows for a handwritten
-    // signature, a line, then Prepared By / Prepared Date.
+    // Signature block, bottom-right (D:E): Prepared Date / Prepared By,
+    // then blank rows and a line for a handwritten signature.
 
     const sr=ar+4;
 
-    put(sr,3,"Signature",{font:{sz:9,color:{rgb:"6B7280"}},alignment:{horizontal:"center"}});
+    put(sr,3,`Prepared Date : ${m.preparedText}`,{font:{sz:10,color:{rgb:NAVY}}});
 
     merges.push({s:{r:sr,c:3},e:{r:sr,c:4}});
 
-    const lineRow=sr+4;
+    put(sr+1,3,`Prepared By : ${m.preparedBy}`,{font:{bold:true,sz:10,color:{rgb:NAVY}}});
+
+    merges.push({s:{r:sr+1,c:3},e:{r:sr+1,c:4}});
+
+    const lineRow=sr+5;
 
     put(lineRow,3,"",{border:{bottom:{style:"thin",color:{rgb:"888888"}}}});
 
     put(lineRow,4,"",{border:{bottom:{style:"thin",color:{rgb:"888888"}}}});
 
-    put(lineRow+1,3,`Prepared By : ${m.preparedBy}`,{font:{bold:true,sz:10,color:{rgb:NAVY}}});
+    put(lineRow+1,3,"Signature",{font:{sz:9,color:{rgb:"6B7280"}},alignment:{horizontal:"center"}});
 
     merges.push({s:{r:lineRow+1,c:3},e:{r:lineRow+1,c:4}});
 
-    put(lineRow+2,3,`Prepared Date : ${m.preparedText}`,{font:{sz:10,color:{rgb:NAVY}}});
-
-    merges.push({s:{r:lineRow+2,c:3},e:{r:lineRow+2,c:4}});
-
-    ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lineRow+2,c:4}});
+    ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lineRow+1,c:4}});
 
     ws["!merges"]=merges;
 
@@ -1386,7 +1389,7 @@ function exportExcel(){
 
     ws["!rows"]=[{hpt:28},{hpt:18}];
 
-    for(let r=sr+1;r<lineRow;r++) ws["!rows"][r]={hpt:20};
+    for(let r=sr+2;r<=lineRow;r++) ws["!rows"][r]={hpt:20};
 
     ws["!margins"]={left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.2,footer:0.2};
 
