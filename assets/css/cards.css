@@ -115,8 +115,21 @@
 }
 
 
-/* Dark theme: preserve the original PNG artwork, but let card
-   surfaces, borders and labels follow the user's selected theme. */
+/* Menu icons are two-tone (app navy + gold). On the dark themes the
+   navy would vanish into the card, so each icon swaps to its
+   *-dark.png twin (light gray + bright gold) via content:url(). */
+[data-theme="dark"] .dashboard-card-icon[src$="/customer-search.png"],[data-theme="darkgray"] .dashboard-card-icon[src$="/customer-search.png"]{content:url("../icons/menu/customer-search-dark.png")}
+[data-theme="dark"] .dashboard-card-icon[src$="/daily-arrears.png"],[data-theme="darkgray"] .dashboard-card-icon[src$="/daily-arrears.png"]{content:url("../icons/menu/daily-arrears-dark.png")}
+[data-theme="dark"] .dashboard-card-icon[src$="/average-turnover.png"],[data-theme="darkgray"] .dashboard-card-icon[src$="/average-turnover.png"]{content:url("../icons/menu/average-turnover-dark.png")}
+[data-theme="dark"] .dashboard-card-icon[src$="/spot-check.png"],[data-theme="darkgray"] .dashboard-card-icon[src$="/spot-check.png"]{content:url("../icons/menu/spot-check-dark.png")}
+[data-theme="dark"] .dashboard-card-icon[src$="/master-data.png"],[data-theme="darkgray"] .dashboard-card-icon[src$="/master-data.png"]{content:url("../icons/menu/master-data-dark.png")}
+[data-theme="dark"] .dashboard-card-icon[src$="/land-classification.png"],[data-theme="darkgray"] .dashboard-card-icon[src$="/land-classification.png"]{content:url("../icons/menu/land-classification-dark.png")}
+[data-theme="dark"] .dashboard-card-icon[src$="/credit-report.png"],[data-theme="darkgray"] .dashboard-card-icon[src$="/credit-report.png"]{content:url("../icons/menu/credit-report-dark.png")}
+[data-theme="dark"] .dashboard-card-icon[src$="/loan-calculator.png"],[data-theme="darkgray"] .dashboard-card-icon[src$="/loan-calculator.png"]{content:url("../icons/menu/loan-calculator-dark.png")}
+[data-theme="dark"] .dashboard-card-icon[src$="/retirement-left.png"],[data-theme="darkgray"] .dashboard-card-icon[src$="/retirement-left.png"]{content:url("../icons/menu/retirement-left-dark.png")}
+
+/* Dark theme: card surfaces, borders and labels follow the user's
+   selected theme. */
 [data-theme="dark"] .dashboard-grid{
     color-scheme:dark;
     --dashboard-card-text:#E5EDF9;
