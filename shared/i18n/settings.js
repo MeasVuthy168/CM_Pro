@@ -139,12 +139,6 @@ CMI18n.register({
     km: "CM_Pro គឺជាប្រព័ន្ធត្រួតពិនិត្យឥណទាន ដែលត្រូវបានបង្កើតឡើងដោយក្រុមការងារឥណទានសាខាខេត្តស្វាយរៀង សម្រាប់បុគ្គលិកឥណទានរបស់ធនាគារអេស៊ីលីដាសាខាខេត្តស្វាយរៀងប៉ុណ្ណោះ។ គោលបំណង ដើម្បីស្វែងរកព័ត៌មានអតិថិជន តាមដានឥណទានយឺតយ៉ាវ ពិនិត្យរបាយការណ៍ឥណទានប្រចាំថ្ងៃ, Average Turnover, Spot Check និងព័ត៌មានឥណទានផ្សេងៗបានគ្រប់ពេលវេលា និងគ្រប់ទីកន្លែង។",
     en: "CM_Pro is a credit monitoring system built by the Svay Rieng Branch credit team, exclusively for the credit staff of ACLEDA Bank Svay Rieng Branch. Its purpose is to search customer information, track overdue loans, and review the daily credit report, Average Turnover, Spot Check and other credit information anytime, anywhere."
   },
-  "settings.about.feat.search": { km: "ស្វែងរកព័ត៌មានអតិថិជន", en: "Customer search" },
-  "settings.about.feat.overdue": { km: "តាមដានឥណទានយឺតយ៉ាវ", en: "Overdue loan tracking" },
-  "settings.about.feat.daily": { km: "របាយការណ៍ឥណទានប្រចាំថ្ងៃ", en: "Daily credit report" },
-  "settings.about.feat.turnover": { km: "Average Turnover", en: "Average Turnover" },
-  "settings.about.feat.spot": { km: "Spot Check", en: "Spot Check" },
-  "settings.about.feat.anywhere": { km: "គ្រប់ពេល គ្រប់ទីកន្លែង", en: "Anytime, anywhere" },
   "settings.about.footer": { km: "សម្រាប់ប្រើប្រាស់ផ្ទៃក្នុង · ACLEDA Bank Svay Rieng Branch", en: "For internal use only · ACLEDA Bank Svay Rieng Branch" },
   "settings.about.sectionTerms": { km: "លក្ខខណ្ឌប្រើប្រាស់", en: "Terms of Use" },
   "settings.about.sectionTermsBody": {
