@@ -1035,3 +1035,63 @@ body{ align-items:flex-start; }
 .pin-pw-btn:active{ transform:scale(.97); background:rgba(255,215,0,.12); }
 :root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-pw-btn{ border-color:#E2E6ED; background:#fff; color:#0E1B3C; box-shadow:0 1px 3px rgba(14,27,60,.08); }
 :root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-pw-btn .ico{ color:#B8860B; }
+
+/* ===== PIN keypad: physical keyboard feedback + hint (desktop only) ===== */
+.pin-dots{ justify-content:center; }
+.pin-key.kbd-press{ background:rgba(255,215,0,.18); transform:scale(.94); }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-key.kbd-press{ background:rgba(212,175,55,.18); }
+.pin-kbd-hint{ display:none; margin-top:14px; font-size:12.5px; color:#8A97B4; text-align:center; }
+@media (hover:hover) and (pointer:fine){ .pin-kbd-hint{ display:block; } }
+
+/* ===== PIN SETUP: header, step indicator, skip ===== */
+#pinSetupEntryStep{ width:100%; display:flex; flex-direction:column; align-items:center; }
+#pinSetupPasswordStep{ width:100%; max-width:320px; }
+.pin-setup-head{ display:flex; flex-direction:column; align-items:center; text-align:center; margin-bottom:22px; }
+.pin-setup-badge{
+    width:72px; height:72px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(255,215,0,.10); color:#FFD700;
+    border:1.5px solid rgba(255,215,0,.45);
+    box-shadow:0 0 0 6px rgba(255,215,0,.06);
+    margin-bottom:14px;
+}
+.pin-setup-badge svg{ width:36px; height:36px; }
+.pin-setup-heading{ margin:0 0 6px; font-size:21px; font-weight:700; color:#fff; line-height:1.4; }
+.pin-setup-head .pin-overlay-title{ margin-bottom:0; }
+.pin-setup-steps{ display:flex; align-items:center; gap:8px; margin-top:16px; }
+.pin-setup-steps[hidden]{ display:none; }
+.pin-setup-step{ display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:#8A97B4; }
+.pin-setup-step b{
+    width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-family:Arial,sans-serif;
+    border:1.5px solid #4A5878; color:#8A97B4;
+}
+.pin-setup-step.active{ color:#FFD700; }
+.pin-setup-step.active b{ background:#FFD700; border-color:#FFD700; color:#0E1B3C; }
+.pin-setup-step.done{ color:#5BC58A; }
+.pin-setup-step.done b{ background:#5BC58A; border-color:#5BC58A; color:#fff; }
+.pin-setup-step-line{ width:34px; height:2px; border-radius:2px; background:#4A5878; }
+.pin-setup-skip{ margin:26px auto 0; }
+#pinSetupBiometricStep{ width:100%; max-width:320px; text-align:center; }
+
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-setup-badge{ background:#FFF8E1; color:#B8860B; border-color:#E8C766; box-shadow:0 0 0 6px rgba(212,175,55,.10); }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-setup-heading{ color:#0E1B3C; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-setup-step{ color:#8A93A6; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-setup-step b{ border-color:#C9CFDA; color:#8A93A6; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-setup-step.active{ color:#B8860B; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-setup-step.active b{ background:#D4AF37; border-color:#D4AF37; color:#fff; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-setup-step.done{ color:#2E9E62; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-setup-step.done b{ background:#2E9E62; border-color:#2E9E62; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-setup-step-line{ background:#D5DAE3; }
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .pin-kbd-hint{ color:#8A93A6; }
+#pinSetupEntryStep[hidden],#pinSetupPasswordStep[hidden],#pinSetupBiometricStep[hidden]{ display:none; }
+@media (max-height:760px){
+    .pin-setup-badge{ width:56px; height:56px; margin-bottom:10px; }
+    .pin-setup-badge svg{ width:28px; height:28px; }
+    .pin-setup-heading{ font-size:19px; margin-bottom:2px; }
+    .pin-setup-head{ margin-bottom:14px; }
+    .pin-setup-steps{ margin-top:10px; }
+    .pin-setup-skip{ margin-top:16px; }
+    #pinSetupEntryStep .pin-keypad{ gap:12px; }
+}

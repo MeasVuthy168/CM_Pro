@@ -354,7 +354,7 @@ function cmInjectStyles() {
 .cm-lock-status{min-height:20px;color:#ff6b6b;font-size:13.5px;font-weight:600;text-align:center;margin-bottom:8px;}
 .cm-lock-keypad{width:100%;max-width:320px;display:grid;grid-template-columns:repeat(3,1fr);justify-items:center;gap:18px;margin-top:6px;}
 .cm-lock-key{width:72px;height:72px;border:none;border-radius:50%;background:rgba(255,255,255,.06);color:#fff;font-size:30px;font-weight:500;font-family:Arial,sans-serif;cursor:pointer;transition:background .15s,transform .1s;}
-.cm-lock-key:active{background:rgba(255,215,0,.18);transform:scale(.94);}
+.cm-lock-key:active,.cm-lock-key.kbd-press{background:rgba(255,215,0,.18);transform:scale(.94);}
 .cm-lock-key-back{background:transparent;display:flex;align-items:center;justify-content:center;}
 .cm-lock-slot{display:flex;align-items:center;justify-content:center;}
 .cm-lock-fp-btn{width:72px;height:72px;border-radius:50%;border:1.5px solid #FFD700;background:transparent;color:#FFD700;font-size:24px;cursor:pointer;}
@@ -374,7 +374,7 @@ function cmInjectStyles() {
 :root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-dot.error{border-color:#C0392B;background:#C0392B;}
 :root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-status{color:#C0392B;}
 :root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-key{background:#fff;color:#0E1B3C;box-shadow:0 1px 3px rgba(14,27,60,.10);border:1px solid #E2E6ED;}
-:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-key:active{background:rgba(212,175,55,.18);}
+:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-key:active,:root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-key.kbd-press{background:rgba(212,175,55,.18);}
 :root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-key-back{background:transparent;box-shadow:none;border:none;color:#0E1B3C;}
 :root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-fp-btn{border-color:#D4AF37;color:#B8860B;}
 :root:not([data-theme="dark"]):not([data-theme="darkgray"]) .cm-lock-link{color:#1A2E57;}
@@ -618,6 +618,35 @@ function cmBuildLockOverlay() {
         pinDigits = pinDigits.slice(0, -1);
         cmRenderDots();
     });
+
+    // Physical keyboard (desktop). Capture phase + stopPropagation so the
+    // digits never reach a page input sitting behind the lock. Accepts
+    // Khmer digits (Windows Khmer layout types ០-៩) and the numeric
+    // keypad with Num Lock off (read from e.code).
+    document.addEventListener("keydown", (e) => {
+        if (!el.classList.contains("show")) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        const k = e.key || "";
+        let d = null;
+        if (k === "Backspace" || k === "Delete") d = "back";
+        else if (/^[0-9]$/.test(k)) d = k;
+        else if (k.length === 1 && k.charCodeAt(0) >= 0x17E0 && k.charCodeAt(0) <= 0x17E9) d = String(k.charCodeAt(0) - 0x17E0);
+        else {
+            const m = /^(?:Numpad|Digit)([0-9])$/.exec(e.code || "");
+            if (m && !e.shiftKey) d = m[1];
+        }
+        if (!d) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.repeat && d !== "back") return;
+        const btn = d === "back"
+            ? el.querySelector("#cmLockBackspace")
+            : el.querySelector(`.cm-lock-key[data-digit="${d}"]`);
+        if (!btn) return;
+        btn.classList.add("kbd-press");
+        setTimeout(() => btn.classList.remove("kbd-press"), 130);
+        btn.click();
+    }, true);
 
     // ----- fingerprint -----
     const username = user.username || "";
