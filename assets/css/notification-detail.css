@@ -139,3 +139,17 @@
 .nd-officer .nd-tile b { font-size: 17px; line-height: 1.2; }
 .nd-tile-label { font-size: 10.5px; line-height: 1.3; color: var(--notif-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nd-officer .nd-tile i { top: 50%; transform: translateY(-50%); right: 7px; }
+
+/* Icons (base.css .ui-ico set — follow the text color in every theme) */
+.nd-hero-ico .ui-ico { font-size: 22px; color: #FFD700; }
+.nd-kind .ui-ico { font-size: 19px; }
+.nd-tile-ico { display: inline-flex; }
+.nd-tile-ico .ui-ico { font-size: 15px; }
+.nd-tile-unfilled .nd-tile-ico { color: #B42318; }
+.nd-tile-expired .nd-tile-ico { color: #8A5A00; }
+.nd-tile-outArea .nd-tile-ico { color: #2A4BA8; }
+.nd-tile-zero .nd-tile-ico { color: var(--notif-text-muted2); }
+.nd-tile i.ui-ico { font-size: 14px; color: var(--notif-text-muted2); }
+[data-theme="dark"] .nd-tile-unfilled .nd-tile-ico, [data-theme="darkgray"] .nd-tile-unfilled .nd-tile-ico { color: #FDA29B; }
+[data-theme="dark"] .nd-tile-expired .nd-tile-ico, [data-theme="darkgray"] .nd-tile-expired .nd-tile-ico { color: #F4D27A; }
+[data-theme="dark"] .nd-tile-outArea .nd-tile-ico, [data-theme="darkgray"] .nd-tile-outArea .nd-tile-ico { color: #A8BEFF; }

@@ -183,9 +183,9 @@
 
     // ---------- Smart Alert ----------
     const KIND = {
-        par_rise: { ico: "▲", cls: "par", label: "notifDetail.kind.par" },
-        os_drop: { ico: "▼", cls: "os", label: "notifDetail.kind.os" },
-        npl_rise: { ico: "+", cls: "npl", label: "notifDetail.kind.npl" }
+        par_rise: { ico: "trend-up", cls: "par", label: "notifDetail.kind.par" },
+        os_drop: { ico: "trend-down", cls: "os", label: "notifDetail.kind.os" },
+        npl_rise: { ico: "plus", cls: "npl", label: "notifDetail.kind.npl" }
     };
 
     function alertChange(a) {
@@ -223,7 +223,7 @@
             : `<b>${esc(a.branch)}</b><small>${esc(t("notifDetail.branch"))}</small>`;
         return `
             <a class="nd-card nd-alert" href="${esc(alertLink(a))}">
-                <span class="nd-kind nd-kind-${k.cls}" aria-hidden="true">${k.ico}</span>
+                <span class="nd-kind nd-kind-${k.cls}" aria-hidden="true"><span class="ui-ico ui-ico-${k.ico}"></span></span>
                 <span class="nd-who">${who}</span>
                 <span class="nd-change">
                     <span class="nd-rule nd-rule-${k.cls}">${esc(t(k.label))}</span>
@@ -241,7 +241,7 @@
 
         el.hero.innerHTML = `
             <div class="nd-hero-top">
-                <span class="nd-hero-ico">⚠️</span>
+                <span class="nd-hero-ico"><span class="ui-ico ui-ico-alert" aria-hidden="true"></span></span>
                 <div>
                     <div class="nd-hero-title">${esc(t("notifDetail.alertTitle"))}</div>
                     <div class="nd-hero-sub">${esc(t("notifDetail.dataOf", { date: dmy(n.extra && n.extra.date) }))}</div>
@@ -265,9 +265,9 @@
 
     // ---------- Officer Reminder ----------
     const REMIND = [
-        { key: "unfilled", ico: "📝", label: "notifDetail.remind.unfilled", short: "notifDetail.short.unfilled" },
-        { key: "expired", ico: "⏰", label: "notifDetail.remind.expired", short: "notifDetail.short.expired" },
-        { key: "outArea", ico: "📍", label: "notifDetail.remind.outArea", short: "notifDetail.short.outArea" }
+        { key: "unfilled", ico: "edit", label: "notifDetail.remind.unfilled", short: "notifDetail.short.unfilled" },
+        { key: "expired", ico: "clock", label: "notifDetail.remind.expired", short: "notifDetail.short.expired" },
+        { key: "outArea", ico: "pin", label: "notifDetail.remind.outArea", short: "notifDetail.short.outArea" }
     ];
 
     function arrearsLink(r, key) {
@@ -283,10 +283,10 @@
         const tiles = REMIND.map(m => {
             const n = Number(r[m.key]) || 0;
             const inner = `
-                <span class="nd-tile-top"><span class="nd-tile-ico">${m.ico}</span><b>${n}</b></span>
+                <span class="nd-tile-top"><span class="nd-tile-ico"><span class="ui-ico ui-ico-${m.ico}" aria-hidden="true"></span></span><b>${n}</b></span>
                 <span class="nd-tile-label">${esc(t(m.short))}</span>`;
             return n
-                ? `<a class="nd-tile nd-tile-${m.key}" href="${esc(arrearsLink(r, m.key))}" title="${esc(t(m.label))}">${inner}<i aria-hidden="true">›</i></a>`
+                ? `<a class="nd-tile nd-tile-${m.key}" href="${esc(arrearsLink(r, m.key))}" title="${esc(t(m.label))}">${inner}<i class="ui-ico ui-ico-chevron-right" aria-hidden="true"></i></a>`
                 : `<div class="nd-tile nd-tile-zero" title="${esc(t(m.label))}">${inner}</div>`;
         }).join("");
         return `
@@ -308,7 +308,7 @@
 
         el.hero.innerHTML = `
             <div class="nd-hero-top">
-                <span class="nd-hero-ico">📋</span>
+                <span class="nd-hero-ico"><span class="ui-ico ui-ico-clipboard" aria-hidden="true"></span></span>
                 <div>
                     <div class="nd-hero-title">${esc(t("notifDetail.remindTitle"))}</div>
                     <div class="nd-hero-sub">${esc([dmy(n.extra && n.extra.date), time].filter(Boolean).join(" · "))}${list.length > 1 ? " · " + esc(t("notifDetail.officerCount", { n: list.length })) : ""}</div>
