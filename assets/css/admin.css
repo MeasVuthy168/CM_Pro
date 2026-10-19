@@ -1350,3 +1350,21 @@ table.adm-table {
   .sa-rule { padding: 10px; }
   .sa-rule-input input { width: 72px; }
 }
+
+/* Smart Alerts page: CM Pro AI default comparison */
+.sa-compare-modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 12px; }
+.sa-mode {
+  display: flex; align-items: flex-start; flex-wrap: wrap; gap: 10px;
+  padding: 12px 14px; border: 1px solid var(--adm-border); border-radius: 12px;
+  background-color: var(--adm-bg); cursor: pointer;
+}
+.sa-mode:has(input[type="radio"]:checked) { border-color: var(--adm-gold-500); box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18); }
+.sa-mode input[type="radio"] { margin-top: 3px; accent-color: var(--adm-gold-500); }
+.sa-mode span { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.sa-mode b { font-size: 0.88rem; color: var(--adm-text); }
+.sa-mode em { font-style: normal; font-size: 0.75rem; color: var(--adm-text-muted); }
+.sa-mode-date {
+  flex-basis: 100%; font-family: inherit; font-size: 0.88rem; padding: 7px 10px;
+  border-radius: 8px; border: 1px solid var(--adm-border); background-color: var(--adm-card-bg); color: var(--adm-text);
+}
+.sa-mode-date:disabled { opacity: 0.5; }

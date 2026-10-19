@@ -8,12 +8,18 @@
    parse(text) returns one of:
      { type: "navigate", page }            open a page
      { type: "customer", query }           Customer Search with a keyword
-     { type: "ask", metric, rank, text }   a data question; metric is
+     { type: "ask", metric, rank, text,    a data question; metric is
+       compare }
                                            os | par | npl | disb | summary,
                                            rank { dir: top|bottom, level:
                                            officer|branch } or null; the
                                            entity (branch / CO) is matched
-                                           later against the loaded data
+                                           later against the loaded data;
+                                           compare (optional) { mode: prev |
+                                           month | year | date, date } when
+                                           the question names what to
+                                           compare with ("ធៀបនឹងចុងខែមុន",
+                                           "vs 30/09/2026")
      { type: "alerts" }                    today's Smart Alerts
      { type: "theme", value }              light | dark | auto
      { type: "help" }
@@ -134,8 +140,65 @@
         return { dir, level };
     }
 
+    // ---------- "compared with …" ----------
+    const COMPARE_WORDS = ["compared with", "compared to", "compare with", "compare to", "compare", "versus", "vs", "since",
+        "ធៀបជាមួយ", "ធៀបនឹង", "ប្រៀបធៀប", "ធៀប", "តាំងពី", "គិតពី"];
+    const COMPARE_MODES = [
+        { mode: "year", keywords: ["end of last year", "last year end", "year end", "year to date", "ytd", "last year", "this year", "start of the year", "start of year",
+            "ចុងឆ្នាំមុន", "ឆ្នាំមុន", "ដើមឆ្នាំ", "ឆ្នាំនេះ"] },
+        { mode: "month", keywords: ["end of last month", "last month end", "month end", "month to date", "mtd", "last month", "previous month", "this month", "start of the month", "start of month",
+            "ចុងខែមុន", "ខែមុន", "ដើមខែ", "ខែនេះ"] },
+        { mode: "prev", keywords: ["yesterday", "previous day", "day before", "last day", "ម្សិលមិញ", "ថ្ងៃមុន"] }
+    ];
+
+    function pad2(n) {
+        return String(n).padStart(2, "0");
+    }
+
+    // A real calendar date as YYYY-MM-DD, or null.
+    function dateKey(y, m, d) {
+        const dt = new Date(Date.UTC(+y, +m - 1, +d));
+        if (dt.getUTCFullYear() !== +y || dt.getUTCMonth() !== +m - 1 || dt.getUTCDate() !== +d) return null;
+        return `${y}-${pad2(m)}-${pad2(d)}`;
+    }
+
+    // Pulls the comparison out of the text (so a date's digits never
+    // read as a CO ID) — returns { compare, rest }.
+    function extractCompare(text) {
+        let compare = null;
+        let rest = text;
+        const iso = rest.match(/(^|\D)(\d{4})-(\d{1,2})-(\d{1,2})(?!\d)/);
+        const dmy = rest.match(/(^|\D)(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})(?!\d)/);
+        if (iso && dateKey(iso[2], iso[3], iso[4])) {
+            compare = { mode: "date", date: dateKey(iso[2], iso[3], iso[4]) };
+            rest = rest.replace(iso[0], iso[1] + " ");
+        } else if (dmy && dateKey(dmy[4], dmy[3], dmy[2])) {
+            compare = { mode: "date", date: dateKey(dmy[4], dmy[3], dmy[2]) };
+            rest = rest.replace(dmy[0], dmy[1] + " ");
+        } else {
+            for (const c of COMPARE_MODES) {
+                if (hasAny(rest, c.keywords)) {
+                    compare = { mode: c.mode, date: null };
+                    rest = strip(rest, c.keywords);
+                    break;
+                }
+            }
+        }
+        if (compare) rest = strip(rest, COMPARE_WORDS);
+        return { compare, rest };
+    }
+
     function parse(raw) {
-        const text = normalize(raw);
+        const { compare, rest } = extractCompare(normalize(raw));
+        const intent = parseCore(rest);
+        if (!compare) return intent;
+        if (intent.type === "ask") return { ...intent, compare };
+        // "ធៀបនឹងចុងខែមុន" on its own — the summary, compared that way.
+        if (intent.type === "unknown") return { type: "ask", metric: "summary", rank: null, text: rest, compare };
+        return intent;
+    }
+
+    function parseCore(text) {
         if (!text) return { type: "unknown", text };
 
         if (hasAny(text, HELP_WORDS)) return { type: "help", text };
@@ -223,7 +286,7 @@
         return null;
     }
 
-    const api = { normalize, parse, matchBranch, matchOfficer, PAGES };
+    const api = { normalize, parse, extractCompare, matchBranch, matchOfficer, PAGES };
     root.CMAssistantNLU = api;
     if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

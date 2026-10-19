@@ -294,4 +294,66 @@
   el.date.addEventListener("change", refreshButtons);
 
   loadSettings();
+
+  // ---------- CM Pro AI default comparison ----------
+  const cmp = {
+    radios: [...document.querySelectorAll('input[name="saCompare"]')],
+    date: document.getElementById("saCompareDate"),
+    save: document.getElementById("saBtnSaveCompare")
+  };
+  let savedCompare = null;
+
+  function readCompare() {
+    const mode = (cmp.radios.find((r) => r.checked) || {}).value || "prev";
+    return { mode, date: mode === "date" ? cmp.date.value || null : null };
+  }
+
+  function refreshCompare() {
+    const c = readCompare();
+    cmp.date.disabled = c.mode !== "date";
+    const valid = c.mode !== "date" || !!c.date;
+    const dirty = !savedCompare || savedCompare.mode !== c.mode || (savedCompare.date || null) !== c.date;
+    cmp.save.disabled = !valid || !dirty;
+  }
+
+  function fillCompare(c) {
+    cmp.radios.forEach((r) => { r.checked = r.value === c.mode; });
+    cmp.date.value = c.date || "";
+    refreshCompare();
+  }
+
+  async function loadCompare() {
+    try {
+      const data = await api("/api/admin/assistant/settings");
+      savedCompare = data.compareDefault;
+      fillCompare(savedCompare);
+    } catch (e) {
+      if (e.message === "unauthorized") return;
+      AdminUI.toast(t("admin.smartAlerts.loadFailed"), "error");
+    }
+  }
+
+  cmp.radios.forEach((r) => r.addEventListener("change", refreshCompare));
+  cmp.date.addEventListener("input", () => {
+    if (cmp.date.value) cmp.radios.forEach((r) => { r.checked = r.value === "date"; });
+    refreshCompare();
+  });
+  cmp.save.addEventListener("click", async () => {
+    cmp.save.disabled = true;
+    try {
+      const data = await api("/api/admin/assistant/settings", {
+        method: "PUT",
+        body: JSON.stringify({ compareDefault: readCompare() })
+      });
+      savedCompare = data.compareDefault;
+      fillCompare(savedCompare);
+      AdminUI.toast(t("admin.smartAlerts.compareSaved"), "success");
+    } catch (e) {
+      if (e.message === "unauthorized") return;
+      AdminUI.toast(e.serverMessage || t("admin.smartAlerts.saveFailed"), "error");
+      refreshCompare();
+    }
+  });
+
+  loadCompare();
 })();

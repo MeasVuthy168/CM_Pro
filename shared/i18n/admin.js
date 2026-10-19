@@ -640,5 +640,16 @@ CMI18n.register({
   "admin.smartAlerts.sendConfirmMessage": { km: "Alert {alerts} នឹងត្រូវផ្ញើជូនអ្នកទទួល {recipients} នាក់ សម្រាប់ថ្ងៃ {date}។ អ្នកដែលបានទទួលរួចហើយសម្រាប់ថ្ងៃនេះ នឹងមិនទទួលម្តងទៀតទេ។", en: "{alerts} alerts will go to {recipients} recipients for {date}. Anyone already sent this date's alerts won't get them again." },
   "admin.smartAlerts.sent": { km: "បានផ្ញើទៅអ្នកទទួល {n} នាក់។", en: "Sent to {n} recipients." },
   "admin.smartAlerts.alreadySent": { km: "Alert ថ្ងៃនេះត្រូវបានផ្ញើរួចហើយ — គ្មានអ្វីថ្មីត្រូវផ្ញើទេ។", en: "This date's alerts were already sent — nothing new to send." },
+  "admin.smartAlerts.compareLabel": { km: "CM Pro AI — ការធៀបលំនាំដើម", en: "CM Pro AI — Default Comparison" },
+  "admin.smartAlerts.compareExplain": { km: "កាតតួលេខក្នុងការជជែកនៅទំព័រដើម នឹងធៀបនឹងចំណុចនេះ។ អ្នកប្រើនៅតែអាចប្តូរបាននៅលើកាតនីមួយៗ។", en: "What the Home chat compares figures against. Users can still switch on each card." },
+  "admin.smartAlerts.cmpPrev": { km: "ថ្ងៃមុន", en: "Previous day" },
+  "admin.smartAlerts.cmpPrevHint": { km: "Snapshot មុនថ្ងៃចុងក្រោយ", en: "The snapshot before the latest one" },
+  "admin.smartAlerts.cmpMonth": { km: "ចុងខែមុន", en: "End of last month" },
+  "admin.smartAlerts.cmpMonthHint": { km: "ថ្ងៃធ្វើការចុងក្រោយនៃខែមុន", en: "Last business day of the previous month" },
+  "admin.smartAlerts.cmpYear": { km: "ចុងឆ្នាំមុន", en: "End of last year" },
+  "admin.smartAlerts.cmpYearHint": { km: "គិតតាំងពីដើមឆ្នាំ", en: "Year to date" },
+  "admin.smartAlerts.cmpDate": { km: "ថ្ងៃជាក់លាក់", en: "A fixed date" },
+  "admin.smartAlerts.cmpDateHint": { km: "Snapshot ចុងក្រោយ នៅ ឬមុនថ្ងៃនោះ", en: "The last snapshot on or before it" },
+  "admin.smartAlerts.compareSaved": { km: "បានរក្សាទុកការធៀបលំនាំដើម។", en: "Default comparison saved." },
   "admin.smartAlerts.sendFailed": { km: "ផ្ញើមិនបានសម្រេច។", en: "Send failed." }
 });
