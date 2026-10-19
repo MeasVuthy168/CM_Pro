@@ -1483,7 +1483,7 @@ input.sa-date {
 /* Officer Reminders card (Smart Alerts) */
 .or-rules { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .or-rules li { display: flex; gap: 8px; align-items: center; font-size: 0.875rem; }
-.or-rules b { width: 22px; text-align: center; }
+.or-rules b { flex: 0 0 auto; }
 .or-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .or-n { text-align: center; font-variant-numeric: tabular-nums; color: var(--adm-text-muted); }
 .or-n.or-hot { color: #B42318; font-weight: 700; }
@@ -1507,3 +1507,13 @@ input.sa-date {
   animation: saSpin .7s linear infinite;
 }
 @keyframes saSpin { to { transform: rotate(360deg); } }
+
+/* Officer Reminders rule icons (base.css .ui-ico set) */
+.or-ico { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 8px; font-size: 15px; }
+.or-ico-unfilled { background: #FDECEA; color: #B42318; }
+.or-ico-expired { background: #FFF4D6; color: #8A5A00; }
+.or-ico-outarea { background: #E8EEFF; color: #2A4BA8; }
+[data-theme="dark"] .or-ico-unfilled { background: rgba(240, 68, 56, .16); color: #FDA29B; }
+[data-theme="dark"] .or-ico-expired { background: rgba(212, 175, 55, .16); color: #F4D27A; }
+[data-theme="dark"] .or-ico-outarea { background: rgba(96, 140, 255, .16); color: #A8BEFF; }
+.sa-rule-ico .ui-ico { font-size: 18px; }

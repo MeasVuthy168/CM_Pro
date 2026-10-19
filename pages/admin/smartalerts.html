@@ -93,7 +93,7 @@
 
         <div class="sa-rule-list">
           <div class="sa-rule-row">
-            <div class="sa-rule-ico sa-par" aria-hidden="true">▲</div>
+            <div class="sa-rule-ico sa-par" aria-hidden="true"><span class="ui-ico ui-ico-trend-up"></span></div>
             <div class="sa-rule-body">
               <div class="sa-rule-name" data-i18n="admin.smartAlerts.parRise">PAR rise</div>
               <div class="sa-rule-hint" data-i18n="admin.smartAlerts.parRiseHint">vs the previous day</div>
@@ -107,7 +107,7 @@
           </div>
 
           <div class="sa-rule-row sa-rule-row-wrap">
-            <div class="sa-rule-ico sa-os" aria-hidden="true">▼</div>
+            <div class="sa-rule-ico sa-os" aria-hidden="true"><span class="ui-ico ui-ico-trend-down"></span></div>
             <div class="sa-rule-body">
               <div class="sa-rule-name" data-i18n="admin.smartAlerts.osDrop">OS drop</div>
               <div class="sa-rule-hint" data-i18n="admin.smartAlerts.osDropHint2">vs the comparison below</div>
@@ -131,7 +131,7 @@
           </div>
 
           <div class="sa-rule-row">
-            <div class="sa-rule-ico sa-npl" aria-hidden="true">+</div>
+            <div class="sa-rule-ico sa-npl" aria-hidden="true"><span class="ui-ico ui-ico-plus"></span></div>
             <div class="sa-rule-body">
               <div class="sa-rule-name" data-i18n="admin.smartAlerts.nplRise">NPL rise</div>
               <div class="sa-rule-hint" data-i18n="admin.smartAlerts.nplRiseHint">new non-performing accounts vs the previous day</div>
@@ -233,9 +233,9 @@
           Every working day (Monday–Friday, public holidays skipped) at 9:00 and 15:00, each Credit Officer / FSRO (not in Stop Disburse) is told what is still waiting in Daily Arrears; branch managers and Admin get their officers' list.
         </p>
         <ul class="or-rules">
-          <li><b>📝</b><span data-i18n="admin.officerReminders.ruleUnfilled">Unfilled Reason Arrear (arrear T24)</span></li>
-          <li><b>⏰</b><span data-i18n="admin.officerReminders.ruleExpired">Expired promise to pay</span></li>
-          <li><b>📍</b><span data-i18n="admin.officerReminders.ruleOutArea">Out of Area arrears still NoCoRespone</span></li>
+          <li><b class="or-ico or-ico-unfilled" aria-hidden="true"><span class="ui-ico ui-ico-edit"></span></b><span data-i18n="admin.officerReminders.ruleUnfilled">Unfilled Reason Arrear (arrear T24)</span></li>
+          <li><b class="or-ico or-ico-expired" aria-hidden="true"><span class="ui-ico ui-ico-clock"></span></b><span data-i18n="admin.officerReminders.ruleExpired">Expired promise to pay</span></li>
+          <li><b class="or-ico or-ico-outarea" aria-hidden="true"><span class="ui-ico ui-ico-pin"></span></b><span data-i18n="admin.officerReminders.ruleOutArea">Out of Area arrears still NoCoRespone</span></li>
         </ul>
         <p class="sa-compare" id="orLastRun"></p>
 
