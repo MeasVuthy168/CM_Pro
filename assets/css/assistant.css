@@ -768,39 +768,6 @@ body.ac-open{ overflow:hidden; }
 /* A voice error that says what to change (EN switch, a setting) */
 .voice-sheet-status.help{ font-size:15px; font-weight:600; line-height:1.55; max-width:340px; margin-left:auto; margin-right:auto; }
 
-/* =========================
-   TODAY'S WORK PILLS (assistant box, greeting mode)
-   The box's text shimmer fills its text transparent; the pills paint
-   their own.
-========================= */
-.assistant-greeting{ display:block; }
-.assistant-work{
-    display:flex; flex-wrap:wrap; gap:5px; margin-top:6px;
-    -webkit-text-fill-color:initial; animation:assistantWorkIn .35s ease .2s both;
-}
-@keyframes assistantWorkIn{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:none; } }
-.assistant-pill{
-    display:inline-flex; align-items:center; gap:4px;
-    border:1px solid rgba(255,255,255,.16); border-radius:999px;
-    padding:2px 9px 2px 7px; font:inherit; font-size:12px; font-weight:600; line-height:1.5;
-    background:rgba(255,255,255,.07); color:var(--asst-text); -webkit-text-fill-color:currentColor;
-    cursor:pointer; white-space:nowrap;
-}
-.assistant-pill b{ font-size:13px; font-weight:800; }
-.assistant-pill:active{ transform:scale(.95); }
-.assistant-pill-unfilled{ border-color:rgba(245,181,174,.55); }
-.assistant-pill-unfilled b{ color:#F59E8B; }
-.assistant-pill-expired{ border-color:rgba(242,210,139,.55); }
-.assistant-pill-expired b{ color:#F4C95D; }
-.assistant-pill-promiseToday b{ color:#6FD69A; }
-.assistant-pill-noOfficer b{ color:#8FB0FF; }
-.assistant-pill-done{ cursor:default; color:#6FD69A; border-color:rgba(111,214,154,.4); }
-[data-theme="light"] .assistant-pill, [data-theme="gold"] .assistant-pill{ background:rgba(14,27,60,.05); border-color:rgba(14,27,60,.14); }
-[data-theme="light"] .assistant-pill-unfilled b, [data-theme="gold"] .assistant-pill-unfilled b{ color:#B42318; }
-[data-theme="light"] .assistant-pill-expired b, [data-theme="gold"] .assistant-pill-expired b{ color:#8A5A00; }
-[data-theme="light"] .assistant-pill-promiseToday b, [data-theme="gold"] .assistant-pill-promiseToday b,
-[data-theme="light"] .assistant-pill-done, [data-theme="gold"] .assistant-pill-done{ color:#1F7A45; }
-[data-theme="light"] .assistant-pill-noOfficer b, [data-theme="gold"] .assistant-pill-noOfficer b{ color:#2A4BA8; }
 #assistantRobotSlot{ cursor:pointer; -webkit-tap-highlight-color:transparent; }
 
 /* =========================
@@ -841,29 +808,96 @@ body.ac-open{ overflow:hidden; }
 
 .ac-work-tiles{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px; margin:2px 0 4px; }
 .ac-wtile{
-    display:flex; flex-direction:column; align-items:center; gap:1px; min-width:0;
-    border:1px solid #E3E7EF; border-radius:12px; background:#fff; padding:7px 3px 6px;
+    display:flex; flex-direction:column; align-items:center; gap:2px; min-width:0;
+    border:1px solid #E3E7EF; border-radius:12px; background:#fff; padding:8px 3px 7px;
     font:inherit; color:inherit; cursor:pointer; text-align:center;
 }
 .ac-wtile:active{ transform:scale(.96); }
-.ac-wtile-ico{ font-size:15px; line-height:1.2; }
+.ac-wtile-ico{ font-size:17px; }
 .ac-wtile b{ font-size:17px; font-weight:800; line-height:1.2; font-variant-numeric:tabular-nums; }
 .ac-wtile span:last-child{ font-size:10px; line-height:1.35; color:#6B7280; max-width:100%; overflow-wrap:anywhere; }
-.ac-wtile-unfilled b{ color:#B42318; }
-.ac-wtile-expired b{ color:#8A5A00; }
-.ac-wtile-promiseToday b{ color:#1F7A45; }
-.ac-wtile-noOfficer b{ color:#2A4BA8; }
+.ac-wtile-unfilled .ac-wtile-ico, .ac-wtile-unfilled b{ color:#B42318; }
+.ac-wtile-expired .ac-wtile-ico, .ac-wtile-expired b{ color:#8A5A00; }
+.ac-wtile-promiseToday .ac-wtile-ico, .ac-wtile-promiseToday b{ color:#1F7A45; }
+.ac-wtile-noOfficer .ac-wtile-ico, .ac-wtile-noOfficer b{ color:#2A4BA8; }
 .ac-wtile.on{ border-color:#D4AF37; box-shadow:0 0 0 2px rgba(212,175,55,.35); }
 .ac-work-sub{ margin:8px 0 2px; font-weight:700; }
-.ac-clients li::before{ background:#E9EDF4; color:#3A4356; }
+.ac-head-ico{ margin-right:6px; vertical-align:-3px; color:#B8860B; }
+
+/* All branches › Svay Rieng › Sok Dara */
+.ac-crumbs{ display:flex; flex-wrap:wrap; align-items:center; gap:2px 4px; margin:0 0 8px; font-size:12px; }
+.ac-crumb{ border:none; background:none; padding:2px 0; font:inherit; font-weight:700; color:#B8860B; cursor:pointer; }
+.ac-crumb.on{ color:inherit; font-weight:800; cursor:default; }
+.ac-crumb-sep{ font-size:11px; opacity:.5; }
+
+/* Branch / officer rows (tap to drill down) */
+.ac-wrows, .ac-clients{ display:flex; flex-direction:column; }
+.ac-wrow{
+    display:flex; align-items:center; gap:9px; width:100%; padding:8px 2px;
+    border:none; border-top:1px dashed #E3E7EF; background:none; font:inherit; color:inherit; text-align:left; cursor:pointer;
+}
+.ac-wrow:first-child{ border-top:none; }
+.ac-wrow:active{ background:rgba(212,175,55,.08); }
+.ac-wrow-ico{
+    width:30px; height:30px; flex:none; border-radius:9px; display:flex; align-items:center; justify-content:center;
+    background:rgba(26,46,87,.07); color:#1A2E57; font-size:15px;
+}
+.ac-wrow-main{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.ac-wrow-main b{ font-size:13.5px; overflow-wrap:anywhere; }
+.ac-wrow-main small{ font-size:11px; color:#6B7280; }
+.ac-wn{ display:inline-flex; align-items:center; gap:3px; flex:none; font-size:12.5px; font-weight:800; padding:2px 8px; border-radius:999px; background:#EEF1F6; }
+.ac-wn .ui-ico{ font-size:12px; }
+.ac-wn-unfilled{ background:#FDECEA; color:#B42318; }
+.ac-wn-expired{ background:#FFF4D6; color:#8A5A00; }
+.ac-wn-promiseToday{ background:#E5F7EC; color:#1F7A45; }
+.ac-wn-noOfficer{ background:#E8EEFF; color:#2A4BA8; }
+.ac-wrow-go{ flex:none; font-size:13px; opacity:.45; }
+
+/* Client rows */
+.ac-client{ display:flex; align-items:flex-start; gap:8px; padding:8px 0; border-top:1px dashed #E3E7EF; }
+.ac-client:first-child{ border-top:none; }
+.ac-client-main{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.ac-client-main b{ font-size:13.5px; overflow-wrap:anywhere; }
+.ac-client-main small{ font-size:11px; color:#6B7280; overflow-wrap:anywhere; }
+.ac-client-who{ display:inline-flex; align-items:center; gap:4px; margin-top:1px; }
+.ac-client-who .ui-ico{ font-size:11px; }
+.ac-cl-day, .ac-cl-date, .ac-cl-amt{
+    flex:none; display:inline-flex; align-items:center; gap:4px; font-size:11.5px; font-weight:800;
+    padding:2px 8px; border-radius:999px; white-space:nowrap;
+}
+.ac-cl-day{ background:#FDECEA; color:#B42318; }
+.ac-cl-date{ background:#FFF4D6; color:#8A5A00; }
+.ac-cl-date.ac-cl-promiseToday{ background:#E5F7EC; color:#1F7A45; }
+.ac-cl-amt{ background:#E8EEFF; color:#2A4BA8; }
+
 [data-theme="dark"] .ac-wtile{ background:#16223F; border-color:#223055; }
 [data-theme="darkgray"] .ac-wtile{ background:#363A41; border-color:#474C55; }
-[data-theme="dark"] .ac-wtile span:last-child, [data-theme="darkgray"] .ac-wtile span:last-child{ color:#9AA8C7; }
-[data-theme="dark"] .ac-wtile-unfilled b, [data-theme="darkgray"] .ac-wtile-unfilled b{ color:#FDA29B; }
-[data-theme="dark"] .ac-wtile-expired b, [data-theme="darkgray"] .ac-wtile-expired b{ color:#F4D27A; }
-[data-theme="dark"] .ac-wtile-promiseToday b, [data-theme="darkgray"] .ac-wtile-promiseToday b{ color:#6FD69A; }
-[data-theme="dark"] .ac-wtile-noOfficer b, [data-theme="darkgray"] .ac-wtile-noOfficer b{ color:#A8BEFF; }
-[data-theme="dark"] .ac-clients li::before, [data-theme="darkgray"] .ac-clients li::before{ background:rgba(255,255,255,.1); color:#EAF0FF; }
+[data-theme="dark"] .ac-wtile span:last-child, [data-theme="darkgray"] .ac-wtile span:last-child,
+[data-theme="dark"] .ac-wrow-main small, [data-theme="darkgray"] .ac-wrow-main small,
+[data-theme="dark"] .ac-client-main small, [data-theme="darkgray"] .ac-client-main small{ color:#9AA8C7; }
+[data-theme="dark"] .ac-wtile-unfilled .ac-wtile-ico, [data-theme="dark"] .ac-wtile-unfilled b,
+[data-theme="darkgray"] .ac-wtile-unfilled .ac-wtile-ico, [data-theme="darkgray"] .ac-wtile-unfilled b{ color:#FDA29B; }
+[data-theme="dark"] .ac-wtile-expired .ac-wtile-ico, [data-theme="dark"] .ac-wtile-expired b,
+[data-theme="darkgray"] .ac-wtile-expired .ac-wtile-ico, [data-theme="darkgray"] .ac-wtile-expired b{ color:#F4D27A; }
+[data-theme="dark"] .ac-wtile-promiseToday .ac-wtile-ico, [data-theme="dark"] .ac-wtile-promiseToday b,
+[data-theme="darkgray"] .ac-wtile-promiseToday .ac-wtile-ico, [data-theme="darkgray"] .ac-wtile-promiseToday b{ color:#6FD69A; }
+[data-theme="dark"] .ac-wtile-noOfficer .ac-wtile-ico, [data-theme="dark"] .ac-wtile-noOfficer b,
+[data-theme="darkgray"] .ac-wtile-noOfficer .ac-wtile-ico, [data-theme="darkgray"] .ac-wtile-noOfficer b{ color:#A8BEFF; }
+[data-theme="dark"] .ac-head-ico, [data-theme="darkgray"] .ac-head-ico,
+[data-theme="dark"] .ac-crumb, [data-theme="darkgray"] .ac-crumb{ color:#FFD700; }
+[data-theme="dark"] .ac-crumb.on, [data-theme="darkgray"] .ac-crumb.on{ color:inherit; }
+[data-theme="dark"] .ac-wrow, [data-theme="darkgray"] .ac-wrow,
+[data-theme="dark"] .ac-client, [data-theme="darkgray"] .ac-client{ border-color:rgba(255,255,255,.08); }
+[data-theme="dark"] .ac-wrow-ico, [data-theme="darkgray"] .ac-wrow-ico{ background:rgba(255,215,0,.1); color:#FFD700; }
+[data-theme="dark"] .ac-wn, [data-theme="darkgray"] .ac-wn{ background:rgba(255,255,255,.08); }
+[data-theme="dark"] .ac-wn-unfilled, [data-theme="darkgray"] .ac-wn-unfilled,
+[data-theme="dark"] .ac-cl-day, [data-theme="darkgray"] .ac-cl-day{ background:rgba(240,68,56,.16); color:#FDA29B; }
+[data-theme="dark"] .ac-wn-expired, [data-theme="darkgray"] .ac-wn-expired,
+[data-theme="dark"] .ac-cl-date, [data-theme="darkgray"] .ac-cl-date{ background:rgba(212,175,55,.16); color:#F4D27A; }
+[data-theme="dark"] .ac-wn-promiseToday, [data-theme="darkgray"] .ac-wn-promiseToday,
+[data-theme="dark"] .ac-cl-date.ac-cl-promiseToday, [data-theme="darkgray"] .ac-cl-date.ac-cl-promiseToday{ background:rgba(31,157,85,.18); color:#6FD69A; }
+[data-theme="dark"] .ac-wn-noOfficer, [data-theme="darkgray"] .ac-wn-noOfficer,
+[data-theme="dark"] .ac-cl-amt, [data-theme="darkgray"] .ac-cl-amt{ background:rgba(96,140,255,.16); color:#A8BEFF; }
 
 /* =========================
    VOICE SHEET: example chips, and dark themes like the chat sheet
