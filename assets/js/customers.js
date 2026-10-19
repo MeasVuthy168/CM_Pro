@@ -602,4 +602,24 @@ btnClearKeyword.addEventListener("click",()=>{
 
 applyViewModeButtons();
 
+// ?q=… — the Home assistant ("search customer 0012345") opens this page
+// with the keyword already filled in and searched.
+(function(){
+
+    const q=new URLSearchParams(location.search).get("q");
+
+    if(!q) return;
+
+    inputKeyword.value=q;
+
+    btnClearKeyword.hidden=false;
+
+    // Drop it from the address bar so a reload or back-navigation
+    // doesn't run the same search again on its own.
+    history.replaceState(null,"",location.pathname);
+
+    runCustomerSearch();
+
+})();
+
 console.log("Customer Search Ready.");

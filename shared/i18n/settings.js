@@ -160,8 +160,8 @@ CMI18n.register({
   "settings.voice.cardTitle": { km: "ពាក្យបញ្ជាសំឡេង", en: "Voice Command" },
   "settings.voice.whatIsTitle": { km: "តើពាក្យបញ្ជាសំឡេងជាអ្វី?", en: "What is voice command?" },
   "settings.voice.whatIsBody": {
-    km: "ពាក្យបញ្ជាសំឡេងនៅក្នុង CM_Pro គឺជាវិធីផ្លាស់ទីក្នុងកម្មវិធីដោយមិនប្រើដៃ។ ចុចមីក្រូហ្វូននៅទំព័រដើម ហើយនិយាយពាក្យបញ្ជា ដូចជា <b>\"Open Daily Arrears\"</b> ឬ <b>\"Switch to Dark Mode\"</b> ហើយកម្មវិធីនឹងបើកទំព័រ ឬផ្លាស់ប្តូររូបរាងនោះឱ្យអ្នក។",
-    en: "Voice commands in CM_Pro are a hands-free way to move around the app. Tap the microphone on the Home page and speak a command, such as <b>\"Open Daily Arrears\"</b> or <b>\"Switch to Dark Mode\"</b>, and the app opens that page or applies that theme for you."
+    km: "CM Pro AI នៅទំព័រដើម អាចស្តាប់ <b>ភាសាខ្មែរ</b> ឬ <b>English</b> (ប្តូរបានតាមប៊ូតុង ខ្មែរ/EN)។ ចុចមីក្រូហ្វូន ហើយនិយាយ ឬចុចប៊ូតុង 💬 ដើម្បីវាយសំណួរ ដូចជា <b>«PAR ថ្ងៃនេះ»</b>, <b>«បើកឥណទានយឺតយ៉ាវ»</b> ឬ <b>«ស្វែងរកអតិថិជន 0012345»</b>។ តួលេខដែលបង្ហាញ គឺតាមសិទ្ធិរបស់អ្នក (សាខា ឬ CO របស់អ្នក)។",
+    en: "CM Pro AI on the Home page listens in <b>Khmer</b> or <b>English</b> (switch with the ខ្មែរ/EN buttons). Tap the microphone and speak, or tap 💬 to type, e.g. <b>\"PAR today\"</b>, <b>\"Open Daily Arrears\"</b> or <b>\"Search customer 0012345\"</b>. Figures follow your access (your branch, or your own CO figures)."
   },
   "settings.voice.whatYouCanSay": { km: "អ្វីដែលអ្នកអាចនិយាយ", en: "What you can say" },
   "settings.voice.openPage": { km: "I. បើកទំព័រ", en: "I. Open a page" },
@@ -198,10 +198,28 @@ CMI18n.register({
 <li>Switch to <b>Dark Mode</b></li>
 <li>Switch to <b>Auto Mode</b></li>`
   },
+  "settings.voice.askData": { km: "III. សួរតួលេខ", en: "III. Ask about the figures" },
+  "settings.voice.askDataList": {
+    km: `<li><b>សង្ខេបថ្ងៃនេះ</b></li>
+<li><b>PAR ថ្ងៃនេះ</b> / <b>OS សាខាស្វាយរៀង</b> / <b>NPL CO 9027</b></li>
+<li><b>CO PAR ខ្ពស់ជាងគេ</b> / <b>សាខា OS ទាបជាងគេ</b></li>
+<li><b>Alert ថ្ងៃនេះ</b></li>`,
+    en: `<li><b>Today's summary</b></li>
+<li><b>PAR today</b> / <b>OS Svay Rieng</b> / <b>NPL CO 9027</b></li>
+<li><b>Top CO by PAR</b> / <b>Branch with the lowest OS</b></li>
+<li><b>Today's alerts</b></li>`
+  },
+  "settings.voice.searchCustomer": { km: "IV. ស្វែងរកអតិថិជន", en: "IV. Search for a customer" },
+  "settings.voice.searchCustomerList": {
+    km: `<li><b>ស្វែងរកអតិថិជន 0012345</b></li>
+<li><b>ស្វែងរកអតិថិជន</b> + ឈ្មោះ</li>`,
+    en: `<li><b>Search customer 0012345</b></li>
+<li><b>Search customer</b> + name</li>`
+  },
   "settings.voice.conclusion": { km: "សេចក្តីសន្និដ្ឋាន", en: "Conclusion" },
   "settings.voice.conclusionBody": {
-    km: "បច្ចុប្បន្ននេះ ពាក្យបញ្ជាសំឡេងអាចប្រើបានតែសម្រាប់បើកទំព័រ និងប្តូររូបរាងកម្មវិធីប៉ុណ្ណោះ។ យើងកំពុងបន្តពង្រីកដែលគាំទ្រ និងកែលម្អភាពត្រឹមត្រូវនៃការសម្គាល់សំឡេងជាបន្តបន្ទាប់។",
-    en: "Voice commands are currently limited to opening pages and switching themes. We're continuing to expand the range of supported commands and improve recognition accuracy over time."
+    km: "CM Pro AI ប្រើច្បាប់ (rule-based) មិនមែន AI ខាងក្រៅទេ ដូច្នេះទិន្នន័យមិនចេញពីប្រព័ន្ធធនាគារឡើយ។ បើវាមិនយល់ វានឹងណែនាំពាក្យដែលអាចប្រើបាន។ ការស្តាប់ភាសាខ្មែរ ត្រូវការ Chrome / Android ដែលគាំទ្រ km-KH។",
+    en: "CM Pro AI is rule-based, not an outside AI service, so no data leaves the bank's system. When it doesn't understand, it suggests what you can say. Listening in Khmer needs a browser that supports km-KH (Chrome on Android)."
   },
   "settings.voice.gotIt": { km: "យល់ព្រម", en: "Ok, got it" }
 });
