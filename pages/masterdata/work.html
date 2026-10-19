@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>Work to complete</title>
+
+<meta
+name="theme-color"
+content="#0e1b3c">
+
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
+  );
+</script>
+
+<link
+rel="stylesheet"
+href="../../assets/css/main.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/masterdata/masterdata.css">
+
+<!-- The editor's own styles (.oa-*, .reason-*) live with Daily Arrears,
+     where the same editor also opens as a modal. -->
+<link
+rel="stylesheet"
+href="../../assets/css/arrears.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/masterdata/outarea.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/masterdata/work.css">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
+
+<!-- Hold the first paint until the whole page is parsed (its scripts,
+     translations and header), so a page transition slides in a finished
+     page instead of one still filling itself in. No element has this id:
+     the hold simply ends when parsing does. -->
+<link rel="expect" href="#cm-pt-parsed" blocking="render">
+<link rel="preload" href="/CM_Pro/assets/fonts/Krasar-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<script src="/CM_Pro/shared/page-transition.js"></script>
+</head>
+
+<body>
+
+<div id="offlineBanner" data-i18n="common.offline">
+No Internet Connection
+</div>
+
+<div id="topbar-container"></div>
+
+<div class="page-container">
+
+<!-- Summary: what's left to fill, expired promises, filled %, reload -->
+<section class="oa-page-hero">
+  <div class="oa-ph-top">
+    <span class="oa-ph-ico"><span class="ui-ico ui-ico-clipboard" aria-hidden="true"></span></span>
+    <div class="oa-ph-text">
+      <div class="oa-ph-title" data-i18n="work.heroTitle">Reason Arrear — ការងារត្រូវបំពេញ</div>
+      <div class="oa-ph-sub"><span data-i18n="masterdata.outArea.dataAt">ទិន្នន័យចុងក្រោយ</span> <span id="wkUpdated">-</span></div>
+    </div>
+    <button type="button" id="btnWkRefresh" class="oa-ph-refresh" aria-label="Refresh" data-i18n-aria-label="common.refresh"><span class="ui-ico ui-ico-refresh" aria-hidden="true"></span></button>
+  </div>
+  <div class="oa-ph-stats">
+    <div class="oa-ph-stat oa-ph-todo"><b id="wkStatUnfilled">-</b><span data-i18n="work.tabUnfilled">មិនទាន់បំពេញ</span></div>
+    <div class="oa-ph-stat wk-ph-expired"><b id="wkStatExpired">-</b><span data-i18n="work.tabExpired">ផុតកំណត់</span></div>
+    <div class="oa-ph-stat oa-ph-done"><b id="wkStatPct">-</b><span data-i18n="work.statFilled">បានបំពេញ</span></div>
+  </div>
+</section>
+
+<div id="workCard" class="reason-card noreason-card oa-page">
+
+  <!-- LIST SCREEN -->
+  <div id="wkListScreen">
+
+    <div class="oa-sticky-tools">
+      <div class="oa-tabs wk-tabs" role="tablist">
+        <button type="button" class="oa-tab active" data-wk-tab="unfilled" role="tab"><span data-i18n="work.tabUnfilled">មិនទាន់បំពេញ</span> <span class="oa-tab-count" id="wkCount-unfilled"></span></button>
+        <button type="button" class="oa-tab" data-wk-tab="expired" role="tab"><span data-i18n="work.tabExpired">ផុតកំណត់</span> <span class="oa-tab-count" id="wkCount-expired"></span></button>
+        <button type="button" class="oa-tab" data-wk-tab="filled" role="tab"><span data-i18n="work.tabFilled">បានបំពេញ</span> <span class="oa-tab-count" id="wkCount-filled"></span></button>
+      </div>
+
+      <div class="oa-search">
+        <span class="ui-ico ui-ico-search oa-search-ico" aria-hidden="true"></span>
+        <input type="search" id="wkSearch" placeholder="ឈ្មោះ / LD / CIF / ភ្នាក់ងារ..." data-i18n-placeholder="work.searchPlaceholder" autocomplete="off" aria-label="ស្វែងរក" data-i18n-aria-label="common.search">
+      </div>
+
+      <!-- Branch / team chips (not for Viewer_Staff, who only has their own) -->
+      <div class="oa-branch-filter" id="wkBranchChips" role="group"></div>
+      <div class="oa-branch-filter" id="wkTeamChips" role="group"></div>
+    </div>
+
+    <div class="reason-subtitle oa-count" id="wkSubtitle">-</div>
+
+    <!-- Saved on this phone, not yet submitted -->
+    <div class="wk-pending" id="wkPending" hidden>
+      <span class="wk-pending-ico"><span class="ui-ico ui-ico-clock" aria-hidden="true"></span></span>
+      <span class="wk-pending-text" id="wkPendingText"></span>
+      <button type="button" id="btnWkSubmitAll" class="wk-pending-btn" data-i18n="work.submitAll">ដាក់ស្នើទាំងអស់</button>
+    </div>
+
+    <div id="wkList" class="oa-list"></div>
+
+  </div>
+
+  <!-- DETAIL SCREEN: fill one loan's reason -->
+  <div id="wkDetailScreen" style="display:none;">
+
+    <div class="outarea-sticky-header oa-detail-header">
+      <button type="button" id="btnWkBack" class="oa-back-link"><span class="oa-back-arrow" aria-hidden="true">←</span> <span data-i18n="work.backToList">បញ្ជីការងារ</span> <span id="wkNavPos"></span></button>
+    </div>
+
+    <div class="oa-hero">
+      <div class="oa-hero-name" id="wkName">-</div>
+      <div class="oa-hero-sub" id="wkSub">-</div>
+    </div>
+
+    <div class="oa-info" id="wkInfo"></div>
+
+    <div class="reason-group">
+      <label for="reasonAJ" data-i18n="arrears.reasonOccupationLabel">មុខរបរ</label>
+      <input type="text" id="reasonAJ" placeholder="...">
+    </div>
+
+    <div class="reason-group">
+      <label for="reasonAK" data-i18n="arrears.reasonSolutionLabel">មូលហេតុ/ដំណោះស្រាយ</label>
+      <textarea id="reasonAK" placeholder="..."></textarea>
+    </div>
+
+    <div class="reason-group">
+      <label for="reasonAL" data-i18n="arrears.reasonPromiseDateLabel">ថ្ងៃសន្យាសង</label>
+      <input type="date" id="reasonAL">
+    </div>
+
+    <div class="reason-group">
+      <label for="reasonGPS" data-i18n="arrears.reasonGpsLabel">និយាមការ (GPS)</label>
+      <input type="text" id="reasonGPS" placeholder="មិនទាន់កំណត់ទីតាំង" data-i18n-placeholder="arrears.gpsNotSetPlaceholder" inputmode="decimal" autocomplete="off">
+      <div class="reason-gps-row">
+        <button type="button" id="btnGpsHere" class="reason-gps-btn"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span> <span data-i18n="arrears.gpsCurrentBtn">កំណត់ទីតាំងបច្ចុប្បន្ន</span></button>
+        <button type="button" id="btnGpsPick" class="reason-gps-btn"><span class="ui-ico ui-ico-map" aria-hidden="true"></span> <span data-i18n="arrears.gpsPickBtn">ជ្រើសលើផែនទី</span></button>
+        <button type="button" id="btnGpsOpen" class="reason-gps-btn"><span class="ui-ico ui-ico-compass" aria-hidden="true"></span> <span data-i18n="arrears.gpsViewBtn">មើលលើផែនទី</span></button>
+      </div>
+      <div class="reason-gps-hint" id="reasonGpsHint"></div>
+    </div>
+
+    <!-- More than one LD for this CIF: Save writes the same reason to all -->
+    <label class="reason-apply-all" id="reasonApplyAllWrap" hidden>
+      <input type="checkbox" id="reasonApplyAll">
+      <span id="reasonApplyAllText"></span>
+    </label>
+
+    <div class="reason-meta" id="reasonMeta"></div>
+    <div class="reason-pending-note" id="reasonPendingNote"></div>
+
+    <div class="reason-actions oa-actions wk-actions">
+      <button type="button" id="btnWkPrev" class="wk-nav-btn" aria-label="ថយក្រោយ" data-i18n-aria-label="arrears.navPrevTitle">‹</button>
+      <button type="button" id="btnWkSave" class="wk-save-btn" data-i18n="common.save">រក្សាទុក</button>
+      <button type="button" id="btnWkSubmit" class="wk-submit-btn" data-i18n="work.submit">ដាក់ស្នើ</button>
+      <button type="button" id="btnWkNext" class="wk-nav-btn" aria-label="បន្ទាប់" data-i18n-aria-label="arrears.navNextTitle">›</button>
+    </div>
+
+  </div>
+
+</div>
+
+</div>
+
+<!-- Map picker (assets/js/reason-kit.js) -->
+<div id="mapBackdrop" class="map-backdrop">
+<div id="mapCard" class="map-card">
+
+<div class="map-head">
+<span class="map-title" data-i18n="arrears.mapTitle">ជ្រើសទីតាំងលើផែនទី</span>
+<div class="map-modes">
+<button type="button" class="map-mode-btn active" data-mode="street" data-i18n="arrears.mapModeStreet">ផែនទី</button>
+<button type="button" class="map-mode-btn" data-mode="satellite" data-i18n="arrears.mapModeSatellite">ផ្កាយរណប</button>
+</div>
+<button type="button" id="btnMapClose" class="map-close" aria-label="បិទ" data-i18n-aria-label="common.close">✕</button>
+</div>
+
+<div id="mapCanvas" class="map-canvas"></div>
+
+<div class="map-hint" data-i18n="arrears.mapHint">ចុចលើផែនទីដើម្បីកំណត់ទីតាំង</div>
+
+<div class="map-foot">
+<span class="map-coords" id="mapCoords">-</span>
+<div class="map-foot-actions">
+<button type="button" id="btnMapHere" class="map-btn"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span> <span data-i18n="arrears.mapMyLocation">ទីតាំងខ្ញុំ</span></button>
+<button type="button" id="btnMapConfirm" class="map-btn map-btn-primary" data-i18n="common.ok">យល់ព្រម</button>
+</div>
+</div>
+
+</div>
+</div>
+
+<div id="bottomnav-container"></div>
+
+<script src="../../config/api.js"></script>
+<script src="/CM_Pro/shared/touch-polish.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/features.js"></script>
+<script src="/CM_Pro/shared/i18n/masterdata.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="../../assets/js/reason-kit.js"></script>
+<script src="../../assets/js/masterdata/work.js"></script>
+
+</body>
+
+</html>

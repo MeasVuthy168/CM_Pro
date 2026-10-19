@@ -394,7 +394,7 @@
                 if (liveState === "fail") return `<div class="nd-hero-foot">${esc(t("notifDetail.liveFailed"))}</div>`;
                 return "";
             })()}
-            ${userRole() === "viewer_staff" ? "" : `<a class="nd-work-btn" href="/CM_Pro/pages/arrears/index.html?${new URLSearchParams({ work: "unfilled", ...(branchFilter ? { branch: branchFilter } : {}) })}">
+            ${userRole() === "viewer_staff" ? "" : `<a class="nd-work-btn" href="/CM_Pro/pages/masterdata/work.html?${new URLSearchParams({ tab: "unfilled", ...(branchFilter ? { branch: branchFilter } : {}) })}">
                 <span class="ui-ico ui-ico-clipboard" aria-hidden="true"></span>${esc(t("notifDetail.openWork"))}<span class="ui-ico ui-ico-chevron-right" aria-hidden="true"></span>
             </a>`}`;
 

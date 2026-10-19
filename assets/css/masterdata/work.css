@@ -1,0 +1,116 @@
+/* =========================================================
+   Master Data > Work to complete (pages/masterdata/work.html)
+   Built on the same page shell as Edit Out-of-Area Arrears
+   (outarea.css, .oa-page) and the Reason Arrear form (arrears.css).
+========================================================= */
+
+/* Three tabs on one row */
+.oa-tabs.wk-tabs{ grid-template-columns:repeat(3,1fr); }
+.wk-tabs .oa-tab{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    padding:0 2px;
+    font-size:12px;
+    white-space:nowrap;
+}
+.wk-tabs .oa-tab-count{ margin-left:0; padding:1px 5px; font-size:11px; }
+
+.wk-ph-expired b{ color:#FCA5A5; }
+
+/* Two chip rows (branch, then team) */
+#wkBranchChips:not(:empty){ margin-bottom:6px; }
+
+/* Status chips on a card */
+.wk-chip{
+    padding:1px 8px;
+    border-radius:999px;
+    background:rgba(26,46,87,.07);
+    color:var(--arr-text-muted);
+    font-size:11.5px;
+    font-weight:600;
+}
+[data-theme="dark"] .wk-chip{ background:rgba(255,255,255,.08); }
+.wk-chip-expired{ background:rgba(220,38,38,.10); color:#B91C1C; }
+[data-theme="dark"] .wk-chip-expired{ color:#FCA5A5; }
+.wk-chip-pending{ background:rgba(212,175,55,.18); color:#8A6D00; }
+[data-theme="dark"] .wk-chip-pending{ color:#FFD700; }
+.wk-item-pending{ border-color:rgba(212,175,55,.6); }
+.wk-item-reason{
+    margin-top:4px;
+    font-size:12.5px;
+    color:var(--arr-text);
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+}
+
+/* Saved-on-this-phone banner */
+.wk-pending{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:0 0 10px;
+    padding:10px 12px;
+    border-radius:12px;
+    border:1px solid rgba(212,175,55,.55);
+    background:rgba(212,175,55,.12);
+}
+.wk-pending[hidden]{ display:none; }
+.wk-pending-ico{ color:#B8860B; font-size:16px; }
+[data-theme="dark"] .wk-pending-ico{ color:#FFD700; }
+.wk-pending-text{ flex:1; min-width:0; font-size:13px; font-weight:700; color:var(--arr-text); }
+.wk-pending-btn{
+    height:34px;
+    padding:0 14px;
+    border:none;
+    border-radius:10px;
+    background:linear-gradient(180deg,#FFD700,#D4AF37);
+    color:#0E1B3C;
+    font-family:'KRASAR',sans-serif;
+    font-size:13px;
+    font-weight:800;
+    white-space:nowrap;
+    cursor:pointer;
+}
+
+/* Detail actions: ‹  Save  Submit  › */
+.oa-page .wk-actions{
+    display:flex;
+    gap:8px;
+}
+.oa-page .wk-actions button{
+    height:46px;
+    border-radius:12px;
+    font-family:'KRASAR',sans-serif;
+    font-size:14px;
+    font-weight:800;
+    cursor:pointer;
+}
+.oa-page .wk-actions .wk-nav-btn{
+    flex:0 0 46px;
+    border:1px solid var(--arr-border, #e2e6ed);
+    background:transparent;
+    color:var(--arr-text);
+    font-size:22px !important;
+}
+.oa-page .wk-actions .wk-nav-btn:disabled{ opacity:.35; }
+.oa-page .wk-actions .wk-save-btn{
+    flex:1;
+    border:1.5px solid var(--arr-outline-btn-border, #1A2E57);
+    background:transparent;
+    color:var(--arr-outline-btn-text, #1A2E57);
+}
+.oa-page .wk-actions .wk-submit-btn{
+    flex:1.3;
+    border:none;
+    background:linear-gradient(180deg,#FFD700,#D4AF37);
+    color:#0E1B3C;
+}
+
+/* While a loan is open, the summary card steps aside. */
+.page-container:has(#wkDetailScreen[style*="block"]) .oa-page-hero{
+    display:none;
+}

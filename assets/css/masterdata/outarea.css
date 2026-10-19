@@ -7,7 +7,7 @@
     padding:14px 14px 90px;
 }
 
-#outAreaCard.oa-page{
+.oa-page{
     max-width:720px;
     max-height:none;
     margin:0 auto;
@@ -17,7 +17,7 @@
 }
 
 /* Detail screen header: plain (not sticky) inside a page. */
-#outAreaCard.oa-page .outarea-sticky-header{
+.oa-page .outarea-sticky-header{
     position:static;
     margin:-16px -16px 12px;
     padding:12px 14px;
@@ -110,7 +110,7 @@
 .oa-ph-done b{ color:#86EFAC; }
 
 /* ---------- Tabs / search / branch chips stay under the topbar ---------- */
-#outAreaCard.oa-page .oa-sticky-tools{
+.oa-page .oa-sticky-tools{
     position:sticky;
     top:var(--topbar-h, 72px);
     z-index:6;
@@ -139,7 +139,7 @@
 .oa-back-link:active{ transform:scale(.97); }
 
 /* Save / Delete always in reach, just above the bottom nav. */
-#outAreaCard.oa-page .oa-actions{
+.oa-page .oa-actions{
     position:sticky;
     bottom:calc(var(--bottomnav-h, 78px) + 8px);
     z-index:6;
@@ -157,6 +157,6 @@
 }
 
 /* On the page, the delete bar sits just above the bottom nav. */
-#outAreaCard.oa-page .outarea-bulk-bar{
+.oa-page .outarea-bulk-bar{
     bottom:calc(var(--bottomnav-h, 78px) + 8px);
 }
