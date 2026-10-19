@@ -87,3 +87,68 @@
     }
 
 }
+
+/* Row holding spinner + text (+ % in progress mode). */
+.app-loading-row{
+    display:flex;
+    align-items:center;
+    gap:16px;
+}
+.app-loading-pct,
+.app-loading-track,
+.app-loading-sub{
+    display:none;
+}
+
+/* Progress mode — showAppLoading(text, { progress: true }) */
+.app-loading-box.app-loading-progress{
+    flex-direction:column;
+    align-items:stretch;
+    gap:10px;
+    min-width:272px;
+    max-width:calc(100vw - 32px);
+    padding:18px 20px;
+}
+.app-loading-progress .app-loading-row{
+    gap:12px;
+}
+.app-loading-progress .app-loading-spinner{
+    width:34px;
+    height:34px;
+    border-width:4px;
+}
+.app-loading-progress .app-loading-pct{
+    display:block;
+    margin-left:auto;
+    font-size:18px;
+    font-weight:800;
+    color:#0E1B3C;
+    font-variant-numeric:tabular-nums;
+}
+.app-loading-progress .app-loading-track{
+    display:block;
+    height:7px;
+    border-radius:99px;
+    background:#d9dde5;
+    overflow:hidden;
+}
+.app-loading-progress .app-loading-track span{
+    display:block;
+    width:0;
+    height:100%;
+    border-radius:99px;
+    background:linear-gradient(90deg,#D4AF37,#FFD700);
+    transition:width .2s linear;
+}
+.app-loading-progress .app-loading-sub{
+    display:block;
+    font-size:12.5px;
+    color:#5b6474;
+}
+
+/* Progress-mode loads only read data: keep the topbar and bottom nav
+   above the overlay so the user can go back / switch page meanwhile. */
+html.app-loading-free-nav #topbar-container .topbar,
+html.app-loading-free-nav .bottom-nav{
+    z-index:1000000;
+}

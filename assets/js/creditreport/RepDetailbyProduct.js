@@ -664,14 +664,21 @@ window.addEventListener("orientationchange", () => setTimeout(crSetHeaderOffsets
 // ========================================
 // LOADING STATES
 // ========================================
-function crShowLoading(message = t("creditreport.loadingReportData")) {
+// True from a Refresh's server reply until the re-run report is done: the
+// re-run's own crShowLoading() then keeps the Refresh bar going instead of
+// restarting it at 0% as a plain load.
+let crRefreshing = false;
+// Progress-mode overlay (% bar, topbar / bottom nav stay usable);
+// `key` keeps a separate time estimate per kind of load.
+function crShowLoading(message = t("creditreport.loadingReportData"), key = "load") {
     document.getElementById("crSkeleton").style.display = "block";
     document.getElementById("crSearchWrap").style.display = "none";
     document.getElementById("crTableScroll").style.display = "none";
     document.getElementById("crEmptyMsg").style.display = "none";
-    if (typeof showAppLoading === "function") showAppLoading(message);
+    if (!crRefreshing && typeof showAppLoading === "function") showAppLoading(message, { progress: true, key: `crByProduct:${key}` });
 }
 function crHideLoading() {
+    crRefreshing = false;
     document.getElementById("crSkeleton").style.display = "none";
     if (typeof hideAppLoading === "function") hideAppLoading();
 }
@@ -1131,13 +1138,19 @@ document.getElementById("btnCrSnapshot")?.addEventListener("click", crRunSnapsho
 // ========================================
 document.getElementById("btnCrRefreshData")?.addEventListener("click", async () => {
     document.getElementById("crMenuDropdown")?.classList.remove("show");
-    crShowLoading(t("creditreport.detail.refreshingFromDb"));
+    crShowLoading(t("creditreport.detail.refreshingFromDb"), "refresh");
     try {
         const res = await fetch(`${API.BASE_URL}/api/creditreport/byproduct/refresh`, {
             method: "POST",
             headers: { Authorization: `Bearer ${crToken}` }
         });
         const data = await res.json();
+        // One continuous "Refreshing from DB" bar through the re-run below,
+        // timed by the server's last Mongo read (expectMs) when it has one.
+        if (data.ok) {
+            crRefreshing = true;
+            if (data.expectMs > 0 && typeof setAppLoadingExpect === "function") setAppLoadingExpect(data.expectMs + 1500);
+        }
         if (!data.ok) {
             crHideLoading();
             crShowEmpty(data.message || t("creditreport.detail.refreshFailed"));
@@ -1145,6 +1158,7 @@ document.getElementById("btnCrRefreshData")?.addEventListener("click", async () 
         }
         crData = null;
         await crRunReport();
+        if (crRefreshing) crHideLoading();
     } catch (e) {
         console.error("[refresh data] failed:", e);
         crHideLoading();

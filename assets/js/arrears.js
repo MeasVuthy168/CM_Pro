@@ -491,6 +491,20 @@ async function fetchAllArrearsRows() {
 
     const scopeQuery = arrearsScopeMode === "own" ? "&scope=own" : "";
 
+    // Loading-overlay progress: rows received vs. how many this scope
+    // had last time (this device), so the % tracks real pages.
+    const countKey = `cm_arrears_rows:${arrearsScopeMode}`;
+    let expected = 0;
+    try { expected = Number(localStorage.getItem(countKey)) || 0; } catch (e) {}
+    let received = 0;
+    const reportProgress = n => {
+        received += n;
+        if (typeof setAppLoadingProgress !== "function") return;
+        const total = Math.max(expected, received + limit);
+        const rowsWord = (localStorage.getItem("cm_language") === "en") ? "rows" : "ជួរ";
+        setAppLoadingProgress(received / total * 95, `${received.toLocaleString()} / ~${total.toLocaleString()} ${rowsWord}`);
+    };
+
     // Previously this awaited one page at a time — for ~4000 rows
     // that's 4-5 full sequential round-trips. Since the server
     // already handles startRow going past the actual data gracefully
@@ -508,6 +522,10 @@ async function fetchAllArrearsRows() {
                     .then(res => {
                         if (!res.ok) throw new Error(`HTTP ${res.status}`);
                         return res.json();
+                    })
+                    .then(data => {
+                        reportProgress((data && data.rows && data.rows.length) || 0);
+                        return data;
                     })
             );
         }
@@ -527,6 +545,7 @@ async function fetchAllArrearsRows() {
         startRow += BATCH_SIZE * limit;
     }
 
+    try { localStorage.setItem(countKey, String(all.length)); } catch (e) {}
     const valuesArrays = all.map(r => r.values || []);
     writeArrearsRowsCache(arrearsScopeMode, valuesArrays);
     return valuesArrays.map(parseRow);
@@ -3018,7 +3037,9 @@ document.getElementById("btnSubmitAllPending")?.addEventListener("click", submit
 
 async function refreshArrears() {
     if (typeof showAppLoading === "function") {
-        showAppLoading("Loading arrears data...");
+        // Progress mode: % bar driven by the row pages as they arrive,
+        // and the topbar / bottom nav stay usable meanwhile.
+        showAppLoading("Loading arrears data...", { progress: true, key: `arrears:${arrearsScopeMode}` });
     }
 
     try {
