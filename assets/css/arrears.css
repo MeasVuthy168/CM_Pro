@@ -4252,3 +4252,24 @@ body.arr-view-card .arr-sort-chip-row:not([hidden]){ display:flex; }
 }
 [data-theme="dark"] .arr-focus-bar,[data-theme="darkgray"] .arr-focus-bar{ background:#16223F; border:1px solid #223055; }
 .arr-focus-ico .ui-ico{ font-size:18px; color:#FFD700; }
+
+/* "ការងារត្រូវបំពេញ": kind tabs (unfilled / expired / NoCoRespone) */
+.nr-kind-tabs{ margin:0 0 10px; }
+.nr-kind-tabs .oa-tab{ display:inline-flex; align-items:center; justify-content:center; gap:5px; flex-wrap:wrap; }
+.nr-kind-tabs .oa-tab .ui-ico{ font-size:14px; }
+.nr-kind-tabs .oa-tab b{ font-size:11px; font-weight:800; padding:0 6px; border-radius:999px; background:rgba(14,27,60,.08); }
+.nr-kind-tabs .oa-tab.active b{ background:rgba(14,27,60,.16); }
+.nr-stat[hidden]{ display:none; }
+.nr-client-expired{ color:#8A5A00; font-weight:600; }
+[data-theme="dark"] .nr-client-expired,[data-theme="darkgray"] .nr-client-expired{ color:#F4D27A; }
+.nr-stats:has(#nrStatGood[hidden]){ grid-template-columns:repeat(2, 1fr); }
+/* three equal tabs on one row: icon + count, label under */
+.nr-kind-tabs{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:4px; }
+.nr-kind-tabs .oa-tab{ display:grid; grid-template-columns:auto auto; justify-content:center; align-items:center; column-gap:5px; row-gap:1px; padding:7px 4px; white-space:nowrap; min-width:0; }
+.nr-kind-tabs .oa-tab > span:not(.ui-ico){ grid-column:1 / -1; grid-row:2; font-size:11.5px; overflow:hidden; text-overflow:ellipsis; text-align:center; }
+.nr-kind-tabs .oa-tab .ui-ico{ grid-row:1; }
+.nr-kind-tabs .oa-tab b{ grid-row:1; font-size:12.5px; }
+.nr-kind-tabs .oa-tab{ height:auto; min-height:54px; line-height:1.3; row-gap:3px; padding:8px 4px; }
+.nr-kind-tabs .oa-tab > span:not(.ui-ico){ line-height:1.35; padding-bottom:1px; }
+.nr-kind-tabs .oa-tab .ui-ico{ justify-self:end; }
+.nr-kind-tabs .oa-tab b{ justify-self:start; }

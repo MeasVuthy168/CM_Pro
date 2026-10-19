@@ -236,7 +236,7 @@ No Internet Connection
 <button id="btnExportPdf"><img src="/CM_Pro/assets/icons/arrear/export_pdf.png" alt="" class="menu-icon"><span data-i18n="arrears.exportPdf">Export PDF</span></button>
 <button id="btnPrint"><img src="/CM_Pro/assets/icons/arrear/print.png" alt="" class="menu-icon"><span data-i18n="arrears.print">Print</span></button>
 <button id="btnLandscape"><img src="/CM_Pro/assets/icons/arrear/landscape.png" alt="" class="menu-icon"><span data-i18n="arrears.landscape">Landscape</span></button>
-<button id="btnNoReasonSummary"><img src="/CM_Pro/assets/icons/arrear/noReasonArrear.png" alt="" class="menu-icon"><span data-i18n="arrears.menuNoReasonSummary">មិនទាន់បំពេញ Reason Arrear</span></button>
+<button id="btnNoReasonSummary"><img src="/CM_Pro/assets/icons/arrear/noReasonArrear.png" alt="" class="menu-icon"><span data-i18n="arrears.menuNoReasonSummary">ការងារត្រូវបំពេញ</span></button>
 <button id="btnOutArea"><img src="/CM_Pro/assets/icons/arrear/out_area.png" alt="" class="menu-icon"><span data-i18n="arrears.menuOutArea">កែសម្រួលArrearក្រៅតំបន់</span></button>
 <button id="btnColumns"><img src="/CM_Pro/assets/icons/arrear/columns.png" alt="" class="menu-icon"><span data-i18n="arrears.menuColumns">លាក់/បង្ហាញជួរឈរ</span></button>
 </div>
@@ -394,16 +394,23 @@ No Internet Connection
 
 <div class="outarea-sticky-header">
 <div class="oa-detail-title">
-<div class="reason-title" style="margin:0;" data-i18n="arrears.menuNoReasonSummary">មិនទាន់បំពេញ Reason Arrear</div>
+<div class="reason-title" style="margin:0;" data-i18n="arrears.menuNoReasonSummary">ការងារត្រូវបំពេញ</div>
 <div class="nr-updated"><span data-i18n="arrears.lastUploadAtLabel">ទិន្នន័យចុងក្រោយនៅ</span> <span id="noReasonLastUpload">-</span></div>
 </div>
 <button type="button" id="btnNoReasonCloseX" class="outarea-close-x" aria-label="បិទ" data-i18n-aria-label="common.close"><span class="ui-ico ui-ico-close" aria-hidden="true"></span></button>
 </div>
 
+<!-- What kind of work: unfilled reason / expired promise / NoCoRespone -->
+<div class="oa-tabs nr-kind-tabs" role="tablist" id="nrKindTabs">
+<button type="button" class="oa-tab active" data-nr-kind="unfilled" role="tab"><span class="ui-ico ui-ico-edit" aria-hidden="true"></span><span data-i18n="arrears.workUnfilled">មិនទាន់បំពេញ</span><b id="nrKindCount-unfilled">0</b></button>
+<button type="button" class="oa-tab" data-nr-kind="expired" role="tab"><span class="ui-ico ui-ico-clock" aria-hidden="true"></span><span data-i18n="arrears.workExpired">ផុតកំណត់</span><b id="nrKindCount-expired">0</b></button>
+<button type="button" class="oa-tab" data-nr-kind="outarea" role="tab"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span><span>NoCoRespone</span><b id="nrKindCount-outarea">0</b></button>
+</div>
+
 <!-- Totals for the current Branch / Team choice -->
 <div class="nr-stats">
 <div class="nr-stat nr-stat-bad">
-<span class="nr-stat-label" data-i18n="arrears.nrStatMissing">មិនទាន់បំពេញ</span>
+<span class="nr-stat-label" id="nrStatMissingLabel" data-i18n="arrears.nrStatMissing">មិនទាន់បំពេញ</span>
 <strong id="nrStatMissing">0</strong>
 <span class="nr-stat-unit">LD</span>
 </div>
@@ -412,7 +419,7 @@ No Internet Connection
 <strong id="nrStatOfficers">0</strong>
 <span class="nr-stat-unit" data-i18n="arrears.nrStatOfficersUnit">នាក់</span>
 </div>
-<div class="nr-stat nr-stat-good">
+<div class="nr-stat nr-stat-good" id="nrStatGood">
 <span class="nr-stat-label" data-i18n="arrears.nrStatFilled">បានបំពេញ</span>
 <strong id="nrStatPct">0%</strong>
 <span class="arr-progress"><span id="nrStatBar"></span></span>
@@ -471,7 +478,7 @@ No Internet Connection
 <input type="search" id="noReasonClientSearch" placeholder="ស្វែងរកអតិថិជន, LD, CIF..." data-i18n-placeholder="arrears.nrSearchClient" autocomplete="off">
 </div>
 
-<div class="reason-subtitle oa-count nr-hint" data-i18n="arrears.nrTapHint">ចុចលើអតិថិជន ដើម្បីបំពេញ Reason Arrear</div>
+<div class="reason-subtitle oa-count nr-hint" id="noReasonClientsHint" data-i18n="arrears.nrTapHint">ចុចលើអតិថិជន ដើម្បីបំពេញ Reason Arrear</div>
 
 <div id="noReasonClientsTbody" class="oa-list nr-list"></div>
 
