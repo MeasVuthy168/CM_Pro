@@ -1495,3 +1495,6 @@ input.sa-date {
   #orTableWrap th, #orTableWrap td { padding-left: 6px; padding-right: 6px; }
   #orTableWrap th { font-size: 0.68rem; }
 }
+
+/* Preview / Send inside the Alert Thresholds card */
+.sa-preview-section { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--adm-border); }
