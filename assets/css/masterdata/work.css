@@ -155,3 +155,19 @@
 }
 #wkInfo .oa-info-label{ font-size:10.5px; line-height:1.5; }
 #wkInfo .oa-info-value{ font-size:13px; line-height:1.35; }
+
+/* Loan class next to the days late, coloured like Daily Arrears' scale */
+.wk-class-chip{
+    padding:1px 8px;
+    border-radius:999px;
+    font-size:11.5px;
+    font-weight:700;
+    background:rgba(26,46,87,.08);
+    color:var(--arr-text);
+}
+.wk-class-normal{ background:rgba(22,163,74,.14); color:#15803D; }
+[data-theme="dark"] .wk-class-normal{ color:#86EFAC; }
+.wk-class-sm{ background:#E6D200; color:#1C2333; }
+.wk-class-ss{ background:#FFA500; color:#1C2333; }
+.wk-class-doubtful{ background:#FF0000; color:#fff; }
+.wk-class-loss{ background:#8B0000; color:#fff; }

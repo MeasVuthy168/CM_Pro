@@ -409,6 +409,14 @@ function infoRow(icon, label, value, wide) {
     </div>`;
 }
 
+// Loan class colour, same scale as Daily Arrears (Normal green through
+// Loss dark red).
+function classChipCss(value) {
+    const v = String(value || "").trim().toLowerCase().replace(/[\s-]+/g, "");
+    return { normal: "wk-class-normal", specialmention: "wk-class-sm", substandard: "wk-class-ss",
+        doubtful: "wk-class-doubtful", loss: "wk-class-loss" }[v] || "";
+}
+
 async function openDetail(row) {
     if (!row) return;
     wkRow = row;
@@ -420,13 +428,14 @@ async function openDetail(row) {
     $("wkSub").innerHTML = `
         <span>${escapeHtml(row.loanNumber || row.concate)} · CIF ${escapeHtml(row.cif)}</span>
         ${Number.isFinite(day) ? `<span class="arr-day-badge">${day.toLocaleString()} <small>${escapeHtml(t("arrears.cardDays"))}</small></span>` : ""}
+        ${row.class ? `<span class="wk-class-chip ${classChipCss(row.class)}">${escapeHtml(row.class)}</span>` : ""}
         ${amt ? `<span class="oa-hero-arrears">Arrears ${escapeHtml(amt)}${row.ccy ? ` ${escapeHtml(row.ccy)}` : ""}</span>` : ""}`;
     $("wkInfo").innerHTML =
         infoRow("pin", t("work.address"), row.location, true) +
         infoRow("phone", t("work.phone"), row.tell) +
         infoRow("idcard", t("work.accountLoan"), row.accountLoan) +
         infoRow("officer", t("work.officer"), row.coResponse) +
-        infoRow("package", t("work.product"), [row.product, row.class].filter(Boolean).join(" · "));
+        infoRow("package", t("work.product"), row.product);
 
     // One reason for every LD of the CIF (only offered when it has several).
     const n = siblings(row).length;
