@@ -211,55 +211,9 @@ function setLdSort(state) {
 attachSuggestions(reasonAJ, () => distinctSorted(allRows, "ajReason"));
 attachSuggestions(reasonAK, () => distinctSorted(allRows, "akSolution"));
 
-// ========================================
-// FIELD TEMPLATES
-// Both fields follow a fixed "(label)value, (label)value" shape. The
-// scaffolding is inserted on focus so it never has to be typed, with
-// the caret parked after the first label.
-//
-// A value that is still nothing but scaffolding counts as empty — see
-// isTemplateOnly() — so merely tapping a field and moving on doesn't
-// register as an unsaved edit or save a row of empty brackets.
-// ========================================
-const REASON_TEMPLATES = {
-    reasonAJ: "(ពេលខ្ចី), (បច្ចុប្បន្ន)",
-    reasonAK: "(មូលហេតុ), (ដំណោះស្រាយ)"
-};
-
-// Strips the labels and separators; whatever's left is real content.
-function isTemplateOnly(value, template) {
-    const labels = template.match(/\([^)]*\)/g) || [];
-    let rest = String(value || "");
-    labels.forEach(l => { rest = rest.split(l).join(""); });
-    return rest.replace(/[\s,]/g, "") === "";
-}
-
-function applyTemplate(el) {
-    const tpl = REASON_TEMPLATES[el.id];
-    if (!tpl) return;
-    if (el.value.trim() !== "") return;
-
-    el.value = tpl;
-
-    // Caret after the first "(label)" so typing continues in the right
-    // place instead of at the very end.
-    const pos = tpl.indexOf(")") + 1;
-    requestAnimationFrame(() => {
-        try { el.setSelectionRange(pos, pos); } catch (e) { /* not supported */ }
-    });
-}
-
-[reasonAJ, reasonAK].forEach(el => {
-    el?.addEventListener("focus", () => applyTemplate(el));
-
-    // Clear the field entirely if it's left holding only scaffolding —
-    // otherwise "(ពេលខ្ចី), (បច្ចុប្បន្ន)" would be saved as if it were
-    // a real answer.
-    el?.addEventListener("blur", () => {
-        const tpl = REASON_TEMPLATES[el.id];
-        if (tpl && isTemplateOnly(el.value, tpl)) el.value = "";
-    });
-});
+// Field templates ("(ពេលខ្ចី), (បច្ចុប្បន្ន)" scaffolding on focus) —
+// in assets/js/reason-kit.js, shared with Master Data > Work to complete.
+ReasonKit.attachTemplates(reasonAJ, reasonAK);
 
 // ========================================
 // DISTINCT VALUE HELPERS
@@ -282,46 +236,9 @@ function distinctSorted(rows, field) {
 // pick a previously-used answer instead of retyping it.
 // ========================================
 
+// Previously-used answers under the field (assets/js/reason-kit.js).
 function attachSuggestions(fieldEl, getSourceValues) {
-    const list = document.createElement("ul");
-    list.className = "suggestion-list";
-    fieldEl.parentElement.appendChild(list);
-
-    function hide() {
-        list.classList.remove("show");
-        list.innerHTML = "";
-    }
-
-    function showSuggestionsFor(query) {
-        const q = query.trim().toLowerCase();
-        if (!q) { hide(); return; }
-
-        const matches = getSourceValues()
-            .filter(v => v.toLowerCase().includes(q) && v.toLowerCase() !== q)
-            .slice(0, 8);
-
-        if (!matches.length) { hide(); return; }
-
-        list.innerHTML = "";
-        matches.forEach(value => {
-            const li = document.createElement("li");
-            li.textContent = value;
-            li.addEventListener("mousedown", (e) => {
-                // mousedown (not click) so this fires before the field's
-                // own blur event closes the dropdown first
-                e.preventDefault();
-                fieldEl.value = value;
-                hide();
-                fieldEl.focus();
-            });
-            list.appendChild(li);
-        });
-        list.classList.add("show");
-    }
-
-    fieldEl.addEventListener("input", () => showSuggestionsFor(fieldEl.value));
-    fieldEl.addEventListener("focus", () => showSuggestionsFor(fieldEl.value));
-    fieldEl.addEventListener("blur", hide);
+    return ReasonKit.attachSuggestions(fieldEl, getSourceValues);
 }
 
 function setSelectOptions(selectEl, values, { keepFirstN = 1 } = {}) {
@@ -2091,69 +2008,15 @@ document.addEventListener("keydown", (e) => {
 // display current even when it's ahead of that sync).
 // ========================================
 
-async function fetchReasonArrearData(concateValues) {
-    const CHUNK = 800; // matches the VBA module's own GET_CHUNK
-
-    const chunks = [];
-    for (let i = 0; i < concateValues.length; i += CHUNK) {
-        const chunk = concateValues.slice(i, i + CHUNK);
-        if (chunk.length) chunks.push(chunk);
-    }
-
-    // Fire all chunks concurrently rather than awaiting them one at a
-    // time — for ~2871 rows that's ~4 requests running in parallel
-    // instead of sequentially, roughly a 4x cut in wait time. Each
-    // chunk is independent, so there's no ordering requirement here.
-    const results = await Promise.all(chunks.map(async (chunk) => {
-        try {
-            const res = await fetch(`${API.BASE_URL}/api/reasonarrear/get`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${arrearsToken}`
-                },
-                body: JSON.stringify({ cifs: chunk })
-            });
-            const data = await res.json();
-            return data.ok ? (data.data || []) : [];
-        } catch (err) {
-            console.error("[reasonarrear] chunk fetch failed:", err);
-            return []; // this chunk's rows just won't get overlaid, rest continue
-        }
-    }));
-
-    const map = new Map();
-    results.flat().forEach(item => {
-        if (item.cif) map.set(item.cif, item);
-    });
-
-    return map;
+// Shared with Master Data > Work to complete — see assets/js/reason-kit.js.
+function fetchReasonArrearData(concateValues) {
+    return ReasonKit.fetchReasons(concateValues, arrearsToken);
 }
 
-// Mirrors VBA's StatusFromDate exactly: compares the follow-up date
-// (AL) against today, in whole days.
-//   diff == 0  -> "Today_Payment"
-//   diff  > 0  -> "Upcoming_left: N Days"
-//   diff  < 0  -> "Expired: N Days"
-//   no date    -> "" (matches VBA's blank case, not "Not Yet Followup"
-//                  — that VBA line is commented out in the source)
+// VBA StatusFromDate ("Today_Payment" / "Upcoming_left: N Days" /
+// "Expired: N Days") — in assets/js/reason-kit.js.
 function computeStatusFromDate(alFollowupDMY) {
-    if (!alFollowupDMY) return "";
-
-    const parts = alFollowupDMY.split("/");
-    if (parts.length !== 3) return "";
-    const [dd, mm, yyyy] = parts.map(Number);
-    if (!dd || !mm || !yyyy) return "";
-
-    const followup = Date.UTC(yyyy, mm - 1, dd);
-    const now = new Date();
-    const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-
-    const diffDays = Math.round((followup - todayUTC) / 86400000);
-
-    if (diffDays === 0) return "Today_Payment";
-    if (diffDays > 0) return `Upcoming_left: ${diffDays} Days`;
-    return `Expired: ${Math.abs(diffDays)} Days`;
+    return ReasonKit.computeStatus(alFollowupDMY);
 }
 
 function applyReasonArrearOverlay(rows, map) {
@@ -2191,40 +2054,14 @@ function applyReasonArrearOverlay(rows, map) {
 // edited in between.
 // ========================================
 
-const PENDING_STORAGE_KEY = "cmpro_pending_reasons";
-
-function getPendingReasonsMap() {
-    try {
-        return JSON.parse(localStorage.getItem(PENDING_STORAGE_KEY) || "{}");
-    } catch (err) {
-        console.error("[pending reasons] corrupt localStorage data, resetting:", err);
-        return {};
-    }
-}
-
-function setPendingReason(concate, aj, ak, alISO, gps) {
-    const map = getPendingReasonsMap();
-    map[concate] = {
-        aj,
-        ak,
-        al: alISO,
-        gps: gps || "",
-        savedAt: new Date().toISOString()
-    };
-    localStorage.setItem(PENDING_STORAGE_KEY, JSON.stringify(map));
-    updatePendingBadge();
-}
-
-function removePendingReasons(concates) {
-    const map = getPendingReasonsMap();
-    concates.forEach(c => delete map[c]);
-    localStorage.setItem(PENDING_STORAGE_KEY, JSON.stringify(map));
-    updatePendingBadge();
-}
-
-function getPendingCount() {
-    return Object.keys(getPendingReasonsMap()).length;
-}
+// The store itself (localStorage "cmpro_pending_reasons") lives in
+// assets/js/reason-kit.js, shared with Master Data > Work to complete,
+// so a draft saved on either page shows on both.
+function getPendingReasonsMap() { return ReasonKit.getPending(); }
+function setPendingReason(concate, aj, ak, alISO, gps) { ReasonKit.setPending(concate, aj, ak, alISO, gps); }
+function removePendingReasons(concates) { ReasonKit.removePending(concates); }
+function getPendingCount() { return ReasonKit.pendingCount(); }
+ReasonKit.onPendingChange(() => updatePendingBadge());
 
 function updatePendingBadge() {
     const count = getPendingCount();
@@ -2276,27 +2113,7 @@ async function submitAllPendingReasons() {
     }
 
     try {
-        const UP_CHUNK = 1000;
-        for (let i = 0; i < concates.length; i += UP_CHUNK) {
-            const chunkConcates = concates.slice(i, i + UP_CHUNK);
-            // The 5th element tells the server this client manages GPS. Always
-            // sent, even when empty, so clearing a coordinate actually clears
-            // it server-side. (The VBA still sends 4 — see the backend note.)
-            const chunkRows = chunkConcates.map(c =>
-                [c, map[c].aj, map[c].ak, map[c].al, map[c].gps || ""]
-            );
-
-            const res = await fetch(`${API.BASE_URL}/api/reasonarrear/upsert`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${arrearsToken}`
-                },
-                body: JSON.stringify({ uploadedBy, rows: chunkRows })
-            });
-            const data = await res.json();
-            if (!data.ok) throw new Error(data.message || "Submit failed.");
-        }
+        await ReasonKit.upsertPending(concates, map, arrearsToken, uploadedBy);
 
         // Mirror VBA: after the upsert, pull the confirmed data back
         // (View step) rather than trusting the upsert response alone.
@@ -2436,20 +2253,9 @@ function escapeHtml(s) {
     ));
 }
 
-// Accepts "11.5564, 104.9282" or "11.5564,104.9282".
-// Returns null when it isn't a usable coordinate pair.
+// "11.5564, 104.9282" -> { lat, lng } or null (assets/js/reason-kit.js).
 function parseGps(text) {
-    const m = String(text || "").trim().match(
-        /^(-?\d{1,2}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$/
-    );
-    if (!m) return null;
-
-    const lat = parseFloat(m[1]);
-    const lng = parseFloat(m[2]);
-    if (!isFinite(lat) || !isFinite(lng)) return null;
-    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
-
-    return { lat, lng };
+    return ReasonKit.parseGps(text);
 }
 
 // "មើលលើផែនទី" is hidden until there's a valid coordinate — offering
@@ -2461,170 +2267,19 @@ function updateGpsButtons() {
 }
 
 // ========================================
-// MAP PICKER
-// Leaflet + OpenStreetMap tiles: no API key, and the tiles work in
-// Cambodia without a billing account. The map is created lazily on
-// first open, since most sessions never touch it.
+// MAP PICKER — Leaflet, in assets/js/reason-kit.js (shared with
+// Master Data > Work to complete).
 // ========================================
-let arrMap = null;
-let arrMapMarker = null;
-let arrMapLayers = null;
-
-// Street vs satellite. Both are keyless and free — Esri's imagery is
-// usually the more useful of the two for locating a rural house, where
-// OSM often has no road drawn at all.
-const MAP_TILES = {
-    street: {
-        url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        opts: { maxZoom: 19, attribution: "© OpenStreetMap" }
-    },
-    satellite: {
-        url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        // Esri serves imagery to z19 in most of Cambodia; maxNativeZoom
-        // lets Leaflet upscale beyond that instead of showing blank
-        // tiles when the person zooms right in.
-        opts: { maxZoom: 21, maxNativeZoom: 19, attribution: "© Esri" }
-    }
-};
-
-// Remembered across sessions — an officer who prefers satellite
-// shouldn't have to switch every single time.
-const MAP_MODE_KEY = "CMPRO_map_mode";
-
-function currentMapMode() {
-    return localStorage.getItem(MAP_MODE_KEY) === "satellite" ? "satellite" : "street";
-}
-
-function setMapMode(mode) {
-    if (!arrMap || !arrMapLayers) return;
-
-    const next = mode === "satellite" ? "satellite" : "street";
-    const other = next === "satellite" ? "street" : "satellite";
-
-    if (arrMap.hasLayer(arrMapLayers[other])) arrMap.removeLayer(arrMapLayers[other]);
-    if (!arrMap.hasLayer(arrMapLayers[next])) arrMapLayers[next].addTo(arrMap);
-
-    localStorage.setItem(MAP_MODE_KEY, next);
-
-    document.querySelectorAll(".map-mode-btn").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.mode === next);
+document.getElementById("btnGpsPick")?.addEventListener("click", () => {
+    ReasonKit.openMapPicker({
+        initial: reasonGPS?.value,
+        notify,
+        confirm: (lat, lng) => {
+            reasonGPS.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            updateGpsButtons();
+            setGpsHint("បានជ្រើសទីតាំងពីផែនទី", "ok");
+        }
     });
-}
-
-// Falls back to Svay Rieng town when the field is empty and the device
-// won't share a position — better than dropping the pin in the ocean
-// at 0,0.
-const MAP_FALLBACK = { lat: 11.0879, lng: 105.7993 };
-
-function setMapCoords(lat, lng) {
-    const el = document.getElementById("mapCoords");
-    if (el) el.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-}
-
-function openMapPicker() {
-    const backdrop = document.getElementById("mapBackdrop");
-    if (!backdrop) return;
-
-    if (typeof L === "undefined") {
-        notify("មិនអាចផ្ទុកផែនទីបានទេ — សូមពិនិត្យអ៊ីនធឺណិត", "error");
-        return;
-    }
-
-    const existing = parseGps(reasonGPS?.value);
-    const start = existing || MAP_FALLBACK;
-
-    backdrop.classList.add("show");
-
-    if (!arrMap) {
-        arrMap = L.map("mapCanvas").setView([start.lat, start.lng], existing ? 17 : 13);
-
-        arrMapLayers = {
-            street: L.tileLayer(MAP_TILES.street.url, MAP_TILES.street.opts),
-            satellite: L.tileLayer(MAP_TILES.satellite.url, MAP_TILES.satellite.opts)
-        };
-        arrMapLayers[currentMapMode()].addTo(arrMap);
-
-        // A divIcon (CSS-drawn) rather than Leaflet's default marker:
-        // the default loads marker-icon.png relative to leaflet.css, which
-        // 404s from the CDN — the pin was being created but rendering as
-        // nothing, so taps looked like they did nothing.
-        const pinIcon = L.divIcon({
-            className: "map-pin-wrap",
-            html: '<div class="map-pin"></div>',
-            iconSize: [26, 34],
-            iconAnchor: [13, 34]   // tip of the pin sits on the coordinate
-        });
-
-        arrMapMarker = L.marker([start.lat, start.lng], {
-            icon: pinIcon,
-            draggable: true
-        }).addTo(arrMap);
-
-        arrMapMarker.on("dragend", () => {
-            const { lat, lng } = arrMapMarker.getLatLng();
-            setMapCoords(lat, lng);
-        });
-
-        // Tap anywhere to place the pin. This is the primary way to set
-        // the location — dragging still works, but on a phone tapping the
-        // spot directly is far quicker than dragging across the screen.
-        arrMap.on("click", (e) => {
-            arrMapMarker.setLatLng(e.latlng);
-            setMapCoords(e.latlng.lat, e.latlng.lng);
-        });
-    } else {
-        arrMap.setView([start.lat, start.lng], existing ? 17 : 13);
-        arrMapMarker.setLatLng([start.lat, start.lng]);
-    }
-
-    setMapCoords(start.lat, start.lng);
-    setMapMode(currentMapMode());
-
-    // Leaflet measures the container on creation; inside a modal that's
-    // zero-sized until it's shown, so the tiles render grey without this.
-    setTimeout(() => arrMap.invalidateSize(), 60);
-}
-
-function closeMapPicker() {
-    document.getElementById("mapBackdrop")?.classList.remove("show");
-}
-
-document.querySelectorAll(".map-mode-btn").forEach(btn => {
-    btn.addEventListener("click", () => setMapMode(btn.dataset.mode));
-});
-
-document.getElementById("btnGpsPick")?.addEventListener("click", openMapPicker);
-document.getElementById("btnMapClose")?.addEventListener("click", closeMapPicker);
-
-document.getElementById("mapBackdrop")?.addEventListener("click", (e) => {
-    if (e.target.id === "mapBackdrop") closeMapPicker();
-});
-
-// Centre the picker on the device's position without leaving the map.
-document.getElementById("btnMapHere")?.addEventListener("click", () => {
-    if (!navigator.geolocation) {
-        notify("ឧបករណ៍នេះមិនអាចកំណត់ទីតាំងបានទេ", "warning");
-        return;
-    }
-    navigator.geolocation.getCurrentPosition(
-        pos => {
-            const { latitude: lat, longitude: lng } = pos.coords;
-            arrMap.setView([lat, lng], 17);
-            arrMapMarker.setLatLng([lat, lng]);
-            setMapCoords(lat, lng);
-        },
-        () => notify("មិនអាចកំណត់ទីតាំងបានទេ", "warning"),
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-});
-
-document.getElementById("btnMapConfirm")?.addEventListener("click", () => {
-    if (!arrMapMarker) return;
-    const { lat, lng } = arrMapMarker.getLatLng();
-    reasonGPS.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-    updateGpsButtons();
-    setGpsHint("បានជ្រើសទីតាំងពីផែនទី", "ok");
-    closeMapPicker();
 });
 
 function setGpsHint(message, kind) {
@@ -3850,10 +3505,10 @@ document.getElementById("btnNoReasonClientsCloseX")?.addEventListener("click", c
 document.getElementById("btnNoReasonCloseX")?.addEventListener("click", closeNoReasonSummary);
 document.getElementById("btnNoReasonClose")?.addEventListener("click", closeNoReasonSummary);
 
+// "ការងារត្រូវបំពេញ" now opens its own page (Master Data > Work to
+// complete). The summary modal below still serves ?work= links.
 document.getElementById("btnNoReasonSummary")?.addEventListener("click", () => {
-    const search = document.getElementById("noReasonSearch");
-    if (search) search.value = "";
-    showNoReasonSummary();
+    location.href = "/CM_Pro/pages/masterdata/work.html";
 });
 
 document.getElementById("noReasonBranchFilter")?.addEventListener("change", showNoReasonSummary);
