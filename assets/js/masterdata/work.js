@@ -5,9 +5,11 @@
 //
 // Rows come from GET /api/arreast24byco/work (the user's scope, with the
 // saved reasonarrear record already applied). Saving and submitting use
-// the same local pending store and API as Daily Arrears' Reason Arrear
-// modal (assets/js/reason-kit.js), so a draft saved on one page shows on
-// the other.
+// the local pending store and API in assets/js/reason-kit.js, which Daily
+// Arrears reads too, so a draft saved here shows there.
+//
+// It is also Daily Arrears' Reason Arrear editor: tapping a loan there
+// opens ?from=arrears on that loan (see "Opened from Daily Arrears").
 // ========================================
 
 const t = (key) => (window.CMI18n ? CMI18n.t(key) : key);
@@ -173,6 +175,48 @@ async function wkLoadInfo() {
     } catch (e) {
         $("wkUpdated").textContent = "-";
     }
+}
+
+// ---------- opened from Daily Arrears on one loan ----------
+// Daily Arrears hands over the loan, the rows ‹ › walks there (its filter
+// and sort, or one customer's LDs), those customers' other LDs and its
+// answer suggestions. The page is then just the editor: Back, Save and
+// Submit all return to Daily Arrears, which puts its filters back and
+// scrolls to the same loan.
+const WK_FOCUS_KEY = "cm_work_focus_v1";
+const wkFocus = (() => {
+    if (wkParams.get("from") !== "arrears") return null;
+    try {
+        const f = JSON.parse(sessionStorage.getItem(WK_FOCUS_KEY) || "null");
+        if (!f || !Array.isArray(f.rows) || f.username !== (wkUser.username || "")) return null;
+        return f;
+    } catch (e) {
+        return null;
+    }
+})();
+
+function openFocus() {
+    const label = document.querySelector("#btnWkBack [data-i18n]");
+    if (label) {
+        label.dataset.i18n = "dashboard.dailyArrears";
+        label.textContent = t("dashboard.dailyArrears");
+    }
+    $("reasonApplyAll").checked = !!wkFocus.applyAll;
+    wkRows = wkFocus.rows;
+    applyPending(wkRows);
+    const byConcate = new Map(wkRows.map(r => [r.concate, r]));
+    wkShown = wkFocus.nav.map(c => byConcate.get(c)).filter(Boolean);
+    openDetail(byConcate.get(wkFocus.concate) || wkShown[0]);
+}
+
+// Back to Daily Arrears, with a message for it to show there.
+function backToArrears(flash) {
+    try {
+        sessionStorage.setItem("cm_arrears_back_v1", String(Date.now()));
+        if (flash) sessionStorage.setItem("cm_work_flash_v1", JSON.stringify({ at: Date.now(), ...flash }));
+    } catch (e) {}
+    if (/\/pages\/arrears\//.test(document.referrer) && history.length > 1) history.back();
+    else location.href = "/CM_Pro/pages/arrears/index.html";
 }
 
 // ---------- list ----------
@@ -486,8 +530,16 @@ async function submitAll() {
             r.__pending = false;
         });
         ReasonKit.removePending(concates);
-        // Daily Arrears' handed-over copy no longer matches the server.
-        try { localStorage.setItem(WK_SUBMITTED_KEY, String(Date.now())); } catch (e) {}
+        // Daily Arrears' handed-over copy no longer matches the server;
+        // it shows these values until its own reload confirms them.
+        try {
+            localStorage.setItem(WK_SUBMITTED_KEY, String(Date.now()));
+            const recent = JSON.parse(sessionStorage.getItem("cm_work_recent_v1") || "{}");
+            saved.forEach((v, concate) => {
+                recent[concate] = { aj: v.aj || "", ak: v.ak || "", al: v.al || "", uploadedBy: v.uploadedBy || "", uploadedAt: v.uploadedAt || "" };
+            });
+            sessionStorage.setItem("cm_work_recent_v1", JSON.stringify(recent));
+        } catch (e) {}
         notify(tf("work.submitted", { n: concates.length.toLocaleString() }), "success");
         return true;
     } catch (err) {
@@ -509,19 +561,25 @@ function backToList() {
 
 $("btnWkBack").addEventListener("click", () => {
     if (isDirty() && !confirm(t("work.leaveUnsaved"))) return;
+    if (wkFocus) return backToArrears();
     backToList();
 });
 
 $("btnWkSave").addEventListener("click", () => {
     const n = saveDraft();
     if (!n) return;
-    notify(n > 1 ? t("arrears.savedAllLd").replace("{n}", n.toLocaleString()) : t("work.savedToast"), "success");
+    const message = n > 1 ? t("arrears.savedAllLd").replace("{n}", n.toLocaleString()) : t("work.savedToast");
+    if (wkFocus) return backToArrears({ message, type: "success" });
+    notify(message, "success");
     backToList();
 });
 
 $("btnWkSubmit").addEventListener("click", async () => {
     if (isDirty() && !saveDraft()) return;
-    if (await submitAll()) backToList();
+    const n = ReasonKit.pendingCount();
+    if (!(await submitAll())) return;
+    if (wkFocus) return backToArrears({ message: tf("work.submitted", { n: n.toLocaleString() }), type: "success" });
+    backToList();
 });
 
 $("btnWkSubmitAll").addEventListener("click", async () => {
@@ -545,7 +603,8 @@ $("btnWkNext").addEventListener("click", () => step(1));
 
 // ---------- fields: templates, suggestions, GPS ----------
 ReasonKit.attachTemplates(reasonAJ, reasonAK);
-const distinct = field => [...new Set(wkRows.map(r => String(r[field] || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+const distinct = field => wkFocus?.suggest?.[field] ||
+    [...new Set(wkRows.map(r => String(r[field] || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 ReasonKit.attachSuggestions(reasonAJ, () => distinct("aj"));
 ReasonKit.attachSuggestions(reasonAK, () => distinct("ak"));
 
@@ -593,8 +652,12 @@ $("btnWkRefresh").addEventListener("click", () => {
     wkLoadInfo();
 });
 
-wkLoad();
-if (!takeSnapshot()) wkLoadInfo();
+if (wkFocus) {
+    openFocus();
+} else {
+    wkLoad();
+    if (!takeSnapshot()) wkLoadInfo();
+}
 
 // ========================================
 // COMPONENT LOADER (topbar + bottomnav)

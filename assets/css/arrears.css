@@ -2144,40 +2144,8 @@ display:none !important;
 }
 
 /* ==========================================
-   REASON ARREAR — info block, GPS, record nav
+   REASON ARREAR — fields and GPS (Work to complete's editor)
 ========================================== */
-
-/* ---- Loan context under the title ---- */
-.reason-info{
-    display:flex;
-    flex-wrap:wrap;
-    gap:3px 14px;
-    margin:0 0 10px;
-    padding:8px 10px;
-    border-radius:10px;
-    background:var(--arr-row-alt, rgba(0,0,0,.04));
-    border:1px solid var(--arr-border, #e2e6ed);
-    font-size:11.5px;
-    line-height:1.5;
-}
-.reason-info:empty{ display:none; }
-
-.reason-info-row{
-    display:flex;
-    align-items:baseline;
-    gap:5px;
-    min-width:0;
-}
-.reason-info-label{
-    color:var(--arr-text-muted, #6b7280);
-    font-weight:600;
-    white-space:nowrap;
-}
-.reason-info-value{
-    color:var(--arr-text, #1c2333);
-    font-weight:700;
-    word-break:break-word;
-}
 
 /* ---- Taller reason/solution box ----
    The old height showed ~2 lines, so longer entries were cut
@@ -2231,42 +2199,6 @@ display:none !important;
 .reason-gps-hint.ok{ color:#1a7f37; }
 .reason-gps-hint.bad{ color:var(--arr-danger, #b3261e); }
 
-/* ---- Record navigation ---- */
-.reason-nav{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:16px;
-    margin-top:12px;
-    padding-top:10px;
-    border-top:1px solid var(--arr-border, #e2e6ed);
-}
-.reason-nav-btn{
-    width:46px;
-    height:34px;
-    border-radius:10px;
-    border:1px solid var(--arr-border, #e2e6ed);
-    background:var(--arr-card-bg, #fff);
-    color:var(--arr-navy, #1a2e57);
-    font-size:20px;
-    font-weight:800;
-    font-family:'KRASAR',sans-serif;
-    line-height:1;
-    cursor:pointer;
-}
-.reason-nav-btn:active:not(:disabled){ transform:scale(.96); }
-.reason-nav-btn:disabled{
-    opacity:.35;
-    cursor:default;
-}
-.reason-nav-pos{
-    font-size:12px;
-    font-weight:700;
-    color:var(--arr-text-muted, #6b7280);
-    min-width:64px;
-    text-align:center;
-}
-
 /* The card is taller now (info block + GPS + nav), so cap it to the
    viewport and scroll internally rather than letting the action
    buttons fall off the bottom of the screen. */
@@ -2279,20 +2211,6 @@ display:none !important;
     padding:16px 16px 14px;
     overflow-y:auto;
     -webkit-overflow-scrolling:touch;
-}
-
-/* The customer / contract / CIF rows identify the record, so each takes
-   a full row instead of flowing inline with the shorter loan details. */
-.reason-info-row.reason-info-lead{
-    flex:0 0 100%;
-    gap:8px;
-}
-.reason-info-row.reason-info-lead .reason-info-value{
-    color:var(--arr-navy, #1a2e57);
-    font-weight:800;
-}
-[data-theme="dark"] .reason-info-row.reason-info-lead .reason-info-value{
-    color:var(--arr-gold-light, #ffd700);
 }
 
 /* Subtitle is now empty — its content moved into the info block. Hidden
@@ -2501,44 +2419,6 @@ display:none !important;
    fields' size — otherwise the text visibly shrinks on selection. */
 .suggestion-list li{
     font-size:11.5px;
-}
-
-/* ==========================================
-   REASON ARREAR — info block, fixed 4-line layout
-   Replaces the earlier flow-and-wrap arrangement: each line holds two
-   fields, so the same field always lands in the same place regardless
-   of how long the values are.
-========================================== */
-.reason-info{
-    /* switch off the wrap-everything behaviour from the earlier rules */
-    display:block;
-    padding:9px 11px;
-}
-
-.reason-info-line{
-    display:flex;
-    flex-wrap:wrap;
-    align-items:baseline;
-    gap:2px 16px;
-    line-height:1.75;
-}
-
-.reason-info-cell{
-    display:flex;
-    align-items:baseline;
-    gap:5px;
-    min-width:0;
-}
-
-/* The first cell on each line takes the space it needs; the second sits
-   right after it rather than being pushed to the far edge. */
-.reason-info-cell .reason-info-value{
-    font-weight:800;
-    color:var(--arr-navy, #1a2e57);
-    word-break:break-word;
-}
-[data-theme="dark"] .reason-info-cell .reason-info-value{
-    color:var(--arr-gold-light, #ffd700);
 }
 
 /* ==========================================

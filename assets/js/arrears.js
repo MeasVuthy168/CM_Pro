@@ -2,7 +2,8 @@
 // Daily Arrears — ArreasT24ByCO web port
 // Reads from GET /api/arreast24byco/rows (paginated, 41 cols/row,
 // same collection the VBA Download/Upload buttons already sync).
-// Reason Arrear panel reads/writes via /api/reasonarrear/* keyed
+// Reason Arrear (filled on Work to complete, which a tap on a loan
+// opens) reads/writes via /api/reasonarrear/* keyed
 // on the row's Concate value (AG) — see COL.CONCATE below and the
 // note in the HTML/plan message for why, not raw CIF.
 // ========================================
@@ -108,22 +109,10 @@ const filterEls = {
     promiseStatus: document.getElementById("fPromiseStatus")
 };
 
-const reasonBackdrop = document.getElementById("reasonBackdrop");
-const reasonCard = document.getElementById("reasonCard");
-const reasonSubtitle = document.getElementById("reasonSubtitle");
-const reasonAJ = document.getElementById("reasonAJ");
-const reasonAK = document.getElementById("reasonAK");
-const reasonAL = document.getElementById("reasonAL");
-const reasonGPS = document.getElementById("reasonGPS");
-const reasonInfo = document.getElementById("reasonInfo");
-const reasonGpsHint = document.getElementById("reasonGpsHint");
-const reasonNavPos = document.getElementById("reasonNavPos");
-const reasonMeta = document.getElementById("reasonMeta");
-
 let allRows = [];        // every row, parsed to objects, unfiltered
 let arrearsUnsortedRows = []; // post-filter order, never reordered by sort — what "default" restores
 let currentRows = [];    // whatever's currently displayed (post-filter, post-sort)
-let selectedRow = null;  // row object behind the open Reason Arrear panel
+let selectedRow = null;  // the loan last opened in Work to complete (highlighted)
 
 // ========================================
 // COLUMN SORT
@@ -208,13 +197,6 @@ function setLdSort(state) {
     updateSortUi();
 }
 
-attachSuggestions(reasonAJ, () => distinctSorted(allRows, "ajReason"));
-attachSuggestions(reasonAK, () => distinctSorted(allRows, "akSolution"));
-
-// Field templates ("(ពេលខ្ចី), (បច្ចុប្បន្ន)" scaffolding on focus) —
-// in assets/js/reason-kit.js, shared with Master Data > Work to complete.
-ReasonKit.attachTemplates(reasonAJ, reasonAK);
-
 // ========================================
 // DISTINCT VALUE HELPERS
 // ========================================
@@ -226,19 +208,6 @@ function distinctSorted(rows, field) {
         if (v) set.add(v);
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
-}
-
-// ========================================
-// PREDICTIVE SUGGESTIONS (Reason Arrear's AJ/AK fields)
-// Custom dropdown rather than a native <datalist>, since AK is a
-// <textarea> and datalist only works with <input>. Suggestions come
-// from other rows' existing values in that same column, so users can
-// pick a previously-used answer instead of retyping it.
-// ========================================
-
-// Previously-used answers under the field (assets/js/reason-kit.js).
-function attachSuggestions(fieldEl, getSourceValues) {
-    return ReasonKit.attachSuggestions(fieldEl, getSourceValues);
 }
 
 function setSelectOptions(selectEl, values, { keepFirstN = 1 } = {}) {
@@ -359,13 +328,13 @@ function arrearsCacheKey(mode) {
     return ARREARS_CACHE_KEY + (mode === "own" ? "_own" : "");
 }
 
-function readArrearsRowsCache(mode) {
+function readArrearsRowsCache(mode, maxAgeMs = ARREARS_CACHE_TTL_MS) {
     try {
         const raw = sessionStorage.getItem(arrearsCacheKey(mode));
         if (!raw) return null;
         const parsed = JSON.parse(raw);
         if (!parsed || !Array.isArray(parsed.rows)) return null;
-        if (Date.now() - parsed.fetchedAt > ARREARS_CACHE_TTL_MS) return null;
+        if (Date.now() - parsed.fetchedAt > maxAgeMs) return null;
         return parsed.rows;
     } catch (e) {
         return null;
@@ -394,9 +363,11 @@ function writeArrearsRowsCache(mode, valuesArrays) {
 // ========================================
 
 async function fetchAllArrearsRows() {
-    const cached = readArrearsRowsCache(arrearsScopeMode);
+    // Coming back from Work to complete, the rows loaded before going
+    // there are still good (they only change on an ArreasT24ByCO upload).
+    const cached = readArrearsRowsCache(arrearsScopeMode, arrearsReturn ? ARREARS_RETURN_MAX_MS : ARREARS_CACHE_TTL_MS);
     if (cached) {
-        console.log(`[arrears cache] using cached rows (${cached.length} rows, age < ${ARREARS_CACHE_TTL_MS / 1000}s) — skipped the network fetch`);
+        console.log(`[arrears cache] using cached rows (${cached.length} rows) — skipped the network fetch`);
         return cached.map(parseRow);
     }
 
@@ -1095,7 +1066,7 @@ function renderTableView(rows) {
 // loan with the fields an officer acts on (who, how late, how much,
 // phone, promise status, reason). Same data (currentRows), same
 // batching (RENDER_BATCH_SIZE, more on scroll) and same tap ->
-// Reason Arrear panel as the table rows. Toggle state is remembered
+// Work to complete on that loan as the table rows. Toggle state is remembered
 // in localStorage ("arr_view"); Print / Export PDF / Landscape work on
 // the table, so they switch back to it first (ensureTableView()).
 // ========================================
@@ -1251,7 +1222,7 @@ arrCardList.addEventListener("click", (e) => {
         if (!row) return;
         arrCardList.querySelectorAll(".is-selected").forEach(c => c.classList.remove("is-selected"));
         ldRow.classList.add("is-selected");
-        openReasonPanel(row).then(() => { reasonNavRows = group ? group.rows : null; updateReasonNav(); });
+        openWorkFor(row, group ? group.rows : null);
         return;
     }
 
@@ -1264,14 +1235,13 @@ arrCardList.addEventListener("click", (e) => {
         return;
     }
 
-    reasonNavRows = null;
     const card = e.target.closest(".arr-card[data-index]");
     if (!card) return;
     const row = currentRows[Number(card.dataset.index)];
     if (!row) return;
     arrCardList.querySelectorAll(".arr-card.is-selected").forEach(c => c.classList.remove("is-selected"));
     card.classList.add("is-selected");
-    openReasonPanel(row);
+    openWorkFor(row);
 });
 
 // ========================================
@@ -1282,7 +1252,7 @@ arrCardList.addEventListener("click", (e) => {
 // USD and KHR loans add up correctly), the latest days late, the worst
 // class, the most urgent promise status and how many LDs already have
 // a Reason Arrear. Tapping the card lists its LDs; tapping an LD opens
-// the Reason Arrear panel with ‹ › limited to that customer's LDs.
+// it on Work to complete with ‹ › limited to that customer's LDs.
 // Remembered in localStorage ("arr_group"). Table view stays per LD.
 // ========================================
 
@@ -1717,7 +1687,7 @@ arrCifTable?.addEventListener("click", (e) => {
         if (!row) return;
         arrCifTable.querySelectorAll(".row-selected").forEach(r => r.classList.remove("row-selected"));
         ldRow.classList.add("row-selected");
-        openReasonPanel(row).then(() => { reasonNavRows = group ? group.rows : null; updateReasonNav(); });
+        openWorkFor(row, group ? group.rows : null);
         return;
     }
     const head = e.target.closest("tr.arr-cif-row");
@@ -1958,7 +1928,7 @@ function updateRowInTable(row) {
 }
 
 // ========================================
-// ROW CLICK -> REASON ARREAR PANEL
+// ROW CLICK -> WORK TO COMPLETE (that loan's Reason Arrear)
 // ========================================
 
 tbodyArrears.addEventListener("click", (e) => {
@@ -1972,29 +1942,7 @@ tbodyArrears.addEventListener("click", (e) => {
     document.querySelectorAll("#tbodyArrears tr").forEach(r => r.classList.remove("row-selected"));
     tr.classList.add("row-selected");
 
-    openReasonPanel(row);
-});
-
-function openReasonModal() {
-    reasonBackdrop.classList.add("show");
-}
-
-function closeReasonModal() {
-    reasonBackdrop.classList.remove("show");
-    selectedRow = null;
-    reasonNavRows = null;
-    returnToNoReasonSummary();
-}
-
-// click on the dark backdrop itself (not the card) closes the modal
-reasonBackdrop.addEventListener("click", (e) => {
-    if (e.target === reasonBackdrop) closeReasonModal();
-});
-
-document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && reasonBackdrop.classList.contains("show")) {
-        closeReasonModal();
-    }
+    openWorkFor(row);
 });
 
 // ========================================
@@ -2045,7 +1993,7 @@ function applyReasonArrearOverlay(rows, map) {
 
 // ========================================
 // LOCAL PENDING REASON CHANGES
-// Save (in the modal) no longer hits the server at all — it writes
+// Save (on Work to complete) doesn't hit the server at all — it writes
 // to localStorage instantly. Submit Reason (or the global Submit All
 // button) is what actually pushes everything to the server, in one
 // batch, whenever the user is ready. This is the whole point: saving
@@ -2058,7 +2006,6 @@ function applyReasonArrearOverlay(rows, map) {
 // assets/js/reason-kit.js, shared with Master Data > Work to complete,
 // so a draft saved on either page shows on both.
 function getPendingReasonsMap() { return ReasonKit.getPending(); }
-function setPendingReason(concate, aj, ak, alISO, gps) { ReasonKit.setPending(concate, aj, ak, alISO, gps); }
 function removePendingReasons(concates) { ReasonKit.removePending(concates); }
 function getPendingCount() { return ReasonKit.pendingCount(); }
 ReasonKit.onPendingChange(() => updatePendingBadge());
@@ -2145,7 +2092,7 @@ async function submitAllPendingReasons() {
 // Discards local pending edits for the given concate values, restoring
 // each affected row to whatever the server currently has (or blank,
 // if the server has no record at all for that row). Used by both the
-// global "បោះបង់" button and the per-row cancel link inside the modal.
+// global "បោះបង់" button.
 async function cancelPendingReasons(concates) {
     if (!concates.length) return;
 
@@ -2198,492 +2145,8 @@ document.getElementById("btnCancelAllPending")?.addEventListener("click", async 
 });
 
 
-// ========================================
-// REASON ARREAR — info block, GPS, record navigation
-// ========================================
-
-// Loan context shown under the title. Read-only — these come from the
-// arrears row itself, not the reason record, so they're never saved back.
-function renderReasonInfo(row) {
-    if (!reasonInfo) return;
-
-    // ផលិតផល carries the digital/non-digital split, since the product
-    // name alone doesn't say which side it falls on.
-    const product = String(row.product ?? "").trim();
-    const productLabel = product
-        ? `${product} - ${DIGITAL_PRODUCTS.includes(product) ? "Digital Loan" : "Non Digital Loan"}`
-        : "";
-
-    // Fixed 4-line layout, two fields per line. Ministry is deliberately
-    // left out of មុខរបរ — it made the line wrap without adding much.
-    const lines = [
-        [["អតិថិជន", row.customer],      ["អាស័យដ្ឋាន", row.location]],
-        [["កិច្ចសន្យាលេខ", row.loanNumber], ["លេខអតិថិជន", row.cif]],
-        [["មុខរបរ", row.occu],            ["ផលិតផល", productLabel]],
-        [["ចំណាត់ថ្នាក់", row.class],       ["ថ្ងៃយឺត", row.day ? `${row.day}ថ្ងៃ` : ""]]
-    ];
-
-    reasonInfo.innerHTML = lines
-        .map(pairs => pairs
-            // Blank fields drop out, but the line itself stays as long
-            // as one of its two fields has a value — so a missing
-            // address doesn't collapse the customer name onto the row
-            // below it.
-            .map(([label, value]) => ({ label, value: String(value ?? "").trim() }))
-            .filter(x => x.value !== "" && x.value !== "-")
-        )
-        .filter(pairs => pairs.length > 0)
-        .map(pairs =>
-            `<div class="reason-info-line">` +
-              pairs.map(x =>
-                  `<span class="reason-info-cell">` +
-                    `<span class="reason-info-label">${x.label}</span>` +
-                    `<span class="reason-info-value">${escapeHtml(x.value)}</span>` +
-                  `</span>`
-              ).join("") +
-            `</div>`
-        ).join("");
-}
-
-// These values come from uploaded spreadsheet data, which shouldn't
-// contain markup — but they're injected via innerHTML, so escape anyway.
-function escapeHtml(s) {
-    return s.replace(/[&<>"']/g, c => (
-        { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
-    ));
-}
-
-// "11.5564, 104.9282" -> { lat, lng } or null (assets/js/reason-kit.js).
-function parseGps(text) {
-    return ReasonKit.parseGps(text);
-}
-
-// "មើលលើផែនទី" is hidden until there's a valid coordinate — offering
-// it with nothing to show would just produce an error toast.
-function updateGpsButtons() {
-    const btnOpen = document.getElementById("btnGpsOpen");
-    if (!btnOpen || !reasonGPS) return;
-    btnOpen.style.display = parseGps(reasonGPS.value) ? "" : "none";
-}
-
-// ========================================
-// MAP PICKER — Leaflet, in assets/js/reason-kit.js (shared with
-// Master Data > Work to complete).
-// ========================================
-document.getElementById("btnGpsPick")?.addEventListener("click", () => {
-    ReasonKit.openMapPicker({
-        initial: reasonGPS?.value,
-        notify,
-        confirm: (lat, lng) => {
-            reasonGPS.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-            updateGpsButtons();
-            setGpsHint("បានជ្រើសទីតាំងពីផែនទី", "ok");
-        }
-    });
-});
-
-function setGpsHint(message, kind) {
-    if (!reasonGpsHint) return;
-    reasonGpsHint.textContent = message || "";
-    reasonGpsHint.className = "reason-gps-hint" + (kind ? " " + kind : "");
-}
-
-// Validate as the person types, so a bad value is caught before saving
-// rather than stored and silently failing to open later.
-reasonGPS?.addEventListener("input", () => {
-    updateGpsButtons();
-    const raw = reasonGPS.value.trim();
-    if (!raw) { setGpsHint("", ""); return; }
-    const ok = !!parseGps(raw);
-    setGpsHint(
-        ok ? "ទីតាំងត្រឹមត្រូវ" : "ទម្រង់មិនត្រឹមត្រូវ — ឧ. 11.5564, 104.9282",
-        ok ? "ok" : "bad"
-    );
-});
-
-// Fill from the device's current position.
-document.getElementById("btnGpsHere")?.addEventListener("click", () => {
-    if (!navigator.geolocation) {
-        notify("ឧបករណ៍នេះមិនអាចកំណត់ទីតាំងបានទេ", "warning");
-        return;
-    }
-
-    setGpsHint("កំពុងកំណត់ទីតាំង...", "");
-
-    navigator.geolocation.getCurrentPosition(
-        pos => {
-            // 6dp is ~0.1m — far past what an address needs, and short
-            // enough to stay readable in the input.
-            const lat = pos.coords.latitude.toFixed(6);
-            const lng = pos.coords.longitude.toFixed(6);
-            reasonGPS.value = `${lat}, ${lng}`;
-            updateGpsButtons();
-            setGpsHint(`ភាពត្រឹមត្រូវ ±${Math.round(pos.coords.accuracy)}m`, "ok");
-        },
-        err => {
-            // Permission denial is the common case and worth naming: the
-            // browser prompt may have been dismissed earlier and won't
-            // reappear on its own.
-            setGpsHint(
-                err.code === err.PERMISSION_DENIED
-                    ? "សូមអនុញ្ញាតការចូលប្រើទីតាំង"
-                    : "មិនអាចកំណត់ទីតាំងបានទេ",
-                "bad"
-            );
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-});
-
-// Open in the platform's map app.
-document.getElementById("btnGpsOpen")?.addEventListener("click", () => {
-    const coords = parseGps(reasonGPS.value);
-    if (!coords) {
-        notify("សូមបញ្ចូលទីតាំងជាមុនសិន", "warning");
-        return;
-    }
-
-    const { lat, lng } = coords;
-
-    // maps.apple.com rather than the maps:// scheme, so it still resolves
-    // in contexts that block custom schemes.
-    const isApple = /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent);
-    const url = isApple
-        ? `https://maps.apple.com/?q=${lat},${lng}`
-        : `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-
-    window.open(url, "_blank", "noopener");
-});
-
-// ---- record navigation ----
-// Walks currentRows, so it follows the active filter and sort rather
-// than the unfiltered set.
-// The rows ‹ › walks through: one customer's LDs when the panel was
-// opened from a CIF card, otherwise every row on screen. Reset when the
-// panel closes.
-let reasonNavRows = null;
-function reasonNavList() {
-    return reasonNavRows || currentRows;
-}
-
-function reasonNavIndex() {
-    if (!selectedRow) return -1;
-    return reasonNavList().findIndex(r => r.concate === selectedRow.concate);
-}
-
-function updateReasonNav() {
-    const i = reasonNavIndex();
-    const total = reasonNavList().length;
-
-    if (reasonNavPos) {
-        reasonNavPos.textContent = i >= 0 ? `${i + 1} / ${total}` : "-";
-    }
-
-    const prev = document.getElementById("btnReasonPrev");
-    const next = document.getElementById("btnReasonNext");
-    if (prev) prev.disabled = i <= 0;
-    if (next) next.disabled = i < 0 || i >= total - 1;
-}
-
-// Unsaved edits are kept rather than silently dropped: moving away
-// writes the current state to the same local pending store Save uses.
-// Snapshot of the values the modal was opened with. Comparing against
-// THIS (rather than against the local pending store) is what stops
-// merely opening and navigating past a record from marking it as an
-// unsaved edit — previously a record already carrying a reason from the
-// server counted as "dirty" the moment it loaded, so paging through 10
-// rows queued 10 phantom submissions.
-let reasonBaseline = null;
-
-function currentReasonValues() {
-    return {
-        aj: reasonAJ.value,
-        ak: reasonAK.value,
-        al: reasonAL.value ? `${reasonAL.value}T00:00:00.000Z` : "",
-        gps: reasonGPS ? reasonGPS.value.trim() : ""
-    };
-}
-
-function snapshotReasonBaseline() {
-    reasonBaseline = currentReasonValues();
-}
-
-function reasonIsDirty() {
-    if (!reasonBaseline) return false;
-    const now = currentReasonValues();
-    return now.aj !== reasonBaseline.aj ||
-           now.ak !== reasonBaseline.ak ||
-           now.al !== reasonBaseline.al ||
-           now.gps !== reasonBaseline.gps;
-}
-
-// Writes the current values to the local pending store. Only called
-// once the person has confirmed they want to keep the edit.
-function commitReasonEdits() {
-    if (!selectedRow || !selectedRow.concate) return;
-    writeReasonToRows(reasonTargetRows(), currentReasonValues());
-}
-
-// ---- one reason for every LD of a CIF ----
-// A customer with several LDs usually has one reason for all of them,
-// so the panel offers to write it to every LD of the CIF (all loaded
-// LDs, not only the ones the current filter shows). On by default when
-// the panel is opened from the CIF view.
-const reasonApplyAllWrap = document.getElementById("reasonApplyAllWrap");
-const reasonApplyAll = document.getElementById("reasonApplyAll");
-let reasonApplyAllKey = null;
-
-function reasonSiblingRows(row) {
-    const key = groupKeyOf(row);
-    return allRows.filter(r => r.concate && groupKeyOf(r) === key);
-}
-
-function setupReasonApplyAll(row) {
-    if (!reasonApplyAllWrap || !reasonApplyAll) return;
-    const n = reasonSiblingRows(row).length;
-    const key = groupKeyOf(row);
-    reasonApplyAllWrap.hidden = n < 2;
-    // Moving between LDs of the same customer keeps the person's choice.
-    if (key !== reasonApplyAllKey) reasonApplyAll.checked = arrGroupMode === "cif";
-    reasonApplyAllKey = key;
-    document.getElementById("reasonApplyAllText").textContent = t("arrears.applyAllLd").replace("{n}", n.toLocaleString());
-}
-
-function reasonTargetRows() {
-    if (reasonApplyAll?.checked && !reasonApplyAllWrap?.hidden) return reasonSiblingRows(selectedRow);
-    return [selectedRow];
-}
-
-// Writes the values to each row and to the local pending store, then
-// redraws what changed.
-function writeReasonToRows(rows, { aj, ak, al, gps }) {
-    rows.forEach(row => {
-        row.ajReason = aj;
-        row.akSolution = ak;
-        row.alFollowup = al ? formatRowDateDMY(al) : "";
-        row.promiseStatus = computeStatusFromDate(row.alFollowup);
-        row.__pendingSubmit = true;
-        setPendingReason(row.concate, aj, ak, al, gps);
-    });
-
-    if (arrGroupMode === "cif") {
-        // the customer's card / table row covers all of its LDs
-        if (!updateRowInTable(selectedRow)) renderTable(currentRows);
-        return;
-    }
-    const allUpdated = rows.every(row => currentRows.indexOf(row) === -1 || updateRowInTable(row));
-    if (!allUpdated) renderTable(currentRows);
-}
-
-async function reasonNavStep(delta) {
-    const i = reasonNavIndex();
-    if (i < 0) return;
-
-    const target = reasonNavList()[i + delta];
-    if (!target) return;
-
-    // Unsaved edits would otherwise vanish without a word. Ask rather
-    // than auto-saving: silently queueing a submission the person
-    // didn't ask for is how the phantom-pending problem started.
-    if (reasonIsDirty()) {
-        const keep = confirm(
-            "អ្នកមិនទាន់រក្សាទុកការកែប្រែទេ។\n\n" +
-            "ចុច OK ដើម្បីរក្សាទុក ឬ Cancel ដើម្បីបោះបង់។"
-        );
-        if (keep) {
-            const gps = reasonGPS ? reasonGPS.value.trim() : "";
-            if (gps && !parseGps(gps)) {
-                notify("ទម្រង់ GPS មិនត្រឹមត្រូវ — ឧ. 11.5564, 104.9282", "warning");
-                reasonGPS.focus();
-                return; // stay put so it can be corrected
-            }
-            commitReasonEdits();
-        }
-    }
-
-    await openReasonPanel(target);
-}
-
-document.getElementById("btnReasonPrev")?.addEventListener("click", () => reasonNavStep(-1));
-document.getElementById("btnReasonNext")?.addEventListener("click", () => reasonNavStep(1));
-
-// Arrow keys move records too, but not while typing — otherwise arrowing
-// through text in the reason box would jump rows.
-document.addEventListener("keydown", (e) => {
-    if (!reasonBackdrop.classList.contains("show")) return;
-    if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || "")) return;
-
-    if (e.key === "ArrowLeft") { e.preventDefault(); reasonNavStep(-1); }
-    if (e.key === "ArrowRight") { e.preventDefault(); reasonNavStep(1); }
-});
-
-// Fetches a record purely to show who last submitted it. Deliberately
-// does not touch the input fields — the local draft owns those.
-async function loadReasonMetaOnly(concate) {
-    try {
-        const res = await fetch(`${API.BASE_URL}/api/reasonarrear/get`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${arrearsToken}`
-            },
-            body: JSON.stringify({ cifs: [concate] })
-        });
-        const data = await res.json();
-        if (!data.ok) return;
-
-        const found = (data.data || [])[0];
-        if (found && found.uploadedBy) {
-            const when = found.uploadedAt ? formatRowDateTime12h(found.uploadedAt) : "";
-            reasonMeta.textContent =
-                `Last updated by ${found.uploadedBy}${when ? " on " + when : ""}`;
-        }
-    } catch (err) {
-        // Non-fatal: the draft is still fully usable without this line.
-        console.warn("[reason meta]", err);
-    }
-}
-
-async function openReasonPanel(row) {
-    selectedRow = row;
-    setupReasonApplyAll(row);
-
-    reasonSubtitle.textContent = "";
-    renderReasonInfo(row);
-    reasonAJ.value = "";
-    reasonAK.value = "";
-    reasonAL.value = "";
-    if (reasonGPS) reasonGPS.value = "";
-    setGpsHint("", "");
-    updateGpsButtons();
-    reasonMeta.textContent = "";
-    updateReasonNav();
-    openReasonModal();
-
-    if (!row.concate) {
-        notify("This row has no Concate key — cannot load/save its reason.", "warning");
-        snapshotReasonBaseline();
-        return;
-    }
-
-    // If there's already a local pending (unsubmitted) edit for this
-    // row, show THAT instead of fetching from the server — it's the
-    // user's own more-recent draft, not yet sent anywhere.
-    const pendingMap = getPendingReasonsMap();
-    const localPending = pendingMap[row.concate];
-    const pendingNote = document.getElementById("reasonPendingNote");
-
-    if (localPending) {
-        reasonAJ.value = localPending.aj || "";
-        reasonAK.value = localPending.ak || "";
-        reasonAL.value = localPending.al ? localPending.al.slice(0, 10) : "";
-        if (reasonGPS) reasonGPS.value = localPending.gps || "";
-        updateGpsButtons();
-        if (pendingNote) {
-            pendingNote.innerHTML = "";
-            pendingNote.append(
-                `រក្សាទុកក្នុងម៉ាស៊ីននៅ ${new Date(localPending.savedAt).toLocaleString()} (មិនទាន់ដាក់ស្នើ) `
-            );
-            const cancelLink = document.createElement("button");
-            cancelLink.type = "button";
-            cancelLink.className = "reason-pending-cancel-link";
-            cancelLink.textContent = "បោះបង់";
-            cancelLink.addEventListener("click", async (e) => {
-                e.stopPropagation();
-                await cancelPendingReasons([row.concate]);
-                notify("បានបោះបង់ការកែប្រែក្នុងម៉ាស៊ីន", "success");
-                closeReasonModal();
-            });
-            pendingNote.appendChild(cancelLink);
-            pendingNote.classList.add("show");
-        }
-
-        snapshotReasonBaseline();
-
-        // The draft above is what's shown in the fields, but the server
-        // still holds who last submitted this record — fetch it purely
-        // for the meta line. (Previously this returned early, which is
-        // why "Last updated by" disappeared once a local draft existed.)
-        loadReasonMetaOnly(row.concate);
-        return;
-    }
-
-    if (pendingNote) pendingNote.classList.remove("show");
-
-    try {
-        const res = await fetch(`${API.BASE_URL}/api/reasonarrear/get`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${arrearsToken}`
-            },
-            body: JSON.stringify({ cifs: [row.concate] })
-        });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.message || "Failed to load reason.");
-
-        const found = (data.data || [])[0];
-        if (found) {
-            reasonAJ.value = found.aj || "";
-            reasonAK.value = found.ak || "";
-            reasonAL.value = found.al ? found.al.slice(0, 10) : "";
-            if (reasonGPS) reasonGPS.value = found.gps || "";
-            if (found.uploadedBy) {
-                const when = found.uploadedAt ? formatRowDateTime12h(found.uploadedAt) : "";
-                reasonMeta.textContent = `Last updated by ${found.uploadedBy}${when ? " on " + when : ""}`;
-            }
-        }
-    } catch (err) {
-        console.error(err);
-        notify(err.message || "Could not load reason arrear.", "error");
-    }
-
-    // Baseline AFTER loading, so server-supplied values count as the
-    // starting point rather than as unsaved edits.
-    snapshotReasonBaseline();
-    updateGpsButtons();
-}
-
-document.getElementById("btnReasonCancel").addEventListener("click", closeReasonModal);
-
-// SAVE — now local-only. Instant, no network call at all.
-document.getElementById("btnReasonSave").addEventListener("click", () => {
-    if (!selectedRow || !selectedRow.concate) {
-        notify("No row selected.", "warning");
-        return;
-    }
-
-    // Refuse a malformed coordinate rather than storing something that
-    // won't open in a map later.
-    const gpsRaw = reasonGPS ? reasonGPS.value.trim() : "";
-    if (gpsRaw && !parseGps(gpsRaw)) {
-        notify("ទម្រង់ GPS មិនត្រឹមត្រូវ — ឧ. 11.5564, 104.9282", "warning");
-        reasonGPS.focus();
-        return;
-    }
-
-    // Update the in-memory rows immediately so the table reflects the
-    // edit right away — just without the server round-trip. With
-    // "apply to all LDs" on, every LD of the CIF gets the same values.
-    const targets = reasonTargetRows();
-    writeReasonToRows(targets, currentReasonValues());
-
-    notify(targets.length > 1
-        ? t("arrears.savedAllLd").replace("{n}", targets.length.toLocaleString())
-        : "បានរក្សាទុកក្នុងម៉ាស៊ីន — ចុច \"ដាក់ស្នើមូលហេតុ\" នៅពេលរួចរាល់", "success");
-    closeReasonModal();
-});
-
-// SUBMIT REASON — pushes ALL pending local changes (not just this
-// row) in one batch. This is deliberate: the whole point is letting
-// users save many rows locally first, then submit once.
-document.getElementById("btnReasonSubmit").addEventListener("click", async () => {
-    await submitAllPendingReasons();
-    closeReasonModal();
-});
-
-// Global "Submit All" button, reachable without opening any row's
-// modal — same action as the in-modal Submit Reason button.
+// Global "Submit All" button: pushes every draft saved on this phone
+// (here or on Work to complete — they share the pending store).
 document.getElementById("btnSubmitAllPending")?.addEventListener("click", submitAllPendingReasons);
 
 // ========================================
@@ -2718,6 +2181,7 @@ async function refreshArrears() {
     // not yet sent anywhere. Applied here too (before the overlay
     // fetch below completes) so pending work is visible immediately,
     // not just after the background overlay finishes.
+    applyRecentSubmits(allRows);
     applyPendingReasonsToRows(allRows);
     updatePendingBadge();
 
@@ -2726,8 +2190,20 @@ async function refreshArrears() {
     // is the biggest perceived-speed win: the table is usable in one
     // fetch's time instead of two sequential fetches' time.
     populateFilterOptions();
+    const back = arrearsReturn;
+    arrearsReturn = null;
+    if (back) {
+        restoreArrearsFilters(back.filters);
+        const row = allRows.find(r => r.concate === back.concate);
+        if (row && arrGroupMode === "cif") arrExpandedGroups.add(groupKeyOf(row));
+    }
     applyFilters();
     if (typeof hideAppLoading === "function") hideAppLoading();
+    if (back) {
+        revealArrearsRow(back.concate);
+        if (back.summary) restoreNoReasonSummary(back.summary);
+        showWorkFlash();
+    }
 
     // Mirrors VBA's ViewReasonArreas_Mongo: the bulk row data above
     // only reflects Reason Arrear as of the last Excel
@@ -2743,6 +2219,8 @@ async function refreshArrears() {
         applyReasonArrearOverlay(allRows, reasonMap);
         applyPendingReasonsToRows(allRows); // re-apply — local pending still wins over the fresh server overlay
         applyFilters(); // quiet re-render with the fresher data
+        if (back && !back.summary) revealArrearsRow(back.concate); // keep the loan in view
+        if (back && back.summary) refreshOpenNoReasonSummary();
         arrearsReasonsAt = Date.now();
     } catch (err) {
         console.error("[reasonarrear overlay] failed, table still shows bulk data:", err);
@@ -3249,10 +2727,6 @@ let noReasonKind = "unfilled";  // "unfilled" | "expired" | "outarea" (see build
 let noReasonClientRows = [];
 let noReasonOpenKey = null;
 
-// Set while the Reason Arrear panel was opened from this summary, so
-// closing the panel comes back to the officer's (refreshed) list.
-let noReasonReturnKey = null;
-
 function noReasonInitials(name) {
     const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
     return ((parts[0] || "?")[0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
@@ -3415,16 +2889,30 @@ function renderNoReasonClients() {
     }).join("");
 }
 
-// Called by closeReasonModal(): back to the officer's list when the
-// panel was opened from here, with the list rebuilt so a client whose
-// reason was just saved drops off it.
-function returnToNoReasonSummary() {
-    const key = noReasonReturnKey;
-    noReasonReturnKey = null;
-    if (!key) return;
+// Back from Work to complete: the officer's list as it was, rebuilt so
+// a client whose reason was just filled drops off it.
+function restoreNoReasonSummary(state) {
+    if (!state) return;
+    noReasonKind = state.kind || "unfilled";
+    noReasonTeam = state.team || "";
+    populateNoReasonBranchFilter();
+    const sel = document.getElementById("noReasonBranchFilter");
+    if (sel && [...sel.options].some(o => o.value === state.branch)) sel.value = state.branch;
     showNoReasonSummary();
-    const group = noReasonGroups.find(g => g.key === key);
+    const group = noReasonGroups.find(g => g.key === state.key);
     if (group) showNoReasonClients(group);
+}
+
+// The summary put back above was built before the saved reasons loaded:
+// rebuild it, where the person is now, once they're in.
+function refreshOpenNoReasonSummary() {
+    if (!document.getElementById("noReasonBackdrop")?.classList.contains("show")) return;
+    restoreNoReasonSummary({
+        kind: noReasonKind,
+        team: noReasonTeam,
+        branch: document.getElementById("noReasonBranchFilter")?.value || "",
+        key: noReasonOpenKey
+    });
 }
 
 document.getElementById("noReasonTbody")?.addEventListener("click", (e) => {
@@ -3441,7 +2929,12 @@ document.getElementById("noReasonClientsTbody")?.addEventListener("click", (e) =
     if (!row) return;
 
     const navRows = noReasonClientRows.slice();
-    const returnKey = noReasonOpenKey;
+    const summary = {
+        kind: noReasonKind,
+        team: noReasonTeam,
+        branch: document.getElementById("noReasonBranchFilter")?.value || "",
+        key: noReasonOpenKey
+    };
     closeNoReasonSummary();
     if (noReasonKind === "outarea") {
         // NoCoRespone is fixed by moving the loan to its officer on the
@@ -3450,8 +2943,7 @@ document.getElementById("noReasonClientsTbody")?.addEventListener("click", (e) =
         selectOutAreaCustomer(row);
         return;
     }
-    openReasonPanel(row).then(() => { reasonNavRows = navRows; updateReasonNav(); });
-    noReasonReturnKey = returnKey;
+    openWorkFor(row, navRows, summary);
 });
 
 document.getElementById("noReasonSearch")?.addEventListener("input", renderNoReasonOfficers);
@@ -3527,27 +3019,237 @@ function handOffWorkRows() {
     try {
         sessionStorage.removeItem("cm_work_snapshot_v1");
         if (!arrearsReasonsAt || arrearsScopeMode === "own") return;
-        const isoFromDMY = dmy => {
-            const m = String(dmy || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-            return m ? `${m[3]}-${m[2]}-${m[1]}` : "";
-        };
         const rows = allRows
             .filter(r => String(r.cif || "").trim() && r.concate && !isNoCoResponseRow(r))
-            .map(r => ({
-                loanNumber: r.loanNumber, customer: r.customer, location: r.location, arreas: r.arreas,
-                day: r.day, accountLoan: r.accountLoan, tell: r.tell, cif: r.cif, occu: r.occu,
-                branch: r.branch, coId: r.coId, coResponse: r.coResponse, ccy: r.ccy,
-                teamLeader: r.teamLeader, class: r.class, concate: r.concate, product: r.product,
-                aj: r.ajReason || "", ak: r.akSolution || "", al: isoFromDMY(r.alFollowup),
-                user: r.user || "", dateBackup: r.dateBackup || ""
-            }));
-        const user = JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}");
-        const payload = JSON.stringify({ at: arrearsReasonsAt, username: user.username || "", lastUploadAt: lastUploadAtRaw || "", rows });
+            .map(toWorkRow);
+        const payload = JSON.stringify({ at: arrearsReasonsAt, username: arrearsUsername(), lastUploadAt: lastUploadAtRaw || "", rows });
         if (payload.length < 4 * 1024 * 1024) sessionStorage.setItem("cm_work_snapshot_v1", payload);
     } catch (e) {
         // Not fatal: the page just loads its own rows.
     }
 }
+
+// A row as Work to complete's GET /api/arreast24byco/work shapes it.
+function toWorkRow(r) {
+    const m = String(r.alFollowup || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    return {
+        loanNumber: r.loanNumber, customer: r.customer, location: r.location, arreas: r.arreas,
+        day: r.day, accountLoan: r.accountLoan, tell: r.tell, cif: r.cif, occu: r.occu,
+        branch: r.branch, coId: r.coId, coResponse: r.coResponse, ccy: r.ccy,
+        teamLeader: r.teamLeader, class: r.class, concate: r.concate, product: r.product,
+        aj: r.ajReason || "", ak: r.akSolution || "", al: m ? `${m[3]}-${m[2]}-${m[1]}` : "",
+        user: r.user || "", dateBackup: r.dateBackup || ""
+    };
+}
+
+function arrearsUsername() {
+    try {
+        return JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}").username || "";
+    } catch (e) {
+        return "";
+    }
+}
+
+// ========================================
+// OPEN A LOAN IN WORK TO COMPLETE
+// Tapping a card / row opens that loan's Reason Arrear on Master Data >
+// Work to complete (the one editor, shared with that page) instead of
+// a modal here. It gets the loan, the rows its ‹ › walks — what's on
+// screen in this filter / sort, or one customer's LDs — and their
+// customers' other LDs (for "apply to all LD"). Every way out of it
+// comes back here, to the same filters and the same card.
+// ========================================
+const WORK_FOCUS_KEY = "cm_work_focus_v1";
+const ARREARS_RETURN_KEY = "cm_arrears_return_v1";
+const ARREARS_RETURN_MAX_MS = 60 * 60 * 1000;
+
+function openWorkFor(row, navRows, summary) {
+    if (!row || !row.concate) {
+        notify("This row has no Concate key — cannot load/save its reason.", "warning");
+        return;
+    }
+    selectedRow = row;
+
+    let nav = (navRows || currentRows).filter(r => r.concate);
+    const cifs = new Set(nav.map(r => r.cif).filter(Boolean));
+    const build = () => {
+        const byConcate = new Map(nav.map(r => [r.concate, r]));
+        allRows.forEach(r => {
+            if (r.concate && r.cif && cifs.has(r.cif) && !byConcate.has(r.concate)) byConcate.set(r.concate, r);
+        });
+        const capped = list => list.length > 2000 ? list.slice(0, 2000) : list;
+        return JSON.stringify({
+            at: Date.now(),
+            username: arrearsUsername(),
+            concate: row.concate,
+            nav: nav.map(r => r.concate),
+            rows: [...byConcate.values()].map(toWorkRow),
+            applyAll: arrGroupMode === "cif",
+            suggest: {
+                aj: capped(distinctSorted(allRows, "ajReason")),
+                ak: capped(distinctSorted(allRows, "akSolution"))
+            }
+        });
+    };
+
+    try {
+        let payload = build();
+        if (payload.length > 3.5 * 1024 * 1024) {
+            // Too many rows on screen for sessionStorage: ‹ › walks the
+            // 1,000 around this loan instead.
+            const i = Math.max(0, nav.indexOf(row));
+            nav = nav.slice(Math.max(0, i - 500), i + 500);
+            cifs.clear();
+            nav.forEach(r => r.cif && cifs.add(r.cif));
+            payload = build();
+        }
+        sessionStorage.setItem(WORK_FOCUS_KEY, payload);
+
+        const filters = {};
+        Object.entries(filterEls).forEach(([k, el]) => { if (el) filters[k] = el.value; });
+        sessionStorage.setItem(ARREARS_RETURN_KEY, JSON.stringify({
+            at: Date.now(),
+            username: arrearsUsername(),
+            scopeMode: arrearsScopeMode,
+            filters,
+            concate: row.concate,
+            summary: summary || null
+        }));
+    } catch (e) {
+        notify(e.message || "Could not open the loan.", "error");
+        return;
+    }
+    location.href = "/CM_Pro/pages/masterdata/work.html?from=arrears";
+}
+
+// What to put back when Work to complete sends the person back here
+// (it stamps "cm_arrears_back_v1" just before leaving) — not on a later,
+// unrelated visit. Used once.
+function takeArrearsReturn() {
+    try {
+        const r = JSON.parse(sessionStorage.getItem(ARREARS_RETURN_KEY) || "null");
+        const backAt = Number(sessionStorage.getItem("cm_arrears_back_v1")) || 0;
+        sessionStorage.removeItem(ARREARS_RETURN_KEY);
+        sessionStorage.removeItem("cm_arrears_back_v1");
+        if (!r || Date.now() - backAt > 60 * 1000) return null;
+        if (Date.now() - r.at > ARREARS_RETURN_MAX_MS || r.username !== arrearsUsername()) return null;
+        return r;
+    } catch (e) {
+        return null;
+    }
+}
+let arrearsReturn = takeArrearsReturn();
+
+// Filters as they were (Branch first: it decides the officer lists).
+function restoreArrearsFilters(filters) {
+    if (!filters) return;
+    const set = (key) => {
+        const el = filterEls[key];
+        const v = filters[key];
+        if (!el || v == null) return;
+        if (el.tagName === "SELECT" && v && ![...el.options].some(o => o.value === v)) return;
+        el.value = v;
+    };
+    set("branch");
+    populateOfficerOptions();
+    Object.keys(filterEls).forEach(k => { if (k !== "branch") set(k); });
+}
+
+// Brings the loan's card / row on screen (rendering more batches, or
+// opening its customer's group, as needed) and highlights it.
+function revealArrearsRow(concate) {
+    const row = currentRows.find(r => r.concate === concate);
+    if (!row) return;
+    selectedRow = row;
+    const idx = currentRows.indexOf(row);
+    const find = () => {
+        if (arrGroupMode === "cif") {
+            const host = arrViewMode === "card" ? arrCardList : arrCifTable;
+            return host?.querySelector(`.arr-group-ld[data-index="${idx}"], tr.arr-cif-ld[data-index="${idx}"]`)
+                || host?.querySelector(`.arr-group[data-key="${CSS.escape(groupKeyOf(row))}"]`);
+        }
+        return arrViewMode === "card"
+            ? arrCardList.querySelector(`.arr-card[data-index="${idx}"]`)
+            : tbodyArrears.querySelector(`tr[data-index="${idx}"]`);
+    };
+    const more = () => {
+        if (arrGroupMode === "cif") {
+            if (renderedGroupCount >= arrGroups.length) return false;
+            appendMoreGroups();
+        } else if (arrViewMode === "card") {
+            if (renderedCardCount >= currentRows.length) return false;
+            appendMoreCards();
+        } else {
+            if (renderedCount >= currentRows.length) return false;
+            appendMoreRows();
+        }
+        return true;
+    };
+    let el = find();
+    while (!el && more()) el = find();
+    if (!el) return;
+    el.classList.add(el.tagName === "TR" ? "row-selected" : "is-selected");
+    el.scrollIntoView({ block: "center" });
+}
+
+// Reasons submitted on Work to complete (sessionStorage, written by
+// work.js) so the cards show them before the overlay below confirms.
+function applyRecentSubmits(rows) {
+    let map = {};
+    try { map = JSON.parse(sessionStorage.getItem("cm_work_recent_v1") || "{}"); } catch (e) {}
+    if (!Object.keys(map).length) return;
+    rows.forEach(row => {
+        const r = row.concate && map[row.concate];
+        if (!r) return;
+        row.ajReason = r.aj || "";
+        row.akSolution = r.ak || "";
+        row.alFollowup = r.al ? formatRowDateDMY(r.al) : "";
+        row.user = r.uploadedBy || row.user;
+        row.dateBackup = r.uploadedAt || row.dateBackup;
+        row.promiseStatus = computeStatusFromDate(row.alFollowup);
+        row.__pendingSubmit = false;
+    });
+}
+
+// What the Work to complete page wanted said here ("Saved", "Submitted").
+function showWorkFlash() {
+    try {
+        const f = JSON.parse(sessionStorage.getItem("cm_work_flash_v1") || "null");
+        sessionStorage.removeItem("cm_work_flash_v1");
+        if (f && f.message && Date.now() - f.at < 60 * 1000) notify(f.message, f.type || "success");
+    } catch (e) {}
+}
+
+// Back from Work to complete with the page kept in memory (bfcache):
+// the rows are still the old ones — bring the edited loans up to date.
+window.addEventListener("pageshow", (e) => {
+    if (!e.persisted) return;
+    const back = takeArrearsReturn();
+    if (!back) return;
+    applyRecentSubmits(allRows);
+    const pending = getPendingReasonsMap();
+    const dropped = allRows.filter(r => r.__pendingSubmit && !pending[r.concate]).map(r => r.concate);
+    applyPendingReasonsToRows(allRows);
+    updatePendingBadge();
+    applyFilters();
+    revealArrearsRow(back.concate);
+    if (back.summary) restoreNoReasonSummary(back.summary);
+    showWorkFlash();
+    // Drafts discarded over there: back to what the server has.
+    if (dropped.length) {
+        fetchReasonArrearData(dropped).then(map => {
+            allRows.filter(r => dropped.includes(r.concate)).forEach(r => {
+                const found = map.get(r.concate);
+                r.ajReason = found ? found.aj || "" : "";
+                r.akSolution = found ? found.ak || "" : "";
+                r.alFollowup = found && found.al ? formatRowDateDMY(found.al) : "";
+                r.promiseStatus = computeStatusFromDate(r.alFollowup);
+                r.__pendingSubmit = false;
+            });
+            renderTable(currentRows);
+        }).catch(() => {});
+    }
+});
 
 document.getElementById("noReasonBranchFilter")?.addEventListener("change", showNoReasonSummary);
 
@@ -3903,7 +3605,9 @@ function showArrearsScopeDialog() {
         // From a reminder the scope is already known: their own
         // NoCoRespone loans are under their ID (column V), everything
         // else under their name (column W).
-        arrearsScopeMode = reminderFocus
+        arrearsScopeMode = arrearsReturn
+            ? arrearsReturn.scopeMode || ""
+            : reminderFocus
             ? (reminderFocus.kind === "outarea" ? "own" : "")
             : pendingWorkLink
                 ? (pendingWorkLink.kind === "outarea" ? "own" : "")
