@@ -284,103 +284,6 @@ No Internet Connection
 <!-- ========================= -->
 
 <!-- ========================= -->
-<!-- MAP PICKER (drag the pin to set the customer's location) -->
-<!-- ========================= -->
-
-<div id="mapBackdrop" class="map-backdrop">
-<div id="mapCard" class="map-card">
-
-<div class="map-head">
-<span class="map-title" data-i18n="arrears.mapTitle">ជ្រើសទីតាំងលើផែនទី</span>
-<div class="map-modes">
-<button type="button" class="map-mode-btn active" data-mode="street" data-i18n="arrears.mapModeStreet">ផែនទី</button>
-<button type="button" class="map-mode-btn" data-mode="satellite" data-i18n="arrears.mapModeSatellite">ផ្កាយរណប</button>
-</div>
-<button type="button" id="btnMapClose" class="map-close" aria-label="បិទ" data-i18n-aria-label="common.close">✕</button>
-</div>
-
-<div id="mapCanvas" class="map-canvas"></div>
-
-<div class="map-hint" data-i18n="arrears.mapHint">ចុចលើផែនទីដើម្បីកំណត់ទីតាំង</div>
-
-<div class="map-foot">
-<span class="map-coords" id="mapCoords">-</span>
-<div class="map-foot-actions">
-<button type="button" id="btnMapHere" class="map-btn"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span> <span data-i18n="arrears.mapMyLocation">ទីតាំងខ្ញុំ</span></button>
-<button type="button" id="btnMapConfirm" class="map-btn map-btn-primary" data-i18n="common.ok">យល់ព្រម</button>
-</div>
-</div>
-
-</div>
-</div>
-
-<div id="reasonBackdrop" class="reason-backdrop">
-
-<div id="reasonCard" class="reason-card">
-
-<div class="reason-title" data-i18n="arrears.reasonArrearTitle">Reason Arrear</div>
-<div class="reason-subtitle" id="reasonSubtitle">-</div>
-
-<!-- Loan context, filled by renderReasonInfo() in arrears.js -->
-<div class="reason-info" id="reasonInfo"></div>
-
-<div class="reason-group">
-<label for="reasonAJ" data-i18n="arrears.reasonOccupationLabel">មុខរបរ</label>
-<input type="text" id="reasonAJ" placeholder="...">
-</div>
-
-<div class="reason-group">
-<label for="reasonAK" data-i18n="arrears.reasonSolutionLabel">មូលហេតុ/ដំណោះស្រាយ</label>
-<textarea id="reasonAK" placeholder="..."></textarea>
-</div>
-
-<div class="reason-group">
-<label for="reasonAL" data-i18n="arrears.reasonPromiseDateLabel">ថ្ងៃសន្យាសង</label>
-<input type="date" id="reasonAL">
-</div>
-
-<div class="reason-group">
-<label for="reasonGPS" data-i18n="arrears.reasonGpsLabel">និយាមការ (GPS)</label>
-<input type="text" id="reasonGPS" placeholder="មិនទាន់កំណត់ទីតាំង" data-i18n-placeholder="arrears.gpsNotSetPlaceholder" inputmode="decimal" autocomplete="off">
-<div class="reason-gps-row">
-<button type="button" id="btnGpsHere" class="reason-gps-btn"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span> <span data-i18n="arrears.gpsCurrentBtn">កំណត់ទីតាំងបច្ចុប្បន្ន</span></button>
-<button type="button" id="btnGpsPick" class="reason-gps-btn"><span class="ui-ico ui-ico-map" aria-hidden="true"></span> <span data-i18n="arrears.gpsPickBtn">ជ្រើសលើផែនទី</span></button>
-<button type="button" id="btnGpsOpen" class="reason-gps-btn"><span class="ui-ico ui-ico-compass" aria-hidden="true"></span> <span data-i18n="arrears.gpsViewBtn">មើលលើផែនទី</span></button>
-</div>
-<div class="reason-gps-hint" id="reasonGpsHint"></div>
-</div>
-
-<!-- Shown when the customer has more than one LD: Save writes the same
-     reason to every LD of the CIF. -->
-<label class="reason-apply-all" id="reasonApplyAllWrap" hidden>
-<input type="checkbox" id="reasonApplyAll">
-<span id="reasonApplyAllText"></span>
-</label>
-
-<div class="reason-meta" id="reasonMeta"></div>
-
-<div class="reason-pending-note" id="reasonPendingNote"></div>
-
-<div class="reason-actions">
-<button id="btnReasonCancel" data-i18n="common.cancel">Cancel</button>
-<button id="btnReasonSave" data-i18n="common.save">រក្សាទុក</button>
-<button id="btnReasonSubmit" data-i18n="arrears.submitReasonBtn">ដាក់ស្នើមូលហេតុយឺតយ៉ាវ</button>
-</div>
-
-<!-- Move between rows without closing the modal. Follows whatever
-     filter/sort the table currently has. -->
-<div class="reason-nav">
-<button type="button" id="btnReasonPrev" class="reason-nav-btn" title="ថយក្រោយ" data-i18n-title="arrears.navPrevTitle">‹</button>
-<span class="reason-nav-pos" id="reasonNavPos">-</span>
-<button type="button" id="btnReasonNext" class="reason-nav-btn" title="បន្ទាប់" data-i18n-title="arrears.navNextTitle">›</button>
-</div>
-
-
-</div>
-
-</div>
-
-<!-- ========================= -->
 <!-- NO REASON ARREAR SUMMARY (modal popup) -->
 <!-- ========================= -->
 
@@ -834,9 +737,6 @@ No Internet Connection
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
 
 <!-- EXPORT (SheetJS) -->
-<!-- MAP PICKER (Leaflet + OpenStreetMap — no API key required) -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
