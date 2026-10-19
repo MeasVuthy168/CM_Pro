@@ -2691,6 +2691,7 @@ document.getElementById("btnSubmitAllPending")?.addEventListener("click", submit
 // ========================================
 
 async function refreshArrears() {
+    arrearsReasonsAt = 0;
     if (typeof showAppLoading === "function") {
         // Progress mode: % bar driven by the row pages as they arrive,
         // and the topbar / bottom nav stay usable meanwhile.
@@ -2742,6 +2743,7 @@ async function refreshArrears() {
         applyReasonArrearOverlay(allRows, reasonMap);
         applyPendingReasonsToRows(allRows); // re-apply — local pending still wins over the fresh server overlay
         applyFilters(); // quiet re-render with the fresher data
+        arrearsReasonsAt = Date.now();
     } catch (err) {
         console.error("[reasonarrear overlay] failed, table still shows bulk data:", err);
     }
@@ -3508,8 +3510,44 @@ document.getElementById("btnNoReasonClose")?.addEventListener("click", closeNoRe
 // "ការងារត្រូវបំពេញ" now opens its own page (Master Data > Work to
 // complete). The summary modal below still serves ?work= links.
 document.getElementById("btnNoReasonSummary")?.addEventListener("click", () => {
+    handOffWorkRows();
     location.href = "/CM_Pro/pages/masterdata/work.html";
 });
+
+// When the Reason Arrear overlay last finished for the rows in memory
+// (0 = not yet, or the data has been reloaded since).
+let arrearsReasonsAt = 0;
+
+// The rows are already here — hand them to the Work to complete page so
+// it opens instantly instead of loading them all again. Same fields as
+// its own GET /api/arreast24byco/work. Only when they match what that
+// page would load: reasons overlaid, and not Viewer_Staff's "own (ID)"
+// scope (the page uses the by-name scope).
+function handOffWorkRows() {
+    try {
+        sessionStorage.removeItem("cm_work_snapshot_v1");
+        if (!arrearsReasonsAt || arrearsScopeMode === "own") return;
+        const isoFromDMY = dmy => {
+            const m = String(dmy || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            return m ? `${m[3]}-${m[2]}-${m[1]}` : "";
+        };
+        const rows = allRows
+            .filter(r => String(r.cif || "").trim() && r.concate && !isNoCoResponseRow(r))
+            .map(r => ({
+                loanNumber: r.loanNumber, customer: r.customer, location: r.location, arreas: r.arreas,
+                day: r.day, accountLoan: r.accountLoan, tell: r.tell, cif: r.cif, occu: r.occu,
+                branch: r.branch, coId: r.coId, coResponse: r.coResponse, ccy: r.ccy,
+                teamLeader: r.teamLeader, class: r.class, concate: r.concate, product: r.product,
+                aj: r.ajReason || "", ak: r.akSolution || "", al: isoFromDMY(r.alFollowup),
+                user: r.user || "", dateBackup: r.dateBackup || ""
+            }));
+        const user = JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}");
+        const payload = JSON.stringify({ at: arrearsReasonsAt, username: user.username || "", lastUploadAt: lastUploadAtRaw || "", rows });
+        if (payload.length < 4 * 1024 * 1024) sessionStorage.setItem("cm_work_snapshot_v1", payload);
+    } catch (e) {
+        // Not fatal: the page just loads its own rows.
+    }
+}
 
 document.getElementById("noReasonBranchFilter")?.addEventListener("change", showNoReasonSummary);
 
