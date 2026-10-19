@@ -729,3 +729,21 @@ body.ac-open{ overflow:hidden; }
 [data-theme="dark"] .ac-mic, [data-theme="darkgray"] .ac-mic{ background:rgba(255,255,255,.1); color:#fff; }
 [data-theme="dark"] .ac-send, [data-theme="darkgray"] .ac-send{ background:#D4AF37; color:#0E1B3C; }
 [data-theme="dark"] .ac-rank li::before, [data-theme="darkgray"] .ac-rank li::before{ background:#D4AF37; color:#0E1B3C; }
+
+/* Compare switch on a stat card (ថ្ងៃមុន | ចុងខែមុន | ចុងឆ្នាំមុន | 📅) */
+.ac-cmp{ display:flex; gap:4px; margin-top:6px; padding:3px; border-radius:12px; background:#EEF1F6; }
+.ac-cmp button, .ac-cmp label{
+    flex:1; position:relative; border:none; background:none; border-radius:9px;
+    font:inherit; font-size:11.5px; font-weight:700; color:#5B6B8C;
+    padding:6px 2px; cursor:pointer; text-align:center; white-space:nowrap;
+}
+.ac-cmp label{ flex:0 0 38px; }
+.ac-cmp .on{ background:#0E1B3C; color:#FFD700; }
+/* The date input covers its 📅 label invisibly, so a tap opens the
+   native date picker. */
+.ac-cmp-date{ position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+.ac-bubble.ac-loading{ opacity:.5; transition:opacity .15s; }
+[data-theme="dark"] .ac-cmp, [data-theme="darkgray"] .ac-cmp{ background:rgba(255,255,255,.06); }
+[data-theme="dark"] .ac-cmp button, [data-theme="darkgray"] .ac-cmp button,
+[data-theme="dark"] .ac-cmp label, [data-theme="darkgray"] .ac-cmp label{ color:#9AA8C7; }
+[data-theme="dark"] .ac-cmp .on, [data-theme="darkgray"] .ac-cmp .on{ background:#D4AF37; color:#0E1B3C; }

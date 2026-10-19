@@ -67,8 +67,15 @@
         return "$" + Math.round(v);
     }
 
-    function pct(n) {
-        return (Math.round((Number(n) || 0) * 100) / 100) + "%";
+    // The snapshot stores PAR / NPL shares as fractions (0.1388 = 13.88%).
+    function pct(fraction) {
+        return (Math.round((Number(fraction) || 0) * 10000) / 100) + "%";
+    }
+
+    // A change in percent: one decimal, or two when it would round to 0.
+    function changePct(delta, base) {
+        const v = Math.abs(delta / base * 100);
+        return (v < 0.1 ? Math.round(v * 100) / 100 : Math.round(v * 10) / 10) + "%";
     }
 
     // ---------- voice language ----------
@@ -91,16 +98,20 @@
     }
 
     // ---------- data ----------
-    async function loadOverview(force) {
-        if (!force) {
-            try {
-                const hit = JSON.parse(sessionStorage.getItem(OVERVIEW_KEY) || "null");
-                if (hit && Date.now() - hit.at < OVERVIEW_TTL) return hit.data;
-            } catch (e) {}
-        }
-        const data = await API.get("/api/assistant/overview");
+    // compare: { mode: prev|month|year|date, date } or null for the
+    // admin's default (Admin → Smart Alerts → CM Pro AI comparison).
+    async function loadOverview(compare) {
+        const query = compare
+            ? `?compare=${encodeURIComponent(compare.mode)}${compare.date ? `&date=${encodeURIComponent(compare.date)}` : ""}`
+            : "";
+        const cacheKey = OVERVIEW_KEY + query;
+        try {
+            const hit = JSON.parse(sessionStorage.getItem(cacheKey) || "null");
+            if (hit && Date.now() - hit.at < OVERVIEW_TTL) return hit.data;
+        } catch (e) {}
+        const data = await API.get("/api/assistant/overview" + query);
         if (!data || !data.ok) throw new Error((data && data.message) || "overview failed");
-        try { sessionStorage.setItem(OVERVIEW_KEY, JSON.stringify({ at: Date.now(), data })); } catch (e) {}
+        try { sessionStorage.setItem(cacheKey, JSON.stringify({ at: Date.now(), data })); } catch (e) {}
         return data;
     }
 
@@ -120,7 +131,7 @@
         return t("assistant.who.branch", { branch: row.branch });
     }
 
-    // One "+1.2%" pill comparing to the previous snapshot day.
+    // One "+1.2%" pill comparing to the comparison snapshot.
     function changePill(metric, cur, prev) {
         if (!prev) return "";
         const field = metric === "par" ? "par" : metric;
@@ -132,7 +143,7 @@
         const sign = delta > 0 ? "+" : "−";
         const body = metric === "npl"
             ? `${sign}${Math.abs(delta)}`
-            : a ? `${sign}${Math.abs(Math.round(delta / a * 1000) / 10)}%` : `${sign}${usdShort(Math.abs(delta))}`;
+            : a ? `${sign}${changePct(delta, a)}` : `${sign}${usdShort(Math.abs(delta))}`;
         return `<span class="ac-pill ${good ? "good" : "bad"}">${delta > 0 ? "▲" : "▼"} ${body}</span>`;
     }
 
@@ -164,7 +175,25 @@
         return { href: PAGE_URLS.creditReportBranch, label: t("assistant.openBranchReport") };
     }
 
-    function statCard(row, data, metrics) {
+    // What the card is compared with, and buttons to change it. q is the
+    // question that produced the card, re-asked with the new comparison.
+    function compareBar(row, data, q, prevDate) {
+        const mode = (data.compare && data.compare.mode) || "prev";
+        const foot = row.prev && prevDate
+            ? t(`assistant.vs.${mode}`, { date: prevDate })
+            : t("assistant.vs.none");
+        const btn = m => `<button type="button" data-cmp="${m}" class="${m === mode ? "on" : ""}">${esc(t(`assistant.cmp.${m}`))}</button>`;
+        return `
+            <div class="ac-foot">${esc(foot)}</div>
+            <div class="ac-cmp" data-q="${esc(q)}">
+                ${btn("prev")}${btn("month")}${btn("year")}
+                <label class="${mode === "date" ? "on" : ""}" title="${esc(t("assistant.cmp.date"))}">📅
+                    <input type="date" class="ac-cmp-date" value="${esc(mode === "date" && data.compare.date ? data.compare.date : "")}" aria-label="${esc(t("assistant.cmp.date"))}">
+                </label>
+            </div>`;
+    }
+
+    function statCard(row, data, metrics, q) {
         const date = row.id != null ? (data.officerDate || data.date) : data.date;
         const prevDate = row.id != null ? (data.officerPrevDate || data.prevDate) : data.prevDate;
         const link = reportLink(row, data);
@@ -183,7 +212,7 @@
                         </div>
                         <div class="ac-sub">${esc(metricSub(m, row))}</div>
                     </div>`).join("")}
-                ${row.prev && prevDate ? `<div class="ac-foot">${esc(t("assistant.vsDate", { date: prevDate }))}</div>` : ""}
+                ${compareBar(row, data, q, prevDate)}
                 <a class="ac-link" href="${esc(link.href)}">${esc(link.label)} ›</a>
             </div>`;
     }
@@ -236,10 +265,10 @@
         };
     }
 
-    async function answerAsk(intent) {
+    async function answerAsk(intent, q) {
         let data;
         try {
-            data = await loadOverview();
+            data = await loadOverview(intent.compare || null);
         } catch (e) {
             return { html: esc(t("assistant.loadFailed")) };
         }
@@ -262,7 +291,7 @@
         const lead = intent.metric === "summary"
             ? t("assistant.lead.summary", { who: whoLabel(row, data) })
             : t("assistant.lead.metric", { metric: metricLabel(intent.metric), who: whoLabel(row, data), value: metricValue(intent.metric, row) });
-        return { html: `<p>${esc(lead)}</p>${statCard(row, data, metrics)}` };
+        return { html: `<p>${esc(lead)}</p>${statCard(row, data, metrics, q)}` };
     }
 
     async function answerAlerts() {
@@ -291,6 +320,7 @@
             <p>${esc(t("assistant.help.lead"))}</p>
             <ul class="ac-help">
                 <li>📊 ${esc(t("assistant.help.data"))}</li>
+                <li>📅 ${esc(t("assistant.help.compare"))}</li>
                 <li>🏆 ${esc(t("assistant.help.rank"))}</li>
                 <li>🔎 ${esc(t("assistant.help.customer"))}</li>
                 <li>⚠️ ${esc(t("assistant.help.alerts"))}</li>
@@ -320,7 +350,7 @@
             case "alerts":
                 return answerAlerts();
             case "ask":
-                return answerAsk(intent);
+                return answerAsk(intent, text);
             default:
                 return { html: `<p>${esc(t("assistant.unknown", { q: text }))}</p>`, chips: true };
         }
@@ -356,9 +386,37 @@
         listEl.scrollTop = listEl.scrollHeight;
         if (save) {
             history.push({ role, html });
+            el.dataset.h = history.length - 1;
             saveHistory();
         }
         return el;
+    }
+
+    // A compare button / date on a card: re-answer that card's question
+    // with the new comparison, in place.
+    async function recompare(bar, compare) {
+        const msg = bar.closest(".ac-msg");
+        const bubble = msg && msg.querySelector(".ac-bubble");
+        if (!bubble || busy) return;
+        busy = true;
+        bubble.classList.add("ac-loading");
+        let reply;
+        try {
+            const intent = N().parse(bar.dataset.q);
+            reply = intent.type === "ask"
+                ? await answerAsk({ ...intent, compare }, bar.dataset.q)
+                : { html: bubble.innerHTML };
+        } catch (e) {
+            reply = { html: esc(t("assistant.loadFailed")) };
+        }
+        bubble.innerHTML = reply.html;
+        bubble.classList.remove("ac-loading");
+        const i = Number(msg.dataset.h);
+        if (Number.isInteger(i) && history[i]) {
+            history[i].html = reply.html;
+            saveHistory();
+        }
+        busy = false;
     }
 
     function chipsHtml() {
@@ -480,6 +538,13 @@
             if (e.target === sheet) close();
             const chip = e.target.closest(".ac-chip");
             if (chip) ask(chip.textContent);
+            const cmp = e.target.closest(".ac-cmp button[data-cmp]");
+            if (cmp) recompare(cmp.closest(".ac-cmp"), { mode: cmp.dataset.cmp, date: null });
+        });
+        sheet.addEventListener("change", (e) => {
+            if (e.target.classList.contains("ac-cmp-date") && e.target.value) {
+                recompare(e.target.closest(".ac-cmp"), { mode: "date", date: e.target.value });
+            }
         });
         sheet.querySelector(".ac-close").onclick = close;
         sheet.querySelector(".ac-send").onclick = () => ask(inputEl.value);
@@ -498,7 +563,7 @@
 
         try { history = JSON.parse(sessionStorage.getItem(HISTORY_KEY) || "[]"); } catch (e) { history = []; }
         if (history.length) {
-            history.forEach(m => addMessage(m.role, m.html, { save: false }));
+            history.forEach((m, i) => { addMessage(m.role, m.html, { save: false }).dataset.h = i; });
         } else {
             const name = typeof getVoiceUserFirstName === "function" ? getVoiceUserFirstName() : "";
             addMessage("bot", `<p>${esc(name ? t("assistant.hello", { name }) : t("assistant.helloNoName"))}</p>${chipsHtml()}`);

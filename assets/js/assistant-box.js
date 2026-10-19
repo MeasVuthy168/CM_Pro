@@ -154,7 +154,8 @@ function describeSmartAlert(a) {
     if (a.kind === 'par_rise') {
         return t('dashboard.alert.parRise', {
             who, pct: a.changePct, from: fmtUsd(a.from), to: fmtUsd(a.to),
-            par: Math.round((Number(a.parPct) || 0) * 10) / 10
+            // parPct is a fraction, like the snapshot (0.0312 = 3.12%)
+            par: Math.round((Number(a.parPct) || 0) * 1000) / 10
         });
     }
     if (a.kind === 'os_drop') {
@@ -356,7 +357,7 @@ function testAssistantAlert() {
         extra: {
             date: '2026-10-18',
             alerts: [
-                { scope: 'branch', branch: 'Svay Rieng', kind: 'par_rise', changePct: 4.2, from: 250000, to: 260500, parPct: 3.1 },
+                { scope: 'branch', branch: 'Svay Rieng', kind: 'par_rise', changePct: 4.2, from: 250000, to: 260500, parPct: 0.031 },
                 { scope: 'branch', branch: 'Nhor', kind: 'os_drop', changePct: 3.6, from: 1820000, to: 1754000 },
                 { scope: 'officer', id: '9027', name: 'Sok Dara', branch: 'Nhor', kind: 'npl_rise', change: 6, from: 4, to: 10 }
             ]
