@@ -4329,3 +4329,42 @@ body.arr-view-card .arr-sort-chip-row:not([hidden]){ display:flex; }
 #outAreaCard.oa-readonly .oa-item-check{
     display:none !important;
 }
+
+/* Edit Out-of-Area Arrears — "To edit" card: current officer + arrears
+   amount under the address; friendlier empty state. */
+.oa-item-meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:4px 10px;
+    margin-top:3px;
+    font-size:12px;
+    color:var(--arr-text-muted);
+}
+.oa-item-meta:empty{ display:none; }
+.oa-item-meta .ui-ico{ font-size:12px; color:#D4AF37; }
+.oa-item-amt{
+    color:#B91C1C;
+    font-weight:700;
+    font-variant-numeric:tabular-nums;
+}
+[data-theme="dark"] .oa-item-amt{ color:#FCA5A5; }
+.oa-empty-art{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    padding:34px 10px;
+}
+.oa-empty-art strong{ font-size:14px; color:var(--arr-text); }
+.oa-empty-ico{
+    width:52px;
+    height:52px;
+    border-radius:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(212,175,55,.14);
+    color:#B8860B;
+    font-size:24px;
+}
+[data-theme="dark"] .oa-empty-ico{ color:#FFD700; }

@@ -141,6 +141,7 @@
         function setOutAreaTabCount(view, n) {
             const el = document.getElementById(view === "edited" ? "oaTabEditedCount" : "oaTabCandidatesCount");
             if (el) el.textContent = Number.isFinite(n) ? n.toLocaleString() : "";
+            if (host.onCounts) host.onCounts(view, n);
         }
 
         // Branch chips with a count each; tapping one narrows the list.
@@ -204,8 +205,17 @@
 
             // "edited" mode
             document.getElementById("outAreaSelectBar").hidden = false;
-            tbody.innerHTML = `<div class="oa-empty">កំពុងផ្ទុក...</div>`;
+            tbody.innerHTML = `<div class="oa-empty">${escapeHtml(t("arrears.oaLoadingEdited"))}</div>`;
             document.getElementById("outAreaListSubtitle").textContent = "";
+
+            // % bar for the whole load (saved list, then the OS check of
+            // anything not in the loaded rows, chunk by chunk) — not while
+            // typing a search, which re-runs this on every keystroke.
+            const withProgress = !searchTerm.trim() && typeof showAppLoading === "function";
+            const progress = (pct, sub) => {
+                if (withProgress && typeof setAppLoadingProgress === "function") setAppLoadingProgress(pct, sub);
+            };
+            if (withProgress) showAppLoading(t("arrears.oaLoadingEdited"), { progress: true, key: "outarea:edited" });
 
             try {
                 const data = await fetchOutAreaEditedItems(searchTerm);
@@ -221,7 +231,9 @@
                 const missingLdCifs = items
                     .filter(item => !allRows.find(r => r.concate === item.ldCif))
                     .map(item => item.ldCif);
-                const { items: osLookup, failedLdCifs } = await fetchOsLookupBatch(missingLdCifs);
+                progress(missingLdCifs.length ? 20 : 95, missingLdCifs.length ? `${t("arrears.oaCheckingOs")} 0 / ${missingLdCifs.length.toLocaleString()}` : "");
+                const { items: osLookup, failedLdCifs } = await fetchOsLookupBatch(missingLdCifs, (done, total) =>
+                    progress(20 + 75 * done / total, `${t("arrears.oaCheckingOs")} ${done.toLocaleString()} / ${total.toLocaleString()}`));
 
                 if (failedLdCifs.size > 0) {
                     notify(`ការត្រួតពិនិត្យ OS បរាជ័យសម្រាប់ ${failedLdCifs.size} កំណត់ត្រា — មិនបានចាត់ថ្នាក់ជា Paid off ទេ (ដើម្បីជៀសវាងកំហុស)`, "error");
@@ -275,6 +287,8 @@
             } catch (err) {
                 console.error("[outArea] fetch edited list failed:", err);
                 tbody.innerHTML = `<div class="oa-empty">មិនអាចផ្ទុកទិន្នន័យបានទេ</div>`;
+            } finally {
+                if (withProgress && typeof hideAppLoading === "function") hideAppLoading();
             }
         }
 
@@ -282,7 +296,7 @@
         // silently marks everything in it as "Paid off". Each ldCif that couldn't
         // actually be checked comes back in failedLdCifs so the caller can show an
         // honest "unknown" state instead of a confident wrong answer.
-        async function fetchOsLookupBatch(ldCifs) {
+        async function fetchOsLookupBatch(ldCifs, onProgress) {
             const CHUNK_SIZE = 200;
             const items = {};
             const failedLdCifs = new Set();
@@ -308,6 +322,7 @@
                     console.error("[outArea] OS lookup-batch chunk failed:", err);
                     chunk.forEach(c => failedLdCifs.add(c));
                 }
+                if (onProgress) onProgress(Math.min(i + CHUNK_SIZE, ldCifs.length), ldCifs.length);
             }
 
             return { items, failedLdCifs };
@@ -345,7 +360,11 @@
                 const detail = showActions
                     ? `<div class="oa-item-move"><span class="ui-ico ui-ico-officer" aria-hidden="true"></span> ${escapeHtml(entry.thirdCol || "-")} · ${escapeHtml(entry.newCo || "-")}</div>
                        ${entry.uploadedBy || entry.updatedAt ? `<div class="oa-item-by">${escapeHtml(entry.uploadedBy || "")}${entry.updatedAt ? ` · ${escapeHtml(fmtDateTime(entry.updatedAt))}` : ""}</div>` : ""}`
-                    : (row.location ? `<div class="oa-item-addr"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span> ${escapeHtml(row.location)}</div>` : "");
+                    : (row.location ? `<div class="oa-item-addr"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span> ${escapeHtml(row.location)}</div>` : "") +
+                      `<div class="oa-item-meta">
+                          ${row.coId ? `<span><span class="ui-ico ui-ico-officer" aria-hidden="true"></span> ${escapeHtml(officerLabel(row.coId, outAreaOfficerNames))}</span>` : ""}
+                          ${parseFloat(row.arreas) > 0 ? `<span class="oa-item-amt">${escapeHtml(arrFormatAmount(row.arreas))}${row.ccy ? ` ${escapeHtml(row.ccy)}` : ""}</span>` : ""}
+                      </div>`;
                 item.innerHTML = `
                     ${showCheckbox ? `
                     <label class="oa-item-check" data-stop><input type="checkbox" class="outarea-row-checkbox" data-ldcif="${escapeHtml(entry.ldCif)}" ${outAreaSelectedForDelete.has(entry.ldCif) ? "checked" : ""}></label>` : ""}
@@ -390,7 +409,11 @@
             });
 
             if (!entries.length) {
-                list.innerHTML = `<div class="oa-empty">គ្មានទិន្នន័យ</div>`;
+                const doneAll = !showActions && !document.getElementById("outAreaSearch").value.trim() && !outAreaBranchFilter;
+                list.innerHTML = `<div class="oa-empty oa-empty-art">
+                    <span class="oa-empty-ico"><span class="ui-ico ui-ico-clipboard" aria-hidden="true"></span></span>
+                    <strong>${escapeHtml(t(doneAll ? "arrears.oaEmptyDone" : "arrears.oaEmpty"))}</strong>
+                </div>`;
             }
 
             document.getElementById("outAreaListSubtitle").textContent = subtitleText;
@@ -509,6 +532,8 @@
 
             document.getElementById("outAreaListScreen").style.display = "none";
             document.getElementById("outAreaDetailScreen").style.display = "block";
+            // Standalone page: start the loan at the top, not where the list was scrolled.
+            if (host.standalone) { document.body.scrollTo?.(0, 0); window.scrollTo(0, 0); }
             document.getElementById("btnOutAreaDelete").style.display = "none";
 
             document.getElementById("outAreaDetailName").textContent = row.customer || "-";
@@ -652,7 +677,12 @@
             outAreaPaidOffLdCifs.clear();
             document.getElementById("outAreaSearch").value = "";
             setOutAreaTab("candidates");
-            loadOutAreaOfficerNames(); // warm the officer-name lookup for the detail screen
+            // Officer names for the cards and detail screen; on first load the
+            // "To edit" cards show bare IDs until they arrive, then redraw.
+            const hadNames = !!outAreaOfficerNames;
+            loadOutAreaOfficerNames().then(() => {
+                if (!hadNames && outAreaViewMode === "candidates" && document.getElementById("outAreaListScreen").style.display !== "none") renderOutAreaList();
+            });
             document.getElementById("outAreaListScreen").style.display = "block";
             document.getElementById("outAreaDetailScreen").style.display = "none";
             document.getElementById("outAreaBulkBar").hidden = true;
