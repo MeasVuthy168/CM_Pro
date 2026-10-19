@@ -23,8 +23,62 @@
         hero: document.getElementById("ndHero"),
         body: document.getElementById("ndBody"),
         loading: document.getElementById("ndLoading"),
-        empty: document.getElementById("ndEmpty")
+        empty: document.getElementById("ndEmpty"),
+        filter: document.getElementById("ndFilter")
     };
+
+    // Branch filter: for the roles that see more than one branch's
+    // alerts / officers (Admin, User, Viewer_Manager_A).
+    const FILTER_ROLES = ["admin", "user", "viewer_manager_a"];
+    let current = null;
+    let branchFilter = "";
+
+    function userRole() {
+        try {
+            const u = JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}");
+            return String(u.role || "").trim().toLowerCase();
+        } catch (e) {
+            return "";
+        }
+    }
+
+    function itemsOf(n) {
+        const x = n.extra || {};
+        return (n.type === "smart_alert" ? x.alerts : x.reminders) || [];
+    }
+
+    function byBranch(list) {
+        return branchFilter ? list.filter(i => String(i.branch || "").trim() === branchFilter) : list;
+    }
+
+    function renderFilter(n) {
+        const items = itemsOf(n);
+        const counts = new Map();
+        for (const i of items) {
+            const b = String(i.branch || "").trim();
+            if (b) counts.set(b, (counts.get(b) || 0) + 1);
+        }
+        if (!FILTER_ROLES.includes(userRole()) || counts.size < 2) {
+            el.filter.hidden = true;
+            return;
+        }
+        if (branchFilter && !counts.has(branchFilter)) branchFilter = "";
+        const chip = (value, label, n) =>
+            `<button type="button" class="nd-chip${value === branchFilter ? " on" : ""}" data-branch="${esc(value)}">${esc(label)}<span>${n}</span></button>`;
+        el.filter.innerHTML = `
+            <div class="nd-filter-label">${esc(t("notifDetail.filterBranch"))}</div>
+            <div class="nd-chips">
+                ${chip("", t("notifDetail.allBranches"), items.length)}
+                ${[...counts.keys()].sort((a, b) => a.localeCompare(b)).map(b => chip(b, b, counts.get(b))).join("")}
+            </div>`;
+        el.filter.hidden = false;
+    }
+
+    function render() {
+        renderFilter(current);
+        if (current.type === "smart_alert") renderSmartAlert(current);
+        else renderReminder(current);
+    }
 
     const ARREARS_URL = "/CM_Pro/pages/arrears/index.html";
     const BRANCH_REPORT_URL = "/CM_Pro/pages/creditreport/RepDetailbyBranch.html";
@@ -140,7 +194,7 @@
     }
 
     function renderSmartAlert(n) {
-        const alerts = (n.extra && n.extra.alerts) || [];
+        const alerts = byBranch((n.extra && n.extra.alerts) || []);
         const count = kind => alerts.filter(a => a.kind === kind).length;
         const branches = alerts.filter(a => a.scope !== "officer");
         const officers = alerts.filter(a => a.scope === "officer");
@@ -207,7 +261,7 @@
     }
 
     function renderReminder(n) {
-        const list = ((n.extra && n.extra.reminders) || []).slice()
+        const list = byBranch((n.extra && n.extra.reminders) || []).slice()
             .sort((a, b) => (b.unfilled + b.expired + b.outArea) - (a.unfilled + a.expired + a.outArea));
         const sum = k => list.reduce((s, r) => s + (Number(r[k]) || 0), 0);
         const slot = n.extra && n.extra.slot;
@@ -248,8 +302,14 @@
             return;
         }
         el.hero.hidden = false;
-        if (n.type === "smart_alert") renderSmartAlert(n);
-        else renderReminder(n);
+        current = n;
+        el.filter.addEventListener("click", e => {
+            const b = e.target.closest(".nd-chip");
+            if (!b) return;
+            branchFilter = b.dataset.branch || "";
+            render();
+        });
+        render();
         if (!n.isRead) markRead();
     }
 
