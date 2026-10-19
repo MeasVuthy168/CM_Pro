@@ -331,6 +331,11 @@
     border-radius:18px;
     padding:22px;
     box-shadow:0 10px 30px rgba(0,0,0,.3);
+    /* The Add/Edit form (7 fields) is taller than a short phone screen:
+       scroll inside the box instead of running off the top and bottom. */
+    max-height:100%;
+    overflow-y:auto;
+    overscroll-behavior:contain;
 }
 
 .md-dialog-title{

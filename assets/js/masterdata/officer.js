@@ -90,7 +90,7 @@ function mdFilteredOfficers() {
         }
         if (branchFilter && o.branch !== branchFilter) return false;
         if (keyword) {
-            const hay = `${o.officerId} ${o.name} ${o.nameKh || ""} ${o.phone || ""}`.toLowerCase();
+            const hay = `${o.officerId} ${o.name} ${o.nameKh || ""} ${o.position || ""} ${o.phone || ""}`.toLowerCase();
             if (!hay.includes(keyword)) return false;
         }
         return true;
@@ -119,6 +119,7 @@ function mdRenderTable(list, rows) {
             <td>${mdEscapeHtml(o.officerId) || "-"}</td>
             <td>${mdEscapeHtml(o.name) || "-"}</td>
             <td>${mdEscapeHtml(o.nameKh) || "-"}</td>
+            <td>${mdEscapeHtml(o.position) || "-"}</td>
             <td>${mdEscapeHtml(o.phone) || "-"}</td>
             <td>${mdEscapeHtml(o.team) || "-"}</td>
             <td>${mdEscapeHtml(o.branch) || "-"}</td>
@@ -140,6 +141,7 @@ function mdRenderTable(list, rows) {
             <th>${t("masterdata.officer.colId")}</th>
             <th>${t("masterdata.officer.colName")}</th>
             <th>${t("masterdata.officer.colNameKh")}</th>
+            <th>${t("masterdata.officer.colPosition")}</th>
             <th>${t("masterdata.officer.colPhone")}</th>
             <th>${t("masterdata.officer.colTeam")}</th>
             <th>${t("masterdata.officer.colBranch")}</th>
@@ -160,6 +162,7 @@ function mdRenderCards(list, rows) {
                     <div class="md-row-name">${mdEscapeHtml(o.name) || "-"}</div>
                     <div class="md-row-id">${t("masterdata.officer.colId")}: ${mdEscapeHtml(o.officerId) || "-"}</div>
                     <div class="md-row-id">${t("masterdata.officer.colNameKh")}: ${mdEscapeHtml(o.nameKh) || "-"}</div>
+                    <div class="md-row-id">${t("masterdata.officer.colPosition")}: ${mdEscapeHtml(o.position) || "-"}</div>
                     <div class="md-row-id">${t("masterdata.officer.colPhone")}: ${mdEscapeHtml(o.phone) || "-"}</div>
                 </div>
                 ${mdIsAdmin ? `
@@ -188,6 +191,7 @@ function mdOpenDialog(officer) {
     document.getElementById("mdFieldId").disabled = !!officer;
     document.getElementById("mdFieldName").value = officer ? officer.name : "";
     document.getElementById("mdFieldNameKh").value = officer ? (officer.nameKh || "") : "";
+    document.getElementById("mdFieldPosition").value = officer ? (officer.position || "") : "";
     document.getElementById("mdFieldPhone").value = officer ? (officer.phone || "") : "";
     document.getElementById("mdFieldTeam").value = officer ? (officer.team || "") : "";
     document.getElementById("mdFieldBranch").value = officer ? (officer.branch || "") : "";
@@ -204,6 +208,7 @@ async function mdSaveOfficer() {
     const officerId = document.getElementById("mdFieldId").value.trim();
     const name = document.getElementById("mdFieldName").value.trim();
     const nameKh = document.getElementById("mdFieldNameKh").value.trim();
+    const position = document.getElementById("mdFieldPosition").value;
     const phone = document.getElementById("mdFieldPhone").value.trim();
     const team = document.getElementById("mdFieldTeam").value;
     const branch = document.getElementById("mdFieldBranch").value;
@@ -212,7 +217,7 @@ async function mdSaveOfficer() {
     if (!name) return notify(t("masterdata.officer.nameRequired"), "warning");
 
     try {
-        const data = await API.post("/api/creditofficer/upsert", { officerId, name, nameKh, phone, team, branch });
+        const data = await API.post("/api/creditofficer/upsert", { officerId, name, nameKh, position, phone, team, branch });
         if (!data.ok) {
             notify(data.message || t("masterdata.officer.saveFailed"), "error");
             return;
