@@ -202,3 +202,20 @@
 .nd-live-loading b { margin-left: auto; color: #FFD700; font-size: 12px; font-variant-numeric: tabular-nums; }
 .nd-live-track { flex: 1 1 100%; height: 5px; border-radius: 99px; background: rgba(255, 255, 255, .14); overflow: hidden; }
 .nd-live-track span { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #D4AF37, #FFD700); transition: width .2s linear; }
+
+/* Reason Arrear submitted: one card per client */
+.nd-client { padding: 11px 13px; }
+.nd-client-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.nd-client-day {
+    flex: 0 0 auto; font-size: 11.5px; font-weight: 800; padding: 2px 8px; border-radius: 999px;
+    background: #FDECEA; color: #B42318;
+}
+[data-theme="dark"] .nd-client-day, [data-theme="darkgray"] .nd-client-day { background: rgba(240, 68, 56, .16); color: #FDA29B; }
+.nd-client-line { margin-top: 7px; font-size: 13px; line-height: 1.5; color: var(--notif-text-body); overflow-wrap: anywhere; }
+.nd-client-line em { display: block; font-style: normal; font-size: 11px; color: var(--notif-text-muted); }
+.nd-client-promise {
+    display: inline-flex; align-items: center; gap: 5px; margin-top: 8px;
+    font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+    background: rgba(22, 163, 74, .12); color: #15803D;
+}
+[data-theme="dark"] .nd-client-promise, [data-theme="darkgray"] .nd-client-promise { color: #86EFAC; }

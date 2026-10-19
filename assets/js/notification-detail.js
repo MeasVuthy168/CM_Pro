@@ -9,6 +9,9 @@
      - officer_reminder .. per officer: unfilled Reason Arrear, expired
                            promises, Out of Area NoCoRespone — each one
                            opens Daily Arrears showing only those clients
+     - Reason Arrear submit (moduleCode ReasonArrear_Submit) .. who
+                           submitted, and each client: LD, reason,
+                           promise date
    The list page hands the item over in sessionStorage; a direct open
    (push tap, reload) fetches /api/notifications/my and finds it.
 ========================================================= */
@@ -96,8 +99,13 @@
         }
     }
 
+    function isSubmit(n) {
+        return n && n.moduleCode === "ReasonArrear_Submit";
+    }
+
     function snapshotItems(n) {
         const x = n.extra || {};
+        if (isSubmit(n)) return x.clients || [];
         return (n.type === "smart_alert" ? x.alerts : x.reminders) || [];
     }
 
@@ -175,7 +183,8 @@
 
     function render() {
         renderFilter(current);
-        if (current.type === "smart_alert") renderSmartAlert(current);
+        if (isSubmit(current)) renderSubmit(current);
+        else if (current.type === "smart_alert") renderSmartAlert(current);
         else renderReminder(current);
     }
 
@@ -404,6 +413,47 @@
             : `<p class="nd-hint">${esc(n.message || "")}</p>`;
     }
 
+    // ---------- Reason Arrear submitted ----------
+    function whenOf(iso) {
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return "";
+        const p = v => String(v).padStart(2, "0");
+        return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+
+    function clientCard(c) {
+        const day = parseInt(c.day, 10);
+        const meta = [c.ld, c.cif ? `CIF ${c.cif}` : "", c.officer, c.branch].filter(Boolean).join(" · ");
+        return `
+            <div class="nd-card nd-client">
+                <div class="nd-client-head">
+                    <span class="nd-who"><b>${esc(c.customer || c.ld || "-")}</b><small>${esc(meta)}</small></span>
+                    ${Number.isFinite(day) ? `<span class="nd-client-day">${esc(t("notifDetail.daysLate", { n: day }))}</span>` : ""}
+                </div>
+                ${c.aj ? `<div class="nd-client-line"><em>${esc(t("notifDetail.occupation"))}</em>${esc(c.aj)}</div>` : ""}
+                ${c.ak ? `<div class="nd-client-line"><em>${esc(t("notifDetail.reason"))}</em>${esc(c.ak)}</div>` : ""}
+                ${c.al ? `<div class="nd-client-promise"><span class="ui-ico ui-ico-calendar" aria-hidden="true"></span>${esc(t("notifDetail.promiseOn", { d: dmy(c.al) }))}</div>` : ""}
+            </div>`;
+    }
+
+    function renderSubmit(n) {
+        const x = n.extra || {};
+        const list = applyFilters(x.clients || []);
+        const who = [x.submittedByName, x.submittedBy || n.createdBy].filter(Boolean);
+        el.hero.innerHTML = `
+            <div class="nd-hero-top">
+                <span class="nd-hero-ico"><span class="ui-ico ui-ico-edit" aria-hidden="true"></span></span>
+                <div>
+                    <div class="nd-hero-title">${esc(t("notifDetail.submitTitle"))}</div>
+                    <div class="nd-hero-sub">${esc([who.length > 1 ? `${who[0]} (${who[1]})` : who[0], whenOf(n.createdAt)].filter(Boolean).join(" · "))}</div>
+                </div>
+            </div>
+            <div class="nd-hero-foot">${esc(t("notifDetail.submitCount", { n: list.length }))}</div>`;
+        el.body.innerHTML = list.length
+            ? `<div class="nd-list">${list.map(clientCard).join("")}</div>`
+            : `<p class="nd-hint">${esc(n.message || "")}</p>`;
+    }
+
     // ---------- go ----------
     async function init() {
         loadComponent("topbar-container", "/CM_Pro/components/topbar.html");
@@ -416,7 +466,7 @@
         }
         el.loading.hidden = true;
         el.loading.style.display = "none";
-        if (!n || (n.type !== "smart_alert" && n.type !== "officer_reminder")) {
+        if (!n || (n.type !== "smart_alert" && n.type !== "officer_reminder" && !isSubmit(n))) {
             el.empty.style.display = "";
             return;
         }
