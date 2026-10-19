@@ -55,6 +55,7 @@ CMI18n.register({
   "assistant.level.officer": { km: "CO", en: "COs" },
   "assistant.level.branch": { km: "សាខា", en: "Branches" },
   "assistant.rank.top": { km: "{level} {metric} ខ្ពស់ជាងគេ", en: "{level} with the highest {metric}" },
+  "assistant.rank.creditOfficersOnly": { km: "តែមន្ត្រីតួនាទី Credit Officer ប៉ុណ្ណោះ (មិនរាប់ Stop Disburse)", en: "Credit Officers only (by position, excludes Stop Disburse)" },
   "assistant.rank.activeOnly": { km: "មិនរាប់បញ្ចូល CO ដែល Stop Disburse", en: "Excludes Stop Disburse COs" },
   "assistant.rank.bottom": { km: "{level} {metric} ទាបជាងគេ", en: "{level} with the lowest {metric}" },
   "assistant.lead.summary": { km: "នេះជាស្ថានភាពឥណទាន {who}៖", en: "Here's the latest for {who}:" },

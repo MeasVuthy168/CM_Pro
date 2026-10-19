@@ -243,9 +243,14 @@
         if (!list.length && level === "branch") { level = "officer"; list = data.officers; }
         const metric = intent.metric === "par" ? "overdue" : intent.metric;
         const k = rankKey(metric);
-        const active = r => level !== "officer" || String(r.branch || "").trim().toLowerCase() !== "stop disburse";
+        // CO rankings count only officers whose Position (List Officer)
+        // is "Credit Officer" and who aren't in Stop Disburse. Until any
+        // position has been set, fall back to excluding Stop Disburse only.
+        const active = r => String(r.branch || "").trim().toLowerCase() !== "stop disburse";
+        const byPosition = level === "officer" && list.some(r => r.position);
+        const eligible = r => level !== "officer" || (active(r) && (!byPosition || r.position === "Credit Officer"));
         const rows = list
-            .filter(r => r.os > 0 && active(r))
+            .filter(r => r.os > 0 && eligible(r))
             .sort((a, b) => intent.rank.dir === "bottom" ? a[k] - b[k] : b[k] - a[k])
             .slice(0, 5);
         if (!rows.length) return { html: esc(t("assistant.noData")) };
@@ -263,7 +268,7 @@
                         <span class="ac-card-who">${esc(title)}</span>
                         <span class="ac-card-date">${esc(date || "")}</span>
                     </div>
-                    ${level === "officer" ? `<div class="ac-foot">${esc(t("assistant.rank.activeOnly"))}</div>` : ""}
+                    ${level === "officer" ? `<div class="ac-foot">${esc(t(byPosition ? "assistant.rank.creditOfficersOnly" : "assistant.rank.activeOnly"))}</div>` : ""}
                     <ol class="ac-rank">
                         ${rows.map(r => `
                             <li>
