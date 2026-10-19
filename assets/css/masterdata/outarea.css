@@ -1,0 +1,44 @@
+/* =========================================================
+   Master Data > Edit Out-of-Area Arrears (pages/masterdata/outarea.html)
+   The editor's own look comes from arrears.css (it's also the modal on
+   Daily Arrears); this only turns that modal card into a page.
+========================================================= */
+.page-container{
+    padding:14px 14px 90px;
+}
+
+#outAreaCard.oa-page{
+    max-width:720px;
+    max-height:none;
+    margin:0 auto;
+    overflow:visible;
+    box-shadow:none;
+    padding:16px;
+}
+
+/* Detail screen header: plain (not sticky) inside a page. */
+#outAreaCard.oa-page .outarea-sticky-header{
+    position:static;
+    margin:-16px -16px 12px;
+    padding:12px 14px;
+    border-radius:16px 16px 0 0;
+}
+
+.oa-page-state{
+    padding:28px 8px;
+    text-align:center;
+    color:var(--arr-text-muted, #5b6474);
+    font-size:14px;
+}
+.oa-page-state button{
+    margin-top:12px;
+    height:36px;
+    padding:0 18px;
+    border:none;
+    border-radius:10px;
+    background:linear-gradient(180deg,#FFD700,#D4AF37);
+    color:#0E1B3C;
+    font-family:'KRASAR',sans-serif;
+    font-weight:bold;
+    cursor:pointer;
+}
