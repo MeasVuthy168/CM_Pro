@@ -14,6 +14,7 @@ const CM_ADMIN_TOOLS = [
   { key: "users",     label: "User Management",  labelKey: "admin.nav.users",        icon: "users", href: "/CM_Pro/pages/admin/users.html",       status: "live" },
   { key: "logs",      label: "Activity Logs",    labelKey: "admin.nav.logs",         icon: "logs", href: "/CM_Pro/pages/admin/activitylogs.html",status: "live" },
   { key: "notifications", label: "Notifications", labelKey: "admin.nav.notifications", icon: "bell", href: "/CM_Pro/pages/admin/notifications.html", status: "live" },
+  { key: "smartalerts", label: "Smart Alerts",  labelKey: "admin.nav.smartAlerts",   icon: "alert", href: "/CM_Pro/pages/admin/smartalerts.html", status: "live" },
   { key: "wallpaper", label: "Wallpaper",        labelKey: "admin.nav.wallpaper",     icon: "image", href: "/CM_Pro/pages/admin/wallpaper.html",   status: "live" },
   { key: "versions",  label: "App Versions",     labelKey: "admin.nav.versions",     icon: "package", href: "/CM_Pro/pages/admin/appversions.html", status: "live" },
   { key: "maintenance", label: "Storage Cleanup", labelKey: "admin.nav.maintenance", icon: "broom", href: "/CM_Pro/pages/admin/maintenance.html", status: "live" }
