@@ -93,6 +93,7 @@ function initVoiceCommand() {
     let matched = false;
     let heardAnything = false;
     let hadError = false;
+    let keepOpen = false; // an error the user has to act on stays on screen
     let cancelledByUser = false;
     let snackbarTimer = null;
 
@@ -103,6 +104,7 @@ function initVoiceCommand() {
         const name = getVoiceUserFirstName();
         greetingEl.textContent = name ? t("voice.greeting", { name }) : t("voice.greetingNoName");
         statusEl.textContent = t("voice.prompt");
+        statusEl.classList.remove("help");
         btnWrap.classList.add("listening");
         modal.classList.add("show");
     }
@@ -164,6 +166,7 @@ function initVoiceCommand() {
                 recognition = createRecognition();
                 btnWrap.classList.add("listening");
                 statusEl.textContent = t("voice.prompt");
+                statusEl.classList.remove("help");
                 try { recognition.start(); } catch (err) {}
             }, 250);
         });
@@ -203,6 +206,7 @@ function initVoiceCommand() {
             matched = false;
             heardAnything = false;
             hadError = false;
+            keepOpen = false;
             cancelledByUser = false;
         };
 
@@ -264,7 +268,14 @@ function initVoiceCommand() {
             if (event.error === "aborted") return;
 
             hadError = true;
-            if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+            const help = window.CMAssistantChat ? CMAssistantChat.voiceErrorText(event.error) : null;
+            if (help) {
+                // Says what to change (EN switch below, or a setting), so
+                // leave it up until the user taps EN / stop / outside.
+                statusEl.textContent = help;
+                statusEl.classList.add("help");
+                keepOpen = true;
+            } else if (event.error === "not-allowed" || event.error === "service-not-allowed") {
                 statusEl.textContent = t("voice.micBlocked");
             } else if (event.error === "no-speech") {
                 statusEl.textContent = t("voice.noSpeech");
@@ -289,6 +300,8 @@ function initVoiceCommand() {
             // moment longer below, so it doesn't look like it's still
             // recording.
             btnWrap.classList.remove("listening");
+
+            if (hadError && keepOpen) return;
 
             if (hadError) {
                 // Give the user a moment to actually read the message
