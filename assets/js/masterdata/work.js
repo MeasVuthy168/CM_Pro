@@ -109,7 +109,41 @@ function applyPending(rows) {
 }
 
 // ---------- load ----------
-async function wkLoad() {
+// Coming from Daily Arrears, its rows (reasons already applied) are handed
+// over in sessionStorage, so the page opens instantly instead of loading
+// everything a second time. Used only when it's this user's, under 10
+// minutes old, and older than no submit made here since (a submit makes
+// Daily Arrears' copy out of date) — otherwise load as usual.
+const WK_SNAPSHOT_KEY = "cm_work_snapshot_v1";
+const WK_SUBMITTED_KEY = "cm_work_submitted_at";
+
+function takeSnapshot() {
+    try {
+        const snap = JSON.parse(sessionStorage.getItem(WK_SNAPSHOT_KEY) || "null");
+        if (!snap || !Array.isArray(snap.rows)) return null;
+        const submittedAt = Number(localStorage.getItem(WK_SUBMITTED_KEY)) || 0;
+        const fresh = Date.now() - snap.at < 10 * 60 * 1000 && snap.at > submittedAt;
+        if (!fresh || snap.username !== (wkUser.username || "")) return null;
+        return snap;
+    } catch (e) {
+        return null;
+    }
+}
+
+function useRows(rows) {
+    wkRows = rows;
+    applyPending(wkRows);
+    renderChips();
+    renderList();
+}
+
+async function wkLoad({ fresh = false } = {}) {
+    const snap = fresh ? null : takeSnapshot();
+    if (snap) {
+        useRows(snap.rows);
+        if (snap.lastUploadAt) $("wkUpdated").textContent = fmtDateTime(snap.lastUploadAt);
+        return;
+    }
     if (typeof showAppLoading === "function") {
         showAppLoading(t("work.loading"), { progress: true, key: "masterdata:work" });
     }
@@ -119,10 +153,7 @@ async function wkLoad() {
         });
         const data = await res.json();
         if (!data.ok) throw new Error(data.message || "Failed to load.");
-        wkRows = data.rows || [];
-        applyPending(wkRows);
-        renderChips();
-        renderList();
+        useRows(data.rows || []);
     } catch (err) {
         console.error("[work] load failed:", err);
         $("wkList").innerHTML = `<div class="oa-page-state">${escapeHtml(t("masterdata.outArea.loadFailed"))}<br><button type="button" id="btnWkRetry">${escapeHtml(t("masterdata.outArea.retry"))}</button></div>`;
@@ -455,6 +486,8 @@ async function submitAll() {
             r.__pending = false;
         });
         ReasonKit.removePending(concates);
+        // Daily Arrears' handed-over copy no longer matches the server.
+        try { localStorage.setItem(WK_SUBMITTED_KEY, String(Date.now())); } catch (e) {}
         notify(tf("work.submitted", { n: concates.length.toLocaleString() }), "success");
         return true;
     } catch (err) {
@@ -556,12 +589,12 @@ $("btnGpsOpen").addEventListener("click", () => {
 ReasonKit.onPendingChange(renderPendingBar);
 
 $("btnWkRefresh").addEventListener("click", () => {
-    wkLoad();
+    wkLoad({ fresh: true });
     wkLoadInfo();
 });
 
 wkLoad();
-wkLoadInfo();
+if (!takeSnapshot()) wkLoadInfo();
 
 // ========================================
 // COMPONENT LOADER (topbar + bottomnav)
@@ -593,6 +626,8 @@ async function loadComponent(id, file) {
             if (backBtn) {
                 backBtn.onclick = () => {
                     if ($("wkDetailScreen").style.display === "block") return $("btnWkBack").click();
+                    // Opened from Daily Arrears' button: go back there.
+                    if (/\/pages\/arrears\//.test(document.referrer)) return history.back();
                     location.href = "/CM_Pro/pages/masterdata/index.html";
                 };
             }
