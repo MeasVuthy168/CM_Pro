@@ -470,6 +470,7 @@
       const data = await api("/api/admin/officer-reminders/settings");
       setToggle(!!(data.settings && data.settings.enabled));
       renderLastRun(data.lastRun);
+      if (data.workDay === false) el.lastRun.textContent += " · " + t("admin.officerReminders.offDay");
     } catch (e) {
       AdminUI.toast(t("admin.smartAlerts.loadFailed"), "error");
     }
