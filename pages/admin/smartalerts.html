@@ -217,6 +217,68 @@
       </div>
 
       <!-- ========================= -->
+      <!-- OFFICER REMINDERS (09:00 / 15:00) — GET/PUT -->
+      <!-- /api/admin/officer-reminders/settings, POST .../run -->
+      <!-- ========================= -->
+      <div class="adm-card sa-card">
+        <div class="sa-card-head">
+          <div class="adm-card-label">
+            <span class="adm-ico adm-ico-bell" aria-hidden="true"></span>
+            <span data-i18n="admin.officerReminders.label">Officer Reminders — 9:00 &amp; 15:00</span>
+          </div>
+          <button type="button" class="adm-toggle-switch" id="orToggle" role="switch" aria-checked="false">
+            <span class="adm-toggle-knob"></span>
+          </button>
+        </div>
+
+        <p class="adm-modal-message" data-i18n="admin.officerReminders.explain">
+          Every day at 9:00 and 15:00, each Credit Officer / FSRO (not in Stop Disburse) is told what is still waiting in Daily Arrears; branch managers and Admin get their officers' list.
+        </p>
+        <ul class="or-rules">
+          <li><b>📝</b><span data-i18n="admin.officerReminders.ruleUnfilled">Unfilled Reason Arrear (arrear T24)</span></li>
+          <li><b>⏰</b><span data-i18n="admin.officerReminders.ruleExpired">Expired promise to pay</span></li>
+          <li><b>📍</b><span data-i18n="admin.officerReminders.ruleOutArea">Out of Area arrears still NoCoRespone</span></li>
+        </ul>
+        <p class="sa-compare" id="orLastRun"></p>
+
+        <div class="adm-modal-footer sa-actions sa-actions-start">
+          <button type="button" class="adm-btn" id="orBtnPreview">
+            <span class="adm-ico adm-ico-eye" aria-hidden="true"></span>
+            <span data-i18n="admin.smartAlerts.preview">Preview</span>
+          </button>
+          <button type="button" class="adm-btn adm-btn-primary" id="orBtnSend" disabled>
+            <span class="adm-ico adm-ico-bell" aria-hidden="true"></span>
+            <span data-i18n="admin.smartAlerts.sendNow">Send Now</span>
+          </button>
+        </div>
+
+        <div id="orResult" hidden>
+          <div class="sa-kpis or-kpis">
+            <div class="sa-kpi"><b id="orKpiOfficers">0</b><span data-i18n="admin.officerReminders.kpiOfficers">Officers</span></div>
+            <div class="sa-kpi"><b id="orKpiUnfilled">0</b><span data-i18n="admin.officerReminders.kpiUnfilled">Unfilled reasons</span></div>
+            <div class="sa-kpi"><b id="orKpiExpired">0</b><span data-i18n="admin.officerReminders.kpiExpired">Expired promises</span></div>
+            <div class="sa-kpi"><b id="orKpiOutArea">0</b><span data-i18n="admin.officerReminders.kpiOutArea">NoCoRespone</span></div>
+          </div>
+          <div id="orTableWrap" class="sa-table-wrap">
+            <table class="adm-table sa-table">
+              <thead>
+                <tr>
+                  <th data-i18n="admin.officerReminders.colOfficer">Officer</th>
+                  <th data-i18n="admin.officerReminders.colUnfilled">Unfilled</th>
+                  <th data-i18n="admin.officerReminders.colExpired">Expired</th>
+                  <th data-i18n="admin.officerReminders.colOutArea">NoCoRespone</th>
+                </tr>
+              </thead>
+              <tbody id="orBody"></tbody>
+            </table>
+          </div>
+          <h3 class="sa-sub" id="orRecipientsTitle" data-i18n="admin.smartAlerts.recipientsTitle">Recipients &amp; message preview</h3>
+          <div class="sa-recipients" id="orRecipients"></div>
+          <p class="sa-empty" id="orEmpty" hidden data-i18n="admin.officerReminders.none">Nothing waiting — no reminder would be sent.</p>
+        </div>
+      </div>
+
+      <!-- ========================= -->
       <!-- CM PRO AI COMPARISON — GET/PUT /api/admin/assistant/settings -->
       <!-- What every user's chat cards compare against by default; users -->
       <!-- can still switch on each card. -->

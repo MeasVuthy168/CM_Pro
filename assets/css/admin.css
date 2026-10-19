@@ -1479,3 +1479,19 @@ input.sa-date {
   .sa-compare-pick { padding-left: 48px; }
   .sa-seg { grid-template-columns: 1fr 1fr; }
 }
+
+/* Officer Reminders card (Smart Alerts) */
+.or-rules { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.or-rules li { display: flex; gap: 8px; align-items: center; font-size: 0.875rem; }
+.or-rules b { width: 22px; text-align: center; }
+.or-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.or-n { text-align: center; font-variant-numeric: tabular-nums; color: var(--adm-text-muted); }
+.or-n.or-hot { color: #B42318; font-weight: 700; }
+[data-theme="dark"] .or-n.or-hot { color: #FDA29B; }
+.or-kpis { margin-top: 12px; }
+#orTableWrap th { overflow-wrap: anywhere; }
+@media (max-width: 560px) {
+  .or-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #orTableWrap th, #orTableWrap td { padding-left: 6px; padding-right: 6px; }
+  #orTableWrap th { font-size: 0.68rem; }
+}
