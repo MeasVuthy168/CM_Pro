@@ -3025,12 +3025,41 @@ display:none !important;
     margin-top:0 !important;
     margin-left:auto;
     gap:8px;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+    align-items:center;
 }
 .arr-actions #btnRefresh{
     display:inline-flex;
     align-items:center;
     gap:5px;
 }
+/* Work to complete — opens the ការងារត្រូវបំពេញ modal (was in the
+   "..." menu); first in the Refresh / Clear row, so it takes the
+   row's auto left margin. */
+.arr-actions .arr-work-btn{
+    font-family:'KRASAR',sans-serif;
+    margin-left:auto;
+    height:34px;
+    padding:0 12px;
+    border:none;
+    border-radius:10px;
+    background:#1A2E57;
+    color:#fff;
+    font-size:13px;
+    font-weight:bold;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    white-space:nowrap;
+    transition:.2s;
+}
+.arr-actions .arr-work-btn .ui-ico{ color:#FFD700; }
+.arr-actions .arr-work-btn:active{ transform:scale(.97); }
+[data-theme="dark"] .arr-actions .arr-work-btn{ background:#2A3F6E; }
+.arr-actions .arr-work-btn ~ #btnRefresh{ margin-left:0; }
 
 /* Results bar: count note + card/table toggle */
 .arr-results-bar{

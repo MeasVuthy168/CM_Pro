@@ -3837,7 +3837,6 @@ document.getElementById("btnNoReasonSummary")?.addEventListener("click", () => {
     const search = document.getElementById("noReasonSearch");
     if (search) search.value = "";
     showNoReasonSummary();
-    document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
 });
 
 document.getElementById("noReasonBranchFilter")?.addEventListener("change", showNoReasonSummary);
