@@ -298,7 +298,7 @@ function saButtonLoading(btn, on) {
           <span class="sa-count">${lines.length}</span>
         </summary>
         <div class="sa-message">
-          <div class="sa-message-title">⚠️ ចំណុចត្រូវយកចិត្តទុកដាក់ (${lines.length}) — ${esc(data.date)}</div>
+          <div class="sa-message-title">ចំណុចត្រូវយកចិត្តទុកដាក់ (${lines.length}) — ${esc(data.date)}</div>
           ${lines.slice(0, 8).map((l) => `<div class="sa-line">• ${esc(l)}</div>`).join("")}
           ${lines.length > 8 ? `<div class="sa-line sa-more">${esc(t("admin.smartAlerts.moreLines", { n: lines.length - 8 }))}</div>` : ""}
         </div>
@@ -535,7 +535,7 @@ function saButtonLoading(btn, on) {
           <span class="sa-count">${p.lines.length}</span>
         </summary>
         <div class="sa-message">
-          ${p.lines.slice(0, 10).map((l) => `<div class="sa-line">${esc(l)}</div>`).join("")}
+          ${p.lines.slice(0, 10).map((l) => `<div class="sa-line">${p.lines.length > 1 ? "• " : ""}${esc(l)}</div>`).join("")}
           ${p.lines.length > 10 ? `<div class="sa-line sa-more">${esc(t("admin.smartAlerts.moreLines", { n: p.lines.length - 10 }))}</div>` : ""}
         </div>
       </details>`).join("");

@@ -672,7 +672,7 @@ function renderReminderFocusBanner(count) {
         document.querySelector(".page-container")?.prepend(bar);
     }
     const t = (key, vars) => (window.CMI18n ? CMI18n.t(key, vars) : key);
-    const ico = { unfilled: "📝", expired: "⏰", outarea: "📍" }[reminderFocus.kind];
+    const ico = `<span class="ui-ico ui-ico-${{ unfilled: "edit", expired: "clock", outarea: "pin" }[reminderFocus.kind]}" aria-hidden="true"></span>`;
     const who = reminderFocus.kind === "outarea"
         ? `${reminderFocus.co || reminderFocus.coId} (${reminderFocus.coId})`
         : reminderFocus.co;

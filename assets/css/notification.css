@@ -575,6 +575,7 @@ only holds styles specific to the notifications page.
 .notify-icon-success{ --notify-ico:#16A34A; }
 .notify-icon-update{ --notify-ico:#0284C7; }
 .notify-icon-system{ --notify-ico:#475569; }
+.notify-icon-clipboard{ --notify-ico:#0F766E; }
 
 [data-theme="dark"] .notify-icon-bell,
 [data-theme="darkgray"] .notify-icon-bell{ --notify-ico:#FFD54A; }
@@ -594,6 +595,8 @@ only holds styles specific to the notifications page.
 [data-theme="darkgray"] .notify-icon-update{ --notify-ico:#38BDF8; }
 [data-theme="dark"] .notify-icon-system,
 [data-theme="darkgray"] .notify-icon-system{ --notify-ico:#CBD5E1; }
+[data-theme="dark"] .notify-icon-clipboard,
+[data-theme="darkgray"] .notify-icon-clipboard{ --notify-ico:#2DD4BF; }
 
 /* =========================
    Swipe actions

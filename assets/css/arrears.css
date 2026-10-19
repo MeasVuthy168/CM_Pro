@@ -4251,3 +4251,4 @@ body.arr-view-card .arr-sort-chip-row:not([hidden]){ display:flex; }
     background:rgba(255,255,255,.12); color:#fff; font-size:14px; cursor:pointer;
 }
 [data-theme="dark"] .arr-focus-bar,[data-theme="darkgray"] .arr-focus-bar{ background:#16223F; border:1px solid #223055; }
+.arr-focus-ico .ui-ico{ font-size:18px; color:#FFD700; }

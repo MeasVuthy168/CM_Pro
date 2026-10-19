@@ -1124,6 +1124,12 @@ function getTypeIconName(type){
 
 const known=["backup","upload","warning","error","success","update","delete","system"];
 
+// Smart Alerts / Officer Reminders carry no emoji in their text — the
+// card's own icon says what they are.
+const byType={ smart_alert:"warning", officer_reminder:"clipboard" };
+
+if(byType[type]) return byType[type];
+
 return known.includes(type) ? type : "bell";
 
 }
