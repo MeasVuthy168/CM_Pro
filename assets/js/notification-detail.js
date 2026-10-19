@@ -32,6 +32,8 @@
     // Officer Reminders, whose rows carry the List Officer position — by
     // position (CO / FSRO). Each row's counts follow the other filter.
     const FILTER_ROLES = ["admin", "user", "viewer_manager_a"];
+    // Viewer_Staff doesn't get the "Open work to complete" shortcut on
+    // Officer Reminders.
     const POSITIONS = { co: "Credit Officer", fsro: "Financial Service Relation Officer" };
     let current = null;
     let branchFilter = "";
@@ -392,9 +394,9 @@
                 if (liveState === "fail") return `<div class="nd-hero-foot">${esc(t("notifDetail.liveFailed"))}</div>`;
                 return "";
             })()}
-            <a class="nd-work-btn" href="/CM_Pro/pages/arrears/index.html?${new URLSearchParams({ work: "unfilled", ...(branchFilter ? { branch: branchFilter } : {}) })}">
+            ${userRole() === "viewer_staff" ? "" : `<a class="nd-work-btn" href="/CM_Pro/pages/arrears/index.html?${new URLSearchParams({ work: "unfilled", ...(branchFilter ? { branch: branchFilter } : {}) })}">
                 <span class="ui-ico ui-ico-clipboard" aria-hidden="true"></span>${esc(t("notifDetail.openWork"))}<span class="ui-ico ui-ico-chevron-right" aria-hidden="true"></span>
-            </a>`;
+            </a>`}`;
 
         el.body.innerHTML = list.length
             ? `<p class="nd-hint nd-hint-top">${esc(t("notifDetail.remindHint"))}</p>
