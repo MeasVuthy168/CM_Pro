@@ -53,15 +53,19 @@ async function mdLoadOfficers() {
 // ========================================
 // SUMMARY
 // ========================================
+// Counted from each officer's Position (set on this page), not the
+// uploaded sheet's team, and only active officers — anyone moved to
+// "Stop Disburse" is left out: Total = active officers with a position,
+// CO = "Credit Officer", FSRO = "Financial Service Relation Officer".
 function mdRenderSummary() {
-    const total = mdOfficers.length;
-    const fsroCount = mdOfficers.filter(o => o.team && o.team.trim().toLowerCase() === "fsro").length;
-    const coCount = mdOfficers.filter(o =>
-        (o.team || "").trim().toLowerCase() !== "fsro" &&
+    const withPosition = mdOfficers.filter(o =>
+        (o.position || "").trim() &&
         (o.branch || "").trim().toLowerCase() !== "stop disburse"
-    ).length;
+    );
+    const coCount = withPosition.filter(o => o.position === "Credit Officer").length;
+    const fsroCount = withPosition.filter(o => o.position === "Financial Service Relation Officer").length;
 
-    document.getElementById("mdSummaryTotal").textContent = total;
+    document.getElementById("mdSummaryTotal").textContent = withPosition.length;
     document.getElementById("mdSummaryCO").textContent = coCount;
     document.getElementById("mdSummaryFSRO").textContent = fsroCount;
 }

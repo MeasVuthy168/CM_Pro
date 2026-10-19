@@ -45,8 +45,8 @@ CMI18n.register({
   "masterdata.officer.colBranch": { km: "សាខា", en: "Branch" },
   "masterdata.officer.colActions": { km: "សកម្មភាព", en: "Actions" },
 
-  "masterdata.officer.summaryTotal": { km: "មន្ត្រីសរុប", en: "Total Officers" },
-  "masterdata.officer.summaryCO": { km: "មន្ត្រីឥណទាន", en: "Credit Officers" },
+  "masterdata.officer.summaryTotal": { km: "មន្ត្រីសរុប", en: "Total Officer" },
+  "masterdata.officer.summaryCO": { km: "CO", en: "CO" },
   "masterdata.officer.summaryFSRO": { km: "FSRO", en: "FSRO" },
 
   "masterdata.officer.addBtn": { km: "បន្ថែមមន្ត្រី", en: "Add Officer" },
