@@ -137,9 +137,10 @@
     }
 
     // ---------- today's work ----------
-    // GET /api/assistant/work?kind=&branch=&officer= answers one level of
-    // a drill-down — branches, then a branch's officers, then an
-    // officer's clients (a CO starts on their own clients). Tapping a
+    // GET /api/assistant/work?kind=&branch=&team=&officer= answers one
+    // level of a drill-down — branches, then a branch's officers (with a
+    // CO / FSRO switch), then an officer's clients (a CO starts on their
+    // own clients). Tapping a
     // row, a tile or the path above redraws the same card in place.
     const WORK_KEY = "cm_asst_work2";
     const WORK_TTL = 2 * 60 * 1000;
@@ -151,8 +152,8 @@
         return `<span class="ui-ico ui-ico-${name}${extra ? " " + extra : ""}" aria-hidden="true"></span>`;
     }
 
-    async function loadWork({ kind = "all", branch = "", officer = "" } = {}, { fresh = false } = {}) {
-        const query = new URLSearchParams({ kind, ...(branch ? { branch } : {}), ...(officer ? { officer } : {}) }).toString();
+    async function loadWork({ kind = "all", branch = "", team = "", officer = "" } = {}, { fresh = false } = {}) {
+        const query = new URLSearchParams({ kind, ...(branch ? { branch } : {}), ...(team ? { team } : {}), ...(officer ? { officer } : {}) }).toString();
         const key = `${WORK_KEY}?${query}`;
         if (!fresh) {
             try {
@@ -192,7 +193,7 @@
     }
 
     function workAttr(kind, path) {
-        return esc(JSON.stringify({ kind, branch: path.branch || "", officer: path.officer || "" }));
+        return esc(JSON.stringify({ kind, branch: path.branch || "", team: path.team || "", officer: path.officer || "" }));
     }
 
     // Four count tiles. In a work card a tile switches the card to that
@@ -216,7 +217,7 @@
         if (!path.branch && !path.officer) return "";
         const steps = [{ label: t("assistant.work.allBranches"), p: {} }];
         if (path.branch) steps.push({ label: path.branch, p: { branch: path.branch } });
-        if (path.officer) steps.push({ label: officerLabel(path.officer, kind), p: { branch: path.branch, officer: path.officer } });
+        if (path.officer) steps.push({ label: officerLabel(path.officer, kind), p: { branch: path.branch, team: path.team, officer: path.officer } });
         return `<div class="ac-crumbs">${steps.map((s, i) => i === steps.length - 1
             ? `<span class="ac-crumb on">${esc(s.label)}</span>`
             : `<button type="button" class="ac-crumb" data-work="${workAttr(kind, s.p)}">${esc(s.label)}</button>${ico("chevron-right", "ac-crumb-sep")}`).join("")}</div>`;
@@ -225,14 +226,14 @@
     function groupRow(g, data) {
         const kind = data.kind;
         const atBranch = data.level === "branch";
-        const next = atBranch ? { branch: g.key } : { branch: data.path.branch || g.branch, officer: g.key };
+        const next = atBranch ? { branch: g.key } : { branch: data.path.branch || g.branch, team: data.path.team, officer: g.key };
         const counts = kind === "all"
             ? `<span class="ac-wn ac-wn-unfilled">${ico("edit")}${g.unfilled}</span><span class="ac-wn ac-wn-expired">${ico("clock")}${g.expired}</span>`
             : `<span class="ac-wn ac-wn-${kind}">${g.count.toLocaleString("en-US")}</span>`;
         return `
             <button type="button" class="ac-wrow" data-work="${workAttr(kind, next)}">
                 <span class="ac-wrow-ico">${ico(atBranch ? "users" : "officer")}</span>
-                <span class="ac-wrow-main"><b>${esc(atBranch ? g.key : officerLabel(g.key, kind))}</b>${!atBranch && !data.path.branch && g.branch ? `<small>${esc(g.branch)}</small>` : ""}</span>
+                <span class="ac-wrow-main"><b>${esc(atBranch ? g.key : officerLabel(g.key, kind))}${!atBranch && g.team ? ` <span class="ac-team ac-team-${esc(g.team.toLowerCase())}">${esc(g.team)}</span>` : ""}</b>${!atBranch && !data.path.branch && g.branch ? `<small>${esc(g.branch)}</small>` : ""}</span>
                 ${counts}
                 ${ico("chevron-right", "ac-wrow-go")}
             </button>`;
@@ -257,11 +258,23 @@
             </div>`;
     }
 
+    // All | CO | FSRO over a branch's officers — counts for this question.
+    function teamSwitch(data) {
+        const p = data.path || {};
+        const tm = data.teams || {};
+        const atOfficers = !p.officer && (data.level === "officer" || p.team);
+        if (!atOfficers || (!p.team && !(tm.CO && tm.FSRO))) return ""; // nothing to split
+        const btn = (team, label, n) => `<button type="button" class="${(p.team || "") === team ? "on" : ""}" data-work="${workAttr(data.kind, { branch: p.branch, team })}">${esc(label)} <small>${(n || 0).toLocaleString("en-US")}</small></button>`;
+        return `<div class="ac-cmp ac-teams" role="group" aria-label="${esc(t("assistant.work.team"))}">
+            ${btn("", t("assistant.work.teamAll"), (tm.CO || 0) + (tm.FSRO || 0))}${btn("CO", "CO", tm.CO)}${btn("FSRO", "FSRO", tm.FSRO)}
+        </div>`;
+    }
+
     async function answerWork(intent, path = {}) {
         const kind = intent.kind || "all";
         let data;
         try {
-            data = await loadWork({ kind, branch: path.branch, officer: path.officer });
+            data = await loadWork({ kind, branch: path.branch, team: path.team, officer: path.officer });
         } catch (e) {
             return { html: esc(t("assistant.loadFailed")) };
         }
@@ -288,6 +301,7 @@
                     </div>
                     ${workCrumbs(kind, here)}
                     ${workTiles(data, kind === "all" ? null : kind, here, false)}
+                    ${teamSwitch(data)}
                     ${n && levelHint ? `<div class="ac-foot ac-work-sub">${esc(levelHint)}</div>` : ""}
                     ${n ? body : ""}
                     ${n ? `<a class="ac-link" href="${esc(link.href)}">${esc(link.label)} ›</a>` : ""}
@@ -304,7 +318,7 @@
         try { q = JSON.parse(el.dataset.work); } catch (e) { return; }
         busy = true;
         bubble.classList.add("ac-loading");
-        const reply = await answerWork({ kind: q.kind }, { branch: q.branch, officer: q.officer })
+        const reply = await answerWork({ kind: q.kind }, { branch: q.branch, team: q.team, officer: q.officer })
             .catch(() => ({ html: esc(t("assistant.loadFailed")) }));
         bubble.innerHTML = reply.html;
         bubble.classList.remove("ac-loading");
