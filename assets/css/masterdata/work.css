@@ -114,3 +114,44 @@
 .page-container:has(#wkDetailScreen[style*="block"]) .oa-page-hero{
     display:none;
 }
+
+/* Detail header + loan details, compact: the name, then one wrapping
+   line of LD / CIF / days / arrears, then the details two to a row
+   (address across both) — about half the height of the one-per-row
+   list, leaving more of a phone screen for the form. */
+#wkDetailScreen .oa-hero{ padding:2px 2px 8px; }
+#wkDetailScreen .oa-hero-name{ font-size:17px; line-height:1.25; }
+#wkSub{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:2px 8px;
+    margin-top:3px;
+    font-size:12.5px;
+}
+#wkSub .arr-day-badge{ padding:1px 7px; font-size:11.5px; }
+
+#wkInfo{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:8px 12px;
+    padding:9px 11px;
+    margin-bottom:12px;
+}
+#wkInfo:empty{ display:none; }
+#wkInfo .oa-info-row{
+    align-items:flex-start;
+    gap:7px;
+    padding:0;
+    border-bottom:none;
+}
+#wkInfo .wk-info-wide{ grid-column:1 / -1; }
+#wkInfo .oa-info-ico{
+    width:24px;
+    height:24px;
+    border-radius:7px;
+    font-size:13px;
+    margin-top:1px;
+}
+#wkInfo .oa-info-label{ font-size:10.5px; line-height:1.5; }
+#wkInfo .oa-info-value{ font-size:13px; line-height:1.35; }
