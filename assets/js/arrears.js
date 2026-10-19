@@ -3106,7 +3106,19 @@ let pendingWorkLink = (() => {
 // ?outarea=1 — Edit Out-of-Area Arrears, opened from its Master Data
 // card (it used to live in this page's "..." menu). Opens once the rows
 // are in, like ?work= above.
-let pendingOutAreaLink = new URLSearchParams(location.search).get("outarea") === "1";
+// Editing out-of-area loans needs upload permission (Admin / User, as
+// the backend's canUpload); everyone else gets the editor read-only.
+const outAreaCanEdit = (() => {
+    try {
+        const r = String(JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}").role || "").toLowerCase();
+        return r === "admin" || r === "user";
+    } catch (e) {
+        return false;
+    }
+})();
+document.getElementById("outAreaCard")?.classList.toggle("oa-readonly", !outAreaCanEdit);
+
+let pendingOutAreaLink = outAreaCanEdit && new URLSearchParams(location.search).get("outarea") === "1";
 
 function openPendingOutAreaLink() {
     if (!pendingOutAreaLink) return;

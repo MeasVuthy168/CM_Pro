@@ -4302,3 +4302,30 @@ body.arr-view-card .arr-sort-chip-row:not([hidden]){ display:flex; }
 .nr-kind-tabs .oa-tab > span:not(.ui-ico){ line-height:1.35; padding-bottom:1px; }
 .nr-kind-tabs .oa-tab .ui-ico{ justify-self:end; }
 .nr-kind-tabs .oa-tab b{ justify-self:start; }
+
+/* Edit Out-of-Area Arrears, read-only (roles without upload permission,
+   see outAreaCanEdit in arrears.js): the loan details stay visible, but
+   the new branch / officer form, save / delete and the Edited tab's
+   select / bulk-delete controls are hidden. */
+.oa-readonly-note{
+    display:none;
+}
+#outAreaCard.oa-readonly .oa-readonly-note{
+    display:block;
+    margin:12px 0 4px;
+    padding:10px 12px;
+    border-radius:10px;
+    background:var(--arr-card-bg, #f3f4f7);
+    border:1px dashed var(--arr-border, #d9dde5);
+    color:var(--arr-text-muted, #5b6474);
+    font-size:13px;
+    text-align:center;
+}
+#outAreaCard.oa-readonly .oa-form,
+#outAreaCard.oa-readonly #outAreaMove,
+#outAreaCard.oa-readonly .oa-actions,
+#outAreaCard.oa-readonly #outAreaSelectBar,
+#outAreaCard.oa-readonly #outAreaBulkBar,
+#outAreaCard.oa-readonly .oa-item-check{
+    display:none !important;
+}
