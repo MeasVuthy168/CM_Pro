@@ -160,8 +160,8 @@ CMI18n.register({
   "settings.voice.cardTitle": { km: "ពាក្យបញ្ជាសំឡេង", en: "Voice Command" },
   "settings.voice.whatIsTitle": { km: "តើពាក្យបញ្ជាសំឡេងជាអ្វី?", en: "What is voice command?" },
   "settings.voice.whatIsBody": {
-    km: "CM Pro AI នៅទំព័រដើម អាចស្តាប់ <b>ភាសាខ្មែរ</b> ឬ <b>English</b> (ប្តូរបានតាមប៊ូតុង ខ្មែរ/EN)។ ចុចមីក្រូហ្វូន ហើយនិយាយ ឬចុចប៊ូតុង 💬 ដើម្បីវាយសំណួរ ដូចជា <b>«PAR ថ្ងៃនេះ»</b>, <b>«បើកឥណទានយឺតយ៉ាវ»</b> ឬ <b>«ស្វែងរកអតិថិជន 0012345»</b>។ តួលេខដែលបង្ហាញ គឺតាមសិទ្ធិរបស់អ្នក (សាខា ឬ CO របស់អ្នក)។",
-    en: "CM Pro AI on the Home page listens in <b>Khmer</b> or <b>English</b> (switch with the ខ្មែរ/EN buttons). Tap the microphone and speak, or tap 💬 to type, e.g. <b>\"PAR today\"</b>, <b>\"Open Daily Arrears\"</b> or <b>\"Search customer 0012345\"</b>. Figures follow your access (your branch, or your own CO figures)."
+    km: "CM Pro AI នៅទំព័រដើម អាចស្តាប់ <b>ភាសាខ្មែរ</b> ឬ <b>English</b> (ប្តូរបានតាមប៊ូតុង ខ្មែរ/EN)។ ចុចមីក្រូហ្វូន ហើយនិយាយ ឬចុចប៊ូតុង 💬 ដើម្បីវាយសំណួរ ដូចជា <b>«NBC Overdue ថ្ងៃនេះ»</b>, <b>«បើកឥណទានយឺតយ៉ាវ»</b> ឬ <b>«ស្វែងរកអតិថិជន 0012345»</b>។ តួលេខដែលបង្ហាញ គឺតាមសិទ្ធិរបស់អ្នក (សាខា ឬ CO របស់អ្នក)។",
+    en: "CM Pro AI on the Home page listens in <b>Khmer</b> or <b>English</b> (switch with the ខ្មែរ/EN buttons). Tap the microphone and speak, or tap 💬 to type, e.g. <b>\"NBC Overdue today\"</b>, <b>\"Open Daily Arrears\"</b> or <b>\"Search customer 0012345\"</b>. Figures follow your access (your branch, or your own CO figures)."
   },
   "settings.voice.whatYouCanSay": { km: "អ្វីដែលអ្នកអាចនិយាយ", en: "What you can say" },
   "settings.voice.openPage": { km: "I. បើកទំព័រ", en: "I. Open a page" },
@@ -201,12 +201,12 @@ CMI18n.register({
   "settings.voice.askData": { km: "III. សួរតួលេខ", en: "III. Ask about the figures" },
   "settings.voice.askDataList": {
     km: `<li><b>សង្ខេបថ្ងៃនេះ</b></li>
-<li><b>PAR ថ្ងៃនេះ</b> / <b>OS សាខាស្វាយរៀង</b> / <b>NPL CO 9027</b></li>
-<li><b>CO PAR ខ្ពស់ជាងគេ</b> / <b>សាខា OS ទាបជាងគេ</b></li>
+<li><b>PAR ថ្ងៃនេះ</b> / <b>NBC Overdue ថ្ងៃនេះ</b> / <b>OS សាខាស្វាយរៀង</b> / <b>NPL CO 9027</b> / <b>WO ខែនេះ</b></li>
+<li><b>CO PAR ខ្ពស់ជាងគេ</b> / <b>CO បញ្ចេញឥណទានបានទាបជាងគេ</b> / <b>សាខា OS ទាបជាងគេ</b></li>
 <li><b>Alert ថ្ងៃនេះ</b></li>`,
     en: `<li><b>Today's summary</b></li>
-<li><b>PAR today</b> / <b>OS Svay Rieng</b> / <b>NPL CO 9027</b></li>
-<li><b>Top CO by PAR</b> / <b>Branch with the lowest OS</b></li>
+<li><b>PAR today</b> / <b>NBC Overdue today</b> / <b>OS Svay Rieng</b> / <b>NPL CO 9027</b> / <b>WO this month</b></li>
+<li><b>Top CO by PAR</b> / <b>CO with the lowest disbursement</b> / <b>Branch with the lowest OS</b></li>
 <li><b>Today's alerts</b></li>`
   },
   "settings.voice.searchCustomer": { km: "IV. ស្វែងរកអតិថិជន", en: "IV. Search for a customer" },

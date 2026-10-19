@@ -20,7 +20,7 @@
     const t = (key, vars) => (window.CMI18n ? CMI18n.t(key, vars) : key);
     const N = () => window.CMAssistantNLU;
 
-    const OVERVIEW_KEY = "cm_asst_overview";
+    const OVERVIEW_KEY = "cm_asst_overview2"; // bumped when the overview gains fields
     const OVERVIEW_TTL = 10 * 60 * 1000;
     const HISTORY_KEY = "cm_asst_chat";
     const VOICE_LANG_KEY = "cm_voice_lang";
@@ -50,7 +50,7 @@
 
     // A worse direction per metric: PAR / NPL going up is bad news,
     // OS / disbursement going down is.
-    const UP_IS_GOOD = { os: true, disb: true, par: false, npl: false };
+    const UP_IS_GOOD = { os: true, disb: true, par: false, overdue: false, npl: false, wo: false };
 
     function esc(s) {
         return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -134,7 +134,7 @@
     // One "+1.2%" pill comparing to the comparison snapshot.
     function changePill(metric, cur, prev) {
         if (!prev) return "";
-        const field = metric === "par" ? "par" : metric;
+        const field = metric;
         const a = Number(prev[field]) || 0;
         const b = Number(cur[field]) || 0;
         const delta = b - a;
@@ -150,13 +150,17 @@
     function metricValue(metric, r) {
         if (metric === "os") return usd(r.os);
         if (metric === "par") return usd(r.par);
+        if (metric === "overdue") return usd(r.overdue);
+        if (metric === "wo") return usd(r.wo);
         if (metric === "npl") return t("assistant.accounts", { n: r.npl });
         return usd(r.disb);
     }
 
     function metricSub(metric, r) {
         if (metric === "os") return t("assistant.sub.os", { loans: r.loans.toLocaleString("en-US"), clients: r.clients.toLocaleString("en-US") });
-        if (metric === "par") return t("assistant.sub.par", { pct: pct(r.parPct), loans: r.parLoans });
+        if (metric === "par") return t("assistant.sub.par", { pct: pct(r.parPct), loans: (r.parLoans || 0).toLocaleString("en-US") });
+        if (metric === "overdue") return t("assistant.sub.overdue", { pct: pct(r.overduePct), loans: (r.overdueLoans || 0).toLocaleString("en-US") });
+        if (metric === "wo") return t("assistant.sub.wo", { n: r.woCount || 0, balance: usd(r.woBalance), collected: usd(r.woCollected) });
         if (metric === "npl") return t("assistant.sub.npl", { value: usd(r.nplValue), pct: pct(r.nplPct) });
         return t("assistant.sub.disb", { loans: r.disbLoans });
     }
@@ -218,31 +222,37 @@
     }
 
     function rankKey(metric) {
-        return { par: "parPct", npl: "npl", os: "os", disb: "disb", summary: "parPct" }[metric] || "parPct";
+        return { par: "parPct", overdue: "overduePct", npl: "npl", os: "os", disb: "disb", wo: "wo", summary: "overduePct" }[metric] || "overduePct";
     }
 
     function rankValue(metric, r) {
-        if (metric === "par" || metric === "summary") return `${pct(r.parPct)} · ${usdShort(r.par)}`;
+        if (metric === "par") return `${pct(r.parPct)} · ${usdShort(r.par)}`;
+        if (metric === "overdue" || metric === "summary") return `${pct(r.overduePct)} · ${usdShort(r.overdue)}`;
+        if (metric === "wo") return `${usdShort(r.wo)} · ${r.woCount || 0}`;
         if (metric === "npl") return `${t("assistant.accounts", { n: r.npl })} · ${usdShort(r.nplValue)}`;
         if (metric === "os") return usdShort(r.os);
         return usdShort(r.disb);
     }
 
+    // Rankings: PAR is ranked by NBC Overdue (what the Credit Report ranks
+    // COs by), and COs moved to "Stop Disburse" are left out — they no
+    // longer take new loans, so they'd crowd both ends of the list.
     function answerRank(intent, data) {
         let level = intent.rank.level;
         let list = level === "branch" ? data.branches : data.officers;
         if (!list.length && level === "branch") { level = "officer"; list = data.officers; }
-        const metric = intent.metric;
+        const metric = intent.metric === "par" ? "overdue" : intent.metric;
         const k = rankKey(metric);
+        const active = r => level !== "officer" || String(r.branch || "").trim().toLowerCase() !== "stop disburse";
         const rows = list
-            .filter(r => r.os > 0)
+            .filter(r => r.os > 0 && active(r))
             .sort((a, b) => intent.rank.dir === "bottom" ? a[k] - b[k] : b[k] - a[k])
             .slice(0, 5);
         if (!rows.length) return { html: esc(t("assistant.noData")) };
 
         const title = t(`assistant.rank.${intent.rank.dir}`, {
             level: t(`assistant.level.${level}`),
-            metric: metricLabel(metric === "summary" ? "par" : metric)
+            metric: metricLabel(metric === "summary" ? "overdue" : metric)
         });
         const href = level === "branch" ? PAGE_URLS.creditReportBranch : PAGE_URLS.creditReportCO;
         const date = level === "branch" ? data.date : (data.officerDate || data.date);
@@ -253,6 +263,7 @@
                         <span class="ac-card-who">${esc(title)}</span>
                         <span class="ac-card-date">${esc(date || "")}</span>
                     </div>
+                    ${level === "officer" ? `<div class="ac-foot">${esc(t("assistant.rank.activeOnly"))}</div>` : ""}
                     <ol class="ac-rank">
                         ${rows.map(r => `
                             <li>
@@ -287,7 +298,7 @@
         row = row || data.total;
         if (!row) return { html: esc(t("assistant.noData")) };
 
-        const metrics = intent.metric === "summary" ? ["os", "par", "npl", "disb"] : [intent.metric];
+        const metrics = intent.metric === "summary" ? ["os", "overdue", "npl", "disb", "wo"] : [intent.metric];
         const lead = intent.metric === "summary"
             ? t("assistant.lead.summary", { who: whoLabel(row, data) })
             : t("assistant.lead.metric", { metric: metricLabel(intent.metric), who: whoLabel(row, data), value: metricValue(intent.metric, row) });
@@ -320,6 +331,7 @@
             <p>${esc(t("assistant.help.lead"))}</p>
             <ul class="ac-help">
                 <li>📊 ${esc(t("assistant.help.data"))}</li>
+                <li>🔢 ${esc(t("assistant.help.figures"))}</li>
                 <li>📅 ${esc(t("assistant.help.compare"))}</li>
                 <li>🏆 ${esc(t("assistant.help.rank"))}</li>
                 <li>🔎 ${esc(t("assistant.help.customer"))}</li>
@@ -368,6 +380,7 @@
             t("assistant.chip.summary"),
             t("assistant.chip.par"),
             t("assistant.chip.topCo"),
+            t("assistant.chip.lowDisbCo"),
             t("assistant.chip.alerts"),
             t("assistant.chip.customer"),
             t("assistant.chip.help")
