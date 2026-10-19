@@ -1517,3 +1517,111 @@ input.sa-date {
 [data-theme="dark"] .or-ico-expired { background: rgba(212, 175, 55, .16); color: #F4D27A; }
 [data-theme="dark"] .or-ico-outarea { background: rgba(96, 140, 255, .16); color: #A8BEFF; }
 .sa-rule-ico .ui-ico { font-size: 18px; }
+
+/* =====================================================
+   USER MANAGEMENT (users.html) — summary tiles, toolbar, cards
+   ===================================================== */
+.um-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+.um-stat {
+  display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center;
+  text-align: left; font: inherit; cursor: pointer; color: var(--adm-text);
+  background: var(--adm-card-bg); border: 1px solid var(--adm-border); border-radius: var(--adm-radius);
+  padding: 12px 14px; box-shadow: var(--adm-shadow); transition: border-color .15s, transform .1s;
+}
+.um-stat-ico { grid-row: span 2; font-size: 19px; width: 38px; height: 38px; border-radius: 11px;
+  background-color: var(--adm-navy-100); color: var(--adm-navy-900); display: inline-flex; align-items: center; justify-content: center; }
+.um-stat b { font-size: 1.35rem; line-height: 1.1; }
+.um-stat > span:last-child { font-size: 0.75rem; color: var(--adm-text-muted); line-height: 1.3; }
+.um-stat.on { border-color: var(--adm-gold-500); box-shadow: 0 0 0 2px rgba(212, 175, 55, .25); }
+.um-stat:active { transform: scale(.98); }
+.um-stat-ok .um-stat-ico { background-color: #E5F6EC; color: var(--adm-ok); }
+.um-stat-off .um-stat-ico { background-color: #FBE9E7; color: var(--adm-danger); }
+.um-stat-warn .um-stat-ico { background-color: #FFF4D6; color: var(--adm-warn); }
+[data-theme="dark"] .um-stat-ico { color: var(--adm-gold-300); }
+[data-theme="dark"] .um-stat-ok .um-stat-ico { background-color: rgba(31, 157, 85, .16); color: #6EE7A0; }
+[data-theme="dark"] .um-stat-off .um-stat-ico { background-color: rgba(192, 57, 43, .18); color: #F5A39A; }
+[data-theme="dark"] .um-stat-warn .um-stat-ico { background-color: rgba(201, 122, 0, .18); color: #F4D27A; }
+
+.um-toolbar { display: flex; flex-direction: column; gap: 10px; padding: 14px; margin-bottom: 12px; }
+.um-search {
+  display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 44px;
+  border: 1px solid var(--adm-border); border-radius: 12px; background: var(--adm-bg); color: var(--adm-text-muted);
+}
+.um-search input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font: inherit; font-size: 0.9rem; color: var(--adm-text); }
+.um-search input::-webkit-search-cancel-button { display: none; }
+.um-search-clear { border: none; background: none; color: var(--adm-text-muted); cursor: pointer; padding: 4px; display: inline-flex; }
+.um-search:focus-within { border-color: var(--adm-gold-500); }
+
+.um-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.um-chips::-webkit-scrollbar { display: none; }
+.um-chip {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font: inherit; font-size: 0.8rem; font-weight: 600;
+  border: 1px solid var(--adm-border); background: var(--adm-card-bg); color: var(--adm-text); border-radius: 999px; padding: 6px 12px;
+}
+.um-chip span { font-size: 0.7rem; font-weight: 800; padding: 0 6px; border-radius: 999px; background: var(--adm-navy-100); color: var(--adm-text-muted); }
+.um-chip.on { background: var(--adm-navy-900); border-color: var(--adm-navy-900); color: var(--adm-gold-300); }
+.um-chip.on span { background: rgba(255, 215, 0, .18); color: var(--adm-gold-300); }
+[data-theme="dark"] .um-chip.on { background: var(--adm-gold-500); border-color: var(--adm-gold-500); color: var(--adm-navy-900); }
+[data-theme="dark"] .um-chip.on span { background: rgba(14, 27, 60, .18); color: var(--adm-navy-900); }
+
+.um-toolbar-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.um-seg { display: flex; gap: 3px; padding: 3px; border-radius: 11px; background: var(--adm-navy-100); flex: 1 1 260px; }
+.um-seg button { flex: 1; border: none; background: none; font: inherit; font-size: 0.8rem; font-weight: 600; padding: 7px 6px;
+  border-radius: 9px; color: var(--adm-text-muted); cursor: pointer; white-space: nowrap; }
+.um-seg button.on { background: var(--adm-card-bg); color: var(--adm-text); box-shadow: 0 1px 4px rgba(14, 27, 60, .12); }
+.um-sort { flex: 0 1 170px; }
+.um-toolbar-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.um-count { font-size: 0.8rem; color: var(--adm-text-muted); margin-right: auto; }
+.um-link { display: inline-flex; align-items: center; gap: 6px; border: none; background: none; font: inherit; font-size: 0.8rem;
+  font-weight: 600; color: var(--adm-navy-700); cursor: pointer; padding: 6px 2px; }
+[data-theme="dark"] .um-link { color: var(--adm-gold-300); }
+
+.um-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
+.um-card {
+  background: var(--adm-card-bg); border: 1px solid var(--adm-border); border-radius: var(--adm-radius);
+  box-shadow: var(--adm-shadow); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;
+}
+.um-card.is-inactive { opacity: .72; }
+.um-card-main { display: flex; align-items: center; gap: 10px; border: none; background: none; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.um-avatar { position: relative; width: 40px; height: 40px; font-size: 0.8rem; }
+.um-avatar-admin { background-color: #8A6D00; }
+.um-avatar-manager { background-color: #6B3FA0; }
+.um-avatar-viewer_staff { background-color: #1A5C8C; }
+.um-dot { position: absolute; right: -1px; bottom: -1px; width: 11px; height: 11px; border-radius: 50%;
+  background: #A9B1C2; border: 2px solid var(--adm-card-bg); }
+.um-dot.on { background: var(--adm-ok); }
+.um-card-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.um-name { font-weight: 700; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.um-username { font-size: 0.75rem; color: var(--adm-text-muted); }
+.um-card-meta { display: flex; flex-wrap: wrap; gap: 6px 12px; padding-left: 50px; }
+.um-meta { display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--adm-text-muted); }
+.um-meta .ui-ico, .um-meta .adm-ico { font-size: 13px; }
+.um-meta-warn { color: var(--adm-warn); }
+.um-card-actions { display: flex; justify-content: flex-end; gap: 6px; border-top: 1px dashed var(--adm-border); padding-top: 8px; }
+.um-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 28px; color: var(--adm-text-muted); }
+.um-empty .adm-ico { font-size: 28px; }
+
+/* Add / Edit form: what the chosen role can do, branch hint */
+.um-role-desc { grid-column: 1 / -1; display: flex; gap: 8px; align-items: flex-start; font-size: 0.8rem; line-height: 1.5;
+  padding: 10px 12px; border-radius: 12px; background: var(--adm-navy-100); color: var(--adm-text); }
+.um-role-desc .adm-ico { flex: 0 0 auto; margin-top: 2px; color: var(--adm-navy-700); }
+[data-theme="dark"] .um-role-desc .adm-ico { color: var(--adm-gold-300); }
+.um-optional { font-style: normal; font-weight: 400; color: var(--adm-text-muted); }
+.um-field-hint { display: block; margin-top: 4px; font-size: 0.72rem; color: var(--adm-text-muted); line-height: 1.4; }
+
+/* Roles guide modal */
+.um-roles-guide { display: flex; flex-direction: column; gap: 10px; }
+.um-role-row { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--adm-border); border-radius: 12px; }
+.um-role-row .adm-badge { align-self: flex-start; }
+.um-role-row p { margin: 0; font-size: 0.82rem; line-height: 1.55; color: var(--adm-text); }
+
+@media (max-width: 720px) {
+  .um-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .um-list { grid-template-columns: 1fr; }
+  .um-sort { flex: 1 1 100%; }
+}
+.um-empty[hidden], .um-search-clear[hidden] { display: none; }
+.adm-field select, .adm-field input { min-width: 0; max-width: 100%; }
+@media (max-width: 560px) {
+  .adm-form-grid { grid-template-columns: minmax(0, 1fr); }
+}

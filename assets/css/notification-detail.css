@@ -153,3 +153,13 @@
 [data-theme="dark"] .nd-tile-unfilled .nd-tile-ico, [data-theme="darkgray"] .nd-tile-unfilled .nd-tile-ico { color: #FDA29B; }
 [data-theme="dark"] .nd-tile-expired .nd-tile-ico, [data-theme="darkgray"] .nd-tile-expired .nd-tile-ico { color: #F4D27A; }
 [data-theme="dark"] .nd-tile-outArea .nd-tile-ico, [data-theme="darkgray"] .nd-tile-outArea .nd-tile-ico { color: #A8BEFF; }
+
+/* The summary card stays pinned under the topbar while the list
+   scrolls. The page-colored spread fills the gap above it (and its
+   rounded corners), so rows never show through behind it. */
+.nd-hero {
+    position: sticky;
+    top: calc(var(--topbar-h, 78px) + 10px);
+    z-index: 20;
+    box-shadow: 0 -12px 0 12px var(--notif-page-bg), var(--notif-shadow);
+}
