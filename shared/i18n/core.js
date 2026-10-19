@@ -37,6 +37,8 @@ CMI18n.register({
   "dashboard.update.highlights": { km: "សូមចូលទៅ Download កំណែថ្មីក្នុងកម្មវិធី Excel ឈ្មោះ SVG Credit Monitoring", en: "Please download the new version in the Excel add-in named SVG Credit Monitoring" },
   "dashboard.update.cta": { km: "ចុចមើលព័ត៌មានកំណែថ្មី", en: "Tap to see what's new" },
   "notifDetail.title": { km: "ព័ត៌មានលម្អិត", en: "Details" },
+  "notifDetail.filterBranch": { km: "តម្រងតាមសាខា", en: "Filter by branch" },
+  "notifDetail.allBranches": { km: "ទាំងអស់", en: "All" },
   "notifDetail.notFound": { km: "រកមិនឃើញការជូនដំណឹងនេះទេ", en: "Notification not found" },
   "notifDetail.backToList": { km: "ត្រឡប់ទៅការជូនដំណឹង", en: "Back to notifications" },
   "notifDetail.alertTitle": { km: "ចំណុចត្រូវយកចិត្តទុកដាក់", en: "Needs attention" },
