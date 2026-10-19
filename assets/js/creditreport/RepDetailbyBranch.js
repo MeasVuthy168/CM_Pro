@@ -982,13 +982,15 @@ window.addEventListener("orientationchange", () => setTimeout(crSetHeaderOffsets
 // in-button spinner — the button lives inside the collapsible date panel,
 // which is usually closed, so a spinner there would often be invisible
 // while the report was actually loading.
-function crShowLoading(message = t("creditreport.loadingReportData")) {
+// Progress-mode overlay (% bar, topbar / bottom nav stay usable);
+// `key` keeps a separate time estimate per kind of load.
+function crShowLoading(message = t("creditreport.loadingReportData"), key = "load") {
     document.getElementById("crSkeleton").style.display = "block";
     document.getElementById("crTableScroll").style.display = "none";
     document.getElementById("crEmptyMsg").style.display = "none";
     document.getElementById("crReclassNote").style.display = "none";
     if (typeof showAppLoading === "function") {
-        showAppLoading(message);
+        showAppLoading(message, { progress: true, key: `crByBranch:${key}` });
     }
 }
 function crHideLoading() {
@@ -1397,7 +1399,7 @@ if (crMenuToggle && crMenuDropdown) {
 // ========================================
 async function crRefreshData() {
     document.getElementById("crMenuDropdown")?.classList.remove("show");
-    crShowLoading(t("creditreport.detail.refreshingFromDb"));
+    crShowLoading(t("creditreport.detail.refreshingFromDb"), "refresh");
 
     try {
         const res = await fetch(`${API.BASE_URL}/api/creditreport/refresh`, {

@@ -811,12 +811,14 @@ window.addEventListener("orientationchange", () => setTimeout(crSetHeaderOffsets
 // ========================================
 // LOADING STATES
 // ========================================
-function crShowLoading(message = t("creditreport.loadingReportData")) {
+// Progress-mode overlay (% bar, topbar / bottom nav stay usable);
+// `key` keeps a separate time estimate per kind of load.
+function crShowLoading(message = t("creditreport.loadingReportData"), key = "load") {
     document.getElementById("crSkeleton").style.display = "block";
     document.getElementById("crSearchWrap").style.display = "none";
     document.getElementById("crTableScroll").style.display = "none";
     document.getElementById("crEmptyMsg").style.display = "none";
-    if (typeof showAppLoading === "function") showAppLoading(message);
+    if (typeof showAppLoading === "function") showAppLoading(message, { progress: true, key: `crByLocation:${key}` });
 }
 function crHideLoading() {
     document.getElementById("crSkeleton").style.display = "none";
@@ -1402,7 +1404,7 @@ document.getElementById("btnCrSnapshot")?.addEventListener("click", crRunSnapsho
 // ========================================
 document.getElementById("btnCrRefreshData")?.addEventListener("click", async () => {
     document.getElementById("crMenuDropdown")?.classList.remove("show");
-    crShowLoading(t("creditreport.detail.refreshingFromDb"));
+    crShowLoading(t("creditreport.detail.refreshingFromDb"), "refresh");
     try {
         const res = await fetch(`${API.BASE_URL}/api/creditreport/bylocation/refresh`, {
             method: "POST",
