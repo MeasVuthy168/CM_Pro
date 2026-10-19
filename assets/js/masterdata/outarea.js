@@ -31,6 +31,8 @@ OutAreaEditor.init({
     getAllRows: () => oaRows,
     getOfficerNames: branch => oaOfficersByBranch.get(branch) || [],
     canEdit: oaCanEdit,
+    standalone: true,
+    onCounts: oaPaintHero,
     // A saved loan leaves the NoCoRespone list on its own (its row object
     // is patched); Daily Arrears' cached rows are now out of date, so
     // drop them and it reloads on its next visit.
@@ -41,6 +43,42 @@ OutAreaEditor.init({
         } catch (e) {}
     }
 });
+
+// Summary card: loans still to move, saved moves, branches involved.
+function oaPaintHero(view, n) {
+    const set = (id, v) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = Number.isFinite(v) ? v.toLocaleString() : "-";
+    };
+    if (view === "edited") return set("oaPhEdited", n);
+    set("oaPhToEdit", n);
+    const todo = oaRows.filter(r => (r.coResponse || "").toLowerCase().includes("nocorespone"));
+    set("oaPhBranches", new Set(todo.map(r => r.branch).filter(Boolean)).size);
+}
+
+// "2026-10-19 04:06 PM" (Cambodia time) for the data date line.
+function oaFormatDateTime(value) {
+    const d = new Date(value);
+    if (!value || isNaN(d)) return "-";
+    const k = new Date(d.getTime() + 7 * 3600 * 1000);
+    const pad = n => String(n).padStart(2, "0");
+    let h = k.getUTCHours();
+    const ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12 || 12;
+    return `${k.getUTCFullYear()}-${pad(k.getUTCMonth() + 1)}-${pad(k.getUTCDate())} ${pad(h)}:${pad(k.getUTCMinutes())} ${ampm}`;
+}
+
+async function oaLoadInfo() {
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/arreast24byco/info`, {
+            headers: { Authorization: `Bearer ${API.getToken()}` }
+        });
+        const data = await res.json();
+        document.getElementById("oaPhUpdated").textContent = data.ok ? oaFormatDateTime(data.lastUploadAt) : "-";
+    } catch (e) {
+        document.getElementById("oaPhUpdated").textContent = "-";
+    }
+}
 
 function oaShowState(html) {
     const list = document.getElementById("outAreaTbody");
@@ -78,6 +116,12 @@ async function oaLoad() {
 }
 
 oaLoad();
+oaLoadInfo();
+
+document.getElementById("btnOaRefresh")?.addEventListener("click", () => {
+    oaLoad();
+    oaLoadInfo();
+});
 
 // ========================================
 // COMPONENT LOADER (topbar + bottomnav)

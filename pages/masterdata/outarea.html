@@ -65,11 +65,30 @@ No Internet Connection
 
 <div class="page-container">
 
+<!-- Summary: what's left to move, what's done, data date, reload -->
+<section class="oa-page-hero">
+  <div class="oa-ph-top">
+    <span class="oa-ph-ico"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span></span>
+    <div class="oa-ph-text">
+      <div class="oa-ph-title" data-i18n="masterdata.outArea.heroTitle">LD ក្រៅតំបន់ (NoCoRespone)</div>
+      <div class="oa-ph-sub"><span data-i18n="masterdata.outArea.dataAt">ទិន្នន័យចុងក្រោយ</span> <span id="oaPhUpdated">-</span></div>
+    </div>
+    <button type="button" id="btnOaRefresh" class="oa-ph-refresh" aria-label="Refresh" data-i18n-aria-label="common.refresh"><span class="ui-ico ui-ico-refresh" aria-hidden="true"></span></button>
+  </div>
+  <div class="oa-ph-stats">
+    <div class="oa-ph-stat oa-ph-todo"><b id="oaPhToEdit">-</b><span data-i18n="arrears.oaTabCandidates">ត្រូវកែសម្រួល</span></div>
+    <div class="oa-ph-stat oa-ph-done"><b id="oaPhEdited">-</b><span data-i18n="arrears.oaTabEdited">បានកែសម្រួល</span></div>
+    <div class="oa-ph-stat"><b id="oaPhBranches">-</b><span data-i18n="masterdata.outArea.branches">សាខា</span></div>
+  </div>
+</section>
+
 <div id="outAreaCard" class="reason-card noreason-card out-area-card oa-page">
 
   <!-- LIST SCREEN -->
   <div id="outAreaListScreen">
 
+
+    <div class="oa-sticky-tools">
 
     <!-- To edit (NoCoRespone) / Edited (saved reassignments) -->
     <div class="oa-tabs" role="tablist">
@@ -84,6 +103,8 @@ No Internet Connection
 
     <!-- Branch quick filter (counts per branch for the current tab) -->
     <div class="oa-branch-filter" id="outAreaBranchFilter" role="group"></div>
+
+    </div>
 
     <div class="reason-subtitle oa-count" id="outAreaListSubtitle">-</div>
 
@@ -106,8 +127,7 @@ No Internet Connection
   <div id="outAreaDetailScreen" style="display:none;">
 
     <div class="outarea-sticky-header oa-detail-header">
-      <button type="button" id="btnOutAreaBackTop" class="outarea-close-x" aria-label="ត្រឡប់ក្រោយ" data-i18n-aria-label="arrears.backAria"><span class="oa-back-arrow" aria-hidden="true">←</span></button>
-      <div class="reason-title oa-detail-title" style="margin:0;" data-i18n="arrears.menuOutArea">កែសម្រួលArrearក្រៅតំបន់</div>
+      <button type="button" id="btnOutAreaBackTop" class="oa-back-link"><span class="oa-back-arrow" aria-hidden="true">←</span> <span data-i18n="arrears.oaBackToList">បញ្ជី LD</span></button>
     </div>
 
     <div class="oa-hero">
