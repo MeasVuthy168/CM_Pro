@@ -1495,3 +1495,15 @@ input.sa-date {
   #orTableWrap th, #orTableWrap td { padding-left: 6px; padding-right: 6px; }
   #orTableWrap th { font-size: 0.68rem; }
 }
+
+/* Preview / Send inside the Alert Thresholds card */
+.sa-preview-section { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--adm-border); }
+
+/* Preview buttons while loading */
+.adm-btn.is-loading { cursor: progress; opacity: 1; }
+.sa-spinner {
+  width: 14px; height: 14px; border-radius: 50%; display: inline-block; flex: 0 0 auto;
+  border: 2px solid currentColor; border-right-color: transparent;
+  animation: saSpin .7s linear infinite;
+}
+@keyframes saSpin { to { transform: rotate(360deg); } }

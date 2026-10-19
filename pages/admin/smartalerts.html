@@ -144,20 +144,10 @@
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Appears while the thresholds have unsaved changes -->
-      <div class="sa-savebar" id="saSaveBar" hidden>
-        <span data-i18n="admin.smartAlerts.unsaved">Unsaved changes</span>
-        <button type="button" class="adm-btn" id="saBtnUndo" data-i18n="admin.smartAlerts.undo">Undo</button>
-        <button type="button" class="adm-btn adm-btn-primary" id="saBtnSave" data-i18n="admin.smartAlerts.save">Save</button>
-      </div>
-
-      <!-- ========================= -->
-      <!-- PREVIEW / SEND — POST /api/admin/smart-alerts/run -->
-      <!-- ========================= -->
-      <div class="adm-card sa-card">
-        <div class="adm-card-label">
+        <!-- PREVIEW / SEND — POST /api/admin/smart-alerts/run -->
+        <div class="sa-preview-section">
+        <div class="adm-card-label sa-section-label">
           <span class="adm-ico adm-ico-eye" aria-hidden="true"></span>
           <span data-i18n="admin.smartAlerts.previewLabel">Preview Alerts</span>
         </div>
@@ -214,6 +204,14 @@
 
           <p class="sa-empty" id="saEmpty" hidden data-i18n="admin.smartAlerts.noAlerts">No alerts for this date — nothing would be sent.</p>
         </div>
+      </div>
+      </div>
+
+      <!-- Appears while the thresholds have unsaved changes -->
+      <div class="sa-savebar" id="saSaveBar" hidden>
+        <span data-i18n="admin.smartAlerts.unsaved">Unsaved changes</span>
+        <button type="button" class="adm-btn" id="saBtnUndo" data-i18n="admin.smartAlerts.undo">Undo</button>
+        <button type="button" class="adm-btn adm-btn-primary" id="saBtnSave" data-i18n="admin.smartAlerts.save">Save</button>
       </div>
 
       <!-- ========================= -->

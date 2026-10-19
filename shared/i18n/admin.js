@@ -678,6 +678,7 @@ CMI18n.register({
   "admin.officerReminders.off": { km: "បានបិទការរំលឹក", en: "Reminders turned off" },
   "admin.officerReminders.sendConfirmTitle": { km: "ផ្ញើការរំលឹក CO ឥឡូវ?", en: "Send officer reminders now?" },
   "admin.officerReminders.sendConfirm": { km: "ផ្ញើការរំលឹកទៅ {n} អ្នកទទួល ឥឡូវនេះ?", en: "Send reminders to {n} recipient(s) now?" },
+  "admin.smartAlerts.loading": { km: "កំពុងទាញទិន្នន័យ…", en: "Loading data…" },
   "admin.smartAlerts.compareSaved": { km: "បានរក្សាទុកការធៀបលំនាំដើម។", en: "Default comparison saved." },
   "admin.smartAlerts.sendFailed": { km: "ផ្ញើមិនបានសម្រេច។", en: "Send failed." }
 });

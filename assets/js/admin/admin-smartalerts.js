@@ -8,6 +8,24 @@
    threshold edits, then a confirm. Sending is idempotent per
    date + recipient on the server, so a second send is a no-op.
    ===================================================== */
+// A Preview button while its data loads: spinner + "Loading data…",
+// then back to its own label.
+function saButtonLoading(btn, on) {
+  if (!btn) return;
+  if (on) {
+    if (btn.dataset.label == null) btn.dataset.label = btn.innerHTML;
+    btn.innerHTML = `<span class="sa-spinner" aria-hidden="true"></span><span>${window.CMI18n ? CMI18n.t("admin.smartAlerts.loading") : "Loading data…"}</span>`;
+    btn.classList.add("is-loading");
+    btn.setAttribute("aria-busy", "true");
+  } else if (btn.dataset.label != null) {
+    btn.innerHTML = btn.dataset.label;
+    delete btn.dataset.label;
+    btn.classList.remove("is-loading");
+    btn.removeAttribute("aria-busy");
+  }
+  btn.disabled = on;
+}
+
 (function () {
   if (!window.CMAdmin) return; // admin-loader.js already redirected away
 
@@ -289,7 +307,7 @@
   }
 
   async function runPreview() {
-    el.btnPreview.disabled = true;
+    saButtonLoading(el.btnPreview, true);
     const dateKey = currentDateKey();
     try {
       const body = { dryRun: true };
@@ -308,7 +326,7 @@
       el.result.hidden = true;
       AdminUI.toast(e.serverMessage || t("admin.smartAlerts.previewFailed"), "error");
     } finally {
-      el.btnPreview.disabled = false;
+      saButtonLoading(el.btnPreview, false);
       refreshButtons();
     }
   }
@@ -524,7 +542,7 @@
   }
 
   async function runPreview() {
-    el.preview.disabled = true;
+    saButtonLoading(el.preview, true);
     try {
       const data = await api("/api/admin/officer-reminders/run", { method: "POST", body: JSON.stringify({ dryRun: true }) });
       previewCount = (data.recipients || []).length;
@@ -534,7 +552,7 @@
       el.result.hidden = true;
       AdminUI.toast(e.serverMessage || t("admin.smartAlerts.previewFailed"), "error");
     } finally {
-      el.preview.disabled = false;
+      saButtonLoading(el.preview, false);
       el.send.disabled = previewCount === 0;
     }
   }
