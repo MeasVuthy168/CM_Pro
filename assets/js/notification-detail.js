@@ -54,17 +54,43 @@
     let live = null;          // { at, reminders }
     let liveState = "idle";   // idle | loading | ok | fail
 
+    // The live figures come from one server call (it reads the whole
+    // arrears sheet), so the % is an estimate from elapsed time that
+    // eases toward 95% and jumps to 100% when the answer lands.
+    const LIVE_EXPECT_MS = 6000;
+    let liveStarted = 0;
+    let liveTimer = null;
+
+    function livePct() {
+        const elapsed = Date.now() - liveStarted;
+        return Math.min(95, Math.round(95 * (1 - Math.exp(-elapsed / LIVE_EXPECT_MS))));
+    }
+
+    function paintLiveProgress(pct) {
+        const bar = document.getElementById("ndLiveBar");
+        const label = document.getElementById("ndLivePct");
+        if (bar) bar.style.width = `${pct}%`;
+        if (label) label.textContent = `${pct}%`;
+    }
+
     async function loadLive() {
         liveState = "loading";
+        liveStarted = Date.now();
+        clearInterval(liveTimer);
+        liveTimer = setInterval(() => paintLiveProgress(livePct()), 200);
         try {
             const res = await fetch(`${API.BASE_URL}/api/officer-reminders/live`, { headers: { Authorization: `Bearer ${token}` } });
             const data = await res.json();
             if (!res.ok || !data.ok) throw new Error(data.message || `HTTP ${res.status}`);
             live = { at: data.at, reminders: data.reminders || [] };
             liveState = "ok";
+            paintLiveProgress(100);
+            await new Promise(r => setTimeout(r, 250)); // let 100% show for a beat
         } catch (e) {
             console.warn("[notification-detail] live counts failed:", e);
             liveState = "fail";
+        } finally {
+            clearInterval(liveTimer);
         }
     }
 
@@ -103,19 +129,9 @@
         return m;
     }
 
-    function chipRow(labelKey, attr, active, allCount, entries) {
-        const chip = (value, label, n) =>
-            `<button type="button" class="nd-chip${value === active ? " on" : ""}" data-${attr}="${esc(value)}">${esc(label)}<span>${n}</span></button>`;
-        return `
-            <div class="nd-filter-row">
-                <div class="nd-filter-label">${esc(t(labelKey))}</div>
-                <div class="nd-chips">
-                    ${chip("", t("notifDetail.allBranches"), allCount)}
-                    ${entries.map(([value, label, n]) => chip(value, label, n)).join("")}
-                </div>
-            </div>`;
-    }
-
+    // Same controls as Daily Arrears › ការងារត្រូវបំពេញ: a branch dropdown
+    // and an All / CO / FSRO segmented switch, side by side. Counts follow
+    // the other filter.
     function renderFilter(n) {
         const items = itemsOf(n);
         const allowed = FILTER_ROLES.includes(userRole());
@@ -132,16 +148,26 @@
             const pool = applyFilters(items, { branch: "" });
             const counts = countBy(pool, branchOf);
             if (branchFilter && !counts.has(branchFilter)) branchFilter = "";
-            const entries = [...counts.keys()].sort((a, b) => a.localeCompare(b)).map(b => [b, b, counts.get(b)]);
-            html += chipRow("notifDetail.filterBranch", "branch", branchFilter, pool.length, entries);
+            html += `
+                <select class="nd-branch" aria-label="${esc(t("notifDetail.filterBranch"))}">
+                    <option value="">${esc(t("notifDetail.allBranchesLong"))} (${pool.length})</option>
+                    ${[...counts.keys()].sort((a, b) => a.localeCompare(b)).map(b =>
+                        `<option value="${esc(b)}"${b === branchFilter ? " selected" : ""}>${esc(b)} (${counts.get(b)})</option>`).join("")}
+                </select>`;
         }
         if (showPos) {
             const pool = applyFilters(items, { pos: "" });
             const counts = countBy(pool, posOf);
-            const entries = ["co", "fsro"].map(k => [k, t(`notifDetail.pos.${k}`), counts.get(k) || 0]);
-            html += chipRow("notifDetail.filterPosition", "pos", posFilter, pool.length, entries);
+            const seg = (value, label, c) =>
+                `<button type="button" class="nd-seg-btn${value === posFilter ? " on" : ""}" data-pos="${value}">${esc(label)}<small>${c}</small></button>`;
+            html += `
+                <div class="nd-seg" role="tablist" aria-label="${esc(t("notifDetail.filterPosition"))}">
+                    ${seg("", t("notifDetail.allBranches"), pool.length)}
+                    ${seg("co", t("notifDetail.pos.co"), counts.get("co") || 0)}
+                    ${seg("fsro", t("notifDetail.pos.fsro"), counts.get("fsro") || 0)}
+                </div>`;
         }
-        el.filter.innerHTML = html;
+        el.filter.innerHTML = `<div class="nd-filter-bar${showBranch && showPos ? "" : " single"}">${html}</div>`;
         el.filter.hidden = false;
     }
 
@@ -355,7 +381,14 @@
                 const sentSum = k => sent.reduce((s2, r) => s2 + (Number(r[k]) || 0), 0);
                 const sentLine = t("notifDetail.sentAt", { time: time || dmy(n.extra && n.extra.date), a: sentSum("unfilled"), b: sentSum("expired"), c: sentSum("outArea") });
                 if (live) return `<div class="nd-hero-foot">${esc(sentLine)}</div>`;
-                if (liveState === "loading") return `<div class="nd-hero-foot"><span class="nd-spin" aria-hidden="true"></span>${esc(t("notifDetail.liveLoading"))}</div>`;
+                if (liveState === "loading") {
+                    const pct = liveStarted ? livePct() : 0;
+                    return `<div class="nd-hero-foot nd-live-loading">
+                        <span class="nd-spin" aria-hidden="true"></span>${esc(t("notifDetail.liveLoading"))}
+                        <b id="ndLivePct">${pct}%</b>
+                        <span class="nd-live-track"><span id="ndLiveBar" style="width:${pct}%"></span></span>
+                    </div>`;
+                }
                 if (liveState === "fail") return `<div class="nd-hero-foot">${esc(t("notifDetail.liveFailed"))}</div>`;
                 return "";
             })()}
@@ -388,10 +421,14 @@
         el.hero.hidden = false;
         current = n;
         el.filter.addEventListener("click", e => {
-            const b = e.target.closest(".nd-chip");
+            const b = e.target.closest(".nd-seg-btn");
             if (!b) return;
-            if (b.dataset.pos !== undefined) posFilter = b.dataset.pos;
-            else branchFilter = b.dataset.branch || "";
+            posFilter = b.dataset.pos || "";
+            render();
+        });
+        el.filter.addEventListener("change", e => {
+            if (!e.target.classList.contains("nd-branch")) return;
+            branchFilter = e.target.value;
             render();
         });
         render();

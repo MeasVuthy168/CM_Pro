@@ -176,3 +176,29 @@
     background: #FFD700; color: #0E1B3C; font-weight: 800; font-size: 14px; border-radius: 12px; padding: 10px 12px; }
 .nd-work-btn .ui-ico { font-size: 16px; }
 .nd-work-btn:active { transform: scale(.98); }
+
+/* Filters — same look as Daily Arrears › ការងារត្រូវបំពេញ: branch
+   dropdown + All / CO / FSRO segmented switch on one row */
+.nd-filter-bar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 8px; margin: 0 0 10px; }
+.nd-filter-bar.single { grid-template-columns: minmax(0, 1fr); }
+.nd-branch {
+    width: 100%; height: 46px; padding: 0 34px 0 14px; border-radius: 12px; font: inherit; font-size: 14px; font-weight: 600;
+    color: var(--notif-text); background-color: var(--notif-card-bg); border: 1px solid var(--notif-border);
+    appearance: none; -webkit-appearance: none; text-overflow: ellipsis;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6' fill='none' stroke='%239AA5B8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center; background-size: 18px;
+}
+.nd-seg { display: flex; gap: 3px; padding: 3px; height: 46px; border-radius: 12px; background: var(--notif-avatar-bg); }
+.nd-seg-btn {
+    flex: 1; min-width: 0; border: none; border-radius: 9px; background: transparent; font: inherit; font-size: 13px; font-weight: 700;
+    color: var(--notif-text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap;
+}
+.nd-seg-btn small { font-size: 10.5px; font-weight: 800; opacity: .75; }
+.nd-seg-btn.on { background: linear-gradient(180deg, #FFD700, #D4AF37); color: #0E1B3C; box-shadow: 0 2px 6px rgba(212, 175, 55, .35); }
+.nd-seg-btn.on small { opacity: .9; }
+
+/* Live figures loading: estimated % + bar */
+.nd-live-loading { flex-wrap: wrap; }
+.nd-live-loading b { margin-left: auto; color: #FFD700; font-size: 12px; font-variant-numeric: tabular-nums; }
+.nd-live-track { flex: 1 1 100%; height: 5px; border-radius: 99px; background: rgba(255, 255, 255, .14); overflow: hidden; }
+.nd-live-track span { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #D4AF37, #FFD700); transition: width .2s linear; }

@@ -50,6 +50,7 @@ CMI18n.register({
   "notifDetail.liveLoading": { km: "កំពុងទាញទិន្នន័យផ្ទាល់…", en: "Loading live figures…" },
   "notifDetail.liveFailed": { km: "ទាញទិន្នន័យផ្ទាល់មិនបាន — បង្ហាញតួលេខពេលផ្ញើ", en: "Couldn't load live figures — showing the figures when sent" },
   "notifDetail.openWork": { km: "បើកការងារត្រូវបំពេញ", en: "Open work to complete" },
+  "notifDetail.allBranchesLong": { km: "សាខាទាំងអស់", en: "All branches" },
   "notifDetail.notFound": { km: "រកមិនឃើញការជូនដំណឹងនេះទេ", en: "Notification not found" },
   "notifDetail.backToList": { km: "ត្រឡប់ទៅការជូនដំណឹង", en: "Back to notifications" },
   "notifDetail.alertTitle": { km: "ចំណុចត្រូវយកចិត្តទុកដាក់", en: "Needs attention" },
