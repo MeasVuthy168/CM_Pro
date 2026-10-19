@@ -1,3 +1,13 @@
+// Edit Out-of-Area Arrears changes data, so like uploads it's only for
+// Admin / User (the backend's canUpload); other roles don't get the card.
+(function () {
+    let role = "";
+    try {
+        role = String(JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}").role || "").toLowerCase();
+    } catch (e) {}
+    if (role !== "admin" && role !== "user") document.getElementById("mdOutAreaCard")?.remove();
+})();
+
 // =========================
 // COMPONENT LOADER
 // =========================

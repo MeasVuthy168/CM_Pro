@@ -92,6 +92,7 @@ CMI18n.register({
   "arrears.viewEditedRecordsBtn": { km: "មើលកំណត់ត្រាដែលបានកែសម្រួល", en: "View Edited Records" },
   "arrears.selectAllPaidOffBtn": { km: "ជ្រើសរើសទាំងអស់ (Paid off)", en: "Select All (Paid off)" },
   "arrears.oaTabCandidates": { km: "ត្រូវកែសម្រួល", en: "To edit" },
+  "arrears.oaReadOnly": { km: "មានតែ Admin និង User ប៉ុណ្ណោះដែលអាចកែសម្រួលបាន។", en: "Only Admin and User roles can edit this." },
   "arrears.oaTabEdited": { km: "បានកែសម្រួល", en: "Edited" },
   "arrears.oaSelectAll": { km: "ជ្រើសទាំងអស់", en: "Select all" },
   "arrears.backAria": { km: "ត្រឡប់ក្រោយ", en: "Back" },
