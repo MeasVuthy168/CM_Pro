@@ -197,6 +197,60 @@
             </div>`;
     }
 
+    function isAdmin() {
+        try {
+            const u = JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}");
+            return String(u.role || "").toLowerCase() === "admin";
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function dmy(d) {
+        const [y, m, day] = String(d || "").split("-");
+        return day ? `${day}-${m}-${y}` : String(d || "");
+    }
+
+    // The figures come from the latest Daily History snapshot; when the
+    // reports' live data is already newer (uploaded, not yet snapshotted
+    // — that happens automatically after 18:00), say so, so a CO's
+    // numbers here aren't mistaken for wrong. Admins can save it now.
+    function staleNote(data, date, q) {
+        if (!data.liveDate || !date || data.liveDate <= date) return "";
+        return `
+            <div class="ac-stale" data-q="${esc(q)}">
+                <span>⚠️ ${esc(t("assistant.stale", { date: dmy(date), live: dmy(data.liveDate) }))}</span>
+                ${isAdmin() ? `<button type="button" class="ac-snap">${esc(t("assistant.snapNow"))}</button>` : ""}
+            </div>`;
+    }
+
+    // Same 4 reports the Credit Report hub's "Snapshot All" saves.
+    const SNAPSHOT_URLS = [
+        "/api/creditreport/summary/snapshot/run",
+        "/api/creditreport/byco/snapshot/run",
+        "/api/creditreport/byproduct/snapshot/run",
+        "/api/creditreport/bylocation/snapshot/run"
+    ];
+
+    async function snapshotNow(btn) {
+        const note = btn.closest(".ac-stale");
+        if (busy || !note) return;
+        btn.disabled = true;
+        btn.textContent = t("assistant.snapSaving");
+        const results = await Promise.all(SNAPSHOT_URLS.map(u => API.post(u, {}).catch(e => ({ ok: false, message: e.message }))));
+        const failed = results.find(r => !r || !r.ok);
+        if (failed) {
+            btn.disabled = false;
+            btn.textContent = t("assistant.snapNow");
+            note.querySelector("span").textContent = "⚠️ " + t("assistant.snapFailed", { msg: (failed && failed.message) || "" });
+            return;
+        }
+        try {
+            Object.keys(sessionStorage).filter(k => k.startsWith(OVERVIEW_KEY)).forEach(k => sessionStorage.removeItem(k));
+        } catch (e) {}
+        recompare(note, null);
+    }
+
     function statCard(row, data, metrics, q) {
         const date = row.id != null ? (data.officerDate || data.date) : data.date;
         const prevDate = row.id != null ? (data.officerPrevDate || data.prevDate) : data.prevDate;
@@ -207,6 +261,7 @@
                     <span class="ac-card-who">${esc(whoLabel(row, data))}</span>
                     <span class="ac-card-date">${esc(date || "")}</span>
                 </div>
+                ${staleNote(data, date, q)}
                 ${metrics.map(m => `
                     <div class="ac-row ac-${m}">
                         <div class="ac-row-main">
@@ -277,6 +332,7 @@
                         <span class="ac-card-who">${esc(title)}</span>
                         <span class="ac-card-date">${esc(date || "")}</span>
                     </div>
+                    ${staleNote(data, date, q)}
                     ${metric === "disb" ? rankByBar(by, q) : ""}
                     ${level === "officer" ? `<div class="ac-foot">${esc(t(byPosition ? "assistant.rank.creditOfficersOnly" : "assistant.rank.activeOnly"))}</div>` : ""}
                     <ol class="ac-rank">
@@ -569,6 +625,8 @@
             if (chip) ask(chip.textContent);
             const cmp = e.target.closest(".ac-cmp button[data-cmp]");
             if (cmp) recompare(cmp.closest(".ac-cmp"), { mode: cmp.dataset.cmp, date: null });
+            const snap = e.target.closest(".ac-snap");
+            if (snap) snapshotNow(snap);
             const byBtn = e.target.closest(".ac-by button[data-by]");
             if (byBtn && !byBtn.classList.contains("on")) recompare(byBtn.closest(".ac-by"), null, byBtn.dataset.by);
         });
