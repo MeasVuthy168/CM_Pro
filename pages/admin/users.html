@@ -74,53 +74,51 @@
       </div>
 
       <!-- ========================= -->
-      <!-- TOOLBAR -->
+      <!-- SUMMARY — tap a tile to filter by it -->
       <!-- ========================= -->
-      <div class="adm-toolbar">
-        <input type="text" class="adm-search-input" id="ufSearch" placeholder="Search username, full name, or phone…" data-i18n-placeholder="admin.users.searchPlaceholder">
+      <div class="um-stats" id="umStats"></div>
 
-        <select class="adm-toolbar-select" id="ufSearchRole">
-          <option value="all" data-i18n="admin.users.allRoles">All Roles</option>
-          <option value="admin" data-i18n="admin.users.roleAdmin">Admin</option>
-          <option value="user" data-i18n="admin.users.roleUser">User</option>
-          <option value="viewer_staff" data-i18n="admin.users.roleViewerStaff">Viewer_Staff</option>
-          <option value="viewer_manager_a" data-i18n="admin.users.roleViewerManagerA">Viewer_Manager_A</option>
-          <option value="viewer_manager_b" data-i18n="admin.users.roleViewerManagerB">Viewer_Manager_B</option>
-          <option value="viewer_manager_c" data-i18n="admin.users.roleViewerManagerC">Viewer_Manager_C</option>
-        </select>
-
-        <select class="adm-toolbar-select" id="ufSearchStatus">
-          <option value="all" data-i18n="admin.users.allStatus">All Status</option>
-          <option value="active" data-i18n="admin.users.statusActive">Active</option>
-          <option value="inactive" data-i18n="admin.users.statusInactive">Inactive</option>
-        </select>
-
-        <div class="adm-toolbar-spacer"></div>
-
-        <button type="button" class="adm-btn" id="ufBtnShowAll" data-i18n="admin.users.showAll">Show All</button>
-        <button type="button" class="adm-btn adm-btn-primary" id="ufBtnAddUser" data-i18n="admin.users.addUser">+ Add User</button>
+      <!-- ========================= -->
+      <!-- TOOLBAR: search · role chips · status · sort -->
+      <!-- ========================= -->
+      <div class="adm-card um-toolbar">
+        <div class="um-search">
+          <span class="ui-ico ui-ico-search" aria-hidden="true"></span>
+          <input type="search" id="ufSearch" placeholder="Search username, full name, or phone…" data-i18n-placeholder="admin.users.searchPlaceholder" autocomplete="off">
+          <button type="button" class="um-search-clear" id="umSearchClear" hidden aria-label="Clear"><span class="ui-ico ui-ico-close" aria-hidden="true"></span></button>
+        </div>
+        <div class="um-chips" id="umRoleChips" role="radiogroup"></div>
+        <div class="um-toolbar-row">
+          <div class="um-seg" id="umStatusSeg" role="radiogroup">
+            <button type="button" data-status="all" class="on" data-i18n="admin.users.allStatus">All Status</button>
+            <button type="button" data-status="active" data-i18n="admin.users.statusActive">Active</button>
+            <button type="button" data-status="inactive" data-i18n="admin.users.statusInactive">Inactive</button>
+          </div>
+          <select class="adm-toolbar-select um-sort" id="umSort" aria-label="Sort">
+            <option value="name" data-i18n="admin.users.sortName">Name A–Z</option>
+            <option value="role" data-i18n="admin.users.sortRole">Role</option>
+            <option value="branch" data-i18n="admin.users.sortBranch">Branch</option>
+            <option value="login" data-i18n="admin.users.sortLogin">Last login</option>
+          </select>
+        </div>
+        <div class="um-toolbar-foot">
+          <span class="um-count" id="umCount"></span>
+          <button type="button" class="um-link" id="umBtnRoles">
+            <span class="adm-ico adm-ico-key" aria-hidden="true"></span>
+            <span data-i18n="admin.users.rolesGuide">What each role can do</span>
+          </button>
+          <button type="button" class="adm-btn adm-btn-primary" id="ufBtnAddUser" data-i18n="admin.users.addUser">+ Add User</button>
+        </div>
       </div>
 
       <!-- ========================= -->
-      <!-- TABLE -->
+      <!-- LIST (cards; a grid on wide screens) -->
       <!-- ========================= -->
-      <div class="adm-card adm-users-list-card">
-        <div class="adm-users-table-wrap">
-          <table class="adm-table">
-            <thead>
-              <tr>
-                <th data-i18n="admin.users.colUser">User</th>
-                <th data-i18n="admin.users.colRole">Role</th>
-                <th data-i18n="admin.users.colStatus">Status</th>
-                <th data-i18n="admin.users.colPhone">Phone</th>
-                <th data-i18n="admin.users.colBranch">Branch</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="admUsersTableBody"></tbody>
-          </table>
-          <div class="adm-table-empty" id="admUsersTableEmpty" hidden data-i18n="admin.users.noUsersFound">No users found.</div>
-        </div>
+      <div class="um-list" id="umList"></div>
+      <div class="adm-card um-empty" id="admUsersTableEmpty" hidden>
+        <span class="adm-ico adm-ico-users" aria-hidden="true"></span>
+        <b data-i18n="admin.users.noUsersFound">No users found.</b>
+        <button type="button" class="adm-btn" id="ufBtnShowAll" data-i18n="admin.users.showAll">Show All</button>
       </div>
 
     </main>
@@ -154,8 +152,10 @@
         </select>
       </label>
 
+      <div class="um-role-desc" id="ufRoleDesc"></div>
+
       <label class="adm-field" id="ufBranchField" hidden>
-        <span data-i18n="admin.users.fieldBranch">Branch</span>
+        <span><span data-i18n="admin.users.fieldBranch">Branch</span> <em class="um-optional" id="ufBranchOptional" hidden data-i18n="admin.users.optional">(optional)</em></span>
         <select id="ufBranch">
           <option value="" data-i18n="admin.users.selectBranch">— Select Branch —</option>
           <option value="All Branch" data-i18n="admin.users.branchAll">All Branch</option>
@@ -167,6 +167,7 @@
           <option value="Rumduol">Rumduol</option>
           <option value="Svay Chrom">Svay Chrom</option>
         </select>
+        <small class="um-field-hint" id="ufBranchHint"></small>
       </label>
 
       <label class="adm-field">
