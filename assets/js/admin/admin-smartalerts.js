@@ -17,7 +17,6 @@
   const FIELDS = {
     parRisePct: document.getElementById("saParRisePct"),
     osDropPct: document.getElementById("saOsDropPct"),
-    osDropDays: document.getElementById("saOsDropDays"),
     nplRiseCount: document.getElementById("saNplRiseCount")
   };
 
@@ -25,6 +24,10 @@
     lastRun: document.getElementById("saLastRun"),
     btnDefaults: document.getElementById("saBtnDefaults"),
     btnSave: document.getElementById("saBtnSave"),
+    btnUndo: document.getElementById("saBtnUndo"),
+    saveBar: document.getElementById("saSaveBar"),
+    osCompare: document.getElementById("saOsCompare"),
+    osCompareDate: document.getElementById("saOsCompareDate"),
     date: document.getElementById("saDate"),
     btnPreview: document.getElementById("saBtnPreview"),
     btnSend: document.getElementById("saBtnSend"),
@@ -72,30 +75,52 @@
   }
 
   // ---------- thresholds ----------
+  // OS is compared with the previous day, end of last month, end of
+  // last year or a fixed date (osCompare) — set with the segmented
+  // buttons; the date box shows only for "a fixed date".
+  let osMode = "prev";
+
+  function setOsMode(mode, date) {
+    osMode = mode || "prev";
+    el.osCompare.querySelectorAll("button").forEach((b) => {
+      b.classList.toggle("on", b.dataset.mode === osMode);
+      b.setAttribute("aria-checked", b.dataset.mode === osMode ? "true" : "false");
+    });
+    el.osCompareDate.hidden = osMode !== "date";
+    if (date !== undefined) el.osCompareDate.value = date || "";
+  }
+
   function fillForm(th) {
     Object.keys(FIELDS).forEach((k) => { FIELDS[k].value = th && th[k] != null ? th[k] : ""; });
+    const c = (th && th.osCompare) || { mode: "prev", date: null };
+    setOsMode(c.mode, c.date);
   }
 
   function readForm() {
     const out = {};
     Object.keys(FIELDS).forEach((k) => { out[k] = Number(FIELDS[k].value); });
+    out.osCompare = { mode: osMode, date: osMode === "date" ? (el.osCompareDate.value || null) : null };
     return out;
   }
 
   function formValid() {
     const v = readForm();
-    return v.parRisePct > 0 && v.osDropPct > 0 && v.osDropDays >= 1 && v.nplRiseCount >= 1;
+    return v.parRisePct > 0 && v.osDropPct > 0 && v.nplRiseCount >= 1 &&
+      (v.osCompare.mode !== "date" || !!v.osCompare.date);
   }
 
   function isDirty() {
     if (!saved) return false;
     const v = readForm();
-    return Object.keys(FIELDS).some((k) => Number(saved[k]) !== v[k]);
+    const sc = saved.osCompare || { mode: "prev", date: null };
+    return Object.keys(FIELDS).some((k) => Number(saved[k]) !== v[k]) ||
+      sc.mode !== v.osCompare.mode || (sc.date || null) !== v.osCompare.date;
   }
 
   function refreshButtons() {
     const dirty = isDirty();
-    el.btnSave.disabled = !dirty || !formValid();
+    el.saveBar.hidden = !dirty;
+    el.btnSave.disabled = !formValid();
     el.btnSend.disabled = !lastPreview || lastPreview.total === 0 || dirty || lastPreview.date !== currentDateKey();
   }
 
@@ -141,6 +166,34 @@
   }
 
   Object.values(FIELDS).forEach((input) => input.addEventListener("input", refreshButtons));
+
+  // − / + steppers next to each threshold
+  document.querySelectorAll(".sa-stepper").forEach((wrap) => {
+    const input = wrap.querySelector("input");
+    const step = Number(wrap.dataset.step) || 1;
+    const min = Number(wrap.dataset.min) || step;
+    wrap.querySelectorAll(".sa-step").forEach((b) => {
+      b.addEventListener("click", () => {
+        const cur = Number(input.value) || 0;
+        const next = Math.max(min, Math.round((cur + step * Number(b.dataset.dir)) * 10) / 10);
+        input.value = next;
+        refreshButtons();
+      });
+    });
+  });
+
+  el.osCompare.addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-mode]");
+    if (!b) return;
+    setOsMode(b.dataset.mode);
+    if (osMode === "date" && !el.osCompareDate.value) el.osCompareDate.focus();
+    refreshButtons();
+  });
+  el.osCompareDate.addEventListener("input", refreshButtons);
+  el.btnUndo.addEventListener("click", () => {
+    if (saved) fillForm(saved);
+    refreshButtons();
+  });
   el.btnSave.addEventListener("click", saveSettings);
   el.btnDefaults.addEventListener("click", () => {
     if (!defaults) return;
@@ -169,7 +222,7 @@
 
   function changeLabel(a) {
     if (a.kind === "npl_rise") return `+${a.change} ${esc(t("admin.smartAlerts.accountsUnit"))}`;
-    if (a.kind === "os_drop") return `−${a.changePct}%`;
+    if (a.kind === "os_drop") return `−${a.changePct}%${a.since ? `<span class="sa-who-sub">${esc(t("admin.smartAlerts.vsDate", { date: a.since }))}</span>` : ""}`;
     return `+${a.changePct}%`;
   }
 
@@ -196,7 +249,7 @@
     const d = data.dates || {};
     const parts = [t("admin.smartAlerts.compareDate", { date: data.date })];
     if (d.branch && d.branch.prev) parts.push(t("admin.smartAlerts.comparePrev", { date: d.branch.prev }));
-    if (d.branch && d.branch.weekAgo) parts.push(t("admin.smartAlerts.compareWeek", { date: d.branch.weekAgo }));
+    if (d.branch && d.branch.osBase) parts.push(t("admin.smartAlerts.compareOs", { date: d.branch.osBase }));
     if (!d.officer) parts.push(t("admin.smartAlerts.noOfficerSnapshot"));
     el.compare.textContent = parts.join(" · ");
 
