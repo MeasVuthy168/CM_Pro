@@ -3091,6 +3091,7 @@ async function refreshArrears() {
         console.error("[reasonarrear overlay] failed, table still shows bulk data:", err);
     }
     openPendingWorkLink();
+    openPendingOutAreaLink();
 }
 
 // ?work=unfilled|expired|outarea[&branch=…] (from a Smart Alert /
@@ -3101,6 +3102,17 @@ let pendingWorkLink = (() => {
     const kind = p.get("work");
     return ["unfilled", "expired", "outarea"].includes(kind) ? { kind, branch: p.get("branch") || "" } : null;
 })();
+
+// ?outarea=1 — Edit Out-of-Area Arrears, opened from its Master Data
+// card (it used to live in this page's "..." menu). Opens once the rows
+// are in, like ?work= above.
+let pendingOutAreaLink = new URLSearchParams(location.search).get("outarea") === "1";
+
+function openPendingOutAreaLink() {
+    if (!pendingOutAreaLink) return;
+    pendingOutAreaLink = false;
+    openOutAreaModal();
+}
 
 function openPendingWorkLink() {
     if (!pendingWorkLink) return;
@@ -4706,11 +4718,6 @@ function openOutAreaModal() {
 function closeOutAreaModal() {
     document.getElementById("outAreaBackdrop").classList.remove("show");
 }
-
-document.getElementById("btnOutArea")?.addEventListener("click", () => {
-    openOutAreaModal();
-    document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
-});
 
 document.getElementById("btnOutAreaCloseX2")?.addEventListener("click", closeOutAreaModal);
 document.getElementById("btnOutAreaCloseX")?.addEventListener("click", closeOutAreaModal);
