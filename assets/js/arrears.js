@@ -3069,6 +3069,28 @@ async function refreshArrears() {
     } catch (err) {
         console.error("[reasonarrear overlay] failed, table still shows bulk data:", err);
     }
+    openPendingWorkLink();
+}
+
+// ?work=unfilled|expired|outarea[&branch=…] (from a Smart Alert /
+// Officer Reminder detail page) opens "ការងារត្រូវបំពេញ" on that tab
+// once the data — Reason Arrear overlay included — is in. Once only.
+let pendingWorkLink = (() => {
+    const p = new URLSearchParams(location.search);
+    const kind = p.get("work");
+    return ["unfilled", "expired", "outarea"].includes(kind) ? { kind, branch: p.get("branch") || "" } : null;
+})();
+
+function openPendingWorkLink() {
+    if (!pendingWorkLink) return;
+    const { kind, branch } = pendingWorkLink;
+    pendingWorkLink = null;
+    try { history.replaceState(null, "", location.pathname); } catch (e) {}
+    noReasonKind = kind;
+    populateNoReasonBranchFilter();
+    const sel = document.getElementById("noReasonBranchFilter");
+    if (sel && branch && [...sel.options].some(o => o.value === branch)) sel.value = branch;
+    showNoReasonSummary();
 }
 
 // Excel (and other spreadsheet apps) treat a cell string starting with
@@ -3450,16 +3472,23 @@ function getTeamCategory(row) {
     return (row.teamLeader || "").trim().toUpperCase() === "FSRO" ? "FSRO" : "Credit Officer";
 }
 
-function buildNoReasonRows(sourceRows, branchFilter, teamFilter) {
+// "ការងារត្រូវបំពេញ" (work to complete) — three kinds, the same rules
+// as the 9:00 / 15:00 officer reminders (CM-backend lib/officer-reminders.js):
+//   unfilled  real row (has a CIF), no Solution (AK) yet — by officer name (W)
+//   expired   promise date (AL) before today — by officer name (W)
+//   outarea   still NoCoRespone on the Out of Area page — by the loan's
+//             current CO ID (V), since W holds the NoCoRespone marker
+// NoCoRespone rows belong to the third kind only.
+function isNoCoResponseRow(row) {
+    return String(row.coResponse || "").toLowerCase().includes("nocorespone");
+}
+
+function buildNoReasonRows(sourceRows, branchFilter, teamFilter, kind = "unfilled", officerNames = null) {
     const map = new Map();
     const stats = { total: 0, missing: 0 };
     sourceRows.forEach(row => {
-        // Mirrors the VBA COUNTIFS: W=officer, AK blank, Q>0, U=branch.
         // Q is the CIF column, so the guard is simply "this is a real
-        // row" — NOT "arrears amount > 0". The old check required an
-        // arrears figure, which silently dropped every loan whose
-        // arrears cell was blank, zero or "-", hiding officers who did
-        // have unfilled reasons.
+        // row" — NOT "arrears amount > 0" (see the VBA COUNTIFS note above).
         const hasCif = String(row.cif ?? "").trim() !== "";
         if (!hasCif) return;
 
@@ -3469,22 +3498,33 @@ function buildNoReasonRows(sourceRows, branchFilter, teamFilter) {
         const team = getTeamCategory(row);
         if (teamFilter && team !== teamFilter) return;
 
-        const name = row.coResponse || "(Unknown)";
-        const key = name + "||" + branch + "||" + team;
+        const noCo = isNoCoResponseRow(row);
+        if ((kind === "outarea") !== noCo) return;
+        if (kind === "outarea" && !row.concate) return;
 
-        // rows[] keeps a reference to the actual arrears row objects
-        // (not copies) — clicking a client in the drill-down screen
-        // hands one of these straight to openReasonPanel(), same object
-        // the main table's own row click uses, so nav/save behave
-        // identically. total counts every LD of the officer in scope,
-        // for the "filled x/y" bar.
-        if (!map.has(key)) map.set(key, { key, name, branch, team, count: 0, total: 0, rows: [] });
+        let name, key;
+        if (kind === "outarea") {
+            const id = normalizeOfficerId(row.coId);
+            name = (officerNames && officerNames.get(id)) || `CO ${row.coId || "?"}`;
+            key = "id:" + id + "||" + branch + "||" + team;
+        } else {
+            name = row.coResponse || "(Unknown)";
+            key = name + "||" + branch + "||" + team;
+        }
+
+        // rows[] keeps references to the real arrears row objects, so a
+        // client tapped in the drill-down opens the same object the
+        // main table would. total counts every LD of the officer in
+        // scope (the "filled x/y" bar on the unfilled tab).
+        if (!map.has(key)) map.set(key, { key, name, branch, team, coId: row.coId || "", count: 0, total: 0, rows: [] });
         const entry = map.get(key);
         entry.total++;
         stats.total++;
 
-        const solutionFilled = String(row.akSolution ?? "").trim() !== "";
-        if (solutionFilled) return;
+        const pending = kind === "unfilled" ? String(row.akSolution ?? "").trim() === ""
+            : kind === "expired" ? String(row.promiseStatus || "").startsWith("Expired")
+            : true;
+        if (!pending) return;
         entry.count++;
         entry.rows.push(row);
         stats.missing++;
@@ -3506,6 +3546,7 @@ function populateNoReasonBranchFilter() {
 let noReasonGroups = [];
 let noReasonTeam = "";          // "" | "Credit Officer" | "FSRO"
 let noReasonSort = "count";     // "count" (most unfilled first) | "name"
+let noReasonKind = "unfilled";  // "unfilled" | "expired" | "outarea" (see buildNoReasonRows)
 
 // Whichever officer's client list is currently open in the drill-down
 // screen, so its own click handler can resolve a tapped item back to
@@ -3530,7 +3571,26 @@ function showNoReasonSummary() {
     populateNoReasonBranchFilter();
 
     const branchFilter = document.getElementById("noReasonBranchFilter")?.value || "";
-    noReasonGroups = buildNoReasonRows(currentRows, branchFilter, noReasonTeam);
+    const names = outAreaOfficerNames;
+    noReasonGroups = buildNoReasonRows(currentRows, branchFilter, noReasonTeam, noReasonKind, names);
+
+    // Every tab shows its own count for the same Branch / Team choice.
+    ["unfilled", "expired", "outarea"].forEach(kind => {
+        const n = kind === noReasonKind ? noReasonGroups.stats.missing
+            : buildNoReasonRows(currentRows, branchFilter, noReasonTeam, kind, names).stats.missing;
+        const el = document.getElementById(`nrKindCount-${kind}`);
+        if (el) el.textContent = n.toLocaleString();
+    });
+    document.querySelectorAll("[data-nr-kind]").forEach(b =>
+        b.classList.toggle("active", b.dataset.nrKind === noReasonKind));
+    document.getElementById("nrStatMissingLabel").textContent =
+        noReasonKind === "outarea" ? "NoCoRespone" : t(noReasonKind === "expired" ? "arrears.workExpired" : "arrears.workUnfilled");
+    document.getElementById("nrStatGood").hidden = noReasonKind !== "unfilled";
+    // NoCoRespone officers are named from the Master Data list — load it
+    // once, then redraw with names instead of bare IDs.
+    if (noReasonKind === "outarea" && !names) loadOutAreaOfficerNames().then(() => {
+        if (noReasonKind === "outarea" && document.getElementById("noReasonBackdrop").classList.contains("show")) showNoReasonSummary();
+    });
 
     const { total, missing } = noReasonGroups.stats;
     const pct = total ? Math.round((total - missing) / total * 100) : 100;
@@ -3563,7 +3623,7 @@ function renderNoReasonOfficers() {
 
     const el = document.getElementById("noReasonTbody");
     if (!list.length) {
-        el.innerHTML = `<div class="oa-empty">${escapeHtml(t(noReasonGroups.length ? "arrears.nrNoMatch" : "arrears.nrAllDone"))}</div>`;
+        el.innerHTML = `<div class="oa-empty">${escapeHtml(t(noReasonGroups.length ? "arrears.nrNoMatch" : `arrears.workDone.${noReasonKind}`))}</div>`;
     } else {
         el.innerHTML = list.map(({ g, i }) => {
             const filled = g.total - g.count;
@@ -3576,9 +3636,10 @@ function renderNoReasonOfficers() {
                     <span class="oa-item-sub">
                         ${g.branch ? `<span class="oa-branch-chip">${escapeHtml(g.branch)}</span>` : ""}
                         <span>${escapeHtml(g.team === "FSRO" ? "FSRO" : "CO")}</span>
-                        <span>· ${escapeHtml(noReasonFill(t("arrears.nrFilledOf"), { f: filled.toLocaleString(), t: g.total.toLocaleString() }))}</span>
+                        ${noReasonKind === "outarea" ? `<span>· ${escapeHtml(g.coId)}</span>` : ""}
+                        ${noReasonKind === "unfilled" ? `<span>· ${escapeHtml(noReasonFill(t("arrears.nrFilledOf"), { f: filled.toLocaleString(), t: g.total.toLocaleString() }))}</span>` : ""}
                     </span>
-                    <span class="arr-progress nr-item-bar"><span style="width:${pct}%"></span></span>
+                    ${noReasonKind === "unfilled" ? `<span class="arr-progress nr-item-bar"><span style="width:${pct}%"></span></span>` : ""}
                 </span>
                 <span class="nr-count"><strong>${g.count.toLocaleString()}</strong><small>LD</small></span>
                 <span class="oa-item-chevron" aria-hidden="true">›</span>
@@ -3587,7 +3648,7 @@ function renderNoReasonOfficers() {
     }
 
     const { missing } = noReasonGroups.stats;
-    document.getElementById("noReasonSubtitle").textContent = noReasonFill(t("arrears.nrCount"), {
+    document.getElementById("noReasonSubtitle").textContent = noReasonFill(t(`arrears.workCount.${noReasonKind}`), {
         n: missing.toLocaleString(), o: noReasonGroups.length.toLocaleString()
     });
 }
@@ -3617,7 +3678,8 @@ function showNoReasonClients(group) {
 
     document.getElementById("noReasonClientsTitle").textContent = group.name;
     document.getElementById("noReasonClientsSubtitle").textContent =
-        `${group.branch || "-"} · ${group.team} · ${group.count.toLocaleString()} LD`;
+        `${group.branch || "-"} · ${group.team} · ${group.count.toLocaleString()} LD · ${t(`arrears.work.${noReasonKind}`)}`;
+    document.getElementById("noReasonClientsHint").textContent = t(`arrears.workHint.${noReasonKind}`);
 
     document.getElementById("noReasonListScreen").style.display = "none";
     document.getElementById("noReasonClientsScreen").style.display = "block";
@@ -3633,7 +3695,7 @@ function renderNoReasonClients() {
             .some(v => String(v || "").toLowerCase().includes(q)));
 
     if (!items.length) {
-        el.innerHTML = `<div class="oa-empty">${escapeHtml(t(noReasonClientRows.length ? "arrears.nrNoMatch" : "arrears.nrAllDone"))}</div>`;
+        el.innerHTML = `<div class="oa-empty">${escapeHtml(t(noReasonClientRows.length ? "arrears.nrNoMatch" : `arrears.workDone.${noReasonKind}`))}</div>`;
         return;
     }
     el.innerHTML = items.map(({ row, i }) => {
@@ -3648,7 +3710,8 @@ function renderNoReasonClients() {
                 <span class="oa-item-sub nr-client-meta">
                     ${arrears > 0 ? `<span class="arr-amount-bad">Arrears ${escapeHtml(arrFormatAmount(row.arreas))}${row.ccy ? ` ${escapeHtml(row.ccy)}` : ""}</span>` : ""}
                     ${row.tell ? `<span><span class="ui-ico ui-ico-phone" aria-hidden="true"></span> ${escapeHtml(formatPhone(row.tell))}</span>` : ""}
-                    ${draft ? `<span class="nr-client-draft">${escapeHtml(row.ajReason || formatRowDateDMY(row.alFollowup))}</span>` : ""}
+                    ${noReasonKind === "expired" && row.promiseStatus ? `<span class="nr-client-expired"><span class="ui-ico ui-ico-clock" aria-hidden="true"></span> ${escapeHtml(formatRowDateDMY(row.alFollowup))} · ${escapeHtml(row.promiseStatus.replace(/^Expired:\s*/, ""))}</span>` : ""}
+                    ${noReasonKind !== "expired" && draft ? `<span class="nr-client-draft">${escapeHtml(row.ajReason || formatRowDateDMY(row.alFollowup))}</span>` : ""}
                 </span>
             </span>
             ${Number.isFinite(day) ? `<span class="arr-day-badge">${day.toLocaleString()} <small>${escapeHtml(t("arrears.cardDays"))}</small></span>` : ""}
@@ -3685,6 +3748,13 @@ document.getElementById("noReasonClientsTbody")?.addEventListener("click", (e) =
     const navRows = noReasonClientRows.slice();
     const returnKey = noReasonOpenKey;
     closeNoReasonSummary();
+    if (noReasonKind === "outarea") {
+        // NoCoRespone is fixed by moving the loan to its officer on the
+        // Out of Area page — open that editor on this loan.
+        openOutAreaModal();
+        selectOutAreaCustomer(row);
+        return;
+    }
     openReasonPanel(row).then(() => { reasonNavRows = navRows; updateReasonNav(); });
     noReasonReturnKey = returnKey;
 });
@@ -3694,6 +3764,12 @@ document.getElementById("noReasonClientSearch")?.addEventListener("input", rende
 
 document.querySelectorAll("[data-nr-team]").forEach(btn => btn.addEventListener("click", () => {
     noReasonTeam = btn.dataset.nrTeam;
+    showNoReasonSummary();
+}));
+document.querySelectorAll("[data-nr-kind]").forEach(btn => btn.addEventListener("click", () => {
+    noReasonKind = btn.dataset.nrKind;
+    const search = document.getElementById("noReasonSearch");
+    if (search) search.value = "";
     showNoReasonSummary();
 }));
 document.querySelectorAll("[data-nr-sort]").forEach(btn => btn.addEventListener("click", () => {
@@ -3708,7 +3784,7 @@ document.getElementById("btnNoReasonCopy")?.addEventListener("click", async () =
     const team = noReasonTeam || t("arrears.optionAll");
     const sorted = noReasonGroups.slice().sort((a, b) => (b.count - a.count) || a.name.localeCompare(b.name));
     const lines = [
-        `${t("arrears.menuNoReasonSummary")} — ${branch} · ${team}`,
+        `${t("arrears.menuNoReasonSummary")} · ${t(`arrears.work.${noReasonKind}`)} — ${branch} · ${team}`,
         `${t("arrears.lastUploadAtLabel")} ${document.getElementById("noReasonLastUpload").textContent}`,
         "",
         ...sorted.map((g, i) => `${i + 1}. ${g.name}${g.branch ? ` (${g.branch})` : ""} — ${g.count} LD`),
@@ -4813,7 +4889,9 @@ function showArrearsScopeDialog() {
         // else under their name (column W).
         arrearsScopeMode = reminderFocus
             ? (reminderFocus.kind === "outarea" ? "own" : "")
-            : await showArrearsScopeDialog();
+            : pendingWorkLink
+                ? (pendingWorkLink.kind === "outarea" ? "own" : "")
+                : await showArrearsScopeDialog();
     }
 
     refreshArrears();

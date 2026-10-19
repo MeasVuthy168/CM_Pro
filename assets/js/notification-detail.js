@@ -46,9 +46,40 @@
         }
     }
 
-    function itemsOf(n) {
+    // Officer Reminders show LIVE counts (GET /api/officer-reminders/live —
+    // the same rules, computed now, only the officers this user is
+    // reminded about); the figures sent at 9:00 / 15:00 stay as a
+    // reference line. Until the live list arrives — or if it fails —
+    // the sent figures are shown.
+    let live = null;          // { at, reminders }
+    let liveState = "idle";   // idle | loading | ok | fail
+
+    async function loadLive() {
+        liveState = "loading";
+        try {
+            const res = await fetch(`${API.BASE_URL}/api/officer-reminders/live`, { headers: { Authorization: `Bearer ${token}` } });
+            const data = await res.json();
+            if (!res.ok || !data.ok) throw new Error(data.message || `HTTP ${res.status}`);
+            live = { at: data.at, reminders: data.reminders || [] };
+            liveState = "ok";
+        } catch (e) {
+            console.warn("[notification-detail] live counts failed:", e);
+            liveState = "fail";
+        }
+    }
+
+    function snapshotItems(n) {
         const x = n.extra || {};
         return (n.type === "smart_alert" ? x.alerts : x.reminders) || [];
+    }
+
+    function itemsOf(n) {
+        return n.type === "officer_reminder" && live ? live.reminders : snapshotItems(n);
+    }
+
+    function hhmm(iso) {
+        const d = new Date(iso);
+        return Number.isNaN(d.getTime()) ? "" : `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
     }
 
     function branchOf(i) {
@@ -300,7 +331,7 @@
     }
 
     function renderReminder(n) {
-        const list = applyFilters((n.extra && n.extra.reminders) || []).slice()
+        const list = applyFilters(itemsOf(n)).slice()
             .sort((a, b) => (b.unfilled + b.expired + b.outArea) - (a.unfilled + a.expired + a.outArea));
         const sum = k => list.reduce((s, r) => s + (Number(r[k]) || 0), 0);
         const slot = n.extra && n.extra.slot;
@@ -311,12 +342,26 @@
                 <span class="nd-hero-ico"><span class="ui-ico ui-ico-clipboard" aria-hidden="true"></span></span>
                 <div>
                     <div class="nd-hero-title">${esc(t("notifDetail.remindTitle"))}</div>
-                    <div class="nd-hero-sub">${esc([dmy(n.extra && n.extra.date), time].filter(Boolean).join(" · "))}${list.length > 1 ? " · " + esc(t("notifDetail.officerCount", { n: list.length })) : ""}</div>
+                    <div class="nd-hero-sub">${live
+                        ? `<span class="nd-live-dot" aria-hidden="true"></span>${esc(t("notifDetail.liveAt", { time: hhmm(live.at) }))}`
+                        : esc([dmy(n.extra && n.extra.date), time].filter(Boolean).join(" · "))}${list.length > 1 ? " · " + esc(t("notifDetail.officerCount", { n: list.length })) : ""}</div>
                 </div>
             </div>
             <div class="nd-stats">
                 ${REMIND.map(m => `<div class="nd-stat nd-stat-${m.key}"><b>${sum(m.key)}</b><span>${esc(t(m.label))}</span></div>`).join("")}
-            </div>`;
+            </div>
+            ${(() => {
+                const sent = applyFilters(snapshotItems(n));
+                const sentSum = k => sent.reduce((s2, r) => s2 + (Number(r[k]) || 0), 0);
+                const sentLine = t("notifDetail.sentAt", { time: time || dmy(n.extra && n.extra.date), a: sentSum("unfilled"), b: sentSum("expired"), c: sentSum("outArea") });
+                if (live) return `<div class="nd-hero-foot">${esc(sentLine)}</div>`;
+                if (liveState === "loading") return `<div class="nd-hero-foot"><span class="nd-spin" aria-hidden="true"></span>${esc(t("notifDetail.liveLoading"))}</div>`;
+                if (liveState === "fail") return `<div class="nd-hero-foot">${esc(t("notifDetail.liveFailed"))}</div>`;
+                return "";
+            })()}
+            <a class="nd-work-btn" href="/CM_Pro/pages/arrears/index.html?${new URLSearchParams({ work: "unfilled", ...(branchFilter ? { branch: branchFilter } : {}) })}">
+                <span class="ui-ico ui-ico-clipboard" aria-hidden="true"></span>${esc(t("notifDetail.openWork"))}<span class="ui-ico ui-ico-chevron-right" aria-hidden="true"></span>
+            </a>`;
 
         el.body.innerHTML = list.length
             ? `<p class="nd-hint nd-hint-top">${esc(t("notifDetail.remindHint"))}</p>
@@ -351,6 +396,10 @@
         });
         render();
         if (!n.isRead) markRead();
+        if (n.type === "officer_reminder") {
+            loadLive().then(render);
+            render(); // shows "loading live…" until it lands
+        }
     }
 
     init();
