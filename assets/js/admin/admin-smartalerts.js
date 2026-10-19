@@ -410,3 +410,154 @@
 
   loadCompare();
 })();
+
+/* ---------- Officer Reminders (09:00 / 15:00) ----------
+   GET/PUT /api/admin/officer-reminders/settings (on / off) and
+   POST /api/admin/officer-reminders/run (preview, or send now —
+   once per day per recipient on the server). */
+(function () {
+  if (!window.CMAdmin) return;
+
+  const API_BASE = (window.API && window.API.BASE_URL) || "";
+  const t = (key, vars) => (window.CMI18n ? CMI18n.t(key, vars) : key);
+  const $ = (id) => document.getElementById(id);
+  const el = {
+    toggle: $("orToggle"), lastRun: $("orLastRun"),
+    preview: $("orBtnPreview"), send: $("orBtnSend"),
+    result: $("orResult"), body: $("orBody"), tableWrap: $("orTableWrap"),
+    recipients: $("orRecipients"), recipientsTitle: $("orRecipientsTitle"), empty: $("orEmpty"),
+    kOfficers: $("orKpiOfficers"), kUnfilled: $("orKpiUnfilled"), kExpired: $("orKpiExpired"), kOutArea: $("orKpiOutArea")
+  };
+  if (!el.toggle) return;
+
+  let enabled = false;
+  let previewCount = 0;
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  async function api(path, opts = {}) {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...opts,
+      headers: { Authorization: `Bearer ${window.CMAdmin.token}`, "Content-Type": "application/json", ...(opts.headers || {}) }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      const err = new Error(data.message || `HTTP ${res.status}`);
+      err.serverMessage = data.message;
+      throw err;
+    }
+    return data;
+  }
+
+  function setToggle(on) {
+    enabled = on;
+    el.toggle.classList.toggle("adm-toggle-on", on);
+    el.toggle.setAttribute("aria-checked", on ? "true" : "false");
+  }
+
+  function renderLastRun(v) {
+    // "2026-10-19:09" -> "2026-10-19 9:00"
+    const m = String(v || "").match(/^(\d{4}-\d{2}-\d{2}):(\d{2})$/);
+    el.lastRun.textContent = m
+      ? t("admin.officerReminders.lastRun", { when: `${m[1]} ${m[2] === "09" ? "9:00" : "15:00"}` })
+      : t("admin.officerReminders.neverRun");
+  }
+
+  async function load() {
+    try {
+      const data = await api("/api/admin/officer-reminders/settings");
+      setToggle(!!(data.settings && data.settings.enabled));
+      renderLastRun(data.lastRun);
+    } catch (e) {
+      AdminUI.toast(t("admin.smartAlerts.loadFailed"), "error");
+    }
+  }
+
+  async function flip() {
+    const next = !enabled;
+    setToggle(next);
+    try {
+      await api("/api/admin/officer-reminders/settings", { method: "PUT", body: JSON.stringify({ settings: { enabled: next } }) });
+      AdminUI.toast(t(next ? "admin.officerReminders.on" : "admin.officerReminders.off"), "success");
+    } catch (e) {
+      setToggle(!next);
+      AdminUI.toast(e.serverMessage || t("admin.smartAlerts.saveFailed"), "error");
+    }
+  }
+
+  function recipientLabel(key) {
+    return key === "role:admin" ? t("admin.smartAlerts.toAdmins") : key.replace(/^user:/, "");
+  }
+
+  function render(data) {
+    const list = data.reminders || [];
+    const preview = data.preview || [];
+    const sum = (k) => list.reduce((a, r) => a + (r[k] || 0), 0);
+    el.result.hidden = false;
+    el.kOfficers.textContent = list.length;
+    el.kUnfilled.textContent = sum("unfilled");
+    el.kExpired.textContent = sum("expired");
+    el.kOutArea.textContent = sum("outArea");
+    el.tableWrap.hidden = el.recipientsTitle.hidden = el.recipients.hidden = !list.length;
+    el.empty.hidden = list.length > 0;
+    const cell = (n) => `<td class="or-n${n ? " or-hot" : ""}">${n || "–"}</td>`;
+    el.body.innerHTML = list.map((r) => `
+      <tr>
+        <td class="sa-who"><b>${esc(r.name || r.id)}</b><span class="sa-who-sub">${esc(r.id)} · ${esc(r.branch)}</span></td>
+        ${cell(r.unfilled)}${cell(r.expired)}${cell(r.outArea)}
+      </tr>`).join("");
+    el.recipients.innerHTML = preview.map((p, i) => `
+      <details class="sa-recipient"${i === 0 ? " open" : ""}>
+        <summary>
+          <span class="adm-ico ${p.to === "role:admin" ? "adm-ico-users" : "adm-ico-bell"}" aria-hidden="true"></span>
+          <span class="sa-recipient-name">${esc(recipientLabel(p.to))}</span>
+          <span class="sa-count">${p.lines.length}</span>
+        </summary>
+        <div class="sa-message">
+          ${p.lines.slice(0, 10).map((l) => `<div class="sa-line">${esc(l)}</div>`).join("")}
+          ${p.lines.length > 10 ? `<div class="sa-line sa-more">${esc(t("admin.smartAlerts.moreLines", { n: p.lines.length - 10 }))}</div>` : ""}
+        </div>
+      </details>`).join("");
+  }
+
+  async function runPreview() {
+    el.preview.disabled = true;
+    try {
+      const data = await api("/api/admin/officer-reminders/run", { method: "POST", body: JSON.stringify({ dryRun: true }) });
+      previewCount = (data.recipients || []).length;
+      render(data);
+    } catch (e) {
+      previewCount = 0;
+      el.result.hidden = true;
+      AdminUI.toast(e.serverMessage || t("admin.smartAlerts.previewFailed"), "error");
+    } finally {
+      el.preview.disabled = false;
+      el.send.disabled = previewCount === 0;
+    }
+  }
+
+  async function sendNow() {
+    const ok = await AdminUI.confirm({
+      title: t("admin.officerReminders.sendConfirmTitle"),
+      message: t("admin.officerReminders.sendConfirm", { n: previewCount }),
+      confirmLabel: t("admin.smartAlerts.sendNow")
+    });
+    if (!ok) return;
+    el.send.disabled = true;
+    try {
+      const data = await api("/api/admin/officer-reminders/run", { method: "POST", body: JSON.stringify({ dryRun: false }) });
+      AdminUI.toast(data.sent > 0 ? t("admin.smartAlerts.sent", { n: data.sent }) : t("admin.smartAlerts.alreadySent"), data.sent > 0 ? "success" : "info");
+    } catch (e) {
+      AdminUI.toast(e.serverMessage || t("admin.smartAlerts.sendFailed"), "error");
+    } finally {
+      el.send.disabled = previewCount === 0;
+    }
+  }
+
+  el.toggle.addEventListener("click", flip);
+  el.preview.addEventListener("click", runPreview);
+  el.send.addEventListener("click", sendNow);
+  load();
+})();
