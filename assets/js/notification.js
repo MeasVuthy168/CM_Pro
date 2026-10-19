@@ -387,6 +387,13 @@ function updateSummaryFromState(){
 // from the notification's own extra data.
 const DETAIL_TYPES=["smart_alert","officer_reminder"];
 
+// A Reason Arrear submit lists the clients it covered (newer ones carry
+// them in extra.clients).
+function hasDetail(item){
+return DETAIL_TYPES.includes(item.type) ||
+(item.moduleCode==="ReasonArrear_Submit" && Array.isArray(item.extra && item.extra.clients) && item.extra.clients.length>0);
+}
+
 // A plain tap on such a card opens it. A swipe never fires click on
 // touch devices, and a card mid-swipe is skipped anyway.
 notifyList.addEventListener("click",(e)=>{
@@ -419,7 +426,7 @@ return `
 class="
 notify-card
 ${item.isRead ? "" : "unread"}
-${DETAIL_TYPES.includes(item.type) ? "has-detail" : ""}
+${hasDetail(item) ? "has-detail" : ""}
 "
 data-id="${escapeHtml(item._id)}"
 data-url="${escapeHtml(item.url || '')}"
