@@ -1064,3 +1064,7 @@ only holds styles specific to the notifications page.
     color:var(--notif-text);
 
 }
+
+/* Smart Alert / Officer Reminder cards open a detail page on tap */
+.notify-card.has-detail{ cursor:pointer; }
+.notify-card.has-detail .notify-type::after{ content:" ›"; font-weight:800; }

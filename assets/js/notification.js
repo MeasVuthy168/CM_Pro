@@ -373,9 +373,8 @@ function updateSummaryFromState(){
 }
 // =========================================================
 // CARD
-// Open button removed — a tap/click on the card does nothing
-// for now. Redirecting to a specific page on click is a
-// planned feature, not wired up yet. Swipe gestures (mark
+// A tap opens the detail page for Smart Alerts and Officer Reminders
+// (see DETAIL_TYPES below); other cards do nothing on tap. Swipe gestures (mark
 // read / delete) are the only interactions on a card — an
 // always-visible tick/bin button pair used to sit here too, but
 // they cluttered the card next to the swipe gesture that already
@@ -383,6 +382,22 @@ function updateSummaryFromState(){
 // signaled by its text dimming instead (see .notify-card:not(.unread)
 // in notification.css).
 // =========================================================
+
+// Types with a detail page (pages/notifications/detail.html) built
+// from the notification's own extra data.
+const DETAIL_TYPES=["smart_alert","officer_reminder"];
+
+// A plain tap on such a card opens it. A swipe never fires click on
+// touch devices, and a card mid-swipe is skipped anyway.
+notifyList.addEventListener("click",(e)=>{
+    const card=e.target.closest(".notify-card.has-detail");
+    if(!card || card.classList.contains("swiping")) return;
+    const id=card.dataset.id;
+    const item=allNotifications.find(n=>String(n._id)===id);
+    if(!item) return;
+    try{ sessionStorage.setItem("cm_notif_detail",JSON.stringify(item)); }catch(err){}
+    location.href=`/CM_Pro/pages/notifications/detail.html?id=${encodeURIComponent(id)}`;
+});
 
 function createNotificationCard(item){
 
@@ -404,6 +419,7 @@ return `
 class="
 notify-card
 ${item.isRead ? "" : "unread"}
+${DETAIL_TYPES.includes(item.type) ? "has-detail" : ""}
 "
 data-id="${escapeHtml(item._id)}"
 data-url="${escapeHtml(item.url || '')}"
