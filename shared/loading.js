@@ -47,8 +47,8 @@
     // ----- progress mode (data loads) -----
     // showAppLoading(text, { progress: true, key: "..." }) adds a gold
     // % bar under the text. Without real progress the % is estimated
-    // from how long the same load (key) took last time on this device,
-    // easing toward 95% and never claiming 100% before it's done;
+    // from how long the same load (key) took last time on this device
+    // (or setAppLoadingExpect()), never claiming 100% before it's done;
     // setAppLoadingProgress(pct, sub) drives it from real progress
     // instead (e.g. Daily Arrears' row pages).
     //
@@ -57,6 +57,8 @@
     // page without waiting for it. Plain mode (save / delete / submit)
     // still blocks the whole screen.
     var DEFAULT_EXPECT_MS=6000;
+    // Cold reads on the free Atlas tier can take minutes.
+    var MAX_EXPECT_MS=10*60*1000;
     var prog=null;
 
     function lang(){
@@ -65,7 +67,7 @@
     function expectMs(key){
         try{
             var v=Number(localStorage.getItem("cm_load_ms:"+key));
-            if(v>0) return Math.min(Math.max(v,1500),60000);
+            if(v>0) return Math.min(Math.max(v,1500),MAX_EXPECT_MS);
         }catch(e){}
         return DEFAULT_EXPECT_MS;
     }
@@ -85,7 +87,11 @@
     function tick(){
         if(!prog || prog.manual) return;
         var elapsed=Date.now()-prog.started;
-        var pct=Math.min(95,Math.round(95*(1-Math.exp(-elapsed/prog.expect))));
+        // Linear to 90% at the expected time, then easing toward 95%.
+        var pct=elapsed<prog.expect
+            ? 90*elapsed/prog.expect
+            : 90+5*(1-Math.exp(-(elapsed-prog.expect)/prog.expect));
+        pct=Math.round(pct);
         if(pct<prog.pct) pct=prog.pct;
         prog.pct=pct;
         paint(pct,remainingText(prog.expect-elapsed));
@@ -119,6 +125,14 @@
             prog.timer=setInterval(tick,120);
         }
         overlay.classList.add("show");
+    };
+
+    // A better estimate (ms, counted from when the load started) for a
+    // running progress-mode load — e.g. the server's own last read time.
+    window.setAppLoadingExpect=function(ms){
+        if(!prog || !(ms>0)) return;
+        prog.expect=Math.min(Math.max(ms,1500),MAX_EXPECT_MS);
+        tick();
     };
 
     // Real progress for a progress-mode load: pct 0-100, sub = the
