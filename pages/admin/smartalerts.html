@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>CM_Pro Admin — Smart Alerts</title>
+
+<meta name="theme-color" content="#0E1B3C">
+
+<!-- theme flash-prevention -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
+  );
+</script>
+
+<script src="/CM_Pro/config/api.js"></script>
+<script src="/CM_Pro/shared/touch-polish.js"></script>
+
+<!-- auth guard: redirects away if not a logged-in admin -->
+<script src="/CM_Pro/assets/js/admin/admin-loader.js"></script>
+
+<!-- app lock (PIN / fingerprint after inactivity or relaunch) — same
+     script every other protected page loads -->
+<script src="/CM_Pro/config/session.js"></script>
+
+<!-- ========================= -->
+<!-- STYLES -->
+<!-- ========================= -->
+<link rel="stylesheet" href="/CM_Pro/assets/css/base.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/admin.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+
+<!-- Hold the first paint until the whole page is parsed (its scripts,
+     translations and header), so a page transition slides in a finished
+     page instead of one still filling itself in. No element has this id:
+     the hold simply ends when parsing does. -->
+<link rel="expect" href="#cm-pt-parsed" blocking="render">
+<link rel="preload" href="/CM_Pro/assets/fonts/Krasar-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<script src="/CM_Pro/shared/page-transition.js"></script>
+</head>
+<body data-adm-page="smartalerts">
+
+<div class="adm-page">
+  <div class="adm-shell">
+
+    <!-- ========================= -->
+    <!-- SIDEBAR (auto-rendered by admin-nav.js) -->
+    <!-- ========================= -->
+    <aside class="adm-sidebar">
+      <div class="adm-sidebar-brand" data-i18n="admin.common.brand">CM_Pro Admin</div>
+      <nav id="admSidebar"></nav>
+    </aside>
+
+    <main class="adm-main">
+
+      <div class="adm-header">
+        <div class="adm-title-block">
+          <h1 data-i18n="admin.smartAlerts.title">Smart Alerts</h1>
+          <p data-i18n="admin.smartAlerts.subtitle">Set alert thresholds and preview today's alerts before they're sent.</p>
+        </div>
+        <div class="adm-header-right">
+          <span class="adm-user-chip" id="admUserLabel" data-i18n="admin.common.adminFallback">Admin</span>
+          <div class="adm-topbar-actions" id="admTopbarActions"></div>
+        </div>
+      </div>
+
+      <!-- ========================= -->
+      <!-- THRESHOLDS — GET/PUT /api/admin/smart-alerts/settings -->
+      <!-- ========================= -->
+      <div class="adm-card sa-card">
+        <div class="sa-card-head">
+          <div class="adm-card-label">
+            <span class="adm-ico adm-ico-alert" aria-hidden="true"></span>
+            <span data-i18n="admin.smartAlerts.thresholdsLabel">Alert Thresholds</span>
+          </div>
+          <span class="sa-chip" id="saLastRun"></span>
+        </div>
+
+        <p class="adm-modal-message" data-i18n="admin.smartAlerts.thresholdsExplain">
+          Alerts are checked every evening after the Daily History snapshot (after 18:00) and sent once per day to Admin, branch managers and COs.
+        </p>
+
+        <div class="sa-rules">
+          <label class="sa-rule">
+            <span class="sa-rule-name" data-i18n="admin.smartAlerts.parRise">PAR rise</span>
+            <span class="sa-rule-input"><input type="number" id="saParRisePct" min="0.1" step="0.1" inputmode="decimal"><em>%</em></span>
+            <span class="sa-rule-hint" data-i18n="admin.smartAlerts.parRiseHint">vs the previous day</span>
+          </label>
+          <label class="sa-rule">
+            <span class="sa-rule-name" data-i18n="admin.smartAlerts.osDrop">OS drop</span>
+            <span class="sa-rule-input"><input type="number" id="saOsDropPct" min="0.1" step="0.1" inputmode="decimal"><em>%</em></span>
+            <span class="sa-rule-hint" data-i18n="admin.smartAlerts.osDropHint">within the window below</span>
+          </label>
+          <label class="sa-rule">
+            <span class="sa-rule-name" data-i18n="admin.smartAlerts.osDropDays">OS window</span>
+            <span class="sa-rule-input"><input type="number" id="saOsDropDays" min="1" step="1" inputmode="numeric"><em data-i18n="admin.smartAlerts.daysUnit">days</em></span>
+            <span class="sa-rule-hint" data-i18n="admin.smartAlerts.osDropDaysHint">compare against this many days ago</span>
+          </label>
+          <label class="sa-rule">
+            <span class="sa-rule-name" data-i18n="admin.smartAlerts.nplRise">NPL rise</span>
+            <span class="sa-rule-input"><input type="number" id="saNplRiseCount" min="1" step="1" inputmode="numeric"><em data-i18n="admin.smartAlerts.accountsUnit">accounts</em></span>
+            <span class="sa-rule-hint" data-i18n="admin.smartAlerts.nplRiseHint">new non-performing accounts vs the previous day</span>
+          </label>
+        </div>
+
+        <div class="adm-modal-footer sa-actions">
+          <button type="button" class="adm-btn" id="saBtnDefaults" data-i18n="admin.smartAlerts.resetDefaults">Reset to defaults</button>
+          <button type="button" class="adm-btn adm-btn-primary" id="saBtnSave" disabled data-i18n="admin.smartAlerts.save">Save</button>
+        </div>
+      </div>
+
+      <!-- ========================= -->
+      <!-- PREVIEW / SEND — POST /api/admin/smart-alerts/run -->
+      <!-- ========================= -->
+      <div class="adm-card sa-card">
+        <div class="adm-card-label">
+          <span class="adm-ico adm-ico-eye" aria-hidden="true"></span>
+          <span data-i18n="admin.smartAlerts.previewLabel">Preview Alerts</span>
+        </div>
+
+        <p class="adm-modal-message" data-i18n="admin.smartAlerts.previewExplain">
+          See which alerts the saved thresholds raise and who would receive them. Nothing is sent until you press Send Now.
+        </p>
+
+        <label class="adm-cleanup-field">
+          <span data-i18n="admin.smartAlerts.date">Snapshot date (blank = latest)</span>
+          <input type="date" id="saDate" class="sa-date">
+        </label>
+
+        <div class="adm-modal-footer sa-actions sa-actions-start">
+          <button type="button" class="adm-btn" id="saBtnPreview">
+            <span class="adm-ico adm-ico-eye" aria-hidden="true"></span>
+            <span data-i18n="admin.smartAlerts.preview">Preview</span>
+          </button>
+          <button type="button" class="adm-btn adm-btn-primary" id="saBtnSend" disabled>
+            <span class="adm-ico adm-ico-bell" aria-hidden="true"></span>
+            <span data-i18n="admin.smartAlerts.sendNow">Send Now</span>
+          </button>
+        </div>
+
+        <div id="saResult" hidden>
+          <p class="sa-compare" id="saCompare"></p>
+          <div class="sa-kpis">
+            <div class="sa-kpi"><b id="saKpiBranch">0</b><span data-i18n="admin.smartAlerts.kpiBranch">Branch alerts</span></div>
+            <div class="sa-kpi"><b id="saKpiOfficer">0</b><span data-i18n="admin.smartAlerts.kpiOfficer">CO alerts</span></div>
+            <div class="sa-kpi"><b id="saKpiRecipients">0</b><span data-i18n="admin.smartAlerts.kpiRecipients">Recipients</span></div>
+          </div>
+
+          <div id="saAlertsWrap">
+            <h3 class="sa-sub" data-i18n="admin.smartAlerts.alertsTitle">Alerts</h3>
+            <div class="sa-table-wrap">
+              <table class="adm-table sa-table">
+                <thead>
+                  <tr>
+                    <th data-i18n="admin.smartAlerts.colWho">Branch / CO</th>
+                    <th data-i18n="admin.smartAlerts.colRule">Rule</th>
+                    <th data-i18n="admin.smartAlerts.colChange">Change</th>
+                    <th data-i18n="admin.smartAlerts.colValues">Before → Now</th>
+                  </tr>
+                </thead>
+                <tbody id="saAlertsBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="saRecipientsWrap">
+            <h3 class="sa-sub" data-i18n="admin.smartAlerts.recipientsTitle">Recipients &amp; message preview</h3>
+            <div class="sa-recipients" id="saRecipients"></div>
+          </div>
+
+          <p class="sa-empty" id="saEmpty" hidden data-i18n="admin.smartAlerts.noAlerts">No alerts for this date — nothing would be sent.</p>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+</div>
+
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/admin.js"></script>
+
+<script src="/CM_Pro/shared/logout.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-ui.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-nav.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-smartalerts.js"></script>
+
+</body>
+</html>

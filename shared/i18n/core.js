@@ -36,6 +36,18 @@ CMI18n.register({
   "dashboard.update.version": { km: "កំណែថ្មី Version {v} មកដល់ហើយ!", en: "New Version {v} is available!" },
   "dashboard.update.highlights": { km: "សូមចូលទៅ Download កំណែថ្មីក្នុងកម្មវិធី Excel ឈ្មោះ SVG Credit Monitoring", en: "Please download the new version in the Excel add-in named SVG Credit Monitoring" },
   "dashboard.update.cta": { km: "ចុចមើលព័ត៌មានកំណែថ្មី", en: "Tap to see what's new" },
+  "dashboard.alert.title": { km: "ចំណុចត្រូវយកចិត្តទុកដាក់ ({n})", en: "Needs attention ({n})" },
+  "dashboard.alert.view": { km: "មើលលម្អិត", en: "View details" },
+  "dashboard.alert.dismissAria": { km: "បិទការជូនដំណឹង", en: "Dismiss alert" },
+  "dashboard.alert.sheetTitle": { km: "ចំណុចត្រូវយកចិត្តទុកដាក់", en: "Needs attention" },
+  "dashboard.alert.sheetSub": { km: "ពិនិត្យដោយស្វ័យប្រវត្តិ · ទិន្នន័យថ្ងៃ {date}", en: "Checked automatically · data of {date}" },
+  "dashboard.alert.who.branch": { km: "សាខា {branch}", en: "{branch} branch" },
+  "dashboard.alert.who.officer": { km: "CO {name} ({branch})", en: "CO {name} ({branch})" },
+  "dashboard.alert.parRise": { km: "{who}: PAR កើន {pct}% ក្នុង 1 ថ្ងៃ ({from} → {to}, PAR {par}%)", en: "{who}: PAR up {pct}% in 1 day ({from} → {to}, PAR {par}%)" },
+  "dashboard.alert.osDrop": { km: "{who}: OS ធ្លាក់ {pct}% ក្នុង 1 សប្តាហ៍ ({from} → {to})", en: "{who}: OS down {pct}% in 1 week ({from} → {to})" },
+  "dashboard.alert.nplRise": { km: "{who}: NPL កើន {n} គណនី ({from} → {to})", en: "{who}: NPL up {n} accounts ({from} → {to})" },
+  "dashboard.alert.openBranch": { km: "បើករបាយការណ៍តាមសាខា", en: "Open branch report" },
+  "dashboard.alert.openOfficer": { km: "បើករបាយការណ៍តាម CO", en: "Open CO report" },
   "dashboard.update.dismissAria": { km: "បិទការជូនដំណឹងកំណែថ្មី", en: "Dismiss update notice" },
 
   // Voice command sheet (assets/js/voice-command.js, index.html)

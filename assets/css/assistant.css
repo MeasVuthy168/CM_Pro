@@ -496,3 +496,94 @@
     cursor:pointer;
     padding:4px 6px;
 }
+
+/* =========================
+   SMART ALERT MODE (assistant-box.js renderAlertBox)
+   Gold/amber "needs attention" card + bottom-sheet list. Same
+   -webkit-text-fill-color resets as .assistant-cta above, since
+   .assistant-text's shimmer sets it transparent.
+========================= */
+.assistant-box[data-mode="alert"]{
+    border-color:#E0A526;
+    animation:alertBorderPulse 2.4s ease-in-out infinite;
+}
+.assistant-alert-badge{
+    background:#E0A526;
+    color:#1A2E57;
+    -webkit-text-fill-color:#1A2E57;
+}
+.assistant-box[data-mode="alert"] .assistant-dismiss{
+    color:#E0A526;
+    -webkit-text-fill-color:#E0A526;
+}
+.assistant-text .alert-title{
+    display:block;
+    font-size:14.5px;
+    font-weight:800;
+    margin-bottom:3px;
+    -webkit-text-fill-color:currentColor;
+    background:none;
+}
+.assistant-text .alert-line{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    line-height:1.5;
+    min-height:2.9em;
+    -webkit-text-fill-color:currentColor;
+    background:none;
+    opacity:.92;
+}
+.assistant-text .alert-line.in{ animation:alertLineIn .35s ease; }
+.assistant-alert-cta{
+    margin-top:6px;
+    background:#E0A526;
+    -webkit-text-fill-color:#1A2E57;
+}
+@keyframes alertLineIn{
+    from{ opacity:0; transform:translateY(4px); }
+    to{ opacity:.92; transform:none; }
+}
+@keyframes alertBorderPulse{
+    0%, 100%{ box-shadow:0 4px 12px rgba(0,0,0,0.2); }
+    50%{ box-shadow:0 4px 12px rgba(0,0,0,0.2), 0 0 0 4px rgba(224,165,38,0.35); }
+}
+
+.sa-dim{
+    position:fixed; inset:0; z-index:3000;
+    background:rgba(10,16,35,.55);
+    display:flex; align-items:flex-end; justify-content:center;
+    animation:saDimIn .2s ease;
+}
+.sa-sheet{
+    width:100%; max-width:560px; max-height:80vh;
+    display:flex; flex-direction:column;
+    background:#fff; color:#1C2333;
+    border-radius:22px 22px 0 0;
+    padding:10px 16px calc(18px + env(safe-area-inset-bottom));
+    box-sizing:border-box;
+    animation:saSheetUp .25s ease;
+}
+.sa-grab{ width:42px; height:5px; border-radius:3px; background:#D5DAE3; margin:0 auto 12px; }
+.sa-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:10px; }
+.sa-title{ font-size:18px; font-weight:800; }
+.sa-sub{ font-size:12.5px; color:#6B7280; margin-top:2px; }
+.sa-close{ width:34px; height:34px; flex:none; border:none; border-radius:50%; background:#F1F3F7; color:#3A4356; font-size:20px; line-height:1; cursor:pointer; }
+.sa-list{ overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-bottom:4px; }
+.sa-item{ display:flex; gap:12px; padding:12px; border-radius:14px; border:1px solid #F1E1B8; background:#FFF9EA; }
+.sa-item.sa-os_drop{ border-color:#F4D0CC; background:#FFF3F1; }
+.sa-item.sa-npl_rise{ border-color:#E6D7F7; background:#F8F3FF; }
+.sa-ic{ font-size:20px; line-height:1.3; flex:none; }
+.sa-text{ font-size:14px; font-weight:600; line-height:1.55; }
+.sa-link{ display:inline-block; margin-top:6px; font-size:13px; font-weight:700; color:#B8860B; text-decoration:none; }
+[data-theme="dark"] .sa-sheet, [data-theme="darkgray"] .sa-sheet{ background:#16223F; color:#EAF0FF; }
+[data-theme="darkgray"] .sa-sheet{ background:#363A41; }
+[data-theme="dark"] .sa-sub, [data-theme="darkgray"] .sa-sub{ color:#9AA8C7; }
+[data-theme="dark"] .sa-close, [data-theme="darkgray"] .sa-close{ background:rgba(255,255,255,.08); color:#fff; }
+[data-theme="dark"] .sa-grab, [data-theme="darkgray"] .sa-grab{ background:#33456F; }
+[data-theme="dark"] .sa-item, [data-theme="darkgray"] .sa-item{ background:rgba(224,165,38,.10); border-color:rgba(224,165,38,.30); }
+[data-theme="dark"] .sa-item.sa-os_drop, [data-theme="darkgray"] .sa-item.sa-os_drop{ background:rgba(214,69,53,.12); border-color:rgba(214,69,53,.32); }
+[data-theme="dark"] .sa-item.sa-npl_rise, [data-theme="darkgray"] .sa-item.sa-npl_rise{ background:rgba(124,77,214,.14); border-color:rgba(124,77,214,.34); }
+[data-theme="dark"] .sa-link, [data-theme="darkgray"] .sa-link{ color:#FFD700; }
+@keyframes saDimIn{ from{ opacity:0; } to{ opacity:1; } }
+@keyframes saSheetUp{ from{ transform:translateY(40px); opacity:.6; } to{ transform:none; opacity:1; } }
