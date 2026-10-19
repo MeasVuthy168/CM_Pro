@@ -12,7 +12,8 @@
        compare }
                                            os | par | npl | disb | summary,
                                            rank { dir: top|bottom, level:
-                                           officer|branch } or null; the
+                                           officer|branch, by: value|loans }
+                                           or null; the
                                            entity (branch / CO) is matched
                                            later against the loaded data;
                                            compare (optional) { mode: prev |
@@ -135,11 +136,15 @@
         return null;
     }
 
+    // "by number of loans" — disbursement rankings count loans instead of $.
+    const LOAN_COUNT_WORDS = ["# loan", "# loans", "#loan", "#loans", "number of loans", "loan count", "by loans", "ចំនួនកម្ចី", "ចំនួនគណនី", "តាមចំនួន"];
+
     function findRank(text) {
         const dir = hasAny(text, BOTTOM_WORDS) ? "bottom" : hasAny(text, TOP_WORDS) ? "top" : null;
         if (!dir) return null;
         const level = hasAny(text, BRANCH_WORDS) && !hasAny(text, OFFICER_WORDS) ? "branch" : "officer";
-        return { dir, level };
+        const by = hasAny(text, LOAN_COUNT_WORDS) ? "loans" : "value";
+        return { dir, level, by };
     }
 
     // ---------- "compared with …" ----------

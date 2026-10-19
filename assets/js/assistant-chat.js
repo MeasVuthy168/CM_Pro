@@ -225,24 +225,33 @@
         return { par: "parPct", overdue: "overduePct", npl: "npl", os: "os", disb: "disb", wo: "wo", summary: "overduePct" }[metric] || "overduePct";
     }
 
-    function rankValue(metric, r) {
+    function rankValue(metric, r, by) {
         if (metric === "par") return `${pct(r.parPct)} · ${usdShort(r.par)}`;
         if (metric === "overdue" || metric === "summary") return `${pct(r.overduePct)} · ${usdShort(r.overdue)}`;
         if (metric === "wo") return `${usdShort(r.wo)} · ${r.woCount || 0}`;
         if (metric === "npl") return `${t("assistant.accounts", { n: r.npl })} · ${usdShort(r.nplValue)}`;
         if (metric === "os") return usdShort(r.os);
-        return usdShort(r.disb);
+        if (by === "loans") return `${t("assistant.loansN", { n: r.disbLoans || 0 })} · ${usdShort(r.disb)}`;
+        return `${usdShort(r.disb)} · ${t("assistant.loansN", { n: r.disbLoans || 0 })}`;
+    }
+
+    // Disbursement rankings: by amount or by number of loans. q is the
+    // question, re-ranked in place when the other button is tapped.
+    function rankByBar(by, q) {
+        const btn = b => `<button type="button" data-by="${b}" class="${b === by ? "on" : ""}">${esc(t(`assistant.rankBy.${b}`))}</button>`;
+        return `<div class="ac-cmp ac-by" data-q="${esc(q)}">${btn("value")}${btn("loans")}</div>`;
     }
 
     // Rankings: PAR is ranked by NBC Overdue (what the Credit Report ranks
     // COs by), and COs moved to "Stop Disburse" are left out — they no
     // longer take new loans, so they'd crowd both ends of the list.
-    function answerRank(intent, data) {
+    function answerRank(intent, data, q) {
         let level = intent.rank.level;
         let list = level === "branch" ? data.branches : data.officers;
         if (!list.length && level === "branch") { level = "officer"; list = data.officers; }
         const metric = intent.metric === "par" ? "overdue" : intent.metric;
-        const k = rankKey(metric);
+        const by = metric === "disb" && intent.rank.by === "loans" ? "loans" : "value";
+        const k = by === "loans" ? "disbLoans" : rankKey(metric);
         // CO rankings count only officers whose Position (List Officer)
         // is "Credit Officer" and who aren't in Stop Disburse. Until any
         // position has been set, fall back to excluding Stop Disburse only.
@@ -251,7 +260,7 @@
         const eligible = r => level !== "officer" || (active(r) && (!byPosition || r.position === "Credit Officer"));
         const rows = list
             .filter(r => r.os > 0 && eligible(r))
-            .sort((a, b) => intent.rank.dir === "bottom" ? a[k] - b[k] : b[k] - a[k])
+            .sort((a, b) => (intent.rank.dir === "bottom" ? a[k] - b[k] : b[k] - a[k]) || (intent.rank.dir === "bottom" ? a.disb - b.disb : b.disb - a.disb))
             .slice(0, 5);
         if (!rows.length) return { html: esc(t("assistant.noData")) };
 
@@ -268,12 +277,13 @@
                         <span class="ac-card-who">${esc(title)}</span>
                         <span class="ac-card-date">${esc(date || "")}</span>
                     </div>
+                    ${metric === "disb" ? rankByBar(by, q) : ""}
                     ${level === "officer" ? `<div class="ac-foot">${esc(t(byPosition ? "assistant.rank.creditOfficersOnly" : "assistant.rank.activeOnly"))}</div>` : ""}
                     <ol class="ac-rank">
                         ${rows.map(r => `
                             <li>
                                 <span class="ac-rank-name">${esc(level === "branch" ? r.branch : (r.name || r.id))}${level === "officer" ? `<small>${esc(r.id)}${r.branch ? " · " + esc(r.branch) : ""}</small>` : ""}</span>
-                                <span class="ac-rank-v">${esc(rankValue(metric, r))}</span>
+                                <span class="ac-rank-v">${esc(rankValue(metric, r, by))}</span>
                             </li>`).join("")}
                     </ol>
                     <a class="ac-link" href="${href}">${esc(t(level === "branch" ? "assistant.openBranchReport" : "assistant.openCoReport"))} ›</a>
@@ -291,7 +301,7 @@
         if (!data.date && !data.officerDate) return { html: esc(t("assistant.noSnapshot")) };
         if ((data.scope || {}).type === "none") return { html: esc(t("assistant.noScope")) };
 
-        if (intent.rank) return answerRank(intent, data);
+        if (intent.rank) return answerRank(intent, data, q);
 
         const nlu = N();
         let row = nlu.matchOfficer(intent.text, data.officers);
@@ -412,7 +422,7 @@
 
     // A compare button / date on a card: re-answer that card's question
     // with the new comparison, in place.
-    async function recompare(bar, compare) {
+    async function recompare(bar, compare, by) {
         const msg = bar.closest(".ac-msg");
         const bubble = msg && msg.querySelector(".ac-bubble");
         if (!bubble || busy) return;
@@ -421,8 +431,9 @@
         let reply;
         try {
             const intent = N().parse(bar.dataset.q);
+            if (by && intent.rank) intent.rank = { ...intent.rank, by };
             reply = intent.type === "ask"
-                ? await answerAsk({ ...intent, compare }, bar.dataset.q)
+                ? await answerAsk({ ...intent, compare: compare || intent.compare }, bar.dataset.q)
                 : { html: bubble.innerHTML };
         } catch (e) {
             reply = { html: esc(t("assistant.loadFailed")) };
@@ -558,6 +569,8 @@
             if (chip) ask(chip.textContent);
             const cmp = e.target.closest(".ac-cmp button[data-cmp]");
             if (cmp) recompare(cmp.closest(".ac-cmp"), { mode: cmp.dataset.cmp, date: null });
+            const byBtn = e.target.closest(".ac-by button[data-by]");
+            if (byBtn && !byBtn.classList.contains("on")) recompare(byBtn.closest(".ac-by"), null, byBtn.dataset.by);
         });
         sheet.addEventListener("change", (e) => {
             if (e.target.classList.contains("ac-cmp-date") && e.target.value) {
