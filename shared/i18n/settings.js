@@ -201,12 +201,12 @@ CMI18n.register({
   "settings.voice.askData": { km: "III. សួរតួលេខ", en: "III. Ask about the figures" },
   "settings.voice.askDataList": {
     km: `<li><b>សង្ខេបថ្ងៃនេះ</b></li>
-<li><b>NBC Overdue ថ្ងៃនេះ</b> / <b>OS សាខាស្វាយរៀង</b> / <b>NPL CO 9027</b> / <b>WO ខែនេះ</b></li>
-<li><b>CO Overdue ខ្ពស់ជាងគេ</b> / <b>សាខា OS ទាបជាងគេ</b></li>
+<li><b>PAR ថ្ងៃនេះ</b> / <b>NBC Overdue ថ្ងៃនេះ</b> / <b>OS សាខាស្វាយរៀង</b> / <b>NPL CO 9027</b> / <b>WO ខែនេះ</b></li>
+<li><b>CO PAR ខ្ពស់ជាងគេ</b> / <b>CO បញ្ចេញឥណទានបានទាបជាងគេ</b> / <b>សាខា OS ទាបជាងគេ</b></li>
 <li><b>Alert ថ្ងៃនេះ</b></li>`,
     en: `<li><b>Today's summary</b></li>
-<li><b>NBC Overdue today</b> / <b>OS Svay Rieng</b> / <b>NPL CO 9027</b> / <b>WO this month</b></li>
-<li><b>Top CO by overdue</b> / <b>Branch with the lowest OS</b></li>
+<li><b>PAR today</b> / <b>NBC Overdue today</b> / <b>OS Svay Rieng</b> / <b>NPL CO 9027</b> / <b>WO this month</b></li>
+<li><b>Top CO by PAR</b> / <b>CO with the lowest disbursement</b> / <b>Branch with the lowest OS</b></li>
 <li><b>Today's alerts</b></li>`
   },
   "settings.voice.searchCustomer": { km: "IV. ស្វែងរកអតិថិជន", en: "IV. Search for a customer" },
