@@ -765,3 +765,6 @@ body.ac-open{ overflow:hidden; }
 .ac-snap:disabled{ opacity:.6; cursor:default; }
 [data-theme="dark"] .ac-stale, [data-theme="darkgray"] .ac-stale{ background:rgba(212,175,55,.12); color:#E9CF7A; }
 [data-theme="dark"] .ac-snap, [data-theme="darkgray"] .ac-snap{ background:#D4AF37; color:#0E1B3C; }
+
+/* A voice error that says what to change (EN switch, a setting) */
+.voice-sheet-status.help{ font-size:15px; font-weight:600; line-height:1.55; max-width:340px; margin-left:auto; margin-right:auto; }

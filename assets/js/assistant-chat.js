@@ -93,6 +93,21 @@
         });
     }
 
+    // What to tell the user when speech recognition fails to start, by
+    // its error code; null for errors that need no message. iPhone /
+    // iPad (WebKit) answer Khmer with "service-not-allowed" — Apple's
+    // speech service has no Khmer — which used to read as "microphone
+    // blocked" although the mic was fine; in English the same code
+    // means Siri / Dictation is off.
+    function voiceErrorText(code) {
+        if (code === "not-allowed") return t("voice.micBlockedHelp");
+        if (code === "language-not-supported" || (code === "service-not-allowed" && voiceLang() === "km")) {
+            return t("voice.kmUnsupported");
+        }
+        if (code === "service-not-allowed") return t("voice.dictationOff");
+        return null;
+    }
+
     function speechCode() {
         return voiceLang() === "en" ? "en-US" : "km-KH";
     }
@@ -564,11 +579,8 @@
             }
         };
         r.onerror = (ev) => {
-            if (ev.error === "not-allowed" || ev.error === "service-not-allowed") {
-                addMessage("bot", esc(t("voice.micBlocked")), { save: false });
-            } else if (ev.error === "language-not-supported") {
-                addMessage("bot", esc(t("assistant.voiceLangUnsupported")), { save: false });
-            }
+            const msg = voiceErrorText(ev.error);
+            if (msg) addMessage("bot", esc(msg), { save: false });
         };
         r.onend = () => {
             if (rec === r) {
@@ -683,7 +695,7 @@
         document.body.classList.remove("ac-open");
     }
 
-    window.CMAssistantChat = { open, close, voiceLang, setVoiceLang, speechCode, respond };
+    window.CMAssistantChat = { open, close, voiceLang, setVoiceLang, speechCode, voiceErrorText, respond };
 
     document.addEventListener("DOMContentLoaded", () => {
         const btn = document.getElementById("assistantChatBtn");
