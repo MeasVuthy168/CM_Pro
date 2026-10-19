@@ -398,9 +398,9 @@ function updateNav() {
     $("btnWkNext").disabled = i < 0 || i >= wkShown.length - 1;
 }
 
-function infoRow(icon, label, value) {
+function infoRow(icon, label, value, wide) {
     if (!String(value ?? "").trim()) return "";
-    return `<div class="oa-info-row">
+    return `<div class="oa-info-row${wide ? " wk-info-wide" : ""}">
         <span class="oa-info-ico"><span class="ui-ico ui-ico-${icon}" aria-hidden="true"></span></span>
         <div class="oa-info-text">
             <div class="oa-info-label">${escapeHtml(label)}</div>
@@ -422,7 +422,7 @@ async function openDetail(row) {
         ${Number.isFinite(day) ? `<span class="arr-day-badge">${day.toLocaleString()} <small>${escapeHtml(t("arrears.cardDays"))}</small></span>` : ""}
         ${amt ? `<span class="oa-hero-arrears">Arrears ${escapeHtml(amt)}${row.ccy ? ` ${escapeHtml(row.ccy)}` : ""}</span>` : ""}`;
     $("wkInfo").innerHTML =
-        infoRow("pin", t("work.address"), row.location) +
+        infoRow("pin", t("work.address"), row.location, true) +
         infoRow("phone", t("work.phone"), row.tell) +
         infoRow("idcard", t("work.accountLoan"), row.accountLoan) +
         infoRow("officer", t("work.officer"), row.coResponse) +
