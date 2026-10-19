@@ -159,7 +159,12 @@ function describeSmartAlert(a) {
         });
     }
     if (a.kind === 'os_drop') {
-        return t('dashboard.alert.osDrop', { who, pct: a.changePct, from: fmtUsd(a.from), to: fmtUsd(a.to) });
+        // Alerts sent before the OS comparison became selectable carry
+        // no mode — those were measured over a week.
+        const since = a.mode
+            ? t(`dashboard.alert.since.${a.mode}`, { date: a.since || '' }).trim()
+            : t('dashboard.alert.since.week');
+        return t('dashboard.alert.osDrop', { who, pct: a.changePct, since, from: fmtUsd(a.from), to: fmtUsd(a.to) });
     }
     if (a.kind === 'npl_rise') {
         return t('dashboard.alert.nplRise', { who, n: a.change, from: a.from, to: a.to });

@@ -68,6 +68,18 @@
       </div>
 
       <!-- ========================= -->
+      <!-- STATUS -->
+      <!-- ========================= -->
+      <div class="sa-hero">
+        <div class="sa-hero-ico" aria-hidden="true"><span class="adm-ico adm-ico-alert"></span></div>
+        <div class="sa-hero-text">
+          <div class="sa-hero-title" data-i18n="admin.smartAlerts.heroTitle">Automatic every evening</div>
+          <div class="sa-hero-sub" data-i18n="admin.smartAlerts.heroSub">Checked after the Daily History snapshot (after 18:00) and sent once a day to Admin, branch managers and COs.</div>
+        </div>
+        <span class="sa-chip" id="saLastRun"></span>
+      </div>
+
+      <!-- ========================= -->
       <!-- THRESHOLDS — GET/PUT /api/admin/smart-alerts/settings -->
       <!-- ========================= -->
       <div class="adm-card sa-card">
@@ -76,40 +88,69 @@
             <span class="adm-ico adm-ico-alert" aria-hidden="true"></span>
             <span data-i18n="admin.smartAlerts.thresholdsLabel">Alert Thresholds</span>
           </div>
-          <span class="sa-chip" id="saLastRun"></span>
+          <button type="button" class="sa-link" id="saBtnDefaults" data-i18n="admin.smartAlerts.resetDefaults">Reset to defaults</button>
         </div>
 
-        <p class="adm-modal-message" data-i18n="admin.smartAlerts.thresholdsExplain">
-          Alerts are checked every evening after the Daily History snapshot (after 18:00) and sent once per day to Admin, branch managers and COs.
-        </p>
+        <div class="sa-rule-list">
+          <div class="sa-rule-row">
+            <div class="sa-rule-ico sa-par" aria-hidden="true">▲</div>
+            <div class="sa-rule-body">
+              <div class="sa-rule-name" data-i18n="admin.smartAlerts.parRise">PAR rise</div>
+              <div class="sa-rule-hint" data-i18n="admin.smartAlerts.parRiseHint">vs the previous day</div>
+            </div>
+            <div class="sa-stepper" data-step="0.5" data-min="0.5">
+              <button type="button" class="sa-step" data-dir="-1" aria-label="−">−</button>
+              <input type="number" id="saParRisePct" min="0.1" step="0.1" inputmode="decimal">
+              <button type="button" class="sa-step" data-dir="1" aria-label="+">+</button>
+              <em>%</em>
+            </div>
+          </div>
 
-        <div class="sa-rules">
-          <label class="sa-rule">
-            <span class="sa-rule-name" data-i18n="admin.smartAlerts.parRise">PAR rise</span>
-            <span class="sa-rule-input"><input type="number" id="saParRisePct" min="0.1" step="0.1" inputmode="decimal"><em>%</em></span>
-            <span class="sa-rule-hint" data-i18n="admin.smartAlerts.parRiseHint">vs the previous day</span>
-          </label>
-          <label class="sa-rule">
-            <span class="sa-rule-name" data-i18n="admin.smartAlerts.osDrop">OS drop</span>
-            <span class="sa-rule-input"><input type="number" id="saOsDropPct" min="0.1" step="0.1" inputmode="decimal"><em>%</em></span>
-            <span class="sa-rule-hint" data-i18n="admin.smartAlerts.osDropHint">within the window below</span>
-          </label>
-          <label class="sa-rule">
-            <span class="sa-rule-name" data-i18n="admin.smartAlerts.osDropDays">OS window</span>
-            <span class="sa-rule-input"><input type="number" id="saOsDropDays" min="1" step="1" inputmode="numeric"><em data-i18n="admin.smartAlerts.daysUnit">days</em></span>
-            <span class="sa-rule-hint" data-i18n="admin.smartAlerts.osDropDaysHint">compare against this many days ago</span>
-          </label>
-          <label class="sa-rule">
-            <span class="sa-rule-name" data-i18n="admin.smartAlerts.nplRise">NPL rise</span>
-            <span class="sa-rule-input"><input type="number" id="saNplRiseCount" min="1" step="1" inputmode="numeric"><em data-i18n="admin.smartAlerts.accountsUnit">accounts</em></span>
-            <span class="sa-rule-hint" data-i18n="admin.smartAlerts.nplRiseHint">new non-performing accounts vs the previous day</span>
-          </label>
-        </div>
+          <div class="sa-rule-row sa-rule-row-wrap">
+            <div class="sa-rule-ico sa-os" aria-hidden="true">▼</div>
+            <div class="sa-rule-body">
+              <div class="sa-rule-name" data-i18n="admin.smartAlerts.osDrop">OS drop</div>
+              <div class="sa-rule-hint" data-i18n="admin.smartAlerts.osDropHint2">vs the comparison below</div>
+            </div>
+            <div class="sa-stepper" data-step="0.5" data-min="0.5">
+              <button type="button" class="sa-step" data-dir="-1" aria-label="−">−</button>
+              <input type="number" id="saOsDropPct" min="0.1" step="0.1" inputmode="decimal">
+              <button type="button" class="sa-step" data-dir="1" aria-label="+">+</button>
+              <em>%</em>
+            </div>
+            <div class="sa-compare-pick">
+              <div class="sa-compare-label" data-i18n="admin.smartAlerts.osCompareLabel">Compare OS with</div>
+              <div class="sa-seg" id="saOsCompare" role="radiogroup">
+                <button type="button" data-mode="prev" data-i18n="admin.smartAlerts.cmpPrev">Previous day</button>
+                <button type="button" data-mode="month" data-i18n="admin.smartAlerts.cmpMonth">End of last month</button>
+                <button type="button" data-mode="year" data-i18n="admin.smartAlerts.cmpYear">End of last year</button>
+                <button type="button" data-mode="date" data-i18n="admin.smartAlerts.cmpDate">A fixed date</button>
+              </div>
+              <input type="date" id="saOsCompareDate" class="sa-date sa-os-date" hidden>
+            </div>
+          </div>
 
-        <div class="adm-modal-footer sa-actions">
-          <button type="button" class="adm-btn" id="saBtnDefaults" data-i18n="admin.smartAlerts.resetDefaults">Reset to defaults</button>
-          <button type="button" class="adm-btn adm-btn-primary" id="saBtnSave" disabled data-i18n="admin.smartAlerts.save">Save</button>
+          <div class="sa-rule-row">
+            <div class="sa-rule-ico sa-npl" aria-hidden="true">+</div>
+            <div class="sa-rule-body">
+              <div class="sa-rule-name" data-i18n="admin.smartAlerts.nplRise">NPL rise</div>
+              <div class="sa-rule-hint" data-i18n="admin.smartAlerts.nplRiseHint">new non-performing accounts vs the previous day</div>
+            </div>
+            <div class="sa-stepper" data-step="1" data-min="1">
+              <button type="button" class="sa-step" data-dir="-1" aria-label="−">−</button>
+              <input type="number" id="saNplRiseCount" min="1" step="1" inputmode="numeric">
+              <button type="button" class="sa-step" data-dir="1" aria-label="+">+</button>
+              <em data-i18n="admin.smartAlerts.accountsUnit">accounts</em>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- Appears while the thresholds have unsaved changes -->
+      <div class="sa-savebar" id="saSaveBar" hidden>
+        <span data-i18n="admin.smartAlerts.unsaved">Unsaved changes</span>
+        <button type="button" class="adm-btn" id="saBtnUndo" data-i18n="admin.smartAlerts.undo">Undo</button>
+        <button type="button" class="adm-btn adm-btn-primary" id="saBtnSave" data-i18n="admin.smartAlerts.save">Save</button>
       </div>
 
       <!-- ========================= -->
