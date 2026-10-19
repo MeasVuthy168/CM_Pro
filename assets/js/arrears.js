@@ -620,6 +620,80 @@ function promiseStatusMatch(row, filterValue) {
     return containsMatch(row.promiseStatus, filterValue);
 }
 
+// ========================================
+// REMINDER FOCUS
+// Opened from an Officer Reminder's detail page (pages/notifications/
+// detail.html) with ?focus=unfilled|expired|outarea&co=<name>&coId=<id>:
+// show only that officer's clients the reminder counted — the same
+// rules as CM-backend lib/officer-reminders.js:
+//   unfilled  CO (col W, by name) · has a CIF · no Solution (AK)
+//   expired   CO (col W, by name) · promise date before today
+//   outarea   still NoCoRespone · current CO (col V, by ID)
+// On top of the normal filters; the banner's x clears it.
+// ========================================
+const reminderFocus = (() => {
+    const p = new URLSearchParams(location.search);
+    const kind = p.get("focus");
+    if (!["unfilled", "expired", "outarea"].includes(kind)) return null;
+    return { kind, co: p.get("co") || "", coId: p.get("coId") || "" };
+})();
+let reminderFocusOn = !!reminderFocus;
+
+function focusNameKey(v) {
+    return String(v || "").trim().toUpperCase().replace(/\s+/g, " ");
+}
+
+function focusIdKey(v) {
+    return String(v || "").trim().toLowerCase().replace(/^0+/, "");
+}
+
+function reminderFocusMatch(row) {
+    if (!reminderFocusOn) return true;
+    const f = reminderFocus;
+    const noCo = String(row.coResponse || "").toLowerCase().includes("nocorespone");
+    if (f.kind === "outarea") {
+        return noCo && !!row.concate && focusIdKey(row.coId) === focusIdKey(f.coId);
+    }
+    if (noCo || focusNameKey(row.coResponse) !== focusNameKey(f.co)) return false;
+    if (f.kind === "unfilled") return !!String(row.cif || "").trim() && !String(row.akSolution || "").trim();
+    return String(row.promiseStatus || "").startsWith("Expired");
+}
+
+function renderReminderFocusBanner(count) {
+    let bar = document.getElementById("arrFocusBar");
+    if (!reminderFocusOn) {
+        bar?.remove();
+        return;
+    }
+    if (!bar) {
+        bar = document.createElement("div");
+        bar.id = "arrFocusBar";
+        bar.className = "arr-focus-bar";
+        document.querySelector(".page-container")?.prepend(bar);
+    }
+    const t = (key, vars) => (window.CMI18n ? CMI18n.t(key, vars) : key);
+    const ico = { unfilled: "📝", expired: "⏰", outarea: "📍" }[reminderFocus.kind];
+    const who = reminderFocus.kind === "outarea"
+        ? `${reminderFocus.co || reminderFocus.coId} (${reminderFocus.coId})`
+        : reminderFocus.co;
+    bar.innerHTML = `
+        <span class="arr-focus-ico">${ico}</span>
+        <span class="arr-focus-text">
+            <b>${escapeFocus(t(`arrears.focus.${reminderFocus.kind}`))}</b>
+            <small>${escapeFocus(who)} · ${escapeFocus(t("arrears.focus.count", { n: count }))}</small>
+        </span>
+        <button type="button" class="arr-focus-clear" aria-label="${escapeFocus(t("arrears.focus.clear"))}">✕</button>`;
+    bar.querySelector(".arr-focus-clear").onclick = () => {
+        reminderFocusOn = false;
+        try { history.replaceState(null, "", location.pathname); } catch (e) {}
+        applyFilters();
+    };
+}
+
+function escapeFocus(v) {
+    return String(v == null ? "" : v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
 function applyFilters() {
     const f = {
         branch: filterEls.branch.value.trim(),
@@ -648,12 +722,14 @@ function applyFilters() {
             && exactMatch(row.occu, f.occupation)
             && productMatch(row.product, f.productType)
             && containsMatch(row.customer, f.keyword)
-            && promiseStatusMatch(row, f.promiseStatus);
+            && promiseStatusMatch(row, f.promiseStatus)
+            && reminderFocusMatch(row);
     });
 
     currentRows = applyArrearsSort(arrearsUnsortedRows);
     renderTable(currentRows);
     renderSummary(currentRows);
+    renderReminderFocusBanner(currentRows.length);
     updateAdvancedFilterBadge();
 }
 
@@ -4732,7 +4808,12 @@ function showArrearsScopeDialog() {
     }
 
     if (String(loggedInUser.role || "").toLowerCase() === "viewer_staff") {
-        arrearsScopeMode = await showArrearsScopeDialog();
+        // From a reminder the scope is already known: their own
+        // NoCoRespone loans are under their ID (column V), everything
+        // else under their name (column W).
+        arrearsScopeMode = reminderFocus
+            ? (reminderFocus.kind === "outarea" ? "own" : "")
+            : await showArrearsScopeDialog();
     }
 
     refreshArrears();

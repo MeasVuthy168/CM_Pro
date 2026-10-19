@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Notification Detail - CM_Pro</title>
+<meta name="theme-color" content="#0e1b3c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
+  );
+</script>
+
+<link rel="stylesheet" href="../../assets/css/main.css">
+<link rel="stylesheet" href="../../assets/css/notification.css">
+<link rel="stylesheet" href="../../assets/css/notification-detail.css">
+
+<link rel="expect" href="#cm-pt-parsed" blocking="render">
+<link rel="preload" href="/CM_Pro/assets/fonts/Krasar-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<script src="/CM_Pro/shared/page-transition.js"></script>
+</head>
+
+<body>
+
+<div id="offlineBanner" data-i18n="common.offline">No Internet Connection</div>
+
+<script src="../../config/api.js"></script>
+<script src="/CM_Pro/shared/touch-polish.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/features.js"></script>
+
+<div id="topbar-container"></div>
+
+<!-- Smart Alert / Officer Reminder detail — filled by notification-detail.js
+     from the notification's own extra data. -->
+<div class="page-container nd-page">
+    <div class="nd-hero" id="ndHero" hidden></div>
+    <div id="ndBody"></div>
+    <div class="loading-box" id="ndLoading"><div class="spinner"></div></div>
+    <div class="empty-box" id="ndEmpty" style="display:none;">
+        <div class="error-icon"><span class="ui-ico ui-ico-alert" aria-hidden="true"></span></div>
+        <div class="empty-title" data-i18n="notifDetail.notFound">Notification not found</div>
+        <a class="refresh-btn nd-back-link" href="/CM_Pro/pages/notifications/index.html" data-i18n="notifDetail.backToList">Back to notifications</a>
+    </div>
+</div>
+
+<div id="bottomnav-container"></div>
+
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+<script src="../../assets/js/notification-detail.js"></script>
+
+</body>
+</html>

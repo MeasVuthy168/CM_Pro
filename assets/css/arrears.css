@@ -4231,3 +4231,23 @@ body.arr-view-card .arr-sort-chip-row:not([hidden]){ display:flex; }
 .arr-sort-arrow{ color:#B8860B; font-size:13px; }
 [data-theme="dark"] .arr-sort-arrow{ color:#FFD700; }
 .arr-sort-dir .oa-tab:disabled{ opacity:.45; cursor:default; }
+
+/* Opened from an Officer Reminder: which clients are shown, x clears */
+.arr-focus-bar{
+    display:flex; align-items:center; gap:10px;
+    margin:0 0 12px; padding:10px 12px; border-radius:14px;
+    background:#0E1B3C; color:#fff; box-shadow:0 4px 14px rgba(0,0,0,.12);
+}
+.arr-focus-ico{
+    width:34px; height:34px; border-radius:10px; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center; font-size:17px;
+    background:rgba(255,215,0,.16);
+}
+.arr-focus-text{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.arr-focus-text b{ font-size:14px; color:#FFD700; }
+.arr-focus-text small{ font-size:12px; color:#C9D3EE; overflow-wrap:anywhere; }
+.arr-focus-clear{
+    width:32px; height:32px; border-radius:50%; border:none; flex:0 0 auto;
+    background:rgba(255,255,255,.12); color:#fff; font-size:14px; cursor:pointer;
+}
+[data-theme="dark"] .arr-focus-bar,[data-theme="darkgray"] .arr-focus-bar{ background:#16223F; border:1px solid #223055; }
