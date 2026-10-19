@@ -918,3 +918,11 @@ body.ac-open{ overflow:hidden; }
 [data-theme="dark"] .voice-sheet-ring, [data-theme="darkgray"] .voice-sheet-ring{ background:rgba(212,175,55,.22); }
 [data-theme="dark"] .voice-chip, [data-theme="darkgray"] .voice-chip{ background:rgba(224,165,38,.12); border-color:rgba(224,165,38,.4); color:#FFD76A; }
 [data-theme="dark"] .voice-chip-type, [data-theme="darkgray"] .voice-chip-type{ background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.16); color:#EAF0FF; }
+
+/* Officer team: All | CO | FSRO switch and a tag on each officer */
+.ac-cmp.ac-teams{ margin:6px 0 2px; }
+.ac-teams button small{ font-weight:600; opacity:.75; }
+.ac-team{ display:inline-block; margin-left:4px; padding:0 6px; border-radius:6px; font-size:10px; font-weight:800; vertical-align:2px; background:#E8EEFF; color:#2A4BA8; }
+.ac-team-fsro{ background:#F1E8FB; color:#6E3FB0; }
+[data-theme="dark"] .ac-team, [data-theme="darkgray"] .ac-team{ background:rgba(96,140,255,.18); color:#A8BEFF; }
+[data-theme="dark"] .ac-team-fsro, [data-theme="darkgray"] .ac-team-fsro{ background:rgba(158,119,237,.2); color:#C9B3F5; }
