@@ -750,3 +750,18 @@ body.ac-open{ overflow:hidden; }
 
 /* Value | # Loans switch on a disbursement ranking */
 .ac-cmp.ac-by{ margin:8px 0 2px; }
+
+/* "Figures as of an older snapshot" notice on a card */
+.ac-stale{
+    display:flex; flex-direction:column; align-items:flex-start; gap:6px;
+    margin:8px 0 4px; padding:8px 10px; border-radius:10px;
+    background:#FFF6DB; color:#7A5A00; font-size:12px; line-height:1.45;
+}
+.ac-snap{
+    border:none; border-radius:8px; padding:5px 10px; cursor:pointer;
+    font:inherit; font-size:11.5px; font-weight:700;
+    background:#0E1B3C; color:#FFD700;
+}
+.ac-snap:disabled{ opacity:.6; cursor:default; }
+[data-theme="dark"] .ac-stale, [data-theme="darkgray"] .ac-stale{ background:rgba(212,175,55,.12); color:#E9CF7A; }
+[data-theme="dark"] .ac-snap, [data-theme="darkgray"] .ac-snap{ background:#D4AF37; color:#0E1B3C; }
