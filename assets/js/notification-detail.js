@@ -27,11 +27,15 @@
         filter: document.getElementById("ndFilter")
     };
 
-    // Branch filter: for the roles that see more than one branch's
-    // alerts / officers (Admin, User, Viewer_Manager_A).
+    // Filters for the roles that see more than one branch's alerts /
+    // officers (Admin, User, Viewer_Manager_A): by branch, and — for
+    // Officer Reminders, whose rows carry the List Officer position — by
+    // position (CO / FSRO). Each row's counts follow the other filter.
     const FILTER_ROLES = ["admin", "user", "viewer_manager_a"];
+    const POSITIONS = { co: "Credit Officer", fsro: "Financial Service Relation Officer" };
     let current = null;
     let branchFilter = "";
+    let posFilter = "";
 
     function userRole() {
         try {
@@ -47,30 +51,66 @@
         return (n.type === "smart_alert" ? x.alerts : x.reminders) || [];
     }
 
-    function byBranch(list) {
-        return branchFilter ? list.filter(i => String(i.branch || "").trim() === branchFilter) : list;
+    function branchOf(i) {
+        return String(i.branch || "").trim();
+    }
+
+    function posOf(i) {
+        return i.position === POSITIONS.fsro ? "fsro" : i.position === POSITIONS.co ? "co" : "";
+    }
+
+    function applyFilters(list, { branch = branchFilter, pos = posFilter } = {}) {
+        return list.filter(i => (!branch || branchOf(i) === branch) && (!pos || posOf(i) === pos));
+    }
+
+    function countBy(list, keyOf) {
+        const m = new Map();
+        for (const i of list) {
+            const k = keyOf(i);
+            if (k) m.set(k, (m.get(k) || 0) + 1);
+        }
+        return m;
+    }
+
+    function chipRow(labelKey, attr, active, allCount, entries) {
+        const chip = (value, label, n) =>
+            `<button type="button" class="nd-chip${value === active ? " on" : ""}" data-${attr}="${esc(value)}">${esc(label)}<span>${n}</span></button>`;
+        return `
+            <div class="nd-filter-row">
+                <div class="nd-filter-label">${esc(t(labelKey))}</div>
+                <div class="nd-chips">
+                    ${chip("", t("notifDetail.allBranches"), allCount)}
+                    ${entries.map(([value, label, n]) => chip(value, label, n)).join("")}
+                </div>
+            </div>`;
     }
 
     function renderFilter(n) {
         const items = itemsOf(n);
-        const counts = new Map();
-        for (const i of items) {
-            const b = String(i.branch || "").trim();
-            if (b) counts.set(b, (counts.get(b) || 0) + 1);
-        }
-        if (!FILTER_ROLES.includes(userRole()) || counts.size < 2) {
+        const allowed = FILTER_ROLES.includes(userRole());
+        const showBranch = allowed && countBy(items, branchOf).size >= 2;
+        const showPos = allowed && n.type === "officer_reminder" && countBy(items, posOf).size >= 2;
+        if (!showBranch) branchFilter = "";
+        if (!showPos) posFilter = "";
+        if (!showBranch && !showPos) {
             el.filter.hidden = true;
             return;
         }
-        if (branchFilter && !counts.has(branchFilter)) branchFilter = "";
-        const chip = (value, label, n) =>
-            `<button type="button" class="nd-chip${value === branchFilter ? " on" : ""}" data-branch="${esc(value)}">${esc(label)}<span>${n}</span></button>`;
-        el.filter.innerHTML = `
-            <div class="nd-filter-label">${esc(t("notifDetail.filterBranch"))}</div>
-            <div class="nd-chips">
-                ${chip("", t("notifDetail.allBranches"), items.length)}
-                ${[...counts.keys()].sort((a, b) => a.localeCompare(b)).map(b => chip(b, b, counts.get(b))).join("")}
-            </div>`;
+        let html = "";
+        if (showBranch) {
+            const pool = applyFilters(items, { branch: "" });
+            const counts = countBy(pool, branchOf);
+            if (branchFilter && !counts.has(branchFilter)) branchFilter = "";
+            const entries = [...counts.keys()].sort((a, b) => a.localeCompare(b)).map(b => [b, b, counts.get(b)]);
+            html += chipRow("notifDetail.filterBranch", "branch", branchFilter, pool.length, entries);
+        }
+        if (showPos) {
+            const pool = applyFilters(items, { pos: "" });
+            const counts = countBy(pool, posOf);
+            const entries = ["co", "fsro"].map(k => [k, t(`notifDetail.pos.${k}`), counts.get(k) || 0]);
+            html += chipRow("notifDetail.filterPosition", "pos", posFilter, pool.length, entries);
+        }
+        el.filter.innerHTML = html;
         el.filter.hidden = false;
     }
 
@@ -194,7 +234,7 @@
     }
 
     function renderSmartAlert(n) {
-        const alerts = byBranch((n.extra && n.extra.alerts) || []);
+        const alerts = applyFilters((n.extra && n.extra.alerts) || []);
         const count = kind => alerts.filter(a => a.kind === kind).length;
         const branches = alerts.filter(a => a.scope !== "officer");
         const officers = alerts.filter(a => a.scope === "officer");
@@ -225,9 +265,9 @@
 
     // ---------- Officer Reminder ----------
     const REMIND = [
-        { key: "unfilled", ico: "📝", label: "notifDetail.remind.unfilled" },
-        { key: "expired", ico: "⏰", label: "notifDetail.remind.expired" },
-        { key: "outArea", ico: "📍", label: "notifDetail.remind.outArea" }
+        { key: "unfilled", ico: "📝", label: "notifDetail.remind.unfilled", short: "notifDetail.short.unfilled" },
+        { key: "expired", ico: "⏰", label: "notifDetail.remind.expired", short: "notifDetail.short.expired" },
+        { key: "outArea", ico: "📍", label: "notifDetail.remind.outArea", short: "notifDetail.short.outArea" }
     ];
 
     function arrearsLink(r, key) {
@@ -243,25 +283,24 @@
         const tiles = REMIND.map(m => {
             const n = Number(r[m.key]) || 0;
             const inner = `
-                <span class="nd-tile-ico">${m.ico}</span>
-                <b>${n}</b>
-                <span>${esc(t(m.label))}</span>`;
+                <span class="nd-tile-top"><span class="nd-tile-ico">${m.ico}</span><b>${n}</b></span>
+                <span class="nd-tile-label">${esc(t(m.short))}</span>`;
             return n
-                ? `<a class="nd-tile nd-tile-${m.key}" href="${esc(arrearsLink(r, m.key))}">${inner}<i aria-hidden="true">›</i></a>`
-                : `<div class="nd-tile nd-tile-zero">${inner}</div>`;
+                ? `<a class="nd-tile nd-tile-${m.key}" href="${esc(arrearsLink(r, m.key))}" title="${esc(t(m.label))}">${inner}<i aria-hidden="true">›</i></a>`
+                : `<div class="nd-tile nd-tile-zero" title="${esc(t(m.label))}">${inner}</div>`;
         }).join("");
         return `
             <div class="nd-card nd-officer">
                 <div class="nd-officer-head">
                     <span class="nd-avatar">${esc(String(r.name || r.id || "?").trim().charAt(0).toUpperCase())}</span>
-                    <span class="nd-who"><b>${esc(r.name || r.id)}</b><small>${esc([r.id, r.branch, r.position].filter(Boolean).join(" · "))}</small></span>
+                    <span class="nd-who"><b>${esc(r.name || r.id)}</b><small>${esc([r.id, r.branch, posOf(r) ? t(`notifDetail.pos.${posOf(r)}`) : r.position].filter(Boolean).join(" · "))}</small></span>
                 </div>
                 <div class="nd-tiles">${tiles}</div>
             </div>`;
     }
 
     function renderReminder(n) {
-        const list = byBranch((n.extra && n.extra.reminders) || []).slice()
+        const list = applyFilters((n.extra && n.extra.reminders) || []).slice()
             .sort((a, b) => (b.unfilled + b.expired + b.outArea) - (a.unfilled + a.expired + a.outArea));
         const sum = k => list.reduce((s, r) => s + (Number(r[k]) || 0), 0);
         const slot = n.extra && n.extra.slot;
@@ -306,7 +345,8 @@
         el.filter.addEventListener("click", e => {
             const b = e.target.closest(".nd-chip");
             if (!b) return;
-            branchFilter = b.dataset.branch || "";
+            if (b.dataset.pos !== undefined) posFilter = b.dataset.pos;
+            else branchFilter = b.dataset.branch || "";
             render();
         });
         render();
