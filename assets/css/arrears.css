@@ -4368,3 +4368,73 @@ body.arr-view-card .arr-sort-chip-row:not([hidden]){ display:flex; }
     font-size:24px;
 }
 [data-theme="dark"] .oa-empty-ico{ color:#FFD700; }
+
+/* Edit Out-of-Area Arrears — Edited tab clean-up: explained up front,
+   checkboxes only once the user chooses to select. */
+.oa-clean{
+    margin:0 0 10px;
+    padding:10px 12px;
+    border:1px dashed var(--arr-border, #e2e6ed);
+    border-radius:12px;
+    background:rgba(26,46,87,.03);
+}
+.oa-clean[hidden]{ display:none; }
+[data-theme="dark"] .oa-clean{ background:rgba(255,255,255,.03); }
+.oa-clean-info{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+}
+.oa-clean-ico{
+    width:32px;
+    height:32px;
+    flex:0 0 auto;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(220,38,38,.10);
+    color:#DC2626;
+    font-size:15px;
+}
+[data-theme="dark"] .oa-clean-ico{ color:#FCA5A5; background:rgba(248,113,113,.12); }
+.oa-clean-text{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+.oa-clean-text b{ font-size:13.5px; color:var(--arr-text); }
+.oa-clean-text small{ font-size:12px; line-height:1.45; color:var(--arr-text-muted); }
+.oa-clean-actions,
+.oa-select-tools{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px;
+    margin-top:10px;
+}
+.oa-clean-actions[hidden],
+.oa-select-tools[hidden]{ display:none; }
+.oa-select-tools{ justify-content:space-between; }
+.oa-clean-actions .oa-chip-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+}
+.oa-chip-btn[hidden]{ display:none; }
+.oa-chip-paid{
+    border-color:rgba(22,163,74,.45) !important;
+    color:#15803D !important;
+}
+[data-theme="dark"] .oa-chip-paid{ color:#86EFAC !important; }
+.oa-item-selected{
+    border-color:#DC2626 !important;
+    background:rgba(220,38,38,.05);
+}
+
+/* Selected-for-delete bar stays in reach at the bottom while selecting. */
+#outAreaCard .outarea-bulk-bar{
+    position:sticky;
+    bottom:0;
+    z-index:6;
+    margin:10px 0 0;
+    background:var(--arr-card-bg, #fff);
+    border-color:rgba(220,38,38,.35);
+    box-shadow:0 -6px 18px rgba(14,27,60,.12);
+}

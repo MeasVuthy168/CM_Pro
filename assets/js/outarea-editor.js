@@ -32,6 +32,7 @@
 
 (function () {
     const t = (key) => (window.CMI18n ? CMI18n.t(key) : key);
+    const tf = (key, vars) => Object.entries(vars || {}).reduce((str, [k, v]) => str.replace(`{${k}}`, v), t(key));
 
     function notify(message, type = "info") {
         if (typeof CMToast !== "undefined" && CMToast.show) {
@@ -283,7 +284,9 @@
 
                 outAreaPaidOffLdCifs = new Set(mapped.filter(m => m.isPaidOff).map(m => m.ldCif));
                 const shown = applyOutAreaBranchFilter(mapped);
-                renderOutAreaRows(shown, shown.length, buildEditedSubtitle(shown), true, true);
+                outAreaLastEdited = { shown, subtitle: buildEditedSubtitle(shown) };
+                paintPaidOffButton(shown);
+                renderEditedFromCache();
             } catch (err) {
                 console.error("[outArea] fetch edited list failed:", err);
                 tbody.innerHTML = `<div class="oa-empty">មិនអាចផ្ទុកទិន្នន័យបានទេ</div>`;
@@ -331,14 +334,45 @@
         function buildEditedSubtitle(mapped) {
             const paidOffCount = mapped.filter(m => m.isPaidOff).length;
             const unknownCount = mapped.filter(m => m.customer === "(មិនអាចត្រួតពិនិត្យបាន)").length;
-            let text = `បានកែសម្រួល: ${mapped.length.toLocaleString()} នាក់`;
-            if (paidOffCount > 0) text += ` · Paid off: ${paidOffCount.toLocaleString()} នាក់`;
-            if (unknownCount > 0) text += ` · មិនអាចត្រួតពិនិត្យបាន: ${unknownCount.toLocaleString()} នាក់`;
+            let text = tf("arrears.oaEditedCount", { n: mapped.length.toLocaleString() });
+            if (paidOffCount > 0) text += " · " + tf("arrears.oaPaidOffCount", { n: paidOffCount.toLocaleString() });
+            if (unknownCount > 0) text += " · " + tf("arrears.oaUnknownCount", { n: unknownCount.toLocaleString() });
             return text;
         }
 
         let outAreaSelectedForDelete = new Set(); // LD-CIFs currently checked for bulk delete
         let outAreaPaidOffLdCifs = new Set();     // LD-CIFs marked "Paid off" in the current render — powers the quick "select all Paid off" action
+        // Edited tab clean-up: checkboxes only in select mode (entered with
+        // "Select Paid off" or "Select manually"); the last rendered Edited
+        // list is kept so switching modes doesn't re-fetch it.
+        let outAreaSelectMode = false;
+        let outAreaLastEdited = null; // { shown, subtitle }
+
+        function renderEditedFromCache() {
+            if (!outAreaLastEdited) return;
+            const { shown, subtitle } = outAreaLastEdited;
+            renderOutAreaRows(shown, shown.length, subtitle, true, outAreaSelectMode);
+        }
+
+        function setOutAreaSelectMode(on, rerender = true) {
+            outAreaSelectMode = !!on;
+            if (!outAreaSelectMode) outAreaSelectedForDelete.clear();
+            const actions = document.getElementById("outAreaCleanActions");
+            const tools = document.getElementById("outAreaSelectTools");
+            if (actions) actions.hidden = outAreaSelectMode;
+            if (tools) tools.hidden = !outAreaSelectMode;
+            if (rerender && outAreaViewMode === "edited") renderEditedFromCache();
+            else updateOutAreaBulkBar();
+        }
+
+        // "Select Paid off (14)" — hidden when the list has none.
+        function paintPaidOffButton(shown) {
+            const btn = document.getElementById("btnOutAreaSelectPaidOff");
+            if (!btn) return;
+            const n = shown.filter(m => m.isPaidOff).length;
+            btn.hidden = n === 0;
+            btn.innerHTML = `<span class="ui-ico ui-ico-trash" aria-hidden="true"></span> ${escapeHtml(tf("arrears.oaSelectPaidOff", { n: n.toLocaleString() }))}`;
+        }
 
         function renderOutAreaRows(entries, totalCount, subtitleText, showActions, showCheckbox) {
             const list = document.getElementById("outAreaTbody");
@@ -376,16 +410,25 @@
                     <div class="oa-item-side">
                         ${!showActions && entry.thirdCol ? `<span class="oa-branch-chip">${escapeHtml(entry.thirdCol)}</span>` : ""}
                         ${!showActions && Number.isFinite(day) ? `<span class="arr-day-badge">${day.toLocaleString()} <small>${escapeHtml(t("arrears.cardDays"))}</small></span>` : ""}
-                        ${showActions ? `
+                        ${showCheckbox ? "" : showActions ? `
                         <button type="button" class="outarea-row-btn outarea-row-btn-danger" data-action="delete" title="លុប" aria-label="លុប" data-i18n-title="common.delete"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span></button>` : `<span class="oa-item-chevron" aria-hidden="true">›</span>`}
                     </div>
                 `;
+                const tapCard = () => {
+                    if (showCheckbox) {
+                        const cb = item.querySelector(".outarea-row-checkbox");
+                        cb.checked = !cb.checked;
+                        cb.dispatchEvent(new Event("change"));
+                    } else {
+                        selectOutAreaCustomer(entry.row);
+                    }
+                };
                 item.addEventListener("click", (e) => {
                     if (e.target.closest("[data-stop]")) return;
-                    selectOutAreaCustomer(entry.row);
+                    tapCard();
                 });
                 item.addEventListener("keydown", (e) => {
-                    if (e.key === "Enter") selectOutAreaCustomer(entry.row);
+                    if (e.key === "Enter") tapCard();
                 });
 
                 if (showCheckbox) {
@@ -394,11 +437,13 @@
                     checkbox.addEventListener("change", () => {
                         if (checkbox.checked) outAreaSelectedForDelete.add(entry.ldCif);
                         else outAreaSelectedForDelete.delete(entry.ldCif);
+                        item.classList.toggle("oa-item-selected", checkbox.checked);
                         updateOutAreaBulkBar();
                     });
+                    item.classList.toggle("oa-item-selected", checkbox.checked);
                 }
 
-                if (showActions) {
+                if (showActions && !showCheckbox) {
                     item.querySelector('[data-action="delete"]').addEventListener("click", (e) => {
                         e.stopPropagation();
                         deleteWrongAddressRecord(entry.ldCif);
@@ -424,7 +469,9 @@
             // delete clears the selection, or after switching back to candidates
             // mode where there's nothing to select at all).
             const selectAll = document.getElementById("outAreaSelectAll");
-            if (selectAll) selectAll.checked = false;
+            if (selectAll) selectAll.checked = entries.length > 0 && entries.every(e => outAreaSelectedForDelete.has(e.ldCif));
+            const allLabel = document.getElementById("outAreaSelectAllLabel");
+            if (allLabel) allLabel.textContent = tf("arrears.oaSelectAllShown", { n: entries.length.toLocaleString() });
             updateOutAreaBulkBar();
         }
 
@@ -442,10 +489,8 @@
             setOutAreaTab(tab.dataset.view);
             outAreaBranchFilter = "";
             document.getElementById("outAreaSearch").value = "";
-            outAreaSelectedForDelete.clear();
-            document.getElementById("outAreaBulkBar").hidden = true;
-            const selectAll = document.getElementById("outAreaSelectAll");
-            if (selectAll) selectAll.checked = false;
+            setOutAreaSelectMode(false, false);
+            outAreaLastEdited = null;
             renderOutAreaList();
         }));
 
@@ -671,7 +716,8 @@
             outAreaSelectedRow = null;
             outAreaViewMode = "candidates";
             outAreaBranchFilter = "";
-            outAreaSelectedForDelete.clear();
+            setOutAreaSelectMode(false, false);
+            outAreaLastEdited = null;
             setOutAreaTabCount("edited", NaN);
             refreshOutAreaEditedCount();
             outAreaPaidOffLdCifs.clear();
@@ -713,16 +759,17 @@
         });
 
         document.getElementById("btnOutAreaSelectPaidOff")?.addEventListener("click", () => {
-            const checkboxes = document.querySelectorAll(".outarea-row-checkbox");
-            checkboxes.forEach(cb => {
-                const ldCif = cb.dataset.ldcif;
-                if (outAreaPaidOffLdCifs.has(ldCif)) {
-                    cb.checked = true;
-                    outAreaSelectedForDelete.add(ldCif);
-                }
-            });
-            updateOutAreaBulkBar();
+            if (!outAreaLastEdited) return;
+            outAreaSelectMode = true;
+            // Paid off first, so what's about to be deleted is what's on screen.
+            const shown = outAreaLastEdited.shown;
+            outAreaLastEdited.shown = shown.filter(m => m.isPaidOff).concat(shown.filter(m => !m.isPaidOff));
+            outAreaLastEdited.shown.filter(m => m.isPaidOff).forEach(m => outAreaSelectedForDelete.add(m.ldCif));
+            setOutAreaSelectMode(true);
         });
+
+        document.getElementById("btnOutAreaSelectMode")?.addEventListener("click", () => setOutAreaSelectMode(true));
+        document.getElementById("btnOutAreaSelectCancel")?.addEventListener("click", () => setOutAreaSelectMode(false));
 
         function updateOutAreaBulkBar() {
             const bar = document.getElementById("outAreaBulkBar");
@@ -732,8 +779,8 @@
             // Only ever visible in the "edited" view — the "candidates" view has no
             // checkboxes at all, so the bar has no business showing there regardless
             // of count (defensive, in case selection state ever gets out of sync).
-            bar.hidden = (outAreaViewMode !== "edited") || count === 0;
-            countEl.textContent = `បានជ្រើសរើស ${count.toLocaleString()} នាក់`;
+            bar.hidden = (outAreaViewMode !== "edited") || !outAreaSelectMode || count === 0;
+            countEl.textContent = tf("arrears.oaSelectedCount", { n: count.toLocaleString() });
         }
 
         document.getElementById("btnOutAreaBulkDelete")?.addEventListener("click", async () => {
@@ -758,7 +805,7 @@
 
                 notify(`បានលុប ${data.deletedCount} កំណត់ត្រា`, "success");
                 if (outAreaViewMode !== "edited") refreshOutAreaEditedCount();
-                outAreaSelectedForDelete.clear();
+                setOutAreaSelectMode(false, false);
                 renderOutAreaList();
             } catch (err) {
                 console.error("[outArea] bulk delete failed:", err);

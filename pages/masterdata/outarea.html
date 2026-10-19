@@ -108,18 +108,33 @@ No Internet Connection
 
     <div class="reason-subtitle oa-count" id="outAreaListSubtitle">-</div>
 
-    <!-- Edited tab only: select all / select Paid off / bulk delete -->
-    <div class="oa-select-bar" id="outAreaSelectBar" hidden>
-      <label class="oa-check-all"><input type="checkbox" id="outAreaSelectAll"> <span data-i18n="arrears.oaSelectAll">ជ្រើសទាំងអស់</span></label>
-      <button type="button" id="btnOutAreaSelectPaidOff" class="oa-chip-btn" data-i18n="arrears.selectAllPaidOffBtn">ជ្រើសរើសទាំងអស់ (Paid off)</button>
+    <!-- Edited tab only: clean up saved moves that are no longer needed
+         (e.g. Paid off loans). Checkboxes only show in select mode. -->
+    <div class="oa-clean" id="outAreaSelectBar" hidden>
+      <div class="oa-clean-info">
+        <span class="oa-clean-ico"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span></span>
+        <div class="oa-clean-text">
+          <b data-i18n="arrears.oaCleanTitle">សម្អាតកំណត់ត្រា</b>
+          <small data-i18n="arrears.oaCleanHint">លុបការផ្ទេរដែលលែងត្រូវការ ដូចជា LD ដែល Paid off (បានទូទាត់រួច)។</small>
+        </div>
+      </div>
+      <div class="oa-clean-actions" id="outAreaCleanActions">
+        <button type="button" id="btnOutAreaSelectPaidOff" class="oa-chip-btn oa-chip-paid"></button>
+        <button type="button" id="btnOutAreaSelectMode" class="oa-chip-btn"><span class="ui-ico ui-ico-edit" aria-hidden="true"></span> <span data-i18n="arrears.oaSelectManual">ជ្រើសខ្លួនឯង</span></button>
+      </div>
+      <div class="oa-select-tools" id="outAreaSelectTools" hidden>
+        <label class="oa-check-all"><input type="checkbox" id="outAreaSelectAll"> <span id="outAreaSelectAllLabel"></span></label>
+        <button type="button" id="btnOutAreaSelectCancel" class="oa-chip-btn" data-i18n="common.cancel">បោះបង់</button>
+      </div>
     </div>
 
+    <div id="outAreaTbody" class="oa-list"></div>
+
+    <!-- Selected-for-delete bar, pinned to the bottom while selecting -->
     <div id="outAreaBulkBar" class="outarea-bulk-bar" hidden>
       <span id="outAreaBulkCount">0</span>
       <button type="button" id="btnOutAreaBulkDelete" class="outarea-bulk-delete-btn"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span> <span data-i18n="arrears.deleteSelectedBtn">លុបដែលបានជ្រើសរើស</span></button>
     </div>
-
-    <div id="outAreaTbody" class="oa-list"></div>
 
   </div>
 
