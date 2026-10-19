@@ -67,6 +67,7 @@ CMI18n.register({
   "notifDetail.officerCount": { km: "{n} នាក់", en: "{n} officers" },
   "notifDetail.submitTitle": { km: "បានដាក់ស្នើ Reason Arrear", en: "Reason Arrear submitted" },
   "notifDetail.submitCount": { km: "អតិថិជន {n} នាក់", en: "{n} clients" },
+  "notifDetail.viaExcel": { km: "តាម Excel (VBA)", en: "via Excel (VBA)" },
   "notifDetail.daysLate": { km: "{n} ថ្ងៃ", en: "{n} days" },
   "notifDetail.occupation": { km: "មុខរបរ", en: "Occupation" },
   "notifDetail.reason": { km: "មូលហេតុ/ដំណោះស្រាយ", en: "Reason / solution" },
