@@ -445,7 +445,7 @@
                 <span class="nd-hero-ico"><span class="ui-ico ui-ico-edit" aria-hidden="true"></span></span>
                 <div>
                     <div class="nd-hero-title">${esc(t("notifDetail.submitTitle"))}</div>
-                    <div class="nd-hero-sub">${esc([who.length > 1 ? `${who[0]} (${who[1]})` : who[0], whenOf(n.createdAt)].filter(Boolean).join(" · "))}</div>
+                    <div class="nd-hero-sub">${esc([who.length > 1 ? `${who[0]} (${who[1]})` : who[0], whenOf(n.createdAt), x.source === "excel" ? t("notifDetail.viaExcel") : ""].filter(Boolean).join(" · "))}</div>
                 </div>
             </div>
             <div class="nd-hero-foot">${esc(t("notifDetail.submitCount", { n: list.length }))}</div>`;
