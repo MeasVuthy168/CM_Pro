@@ -137,25 +137,36 @@
     }
 
     // ---------- today's work ----------
-    const WORK_KEY = "cm_asst_work";
+    // GET /api/assistant/work?kind=&branch=&officer= answers one level of
+    // a drill-down — branches, then a branch's officers, then an
+    // officer's clients (a CO starts on their own clients). Tapping a
+    // row, a tile or the path above redraws the same card in place.
+    const WORK_KEY = "cm_asst_work2";
     const WORK_TTL = 2 * 60 * 1000;
     const WORK_KINDS = ["unfilled", "expired", "promiseToday", "noOfficer"];
-    const WORK_ICONS = { unfilled: "📝", expired: "⏰", promiseToday: "📅", noOfficer: "📍" };
+    // The same line icons as Work to complete (base.css .ui-ico-*).
+    const WORK_ICONS = { all: "clipboard", unfilled: "edit", expired: "clock", promiseToday: "calendar", noOfficer: "pin" };
 
-    async function loadWork({ fresh = false } = {}) {
+    function ico(name, extra) {
+        return `<span class="ui-ico ui-ico-${name}${extra ? " " + extra : ""}" aria-hidden="true"></span>`;
+    }
+
+    async function loadWork({ kind = "all", branch = "", officer = "" } = {}, { fresh = false } = {}) {
+        const query = new URLSearchParams({ kind, ...(branch ? { branch } : {}), ...(officer ? { officer } : {}) }).toString();
+        const key = `${WORK_KEY}?${query}`;
         if (!fresh) {
             try {
-                const hit = JSON.parse(sessionStorage.getItem(WORK_KEY) || "null");
+                const hit = JSON.parse(sessionStorage.getItem(key) || "null");
                 if (hit && Date.now() - hit.at < WORK_TTL) return hit.data;
             } catch (e) {}
         }
-        const data = await API.get("/api/assistant/work");
+        const data = await API.get(`/api/assistant/work?${query}`);
         if (!data || !data.ok) throw new Error((data && data.message) || "work failed");
-        try { sessionStorage.setItem(WORK_KEY, JSON.stringify({ at: Date.now(), data })); } catch (e) {}
+        try { sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), data })); } catch (e) {}
         return data;
     }
 
-    // The question a work tile / pill asks, in the app's language.
+    // The question a work tile asks, in the app's language.
     function workQuestion(kind) {
         return t(`assistant.chip.work.${kind}`);
     }
@@ -169,90 +180,141 @@
     }
 
     // Where to go and fill / fix them.
-    function workLink(kind) {
+    function workLink(kind, branch) {
         if (kind === "noOfficer") {
             const r = userRole();
             return r === "admin" || r === "user"
                 ? { href: PAGE_URLS.outArea, label: t("assistant.work.openOutArea") }
-                : { href: `${PAGE_URLS.arrears}?work=outarea`, label: t("assistant.work.openOutArea") };
+                : { href: `${PAGE_URLS.arrears}?work=outarea${branch ? `&branch=${encodeURIComponent(branch)}` : ""}`, label: t("assistant.work.openOutArea") };
         }
         const tab = kind === "expired" ? "expired" : kind === "promiseToday" ? "filled" : "unfilled";
-        return { href: `${PAGE_URLS.work}?tab=${tab}`, label: t("assistant.work.openWork") };
+        return { href: `${PAGE_URLS.work}?tab=${tab}${branch ? `&branch=${encodeURIComponent(branch)}` : ""}`, label: t("assistant.work.openWork") };
     }
 
-    function workTiles(data, active) {
+    function workAttr(kind, path) {
+        return esc(JSON.stringify({ kind, branch: path.branch || "", officer: path.officer || "" }));
+    }
+
+    // Four count tiles. In a work card a tile switches the card to that
+    // kind at the same branch / officer; elsewhere (asAsk) it asks.
+    function workTiles(data, active, path, asAsk) {
         return `<div class="ac-work-tiles">${WORK_KINDS.map(k => `
-            <button type="button" class="ac-wtile ac-wtile-${k}${k === active ? " on" : ""}" data-ask="${esc(workQuestion(k))}">
-                <span class="ac-wtile-ico" aria-hidden="true">${WORK_ICONS[k]}</span>
+            <button type="button" class="ac-wtile ac-wtile-${k}${k === active ? " on" : ""}" ${asAsk ? `data-ask="${esc(workQuestion(k))}"` : `data-work="${workAttr(k, path)}"`}>
+                ${ico(WORK_ICONS[k], "ac-wtile-ico")}
                 <b>${(Number(data.counts[k]) || 0).toLocaleString("en-US")}</b>
                 <span>${esc(t(`assistant.work.${k}`))}</span>
             </button>`).join("")}</div>`;
     }
 
-    function clientLine(c, kind) {
-        const right = kind === "noOfficer"
-            ? `${esc(usd(c.arreas))}${c.ccy && c.ccy !== "USD" ? ` <small>${esc(c.ccy)}</small>` : ""}`
-            : kind === "expired" || kind === "promiseToday"
-                ? esc(dmy(c.al))
-                : esc(t("assistant.work.days", { n: c.day }));
-        const meta = [c.ld, kind === "noOfficer" ? (c.coId ? `ID ${c.coId}` : "") : c.officer, c.branch].filter(Boolean).join(" · ");
-        return `
-            <li>
-                <span class="ac-rank-name">${esc(c.customer || c.ld || "-")}<small>${esc(meta)}</small></span>
-                <span class="ac-rank-v">${right}</span>
-            </li>`;
+    function officerLabel(key, kind) {
+        if (key === "-") return t("assistant.work.noName");
+        return kind === "noOfficer" ? `ID ${key}` : key;
     }
 
-    async function answerWork(intent) {
+    // All branches › Svay Rieng › Sok Dara — each step goes back up.
+    function workCrumbs(kind, path) {
+        if (!path.branch && !path.officer) return "";
+        const steps = [{ label: t("assistant.work.allBranches"), p: {} }];
+        if (path.branch) steps.push({ label: path.branch, p: { branch: path.branch } });
+        if (path.officer) steps.push({ label: officerLabel(path.officer, kind), p: { branch: path.branch, officer: path.officer } });
+        return `<div class="ac-crumbs">${steps.map((s, i) => i === steps.length - 1
+            ? `<span class="ac-crumb on">${esc(s.label)}</span>`
+            : `<button type="button" class="ac-crumb" data-work="${workAttr(kind, s.p)}">${esc(s.label)}</button>${ico("chevron-right", "ac-crumb-sep")}`).join("")}</div>`;
+    }
+
+    function groupRow(g, data) {
+        const kind = data.kind;
+        const atBranch = data.level === "branch";
+        const next = atBranch ? { branch: g.key } : { branch: data.path.branch || g.branch, officer: g.key };
+        const counts = kind === "all"
+            ? `<span class="ac-wn ac-wn-unfilled">${ico("edit")}${g.unfilled}</span><span class="ac-wn ac-wn-expired">${ico("clock")}${g.expired}</span>`
+            : `<span class="ac-wn ac-wn-${kind}">${g.count.toLocaleString("en-US")}</span>`;
+        return `
+            <button type="button" class="ac-wrow" data-work="${workAttr(kind, next)}">
+                <span class="ac-wrow-ico">${ico(atBranch ? "users" : "officer")}</span>
+                <span class="ac-wrow-main"><b>${esc(atBranch ? g.key : officerLabel(g.key, kind))}</b>${!atBranch && !data.path.branch && g.branch ? `<small>${esc(g.branch)}</small>` : ""}</span>
+                ${counts}
+                ${ico("chevron-right", "ac-wrow-go")}
+            </button>`;
+    }
+
+    function clientRow(c, kind) {
+        const day = Number(c.day);
+        const right = kind === "noOfficer"
+            ? `<span class="ac-cl-amt">${esc(usd(c.arreas))}${c.ccy && c.ccy !== "USD" ? ` ${esc(c.ccy)}` : ""}</span>`
+            : (kind === "expired" || kind === "promiseToday") && c.al
+                ? `<span class="ac-cl-date ac-cl-${kind}">${ico("calendar")}${esc(dmy(c.al))}</span>`
+                : `<span class="ac-cl-day">${esc(t("assistant.work.days", { n: day }))}</span>`;
+        const who = kind === "noOfficer" ? (c.coId ? `ID ${c.coId}` : "") : c.officer;
+        return `
+            <div class="ac-client">
+                <div class="ac-client-main">
+                    <b>${esc(c.customer || c.ld || "-")}</b>
+                    <small>${esc([c.ld, c.cif ? `CIF ${c.cif}` : ""].filter(Boolean).join(" · "))}</small>
+                    ${who || c.branch ? `<small class="ac-client-who">${ico("officer")}${esc([who, c.branch].filter(Boolean).join(" · "))}</small>` : ""}
+                </div>
+                ${right}
+            </div>`;
+    }
+
+    async function answerWork(intent, path = {}) {
+        const kind = intent.kind || "all";
         let data;
         try {
-            data = await loadWork();
+            data = await loadWork({ kind, branch: path.branch, officer: path.officer });
         } catch (e) {
             return { html: esc(t("assistant.loadFailed")) };
         }
-        const kind = intent.kind;
-        if (kind === "all") {
-            const c = data.counts;
-            const todo = c.unfilled + c.expired;
-            const link = workLink("unfilled");
-            return {
-                html: `
-                    <p>${esc(todo || c.promiseToday || c.noOfficer ? t("assistant.work.leadAll", { n: todo }) : t("assistant.work.allDone"))}</p>
-                    <div class="ac-card">
-                        <div class="ac-card-head">
-                            <span class="ac-card-who">${esc(t("assistant.work.title.all"))}</span>
-                            <span class="ac-card-date">${esc(dmy(data.today))}</span>
-                        </div>
-                        ${workTiles(data, null)}
-                        ${data.officers && data.officers.length > 1 ? `
-                            <div class="ac-foot ac-work-sub">${esc(t("assistant.work.byOfficer"))}</div>
-                            <ol class="ac-rank">${data.officers.map(o => `
-                                <li>
-                                    <span class="ac-rank-name">${esc(o.officer)}<small>${esc(o.branch)}</small></span>
-                                    <span class="ac-rank-v">📝 ${o.unfilled} · ⏰ ${o.expired}</span>
-                                </li>`).join("")}</ol>` : ""}
-                        <a class="ac-link" href="${esc(link.href)}">${esc(link.label)} ›</a>
-                    </div>`
-            };
-        }
-        const n = Number(data.counts[kind]) || 0;
-        const list = (data.lists && data.lists[kind]) || [];
-        const link = workLink(kind);
+        const here = data.path || {};
+        const n = Number(data.total) || 0;
+        const lead = kind === "all"
+            ? (n || data.counts.promiseToday || data.counts.noOfficer ? t("assistant.work.leadAll", { n: n.toLocaleString("en-US") }) : t("assistant.work.allDone"))
+            : n ? t(`assistant.work.lead.${kind}`, { n: n.toLocaleString("en-US") }) : t(`assistant.work.none.${kind}`);
+        const link = workLink(kind === "all" ? "unfilled" : kind, here.branch);
+        const levelHint = data.level === "branch" ? t("assistant.work.byBranch")
+            : data.level === "officer" ? t("assistant.work.byOfficer")
+            : n > data.clients.length ? t("assistant.work.showing", { n: data.clients.length, total: n.toLocaleString("en-US") })
+            : "";
+        const body = data.level === "client"
+            ? (data.clients.length ? `<div class="ac-clients">${data.clients.map(c => clientRow(c, kind)).join("")}</div>` : "")
+            : `<div class="ac-wrows">${data.groups.map(g => groupRow(g, data)).join("")}</div>`;
         return {
             html: `
-                <p>${esc(n ? t(`assistant.work.lead.${kind}`, { n: n.toLocaleString("en-US") }) : t(`assistant.work.none.${kind}`))}</p>
-                <div class="ac-card">
+                <p>${esc(lead)}</p>
+                <div class="ac-card ac-work" data-kind="${esc(kind)}">
                     <div class="ac-card-head">
-                        <span class="ac-card-who">${WORK_ICONS[kind]} ${esc(t(`assistant.work.title.${kind}`))}</span>
+                        <span class="ac-card-who">${ico(WORK_ICONS[kind], "ac-head-ico")}${esc(t(`assistant.work.title.${kind}`))}</span>
                         <span class="ac-card-date">${esc(dmy(data.today))}</span>
                     </div>
-                    ${workTiles(data, kind)}
-                    ${list.length ? `
-                        <div class="ac-foot ac-work-sub">${esc(t(n > list.length ? "assistant.work.showing" : "assistant.work.clients", { n: list.length, total: n.toLocaleString("en-US") }))}</div>
-                        <ol class="ac-rank ac-clients">${list.map(c => clientLine(c, kind)).join("")}</ol>` : ""}
+                    ${workCrumbs(kind, here)}
+                    ${workTiles(data, kind === "all" ? null : kind, here, false)}
+                    ${n && levelHint ? `<div class="ac-foot ac-work-sub">${esc(levelHint)}</div>` : ""}
+                    ${n ? body : ""}
                     ${n ? `<a class="ac-link" href="${esc(link.href)}">${esc(link.label)} ›</a>` : ""}
                 </div>`
         };
+    }
+
+    // A row / tile / crumb in a work card: redraw that card in place.
+    async function workDrill(el) {
+        const msg = el.closest(".ac-msg");
+        const bubble = msg && msg.querySelector(".ac-bubble");
+        if (!bubble || busy) return;
+        let q;
+        try { q = JSON.parse(el.dataset.work); } catch (e) { return; }
+        busy = true;
+        bubble.classList.add("ac-loading");
+        const reply = await answerWork({ kind: q.kind }, { branch: q.branch, officer: q.officer })
+            .catch(() => ({ html: esc(t("assistant.loadFailed")) }));
+        bubble.innerHTML = reply.html;
+        bubble.classList.remove("ac-loading");
+        const i = Number(msg.dataset.h);
+        if (Number.isInteger(i) && history[i]) {
+            history[i].html = reply.html;
+            saveHistory();
+        }
+        busy = false;
+        msg.scrollIntoView({ block: "nearest" });
     }
 
     // ---------- answer building ----------
@@ -788,6 +850,8 @@
             if (chip) ask(chip.textContent);
             const tile = e.target.closest("[data-ask]");
             if (tile) ask(tile.dataset.ask);
+            const drill = e.target.closest("[data-work]");
+            if (drill) workDrill(drill);
             const cmp = e.target.closest(".ac-cmp button[data-cmp]");
             if (cmp) recompare(cmp.closest(".ac-cmp"), { mode: cmp.dataset.cmp, date: null });
             const snap = e.target.closest(".ac-snap");
@@ -839,7 +903,7 @@
         loadWork().then(data => {
             const c = data.counts;
             if (!c || !(c.unfilled || c.expired || c.promiseToday || c.noOfficer) || history.length !== 1) return;
-            addMessage("bot", `<p>${esc(t("assistant.work.glance"))}</p><div class="ac-card">${workTiles(data, null)}</div>`);
+            addMessage("bot", `<p>${esc(t("assistant.work.glance"))}</p><div class="ac-card">${workTiles(data, null, {}, true)}</div>`);
         }).catch(() => {});
     }
 
