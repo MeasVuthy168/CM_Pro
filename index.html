@@ -211,7 +211,8 @@ Loading...
 <button class="voice-sheet-btn" id="voiceStopBtn" type="button" aria-label="Stop listening" data-i18n-aria-label="voice.stopAria"><span class="ui-ico ui-ico-stop" aria-hidden="true"></span></button>
 </div>
 
-<div class="voice-sheet-hint" data-i18n="voice.hint">Try saying "Open Customer Search"</div>
+<div class="voice-sheet-hint" data-i18n="voice.tryLabel">Try saying</div>
+<div class="voice-chips" id="voiceChips"></div>
 
 <div class="ac-lang voice-lang" role="group" aria-label="Voice language" data-i18n-aria-label="assistant.voiceLang">
 <button type="button" data-voice-lang="km">ខ្មែរ</button>
@@ -263,7 +264,19 @@ Loading...
   embedCMProRobot(document.getElementById("assistantRobotSlot"), {
     src: "./assets/images/robot.svg",
   }).then((robot) => {
-    if (robot) robot.startWelcomeLoop();
+    if (!robot) return;
+    robot.startWelcomeLoop();
+    // Tapping the robot: a wave, then the chat.
+    const slot = document.getElementById("assistantRobotSlot");
+    slot.setAttribute("role", "button");
+    slot.setAttribute("tabindex", "0");
+    slot.setAttribute("aria-label", (window.CMI18n && CMI18n.t("assistant.openChat")) || "Chat with CM Pro AI");
+    const tap = () => {
+      Promise.resolve(robot.wave()).catch(() => {}).finally(() => robot.startWelcomeLoop());
+      setTimeout(() => window.CMAssistantChat && CMAssistantChat.open(), 450);
+    };
+    slot.addEventListener("click", tap);
+    slot.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tap(); } });
   });
 </script>
 

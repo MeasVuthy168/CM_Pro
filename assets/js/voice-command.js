@@ -99,7 +99,27 @@ function initVoiceCommand() {
 
     const t = (key, vars) => window.CMI18n ? CMI18n.t(key, vars) : key;
 
+    // Tappable examples under the mic: tapping one asks it in the chat
+    // (handy when speech isn't working, e.g. Khmer on an iPhone).
+    function renderVoiceChips() {
+        const wrap = document.getElementById("voiceChips");
+        const chat = window.CMAssistantChat;
+        if (!wrap || !chat) return;
+        const qs = [chat.workQuestion("unfilled"), chat.workQuestion("noOfficer"), t("assistant.chip.summary"), t("assistant.chip.customer")];
+        wrap.innerHTML = qs.map(q => `<button type="button" class="voice-chip"></button>`).join("") +
+            `<button type="button" class="voice-chip voice-chip-type"></button>`;
+        wrap.querySelectorAll(".voice-chip").forEach((b, i) => {
+            b.textContent = i < qs.length ? qs[i] : "⌨️ " + t("voice.typeInstead");
+            b.onclick = (e) => {
+                e.stopPropagation();
+                userStop();
+                setTimeout(() => chat.open(i < qs.length ? qs[i] : undefined), 200);
+            };
+        });
+    }
+
     function openModal() {
+        renderVoiceChips();
         if (window.CMAssistantChat) CMAssistantChat.setVoiceLang(CMAssistantChat.voiceLang());
         const name = getVoiceUserFirstName();
         greetingEl.textContent = name ? t("voice.greeting", { name }) : t("voice.greetingNoName");

@@ -9,10 +9,14 @@
      lib/assistant-data.js): the latest Daily Monitoring snapshot,
      already scoped by the server to what this user may see — admin
      every branch, a branch manager their branch, a CO their own row.
+   - Today's work (unfilled Reason Arrear, expired promises, promises
+     due today, no officer responsible) comes from GET
+     /api/assistant/work, scoped like Work to complete.
    - Voice uses the browser's speech recognition in Khmer (km-KH) or
      English (en-US); the choice is shared with the mic sheet.
 
-   Public: CMAssistantChat.open(question?), .voiceLang(), .setVoiceLang()
+   Public: CMAssistantChat.open(question?), .voiceLang(), .setVoiceLang(),
+   .loadWork(), .workQuestion(kind)
 ========================================================= */
 (function () {
     "use strict";
@@ -36,6 +40,8 @@
         creditReportBranch: "/CM_Pro/pages/creditreport/RepDetailbyBranch.html",
         creditReportCO: "/CM_Pro/pages/creditreport/RepDetailbyCO.html",
         masterData: "/CM_Pro/pages/masterdata/index.html",
+        work: "/CM_Pro/pages/masterdata/work.html",
+        outArea: "/CM_Pro/pages/masterdata/outarea.html",
         land: "/CM_Pro/pages/landClassisfy/index.html",
         loanCalculator: "/CM_Pro/pages/loanCalculate/index.html",
         retirement: "/CM_Pro/pages/retirement/index.html",
@@ -128,6 +134,125 @@
         if (!data || !data.ok) throw new Error((data && data.message) || "overview failed");
         try { sessionStorage.setItem(cacheKey, JSON.stringify({ at: Date.now(), data })); } catch (e) {}
         return data;
+    }
+
+    // ---------- today's work ----------
+    const WORK_KEY = "cm_asst_work";
+    const WORK_TTL = 2 * 60 * 1000;
+    const WORK_KINDS = ["unfilled", "expired", "promiseToday", "noOfficer"];
+    const WORK_ICONS = { unfilled: "📝", expired: "⏰", promiseToday: "📅", noOfficer: "📍" };
+
+    async function loadWork({ fresh = false } = {}) {
+        if (!fresh) {
+            try {
+                const hit = JSON.parse(sessionStorage.getItem(WORK_KEY) || "null");
+                if (hit && Date.now() - hit.at < WORK_TTL) return hit.data;
+            } catch (e) {}
+        }
+        const data = await API.get("/api/assistant/work");
+        if (!data || !data.ok) throw new Error((data && data.message) || "work failed");
+        try { sessionStorage.setItem(WORK_KEY, JSON.stringify({ at: Date.now(), data })); } catch (e) {}
+        return data;
+    }
+
+    // The question a work tile / pill asks, in the app's language.
+    function workQuestion(kind) {
+        return t(`assistant.chip.work.${kind}`);
+    }
+
+    function userRole() {
+        try {
+            return String(JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}").role || "").toLowerCase();
+        } catch (e) {
+            return "";
+        }
+    }
+
+    // Where to go and fill / fix them.
+    function workLink(kind) {
+        if (kind === "noOfficer") {
+            const r = userRole();
+            return r === "admin" || r === "user"
+                ? { href: PAGE_URLS.outArea, label: t("assistant.work.openOutArea") }
+                : { href: `${PAGE_URLS.arrears}?work=outarea`, label: t("assistant.work.openOutArea") };
+        }
+        const tab = kind === "expired" ? "expired" : kind === "promiseToday" ? "filled" : "unfilled";
+        return { href: `${PAGE_URLS.work}?tab=${tab}`, label: t("assistant.work.openWork") };
+    }
+
+    function workTiles(data, active) {
+        return `<div class="ac-work-tiles">${WORK_KINDS.map(k => `
+            <button type="button" class="ac-wtile ac-wtile-${k}${k === active ? " on" : ""}" data-ask="${esc(workQuestion(k))}">
+                <span class="ac-wtile-ico" aria-hidden="true">${WORK_ICONS[k]}</span>
+                <b>${(Number(data.counts[k]) || 0).toLocaleString("en-US")}</b>
+                <span>${esc(t(`assistant.work.${k}`))}</span>
+            </button>`).join("")}</div>`;
+    }
+
+    function clientLine(c, kind) {
+        const right = kind === "noOfficer"
+            ? `${esc(usd(c.arreas))}${c.ccy && c.ccy !== "USD" ? ` <small>${esc(c.ccy)}</small>` : ""}`
+            : kind === "expired" || kind === "promiseToday"
+                ? esc(dmy(c.al))
+                : esc(t("assistant.work.days", { n: c.day }));
+        const meta = [c.ld, kind === "noOfficer" ? (c.coId ? `ID ${c.coId}` : "") : c.officer, c.branch].filter(Boolean).join(" · ");
+        return `
+            <li>
+                <span class="ac-rank-name">${esc(c.customer || c.ld || "-")}<small>${esc(meta)}</small></span>
+                <span class="ac-rank-v">${right}</span>
+            </li>`;
+    }
+
+    async function answerWork(intent) {
+        let data;
+        try {
+            data = await loadWork();
+        } catch (e) {
+            return { html: esc(t("assistant.loadFailed")) };
+        }
+        const kind = intent.kind;
+        if (kind === "all") {
+            const c = data.counts;
+            const todo = c.unfilled + c.expired;
+            const link = workLink("unfilled");
+            return {
+                html: `
+                    <p>${esc(todo || c.promiseToday || c.noOfficer ? t("assistant.work.leadAll", { n: todo }) : t("assistant.work.allDone"))}</p>
+                    <div class="ac-card">
+                        <div class="ac-card-head">
+                            <span class="ac-card-who">${esc(t("assistant.work.title.all"))}</span>
+                            <span class="ac-card-date">${esc(dmy(data.today))}</span>
+                        </div>
+                        ${workTiles(data, null)}
+                        ${data.officers && data.officers.length > 1 ? `
+                            <div class="ac-foot ac-work-sub">${esc(t("assistant.work.byOfficer"))}</div>
+                            <ol class="ac-rank">${data.officers.map(o => `
+                                <li>
+                                    <span class="ac-rank-name">${esc(o.officer)}<small>${esc(o.branch)}</small></span>
+                                    <span class="ac-rank-v">📝 ${o.unfilled} · ⏰ ${o.expired}</span>
+                                </li>`).join("")}</ol>` : ""}
+                        <a class="ac-link" href="${esc(link.href)}">${esc(link.label)} ›</a>
+                    </div>`
+            };
+        }
+        const n = Number(data.counts[kind]) || 0;
+        const list = (data.lists && data.lists[kind]) || [];
+        const link = workLink(kind);
+        return {
+            html: `
+                <p>${esc(n ? t(`assistant.work.lead.${kind}`, { n: n.toLocaleString("en-US") }) : t(`assistant.work.none.${kind}`))}</p>
+                <div class="ac-card">
+                    <div class="ac-card-head">
+                        <span class="ac-card-who">${WORK_ICONS[kind]} ${esc(t(`assistant.work.title.${kind}`))}</span>
+                        <span class="ac-card-date">${esc(dmy(data.today))}</span>
+                    </div>
+                    ${workTiles(data, kind)}
+                    ${list.length ? `
+                        <div class="ac-foot ac-work-sub">${esc(t(n > list.length ? "assistant.work.showing" : "assistant.work.clients", { n: list.length, total: n.toLocaleString("en-US") }))}</div>
+                        <ol class="ac-rank ac-clients">${list.map(c => clientLine(c, kind)).join("")}</ol>` : ""}
+                    ${n ? `<a class="ac-link" href="${esc(link.href)}">${esc(link.label)} ›</a>` : ""}
+                </div>`
+        };
     }
 
     // ---------- answer building ----------
@@ -421,6 +546,7 @@
                 <li>📅 ${esc(t("assistant.help.compare"))}</li>
                 <li>🏆 ${esc(t("assistant.help.rank"))}</li>
                 <li>🔎 ${esc(t("assistant.help.customer"))}</li>
+                <li>📝 ${esc(t("assistant.help.work"))}</li>
                 <li>⚠️ ${esc(t("assistant.help.alerts"))}</li>
                 <li>🧭 ${esc(t("assistant.help.open"))}</li>
                 <li>🎙️ ${esc(t("assistant.help.voice"))}</li>
@@ -447,6 +573,8 @@
                 return { html: helpHtml(), chips: true };
             case "alerts":
                 return answerAlerts();
+            case "work":
+                return answerWork(intent);
             case "ask":
                 return answerAsk(intent, text);
             default:
@@ -455,22 +583,35 @@
     }
 
     // ---------- UI ----------
+    // The robot's head, small, for the chat header.
+    const ROBOT_FACE = `<svg viewBox="0 0 40 40" width="30" height="30">
+        <rect x="6" y="8" width="28" height="24" rx="11" fill="#F4F6FA"/>
+        <rect x="10" y="13" width="20" height="12" rx="6" fill="#0E1B3C"/>
+        <circle cx="15.5" cy="19" r="2.2" fill="#5BD0FF"/><circle cx="24.5" cy="19" r="2.2" fill="#5BD0FF"/>
+        <rect x="18.5" y="3.5" width="3" height="5" rx="1.5" fill="#D4AF37"/><circle cx="20" cy="3.5" r="2.2" fill="#FFD700"/>
+        <rect x="3" y="16" width="3" height="8" rx="1.5" fill="#C9D1DE"/><rect x="34" y="16" width="3" height="8" rx="1.5" fill="#C9D1DE"/>
+    </svg>`;
+
     let sheet = null;
     let listEl = null;
     let inputEl = null;
     let busy = false;
     let history = [];
 
-    function suggestions() {
+    // Suggested questions, in groups (the welcome message and "didn't
+    // understand" show them all; the strip above the input the first of
+    // each).
+    function suggestionGroups() {
         return [
-            t("assistant.chip.summary"),
-            t("assistant.chip.par"),
-            t("assistant.chip.topCo"),
-            t("assistant.chip.lowDisbCo"),
-            t("assistant.chip.alerts"),
-            t("assistant.chip.customer"),
-            t("assistant.chip.help")
+            { key: "work", items: ["unfilled", "expired", "promiseToday", "noOfficer"].map(workQuestion).concat(t("assistant.chip.work.all")) },
+            { key: "data", items: [t("assistant.chip.summary"), t("assistant.chip.par"), t("assistant.chip.topCo"), t("assistant.chip.lowDisbCo"), t("assistant.chip.alerts")] },
+            { key: "open", items: [t("assistant.chip.openWork"), t("assistant.chip.customer"), t("assistant.chip.help")] }
         ];
+    }
+
+    function quickStrip() {
+        return [workQuestion("unfilled"), workQuestion("noOfficer"), t("assistant.chip.summary"), workQuestion("expired"),
+            t("assistant.chip.par"), workQuestion("promiseToday"), t("assistant.chip.alerts"), t("assistant.chip.help")];
     }
 
     function saveHistory() {
@@ -520,7 +661,11 @@
     }
 
     function chipsHtml() {
-        return `<div class="ac-chips">${suggestions().map(s => `<button type="button" class="ac-chip">${esc(s)}</button>`).join("")}</div>`;
+        return suggestionGroups().map(g => `
+            <div class="ac-chip-group">
+                <div class="ac-chip-label">${esc(t(`assistant.group.${g.key}`))}</div>
+                <div class="ac-chips">${g.items.map(s => `<button type="button" class="ac-chip">${esc(s)}</button>`).join("")}</div>
+            </div>`).join("");
     }
 
     async function ask(text) {
@@ -603,14 +748,20 @@
             <div class="ac-sheet" role="dialog" aria-modal="true" aria-labelledby="acTitle">
                 <div class="ac-grab"></div>
                 <div class="ac-head">
-                    <div class="ac-avatar">AI</div>
+                    <div class="ac-avatar" aria-hidden="true">${ROBOT_FACE}<span class="ac-online"></span></div>
                     <div class="ac-head-text">
                         <div class="ac-title" id="acTitle">CM Pro AI</div>
                         <div class="ac-subtitle">${esc(t("assistant.subtitle"))}</div>
                     </div>
+                    <button type="button" class="ac-clear" aria-label="${esc(t("assistant.clear"))}" title="${esc(t("assistant.clear"))}">
+                        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.34-5.66M4 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
                     <button type="button" class="ac-close" aria-label="${esc(t("assistant.close"))}">×</button>
                 </div>
                 <div class="ac-list" aria-live="polite"></div>
+                <div class="ac-quick" role="group" aria-label="${esc(t("assistant.suggested"))}">
+                    ${quickStrip().map(q => `<button type="button" class="ac-chip">${esc(q)}</button>`).join("")}
+                </div>
                 <div class="ac-bar">
                     ${hasSpeech ? `
                     <div class="ac-lang" role="group" aria-label="${esc(t("assistant.voiceLang"))}">
@@ -635,6 +786,8 @@
             if (e.target === sheet) close();
             const chip = e.target.closest(".ac-chip");
             if (chip) ask(chip.textContent);
+            const tile = e.target.closest("[data-ask]");
+            if (tile) ask(tile.dataset.ask);
             const cmp = e.target.closest(".ac-cmp button[data-cmp]");
             if (cmp) recompare(cmp.closest(".ac-cmp"), { mode: cmp.dataset.cmp, date: null });
             const snap = e.target.closest(".ac-snap");
@@ -648,6 +801,7 @@
             }
         });
         sheet.querySelector(".ac-close").onclick = close;
+        sheet.querySelector(".ac-clear").onclick = clearChat;
         sheet.querySelector(".ac-send").onclick = () => ask(inputEl.value);
         inputEl.addEventListener("input", updateSend);
         inputEl.addEventListener("keydown", (e) => {
@@ -666,8 +820,7 @@
         if (history.length) {
             history.forEach((m, i) => { addMessage(m.role, m.html, { save: false }).dataset.h = i; });
         } else {
-            const name = typeof getVoiceUserFirstName === "function" ? getVoiceUserFirstName() : "";
-            addMessage("bot", `<p>${esc(name ? t("assistant.hello", { name }) : t("assistant.helloNoName"))}</p>${chipsHtml()}`);
+            welcome();
         }
 
         document.addEventListener("keydown", (e) => {
@@ -677,6 +830,25 @@
         // it was left — sheet open mid-answer included.
         window.addEventListener("pageshow", (e) => { if (e.persisted) { stopRec(); close(); } });
         window.addEventListener("pagehide", stopRec);
+    }
+
+    // Greeting, today's work at a glance (when there's any), and what to ask.
+    function welcome() {
+        const name = typeof getVoiceUserFirstName === "function" ? getVoiceUserFirstName() : "";
+        addMessage("bot", `<p>${esc(name ? t("assistant.hello", { name }) : t("assistant.helloNoName"))}</p>${chipsHtml()}`);
+        loadWork().then(data => {
+            const c = data.counts;
+            if (!c || !(c.unfilled || c.expired || c.promiseToday || c.noOfficer) || history.length !== 1) return;
+            addMessage("bot", `<p>${esc(t("assistant.work.glance"))}</p><div class="ac-card">${workTiles(data, null)}</div>`);
+        }).catch(() => {});
+    }
+
+    function clearChat() {
+        if (busy) return;
+        history = [];
+        saveHistory();
+        listEl.innerHTML = "";
+        welcome();
     }
 
     function open(question) {
@@ -695,7 +867,7 @@
         document.body.classList.remove("ac-open");
     }
 
-    window.CMAssistantChat = { open, close, voiceLang, setVoiceLang, speechCode, voiceErrorText, respond };
+    window.CMAssistantChat = { open, close, voiceLang, setVoiceLang, speechCode, voiceErrorText, respond, loadWork, workQuestion };
 
     document.addEventListener("DOMContentLoaded", () => {
         const btn = document.getElementById("assistantChatBtn");

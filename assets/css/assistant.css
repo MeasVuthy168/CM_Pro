@@ -331,10 +331,9 @@
 
 /* =========================
    VOICE COMMAND SHEET
-   A bottom sheet, not the app's centered .dialog pattern — deliberately
-   kept light/white in every theme (like the topbar's "⋮" menus and the
-   arrears map-mode bar) rather than theme-variable-driven, since it's a
-   transient system overlay, not page content.
+   A bottom sheet, not the app's centered .dialog pattern. Light by
+   default; the dark themes match the chat sheet (see the end of this
+   file).
 ========================= */
 .voice-modal{
     position:fixed;
@@ -768,3 +767,120 @@ body.ac-open{ overflow:hidden; }
 
 /* A voice error that says what to change (EN switch, a setting) */
 .voice-sheet-status.help{ font-size:15px; font-weight:600; line-height:1.55; max-width:340px; margin-left:auto; margin-right:auto; }
+
+/* =========================
+   TODAY'S WORK PILLS (assistant box, greeting mode)
+   The box's text shimmer fills its text transparent; the pills paint
+   their own.
+========================= */
+.assistant-greeting{ display:block; }
+.assistant-work{
+    display:flex; flex-wrap:wrap; gap:5px; margin-top:6px;
+    -webkit-text-fill-color:initial; animation:assistantWorkIn .35s ease .2s both;
+}
+@keyframes assistantWorkIn{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:none; } }
+.assistant-pill{
+    display:inline-flex; align-items:center; gap:4px;
+    border:1px solid rgba(255,255,255,.16); border-radius:999px;
+    padding:2px 9px 2px 7px; font:inherit; font-size:12px; font-weight:600; line-height:1.5;
+    background:rgba(255,255,255,.07); color:var(--asst-text); -webkit-text-fill-color:currentColor;
+    cursor:pointer; white-space:nowrap;
+}
+.assistant-pill b{ font-size:13px; font-weight:800; }
+.assistant-pill:active{ transform:scale(.95); }
+.assistant-pill-unfilled{ border-color:rgba(245,181,174,.55); }
+.assistant-pill-unfilled b{ color:#F59E8B; }
+.assistant-pill-expired{ border-color:rgba(242,210,139,.55); }
+.assistant-pill-expired b{ color:#F4C95D; }
+.assistant-pill-promiseToday b{ color:#6FD69A; }
+.assistant-pill-noOfficer b{ color:#8FB0FF; }
+.assistant-pill-done{ cursor:default; color:#6FD69A; border-color:rgba(111,214,154,.4); }
+[data-theme="light"] .assistant-pill, [data-theme="gold"] .assistant-pill{ background:rgba(14,27,60,.05); border-color:rgba(14,27,60,.14); }
+[data-theme="light"] .assistant-pill-unfilled b, [data-theme="gold"] .assistant-pill-unfilled b{ color:#B42318; }
+[data-theme="light"] .assistant-pill-expired b, [data-theme="gold"] .assistant-pill-expired b{ color:#8A5A00; }
+[data-theme="light"] .assistant-pill-promiseToday b, [data-theme="gold"] .assistant-pill-promiseToday b,
+[data-theme="light"] .assistant-pill-done, [data-theme="gold"] .assistant-pill-done{ color:#1F7A45; }
+[data-theme="light"] .assistant-pill-noOfficer b, [data-theme="gold"] .assistant-pill-noOfficer b{ color:#2A4BA8; }
+#assistantRobotSlot{ cursor:pointer; -webkit-tap-highlight-color:transparent; }
+
+/* =========================
+   CHAT: robot avatar, clear, grouped chips, quick strip, work tiles
+========================= */
+.ac-avatar{ position:relative; overflow:visible; }
+.ac-avatar svg{ display:block; }
+.ac-online{
+    position:absolute; right:-2px; bottom:-2px; width:11px; height:11px; border-radius:50%;
+    background:#22C55E; border:2px solid #F6F8FC;
+}
+[data-theme="dark"] .ac-online{ border-color:#0F1830; }
+[data-theme="darkgray"] .ac-online{ border-color:#2B2E33; }
+.ac-clear{
+    width:34px; height:34px; flex:none; border:none; border-radius:50%;
+    background:#E9EDF4; color:#3A4356; display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+[data-theme="dark"] .ac-clear, [data-theme="darkgray"] .ac-clear{ background:rgba(255,255,255,.08); color:#fff; }
+
+.ac-chip-group + .ac-chip-group{ margin-top:6px; }
+.ac-chip-label{ margin-top:10px; font-size:11px; font-weight:700; letter-spacing:.3px; color:#8A94A8; text-transform:uppercase; }
+/* One scrolling row per group keeps the welcome message short. */
+.ac-chip-group .ac-chips{
+    margin:5px -13px 0; padding:0 13px 2px; flex-wrap:nowrap; overflow-x:auto;
+    scrollbar-width:none; -webkit-overflow-scrolling:touch;
+}
+.ac-chip-group .ac-chips::-webkit-scrollbar{ display:none; }
+.ac-chip-group .ac-chip{ flex:none; white-space:nowrap; }
+
+.ac-quick{
+    display:flex; gap:6px; overflow-x:auto; padding:8px 12px 2px; flex:none;
+    scrollbar-width:none; -webkit-overflow-scrolling:touch; border-top:1px solid #E6EAF2;
+}
+.ac-quick::-webkit-scrollbar{ display:none; }
+.ac-quick .ac-chip{ flex:none; white-space:nowrap; padding:5px 10px; font-size:12px; }
+.ac-quick + .ac-bar{ border-top:none; padding-top:8px; }
+[data-theme="dark"] .ac-quick, [data-theme="darkgray"] .ac-quick{ border-color:rgba(255,255,255,.08); }
+
+.ac-work-tiles{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px; margin:2px 0 4px; }
+.ac-wtile{
+    display:flex; flex-direction:column; align-items:center; gap:1px; min-width:0;
+    border:1px solid #E3E7EF; border-radius:12px; background:#fff; padding:7px 3px 6px;
+    font:inherit; color:inherit; cursor:pointer; text-align:center;
+}
+.ac-wtile:active{ transform:scale(.96); }
+.ac-wtile-ico{ font-size:15px; line-height:1.2; }
+.ac-wtile b{ font-size:17px; font-weight:800; line-height:1.2; font-variant-numeric:tabular-nums; }
+.ac-wtile span:last-child{ font-size:10px; line-height:1.35; color:#6B7280; max-width:100%; overflow-wrap:anywhere; }
+.ac-wtile-unfilled b{ color:#B42318; }
+.ac-wtile-expired b{ color:#8A5A00; }
+.ac-wtile-promiseToday b{ color:#1F7A45; }
+.ac-wtile-noOfficer b{ color:#2A4BA8; }
+.ac-wtile.on{ border-color:#D4AF37; box-shadow:0 0 0 2px rgba(212,175,55,.35); }
+.ac-work-sub{ margin:8px 0 2px; font-weight:700; }
+.ac-clients li::before{ background:#E9EDF4; color:#3A4356; }
+[data-theme="dark"] .ac-wtile{ background:#16223F; border-color:#223055; }
+[data-theme="darkgray"] .ac-wtile{ background:#363A41; border-color:#474C55; }
+[data-theme="dark"] .ac-wtile span:last-child, [data-theme="darkgray"] .ac-wtile span:last-child{ color:#9AA8C7; }
+[data-theme="dark"] .ac-wtile-unfilled b, [data-theme="darkgray"] .ac-wtile-unfilled b{ color:#FDA29B; }
+[data-theme="dark"] .ac-wtile-expired b, [data-theme="darkgray"] .ac-wtile-expired b{ color:#F4D27A; }
+[data-theme="dark"] .ac-wtile-promiseToday b, [data-theme="darkgray"] .ac-wtile-promiseToday b{ color:#6FD69A; }
+[data-theme="dark"] .ac-wtile-noOfficer b, [data-theme="darkgray"] .ac-wtile-noOfficer b{ color:#A8BEFF; }
+[data-theme="dark"] .ac-clients li::before, [data-theme="darkgray"] .ac-clients li::before{ background:rgba(255,255,255,.1); color:#EAF0FF; }
+
+/* =========================
+   VOICE SHEET: example chips, and dark themes like the chat sheet
+========================= */
+.voice-sheet-hint{ margin-top:8px; font-weight:600; }
+.voice-chips{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin:8px auto 0; max-width:420px; }
+.voice-chip{
+    border:1px solid #E0C46C; background:#FFF8E3; color:#7A5A00;
+    border-radius:999px; padding:6px 11px; font:inherit; font-size:12.5px; font-weight:600; cursor:pointer;
+}
+.voice-chip:active{ transform:scale(.96); }
+.voice-chip-type{ border-color:#D9DFEA; background:#F1F3F7; color:#3A4356; }
+[data-theme="dark"] .voice-sheet{ background:#0F1830; }
+[data-theme="darkgray"] .voice-sheet{ background:#2B2E33; }
+[data-theme="dark"] .voice-sheet-status, [data-theme="darkgray"] .voice-sheet-status{ color:#EAF0FF; }
+[data-theme="dark"] .voice-sheet-greeting, [data-theme="darkgray"] .voice-sheet-greeting,
+[data-theme="dark"] .voice-sheet-hint, [data-theme="darkgray"] .voice-sheet-hint{ color:#9AA8C7; }
+[data-theme="dark"] .voice-sheet-ring, [data-theme="darkgray"] .voice-sheet-ring{ background:rgba(212,175,55,.22); }
+[data-theme="dark"] .voice-chip, [data-theme="darkgray"] .voice-chip{ background:rgba(224,165,38,.12); border-color:rgba(224,165,38,.4); color:#FFD76A; }
+[data-theme="dark"] .voice-chip-type, [data-theme="darkgray"] .voice-chip-type{ background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.16); color:#EAF0FF; }
