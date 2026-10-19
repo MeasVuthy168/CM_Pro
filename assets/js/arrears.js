@@ -4905,6 +4905,12 @@ function showArrearsScopeDialog() {
     }
 
     if (String(loggedInUser.role || "").toLowerCase() === "viewer_staff") {
+        // Work to complete: Viewer_Staff only ever sees their own work,
+        // so the branch / All·CO·FSRO filters and officer search are
+        // hidden (left at "all", so nothing is filtered out).
+        document.querySelector("#noReasonCard .nr-filters")?.style.setProperty("display", "none");
+        document.getElementById("noReasonSearch")?.closest(".oa-search")?.style.setProperty("display", "none");
+
         // From a reminder the scope is already known: their own
         // NoCoRespone loans are under their ID (column V), everything
         // else under their name (column W).
