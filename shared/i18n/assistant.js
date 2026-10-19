@@ -46,6 +46,9 @@ CMI18n.register({
   "assistant.cmp.prev": { km: "ថ្ងៃមុន", en: "Prev. day" },
   "assistant.cmp.month": { km: "ចុងខែមុន", en: "Month-end" },
   "assistant.cmp.year": { km: "ចុងឆ្នាំមុន", en: "Year-end" },
+  "assistant.rankBy.value": { km: "តាមទឹកប្រាក់", en: "Value" },
+  "assistant.rankBy.loans": { km: "តាមចំនួនកម្ចី", en: "# Loans" },
+  "assistant.loansN": { km: "{n} កម្ចី", en: "{n} loans" },
   "assistant.cmp.date": { km: "ជ្រើសថ្ងៃ", en: "Pick a date" },
 
   "assistant.who.all": { km: "គ្រប់សាខា", en: "All branches" },
@@ -83,7 +86,7 @@ CMI18n.register({
   "assistant.help.data": { km: "សង្ខេប៖ «សង្ខេបថ្ងៃនេះ» — OS, NBC Overdue, NPL, ការបញ្ចេញឥណទាន និង WO", en: "Summary: \"Today's summary\" — OS, NBC Overdue, NPL, disbursement and WO" },
   "assistant.help.figures": { km: "តួលេខនីមួយៗ៖ «PAR ថ្ងៃនេះ» (PAR T24), «NBC Overdue ថ្ងៃនេះ», «OS សាខាស្វាយរៀង», «NPL CO 9027», «WO ខែនេះ»", en: "One figure: \"PAR today\" (PAR T24), \"NBC Overdue today\", \"OS Svay Rieng\", \"NPL CO 9027\", \"WO this month\"" },
   "assistant.help.compare": { km: "ធៀប៖ «PAR ធៀបនឹងចុងខែមុន», «OS ធៀបនឹង 30/09/2026» ឬចុចប៊ូតុងលើកាត", en: "Compare: \"PAR vs end of last month\", \"OS vs 30/09/2026\", or tap the buttons on a card" },
-  "assistant.help.rank": { km: "ចំណាត់ថ្នាក់ CO (មិនរាប់ Stop Disburse)៖ «CO PAR ខ្ពស់ជាងគេ» (តាម NBC Overdue), «CO បញ្ចេញឥណទានបានទាបជាងគេ», «សាខា OS ទាបជាងគេ»", en: "CO rankings (Stop Disburse excluded): \"top CO by PAR\" (by NBC Overdue), \"CO with the lowest disbursement\", \"branch with the lowest OS\"" },
+  "assistant.help.rank": { km: "ចំណាត់ថ្នាក់ CO (មិនរាប់ Stop Disburse)៖ «CO PAR ខ្ពស់ជាងគេ» (តាម NBC Overdue), «CO បញ្ចេញឥណទានបានទាបជាងគេ» (ជ្រើសតាមទឹកប្រាក់ ឬចំនួនកម្ចី), «សាខា OS ទាបជាងគេ»", en: "CO rankings (Stop Disburse excluded): \"top CO by PAR\" (by NBC Overdue), \"CO with the lowest disbursement\" (by value or # loans), \"branch with the lowest OS\"" },
   "assistant.help.customer": { km: "ស្វែងរក៖ «ស្វែងរកអតិថិជន 0012345»", en: "Search: \"search customer 0012345\"" },
   "assistant.help.alerts": { km: "«Alert ថ្ងៃនេះ» — ចំណុចដែលត្រូវយកចិត្តទុកដាក់", en: "\"Today's alerts\" — what needs attention" },
   "assistant.help.open": { km: "បើកទំព័រ៖ «បើកឥណទានយឺតយ៉ាវ», «បើករបាយការណ៍ឥណទាន»", en: "Open a page: \"open daily arrears\", \"open credit report\"" },

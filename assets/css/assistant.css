@@ -747,3 +747,6 @@ body.ac-open{ overflow:hidden; }
 [data-theme="dark"] .ac-cmp button, [data-theme="darkgray"] .ac-cmp button,
 [data-theme="dark"] .ac-cmp label, [data-theme="darkgray"] .ac-cmp label{ color:#9AA8C7; }
 [data-theme="dark"] .ac-cmp .on, [data-theme="darkgray"] .ac-cmp .on{ background:#D4AF37; color:#0E1B3C; }
+
+/* Value | # Loans switch on a disbursement ranking */
+.ac-cmp.ac-by{ margin:8px 0 2px; }
