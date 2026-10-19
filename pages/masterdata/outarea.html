@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>Edit Out-of-Area Arrears</title>
+
+<meta
+name="theme-color"
+content="#0e1b3c">
+
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
+  );
+</script>
+
+<link
+rel="stylesheet"
+href="../../assets/css/main.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/masterdata/masterdata.css">
+
+<!-- The editor's own styles (.oa-*, .reason-*) live with Daily Arrears,
+     where the same editor also opens as a modal. -->
+<link
+rel="stylesheet"
+href="../../assets/css/arrears.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/masterdata/outarea.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
+
+<!-- Hold the first paint until the whole page is parsed (its scripts,
+     translations and header), so a page transition slides in a finished
+     page instead of one still filling itself in. No element has this id:
+     the hold simply ends when parsing does. -->
+<link rel="expect" href="#cm-pt-parsed" blocking="render">
+<link rel="preload" href="/CM_Pro/assets/fonts/Krasar-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<script src="/CM_Pro/shared/page-transition.js"></script>
+</head>
+
+<body>
+
+<div id="offlineBanner" data-i18n="common.offline">
+No Internet Connection
+</div>
+
+<div id="topbar-container"></div>
+
+<div class="page-container">
+
+<div id="outAreaCard" class="reason-card noreason-card out-area-card oa-page">
+
+  <!-- LIST SCREEN -->
+  <div id="outAreaListScreen">
+
+
+    <!-- To edit (NoCoRespone) / Edited (saved reassignments) -->
+    <div class="oa-tabs" role="tablist">
+      <button type="button" class="oa-tab active" id="oaTabCandidates" data-view="candidates" role="tab"><span data-i18n="arrears.oaTabCandidates">ត្រូវកែសម្រួល</span> <span class="oa-tab-count" id="oaTabCandidatesCount"></span></button>
+      <button type="button" class="oa-tab" id="oaTabEdited" data-view="edited" role="tab"><span data-i18n="arrears.oaTabEdited">បានកែសម្រួល</span> <span class="oa-tab-count" id="oaTabEditedCount"></span></button>
+    </div>
+
+    <div class="oa-search">
+      <span class="ui-ico ui-ico-search oa-search-ico" aria-hidden="true"></span>
+      <input type="search" id="outAreaSearch" placeholder="ឈ្មោះ / LD-CIF / សាខា..." data-i18n-placeholder="arrears.outAreaSearchPlaceholder" autocomplete="off" aria-label="ស្វែងរក" data-i18n-aria-label="common.search">
+    </div>
+
+    <!-- Branch quick filter (counts per branch for the current tab) -->
+    <div class="oa-branch-filter" id="outAreaBranchFilter" role="group"></div>
+
+    <div class="reason-subtitle oa-count" id="outAreaListSubtitle">-</div>
+
+    <!-- Edited tab only: select all / select Paid off / bulk delete -->
+    <div class="oa-select-bar" id="outAreaSelectBar" hidden>
+      <label class="oa-check-all"><input type="checkbox" id="outAreaSelectAll"> <span data-i18n="arrears.oaSelectAll">ជ្រើសទាំងអស់</span></label>
+      <button type="button" id="btnOutAreaSelectPaidOff" class="oa-chip-btn" data-i18n="arrears.selectAllPaidOffBtn">ជ្រើសរើសទាំងអស់ (Paid off)</button>
+    </div>
+
+    <div id="outAreaBulkBar" class="outarea-bulk-bar" hidden>
+      <span id="outAreaBulkCount">0</span>
+      <button type="button" id="btnOutAreaBulkDelete" class="outarea-bulk-delete-btn"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span> <span data-i18n="arrears.deleteSelectedBtn">លុបដែលបានជ្រើសរើស</span></button>
+    </div>
+
+    <div id="outAreaTbody" class="oa-list"></div>
+
+  </div>
+
+  <!-- DETAIL / REASSIGN SCREEN -->
+  <div id="outAreaDetailScreen" style="display:none;">
+
+    <div class="outarea-sticky-header oa-detail-header">
+      <button type="button" id="btnOutAreaBackTop" class="outarea-close-x" aria-label="ត្រឡប់ក្រោយ" data-i18n-aria-label="arrears.backAria"><span class="oa-back-arrow" aria-hidden="true">←</span></button>
+      <div class="reason-title oa-detail-title" style="margin:0;" data-i18n="arrears.menuOutArea">កែសម្រួលArrearក្រៅតំបន់</div>
+    </div>
+
+    <div class="oa-hero">
+      <div class="oa-hero-name" id="outAreaDetailName">-</div>
+      <div class="oa-hero-sub" id="outAreaDetailSubtitle">-</div>
+    </div>
+
+    <div class="oa-info" id="outAreaInfo"></div>
+
+    <div class="oa-form">
+
+      <div class="reason-group">
+        <label for="outAreaNewBranch" data-i18n="arrears.newBranchLabel">សាខាថ្មី</label>
+        <select id="outAreaNewBranch">
+          <option value="" data-i18n="arrears.selectBranchOption">— ជ្រើសសាខា —</option>
+          <option value="Svay Rieng">Svay Rieng</option>
+          <option value="Romeas Haek">Romeas Haek</option>
+          <option value="Kraol Kou">Kraol Kou</option>
+          <option value="Nhor">Nhor</option>
+          <option value="Rumduol">Rumduol</option>
+          <option value="Svay Chrom">Svay Chrom</option>
+          <option value="Svay Teab">Svay Teab</option>
+        </select>
+      </div>
+
+      <div class="reason-group">
+        <label for="outAreaNewCO" data-i18n="arrears.newOfficerLabel">ភ្នាក់ងារឥណទានថ្មី</label>
+        <select id="outAreaNewCO">
+          <option value="" data-i18n="arrears.selectBranchFirstOption">— ជ្រើសសាខាមុន —</option>
+        </select>
+      </div>
+
+    </div>
+
+    <!-- From -> To preview, shown once a new branch / officer is picked -->
+    <div class="oa-move" id="outAreaMove" hidden></div>
+
+    <div class="reason-meta oa-meta" id="outAreaMeta"></div>
+
+    <div class="oa-readonly-note" data-i18n="arrears.oaReadOnly">មានតែ Admin និង User ប៉ុណ្ណោះដែលអាចកែសម្រួលបាន។</div>
+
+    <div class="reason-actions oa-actions">
+      <button id="btnOutAreaDelete" type="button" class="outarea-delete-btn" style="display:none;"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span> <span data-i18n="common.delete">លុប</span></button>
+      <button id="btnOutAreaSave" data-i18n="common.save">រក្សាទុក</button>
+    </div>
+
+  </div>
+
+</div>
+
+</div>
+
+<div id="bottomnav-container"></div>
+
+<script src="../../config/api.js"></script>
+<script src="/CM_Pro/shared/touch-polish.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/features.js"></script>
+<script src="/CM_Pro/shared/i18n/masterdata.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<script src="../../assets/js/outarea-editor.js"></script>
+<script src="../../assets/js/masterdata/outarea.js"></script>
+
+</body>
+
+</html>
