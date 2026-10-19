@@ -99,6 +99,7 @@ function initVoiceCommand() {
     const t = (key, vars) => window.CMI18n ? CMI18n.t(key, vars) : key;
 
     function openModal() {
+        if (window.CMAssistantChat) CMAssistantChat.setVoiceLang(CMAssistantChat.voiceLang());
         const name = getVoiceUserFirstName();
         greetingEl.textContent = name ? t("voice.greeting", { name }) : t("voice.greetingNoName");
         statusEl.textContent = t("voice.prompt");
@@ -150,6 +151,24 @@ function initVoiceCommand() {
 
     stopBtn.addEventListener("click", userStop);
 
+    // ខ្មែរ / EN switch on the sheet: restart listening in the new
+    // language straight away.
+    modal.querySelectorAll("[data-voice-lang]").forEach((b) => {
+        b.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (!window.CMAssistantChat) return;
+            CMAssistantChat.setVoiceLang(b.dataset.voiceLang);
+            cancelledByUser = true;
+            stopListening();
+            setTimeout(() => {
+                recognition = createRecognition();
+                btnWrap.classList.add("listening");
+                statusEl.textContent = t("voice.prompt");
+                try { recognition.start(); } catch (err) {}
+            }, 250);
+        });
+    });
+
     snackbarHelp.addEventListener("click", () => {
         location.href = VOICE_HELP_URL;
     });
@@ -176,7 +195,7 @@ function initVoiceCommand() {
 
     function createRecognition() {
         const rec = new SpeechRecognitionCtor();
-        rec.lang = "en-US";
+        rec.lang = window.CMAssistantChat ? CMAssistantChat.speechCode() : "en-US";
         rec.interimResults = true;
         rec.maxAlternatives = 1;
 
@@ -194,6 +213,31 @@ function initVoiceCommand() {
             statusEl.textContent = transcript;
 
             if (result.isFinal) {
+                // CM Pro AI: Khmer or English. Opening a page / searching
+                // a customer / switching theme happens right here;
+                // anything else (a data question, or a phrase that wasn't
+                // understood) continues in the chat sheet, which answers
+                // it or suggests what to say.
+                if (window.CMAssistantNLU && window.CMAssistantChat) {
+                    const intent = CMAssistantNLU.parse(transcript);
+                    matched = true;
+                    btnWrap.classList.remove("listening");
+                    stopListening();
+                    if (intent.type === "navigate" || intent.type === "customer" || intent.type === "theme") {
+                        CMAssistantChat.respond(transcript).then((reply) => {
+                            statusEl.innerHTML = reply.html;
+                            if (reply.go) setTimeout(() => { location.href = reply.go; }, 600);
+                            else setTimeout(closeModal, 800);
+                        });
+                    } else {
+                        setTimeout(() => {
+                            closeModal();
+                            CMAssistantChat.open(transcript);
+                        }, 400);
+                    }
+                    return;
+                }
+
                 const command = matchVoiceCommand(transcript);
                 if (command) {
                     matched = true;

@@ -1,0 +1,90 @@
+// shared/i18n/assistant.js
+//
+// Strings for CM Pro AI's chat sheet (assets/js/assistant-chat.js) on
+// the Home page. Key namespace: assistant.*
+
+CMI18n.register({
+  "assistant.openChat": { km: "ជជែកជាមួយ CM Pro AI", en: "Chat with CM Pro AI" },
+  "assistant.subtitle": { km: "ជំនួយការការងារឆ្លាតវៃ", en: "Your smart banking work assistant" },
+  "assistant.close": { km: "បិទ", en: "Close" },
+  "assistant.placeholder": { km: "សួរ ឬវាយពាក្យបញ្ជា…", en: "Ask or type a command…" },
+  "assistant.listening": { km: "កំពុងស្តាប់…", en: "Listening…" },
+  "assistant.speak": { km: "និយាយ", en: "Speak" },
+  "assistant.send": { km: "ផ្ញើ", en: "Send" },
+  "assistant.voiceLang": { km: "ភាសាសំឡេង", en: "Voice language" },
+  "assistant.voiceLangUnsupported": { km: "ឧបករណ៍នេះមិនទាន់គាំទ្រការស្តាប់ភាសានេះទេ — សូមសាកល្បង EN ឬវាយអក្សរ។", en: "This device can't listen in that language yet — try EN or type instead." },
+
+  "assistant.hello": { km: "សួស្តី {name}! ខ្ញុំជា CM Pro AI។ សួរខ្ញុំអំពី OS, PAR, NPL ឬប្រាប់ខ្ញុំឱ្យបើកទំព័រណាមួយ។", en: "Hi {name}! I'm CM Pro AI. Ask me about OS, PAR, NPL, or tell me which page to open." },
+  "assistant.helloNoName": { km: "សួស្តី! ខ្ញុំជា CM Pro AI។ សួរខ្ញុំអំពី OS, PAR, NPL ឬប្រាប់ខ្ញុំឱ្យបើកទំព័រណាមួយ។", en: "Hi! I'm CM Pro AI. Ask me about OS, PAR, NPL, or tell me which page to open." },
+
+  "assistant.chip.summary": { km: "សង្ខេបថ្ងៃនេះ", en: "Today's summary" },
+  "assistant.chip.par": { km: "PAR ថ្ងៃនេះ", en: "PAR today" },
+  "assistant.chip.topCo": { km: "CO PAR ខ្ពស់ជាងគេ", en: "Top CO by PAR" },
+  "assistant.chip.alerts": { km: "Alert ថ្ងៃនេះ", en: "Today's alerts" },
+  "assistant.chip.customer": { km: "បើកស្វែងរកអតិថិជន", en: "Open Customer Search" },
+  "assistant.chip.help": { km: "ជំនួយ", en: "Help" },
+
+  "assistant.metric.os": { km: "OS (សមតុល្យឥណទាន)", en: "Loan Outstanding" },
+  "assistant.metric.par": { km: "PAR (T24)", en: "PAR (T24)" },
+  "assistant.metric.npl": { km: "NPL", en: "NPL" },
+  "assistant.metric.disb": { km: "ការបញ្ចេញឥណទាន", en: "Disbursement" },
+  "assistant.accounts": { km: "{n} គណនី", en: "{n} accounts" },
+  "assistant.sub.os": { km: "{loans} កម្ចី · {clients} អតិថិជន", en: "{loans} loans · {clients} clients" },
+  "assistant.sub.par": { km: "PAR {pct} · {loans} កម្ចី", en: "PAR {pct} · {loans} loans" },
+  "assistant.sub.npl": { km: "{value} · {pct} នៃ OS", en: "{value} · {pct} of OS" },
+  "assistant.sub.disb": { km: "{loans} កម្ចី ក្នុងរយៈពេលរបាយការណ៍", en: "{loans} loans in the report period" },
+  "assistant.vsDate": { km: "បម្រែបម្រួលធៀបនឹង {date}", en: "Change vs {date}" },
+
+  "assistant.who.all": { km: "គ្រប់សាខា", en: "All branches" },
+  "assistant.who.branch": { km: "សាខា {branch}", en: "{branch} branch" },
+  "assistant.who.officer": { km: "CO {name} ({id})", en: "CO {name} ({id})" },
+  "assistant.who.me": { km: "តួលេខរបស់អ្នក", en: "Your figures" },
+  "assistant.level.officer": { km: "CO", en: "COs" },
+  "assistant.level.branch": { km: "សាខា", en: "Branches" },
+  "assistant.rank.top": { km: "{level} {metric} ខ្ពស់ជាងគេ", en: "{level} with the highest {metric}" },
+  "assistant.rank.bottom": { km: "{level} {metric} ទាបជាងគេ", en: "{level} with the lowest {metric}" },
+  "assistant.lead.summary": { km: "នេះជាស្ថានភាពឥណទាន {who}៖", en: "Here's the latest for {who}:" },
+  "assistant.lead.metric": { km: "{metric} {who}៖ {value}", en: "{metric}, {who}: {value}" },
+
+  "assistant.openBranchReport": { km: "មើលរបាយការណ៍តាមសាខា", en: "Open report by branch" },
+  "assistant.openCoReport": { km: "មើលរបាយការណ៍តាម CO", en: "Open report by CO" },
+
+  "assistant.noSnapshot": { km: "មិនទាន់មានទិន្នន័យប្រចាំថ្ងៃ (Snapshot) នៅឡើយទេ — វាត្រូវបានរក្សាទុករៀងរាល់ល្ងាច ក្រោយម៉ោង 18:00។", en: "No daily snapshot yet — one is saved every evening after 18:00." },
+  "assistant.noScope": { km: "គណនីរបស់អ្នកមិនមានសិទ្ធិមើលតួលេខឥណទានទេ។", en: "Your account can't see credit figures." },
+  "assistant.noData": { km: "រកមិនឃើញទិន្នន័យសម្រាប់សំណួរនេះទេ។", en: "I couldn't find data for that." },
+  "assistant.notYourBranch": { km: "អ្នកមិនមានសិទ្ធិមើលទិន្នន័យសាខា {branch} ទេ។", en: "You don't have access to {branch} branch figures." },
+  "assistant.loadFailed": { km: "មិនអាចទាញទិន្នន័យបានទេ — សូមពិនិត្យអ៊ីនធឺណិត ហើយសាកល្បងម្តងទៀត។", en: "Couldn't load the data — check your connection and try again." },
+
+  "assistant.noAlerts": { km: "គ្មាន Alert ថ្មីទេ 👍", en: "No new alerts 👍" },
+  "assistant.alertsLead": { km: "Alert ចុងក្រោយ ({n}) — ថ្ងៃ {date}៖", en: "Latest alerts ({n}) — {date}:" },
+  "assistant.more": { km: "… និង {n} ទៀត", en: "… and {n} more" },
+
+  "assistant.opening": { km: "កំពុងបើក {page}…", en: "Opening {page}…" },
+  "assistant.searchingCustomer": { km: "កំពុងស្វែងរកអតិថិជន «{q}»…", en: "Searching customers for \"{q}\"…" },
+  "assistant.themeChanged": { km: "បានប្តូរពណ៌ App រួចហើយ។", en: "Theme changed." },
+  "assistant.unknown": { km: "សុំទោស ខ្ញុំមិនទាន់យល់ «{q}» ទេ។ សាកល្បងមួយក្នុងចំណោមទាំងនេះ៖", en: "Sorry, I didn't understand \"{q}\". Try one of these:" },
+
+  "assistant.help.lead": { km: "ខ្ញុំអាចជួយបាន៖", en: "Here's what I can do:" },
+  "assistant.help.data": { km: "សួរតួលេខ៖ «PAR ថ្ងៃនេះ», «OS សាខាស្វាយរៀង», «NPL CO 9027»", en: "Figures: \"PAR today\", \"OS Svay Rieng\", \"NPL CO 9027\"" },
+  "assistant.help.rank": { km: "ចំណាត់ថ្នាក់៖ «CO PAR ខ្ពស់ជាងគេ», «សាខា OS ទាបជាងគេ»", en: "Rankings: \"top CO by PAR\", \"branch with the lowest OS\"" },
+  "assistant.help.customer": { km: "ស្វែងរក៖ «ស្វែងរកអតិថិជន 0012345»", en: "Search: \"search customer 0012345\"" },
+  "assistant.help.alerts": { km: "«Alert ថ្ងៃនេះ» — ចំណុចដែលត្រូវយកចិត្តទុកដាក់", en: "\"Today's alerts\" — what needs attention" },
+  "assistant.help.open": { km: "បើកទំព័រ៖ «បើកឥណទានយឺតយ៉ាវ», «បើករបាយការណ៍ឥណទាន»", en: "Open a page: \"open daily arrears\", \"open credit report\"" },
+  "assistant.help.voice": { km: "ចុចមីក្រូហ្វូន ហើយនិយាយជាខ្មែរ ឬ English (ប្តូរបានតាម ខ្មែរ/EN)", en: "Tap the mic and speak Khmer or English (switch with ខ្មែរ/EN)" },
+
+  "assistant.page.customers": { km: "ស្វែងរកអតិថិជន", en: "Customer Search" },
+  "assistant.page.arrears": { km: "ឥណទានយឺតយ៉ាវប្រចាំថ្ងៃ", en: "Daily Arrears" },
+  "assistant.page.turnover": { km: "Average Turnover", en: "Average Turnover" },
+  "assistant.page.spotcheck": { km: "Spot Check", en: "Spot Check" },
+  "assistant.page.officertask": { km: "ភារកិច្ចមន្ត្រី", en: "Officer Task" },
+  "assistant.page.creditReport": { km: "របាយការណ៍ឥណទាន", en: "Credit Report" },
+  "assistant.page.creditReportBranch": { km: "របាយការណ៍តាមសាខា", en: "Report by Branch" },
+  "assistant.page.creditReportCO": { km: "របាយការណ៍តាម CO", en: "Report by CO" },
+  "assistant.page.masterData": { km: "ទិន្នន័យមូលដ្ឋាន", en: "Master Data" },
+  "assistant.page.land": { km: "ចំណាត់ថ្នាក់ដីធ្លី", en: "Land Classification" },
+  "assistant.page.loanCalculator": { km: "គណនាឥណទាន", en: "Loan Calculator" },
+  "assistant.page.retirement": { km: "ចំនួនខែចូលនិវត្តន៍", en: "Retirement Left" },
+  "assistant.page.notifications": { km: "ការជូនដំណឹង", en: "Notifications" },
+  "assistant.page.settings": { km: "ការកំណត់", en: "Settings" },
+  "assistant.page.home": { km: "ទំព័រដើម", en: "Home" }
+});

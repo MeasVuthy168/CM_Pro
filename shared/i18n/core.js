@@ -54,7 +54,7 @@ CMI18n.register({
   "voice.greeting": { km: "សួស្តី {name}", en: "Hi {name}," },
   "voice.greetingNoName": { km: "សួស្តី,", en: "Hi," },
   "voice.prompt": { km: "តើខ្ញុំអាចជួយអ្វីបាន?", en: "What can I do for you?" },
-  "voice.hint": { km: "សាកល្បងនិយាយថា \"Open Customer Search\"", en: "Try saying \"Open Customer Search\"" },
+  "voice.hint": { km: "សាកល្បងនិយាយថា «PAR ថ្ងៃនេះ» ឬ «បើកស្វែងរកអតិថិជន»", en: "Try \"PAR today\" or \"Open Customer Search\"" },
   "voice.stopAria": { km: "បញ្ឈប់ការស្តាប់", en: "Stop listening" },
   "voice.notFound": { km: "រកមិនឃើញពាក្យបញ្ជា", en: "Voice command not found" },
   "voice.help": { km: "ជំនួយ", en: "HELP" },
