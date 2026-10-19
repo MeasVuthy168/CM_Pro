@@ -22,6 +22,9 @@
                                            compare with ("ធៀបនឹងចុងខែមុន",
                                            "vs 30/09/2026")
      { type: "alerts" }                    today's Smart Alerts
+     { type: "work", kind }                today's work to complete; kind
+                                           unfilled | expired | promiseToday
+                                           | noOfficer | all
      { type: "theme", value }              light | dark | auto
      { type: "help" }
      { type: "unknown" }
@@ -85,6 +88,8 @@
         { page: "spotcheck", keywords: ["spot check", "spotcheck", "ស្ប៉តឆែក", "ស្ប៉ត់ឆែក", "ពិនិត្យដល់ទីតាំង", "ត្រួតពិនិត្យភ្លាមៗ"] },
         { page: "officertask", keywords: ["officer task", "ភារកិច្ចមន្ត្រី", "កិច្ចការមន្ត្រី"] },
         { page: "creditReport", keywords: ["credit report", "report", "reports", "របាយការណ៍ឥណទាន", "របាយការណ៍"] },
+        { page: "work", keywords: ["work to complete", "ការងារត្រូវបំពេញ"] },
+        { page: "outArea", keywords: ["out of area arrears", "edit out-of-area", "កែសម្រួលarrearក្រៅតំបន់", "arrearក្រៅតំបន់"] },
         { page: "masterData", keywords: ["master data", "ទិន្នន័យមូលដ្ឋាន"] },
         { page: "land", keywords: ["land classification", "land", "ចំណាត់ថ្នាក់ដីធ្លី", "ចំណាត់ថ្នាក់ដី", "ដីធ្លី"] },
         { page: "loanCalculator", keywords: ["loan calculator", "loan calculate", "calculate loan", "calculator", "គណនាឥណទាន", "គណនាប្រាក់កម្ចី", "គណនាកម្ចី", "ម៉ាស៊ីនគិតលេខ"] },
@@ -113,6 +118,30 @@
     const BOTTOM_WORDS = ["lowest", "least", "smallest", "ទាបជាងគេ", "តិចជាងគេ", "ទាបបំផុត", "តិចបំផុត"];
     const OFFICER_WORDS = ["co", "cos", "officer", "officers", "staff", "មន្ត្រី", "បុគ្គលិក", "មន្រ្តី"];
     const BRANCH_WORDS = ["branch", "branches", "សាខា"];
+
+    // ---------- today's work (Reason Arrear) ----------
+    // Most specific first. Checked before the customer search, since
+    // "client arrear no officer responsible" names a client too.
+    const WORK_KINDS = [
+        { kind: "noOfficer", keywords: ["no officer responsible", "no officer", "without officer", "without an officer", "no co responsible", "no co",
+            "nocorespone", "no co respone", "no responsible", "out of area", "out-of-area",
+            "គ្មានមន្ត្រីទទួលខុសត្រូវ", "គ្មានមន្រ្តីទទួលខុសត្រូវ", "គ្មានអ្នកទទួលខុសត្រូវ", "គ្មានមន្ត្រី", "គ្មានមន្រ្តី", "គ្មានភ្នាក់ងារ", "ក្រៅតំបន់"] },
+        { kind: "promiseToday", keywords: ["promise today", "promised today", "promises today", "promise to pay today", "pay today", "due today", "today payment", "today_payment",
+            "សន្យាសងថ្ងៃនេះ", "សន្យាថ្ងៃនេះ", "ត្រូវសងថ្ងៃនេះ", "ថ្ងៃសន្យាថ្ងៃនេះ", "សងថ្ងៃនេះ"] },
+        { kind: "expired", keywords: ["expired promise", "expired promises", "broken promise", "broken promises", "promise expired", "expired",
+            "សន្យាផុតកំណត់", "ផុតកំណត់សន្យា", "ផុតកំណត់", "ខកសន្យា", "បំពានសន្យា"] },
+        { kind: "unfilled", keywords: ["unfilled", "not filled", "no reason", "without reason", "missing reason", "reason arrear", "reason arrears", "fill reason",
+            "មិនទាន់បំពេញ", "មិនទាន់មានមូលហេតុ", "គ្មានមូលហេតុ", "មិនទាន់ដាក់មូលហេតុ", "មូលហេតុយឺតយ៉ាវ", "reason"] },
+        { kind: "all", keywords: ["work to complete", "my work", "today's work", "todays work", "to do", "todo", "to-do", "what should i do", "tasks today",
+            "ការងារត្រូវបំពេញ", "ការងារថ្ងៃនេះ", "ការងាររបស់ខ្ញុំ", "ត្រូវធ្វើអ្វី", "កិច្ចការថ្ងៃនេះ"] }
+    ];
+
+    function findWork(text) {
+        for (const w of WORK_KINDS) {
+            if (hasAny(text, w.keywords)) return w.kind;
+        }
+        return null;
+    }
 
     const ALERT_WORDS = ["alert", "alerts", "smart alert", "attention", "warning", "ត្រូវយកចិត្តទុកដាក់", "ការព្រមាន", "ព្រមាន", "ជូនដំណឹងឆ្លាតវៃ"];
     const HELP_WORDS = ["help", "what can you do", "commands", "ជំនួយ", "អាចធ្វើអ្វី", "ធ្វើអ្វីបាន", "របៀបប្រើ"];
@@ -215,6 +244,11 @@
         }
 
         const wantsOpen = hasAny(text, OPEN_WORDS);
+
+        // "today's unfilled reason arrear", "client arrear no officer
+        // responsible" — unless it's "open work to complete".
+        const work = findWork(text);
+        if (work && !(wantsOpen && findPage(text))) return { type: "work", kind: work, text };
 
         // "search customer 0012345" / "ស្វែងរកអតិថិជន សុខ ដារា" /
         // "អតិថិជន 0012345" — a customer word plus something to look for.

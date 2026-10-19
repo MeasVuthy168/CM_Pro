@@ -101,7 +101,53 @@ function renderGreetingBox(box, textEl, fullname) {
     box.dataset.mode = 'greeting';
     box.querySelector('.assistant-new-badge')?.remove();
     box.querySelector('.assistant-dismiss')?.remove();
-    textEl.textContent = getGreeting(fullname);
+    textEl.innerHTML = `<span class="assistant-greeting">${escapeHtml(getGreeting(fullname))}</span>`;
+    renderWorkPills(box, textEl);
+}
+
+/* =========================
+   TODAY'S WORK PILLS (greeting mode)
+   Under the greeting: how many Reason Arrear are unfilled / expired /
+   promised for today and loans with no officer responsible, from
+   CM Pro AI's GET /api/assistant/work. Each pill asks the chat that
+   question; with nothing left it says the day's work is done.
+========================= */
+const WORK_PILLS = [
+    { kind: 'unfilled', icon: '📝' },
+    { kind: 'expired', icon: '⏰' },
+    { kind: 'promiseToday', icon: '📅' },
+    { kind: 'noOfficer', icon: '📍' }
+];
+
+async function renderWorkPills(box, textEl) {
+    const chat = window.CMAssistantChat;
+    if (!chat || !chat.loadWork) return;
+    let data;
+    try {
+        data = await chat.loadWork();
+    } catch (e) {
+        return; // the greeting alone is fine
+    }
+    if (box.dataset.mode !== 'greeting' || !textEl.querySelector('.assistant-greeting')) return;
+    const t = (key, vars) => window.CMI18n ? CMI18n.t(key, vars) : key;
+    const c = data.counts || {};
+    const shown = WORK_PILLS.filter(p => Number(c[p.kind]) > 0);
+    textEl.querySelector('.assistant-work')?.remove();
+    const row = document.createElement('div');
+    row.className = 'assistant-work';
+    row.innerHTML = shown.length
+        ? shown.map(p => {
+            const label = `${Number(c[p.kind]).toLocaleString('en-US')} ${t(`assistant.work.${p.kind}`)}`;
+            return `<button type="button" class="assistant-pill assistant-pill-${p.kind}" data-ask="${escapeHtml(chat.workQuestion(p.kind))}" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}">
+                <span aria-hidden="true">${p.icon}</span><b>${Number(c[p.kind]).toLocaleString('en-US')}</b>
+            </button>`;
+        }).join('')
+        : `<span class="assistant-pill assistant-pill-done">${escapeHtml(t('assistant.box.allDone'))}</span>`;
+    row.addEventListener('click', e => {
+        const pill = e.target.closest('[data-ask]');
+        if (pill) chat.open(pill.dataset.ask);
+    });
+    textEl.appendChild(row);
 }
 
 /* =========================
