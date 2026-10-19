@@ -155,3 +155,8 @@
 .page-container:has(#outAreaDetailScreen[style*="block"]) .oa-page-hero{
     display:none;
 }
+
+/* On the page, the delete bar sits just above the bottom nav. */
+#outAreaCard.oa-page .outarea-bulk-bar{
+    bottom:calc(var(--bottomnav-h, 78px) + 8px);
+}
