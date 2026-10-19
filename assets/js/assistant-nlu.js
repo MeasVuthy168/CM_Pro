@@ -100,7 +100,10 @@
 
     const METRICS = [
         { metric: "npl", keywords: ["npl", "non performing", "non-performing", "អិនភីអិល", "ឥណទានមិនដំណើរការ", "មិនដំណើរការ"] },
-        { metric: "par", keywords: ["par", "par t24", "portfolio at risk", "ផារ", "ប៉ារ", "ហានិភ័យឥណទាន", "ហានិភ័យ"] },
+        // NBC Overdue answers "PAR" questions too — it's the overdue figure
+        // the Credit Report leads with.
+        { metric: "overdue", keywords: ["nbc overdue", "overdue", "nbc", "par", "par t24", "portfolio at risk", "ផារ", "ប៉ារ", "ហានិភ័យឥណទាន", "ហានិភ័យ", "ហួសកាលកំណត់ nbc"] },
+        { metric: "wo", keywords: ["write off", "write-off", "written off", "writeoff", "wo", "លុបចេញពីបញ្ជី", "លុបចេញបញ្ជី", "ឥណទានលុប"] },
         { metric: "disb", keywords: ["disburse", "disbursed", "disbursement", "disbursements", "បញ្ចេញឥណទាន", "ផ្តល់ឥណទាន", "បើកប្រាក់កម្ចី", "បញ្ចេញ"] },
         { metric: "os", keywords: ["os", "outstanding", "loan outstanding", "portfolio", "អូអេស", "សមតុល្យឥណទាន", "ឥណទានសរុប", "ប្រាក់កម្ចីសរុប", "សមតុល្យ"] }
     ];
@@ -229,7 +232,7 @@
         if (wantsOpen && page) return { type: "navigate", page, text };
 
         if (metric) return { type: "ask", metric, rank, text };
-        if (rank) return { type: "ask", metric: "par", rank, text };
+        if (rank) return { type: "ask", metric: "overdue", rank, text };
         if (page) return { type: "navigate", page, text };
         if (hasAny(text, SUMMARY_WORDS) || hasAny(text, OFFICER_WORDS) || hasAny(text, BRANCH_WORDS)) {
             return { type: "ask", metric: "summary", rank: null, text };
