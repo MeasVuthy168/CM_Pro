@@ -149,6 +149,16 @@
     rightFinger2: "320px 434px",
     rightFinger3: "308px 436px",
     rightThumb: "343px 411px",
+    // Leg chain (see LEGS in robot.svg): hip, the part below the knee,
+    // the knee, the ankle.
+    leftThigh: "207px 388px",
+    leftLower: "207px 545px",
+    leftShin: "207px 545px",
+    leftAnkle: "207px 673px",
+    rightThigh: "273px 388px",
+    rightLower: "273px 545px",
+    rightShin: "273px 545px",
+    rightAnkle: "273px 673px",
   };
 
   // Maps the camelCase keys above to the element ids in robot.svg.
@@ -177,6 +187,14 @@
     rightFinger2: "right-finger-2",
     rightFinger3: "right-finger-3",
     rightThumb: "right-thumb",
+    leftThigh: "left-thigh-pivot",
+    leftLower: "left-lower-leg",
+    leftShin: "left-shin-pivot",
+    leftAnkle: "left-ankle-pivot",
+    rightThigh: "right-thigh-pivot",
+    rightLower: "right-lower-leg",
+    rightShin: "right-shin-pivot",
+    rightAnkle: "right-ankle-pivot",
   };
 
   const GESTURE_EASE = "cubic-bezier(0.42, 0, 0.2, 1)"; // a controlled, motor-like ease — no bounce/overshoot
@@ -225,6 +243,14 @@
     point: ["rotate(4deg) scaleY(1.12)", "rotate(0deg) scaleY(0.45)", "rotate(0deg) scaleY(0.45)", "rotate(30deg) scale(0.75)"],
   };
   const mirrorPose = (t) => t.replace(/rotate\((-?[\d.]+)deg\)/, (m, a) => `rotate(${-Number(a)}deg)`);
+
+  // Leg segment lengths in robot.svg (hip 388 -> knee 545 -> ankle 673).
+  const THIGH_LEN = 157;
+  const SHIN_LEN = 128;
+  // How far a leg pose { t: thigh scaleY, s: shin scaleY } lifts the foot
+  // toward the hip — the body drops by this much to keep a planted foot
+  // on the ground.
+  const legRise = (f) => THIGH_LEN * (1 - (f.t ?? 1)) + SHIN_LEN * (1 - (f.s ?? 1));
 
   // Expressions robot.svg can show (#expr-<name>); neutral is the rest face.
   const EXPRESSIONS = ["neutral", "happy", "joy", "think", "wow"];
@@ -703,9 +729,18 @@
     // seamless — no snap) and restarts idle for the given keys.
     async _playGesture(idleKeysToRestart, animSpecs) {
       this._cancelGesture();
+      const gen = this._gestureGen;
       this._pauseIdle(idleKeysToRestart);
       await this._run(animSpecs);
+      if (gen !== this._gestureGen) {
+        // A newer gesture took over: leave its animations alone, but give
+        // idle back the parts it isn't moving, so nothing is left frozen.
+        const busy = new Set(this._gestureAnims.map((a) => a.effect && a.effect.target));
+        this.idle(idleKeysToRestart.filter((k) => this.el[k] && !busy.has(this.el[k]) && !this._idleAnims[k]));
+        return false;
+      }
       this._finishGesture(idleKeysToRestart);
+      return true;
     }
 
     // Hands control of `keys` back to idle(): starts fresh idle loops
@@ -1320,6 +1355,12 @@
       this._welcomeLoopActive = true;
       this._welcomeRelaxMs = typeof relaxHoldMs === "number" ? relaxHoldMs : 850;
 
+      if (!this._walkedIn && !REDUCED_MOTION) {
+        this._walkedIn = true;
+        await this.walkIn();
+        if (!current()) return;
+      }
+
       this._expressFor("wow", 600); // "oh, hello!" as it notices the user
       await this._noticeAndSettle();
       if (!current()) return;
@@ -1335,7 +1376,8 @@
 
     // Between greetings: rest a few seconds (blinking, glancing), and
     // now and then do something else — point at the chat button, a
-    // thumbs-up, a shrug, or (rarely) a little celebration — so the
+    // thumbs-up, a shrug, a weight shift, a foot tap, or (rarely) a
+    // little celebration — so the
     // loop never feels like the same clip on repeat. Resolves false if
     // another gesture or loop took over meanwhile.
     async _interlude(current) {
@@ -1344,10 +1386,12 @@
       if (gen !== this._gestureGen || !current()) return false;
       const roll = Math.random();
       const pick =
-        roll < 0.25 ? "pointAtChat" :
-        roll < 0.45 ? "thumbsUp" :
-        roll < 0.6 ? "shrug" :
-        roll < 0.68 ? "celebrate" : null;
+        roll < 0.2 ? "pointAtChat" :
+        roll < 0.35 ? "thumbsUp" :
+        roll < 0.47 ? "shrug" :
+        roll < 0.6 ? "shiftWeight" :
+        roll < 0.7 ? "tapFoot" :
+        roll < 0.77 ? "celebrate" : null;
       if (!pick) return true;
       const done = await this[pick]();
       if (!done || !current()) return false;
@@ -1391,6 +1435,97 @@
       this.setExpression("neutral");
       this._finishGesture(keys);
       return true;
+    }
+
+    // ============ LEGS ============
+    // Keyframes for one leg through a list of poses
+    // { offset, t, s, a, easing }: t / s foreshorten the thigh / shin
+    // (a knee coming toward the viewer), a tilts the boot. The part below
+    // each foreshortened segment moves up by exactly what it lost, so the
+    // leg never comes apart.
+    _legSpecs(side, frames, duration) {
+      const parts = {
+        Thigh: (f) => `scaleY(${f.t ?? 1})`,
+        Lower: (f) => `translateY(${-THIGH_LEN * (1 - (f.t ?? 1))}px)`,
+        Shin: (f) => `scaleY(${f.s ?? 1})`,
+        Ankle: (f) => `translateY(${-SHIN_LEN * (1 - (f.s ?? 1))}px) rotate(${f.a ?? 0}deg)`,
+      };
+      return Object.keys(parts).map((part) => ({
+        key: side + part,
+        keyframes: frames.map((f) => ({ transform: parts[part](f), offset: f.offset, easing: f.easing || "ease-in-out" })),
+        options: { duration, easing: "linear", fill: "forwards" },
+      }));
+    }
+
+    // Shift the weight onto the right leg: the left knee softens and the
+    // body leans over, a few seconds, then back.
+    shiftWeight() {
+      const dur = 3200;
+      const bent = { t: 0.97, s: 0.95 };
+      const drop = legRise(bent) / 2;
+      return this._playGesture(["body"], [
+        ...this._legSpecs("left", [
+          { offset: 0 },
+          { offset: 0.2, ...bent },
+          { offset: 0.8, ...bent },
+          { offset: 1 },
+        ], dur),
+        {
+          key: "body",
+          keyframes: [
+            { transform: "translate(0px, 0px) rotate(0deg)", offset: 0 },
+            { transform: `translate(5px, ${drop}px) rotate(-1.5deg)`, offset: 0.2 },
+            { transform: `translate(5px, ${drop}px) rotate(-1.5deg)`, offset: 0.8 },
+            { transform: "translate(0px, 0px) rotate(0deg)", offset: 1 },
+          ],
+          options: { duration: dur, easing: GESTURE_EASE, fill: "forwards" },
+        },
+      ]);
+    }
+
+    // Three quick taps of the right foot — impatient / waiting.
+    _footTapSpecs(duration) {
+      const up = { s: 0.86, a: -8 };
+      return this._legSpecs("right", [
+        { offset: 0 },
+        { offset: 0.12, ...up }, { offset: 0.25 },
+        { offset: 0.37, ...up }, { offset: 0.5 },
+        { offset: 0.62, ...up }, { offset: 0.75 },
+        { offset: 1 },
+      ], duration);
+    }
+
+    tapFoot() {
+      this._expressFor("think", 1600);
+      return this._playGesture([], this._footTapSpecs(1500));
+    }
+
+    // Entrance, once per page: the robot walks in from the right, fading
+    // in, four alternating steps with a little bob on each.
+    walkIn() {
+      const dur = 1800;
+      const offsets = [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1];
+      const xAt = (o) => 110 * Math.pow(1 - o, 1.2);
+      const lift = { t: 0.95, s: 0.8 };
+      const legFrames = (liftAt) => offsets.map((o) => (liftAt.indexOf(o) !== -1 ? { offset: o, ...lift } : { offset: o }));
+      return this._playGesture(["body", "shadowEllipse"], [
+        ...this._legSpecs("left", legFrames([0.125, 0.625]), dur),
+        ...this._legSpecs("right", legFrames([0.375, 0.875]), dur),
+        {
+          key: "body",
+          keyframes: offsets.map((o, i) => ({
+            transform: `translate(${xAt(o)}px, ${i % 2 ? -4 : 0}px)`,
+            opacity: Math.min(1, o * 4),
+            offset: o,
+          })),
+          options: { duration: dur, easing: "linear", fill: "forwards" },
+        },
+        {
+          key: "shadowEllipse",
+          keyframes: offsets.map((o) => ({ transform: `translateX(${xAt(o)}px)`, opacity: 0.3 * Math.min(1, o * 4), offset: o })),
+          options: { duration: dur, easing: "linear", fill: "forwards" },
+        },
+      ]);
     }
 
     // ============ HANDS ============
@@ -1486,9 +1621,9 @@
     }
 
     // 🙌 — right hand up high with fingers spread, left fist pumped up
-    // beside the shoulder, two happy bounces, back down.
+    // beside the shoulder, a little jump, back down.
     async celebrate() {
-      const keys = ["body", "rightArm", "rightElbow", "rightWrist", "rightHand", "leftArm", "leftElbow", "leftWrist", "leftHand"];
+      const keys = ["body", "shadowEllipse", "rightArm", "rightElbow", "rightWrist", "rightHand", "leftArm", "leftElbow", "leftWrist", "leftHand"];
       this._cancelGesture();
       const gen = this._gestureGen;
       this._pauseIdle(keys);
@@ -1500,28 +1635,60 @@
       ]);
       if (gen !== this._gestureGen) return false;
 
-      const bounce = "cubic-bezier(0.34, 1.3, 0.64, 1)";
+      // crouch, spring up (legs tucked a little in the air), land with a
+      // squash, settle. Body height keeps the feet on the ground except
+      // in the air.
+      const jump = 1100;
+      const crouch = { t: 0.88, s: 0.92 };
+      const land = { t: 0.9, s: 0.93 };
+      const tuck = { t: 0.97, s: 0.95, a: 4 };
+      const legs = [
+        { offset: 0 },
+        { offset: 0.18, ...crouch, easing: "ease-out" },
+        { offset: 0.38, easing: "ease-out" },
+        { offset: 0.5, ...tuck },
+        { offset: 0.66, easing: "ease-in" },
+        { offset: 0.76, ...land, easing: "ease-out" },
+        { offset: 0.9 },
+        { offset: 1 },
+      ];
       await this._run([
+        ...this._legSpecs("left", legs, jump),
+        ...this._legSpecs("right", legs.map((f) => (f.a ? { ...f, a: -f.a } : f)), jump),
         {
           key: "body",
           keyframes: [
-            { transform: "translateY(0px)" },
-            { transform: "translateY(-10px)", offset: 0.25 },
-            { transform: "translateY(1px)", offset: 0.5 },
-            { transform: "translateY(-7px)", offset: 0.75 },
-            { transform: "translateY(0px)" },
+            { transform: "translateY(0px)", offset: 0 },
+            { transform: `translateY(${legRise(crouch)}px)`, offset: 0.18, easing: "ease-out" },
+            { transform: "translateY(-10px)", offset: 0.38, easing: "ease-out" },
+            { transform: "translateY(-24px)", offset: 0.5, easing: "ease-in" },
+            { transform: "translateY(-6px)", offset: 0.66, easing: "ease-in" },
+            { transform: `translateY(${legRise(land)}px)`, offset: 0.76, easing: "ease-out" },
+            { transform: "translateY(-3px)", offset: 0.9 },
+            { transform: "translateY(0px)", offset: 1 },
           ],
-          options: { duration: 900, easing: bounce, fill: "forwards" },
+          options: { duration: jump, easing: "linear", fill: "forwards" },
+        },
+        {
+          key: "shadowEllipse",
+          keyframes: [
+            { transform: "scale(1)", opacity: 0.3, offset: 0 },
+            { transform: "scale(1.05)", opacity: 0.34, offset: 0.18 },
+            { transform: "scale(0.72)", opacity: 0.14, offset: 0.5 },
+            { transform: "scale(1.06)", opacity: 0.34, offset: 0.76 },
+            { transform: "scale(1)", opacity: 0.3, offset: 1 },
+          ],
+          options: { duration: jump, easing: "ease-in-out", fill: "forwards" },
         },
         ...["rightWrist", "leftWrist"].map((key, i) => ({
           key,
           keyframes: [
             { transform: "rotate(0deg)" },
-            { transform: `rotate(${i ? 9 : -9}deg)`, offset: 0.25 },
-            { transform: `rotate(${i ? -6 : 6}deg)`, offset: 0.6 },
+            { transform: `rotate(${i ? 9 : -9}deg)`, offset: 0.45 },
+            { transform: `rotate(${i ? -6 : 6}deg)`, offset: 0.75 },
             { transform: "rotate(0deg)" },
           ],
-          options: { duration: 900, easing: "ease-in-out", fill: "forwards" },
+          options: { duration: jump, easing: "ease-in-out", fill: "forwards" },
         })),
       ]);
       if (gen !== this._gestureGen) return false;
@@ -1632,6 +1799,7 @@
       const dur = 2000;
       this._expressFor("think", dur);
       return this._playGesture(["head", "leftArm", "leftHand"], [
+        ...this._footTapSpecs(dur),
         {
           key: "head",
           keyframes: [
@@ -1786,6 +1954,12 @@
   };
   global.robotThumbsUp = function () {
     return global.cmProRobot && global.cmProRobot.thumbsUp();
+  };
+  global.robotShiftWeight = function () {
+    return global.cmProRobot && global.cmProRobot.shiftWeight();
+  };
+  global.robotTapFoot = function () {
+    return global.cmProRobot && global.cmProRobot.tapFoot();
   };
   global.robotCelebrate = function () {
     return global.cmProRobot && global.cmProRobot.celebrate();
