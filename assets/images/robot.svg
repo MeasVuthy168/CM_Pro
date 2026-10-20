@@ -278,7 +278,7 @@
         <ellipse cx="204" cy="190" rx="28" ry="12" fill="#ffffff" opacity="0.75"/>
         <text x="240" y="217" font-family="'Segoe UI', Arial, sans-serif" font-size="17" font-weight="800" fill="#56637c" text-anchor="middle" letter-spacing="1.5">CM PRO</text>
         <ellipse cx="240" cy="238" rx="26" ry="9" fill="url(#cyanGlow)"/>
-        <rect x="226" y="235" width="28" height="6" rx="3" fill="#5fd6f5"/>
+        <rect id="chest-light" x="226" y="235" width="28" height="6" rx="3" fill="#5fd6f5"/>
       </g>
 
       <!-- ============ WAIST JOINT ============
@@ -286,7 +286,7 @@
       <g id="waist-joint">
         <rect x="186" y="320" width="108" height="34" rx="15" fill="url(#jointGrad)"/>
         <ellipse cx="240" cy="337" rx="30" ry="9" fill="url(#cyanGlow)"/>
-        <rect x="220" y="334" width="40" height="6" rx="3" fill="#5fd6f5"/>
+        <rect id="waist-light" x="220" y="334" width="40" height="6" rx="3" fill="#5fd6f5"/>
       </g>
 
       <!-- ============ NECK ============ -->
@@ -310,28 +310,76 @@
         <ellipse cx="208" cy="40" rx="26" ry="10" fill="#ffffff" opacity="0.85"/>
         <!-- forehead light -->
         <ellipse cx="240" cy="31" rx="20" ry="7" fill="url(#cyanGlow)"/>
-        <rect x="226" y="28" width="28" height="6" rx="3" fill="#5fd6f5"/>
+        <rect id="head-light" x="226" y="28" width="28" height="6" rx="3" fill="#5fd6f5"/>
         <!-- ear pod faces: black disc, cyan ring -->
         <circle cx="168" cy="86" r="14" fill="url(#jointGrad)"/>
-        <circle cx="168" cy="86" r="9.5" fill="none" stroke="#5fd6f5" stroke-width="3"/>
+        <circle id="ear-ring-left" cx="168" cy="86" r="9.5" fill="none" stroke="#5fd6f5" stroke-width="3"/>
         <circle cx="312" cy="86" r="14" fill="url(#jointGrad)"/>
-        <circle cx="312" cy="86" r="9.5" fill="none" stroke="#5fd6f5" stroke-width="3"/>
+        <circle id="ear-ring-right" cx="312" cy="86" r="9.5" fill="none" stroke="#5fd6f5" stroke-width="3"/>
 
-        <!-- ============ FACE (black visor, cyan smile) ============ -->
+        <!-- ============ FACE (black visor, cyan expressions) ============
+             One group per expression; robot-animator.js cross-fades their
+             opacity (setExpression). Only #expr-neutral shows at rest:
+             its #eyes-look group moves the eyes around and #eyes-blink
+             (inside it) squashes them for a blink. -->
         <g id="face">
           <circle id="visor-halo" cx="240" cy="84" r="58" fill="url(#visorHalo)"/>
           <rect x="185" y="50" width="110" height="76" rx="32" fill="#2b313d"/>
           <rect x="189" y="54" width="102" height="68" rx="29" fill="url(#visorGrad)"/>
-          <!-- glass reflection -->
+          <clipPath id="visorClip">
+            <rect x="189" y="54" width="102" height="68" rx="29"/>
+          </clipPath>
+          <!-- reflection that sweeps across the glass now and then -->
+          <g clip-path="url(#visorClip)">
+            <path id="visor-glint" d="M 150 54 L 166 54 L 146 122 L 130 122 Z" fill="#ffffff" opacity="0.12"/>
+          </g>
           <path d="M 202 66 Q 210 58 224 57" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.18"/>
-          <!-- happy eyes -->
-          <path d="M 207 85 Q 217 72 227 85" fill="none" stroke="#5fd6f5" stroke-width="5.5" stroke-linecap="round"/>
-          <path d="M 253 85 Q 263 72 273 85" fill="none" stroke="#5fd6f5" stroke-width="5.5" stroke-linecap="round"/>
-          <!-- smile -->
-          <path d="M 228 97 Q 240 108 252 97" fill="none" stroke="#5fd6f5" stroke-width="5" stroke-linecap="round"/>
-          <!-- blush marks -->
-          <path d="M 205 99 L 209 94 M 211 99 L 215 94" stroke="#5fd6f5" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
-          <path d="M 265 99 L 269 94 M 271 99 L 275 94" stroke="#5fd6f5" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
+
+          <!-- neutral: open eyes (blink + look around) and a small smile -->
+          <g id="expr-neutral">
+            <g id="eyes-look">
+              <g id="eyes-blink">
+                <rect x="210" y="71" width="13" height="19" rx="6.5" fill="#5fd6f5"/>
+                <rect x="257" y="71" width="13" height="19" rx="6.5" fill="#5fd6f5"/>
+                <circle cx="219" cy="76" r="2.4" fill="#e9fbff"/>
+                <circle cx="266" cy="76" r="2.4" fill="#e9fbff"/>
+              </g>
+            </g>
+            <path d="M 231 100 Q 240 107 249 100" fill="none" stroke="#5fd6f5" stroke-width="4" stroke-linecap="round"/>
+          </g>
+
+          <!-- happy: ^ ^ eyes, smile, blush (greeting / waving) -->
+          <g id="expr-happy" opacity="0">
+            <path d="M 207 85 Q 217 72 227 85" fill="none" stroke="#5fd6f5" stroke-width="5.5" stroke-linecap="round"/>
+            <path d="M 253 85 Q 263 72 273 85" fill="none" stroke="#5fd6f5" stroke-width="5.5" stroke-linecap="round"/>
+            <path d="M 228 97 Q 240 108 252 97" fill="none" stroke="#5fd6f5" stroke-width="5" stroke-linecap="round"/>
+            <path d="M 205 99 L 209 94 M 211 99 L 215 94" stroke="#5fd6f5" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
+            <path d="M 265 99 L 269 94 M 271 99 L 275 94" stroke="#5fd6f5" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
+          </g>
+
+          <!-- joy: ^ ^ eyes and an open grin (success) -->
+          <g id="expr-joy" opacity="0">
+            <path d="M 207 83 Q 217 70 227 83" fill="none" stroke="#5fd6f5" stroke-width="5.5" stroke-linecap="round"/>
+            <path d="M 253 83 Q 263 70 273 83" fill="none" stroke="#5fd6f5" stroke-width="5.5" stroke-linecap="round"/>
+            <path d="M 226 94 Q 240 94 254 94 Q 252 110 240 110 Q 228 110 226 94 Z" fill="#5fd6f5"/>
+            <path d="M 205 99 L 209 94 M 211 99 L 215 94" stroke="#5fd6f5" stroke-width="2" stroke-linecap="round"/>
+            <path d="M 265 99 L 269 94 M 271 99 L 275 94" stroke="#5fd6f5" stroke-width="2" stroke-linecap="round"/>
+          </g>
+
+          <!-- think: eyes glance up to the side, one squinting; flat mouth -->
+          <g id="expr-think" opacity="0">
+            <rect x="214" y="68" width="13" height="17" rx="6.5" fill="#5fd6f5"/>
+            <rect x="261" y="72" width="13" height="10" rx="5" fill="#5fd6f5"/>
+            <path d="M 258 66 L 276 63" stroke="#5fd6f5" stroke-width="3" stroke-linecap="round"/>
+            <path d="M 234 102 L 250 100" fill="none" stroke="#5fd6f5" stroke-width="4" stroke-linecap="round"/>
+          </g>
+
+          <!-- wow: round eyes and a small "o" (attention) -->
+          <g id="expr-wow" opacity="0">
+            <circle cx="217" cy="80" r="9" fill="none" stroke="#5fd6f5" stroke-width="5"/>
+            <circle cx="263" cy="80" r="9" fill="none" stroke="#5fd6f5" stroke-width="5"/>
+            <ellipse cx="240" cy="103" rx="5" ry="6" fill="none" stroke="#5fd6f5" stroke-width="4"/>
+          </g>
         </g>
       </g>
 

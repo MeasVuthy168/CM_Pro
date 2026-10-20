@@ -180,6 +180,10 @@
   // — the anticipation dip right before the arm commits to rising.
   const RIGHT_ANTICIPATION = { shoulder: RIGHT_HIP_BASE.shoulder - 4, elbow: RIGHT_HIP_BASE.elbow + 6 };
 
+  // Expressions robot.svg can show (#expr-<name>); neutral is the rest face.
+  const EXPRESSIONS = ["neutral", "happy", "joy", "think", "wow"];
+  const REDUCED_MOTION = !!(global.matchMedia && global.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
   class CMProRobotAnimator {
     /**
      * @param {SVGSVGElement} svgRoot - the injected, inline robot.svg root <svg>.
@@ -202,6 +206,133 @@
       this._gestureGen = 0; // bumped on every top-level gesture call; async phase chains check it to bail out when superseded
 
       this.idle(); // start continuously — the robot should never look frozen
+      this._initFace();
+    }
+
+    // ============ FACE & LIGHTS ============
+    // The life layer on top of the body idle: real blinks, the eyes
+    // glancing around, a glint sweeping the visor, the cyan lights
+    // pulsing out of step, and an expression per gesture (setExpression).
+    // Every part is optional — an older robot.svg without them just
+    // skips that part.
+    _initFace() {
+      const q = (id) => this.svg.querySelector("#" + id);
+      this.face = { expr: {}, look: q("eyes-look"), blink: q("eyes-blink"), glint: q("visor-glint") };
+      for (const name of EXPRESSIONS) {
+        const g = q("expr-" + name);
+        if (!g) continue;
+        g.style.transition = "opacity 180ms ease";
+        this.face.expr[name] = g;
+      }
+      if (this.face.blink) this.face.blink.style.transformOrigin = "240px 80px";
+      this._expression = "neutral";
+      this._exprToken = 0;
+      this._lookAt = { x: 0, y: 0 };
+      this._faceTimers = Object.create(null);
+
+      // Lights breathe at different rates so they never pulse in unison.
+      this._lightAnims = [];
+      const pulse = (id, low, duration, delay) => {
+        const el = q(id);
+        if (!el) return;
+        this._lightAnims.push(el.animate(
+          [{ opacity: 1 }, { opacity: low, offset: 0.5 }, { opacity: 1 }],
+          { duration, delay, iterations: Infinity, easing: "ease-in-out" }
+        ));
+      };
+      pulse("chest-light", 0.45, 2600, 0);
+      pulse("waist-light", 0.45, 2600, -1300);
+      pulse("head-light", 0.5, 3200, -400);
+      pulse("ear-ring-left", 0.55, 3000, 0);
+      pulse("ear-ring-right", 0.55, 3000, -1500);
+
+      this._scheduleBlink();
+      if (!REDUCED_MOTION) {
+        this._scheduleLook();
+        this._scheduleGlint();
+      }
+    }
+
+    _later(kind, fn, ms) {
+      clearTimeout(this._faceTimers[kind]);
+      this._faceTimers[kind] = setTimeout(fn, ms);
+    }
+
+    // Cross-fades to one of EXPRESSIONS. A pending timed revert from
+    // _expressFor() is dropped by any newer call.
+    setExpression(name) {
+      this._exprToken++;
+      if (!this.face || !this.face.expr[name] || name === this._expression) return;
+      this._expression = name;
+      for (const key in this.face.expr) this.face.expr[key].style.opacity = key === name ? "1" : "0";
+    }
+
+    // Shows an expression for a while, then back to neutral.
+    _expressFor(name, ms) {
+      this.setExpression(name);
+      const token = this._exprToken;
+      this._later("expr", () => {
+        if (token === this._exprToken) this.setExpression("neutral");
+      }, ms);
+    }
+
+    _scheduleBlink() {
+      this._later("blink", () => {
+        this.blink(Math.random() < 0.2);
+        this._scheduleBlink();
+      }, 2400 + Math.random() * 3200);
+    }
+
+    // A quick squash of the open eyes (only the neutral face has them).
+    blink(double) {
+      const eyes = this.face && this.face.blink;
+      if (!eyes || this._expression !== "neutral") return;
+      const keyframes = [
+        { transform: "scaleY(1)" },
+        { transform: "scaleY(0.1)", offset: 0.45 },
+        { transform: "scaleY(1)" },
+      ];
+      const first = eyes.animate(keyframes, { duration: 170, easing: "ease-in-out" });
+      if (double) {
+        first.finished.then(() => {
+          this._later("blink2", () => eyes.animate(keyframes, { duration: 170, easing: "ease-in-out" }), 90);
+        }).catch(() => {});
+      }
+    }
+
+    _scheduleLook() {
+      this._later("look", () => {
+        this._glance();
+        this._scheduleLook();
+      }, 3000 + Math.random() * 3500);
+    }
+
+    // The eyes glance somewhere new, or back to the middle.
+    _glance() {
+      const eyes = this.face && this.face.look;
+      if (!eyes) return;
+      const centre = Math.random() < 0.4;
+      const to = centre ? { x: 0, y: 0 } : { x: jitter(0, 4), y: jitter(-0.5, 2) };
+      eyes.animate(
+        [
+          { transform: `translate(${this._lookAt.x}px, ${this._lookAt.y}px)` },
+          { transform: `translate(${to.x}px, ${to.y}px)` },
+        ],
+        { duration: 240, easing: GESTURE_EASE, fill: "forwards" }
+      );
+      this._lookAt = to;
+    }
+
+    _scheduleGlint() {
+      this._later("glint", () => {
+        if (this.face && this.face.glint) {
+          this.face.glint.animate(
+            [{ transform: "translateX(0px)" }, { transform: "translateX(200px)" }],
+            { duration: 750, easing: "ease-in-out" }
+          );
+        }
+        this._scheduleGlint();
+      }, 6000 + Math.random() * 5000);
     }
 
     // ============ IDLE ============
@@ -265,9 +396,7 @@
       }
       if (want("face")) {
         // A subtle side-to-side "look" (independent of the head's own
-        // rotation above) plus the existing brief brightness dip
-        // standing in for a blink, since the face is one glass visor
-        // rather than a pair of eyes.
+        // rotation above). Real blinks are blink() — see FACE & LIGHTS.
         loop(
           "face",
           [
@@ -276,8 +405,6 @@
             { transform: "translateX(1.5px)", opacity: 1, offset: 0.5 },
             { transform: "translateX(-1.5px)", opacity: 1, offset: 0.72 },
             { transform: "translateX(0px)", opacity: 1, offset: 0.9 },
-            { transform: "translateX(0px)", opacity: 0.5, offset: 0.94 },
-            { transform: "translateX(0px)", opacity: 1, offset: 0.97 },
             { transform: "translateX(0px)", opacity: 1, offset: 1 },
           ],
           4500
@@ -1027,6 +1154,7 @@
       await this._relaxHold(this._welcomeRelaxMs || 850);
       if (gen !== this._gestureGen) return false;
 
+      this.setExpression("happy");
       await this._anticipate(260, variation);
       if (gen !== this._gestureGen) return false;
 
@@ -1048,6 +1176,7 @@
       await this._lowerToHip(950, true, variation);
       if (gen !== this._gestureGen) return false;
 
+      this.setExpression("neutral");
       this._finishGesture(keys);
       return true;
     }
@@ -1078,6 +1207,7 @@
       this._welcomeLoopActive = true;
       this._welcomeRelaxMs = typeof relaxHoldMs === "number" ? relaxHoldMs : 850;
 
+      this._expressFor("wow", 600); // "oh, hello!" as it notices the user
       await this._noticeAndSettle();
       if (!this._welcomeLoopActive) return;
 
@@ -1106,6 +1236,7 @@
       this._cancelGesture();
       const gen = this._gestureGen;
       this._pauseIdle(keys);
+      this.setExpression("happy");
 
       await this._riseToWelcomeQuick(750);
       if (gen !== this._gestureGen) return false;
@@ -1119,6 +1250,7 @@
       await this._lowerToHip(700, false, {});
       if (gen !== this._gestureGen) return false;
 
+      this.setExpression("neutral");
       this._finishGesture(keys);
       return true;
     }
@@ -1129,6 +1261,7 @@
     // verification; the tilt alone reads clearly as "thinking".
     think() {
       const dur = 2000;
+      this._expressFor("think", dur);
       return this._playGesture(["head", "leftArm", "leftHand"], [
         {
           key: "head",
@@ -1171,6 +1304,7 @@
     // on top of any other gesture's ending without extra clipping risk.
     success() {
       const dur = 900;
+      this._expressFor("joy", 1400);
       const bounceEase = "cubic-bezier(0.34, 1.2, 0.64, 1)"; // a small, restrained overshoot — pleased, not cartoonish
       return this._playGesture(["body", "head"], [
         {
@@ -1210,6 +1344,7 @@
     // non-disruptive, not a big movement.
     attention() {
       const dur = 700;
+      this._expressFor("wow", 1000);
       return this._playGesture(["head", "neckStatus"], [
         {
           key: "head",
@@ -1244,6 +1379,10 @@
       this._cancelGesture();
       for (const k in this._idleAnims) this._idleAnims[k].cancel();
       this._idleAnims = Object.create(null);
+      for (const k in this._faceTimers) clearTimeout(this._faceTimers[k]);
+      for (const a of this._lightAnims || []) a.cancel();
+      this._lightAnims = [];
+      this.setExpression("neutral");
     }
   }
 
