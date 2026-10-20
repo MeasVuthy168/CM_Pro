@@ -382,6 +382,34 @@
     // again as it was, so drop its loading bar and guard.
     window.addEventListener("pageshow", function (e) { if (e.persisted) resetNav(); });
 
+    // ----- prepare the next page on touch (Chrome / Android) -----
+    // Speculation Rules: the moment a finger presses an in-app link,
+    // Chrome starts loading and running that page in the background, so
+    // it's ready (or nearly) when the tap ends. "conservative" waits for
+    // the press itself, so pages nobody opens are never loaded. Pages
+    // that change something just by opening (Notification detail marks
+    // it read), login and admin are left out. Safari ignores this.
+    try {
+        if (HTMLScriptElement.supports && HTMLScriptElement.supports("speculationrules")) {
+            var rules = document.createElement("script");
+            rules.type = "speculationrules";
+            rules.textContent = JSON.stringify({
+                prerender: [{
+                    where: { and: [
+                        { href_matches: "/CM_Pro/*" },
+                        { not: { href_matches: "/CM_Pro/login.html" } },
+                        { not: { href_matches: "/CM_Pro/pages/notifications/detail.html" } },
+                        { not: { href_matches: "/CM_Pro/pages/notifications/detail.html?*" } },
+                        { not: { href_matches: "/CM_Pro/pages/admin/*" } },
+                        { not: { selector_matches: "[data-no-prerender]" } }
+                    ] },
+                    eagerness: "conservative"
+                }]
+            });
+            (document.head || root).appendChild(rules);
+        }
+    } catch (e) {}
+
     // ----- BroadcastChannel that keeps Back instant -----
     // An open BroadcastChannel can keep a page out of the browser's
     // back/forward cache, so Back reloads it from scratch. cmChannel()

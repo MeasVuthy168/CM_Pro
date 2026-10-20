@@ -435,10 +435,18 @@ window.loadTopbarPhoto = async function(){
 
     if(!onSettingOrNotification){
 
-        sessionStorage.setItem(
+        const remember = ()=>sessionStorage.setItem(
             "cmLastWorkPage",
             location.pathname + location.search
         );
+
+        // A page Chrome prepared on touch (see page-transition.js) but
+        // that wasn't opened in the end must not count as visited.
+        if(document.prerendering){
+            document.addEventListener("prerenderingchange", remember, { once:true });
+        }else{
+            remember();
+        }
 
     }
 
