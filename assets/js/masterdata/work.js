@@ -28,7 +28,7 @@ const wkShowFilters = wkRole !== "viewer_staff";
 
 const wkParams = new URLSearchParams(location.search);
 let wkRows = [];
-let wkTab = ["unfilled", "expired", "filled"].includes(wkParams.get("tab")) ? wkParams.get("tab") : "unfilled";
+let wkTab = ["unfilled", "expired", "today", "filled"].includes(wkParams.get("tab")) ? wkParams.get("tab") : "unfilled";
 let wkBranch = wkParams.get("branch") || "";
 let wkTeam = "";          // "" | "Credit Officer" | "FSRO"
 // "officer": the list is the officers (CO / FSRO), tap one for their
@@ -107,6 +107,7 @@ function isExpired(row) { return !!row.al && row.al < todayKey(); }
 function inTab(row, tab) {
     if (tab === "unfilled") return isUnfilled(row);
     if (tab === "expired") return isExpired(row);
+    if (tab === "today") return row.al === todayKey();
     return !isUnfilled(row) && !isExpired(row);
 }
 
@@ -251,7 +252,7 @@ function renderViewBar() {
         return;
     }
     bar.hidden = false;
-    const seg = (v, icon, key) => `<button type="button" class="${wkView === v ? "on" : ""}" data-wk-view="${v}"><span class="ui-ico ui-ico-${icon}" aria-hidden="true"></span>${escapeHtml(t(key))}</button>`;
+    const seg = (v, icon, key) => `<button type="button" class="${wkView === v ? "on" : ""}" data-wk-view="${v}" title="${escapeHtml(t(key))}" aria-label="${escapeHtml(t(key))}"><span class="ui-ico ui-ico-${icon}" aria-hidden="true"></span></button>`;
     bar.innerHTML = `
         <div class="wk-viewseg" role="group" aria-label="${escapeHtml(t("work.viewAria"))}">
             ${seg("officer", "officer", "work.viewOfficer")}${seg("clients", "users", "work.viewClients")}
@@ -283,7 +284,7 @@ function renderOfficers(list, scoped, q) {
     if (!officers.length) {
         list.innerHTML = `<div class="oa-empty oa-empty-art">
             <span class="oa-empty-ico"><span class="ui-ico ui-ico-clipboard" aria-hidden="true"></span></span>
-            <strong>${escapeHtml(t(wkTab !== "filled" && !q ? "work.emptyDone" : "arrears.oaEmpty"))}</strong>
+            <strong>${escapeHtml(t((wkTab === "unfilled" || wkTab === "expired") && !q ? "work.emptyDone" : "arrears.oaEmpty"))}</strong>
         </div>`;
         return;
     }
@@ -328,22 +329,29 @@ function renderChips() {
     branchWrap.innerHTML = branches.length < 2 ? "" :
         chip("data-branch", "", t("work.allBranches"), null, !wkBranch) +
         branches.map(b => chip("data-branch", b, b, counts.get(b) || 0, wkBranch === b)).join("");
-    teamWrap.innerHTML =
-        chip("data-team", "", t("arrears.optionAll"), null, !wkTeam) +
-        chip("data-team", "Credit Officer", "CO", null, wkTeam === "Credit Officer") +
-        chip("data-team", "FSRO", "FSRO", null, wkTeam === "FSRO");
+    // All | CO | FSRO with this tab's counts at this branch (like the chat).
+    const inBranch = wkRows.filter(r => (!wkBranch || r.branch === wkBranch) && inTab(r, wkTab));
+    const nTeam = team => inBranch.filter(r => !team || teamOf(r) === team).length;
+    const seg = (team, label) => `<button type="button" class="${wkTeam === team ? "on" : ""}" data-team="${team}">${escapeHtml(label)} <small>${nTeam(team).toLocaleString()}</small></button>`;
+    teamWrap.innerHTML = `<div class="wk-viewseg wk-teamseg" role="group" aria-label="CO / FSRO">${seg("", t("arrears.optionAll"))}${seg("Credit Officer", "CO")}${seg("FSRO", "FSRO")}</div>`;
+}
+
+// The four tiles (= the tabs): counts for the branch / team / officer.
+function workCounts(scoped) {
+    const n = tab => scoped.filter(r => inTab(r, tab)).length;
+    const unfilled = n("unfilled");
+    return {
+        unfilled, expired: n("expired"), today: n("today"), filled: n("filled"),
+        pct: scoped.length ? Math.floor((scoped.length - unfilled) / scoped.length * 100) : null
+    };
 }
 
 function renderStats(scoped) {
-    const n = tab => scoped.filter(r => inTab(r, tab)).length;
-    const unfilled = n("unfilled");
-    const expired = n("expired");
-    ["unfilled", "expired", "filled"].forEach(tab => {
-        $(`wkCount-${tab}`).textContent = (tab === "unfilled" ? unfilled : tab === "expired" ? expired : n("filled")).toLocaleString();
+    const c = workCounts(scoped);
+    ["unfilled", "expired", "today", "filled"].forEach(tab => {
+        $(`wkCount-${tab}`).textContent = c[tab].toLocaleString();
     });
-    $("wkStatUnfilled").textContent = unfilled.toLocaleString();
-    $("wkStatExpired").textContent = expired.toLocaleString();
-    $("wkStatPct").textContent = scoped.length ? `${Math.floor((scoped.length - unfilled) / scoped.length * 100)}%` : "-";
+    $("wkStatPct").textContent = c.pct == null ? "" : `${c.pct}%`;
 }
 
 function renderPendingBar() {
@@ -374,7 +382,7 @@ function renderList() {
 
     const list = $("wkList");
     if (!shown.length) {
-        const done = wkTab !== "filled" && !q;
+        const done = (wkTab === "unfilled" || wkTab === "expired") && !q;
         list.innerHTML = `<div class="oa-empty oa-empty-art">
             <span class="oa-empty-ico"><span class="ui-ico ui-ico-clipboard" aria-hidden="true"></span></span>
             <strong>${escapeHtml(t(done ? "work.emptyDone" : "arrears.oaEmpty"))}</strong>
@@ -762,6 +770,77 @@ $("btnGpsOpen").addEventListener("click", () => {
 });
 
 ReasonKit.onPendingChange(renderPendingBar);
+
+// ---------- copy report (Telegram) ----------
+// What's on screen as plain text: the four counts for the branch / team /
+// officer, then the officers (by-officer view) or the clients.
+function buildReport() {
+    const scoped = scopedRows();
+    const c = workCounts(scoped);
+    const tabName = t(`work.tab${wkTab[0].toUpperCase()}${wkTab.slice(1)}`);
+    const d = isoToDMY(todayKey());
+    const where = [wkBranch || (wkShowFilters ? t("work.allBranches") : ""), wkTeam ? teamLabel(wkTeam) : "", wkOfficer].filter(Boolean).join(" · ");
+    const lines = [
+        `📋 ${t("work.heroTitle")}`,
+        `📅 ${d}${where ? " · " + where : ""}`,
+        "",
+        `📝 ${t("work.tabUnfilled")}: ${c.unfilled.toLocaleString()}`,
+        `⏰ ${t("work.tabExpired")}: ${c.expired.toLocaleString()}`,
+        `📆 ${t("work.tabToday")}: ${c.today.toLocaleString()}`,
+        `✅ ${t("work.tabFilled")}: ${c.filled.toLocaleString()}${c.pct == null ? "" : ` (${c.pct}%)`}`,
+        ""
+    ];
+    const rows = scoped.filter(r => inTab(r, wkTab));
+    if (wkView === "officer" && !wkOfficer && wkShowFilters) {
+        const map = new Map();
+        rows.forEach(r => {
+            const k = r.coResponse || "-";
+            const o = map.get(k) || { name: k, team: teamOf(r), n: 0 };
+            o.n++;
+            map.set(k, o);
+        });
+        const officers = [...map.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
+        lines.push(`👤 ${tabName} — ${t("work.byOfficerTitle")}:`);
+        officers.forEach((o, i) => lines.push(`${i + 1}. ${o.name} (${teamLabel(o.team)}) — ${o.n.toLocaleString()}`));
+        if (!officers.length) lines.push(t("work.emptyDone"));
+    } else {
+        const MAX = 50;
+        const list = rows.slice().sort((a, b) => (parseInt(b.day, 10) || 0) - (parseInt(a.day, 10) || 0));
+        lines.push(`👥 ${tabName} (${list.length.toLocaleString()} LD):`);
+        list.slice(0, MAX).forEach((r, i) => {
+            const parts = [r.customer || "-", r.loanNumber || r.concate];
+            if (wkTab === "expired" || wkTab === "today") parts.push(t("work.promiseShort").replace("{d}", isoToDMY(r.al)));
+            else parts.push(t("arrears.cardDays") ? `${parseInt(r.day, 10) || 0} ${t("arrears.cardDays")}` : "");
+            if (!wkOfficer && wkShowFilters && r.coResponse) parts.push(r.coResponse);
+            lines.push(`${i + 1}. ${parts.filter(Boolean).join(" · ")}`);
+        });
+        if (list.length > MAX) lines.push(tf("work.reportMore", { n: (list.length - MAX).toLocaleString() }));
+        if (!list.length) lines.push(t("work.emptyDone"));
+    }
+    return lines.join("\n").trim();
+}
+
+async function copyReport() {
+    const text = buildReport();
+    let ok = false;
+    try {
+        await navigator.clipboard.writeText(text);
+        ok = true;
+    } catch (e) {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        try { ok = document.execCommand("copy"); } catch (e2) {}
+        ta.remove();
+    }
+    notify(t(ok ? "work.reportCopied" : "work.reportCopyFailed"), ok ? "success" : "error");
+}
+
+$("btnWkCopy").addEventListener("click", copyReport);
 
 $("btnWkRefresh").addEventListener("click", () => {
     wkLoad({ fresh: true });

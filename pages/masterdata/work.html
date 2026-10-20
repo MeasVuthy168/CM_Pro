@@ -71,7 +71,8 @@ No Internet Connection
 
 <div class="page-container">
 
-<!-- Summary: what's left to fill, expired promises, filled %, reload -->
+<!-- Summary: the four counts are also the list's tabs (tap one), plus
+     Copy report (for Telegram) and reload -->
 <section class="oa-page-hero">
   <div class="oa-ph-top">
     <span class="oa-ph-ico"><span class="ui-ico ui-ico-clipboard" aria-hidden="true"></span></span>
@@ -79,12 +80,14 @@ No Internet Connection
       <div class="oa-ph-title" data-i18n="work.heroTitle">Reason Arrear — ការងារត្រូវបំពេញ</div>
       <div class="oa-ph-sub"><span data-i18n="masterdata.outArea.dataAt">ទិន្នន័យចុងក្រោយ</span> <span id="wkUpdated">-</span></div>
     </div>
+    <button type="button" id="btnWkCopy" class="oa-ph-refresh wk-copy" aria-label="Copy report" data-i18n-aria-label="work.copyReport"><span class="ui-ico ui-ico-copy" aria-hidden="true"></span></button>
     <button type="button" id="btnWkRefresh" class="oa-ph-refresh" aria-label="Refresh" data-i18n-aria-label="common.refresh"><span class="ui-ico ui-ico-refresh" aria-hidden="true"></span></button>
   </div>
-  <div class="oa-ph-stats">
-    <div class="oa-ph-stat oa-ph-todo"><b id="wkStatUnfilled">-</b><span data-i18n="work.tabUnfilled">មិនទាន់បំពេញ</span></div>
-    <div class="oa-ph-stat wk-ph-expired"><b id="wkStatExpired">-</b><span data-i18n="work.tabExpired">ផុតកំណត់</span></div>
-    <div class="oa-ph-stat oa-ph-done"><b id="wkStatPct">-</b><span data-i18n="work.statFilled">បានបំពេញ</span></div>
+  <div class="oa-ph-stats wk-tiles" role="tablist">
+    <button type="button" class="oa-ph-stat wk-tile wk-tile-unfilled active" data-wk-tab="unfilled" role="tab"><span class="ui-ico ui-ico-edit wk-tile-ico" aria-hidden="true"></span><b id="wkCount-unfilled">-</b><span data-i18n="work.tabUnfilled">មិនទាន់បំពេញ</span></button>
+    <button type="button" class="oa-ph-stat wk-tile wk-tile-expired" data-wk-tab="expired" role="tab"><span class="ui-ico ui-ico-clock wk-tile-ico" aria-hidden="true"></span><b id="wkCount-expired">-</b><span data-i18n="work.tabExpired">ផុតកំណត់</span></button>
+    <button type="button" class="oa-ph-stat wk-tile wk-tile-today" data-wk-tab="today" role="tab"><span class="ui-ico ui-ico-calendar wk-tile-ico" aria-hidden="true"></span><b id="wkCount-today">-</b><span data-i18n="work.tabToday">សន្យាថ្ងៃនេះ</span></button>
+    <button type="button" class="oa-ph-stat wk-tile wk-tile-filled" data-wk-tab="filled" role="tab"><span class="ui-ico ui-ico-clipboard wk-tile-ico" aria-hidden="true"></span><b id="wkCount-filled">-</b><span><span data-i18n="work.tabFilled">បានបំពេញ</span> <small id="wkStatPct"></small></span></button>
   </div>
 </section>
 
@@ -94,12 +97,6 @@ No Internet Connection
   <div id="wkListScreen">
 
     <div class="oa-sticky-tools">
-      <div class="oa-tabs wk-tabs" role="tablist">
-        <button type="button" class="oa-tab active" data-wk-tab="unfilled" role="tab"><span data-i18n="work.tabUnfilled">មិនទាន់បំពេញ</span> <span class="oa-tab-count" id="wkCount-unfilled"></span></button>
-        <button type="button" class="oa-tab" data-wk-tab="expired" role="tab"><span data-i18n="work.tabExpired">ផុតកំណត់</span> <span class="oa-tab-count" id="wkCount-expired"></span></button>
-        <button type="button" class="oa-tab" data-wk-tab="filled" role="tab"><span data-i18n="work.tabFilled">បានបំពេញ</span> <span class="oa-tab-count" id="wkCount-filled"></span></button>
-      </div>
-
       <div class="oa-search">
         <span class="ui-ico ui-ico-search oa-search-ico" aria-hidden="true"></span>
         <input type="search" id="wkSearch" placeholder="ឈ្មោះ / LD / CIF / ភ្នាក់ងារ..." data-i18n-placeholder="work.searchPlaceholder" autocomplete="off" aria-label="ស្វែងរក" data-i18n-aria-label="common.search">

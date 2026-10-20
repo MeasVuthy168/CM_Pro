@@ -4,20 +4,6 @@
    (outarea.css, .oa-page) and the Reason Arrear form (arrears.css).
 ========================================================= */
 
-/* Three tabs on one row */
-.oa-tabs.wk-tabs{ grid-template-columns:repeat(3,1fr); }
-.wk-tabs .oa-tab{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:3px;
-    padding:0 2px;
-    font-size:12px;
-    white-space:nowrap;
-}
-.wk-tabs .oa-tab-count{ margin-left:0; padding:1px 5px; font-size:11px; }
-
-.wk-ph-expired b{ color:#FCA5A5; }
 
 /* Two chip rows (branch, then team) */
 #wkBranchChips:not(:empty){ margin-bottom:6px; }
@@ -213,3 +199,30 @@
 [data-theme="dark"] .wk-officer-n-unfilled, [data-theme="darkgray"] .wk-officer-n-unfilled{ color:#FCA5A5; }
 [data-theme="dark"] .wk-officer-n-expired, [data-theme="darkgray"] .wk-officer-n-expired{ color:#FFD700; }
 [data-theme="dark"] .wk-officer-n-filled, [data-theme="darkgray"] .wk-officer-n-filled{ color:#86EFAC; }
+
+/* The summary tiles are the tabs (like the CM Pro AI chat) */
+.oa-ph-stats.wk-tiles{ grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px; }
+.wk-tile{
+    border:1px solid transparent; font:inherit; color:inherit; text-align:left; cursor:pointer;
+    padding:7px 8px; align-items:flex-start;
+}
+.wk-tile:active{ transform:scale(.97); }
+.wk-tile.active{ border-color:#FFD700; background:rgba(255,215,0,.14); }
+.wk-tile-ico{ font-size:14px; opacity:.9; }
+.wk-tile b{ font-size:18px; }
+.wk-tile > span:last-child{ font-size:10.5px; white-space:normal; line-height:1.3; }
+.wk-tile small{ font-weight:800; opacity:.95; }
+.wk-tile-unfilled .wk-tile-ico, .wk-tile-unfilled b{ color:#FFD700; }
+.wk-tile-expired .wk-tile-ico, .wk-tile-expired b{ color:#FCA5A5; }
+.wk-tile-today .wk-tile-ico, .wk-tile-today b{ color:#93C5FD; }
+.wk-tile-filled .wk-tile-ico, .wk-tile-filled b{ color:#86EFAC; }
+.oa-ph-top .wk-copy{ margin-right:6px; }
+
+/* All | CO | FSRO with counts */
+.wk-teamseg small{ font-weight:600; opacity:.75; margin-left:2px; }
+
+/* The team switch fills the row and never clips; the view switch is icons only */
+.wk-filter-row #wkTeamChips{ overflow:visible; }
+.wk-teamseg{ flex:1; }
+.wk-teamseg button{ flex:1; justify-content:center; padding:6px 6px; }
+.wk-viewbar .wk-viewseg button{ padding:6px 9px; }
