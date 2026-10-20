@@ -1052,9 +1052,6 @@
 
     function open(question) {
         if (!sheet) build();
-        // The panel stops above the bottom bar, which stays visible.
-        const nav = document.querySelector(".bottom-nav");
-        sheet.style.setProperty("--ac-nav", `${nav ? Math.round(nav.getBoundingClientRect().height) : 0}px`);
         sheet.hidden = false;
         document.body.classList.add("ac-open");
         const panel = sheet.querySelector(".ac-sheet");
