@@ -765,19 +765,68 @@
     ra.btnDelete.hidden = false;
   }
 
+  function setReasonProgress(pct) {
+    ra.btnPreview.classList.add("ra-busy");
+    ra.btnPreview.style.setProperty("--ra-p", `${pct}%`);
+    ra.btnPreviewText.textContent = t("admin.maintenance.raSearching", { pct });
+  }
+
+  // Find streams one JSON object per line: { progress } while the
+  // server reads OS, then the result (or { ok: false, message }).
+  async function fetchReasonPreview() {
+    const res = await fetch(`${API_BASE}/api/maintenance/reasonarrear-orphans`, {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ dryRun: true, stream: true })
+    });
+    if (res.status === 401 || res.status === 403) {
+      location.replace(window.CM_ADMIN_CONFIG.loginPage);
+      return null;
+    }
+    if (!res.body || !(res.headers.get("Content-Type") || "").includes("ndjson")) {
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.message || t("admin.maintenance.raFailed"));
+      return data;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = "";
+    let result = null;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (value) buf += decoder.decode(value, { stream: true });
+      const lines = buf.split("\n");
+      buf = done ? "" : lines.pop();
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const msg = JSON.parse(line);
+        if (msg.ok === false) throw new Error(msg.message || t("admin.maintenance.raFailed"));
+        if (Number.isFinite(msg.progress)) setReasonProgress(msg.progress);
+        if (msg.done) result = msg;
+      }
+      if (done) break;
+    }
+    if (!result) throw new Error(t("admin.maintenance.raFailed"));
+    return result;
+  }
+
   async function runReasonPreview() {
     ra.btnPreview.disabled = true;
+    setReasonProgress(0);
     try {
-      const data = await postReasonOrphans({ dryRun: true });
+      const data = await fetchReasonPreview();
       if (!data) return;
       resetReasonPreview();
       raOrphans = data.orphans;
       renderReasonOrphans(data);
     } catch (e) {
       console.error("reason arrear preview failed:", e);
-      AdminUI.toast(t("admin.maintenance.raFailedServer"), "error");
+      AdminUI.toast(e.message || t("admin.maintenance.raFailedServer"), "error");
+      ra.btnPreviewText.textContent = t(raOrphans ? "admin.maintenance.raFindAgain" : "admin.maintenance.raFind");
     } finally {
       ra.btnPreview.disabled = false;
+      ra.btnPreview.classList.remove("ra-busy");
     }
   }
 

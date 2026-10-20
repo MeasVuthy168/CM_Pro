@@ -1672,3 +1672,13 @@ input.sa-date {
 .ra-actions .adm-btn[hidden] { display: none; }
 .ra-actions .adm-btn-danger { background: var(--adm-danger); color: #fff; }
 .ra-actions .adm-btn-danger:hover { background: #a93226; }
+/* Find fills up like a progress bar while it runs */
+#raBtnPreview { position: relative; overflow: hidden; }
+#raBtnPreview > * { position: relative; }
+#raBtnPreview.ra-busy::before {
+  content: ""; position: absolute; inset: 0; width: var(--ra-p, 0%);
+  background: rgba(212, 175, 55, 0.28); transition: width .25s ease;
+}
+#raBtnPreview.ra-busy { opacity: 1; cursor: progress; font-variant-numeric: tabular-nums; }
+#raBtnPreview.ra-busy .adm-ico { animation: ra-spin 1s linear infinite; }
+@keyframes ra-spin { to { transform: rotate(360deg); } }
