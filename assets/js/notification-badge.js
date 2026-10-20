@@ -62,14 +62,6 @@ async function loadNotificationBadge(force){
 
         if(!badgeToken) return;
 
-        const badge =
-
-            document.getElementById(
-                "notificationBadge"
-            );
-
-        if(!badge) return;
-
         if(force || !badgeFetch || Date.now() - badgeFetch.at > BADGE_REUSE_MS){
 
             badgeFetch = { at: Date.now(), promise: fetchUnreadCount(badgeToken) };
@@ -83,6 +75,18 @@ async function loadNotificationBadge(force){
             badgeFetch = null;
             throw err;
         }
+
+        // Remembered and painted again whenever the bottom bar is
+        // (re)rendered (shared/page-transition.js).
+        if(window.cmBadge) cmBadge.set(count);
+
+        const badge =
+
+            document.getElementById(
+                "notificationBadge"
+            );
+
+        if(!badge) return;
 
         if(count > 0){
 
