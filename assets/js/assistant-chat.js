@@ -659,14 +659,45 @@
     }
 
     // ---------- UI ----------
-    // The robot's head, small, for the chat header.
-    const ROBOT_FACE = `<svg viewBox="0 0 40 40" width="30" height="30">
-        <rect x="6" y="8" width="28" height="24" rx="11" fill="#F4F6FA"/>
-        <rect x="10" y="13" width="20" height="12" rx="6" fill="#0E1B3C"/>
-        <circle cx="15.5" cy="19" r="2.2" fill="#5BD0FF"/><circle cx="24.5" cy="19" r="2.2" fill="#5BD0FF"/>
-        <rect x="18.5" y="3.5" width="3" height="5" rx="1.5" fill="#D4AF37"/><circle cx="20" cy="3.5" r="2.2" fill="#FFD700"/>
-        <rect x="3" y="16" width="3" height="8" rx="1.5" fill="#C9D1DE"/><rect x="34" y="16" width="3" height="8" rx="1.5" fill="#C9D1DE"/>
+    // The robot's head, small, for the chat header — same look as the
+    // Home robot (assets/images/robot.svg). .ac-avatar[data-face] picks
+    // the face: neutral (blinks), think (while an answer is on its way),
+    // joy (when it arrives) — see setFace().
+    const ROBOT_FACE = `<svg viewBox="0 0 44 44" width="34" height="34">
+        <path d="M13 9 Q13 2 20 2 Q16 4 16.5 8 Z" fill="#EEF1F5"/>
+        <circle cx="7" cy="22" r="4.6" fill="#11151D"/><circle cx="7" cy="22" r="2.9" fill="none" stroke="#5FD6F5" stroke-width="1.3"/>
+        <circle cx="37" cy="22" r="4.6" fill="#11151D"/><circle cx="37" cy="22" r="2.9" fill="none" stroke="#5FD6F5" stroke-width="1.3"/>
+        <rect x="8" y="5" width="28" height="33" rx="14" fill="#F4F6FA"/>
+        <rect x="18" y="7" width="8" height="2" rx="1" fill="#5FD6F5"/>
+        <rect x="11" y="13" width="22" height="18" rx="8" fill="#0B1019"/>
+        <g class="ac-f ac-f-neutral">
+            <g class="ac-f-eyes"><rect x="15.2" y="17.4" width="3.4" height="5" rx="1.7" fill="#5FD6F5"/><rect x="25.4" y="17.4" width="3.4" height="5" rx="1.7" fill="#5FD6F5"/></g>
+            <path d="M19.6 25.6 Q22 27.4 24.4 25.6" fill="none" stroke="#5FD6F5" stroke-width="1.3" stroke-linecap="round"/>
+        </g>
+        <g class="ac-f ac-f-think">
+            <rect x="16.4" y="16.6" width="3.4" height="4.4" rx="1.7" fill="#5FD6F5"/>
+            <rect x="26.2" y="18" width="3.4" height="2.6" rx="1.3" fill="#5FD6F5"/>
+            <path d="M25.4 16.2 L30 15.4" stroke="#5FD6F5" stroke-width="1" stroke-linecap="round"/>
+            <path d="M20 26.4 L24.6 25.8" stroke="#5FD6F5" stroke-width="1.3" stroke-linecap="round"/>
+        </g>
+        <g class="ac-f ac-f-joy">
+            <path d="M14.6 21 Q16.9 17.6 19.2 21" fill="none" stroke="#5FD6F5" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M24.8 21 Q27.1 17.6 29.4 21" fill="none" stroke="#5FD6F5" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M19 24.4 L25 24.4 Q24.6 28.4 22 28.4 Q19.4 28.4 19 24.4 Z" fill="#5FD6F5"/>
+        </g>
     </svg>`;
+
+    // The header robot's face, and its subtitle while it works.
+    let faceTimer = null;
+    function setFace(face) {
+        const avatar = sheet && sheet.querySelector(".ac-avatar");
+        if (!avatar) return;
+        clearTimeout(faceTimer);
+        avatar.dataset.face = face;
+        const sub = sheet.querySelector(".ac-subtitle");
+        if (sub) sub.textContent = t(face === "think" ? "assistant.thinking" : "assistant.subtitle");
+        if (face === "joy") faceTimer = setTimeout(() => setFace("neutral"), 1800);
+    }
 
     let sheet = null;
     let listEl = null;
@@ -716,7 +747,9 @@
         if (!bubble || busy) return;
         busy = true;
         bubble.classList.add("ac-loading");
+        setFace("think");
         let reply;
+        let failed = false;
         try {
             const intent = N().parse(bar.dataset.q);
             if (by && intent.rank) intent.rank = { ...intent.rank, by };
@@ -725,9 +758,11 @@
                 : { html: bubble.innerHTML };
         } catch (e) {
             reply = { html: esc(t("assistant.loadFailed")) };
+            failed = true;
         }
         bubble.innerHTML = reply.html;
         bubble.classList.remove("ac-loading");
+        setFace(failed ? "neutral" : "joy");
         const i = Number(msg.dataset.h);
         if (Number.isInteger(i) && history[i]) {
             history[i].html = reply.html;
@@ -752,14 +787,18 @@
         updateSend();
         addMessage("me", esc(text));
         const typing = addMessage("bot", `<span class="ac-typing"><i></i><i></i><i></i></span>`, { save: false });
+        setFace("think");
         let reply;
+        let failed = false;
         try {
             reply = await respond(text);
         } catch (e) {
             console.warn("[assistant-chat] reply failed:", e);
             reply = { html: esc(t("assistant.loadFailed")) };
+            failed = true;
         }
         typing.remove();
+        setFace(failed ? "neutral" : "joy");
         addMessage("bot", reply.html + (reply.chips ? chipsHtml() : ""));
         busy = false;
         if (reply.go) setTimeout(() => { location.href = reply.go; }, 700);
@@ -824,7 +863,7 @@
             <div class="ac-sheet" role="dialog" aria-modal="true" aria-labelledby="acTitle">
                 <div class="ac-grab"></div>
                 <div class="ac-head">
-                    <div class="ac-avatar" aria-hidden="true">${ROBOT_FACE}<span class="ac-online"></span></div>
+                    <div class="ac-avatar" data-face="neutral" aria-hidden="true">${ROBOT_FACE}<span class="ac-online"></span></div>
                     <div class="ac-head-text">
                         <div class="ac-title" id="acTitle">CM Pro AI</div>
                         <div class="ac-subtitle">${esc(t("assistant.subtitle"))}</div>

@@ -6,6 +6,7 @@
 CMI18n.register({
   "assistant.openChat": { km: "ជជែកជាមួយ CM Pro AI", en: "Chat with CM Pro AI" },
   "assistant.subtitle": { km: "ជំនួយការការងារឆ្លាតវៃ", en: "Your smart banking work assistant" },
+  "assistant.thinking": { km: "កំពុងរកចម្លើយ…", en: "Finding the answer…" },
   "assistant.close": { km: "បិទ", en: "Close" },
   "assistant.placeholder": { km: "សួរ ឬវាយពាក្យបញ្ជា…", en: "Ask or type a command…" },
   "assistant.listening": { km: "កំពុងស្តាប់…", en: "Listening…" },
