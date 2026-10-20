@@ -30,7 +30,7 @@ async function loadComponent(id, file) {
             // under the dashboard, so send Back there explicitly.
             const backBtn = document.getElementById("topbarBackBtn");
             if (backBtn) {
-                backBtn.onclick = () => { location.href = "/CM_Pro/index.html"; };
+                backBtn.onclick = () => cmNav.back("/CM_Pro/index.html");
             }
         }
     } catch (error) {

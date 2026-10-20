@@ -27,7 +27,7 @@ async function loadComponent(id, file) {
             // (which breaks on reload/bookmark/PWA restore).
             const backBtn = document.getElementById("topbarBackBtn");
             if (backBtn) {
-                backBtn.onclick = () => { location.href = "/CM_Pro/pages/creditreport/index.html"; };
+                backBtn.onclick = () => cmNav.back("/CM_Pro/pages/creditreport/index.html");
             }
 
             // Move the page's own "..." menu into the topbar. The existing

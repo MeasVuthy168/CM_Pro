@@ -996,7 +996,7 @@ async function deleteNotification(id){
             === "function"
         ){
 
-            loadNotificationBadge();
+            loadNotificationBadge(true);
 
         }
 
@@ -1229,9 +1229,6 @@ document.addEventListener("visibilitychange",()=>{
 
 if("BroadcastChannel" in window){
 
-    const cmProChannel =
-        new BroadcastChannel("cm-pro-notifications");
-
     let reconcileTimer = null;
 
     function scheduleReconcile(){
@@ -1297,9 +1294,11 @@ if("BroadcastChannel" in window){
 
     }
 
-    cmProChannel.addEventListener(
+    // cmChannel (shared/page-transition.js) closes it while the page
+    // sits in the back/forward cache, so Back stays instant.
+    cmChannel(
 
-        "message",
+        "cm-pro-notifications",
 
         event=>{
 

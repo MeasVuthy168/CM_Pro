@@ -745,7 +745,7 @@ function handleSWMessage(msg) {
 
     if (typeof loadNotificationBadge === "function") {
 
-      loadNotificationBadge();
+      loadNotificationBadge(true);
 
     }
 
@@ -837,8 +837,8 @@ if ("serviceWorker" in navigator) {
 
 if ("BroadcastChannel" in window) {
 
-  const cmProChannel = new BroadcastChannel("cm-pro-notifications");
-
-  cmProChannel.onmessage = (event) => handleSWMessage(event.data);
+  // cmChannel (shared/page-transition.js) closes it while the page
+  // sits in the back/forward cache, so Back stays instant.
+  cmChannel("cm-pro-notifications", (event) => handleSWMessage(event.data));
 
 }

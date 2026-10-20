@@ -190,7 +190,7 @@ window.initTopbar = function(config={}){
             : "none";
 
         backBtn.onclick =
-            ()=>history.back();
+            ()=>window.cmNav ? cmNav.goBack() : history.back();
 
     }
 

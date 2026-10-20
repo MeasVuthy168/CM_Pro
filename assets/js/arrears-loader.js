@@ -40,7 +40,7 @@ async function loadComponent(id,file){
             // previous history entry to return to.
             const backBtn = document.getElementById("topbarBackBtn");
             if (backBtn) {
-                backBtn.onclick = () => { location.href = backTarget; };
+                backBtn.onclick = () => cmNav.back(backTarget);
             }
 
             // Relocate the page's own "..." menu (Export/Print/Landscape,

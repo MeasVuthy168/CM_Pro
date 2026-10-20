@@ -230,7 +230,7 @@ function backToArrears(flash) {
         if (flash) sessionStorage.setItem("cm_work_flash_v1", JSON.stringify({ at: Date.now(), ...flash }));
     } catch (e) {}
     if (/\/pages\/arrears\//.test(document.referrer) && history.length > 1) history.back();
-    else location.href = "/CM_Pro/pages/arrears/index.html";
+    else cmNav.back("/CM_Pro/pages/arrears/index.html");
 }
 
 // ---------- list ----------
@@ -891,7 +891,7 @@ async function loadComponent(id, file) {
                     }
                     // Opened from Daily Arrears' button: go back there.
                     if (/\/pages\/arrears\//.test(document.referrer)) return history.back();
-                    location.href = "/CM_Pro/pages/masterdata/index.html";
+                    cmNav.back("/CM_Pro/pages/masterdata/index.html");
                 };
             }
         }

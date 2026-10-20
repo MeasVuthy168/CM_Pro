@@ -2,7 +2,55 @@
    CM_Pro Notification Badge
 ========================================================= */
 
-async function loadNotificationBadge(){
+async function fetchUnreadCount(badgeToken){
+
+    const response = await fetch(
+
+        `${API.BASE_URL}/api/notifications/unread-count`,
+
+        {
+
+            headers:{
+
+                Authorization:
+                `Bearer ${badgeToken}`
+
+            }
+
+        }
+
+    );
+
+    if(!response.ok){
+
+        throw new Error(
+            `HTTP ${response.status}`
+        );
+
+    }
+
+    const data =
+        await response.json();
+
+    return Number(
+
+        data.unreadCount ||
+
+        data.count ||
+
+        0
+
+    );
+
+}
+
+// One unread-count request serves every caller within a few seconds —
+// pages ask on load and again once their bottom bar is in place.
+// force (a realtime refresh) always asks the server again.
+const BADGE_REUSE_MS = 3000;
+let badgeFetch = null; // { at, promise }
+
+async function loadNotificationBadge(force){
 
     try{
 
@@ -22,43 +70,19 @@ async function loadNotificationBadge(){
 
         if(!badge) return;
 
-        const response = await fetch(
+        if(force || !badgeFetch || Date.now() - badgeFetch.at > BADGE_REUSE_MS){
 
-            `${API.BASE_URL}/api/notifications/unread-count`,
-
-            {
-
-                headers:{
-
-                    Authorization:
-                    `Bearer ${badgeToken}`
-
-                }
-
-            }
-
-        );
-
-        if(!response.ok){
-
-            throw new Error(
-                `HTTP ${response.status}`
-            );
+            badgeFetch = { at: Date.now(), promise: fetchUnreadCount(badgeToken) };
 
         }
 
-        const data =
-            await response.json();
-
-        const count = Number(
-
-            data.unreadCount ||
-
-            data.count ||
-
-            0
-
-        );
+        let count;
+        try{
+            count = await badgeFetch.promise;
+        }catch(err){
+            badgeFetch = null;
+            throw err;
+        }
 
         if(count > 0){
 
@@ -222,14 +246,10 @@ if(
 
 if("BroadcastChannel" in window){
 
+    // cmChannel (shared/page-transition.js) closes the channel while
+    // the page sits in the back/forward cache, so Back stays instant.
     const cmProChannel =
-        new BroadcastChannel("cm-pro-notifications");
-
-    cmProChannel.addEventListener(
-
-        "message",
-
-        event=>{
+        cmChannel("cm-pro-notifications", event=>{
 
             if(
 
@@ -245,7 +265,7 @@ if("BroadcastChannel" in window){
 
                 );
 
-                loadNotificationBadge();
+                loadNotificationBadge(true);
 
             }
 

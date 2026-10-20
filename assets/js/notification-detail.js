@@ -245,7 +245,7 @@
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ notificationId: id })
         }).then(() => {
-            if (typeof loadNotificationBadge === "function") loadNotificationBadge();
+            if (typeof loadNotificationBadge === "function") loadNotificationBadge(true);
         }).catch(() => {});
     }
 
