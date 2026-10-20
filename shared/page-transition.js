@@ -201,6 +201,45 @@
         }
     }
 
+    // ----- notification badge -----
+    // The last unread count is kept per user, and painted the moment a
+    // bottom bar appears — every page's bar arrives with the badge
+    // hidden, and the notifications page used to get its count before
+    // its bar existed, so the badge never showed there. cmBadge.set()
+    // is called wherever a fresh count arrives.
+    function badgeKey() {
+        try {
+            var u = JSON.parse(localStorage.getItem("loggedInUser") || "{}").username;
+            return u ? "cm_unread_count:" + u : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function paintBadge() {
+        var key = badgeKey();
+        var raw = key ? localStorage.getItem(key) : null;
+        if (raw === null) return;
+        var n = Number(raw) || 0;
+        var text = n > 99 ? "99+" : String(n);
+        var els = document.querySelectorAll("#notificationBadge");
+        for (var i = 0; i < els.length; i++) {
+            var el = els[i];
+            var display = n > 0 ? "flex" : "none";
+            // Only touch what differs: this runs from the observer below.
+            if (el.style.display !== display) el.style.display = display;
+            if (n > 0 && el.textContent.trim() !== text) el.textContent = text;
+        }
+    }
+
+    window.cmBadge = {
+        set: function (count) {
+            var key = badgeKey();
+            try { if (key) localStorage.setItem(key, String(Number(count) || 0)); } catch (e) {}
+            paintBadge();
+        }
+    };
+
     if (window.MutationObserver) {
         // The bar (and which tab is active) is set by each page's own
         // loader; follow it whenever it is (re)rendered.
@@ -209,11 +248,13 @@
                 var t = list[i].target;
                 if (t.id === "bottomnav-container" || (t.closest && t.closest(".bottom-nav"))) {
                     placeTabInd();
+                    paintBadge();
                     return;
                 }
             }
         }).observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
     }
+    window.addEventListener("pageshow", paintBadge);
     window.addEventListener("resize", placeTabInd);
     window.addEventListener("load", placeTabInd);
     window.addEventListener("pageshow", placeTabInd);

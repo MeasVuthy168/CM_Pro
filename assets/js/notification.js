@@ -1044,6 +1044,10 @@ function markReadInState(id){
 
 function updateBadgeDisplay(count){
 
+    // Remembered and painted again whenever the bottom bar is
+    // (re)rendered — this can run before the bar exists.
+    if(window.cmBadge) cmBadge.set(count);
+
     const notifyBadgeEl=document.getElementById("notificationBadge");
 
     if(!notifyBadgeEl) return;
