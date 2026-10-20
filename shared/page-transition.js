@@ -72,7 +72,13 @@
         // First-paint calm: no CSS transitions while the page is still
         // filling itself in (switches sliding from off to on, colors
         // fading) — those read as jank inside the slide/fade.
-        "html.cm-pt-init *, html.cm-pt-init *::before, html.cm-pt-init *::after { transition: none !important; }"
+        "html.cm-pt-init *, html.cm-pt-init *::before, html.cm-pt-init *::after { transition: none !important; }",
+        // Press feedback on anything tappable. :where() has no
+        // specificity, so a component's own :active style still wins.
+        ":where(a[href], button, [role=button], .bottom-nav-item):active { opacity: .7; }",
+        // Thin loading bar, shown only when a page change is slow.
+        "#cmNavBar { position: fixed; z-index: 2147483000; top: env(safe-area-inset-top, 0px); left: 0; height: 3px; width: 0; background: #FFD700; box-shadow: 0 0 8px rgba(255,215,0,.6); border-radius: 0 3px 3px 0; pointer-events: none; opacity: 0; }",
+        "#cmNavBar.on { opacity: 1; width: 85%; transition: width 4s cubic-bezier(.1,.7,.2,1), opacity .15s; }"
     ].join("\n");
 
     var style = document.createElement("style");
@@ -236,6 +242,167 @@
         document.addEventListener("DOMContentLoaded", function () { mo.disconnect(); });
     }
 
+    // ----- back navigation -----
+    // cmNav.goBack(): the browser's back when the previous page is one
+    // of ours; otherwise (opened from a notification, a cold PWA launch,
+    // a reload) the page's parent, so Back never does nothing.
+    // cmNav.back(url): open a page *as* going back — it slides in from
+    // the left like a real history back, not as a forward step.
+    var BACK_KEY = "cm_pt_back";
+
+    function parentOf(path) {
+        var m = path.match(/^\/CM_Pro\/pages\/([^/]+)\/([^/]*)$/);
+        if (m && m[2] && m[2] !== "index.html" &&
+            ["settings", "notifications", "creditreport", "masterdata"].indexOf(m[1]) !== -1) {
+            return "/CM_Pro/pages/" + m[1] + "/index.html";
+        }
+        return "/CM_Pro/index.html";
+    }
+
+    function cameFromApp() {
+        try {
+            var act = window.navigation && navigation.activation;
+            if (window.navigation && "canGoBack" in navigation && !navigation.canGoBack) return false;
+            var ref = (act && act.from && act.from.url) || document.referrer;
+            var refUrl = ref ? new URL(ref) : null;
+            return history.length > 1 && !!refUrl && refUrl.origin === location.origin &&
+                refUrl.pathname.indexOf("/CM_Pro/") === 0 && !/\/login\.html$/.test(refUrl.pathname);
+        } catch (e) {
+            return false;
+        }
+    }
+
+    window.cmNav = {
+        back: function (url) {
+            try {
+                var to = new URL(url, location.href).pathname;
+                sessionStorage.setItem(BACK_KEY, JSON.stringify({ to: to, at: Date.now() }));
+            } catch (e) {}
+            location.href = url;
+        },
+        goBack: function (fallback) {
+            if (cameFromApp()) return history.back();
+            window.cmNav.back(fallback || parentOf(location.pathname));
+        }
+    };
+
+    function markedBack() {
+        try {
+            var m = JSON.parse(sessionStorage.getItem(BACK_KEY) || "null");
+            sessionStorage.removeItem(BACK_KEY);
+            return !!m && m.to === location.pathname && Date.now() - m.at < 15000;
+        } catch (e) {
+            return false;
+        }
+    }
+    var arrivedBack = markedBack();
+
+    // ----- page changes: tab re-tap, double-tap guard, loading bar -----
+    // Tapping the page you're already on (e.g. the active bottom tab)
+    // scrolls to the top instead of reloading it. A second tap while a
+    // page change is under way is ignored (it used to start a second
+    // navigation). A slow change shows a thin gold bar along the top.
+    var NAV_GUARD_MS = 4000;
+    var navStartedAt = 0;
+    var navBar = null;
+    var navBarTimer = null;
+
+    function samePage(url) {
+        var a = url.pathname === "/CM_Pro/" ? "/CM_Pro/index.html" : url.pathname;
+        var b = location.pathname === "/CM_Pro/" ? "/CM_Pro/index.html" : location.pathname;
+        return a === b && url.search === location.search;
+    }
+
+    function startNavBar() {
+        clearTimeout(navBarTimer);
+        navBarTimer = setTimeout(function () {
+            if (!navBar) {
+                navBar = document.createElement("div");
+                navBar.id = "cmNavBar";
+                navBar.setAttribute("aria-hidden", "true");
+                (document.body || root).appendChild(navBar);
+            }
+            navBar.getBoundingClientRect(); // start the width transition from 0
+            navBar.classList.add("on");
+        }, 250);
+    }
+
+    function resetNav() {
+        navStartedAt = 0;
+        clearTimeout(navBarTimer);
+        if (navBar) navBar.classList.remove("on");
+    }
+
+    document.addEventListener("click", function (e) {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        var a = e.target.closest && e.target.closest("a[href]");
+        if (!a || (a.target && a.target !== "_self") || a.hasAttribute("download")) return;
+        var url;
+        try { url = new URL(a.href, location.href); } catch (err) { return; }
+        if (url.origin !== location.origin || url.pathname.indexOf("/CM_Pro/") !== 0) return;
+
+        if (samePage(url)) {
+            if (url.hash) return;
+            e.preventDefault();
+            // Some pages scroll <body> rather than the window.
+            [document.scrollingElement, document.body].forEach(function (el) {
+                if (el && el.scrollTop > 0) el.scrollTo({ top: 0, behavior: "smooth" });
+            });
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            return;
+        }
+        if (navStartedAt && Date.now() - navStartedAt < NAV_GUARD_MS) {
+            e.preventDefault();
+            return;
+        }
+        // Decided after every other click handler has run: one that
+        // cancels the link (opens a modal instead) isn't a page change.
+        setTimeout(function () {
+            if (e.defaultPrevented) return;
+            navStartedAt = Date.now();
+            startNavBar();
+            // A navigation that never happens (offline) frees the guard.
+            setTimeout(function () { if (navStartedAt && Date.now() - navStartedAt >= NAV_GUARD_MS) resetNav(); }, NAV_GUARD_MS + 50);
+        }, 0);
+    });
+
+    // Page changes started from script (location.href = …) get the
+    // loading bar too where the Navigation API exists (Chrome/Android).
+    if (window.navigation && navigation.addEventListener) {
+        navigation.addEventListener("navigate", function (e) {
+            if (e.hashChange || e.downloadRequest || e.navigationType === "reload") return;
+            try {
+                if (new URL(e.destination.url).origin !== location.origin) return;
+            } catch (err) { return; }
+            startNavBar();
+        });
+    }
+
+    // Coming back from the back/forward cache: the old page is shown
+    // again as it was, so drop its loading bar and guard.
+    window.addEventListener("pageshow", function (e) { if (e.persisted) resetNav(); });
+
+    // ----- BroadcastChannel that keeps Back instant -----
+    // An open BroadcastChannel can keep a page out of the browser's
+    // back/forward cache, so Back reloads it from scratch. cmChannel()
+    // closes it while the page is cached and opens it again on return.
+    window.cmChannel = function (name, onMessage) {
+        var ch = null;
+        function open() {
+            if (ch || !("BroadcastChannel" in window)) return;
+            ch = new BroadcastChannel(name);
+            ch.onmessage = onMessage;
+        }
+        open();
+        window.addEventListener("pagehide", function (e) {
+            if (e.persisted && ch) { ch.close(); ch = null; }
+        });
+        window.addEventListener("pageshow", function (e) { if (e.persisted) open(); });
+        return {
+            postMessage: function (msg) { if (ch) ch.postMessage(msg); }
+        };
+    };
+
     // Which way did we arrive? Navigation API where available (Chrome/
     // Android); otherwise the classic navigation timing type (Safari).
     function directionOf(e) {
@@ -264,7 +431,7 @@
         var toTab = isTabRoot(location.href);
 
         if (fromTab && toTab) return "tab";
-        if (isTraverseBack) return "back";
+        if (isTraverseBack || arrivedBack) return "back";
         // Leaving a sub-page for one of the root pages (e.g. Save in
         // Manage PIN → Settings) reads as going back up, not forward.
         if (toTab && !fromTab) return "back";

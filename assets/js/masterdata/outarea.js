@@ -151,7 +151,7 @@ async function loadComponent(id, file) {
             // Belongs under Master Data — Back goes there, not history.back().
             const backBtn = document.getElementById("topbarBackBtn");
             if (backBtn) {
-                backBtn.onclick = () => { location.href = "/CM_Pro/pages/masterdata/index.html"; };
+                backBtn.onclick = () => cmNav.back("/CM_Pro/pages/masterdata/index.html");
             }
         }
     } catch (error) {

@@ -74,7 +74,8 @@ display:flex;
 justify-content:center;
 align-items:flex-start;
 
-padding:24px;
+/* bottom: room for the bottom bar */
+padding:24px 24px 100px;
 
 box-sizing:border-box;
 
@@ -343,12 +344,17 @@ showBack: true,
 showLogo: false,
 showProfile: false
 });
+// Bottom bar, Setting tab active — same as the other Setting pages.
+const navHtml = await (await fetch("/CM_Pro/components/bottomnav.html")).text();
+document.getElementById("bottomnav-container").innerHTML = navHtml;
+document.querySelectorAll(".bottom-nav-item")[1]?.classList.add("active");
 }catch(err){
 console.error(err);
 }
 })();
 </script>
 
+<div id="bottomnav-container"></div>
 </body>
 
 </html>

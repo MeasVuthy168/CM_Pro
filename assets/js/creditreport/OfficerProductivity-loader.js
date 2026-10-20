@@ -29,7 +29,7 @@ async function loadComponent(id, file) {
             // restore), matching that page's own back-button override.
             const backBtn = document.getElementById("topbarBackBtn");
             if (backBtn) {
-                backBtn.onclick = () => { location.href = "/CM_Pro/pages/creditreport/RepDetailbyCO.html"; };
+                backBtn.onclick = () => cmNav.back("/CM_Pro/pages/creditreport/RepDetailbyCO.html");
             }
         }
     } catch (error) {

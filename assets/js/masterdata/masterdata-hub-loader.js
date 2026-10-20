@@ -39,7 +39,7 @@ async function loadComponent(id, file) {
             // instead of the default history.back().
             const backBtn = document.getElementById("topbarBackBtn");
             if (backBtn) {
-                backBtn.onclick = () => { location.href = "/CM_Pro/index.html"; };
+                backBtn.onclick = () => cmNav.back("/CM_Pro/index.html");
             }
         }
     } catch (error) {

@@ -30,7 +30,7 @@ async function loadComponent(id, file) {
             // no previous history entry).
             const backBtn = document.getElementById("topbarBackBtn");
             if (backBtn) {
-                backBtn.onclick = () => { location.href = "/CM_Pro/pages/creditreport/index.html"; };
+                backBtn.onclick = () => cmNav.back("/CM_Pro/pages/creditreport/index.html");
             }
 
             // Relocate the page's own "..." menu (Export/Print, built in
