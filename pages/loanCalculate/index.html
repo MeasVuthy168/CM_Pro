@@ -35,6 +35,7 @@ href="/CM_Pro/assets/css/global-splash.css">
 <link rel="expect" href="#cm-pt-parsed" blocking="render">
 <link rel="preload" href="/CM_Pro/assets/fonts/Krasar-Regular.ttf" as="font" type="font/ttf" crossorigin>
 <script src="/CM_Pro/shared/page-transition.js"></script>
+<script src="/CM_Pro/shared/sw-register.js"></script>
 </head>
 <body>
 <!-- ========================= -->
@@ -214,9 +215,9 @@ style="display:none;">
 <!-- ========================= -->
 <div id="bottomnav-container"></div>
 <!-- xlsx-js-style: SheetJS fork (same XLSX API) that also writes cell styles -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 <!-- NOTIFICATION BADGE -->
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
 <!-- LOAN CALCULATE LOGIC -->
