@@ -668,6 +668,10 @@
     function setFace(face) {
         const sub = sheet && sheet.querySelector(".ac-subtitle");
         if (sub) sub.textContent = t(face === "think" ? "assistant.thinking" : "assistant.subtitle");
+        // While it thinks, the robot zooms in to just its head (CSS .ac-zoom);
+        // the answer brings the whole robot back.
+        const slot = sheet && sheet.querySelector(".ac-robot");
+        if (slot) slot.classList.toggle("ac-zoom", face === "think");
         if (!chatRobot) return;
         if (face === "think") {
             chatRobot.think();
@@ -852,9 +856,11 @@
                             <div class="ac-title" id="acTitle">CM Pro AI</div>
                             <div class="ac-subtitle">${esc(t("assistant.subtitle"))}</div>
                         </div>
-                        <button type="button" class="ac-clear" aria-label="${esc(t("assistant.clear"))}">
-                            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            <span>${esc(t("assistant.clearShort"))}</span>
+                        <button type="button" class="ac-refresh" aria-label="${esc(t("assistant.refresh"))}" title="${esc(t("assistant.refresh"))}">
+                            <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.34-5.66M4 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                        <button type="button" class="ac-clear" aria-label="${esc(t("assistant.clear"))}" title="${esc(t("assistant.clearShort"))}">
+                            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </button>
                         <button type="button" class="ac-close" aria-label="${esc(t("assistant.close"))}">×</button>
                     </div>
@@ -905,6 +911,7 @@
         });
         sheet.querySelector(".ac-close").onclick = close;
         sheet.querySelector(".ac-clear").onclick = clearChat;
+        sheet.querySelector(".ac-refresh").onclick = refreshChat;
         initDrag();
 
         // The full robot on the panel's edge (only where the robot scripts
@@ -963,6 +970,22 @@
         welcome();
     }
 
+    // Refresh: drop the cached figures and ask the last question again,
+    // so the answer is today's latest (with no question yet, the
+    // greeting and today's work are redrawn).
+    function refreshChat() {
+        if (busy) return;
+        for (let i = sessionStorage.length - 1; i >= 0; i--) {
+            const k = sessionStorage.key(i);
+            if (k && (k.startsWith(OVERVIEW_KEY) || k.startsWith(WORK_KEY))) sessionStorage.removeItem(k);
+        }
+        const last = [...history].reverse().find(m => m.role === "me");
+        if (!last) return clearChat();
+        const tmp = document.createElement("div");
+        tmp.innerHTML = last.html;
+        ask(tmp.textContent);
+    }
+
     // ---------- size: normal sheet <-> fullscreen ----------
     // Drag the top bar (handle or header) up to go fullscreen, down to
     // shrink back or — far enough — close; a tap on the handle toggles.
@@ -992,7 +1015,7 @@
             if (!drag.moved && Math.abs(dy) < 6) return;
             if (!drag.moved) panel.classList.add("ac-dragging");
             drag.moved = true;
-            panel.style.height = `${Math.max(140, Math.min(window.innerHeight, drag.h - dy))}px`;
+            panel.style.height = `${Math.max(140, Math.min(sheet.clientHeight, drag.h - dy))}px`;
         });
         const end = () => {
             if (!drag) return;
@@ -1004,8 +1027,9 @@
                 return;
             }
             const h = panel.getBoundingClientRect().height;
-            const normal = Math.min(window.innerHeight * 0.86, 720);
-            if (h > (normal + window.innerHeight) / 2) setFull(true);
+            const room = sheet.clientHeight; // the space above the bottom bar
+            const normal = Math.min(room - 90, 720);
+            if (h > (normal + room) / 2) setFull(true);
             else if (h < normal * 0.55) { setFull(false); close(); }
             else setFull(false);
         };
@@ -1028,6 +1052,9 @@
 
     function open(question) {
         if (!sheet) build();
+        // The panel stops above the bottom bar, which stays visible.
+        const nav = document.querySelector(".bottom-nav");
+        sheet.style.setProperty("--ac-nav", `${nav ? Math.round(nav.getBoundingClientRect().height) : 0}px`);
         sheet.hidden = false;
         document.body.classList.add("ac-open");
         const panel = sheet.querySelector(".ac-sheet");

@@ -8,6 +8,7 @@ CMI18n.register({
   "assistant.subtitle": { km: "ជំនួយការការងារឆ្លាតវៃ", en: "Your smart banking work assistant" },
   "assistant.thinking": { km: "កំពុងរកចម្លើយ…", en: "Finding the answer…" },
   "assistant.clearShort": { km: "សម្អាត", en: "Clear" },
+  "assistant.refresh": { km: "ទាញទិន្នន័យថ្មី", en: "Refresh" },
   "assistant.expand": { km: "ពង្រីក ឬបង្រួមផ្ទាំង chat", en: "Expand or shrink the chat" },
   "assistant.close": { km: "បិទ", en: "Close" },
   "assistant.placeholder": { km: "សួរ ឬវាយពាក្យបញ្ជា…", en: "Ask or type a command…" },
