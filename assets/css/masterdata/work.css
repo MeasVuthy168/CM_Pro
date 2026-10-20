@@ -171,3 +171,45 @@
 .wk-class-ss{ background:#FFA500; color:#1C2333; }
 .wk-class-doubtful{ background:#FF0000; color:#fff; }
 .wk-class-loss{ background:#8B0000; color:#fff; }
+
+/* Team chips and Officers | Clients on one row; the officer picked below */
+.wk-filter-row{ display:flex; align-items:center; gap:8px; }
+.wk-filter-row #wkTeamChips{ flex:1; min-width:0; margin:0; }
+.wk-viewbar{ flex:none; }
+.wk-viewbar[hidden]{ display:none; }
+.wk-officer-bar{ margin:0 0 8px; }
+.wk-officer-bar[hidden]{ display:none; }
+.wk-viewseg{ display:flex; padding:3px; border-radius:12px; background:rgba(26,46,87,.07); }
+.wk-viewseg button{
+    display:inline-flex; align-items:center; gap:5px; border:none; background:none; border-radius:9px;
+    padding:6px 9px; font:inherit; font-size:12px; font-weight:700; color:var(--arr-text-muted); cursor:pointer; white-space:nowrap;
+}
+.wk-viewseg button.on{ background:#0E1B3C; color:#FFD700; }
+.wk-officer-chip{
+    display:inline-flex; align-items:center; gap:6px; border:1px solid rgba(212,175,55,.6); border-radius:999px;
+    background:rgba(212,175,55,.14); color:var(--arr-text); padding:5px 10px; font:inherit; font-size:12.5px; font-weight:700; cursor:pointer;
+}
+.wk-officer-x{ opacity:.6; font-size:11px; }
+[data-theme="dark"] .wk-viewseg, [data-theme="darkgray"] .wk-viewseg{ background:rgba(255,255,255,.06); }
+[data-theme="dark"] .wk-viewseg button.on, [data-theme="darkgray"] .wk-viewseg button.on{ background:#D4AF37; color:#0E1B3C; }
+
+/* Officer rows */
+.wk-officer{ align-items:center; }
+.wk-officer-ico{
+    width:34px; height:34px; flex:none; border-radius:10px; display:flex; align-items:center; justify-content:center;
+    background:rgba(26,46,87,.07); color:#1A2E57; font-size:16px; margin-right:10px;
+}
+[data-theme="dark"] .wk-officer-ico, [data-theme="darkgray"] .wk-officer-ico{ background:rgba(255,215,0,.1); color:#FFD700; }
+.wk-team{ display:inline-block; margin-left:4px; padding:0 6px; border-radius:6px; font-size:10.5px; font-weight:800; vertical-align:2px; }
+.wk-team-co{ background:#E8EEFF; color:#2A4BA8; }
+.wk-team-fsro{ background:#F1E8FB; color:#6E3FB0; }
+[data-theme="dark"] .wk-team-co, [data-theme="darkgray"] .wk-team-co{ background:rgba(96,140,255,.18); color:#A8BEFF; }
+[data-theme="dark"] .wk-team-fsro, [data-theme="darkgray"] .wk-team-fsro{ background:rgba(158,119,237,.2); color:#C9B3F5; }
+.wk-officer-n{ font-size:13px; font-weight:800; padding:3px 9px; border-radius:999px; white-space:nowrap; background:rgba(26,46,87,.07); }
+.wk-officer-n small{ font-size:10px; font-weight:700; opacity:.7; }
+.wk-officer-n-unfilled{ background:rgba(220,38,38,.10); color:#B91C1C; }
+.wk-officer-n-expired{ background:rgba(212,175,55,.18); color:#8A6D00; }
+.wk-officer-n-filled{ background:rgba(22,163,74,.12); color:#15803D; }
+[data-theme="dark"] .wk-officer-n-unfilled, [data-theme="darkgray"] .wk-officer-n-unfilled{ color:#FCA5A5; }
+[data-theme="dark"] .wk-officer-n-expired, [data-theme="darkgray"] .wk-officer-n-expired{ color:#FFD700; }
+[data-theme="dark"] .wk-officer-n-filled, [data-theme="darkgray"] .wk-officer-n-filled{ color:#86EFAC; }

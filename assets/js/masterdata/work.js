@@ -31,6 +31,19 @@ let wkRows = [];
 let wkTab = ["unfilled", "expired", "filled"].includes(wkParams.get("tab")) ? wkParams.get("tab") : "unfilled";
 let wkBranch = wkParams.get("branch") || "";
 let wkTeam = "";          // "" | "Credit Officer" | "FSRO"
+// "officer": the list is the officers (CO / FSRO), tap one for their
+// clients; "clients": every client. Managers start by officer; the
+// choice is remembered on this device.
+const WK_VIEW_KEY = "cm_work_view";
+let wkView = (() => {
+    if (!wkShowFilters) return "clients";
+    try {
+        const v = localStorage.getItem(WK_VIEW_KEY);
+        if (v === "officer" || v === "clients") return v;
+    } catch (e) {}
+    return /^viewer_manager_/.test(wkRole) ? "officer" : "clients";
+})();
+let wkOfficer = "";       // the officer picked in the "officer" view
 let wkShown = [];         // the list as currently filtered (also what ‹ › walks)
 let wkRow = null;         // the loan open in the detail screen
 let wkBaseline = null;    // field values it was opened with (dirty check)
@@ -221,7 +234,79 @@ function backToArrears(flash) {
 
 // ---------- list ----------
 function scopedRows() {
-    return wkRows.filter(r => (!wkBranch || r.branch === wkBranch) && (!wkTeam || teamOf(r) === wkTeam));
+    return wkRows.filter(r => (!wkBranch || r.branch === wkBranch) && (!wkTeam || teamOf(r) === wkTeam) &&
+        (!wkOfficer || (r.coResponse || "-") === wkOfficer));
+}
+
+function teamLabel(team) {
+    return team === "FSRO" ? "FSRO" : "CO";
+}
+
+function renderViewBar() {
+    const bar = $("wkViewBar");
+    const officerBar = $("wkOfficerBar");
+    if (!wkShowFilters) {
+        bar.hidden = true;
+        officerBar.hidden = true;
+        return;
+    }
+    bar.hidden = false;
+    const seg = (v, icon, key) => `<button type="button" class="${wkView === v ? "on" : ""}" data-wk-view="${v}"><span class="ui-ico ui-ico-${icon}" aria-hidden="true"></span>${escapeHtml(t(key))}</button>`;
+    bar.innerHTML = `
+        <div class="wk-viewseg" role="group" aria-label="${escapeHtml(t("work.viewAria"))}">
+            ${seg("officer", "officer", "work.viewOfficer")}${seg("clients", "users", "work.viewClients")}
+        </div>`;
+    officerBar.hidden = !wkOfficer;
+    officerBar.innerHTML = wkOfficer ? `<button type="button" class="wk-officer-chip" data-wk-officer-clear>
+            <span class="ui-ico ui-ico-officer" aria-hidden="true"></span>${escapeHtml(wkOfficer)}<span class="wk-officer-x" aria-label="${escapeHtml(t("common.close"))}">✕</span>
+        </button>` : "";
+}
+
+// The officers in the current branch / team / tab, most loans first.
+function renderOfficers(list, scoped, q) {
+    const map = new Map();
+    scoped.filter(r => inTab(r, wkTab)).forEach(r => {
+        const k = r.coResponse || "-";
+        const o = map.get(k) || { name: k, team: teamOf(r), branch: r.branch || "", n: 0, maxDay: 0 };
+        o.n++;
+        o.maxDay = Math.max(o.maxDay, parseInt(r.day, 10) || 0);
+        map.set(k, o);
+    });
+    const officers = [...map.values()]
+        .filter(o => !q || o.name.toLowerCase().includes(q))
+        .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
+    $("wkSubtitle").textContent = tf("work.subtitleOfficers", {
+        n: officers.length.toLocaleString(),
+        tab: t(`work.tab${wkTab[0].toUpperCase()}${wkTab.slice(1)}`)
+    });
+    wkShown = [];
+    if (!officers.length) {
+        list.innerHTML = `<div class="oa-empty oa-empty-art">
+            <span class="oa-empty-ico"><span class="ui-ico ui-ico-clipboard" aria-hidden="true"></span></span>
+            <strong>${escapeHtml(t(wkTab !== "filled" && !q ? "work.emptyDone" : "arrears.oaEmpty"))}</strong>
+        </div>`;
+        return;
+    }
+    const multiBranch = new Set(officers.map(o => o.branch)).size > 1;
+    list.innerHTML = officers.map(o => `
+        <div class="oa-item wk-officer" role="button" tabindex="0" data-officer="${escapeHtml(o.name)}">
+            <span class="wk-officer-ico"><span class="ui-ico ui-ico-officer" aria-hidden="true"></span></span>
+            <div class="oa-item-main">
+                <div class="oa-item-name">${escapeHtml(o.name)} <span class="wk-team wk-team-${o.team === "FSRO" ? "fsro" : "co"}">${teamLabel(o.team)}</span></div>
+                ${multiBranch && o.branch ? `<div class="oa-item-sub">${escapeHtml(o.branch)}</div>` : ""}
+            </div>
+            <div class="oa-item-side">
+                <span class="wk-officer-n wk-officer-n-${wkTab}">${o.n.toLocaleString()} <small>LD</small></span>
+                <span class="oa-item-chevron" aria-hidden="true">›</span>
+            </div>
+        </div>`).join("");
+}
+
+function pickOfficer(name) {
+    wkOfficer = name;
+    $("wkSearch").value = "";
+    renderList();
+    window.scrollTo(0, 0);
 }
 
 function chip(attr, value, label, n, active) {
@@ -272,8 +357,10 @@ function renderList() {
     const scoped = scopedRows();
     renderStats(scoped);
     renderPendingBar();
+    renderViewBar();
 
     const q = $("wkSearch").value.trim().toLowerCase();
+    if (wkView === "officer" && !wkOfficer && wkShowFilters) return renderOfficers($("wkList"), scoped, q);
     wkShown = scoped
         .filter(r => inTab(r, wkTab))
         .filter(r => !q || [r.customer, r.loanNumber, r.cif, r.concate, r.coResponse].some(v => String(v || "").toLowerCase().includes(q)))
@@ -322,12 +409,30 @@ function renderList() {
 }
 
 $("wkList").addEventListener("click", e => {
+    const off = e.target.closest("[data-officer]");
+    if (off) return pickOfficer(off.dataset.officer);
     const item = e.target.closest("[data-i]");
     if (item) openDetail(wkShown[Number(item.dataset.i)]);
 });
 $("wkList").addEventListener("keydown", e => {
+    if (e.key !== "Enter") return;
+    const off = e.target.closest("[data-officer]");
+    if (off) return pickOfficer(off.dataset.officer);
     const item = e.target.closest("[data-i]");
-    if (item && e.key === "Enter") openDetail(wkShown[Number(item.dataset.i)]);
+    if (item) openDetail(wkShown[Number(item.dataset.i)]);
+});
+$("wkOfficerBar").addEventListener("click", e => {
+    if (!e.target.closest("[data-wk-officer-clear]")) return;
+    wkOfficer = "";
+    renderList();
+});
+$("wkViewBar").addEventListener("click", e => {
+    const v = e.target.closest("[data-wk-view]");
+    if (!v) return;
+    wkView = v.dataset.wkView;
+    wkOfficer = "";
+    try { localStorage.setItem(WK_VIEW_KEY, wkView); } catch (e2) {}
+    renderList();
 });
 
 document.querySelectorAll("[data-wk-tab]").forEach(btn => btn.addEventListener("click", () => {
@@ -339,6 +444,7 @@ $("wkBranchChips").addEventListener("click", e => {
     const c = e.target.closest("[data-branch]");
     if (!c) return;
     wkBranch = c.dataset.branch;
+    wkOfficer = "";
     renderChips();
     renderList();
 });
@@ -346,6 +452,7 @@ $("wkTeamChips").addEventListener("click", e => {
     const c = e.target.closest("[data-team]");
     if (!c) return;
     wkTeam = c.dataset.team;
+    wkOfficer = "";
     renderChips();
     renderList();
 });
@@ -698,6 +805,11 @@ async function loadComponent(id, file) {
             if (backBtn) {
                 backBtn.onclick = () => {
                     if ($("wkDetailScreen").style.display === "block") return $("btnWkBack").click();
+                    // An officer's clients: back to the officers.
+                    if (wkOfficer) {
+                        wkOfficer = "";
+                        return renderList();
+                    }
                     // Opened from Daily Arrears' button: go back there.
                     if (/\/pages\/arrears\//.test(document.referrer)) return history.back();
                     location.href = "/CM_Pro/pages/masterdata/index.html";

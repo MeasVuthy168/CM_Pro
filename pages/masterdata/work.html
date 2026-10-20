@@ -107,9 +107,15 @@ No Internet Connection
 
       <!-- Branch / team chips (not for Viewer_Staff, who only has their own) -->
       <div class="oa-branch-filter" id="wkBranchChips" role="group"></div>
-      <div class="oa-branch-filter" id="wkTeamChips" role="group"></div>
+      <!-- Team chips, with By officer | All clients on the same row (not for Viewer_Staff) -->
+      <div class="wk-filter-row">
+        <div class="oa-branch-filter" id="wkTeamChips" role="group"></div>
+        <div class="wk-viewbar" id="wkViewBar" hidden></div>
+      </div>
     </div>
 
+    <!-- The officer picked in the "by officer" view -->
+    <div class="wk-officer-bar" id="wkOfficerBar" hidden></div>
     <div class="reason-subtitle oa-count" id="wkSubtitle">-</div>
 
     <!-- Saved on this phone, not yet submitted -->
