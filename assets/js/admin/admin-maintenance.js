@@ -682,4 +682,156 @@
   }
 
   cp.btnRun.addEventListener("click", openCompactConfirmModal);
+
+  // =====================================================
+  // Clean Up Reason Arrear — rows whose LD-CIF is no longer in OS
+  // (POST /api/maintenance/reasonarrear-orphans). Find lists them;
+  // Delete Permanently sends exactly the previewed LD-CIFs, and the
+  // server re-checks each against OS before deleting.
+  // =====================================================
+  const ra = {
+    previewResult: document.getElementById("raPreviewResult"),
+    list: document.getElementById("raList"),
+    btnPreview: document.getElementById("raBtnPreview"),
+    btnCopy: document.getElementById("raBtnCopy"),
+    btnDelete: document.getElementById("raBtnDelete")
+  };
+  const RA_SHOWN = 100;
+
+  let raOrphans = null; // [{ cif, aj, ak, al, uploadedBy, uploadedAt }]
+
+  function resetReasonPreview() {
+    raOrphans = null;
+    ra.btnDelete.disabled = true;
+    ra.btnCopy.hidden = true;
+    ra.previewResult.hidden = true;
+    ra.list.hidden = true;
+    ra.list.innerHTML = "";
+  }
+
+  async function postReasonOrphans(payload) {
+    const res = await fetch(`${API_BASE}/api/maintenance/reasonarrear-orphans`, {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (res.status === 401 || res.status === 403) {
+      location.replace(window.CM_ADMIN_CONFIG.loginPage);
+      return null;
+    }
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      AdminUI.toast(data.message || t("admin.maintenance.raFailed"), "error");
+      return null;
+    }
+    return data;
+  }
+
+  function renderReasonOrphans(data) {
+    ra.previewResult.hidden = false;
+    if (!data.count) {
+      ra.previewResult.textContent = t("admin.maintenance.raEmpty", { total: data.total.toLocaleString() });
+      return;
+    }
+    ra.previewResult.innerHTML = t("admin.maintenance.raResult", {
+      total: data.total.toLocaleString(), os: data.osCount.toLocaleString(), count: data.count.toLocaleString()
+    });
+    const rows = data.orphans.slice(0, RA_SHOWN).map(o => `
+      <tr>
+        <td style="white-space:nowrap">${escapeHtml(o.cif)}</td>
+        <td>${escapeHtml(o.ak || o.aj || "—")}</td>
+        <td>${escapeHtml(o.uploadedBy || "—")}</td>
+        <td style="white-space:nowrap">${escapeHtml(o.uploadedAt ? o.uploadedAt.slice(0, 10) : "—")}</td>
+      </tr>`).join("");
+    const more = data.count > RA_SHOWN
+      ? `<p class="adm-table-empty">${escapeHtml(t("admin.maintenance.raMore", { n: (data.count - RA_SHOWN).toLocaleString() }))}</p>`
+      : "";
+    ra.list.innerHTML = `
+      <div style="overflow-x:auto; max-height:360px; overflow-y:auto; margin-bottom:10px;">
+        <table class="adm-table">
+          <thead><tr>
+            <th>LD-CIF</th>
+            <th>${escapeHtml(t("admin.maintenance.raColReason"))}</th>
+            <th>${escapeHtml(t("admin.maintenance.raColBy"))}</th>
+            <th>${escapeHtml(t("admin.maintenance.raColDate"))}</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>${more}`;
+    ra.list.hidden = false;
+    ra.btnCopy.hidden = false;
+    ra.btnDelete.disabled = false;
+  }
+
+  async function runReasonPreview() {
+    ra.btnPreview.disabled = true;
+    resetReasonPreview();
+    try {
+      const data = await postReasonOrphans({ dryRun: true });
+      if (!data) return;
+      raOrphans = data.orphans;
+      renderReasonOrphans(data);
+    } catch (e) {
+      console.error("reason arrear preview failed:", e);
+      AdminUI.toast(t("admin.maintenance.raFailedServer"), "error");
+    } finally {
+      ra.btnPreview.disabled = false;
+    }
+  }
+
+  async function copyReasonOrphans() {
+    if (!raOrphans?.length) return;
+    const text = raOrphans.map(o => o.cif).join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.cssText = "position:fixed;opacity:0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+    AdminUI.toast(t("admin.maintenance.raCopied", { n: raOrphans.length.toLocaleString() }), "success");
+  }
+
+  function openReasonConfirmModal() {
+    if (!raOrphans?.length) {
+      return AdminUI.toast(t("admin.maintenance.previewFirst"), "error");
+    }
+
+    const body = document.createElement("div");
+    body.innerHTML = `
+      <p class="adm-modal-message">${t("admin.maintenance.raConfirmMessage", { count: raOrphans.length.toLocaleString() })}</p>
+      <div class="adm-modal-footer">
+        <button type="button" class="adm-btn" id="raDelCancel">${t("admin.maintenance.cancel")}</button>
+        <button type="button" class="adm-btn adm-btn-danger" id="raDelConfirm">${t("admin.maintenance.confirmDelete")}</button>
+      </div>
+    `;
+
+    const { body: mountedBody } = AdminUI.openModal({ title: t("admin.maintenance.raConfirmTitle"), bodyNode: body });
+
+    mountedBody.querySelector("#raDelCancel").addEventListener("click", () => AdminUI.closeModal());
+    mountedBody.querySelector("#raDelConfirm").addEventListener("click", async (ev) => {
+      const btn = ev.currentTarget;
+      btn.disabled = true;
+      try {
+        const data = await postReasonOrphans({ cifs: raOrphans.map(o => o.cif) });
+        if (!data) return;
+        AdminUI.closeModal();
+        AdminUI.toast(t("admin.maintenance.raDone", { count: data.deletedCount.toLocaleString() }), "success");
+        resetReasonPreview();
+      } catch (e) {
+        console.error("reason arrear cleanup failed:", e);
+        AdminUI.toast(t("admin.maintenance.raFailedServer"), "error");
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+
+  ra.btnPreview.addEventListener("click", runReasonPreview);
+  ra.btnCopy.addEventListener("click", copyReasonOrphans);
+  ra.btnDelete.addEventListener("click", openReasonConfirmModal);
 })();

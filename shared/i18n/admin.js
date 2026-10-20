@@ -497,6 +497,31 @@ CMI18n.register({
   "admin.maintenance.compactDone": { km: "បានបង្រួមរួចរាល់ — លុបជួរចំនួន {count} ពីខែបិទចំនួន {months}។", en: "Compaction complete — deleted {count} row(s) across {months} month(s)." },
   "admin.maintenance.compactFailed": { km: "បង្រួមបានបរាជ័យ។", en: "Compaction failed." },
   "admin.maintenance.compactFailedServer": { km: "បង្រួមបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Compaction failed — could not reach the server." },
+  "admin.maintenance.raLabel": { km: "សម្អាត Reason Arrear", en: "Clean Up Reason Arrear" },
+  "admin.maintenance.raExplain": {
+    km: "ស្វែងរក Reason Arrear ដែល LD-CIF លែងមានក្នុង OS (បង់ផ្តាច់ ឬបិទកម្ចីរួច) រួចលុបចោលជាអចិន្ត្រៃយ៍។ មិនអាចត្រឡប់វិញបានទេ។",
+    en: "Find Reason Arrear rows whose LD-CIF is no longer in OS (paid off or closed loans), then permanently delete them. This can't be undone."
+  },
+  "admin.maintenance.raFind": { km: "ស្វែងរក", en: "Find" },
+  "admin.maintenance.raCopy": { km: "ចម្លង LD-CIF", en: "Copy LD-CIF" },
+  "admin.maintenance.raResult": {
+    km: "Reason Arrear សរុប {total} · OS មាន {os} ជួរ · <b>{count}</b> LD-CIF មិនមានក្នុង OS។",
+    en: "{total} Reason Arrear row(s) · OS has {os} row(s) · <b>{count}</b> LD-CIF(s) not in OS."
+  },
+  "admin.maintenance.raEmpty": { km: "Reason Arrear ទាំងអស់ ({total}) មានក្នុង OS — គ្មានអ្វីត្រូវសម្អាតទេ។", en: "All {total} Reason Arrear row(s) are in OS — nothing to clean up." },
+  "admin.maintenance.raMore": { km: "និង {n} ទៀត… (ចុច ចម្លង LD-CIF ដើម្បីបានទាំងអស់)", en: "and {n} more… (Copy LD-CIF gets them all)" },
+  "admin.maintenance.raColReason": { km: "មូលហេតុ", en: "Reason" },
+  "admin.maintenance.raColBy": { km: "បញ្ចូលដោយ", en: "By" },
+  "admin.maintenance.raColDate": { km: "កាលបរិច្ឆេទ", en: "Date" },
+  "admin.maintenance.raCopied": { km: "បានចម្លង LD-CIF ចំនួន {n}។", en: "Copied {n} LD-CIF(s)." },
+  "admin.maintenance.raConfirmTitle": { km: "បញ្ជាក់ការលុប Reason Arrear", en: "Confirm Reason Arrear Cleanup" },
+  "admin.maintenance.raConfirmMessage": {
+    km: "លុប Reason Arrear ចំនួន <b>{count}</b> ដែល LD-CIF មិនមានក្នុង OS ជាអចិន្ត្រៃយ៍? ប្រសិនបើ Excel VBA នៅមានជួរទាំងនេះ វាអាចបញ្ចូលមកវិញនៅពេល sync។",
+    en: "Permanently delete <b>{count}</b> Reason Arrear row(s) whose LD-CIF is not in OS? If an Excel VBA sheet still has these rows, its next sync may add them back."
+  },
+  "admin.maintenance.raDone": { km: "បានលុប Reason Arrear ចំនួន {count}។", en: "Deleted {count} Reason Arrear row(s)." },
+  "admin.maintenance.raFailed": { km: "ប្រតិបត្តិការបានបរាជ័យ។", en: "The request failed." },
+  "admin.maintenance.raFailedServer": { km: "បរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Failed — could not reach the server." },
   "admin.maintenance.couldNotLoadMongoUsage": { km: "មិនអាចផ្ទុកការប្រើប្រាស់ទំហំផ្ទុកបានទេ។", en: "Could not load storage usage." },
 
   // ===================================================

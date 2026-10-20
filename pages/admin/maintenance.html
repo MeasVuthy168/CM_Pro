@@ -128,6 +128,24 @@
       </div>
 
       <!-- ========================= -->
+      <!-- CLEAN UP REASON ARREAR -->
+      <!-- Reason Arrear rows whose LD-CIF is no longer in OS (paid off / -->
+      <!-- closed loans), from POST /api/maintenance/reasonarrear-orphans. -->
+      <!-- ========================= -->
+      <div class="adm-card">
+        <div class="adm-card-label" data-i18n="admin.maintenance.raLabel">Clean Up Reason Arrear</div>
+        <p class="adm-modal-message" data-i18n="admin.maintenance.raExplain">
+          Find Reason Arrear rows whose LD-CIF is no longer in OS (paid off or closed loans), then permanently delete them. This can't be undone.
+        </p>
+        <p class="adm-modal-message" id="raPreviewResult" hidden></p>
+        <div id="raList" hidden></div>
+        <div class="adm-modal-footer" style="justify-content:flex-start; gap:12px; flex-wrap:wrap;">
+          <button type="button" class="adm-btn" id="raBtnPreview" data-i18n="admin.maintenance.raFind">Find</button>
+          <button type="button" class="adm-btn" id="raBtnCopy" hidden data-i18n="admin.maintenance.raCopy">Copy LD-CIF</button>
+          <button type="button" class="adm-btn adm-btn-danger" id="raBtnDelete" disabled data-i18n="admin.maintenance.deletePermanently">Delete Permanently</button>
+        </div>
+      </div>
+      <!-- ========================= -->
       <!-- WIPE COLLECTION BY SOURCE + WIPE LOCK MANAGEMENT -->
       <!-- For wipe-and-replace collections (ListBlocked, ScheduleRepayments, -->
       <!-- PrevOS, NewRegister, …) where there's no "old" data to prune by -->
