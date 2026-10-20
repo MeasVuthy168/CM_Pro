@@ -799,6 +799,7 @@
         }
         typing.remove();
         setFace(failed ? "neutral" : "joy");
+        if (!failed) answeredSinceOpen++;
         addMessage("bot", reply.html + (reply.chips ? chipsHtml() : ""));
         busy = false;
         if (reply.go) setTimeout(() => { location.href = reply.go; }, 700);
@@ -977,11 +978,18 @@
         else if (window.matchMedia("(pointer:fine)").matches) inputEl.focus();
     }
 
+    // Answers given since the chat was last opened — on close, the page
+    // hears "cm-assistant-close" with that count (Home's robot gives a
+    // thumbs-up when it's > 0).
+    let answeredSinceOpen = 0;
+
     function close() {
-        if (!sheet) return;
+        if (!sheet || sheet.hidden) return;
         stopRec();
         sheet.hidden = true;
         document.body.classList.remove("ac-open");
+        document.dispatchEvent(new CustomEvent("cm-assistant-close", { detail: { answered: answeredSinceOpen } }));
+        answeredSinceOpen = 0;
     }
 
     window.CMAssistantChat = { open, close, voiceLang, setVoiceLang, speechCode, voiceErrorText, respond, loadWork, workQuestion };

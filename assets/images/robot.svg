@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="48 -12 570 790" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="48 -12 570 790" width="100%" height="100%" preserveAspectRatio="xMaxYMid meet">
 
   <!-- =====================================================================
        CM_Pro ROBOT MASCOT — static rig
@@ -19,7 +19,9 @@
 
        RESPONSIVE SIZING: width/height are "100%" — the viewBox alone
        defines the aspect ratio, and the element scales to fill whatever
-       container it's placed in.
+       container it's placed in. Anchored right (xMaxYMid): the spare
+       width goes to the left, where the left arm's cheer/shrug reaches
+       past the viewBox (the page lets the <svg> overflow).
 
        VIEWBOX: measured empirically, not guessed — a headless browser
        sampled the actual rendered bounding box of #cm-pro-robot across
@@ -227,10 +229,10 @@
             <g id="left-hand">
               <rect x="139" y="402" width="42" height="36" rx="14" fill="url(#blackLimbs)"/>
               <circle cx="149" cy="411" r="4.5" fill="#ffffff" opacity="0.18"/>
-              <rect x="143" y="432" width="10" height="23" rx="5" fill="url(#blackLimbs)" transform="rotate(-10 148 436)"/>
-              <rect x="155" y="434" width="10" height="25" rx="5" fill="url(#blackLimbs)"/>
-              <rect x="167" y="432" width="10" height="23" rx="5" fill="url(#blackLimbs)" transform="rotate(10 172 436)"/>
-              <rect x="132" y="410" width="11" height="21" rx="5.5" fill="url(#blackLimbs)" transform="rotate(-36 137 411)"/>
+              <g id="left-finger-1"><rect x="143" y="432" width="10" height="23" rx="5" fill="url(#blackLimbs)" transform="rotate(-10 148 436)"/></g>
+              <g id="left-finger-2"><rect x="155" y="434" width="10" height="25" rx="5" fill="url(#blackLimbs)"/></g>
+              <g id="left-finger-3"><rect x="167" y="432" width="10" height="23" rx="5" fill="url(#blackLimbs)" transform="rotate(10 172 436)"/></g>
+              <g id="left-thumb"><rect x="132" y="410" width="11" height="21" rx="5.5" fill="url(#blackLimbs)" transform="rotate(-36 137 411)"/></g>
             </g>
           </g>
         </g>
@@ -259,10 +261,10 @@
             <g id="right-hand">
               <rect x="299" y="402" width="42" height="36" rx="14" fill="url(#blackLimbs)"/>
               <circle cx="331" cy="411" r="4.5" fill="#ffffff" opacity="0.18"/>
-              <rect id="right-finger-1" x="327" y="432" width="10" height="23" rx="5" fill="url(#blackLimbs)" transform="rotate(10 332 436)"/>
-              <rect id="right-finger-2" x="315" y="434" width="10" height="25" rx="5" fill="url(#blackLimbs)"/>
-              <rect id="right-finger-3" x="303" y="432" width="10" height="23" rx="5" fill="url(#blackLimbs)" transform="rotate(-10 308 436)"/>
-              <rect id="right-thumb" x="337" y="410" width="11" height="21" rx="5.5" fill="url(#blackLimbs)" transform="rotate(36 343 411)"/>
+              <g id="right-finger-1"><rect x="327" y="432" width="10" height="23" rx="5" fill="url(#blackLimbs)" transform="rotate(10 332 436)"/></g>
+              <g id="right-finger-2"><rect x="315" y="434" width="10" height="25" rx="5" fill="url(#blackLimbs)"/></g>
+              <g id="right-finger-3"><rect x="303" y="432" width="10" height="23" rx="5" fill="url(#blackLimbs)" transform="rotate(-10 308 436)"/></g>
+              <g id="right-thumb"><rect x="337" y="410" width="11" height="21" rx="5.5" fill="url(#blackLimbs)" transform="rotate(36 343 411)"/></g>
             </g>
           </g>
         </g>
