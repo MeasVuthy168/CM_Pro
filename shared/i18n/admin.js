@@ -504,6 +504,7 @@ CMI18n.register({
   },
   "admin.maintenance.raFind": { km: "ស្វែងរក", en: "Find" },
   "admin.maintenance.raFindAgain": { km: "ស្វែងរកម្តងទៀត", en: "Find again" },
+  "admin.maintenance.raSearching": { km: "កំពុងស្វែងរក… {pct}%", en: "Searching… {pct}%" },
   "admin.maintenance.raStatTotal": { km: "សរុប", en: "Total" },
   "admin.maintenance.raStatInOs": { km: "មានក្នុង OS", en: "In OS" },
   "admin.maintenance.raStatOrphan": { km: "មិនមានក្នុង OS", en: "Not in OS" },
