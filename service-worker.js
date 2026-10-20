@@ -6,28 +6,78 @@ console.log("🔥 SERVICE WORKER LOADED");
    CM_Pro – Production Service Worker
 ========================================================= */
 
-const SW_VERSION = "v605";
+const SW_VERSION = "v606";
 
 const CACHE_NAME = `cm-pro-cache-${SW_VERSION}`;
 
 // =========================================================
-// STATIC CACHE FILES 
+// APP SHELL — precached on install so the first open of Home and
+// the three tabs after an update is already instant. Every other
+// /CM_Pro/ file is cached the first time it's loaded (see FETCH).
+// A missing file here never blocks the install (allSettled below).
 // =========================================================
 
 const STATIC_ASSETS = [
 
     "/CM_Pro/",
-
-    "/CM_Pro/login.html",
-
     "/CM_Pro/index.html",
-
+    "/CM_Pro/login.html",
     "/CM_Pro/manifest.json",
+    "/CM_Pro/pages/settings/index.html",
+    "/CM_Pro/pages/notifications/index.html",
+
+    "/CM_Pro/components/topbar.html",
+    "/CM_Pro/components/bottomnav.html",
+
+    "/CM_Pro/assets/css/main.css",
+    "/CM_Pro/assets/css/base.css",
+    "/CM_Pro/assets/css/variables.css",
+    "/CM_Pro/assets/css/layout.css",
+    "/CM_Pro/assets/css/mobile.css",
+    "/CM_Pro/assets/css/animation.css",
+    "/CM_Pro/assets/css/dashboard.css",
+    "/CM_Pro/assets/css/cards.css",
+    "/CM_Pro/assets/css/bottomnav.css",
+    "/CM_Pro/assets/css/topbar.css",
+    "/CM_Pro/assets/css/assistant.css",
+    "/CM_Pro/assets/css/page.css",
+    "/CM_Pro/assets/css/toast.css",
+    "/CM_Pro/assets/css/offline-banner.css",
+    "/CM_Pro/assets/css/loading.css",
+    "/CM_Pro/assets/css/global-splash.css",
+    "/CM_Pro/assets/css/settings.css",
+    "/CM_Pro/assets/css/notification.css",
+    "/CM_Pro/assets/fonts/Krasar-Regular.ttf",
+
+    "/CM_Pro/config/api.js",
+    "/CM_Pro/config/auth.js",
+    "/CM_Pro/config/session.js",
+    "/CM_Pro/config/push.js",
+    "/CM_Pro/shared/page-transition.js",
+    "/CM_Pro/shared/sw-register.js",
+    "/CM_Pro/shared/touch-polish.js",
+    "/CM_Pro/shared/theme.js",
+    "/CM_Pro/shared/language.js",
+    "/CM_Pro/shared/i18n.js",
+    "/CM_Pro/shared/i18n/common.js",
+    "/CM_Pro/shared/i18n/core.js",
+    "/CM_Pro/shared/i18n/settings.js",
+    "/CM_Pro/shared/i18n/assistant.js",
+    "/CM_Pro/shared/loading.js",
+    "/CM_Pro/shared/logout.js",
+    "/CM_Pro/shared/topbar.js",
+    "/CM_Pro/assets/js/dashboard.js",
+    "/CM_Pro/assets/js/toast.js",
+    "/CM_Pro/assets/js/global-splash.js",
+    "/CM_Pro/assets/js/notification-badge.js",
+    "/CM_Pro/assets/js/notification.js",
+    "/CM_Pro/assets/js/notification-loader.js",
+    "/CM_Pro/assets/js/settings.js",
+    "/CM_Pro/assets/js/assistant-box.js",
+    "/CM_Pro/assets/js/robot-embed.js",
 
     "/CM_Pro/assets/images/LogoAC.png",
-
     "/CM_Pro/assets/images/icon-192.png",
-
     "/CM_Pro/assets/images/icon-512.png",
 
     "/CM_Pro/assets/icons/menu/customer-search.png",
@@ -51,6 +101,14 @@ const STATIC_ASSETS = [
 
 ];
 
+// Pinned-version CDN libraries (xlsx, jsPDF, Leaflet, Chart.js…):
+// their URLs never change content, so they're served cache-first.
+const CDN_HOSTS = [
+    "cdnjs.cloudflare.com",
+    "cdn.jsdelivr.net",
+    "unpkg.com"
+];
+
 // =========================================================
 // INSTALL
 // =========================================================
@@ -66,17 +124,19 @@ self.addEventListener(
             SW_VERSION
         );
 
+        // cache:"reload" skips the browser's HTTP cache, so a new
+        // version never precaches the previous deploy's files.
         event.waitUntil(
 
             caches.open(CACHE_NAME)
 
-                .then(cache=>{
+                .then(cache=>Promise.allSettled(
 
-                    return cache.addAll(
-                        STATIC_ASSETS
-                    );
+                    STATIC_ASSETS.map(url=>
+                        cache.add(new Request(url,{ cache:"reload" }))
+                    )
 
-                })
+                ))
 
         );
 
@@ -150,17 +210,135 @@ self.addEventListener(
 );
 
 // =========================================================
-// FETCH NETWORK-FIRST
-// Cache-first previously meant that once a file was cached under
-// some version, it kept being served from that cache forever with
-// no re-check against the network — a new SW_VERSION only helps
-// once the browser actually re-installs/activates it, which on some
-// devices (especially installed/home-screen PWAs) can lag well
-// behind the deploy, or not happen promptly at all. Network-first
-// means every load gets whatever is actually live right now
-// whenever there's connectivity; the cache is purely the offline
-// fallback, refreshed on every successful fetch.
+// FETCH
+// Same-origin /CM_Pro/ files: stale-while-revalidate inside the
+// versioned cache — answered from the cache straight away (instant
+// page changes), then re-checked with the server in the background
+// so the next load has whatever is live. Each deploy bumps
+// SW_VERSION, which starts a fresh cache, so a new version never
+// mixes with the previous deploy's files; the background re-check
+// covers a file changed without a bump (one load behind at most).
+// (A plain cache-first used to serve old files forever — this is
+// why every hit is still re-checked.)
+// CDN libraries: cache-first (pinned versions).
+// Everything else (the API, map tiles, Google Fonts): not touched.
 // =========================================================
+
+// A file re-checked this recently isn't re-checked again — one
+// page load asks for the same files a few times.
+const REVALIDATE_GAP_MS = 30 * 1000;
+const lastRevalidated = new Map();
+
+function cacheKeyFor(request){
+
+    // Pages are cached without their query string (?from=…, ?tab=…)
+    // so every variant of a page shares one entry.
+    if(request.mode === "navigate"){
+
+        const url = new URL(request.url);
+
+        return url.origin + url.pathname;
+
+    }
+
+    return request;
+
+}
+
+function cacheable(response){
+
+    return response &&
+        response.status === 200 &&
+        response.type === "basic" &&
+        !response.redirected;
+
+}
+
+async function revalidate(request, cache, force){
+
+    const key = cacheKeyFor(request);
+    const id = typeof key === "string" ? key : key.url;
+
+    const last = lastRevalidated.get(id) || 0;
+    if(!force && Date.now() - last < REVALIDATE_GAP_MS) return null;
+    lastRevalidated.set(id, Date.now());
+
+    try{
+
+        // cache:"no-cache" → conditional request, a cheap 304 when
+        // unchanged (and it skips GitHub Pages' max-age=600).
+        const response = await fetch(request,{ cache:"no-cache" });
+
+        if(cacheable(response)){
+
+            await cache.put(key, response.clone());
+
+        }
+
+        return response;
+
+    }catch(err){
+
+        lastRevalidated.delete(id);
+
+        throw err;
+
+    }
+
+}
+
+async function staleWhileRevalidate(event){
+
+    const request = event.request;
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(cacheKeyFor(request));
+
+    if(cached){
+
+        event.waitUntil(revalidate(request, cache).catch(()=>{}));
+
+        return cached;
+
+    }
+
+    try{
+
+        return await revalidate(request, cache, true);
+
+    }catch(err){
+
+        if(request.mode === "navigate"){
+
+            return (await cache.match("/CM_Pro/login.html")) || Response.error();
+
+        }
+
+        return Response.error();
+
+    }
+
+}
+
+async function cacheFirst(request){
+
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(request);
+
+    if(cached) return cached;
+
+    const response = await fetch(request);
+
+    // CDN scripts without crossorigin come back opaque — still
+    // safe to keep for a pinned URL.
+    if(response && (response.ok || response.type === "opaque")){
+
+        cache.put(request, response.clone());
+
+    }
+
+    return response;
+
+}
 
 self.addEventListener(
 
@@ -168,102 +346,31 @@ self.addEventListener(
 
     (event)=>{
 
-        // only GET requests
-        if(
-            event.request.method !== "GET"
-        ) return;
+        const request = event.request;
 
-        // skip unsupported schemes (e.g. browser extension requests)
-        if(
-            !event.request.url.startsWith("http")
-        ) return;
+        if(request.method !== "GET") return;
 
-        // Same-origin files: revalidate with the server every time
-        // (cache:"no-cache" → conditional request, a cheap 304 when
-        // unchanged). Without this, the browser's HTTP cache honours
-        // GitHub Pages' max-age=600 and keeps serving the previous
-        // deploy's JS/CSS/HTML for up to 10 minutes after an update.
-        // Cross-origin (CDN libraries) keep normal HTTP caching.
+        if(!request.url.startsWith("http")) return;
 
-        const sameOrigin =
-            new URL(event.request.url).origin === self.location.origin;
+        const url = new URL(request.url);
 
-        event.respondWith(
+        if(url.origin === self.location.origin){
 
-            (sameOrigin
-                ? fetch(event.request,{ cache:"no-cache" })
-                : fetch(event.request))
+            if(!url.pathname.startsWith("/CM_Pro/")) return;
 
-                .then(response=>{
+            if(url.pathname.endsWith("/service-worker.js")) return;
 
-                    // invalid response
-                    if(
-                        !response ||
+            event.respondWith(staleWhileRevalidate(event));
 
-                        response.status !== 200 ||
+            return;
 
-                        response.type !== "basic"
-                    ){
+        }
 
-                        return response;
+        if(CDN_HOSTS.includes(url.hostname)){
 
-                    }
+            event.respondWith(cacheFirst(request));
 
-                    // clone response
-                    const responseClone =
-                        response.clone();
-
-                    // save to cache (offline fallback for next time)
-                    caches.open(CACHE_NAME)
-
-                        .then(cache=>{
-
-                            cache.put(
-
-                                event.request,
-
-                                responseClone
-
-                            );
-
-                        });
-
-                    return response;
-
-                })
-
-                .catch(()=>{
-
-                    // =========================
-                    // OFFLINE — SERVE FROM CACHE
-                    // =========================
-
-                    return caches.match(event.request)
-
-                        .then(cached=>{
-
-                            if(cached){
-
-                                return cached;
-
-                            }
-
-                            if(
-                                event.request.mode ===
-                                "navigate"
-                            ){
-
-                                return caches.match(
-                                    "/CM_Pro/login.html"
-                                );
-
-                            }
-
-                        });
-
-                })
-
-        );
+        }
 
     }
 

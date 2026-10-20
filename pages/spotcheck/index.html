@@ -27,6 +27,7 @@
 <link rel="expect" href="#cm-pt-parsed" blocking="render">
 <link rel="preload" href="/CM_Pro/assets/fonts/Krasar-Regular.ttf" as="font" type="font/ttf" crossorigin>
 <script src="/CM_Pro/shared/page-transition.js"></script>
+<script src="/CM_Pro/shared/sw-register.js"></script>
 </head>
 <body>
 
@@ -472,7 +473,7 @@ No Internet Connection
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
 
 <!-- Export Excel (⋮ menu) — same CDN build pages/arrears/index.html uses -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <!-- SPOTCHECK LOGIC -->
 <script src="../../assets/js/spotcheck.js"></script>
