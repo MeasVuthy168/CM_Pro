@@ -610,22 +610,37 @@
 .ac-dim[hidden]{ display:none; }
 body.ac-open{ overflow:hidden; }
 .ac-sheet{
+    position:relative;
     width:100%; max-width:560px; height:min(86vh, 720px);
     display:flex; flex-direction:column;
     background:#F6F8FC; color:#1C2333;
     border-radius:22px 22px 0 0;
-    padding:10px 0 calc(10px + env(safe-area-inset-bottom));
+    padding:0 0 calc(10px + env(safe-area-inset-bottom));
     box-sizing:border-box;
     animation:saSheetUp .25s ease;
+    transition:height .3s cubic-bezier(.2,.8,.2,1), border-radius .3s ease;
 }
-.ac-grab{ width:42px; height:5px; border-radius:3px; background:#D5DAE3; margin:0 auto 10px; flex:none; }
-.ac-head{ display:flex; align-items:center; gap:10px; padding:0 16px 10px; border-bottom:1px solid #E6EAF2; flex:none; }
-.ac-avatar{
-    width:38px; height:38px; flex:none; border-radius:12px;
-    background:linear-gradient(135deg,#0E1B3C,#1A2E57); color:#FFD700;
+/* Fullscreen (drag the top bar up, or tap the handle). */
+.ac-sheet.ac-full{
+    height:100vh; height:100dvh; max-width:none; border-radius:0;
+    padding-top:env(safe-area-inset-top);
+}
+.ac-sheet.ac-dragging{ transition:none; }
+/* Opening from / closing into the assistant box runs its own reveal. */
+.ac-sheet.ac-from-box{ animation:none; }
+.ac-dim.ac-closing{ animation:acDimOut .3s ease forwards; }
+@keyframes acDimOut{ to{ background:rgba(10,16,35,0); } }
+
+/* Top bar: the drag handle + header. touch-action none so a drag here
+   resizes the panel instead of scrolling the page. */
+.ac-top{ flex:none; touch-action:none; cursor:grab; user-select:none; -webkit-user-select:none; }
+.ac-grab{
     display:flex; align-items:center; justify-content:center;
-    font-weight:800; font-size:14px; letter-spacing:.5px;
+    width:100%; height:22px; padding:0; border:none; background:none; cursor:grab;
 }
+.ac-grab span{ width:42px; height:5px; border-radius:3px; background:#D5DAE3; }
+.ac-head{ display:flex; align-items:center; gap:10px; padding:0 16px 10px 98px; border-bottom:1px solid #E6EAF2; }
+.ac-sheet.ac-full .ac-head{ padding-left:72px; }
 .ac-head-text{ flex:1; min-width:0; }
 .ac-title{ font-size:17px; font-weight:800; }
 .ac-subtitle{ font-size:12px; color:#6B7280; }
@@ -710,7 +725,7 @@ body.ac-open{ overflow:hidden; }
 [data-theme="dark"] .ac-k, [data-theme="darkgray"] .ac-k,
 [data-theme="dark"] .ac-rank-name small, [data-theme="darkgray"] .ac-rank-name small{ color:#9AA8C7; }
 [data-theme="dark"] .ac-close, [data-theme="darkgray"] .ac-close{ background:rgba(255,255,255,.08); color:#fff; }
-[data-theme="dark"] .ac-grab, [data-theme="darkgray"] .ac-grab{ background:#33456F; }
+[data-theme="dark"] .ac-grab span, [data-theme="darkgray"] .ac-grab span{ background:#33456F; }
 [data-theme="dark"] .ac-bot .ac-bubble{ background:#16223F; color:#EAF0FF; border-color:#223055; }
 [data-theme="darkgray"] .ac-bot .ac-bubble{ background:#363A41; color:#EEF0F4; border-color:#474C55; }
 [data-theme="dark"] .ac-me .ac-bubble, [data-theme="darkgray"] .ac-me .ac-bubble{ background:#D4AF37; color:#1A1A1A; }
@@ -774,21 +789,25 @@ body.ac-open{ overflow:hidden; }
 #assistantRobotSlot{ cursor:pointer; -webkit-tap-highlight-color:transparent; }
 
 /* =========================
-   CHAT: robot avatar, clear, grouped chips, quick strip, work tiles
+   CHAT: robot on the edge, clear, grouped chips, quick strip, work tiles
 ========================= */
-.ac-avatar{ position:relative; overflow:visible; }
-.ac-avatar svg{ display:block; }
-.ac-online{
-    position:absolute; right:-2px; bottom:-2px; width:11px; height:11px; border-radius:50%;
-    background:#22C55E; border:2px solid #F6F8FC;
+/* The full robot stands on the panel's top edge, head and arms above it.
+   pointer-events off so it never steals a drag of the top bar. */
+.ac-robot{
+    position:absolute; z-index:2; left:12px; top:-64px; width:74px; height:104px;
+    pointer-events:none;
 }
-[data-theme="dark"] .ac-online{ border-color:#0F1830; }
-[data-theme="darkgray"] .ac-online{ border-color:#2B2E33; }
+.ac-robot svg{ width:100%; height:100%; overflow:visible; display:block; }
+.ac-sheet.ac-full .ac-robot{ top:calc(env(safe-area-inset-top) + 4px); width:50px; height:70px; }
+
+/* Clear: a labelled red pill at the top right */
 .ac-clear{
-    width:34px; height:34px; flex:none; border:none; border-radius:50%;
-    background:#E9EDF4; color:#3A4356; display:flex; align-items:center; justify-content:center; cursor:pointer;
+    display:inline-flex; align-items:center; gap:6px; flex:none;
+    height:34px; padding:0 13px; border:none; border-radius:999px;
+    background:#E5484D; color:#fff; font:inherit; font-size:13px; font-weight:700; cursor:pointer;
+    box-shadow:0 3px 10px rgba(229,72,77,.3);
 }
-[data-theme="dark"] .ac-clear, [data-theme="darkgray"] .ac-clear{ background:rgba(255,255,255,.08); color:#fff; }
+.ac-clear:active{ transform:scale(.96); }
 
 .ac-chip-group + .ac-chip-group{ margin-top:6px; }
 .ac-chip-label{ margin-top:10px; font-size:11px; font-weight:700; letter-spacing:.3px; color:#8A94A8; text-transform:uppercase; }
@@ -930,17 +949,3 @@ body.ac-open{ overflow:hidden; }
 [data-theme="dark"] .ac-team, [data-theme="darkgray"] .ac-team{ background:rgba(96,140,255,.18); color:#A8BEFF; }
 [data-theme="dark"] .ac-team-fsro, [data-theme="darkgray"] .ac-team-fsro{ background:rgba(158,119,237,.2); color:#C9B3F5; }
 
-/* Header robot faces (assistant-chat.js setFace) */
-.ac-avatar .ac-f{ opacity:0; transition:opacity .18s ease; }
-.ac-avatar[data-face="neutral"] .ac-f-neutral,
-.ac-avatar[data-face="think"] .ac-f-think,
-.ac-avatar[data-face="joy"] .ac-f-joy{ opacity:1; }
-.ac-f-eyes{ transform-box:fill-box; transform-origin:center; animation:acBlink 4.2s infinite; }
-@keyframes acBlink{ 0%,91%,100%{ transform:scaleY(1); } 94%{ transform:scaleY(.1); } }
-.ac-avatar[data-face="think"] svg{ animation:acThink 1.6s ease-in-out infinite; }
-@keyframes acThink{ 0%,100%{ transform:rotate(-6deg); } 50%{ transform:rotate(6deg); } }
-.ac-avatar[data-face="joy"] svg{ animation:acJoy .6s cubic-bezier(.34,1.4,.64,1); }
-@keyframes acJoy{ 0%{ transform:translateY(0) scale(1); } 40%{ transform:translateY(-4px) scale(1.08); } 100%{ transform:none; } }
-@media (prefers-reduced-motion: reduce){
-    .ac-f-eyes, .ac-avatar[data-face] svg{ animation:none; }
-}

@@ -659,45 +659,27 @@
     }
 
     // ---------- UI ----------
-    // The robot's head, small, for the chat header — same look as the
-    // Home robot (assets/images/robot.svg). .ac-avatar[data-face] picks
-    // the face: neutral (blinks), think (while an answer is on its way),
-    // joy (when it arrives) — see setFace().
-    const ROBOT_FACE = `<svg viewBox="0 0 44 44" width="34" height="34">
-        <path d="M13 9 Q13 2 20 2 Q16 4 16.5 8 Z" fill="#EEF1F5"/>
-        <circle cx="7" cy="22" r="4.6" fill="#11151D"/><circle cx="7" cy="22" r="2.9" fill="none" stroke="#5FD6F5" stroke-width="1.3"/>
-        <circle cx="37" cy="22" r="4.6" fill="#11151D"/><circle cx="37" cy="22" r="2.9" fill="none" stroke="#5FD6F5" stroke-width="1.3"/>
-        <rect x="8" y="5" width="28" height="33" rx="14" fill="#F4F6FA"/>
-        <rect x="18" y="7" width="8" height="2" rx="1" fill="#5FD6F5"/>
-        <rect x="11" y="13" width="22" height="18" rx="8" fill="#0B1019"/>
-        <g class="ac-f ac-f-neutral">
-            <g class="ac-f-eyes"><rect x="15.2" y="17.4" width="3.4" height="5" rx="1.7" fill="#5FD6F5"/><rect x="25.4" y="17.4" width="3.4" height="5" rx="1.7" fill="#5FD6F5"/></g>
-            <path d="M19.6 25.6 Q22 27.4 24.4 25.6" fill="none" stroke="#5FD6F5" stroke-width="1.3" stroke-linecap="round"/>
-        </g>
-        <g class="ac-f ac-f-think">
-            <rect x="16.4" y="16.6" width="3.4" height="4.4" rx="1.7" fill="#5FD6F5"/>
-            <rect x="26.2" y="18" width="3.4" height="2.6" rx="1.3" fill="#5FD6F5"/>
-            <path d="M25.4 16.2 L30 15.4" stroke="#5FD6F5" stroke-width="1" stroke-linecap="round"/>
-            <path d="M20 26.4 L24.6 25.8" stroke="#5FD6F5" stroke-width="1.3" stroke-linecap="round"/>
-        </g>
-        <g class="ac-f ac-f-joy">
-            <path d="M14.6 21 Q16.9 17.6 19.2 21" fill="none" stroke="#5FD6F5" stroke-width="1.6" stroke-linecap="round"/>
-            <path d="M24.8 21 Q27.1 17.6 29.4 21" fill="none" stroke="#5FD6F5" stroke-width="1.6" stroke-linecap="round"/>
-            <path d="M19 24.4 L25 24.4 Q24.6 28.4 22 28.4 Q19.4 28.4 19 24.4 Z" fill="#5FD6F5"/>
-        </g>
-    </svg>`;
-
-    // The header robot's face, and its subtitle while it works.
-    let faceTimer = null;
+    // The full Home robot (assets/images/robot.svg + robot-animator.js)
+    // stands on the panel's top edge. setFace() drives it: "think" while
+    // an answer is on its way (thinking face, foot taps), "joy" when it
+    // arrives (the little success jump), "neutral" otherwise — and
+    // swaps the subtitle while it works.
+    let chatRobot = null;
     function setFace(face) {
-        const avatar = sheet && sheet.querySelector(".ac-avatar");
-        if (!avatar) return;
-        clearTimeout(faceTimer);
-        avatar.dataset.face = face;
-        const sub = sheet.querySelector(".ac-subtitle");
+        const sub = sheet && sheet.querySelector(".ac-subtitle");
         if (sub) sub.textContent = t(face === "think" ? "assistant.thinking" : "assistant.subtitle");
-        if (face === "joy") faceTimer = setTimeout(() => setFace("neutral"), 1800);
+        if (!chatRobot) return;
+        if (face === "think") {
+            chatRobot.think();
+            chatRobot.setExpression("think"); // held until the answer arrives
+        } else if (face === "joy") {
+            chatRobot.success();
+        } else {
+            chatRobot.setExpression("neutral");
+        }
     }
+
+    const REDUCED_MOTION = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
     let sheet = null;
     let listEl = null;
@@ -862,17 +844,20 @@
         const hasSpeech = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
         sheet.innerHTML = `
             <div class="ac-sheet" role="dialog" aria-modal="true" aria-labelledby="acTitle">
-                <div class="ac-grab"></div>
-                <div class="ac-head">
-                    <div class="ac-avatar" data-face="neutral" aria-hidden="true">${ROBOT_FACE}<span class="ac-online"></span></div>
-                    <div class="ac-head-text">
-                        <div class="ac-title" id="acTitle">CM Pro AI</div>
-                        <div class="ac-subtitle">${esc(t("assistant.subtitle"))}</div>
+                <div class="ac-top">
+                    <button type="button" class="ac-grab" aria-label="${esc(t("assistant.expand"))}" aria-expanded="false"><span></span></button>
+                    <div class="ac-head">
+                        <div class="ac-robot" aria-hidden="true"></div>
+                        <div class="ac-head-text">
+                            <div class="ac-title" id="acTitle">CM Pro AI</div>
+                            <div class="ac-subtitle">${esc(t("assistant.subtitle"))}</div>
+                        </div>
+                        <button type="button" class="ac-clear" aria-label="${esc(t("assistant.clear"))}">
+                            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>${esc(t("assistant.clearShort"))}</span>
+                        </button>
+                        <button type="button" class="ac-close" aria-label="${esc(t("assistant.close"))}">×</button>
                     </div>
-                    <button type="button" class="ac-clear" aria-label="${esc(t("assistant.clear"))}" title="${esc(t("assistant.clear"))}">
-                        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.34-5.66M4 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </button>
-                    <button type="button" class="ac-close" aria-label="${esc(t("assistant.close"))}">×</button>
                 </div>
                 <div class="ac-list" aria-live="polite"></div>
                 <div class="ac-quick" role="group" aria-label="${esc(t("assistant.suggested"))}">
@@ -920,6 +905,15 @@
         });
         sheet.querySelector(".ac-close").onclick = close;
         sheet.querySelector(".ac-clear").onclick = clearChat;
+        initDrag();
+
+        // The full robot on the panel's edge (only where the robot scripts
+        // are loaded — Home). Not window.cmProRobot: that stays Home's.
+        if (typeof window.embedCMProRobot === "function") {
+            window.embedCMProRobot(sheet.querySelector(".ac-robot"), { src: "/CM_Pro/assets/images/robot.svg" })
+                .then((r) => { chatRobot = r; })
+                .catch(() => {});
+        }
         sheet.querySelector(".ac-send").onclick = () => ask(inputEl.value);
         inputEl.addEventListener("input", updateSend);
         inputEl.addEventListener("keydown", (e) => {
@@ -969,10 +963,83 @@
         welcome();
     }
 
+    // ---------- size: normal sheet <-> fullscreen ----------
+    // Drag the top bar (handle or header) up to go fullscreen, down to
+    // shrink back or — far enough — close; a tap on the handle toggles.
+    let full = false;
+
+    function setFull(on) {
+        full = on;
+        const panel = sheet.querySelector(".ac-sheet");
+        panel.classList.toggle("ac-full", on);
+        panel.style.height = "";
+        sheet.querySelector(".ac-grab").setAttribute("aria-expanded", String(on));
+    }
+
+    function initDrag() {
+        const panel = sheet.querySelector(".ac-sheet");
+        const top = sheet.querySelector(".ac-top");
+        let drag = null;
+        top.addEventListener("pointerdown", (e) => {
+            if (e.button !== 0) return;
+            if (e.target.closest("button") && !e.target.closest(".ac-grab")) return;
+            drag = { y: e.clientY, h: panel.getBoundingClientRect().height, moved: false, onGrab: !!e.target.closest(".ac-grab") };
+            top.setPointerCapture(e.pointerId);
+        });
+        top.addEventListener("pointermove", (e) => {
+            if (!drag) return;
+            const dy = e.clientY - drag.y;
+            if (!drag.moved && Math.abs(dy) < 6) return;
+            if (!drag.moved) panel.classList.add("ac-dragging");
+            drag.moved = true;
+            panel.style.height = `${Math.max(140, Math.min(window.innerHeight, drag.h - dy))}px`;
+        });
+        const end = () => {
+            if (!drag) return;
+            const d = drag;
+            drag = null;
+            panel.classList.remove("ac-dragging");
+            if (!d.moved) {
+                if (d.onGrab) setFull(!full);
+                return;
+            }
+            const h = panel.getBoundingClientRect().height;
+            const normal = Math.min(window.innerHeight * 0.86, 720);
+            if (h > (normal + window.innerHeight) / 2) setFull(true);
+            else if (h < normal * 0.55) { setFull(false); close(); }
+            else setFull(false);
+        };
+        top.addEventListener("pointerup", end);
+        top.addEventListener("pointercancel", end);
+    }
+
+    // ---------- open / close: grow out of (and back into) the assistant box ----------
+    // The panel is revealed with a clip-path running from the box's
+    // rectangle to the whole panel, so nothing inside is scaled or
+    // squashed on the way.
+    function boxClip(panel) {
+        const box = document.querySelector(".assistant-box");
+        if (!box || REDUCED_MOTION || !box.getClientRects().length) return null;
+        const b = box.getBoundingClientRect();
+        const s = panel.getBoundingClientRect();
+        if (!b.width || !s.width) return null;
+        return `inset(${b.top - s.top}px ${s.right - b.right}px ${s.bottom - b.bottom}px ${b.left - s.left}px round 24px)`;
+    }
+
     function open(question) {
         if (!sheet) build();
         sheet.hidden = false;
         document.body.classList.add("ac-open");
+        const panel = sheet.querySelector(".ac-sheet");
+        const from = boxClip(panel);
+        if (from) {
+            panel.classList.add("ac-from-box");
+            panel.animate(
+                [{ clipPath: from }, { clipPath: `inset(0px 0px 0px 0px round ${full ? "0px" : "22px 22px 0px 0px"})` }],
+                { duration: 380, easing: "cubic-bezier(.2,.8,.2,1)" }
+            ).finished.catch(() => {}).finally(() => panel.classList.remove("ac-from-box"));
+        }
+        if (chatRobot) chatRobot.wave();
         listEl.scrollTop = listEl.scrollHeight;
         if (question) ask(question);
         else if (window.matchMedia("(pointer:fine)").matches) inputEl.focus();
@@ -983,13 +1050,32 @@
     // thumbs-up when it's > 0).
     let answeredSinceOpen = 0;
 
+    let closing = false;
+
     function close() {
-        if (!sheet || sheet.hidden) return;
+        if (!sheet || sheet.hidden || closing) return;
         stopRec();
-        sheet.hidden = true;
-        document.body.classList.remove("ac-open");
-        document.dispatchEvent(new CustomEvent("cm-assistant-close", { detail: { answered: answeredSinceOpen } }));
-        answeredSinceOpen = 0;
+        const finish = () => {
+            closing = false;
+            sheet.hidden = true;
+            sheet.classList.remove("ac-closing");
+            document.body.classList.remove("ac-open");
+            document.dispatchEvent(new CustomEvent("cm-assistant-close", { detail: { answered: answeredSinceOpen } }));
+            answeredSinceOpen = 0;
+        };
+        const panel = sheet.querySelector(".ac-sheet");
+        const to = boxClip(panel);
+        if (!to) return finish();
+        closing = true;
+        sheet.classList.add("ac-closing");
+        panel.classList.add("ac-from-box");
+        panel.animate(
+            [{ clipPath: `inset(0px 0px 0px 0px round ${full ? "0px" : "22px 22px 0px 0px"})` }, { clipPath: to }],
+            { duration: 300, easing: "cubic-bezier(.4,0,.6,1)" }
+        ).finished.catch(() => {}).finally(() => {
+            panel.classList.remove("ac-from-box");
+            finish();
+        });
     }
 
     window.CMAssistantChat = { open, close, voiceLang, setVoiceLang, speechCode, voiceErrorText, respond, loadWork, workQuestion };
