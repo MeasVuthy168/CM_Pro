@@ -497,6 +497,27 @@ CMI18n.register({
   "admin.maintenance.compactDone": { km: "បានបង្រួមរួចរាល់ — លុបជួរចំនួន {count} ពីខែបិទចំនួន {months}។", en: "Compaction complete — deleted {count} row(s) across {months} month(s)." },
   "admin.maintenance.compactFailed": { km: "បង្រួមបានបរាជ័យ។", en: "Compaction failed." },
   "admin.maintenance.compactFailedServer": { km: "បង្រួមបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Compaction failed — could not reach the server." },
+  "admin.maintenance.raLabel": { km: "សម្អាត Reason Arrear", en: "Clean Up Reason Arrear" },
+  "admin.maintenance.raExplain": {
+    km: "Reason Arrear ដែល LD-CIF លែងមានក្នុង OS (បង់ផ្តាច់ ឬបិទកម្ចីរួច)។ ការលុបមិនអាចត្រឡប់វិញបានទេ។",
+    en: "Reason Arrear rows whose LD-CIF is no longer in OS (paid off or closed loans). Deleting can't be undone."
+  },
+  "admin.maintenance.raFind": { km: "ស្វែងរក", en: "Find" },
+  "admin.maintenance.raFindAgain": { km: "ស្វែងរកម្តងទៀត", en: "Find again" },
+  "admin.maintenance.raStatTotal": { km: "សរុប", en: "Total" },
+  "admin.maintenance.raStatInOs": { km: "មានក្នុង OS", en: "In OS" },
+  "admin.maintenance.raStatOrphan": { km: "មិនមានក្នុង OS", en: "Not in OS" },
+  "admin.maintenance.raEmpty": { km: "Reason Arrear ទាំងអស់មានក្នុង OS — គ្មានអ្វីត្រូវសម្អាតទេ។", en: "Every Reason Arrear row is in OS — nothing to clean up." },
+  "admin.maintenance.raMore": { km: "និង {n} ទៀត", en: "and {n} more" },
+  "admin.maintenance.raDelete": { km: "លុប {count} ជួរ", en: "Delete {count}" },
+  "admin.maintenance.raConfirmTitle": { km: "បញ្ជាក់ការលុប Reason Arrear", en: "Confirm Reason Arrear Cleanup" },
+  "admin.maintenance.raConfirmMessage": {
+    km: "លុប Reason Arrear ចំនួន <b>{count}</b> ដែល LD-CIF មិនមានក្នុង OS ជាអចិន្ត្រៃយ៍? ប្រសិនបើ Excel VBA នៅមានជួរទាំងនេះ វាអាចបញ្ចូលមកវិញនៅពេល sync។",
+    en: "Permanently delete <b>{count}</b> Reason Arrear row(s) whose LD-CIF is not in OS? If an Excel VBA sheet still has these rows, its next sync may add them back."
+  },
+  "admin.maintenance.raDone": { km: "បានលុប Reason Arrear ចំនួន {count}។", en: "Deleted {count} Reason Arrear row(s)." },
+  "admin.maintenance.raFailed": { km: "ប្រតិបត្តិការបានបរាជ័យ។", en: "The request failed." },
+  "admin.maintenance.raFailedServer": { km: "បរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Failed — could not reach the server." },
   "admin.maintenance.couldNotLoadMongoUsage": { km: "មិនអាចផ្ទុកការប្រើប្រាស់ទំហំផ្ទុកបានទេ។", en: "Could not load storage usage." },
 
   // ===================================================

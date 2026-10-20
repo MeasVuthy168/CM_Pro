@@ -682,4 +682,140 @@
   }
 
   cp.btnRun.addEventListener("click", openCompactConfirmModal);
+
+  // =====================================================
+  // Clean Up Reason Arrear — rows whose LD-CIF is no longer in OS
+  // (POST /api/maintenance/reasonarrear-orphans). Find lists them;
+  // Delete sends exactly the previewed LD-CIFs, and the server
+  // re-checks each against OS before deleting.
+  // =====================================================
+  const ra = {
+    stats: document.getElementById("raStats"),
+    empty: document.getElementById("raEmpty"),
+    list: document.getElementById("raList"),
+    btnPreview: document.getElementById("raBtnPreview"),
+    btnPreviewText: document.getElementById("raBtnPreviewText"),
+    btnDelete: document.getElementById("raBtnDelete"),
+    btnDeleteText: document.getElementById("raBtnDeleteText")
+  };
+  const RA_SHOWN = 100;
+
+  let raOrphans = null; // [{ cif, aj, ak, al, uploadedBy, uploadedAt }]
+
+  function resetReasonPreview() {
+    raOrphans = null;
+    ra.btnDelete.hidden = true;
+    ra.stats.hidden = true;
+    ra.empty.hidden = true;
+    ra.list.hidden = true;
+    ra.list.innerHTML = "";
+    ra.btnPreviewText.textContent = t("admin.maintenance.raFind");
+  }
+
+  async function postReasonOrphans(payload) {
+    const res = await fetch(`${API_BASE}/api/maintenance/reasonarrear-orphans`, {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (res.status === 401 || res.status === 403) {
+      location.replace(window.CM_ADMIN_CONFIG.loginPage);
+      return null;
+    }
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      AdminUI.toast(data.message || t("admin.maintenance.raFailed"), "error");
+      return null;
+    }
+    return data;
+  }
+
+  function renderReasonOrphans(data) {
+    const stat = (cls, n, key) => `<div class="ra-stat ${cls}"><b>${n.toLocaleString()}</b><span>${escapeHtml(t(key))}</span></div>`;
+    ra.stats.innerHTML =
+      stat("", data.total, "admin.maintenance.raStatTotal") +
+      stat("ra-stat-ok", data.total - data.count, "admin.maintenance.raStatInOs") +
+      stat(data.count ? "ra-stat-bad" : "", data.count, "admin.maintenance.raStatOrphan");
+    ra.stats.hidden = false;
+    ra.btnPreviewText.textContent = t("admin.maintenance.raFindAgain");
+
+    if (!data.count) {
+      ra.empty.innerHTML = `<span class="adm-ico adm-ico-check-circle" aria-hidden="true"></span>${escapeHtml(t("admin.maintenance.raEmpty"))}`;
+      ra.empty.hidden = false;
+      return;
+    }
+
+    const rows = data.orphans.slice(0, RA_SHOWN).map(o => `
+      <div class="ra-row">
+        <div class="ra-row-main">
+          <b>${escapeHtml(o.cif)}</b>
+          <span>${escapeHtml(o.ak || o.aj || "—")}</span>
+        </div>
+        <div class="ra-row-meta">
+          <span>${escapeHtml(o.uploadedBy || "—")}</span>
+          <span>${escapeHtml(o.uploadedAt ? o.uploadedAt.slice(0, 10) : "")}</span>
+        </div>
+      </div>`).join("");
+    const more = data.count > RA_SHOWN
+      ? `<div class="ra-more">${escapeHtml(t("admin.maintenance.raMore", { n: (data.count - RA_SHOWN).toLocaleString() }))}</div>`
+      : "";
+    ra.list.innerHTML = rows + more;
+    ra.list.hidden = false;
+    ra.btnDeleteText.textContent = t("admin.maintenance.raDelete", { count: data.count.toLocaleString() });
+    ra.btnDelete.hidden = false;
+  }
+
+  async function runReasonPreview() {
+    ra.btnPreview.disabled = true;
+    try {
+      const data = await postReasonOrphans({ dryRun: true });
+      if (!data) return;
+      resetReasonPreview();
+      raOrphans = data.orphans;
+      renderReasonOrphans(data);
+    } catch (e) {
+      console.error("reason arrear preview failed:", e);
+      AdminUI.toast(t("admin.maintenance.raFailedServer"), "error");
+    } finally {
+      ra.btnPreview.disabled = false;
+    }
+  }
+
+  function openReasonConfirmModal() {
+    if (!raOrphans?.length) {
+      return AdminUI.toast(t("admin.maintenance.previewFirst"), "error");
+    }
+
+    const body = document.createElement("div");
+    body.innerHTML = `
+      <p class="adm-modal-message">${t("admin.maintenance.raConfirmMessage", { count: raOrphans.length.toLocaleString() })}</p>
+      <div class="adm-modal-footer">
+        <button type="button" class="adm-btn" id="raDelCancel">${t("admin.maintenance.cancel")}</button>
+        <button type="button" class="adm-btn adm-btn-danger" id="raDelConfirm">${t("admin.maintenance.confirmDelete")}</button>
+      </div>
+    `;
+
+    const { body: mountedBody } = AdminUI.openModal({ title: t("admin.maintenance.raConfirmTitle"), bodyNode: body });
+
+    mountedBody.querySelector("#raDelCancel").addEventListener("click", () => AdminUI.closeModal());
+    mountedBody.querySelector("#raDelConfirm").addEventListener("click", async (ev) => {
+      const btn = ev.currentTarget;
+      btn.disabled = true;
+      try {
+        const data = await postReasonOrphans({ cifs: raOrphans.map(o => o.cif) });
+        if (!data) return;
+        AdminUI.closeModal();
+        AdminUI.toast(t("admin.maintenance.raDone", { count: data.deletedCount.toLocaleString() }), "success");
+        runReasonPreview();
+      } catch (e) {
+        console.error("reason arrear cleanup failed:", e);
+        AdminUI.toast(t("admin.maintenance.raFailedServer"), "error");
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+
+  ra.btnPreview.addEventListener("click", runReasonPreview);
+  ra.btnDelete.addEventListener("click", openReasonConfirmModal);
 })();
