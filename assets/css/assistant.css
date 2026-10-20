@@ -601,10 +601,9 @@
 
 .voice-lang{ justify-content:center; margin:14px auto 0; width:max-content; }
 
-/* The chat stops above the bottom bar (--ac-nav, measured on open),
-   which stays visible below it. */
+/* The chat covers the whole screen, bottom bar included. */
 .ac-dim{
-    position:fixed; inset:0 0 var(--ac-nav, 0px) 0; z-index:3000;
+    position:fixed; inset:0; z-index:3000;
     background:rgba(10,16,35,.55);
     display:flex; align-items:flex-end; justify-content:center;
     animation:saDimIn .2s ease;
@@ -618,7 +617,7 @@ body.ac-open{ overflow:hidden; }
     display:flex; flex-direction:column;
     background:#F6F8FC; color:#1C2333;
     border-radius:22px 22px 0 0;
-    padding:0 0 10px;
+    padding:0 0 calc(10px + env(safe-area-inset-bottom));
     box-sizing:border-box;
     animation:saSheetUp .25s ease;
     transition:height .3s cubic-bezier(.2,.8,.2,1), border-radius .3s ease;
