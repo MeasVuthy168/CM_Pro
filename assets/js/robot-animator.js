@@ -140,6 +140,15 @@
     rightWrist: "320px 400px",
     rightHand: "320px 417px",
     rightFoot: "273px 673px",
+    // Each finger bends at its own knuckle.
+    leftFinger1: "148px 436px",
+    leftFinger2: "160px 434px",
+    leftFinger3: "172px 436px",
+    leftThumb: "137px 411px",
+    rightFinger1: "332px 436px",
+    rightFinger2: "320px 434px",
+    rightFinger3: "308px 436px",
+    rightThumb: "343px 411px",
   };
 
   // Maps the camelCase keys above to the element ids in robot.svg.
@@ -160,6 +169,14 @@
     rightWrist: "right-wrist",
     rightHand: "right-hand",
     rightFoot: "right-foot",
+    leftFinger1: "left-finger-1",
+    leftFinger2: "left-finger-2",
+    leftFinger3: "left-finger-3",
+    leftThumb: "left-thumb",
+    rightFinger1: "right-finger-1",
+    rightFinger2: "right-finger-2",
+    rightFinger3: "right-finger-3",
+    rightThumb: "right-thumb",
   };
 
   const GESTURE_EASE = "cubic-bezier(0.42, 0, 0.2, 1)"; // a controlled, motor-like ease — no bounce/overshoot
@@ -179,6 +196,35 @@
   // A small "coil" deeper into the hip rest than RIGHT_HIP_BASE itself
   // — the anticipation dip right before the arm commits to rising.
   const RIGHT_ANTICIPATION = { shoulder: RIGHT_HIP_BASE.shoulder - 4, elbow: RIGHT_HIP_BASE.elbow + 6 };
+
+  // The other arm targets used by the extra gestures (same sign rules as
+  // the *_BASE constants above: the right arm swings outward with
+  // negative angles, the left arm with positive ones).
+  // Celebrating left arm: a "power fist" — elbow stays near the body and
+  // the forearm curls up beside the shoulder. The elbow turns the inner
+  // way (past -180, behind the torso) so the arm never sweeps out to the
+  // left, where the robot has little room on Home.
+  const LEFT_CHEER = { shoulder: 35, elbow: -190 };
+  const RIGHT_POINT = { shoulder: -92, elbow: -4 }; // arm straight out to the side
+  const RIGHT_THUMB = { shoulder: -25, elbow: -65 }; // forearm level, pointing out
+  const RIGHT_SHRUG = { shoulder: -15, elbow: -70 }; // forearm out sideways
+  const LEFT_SHRUG = { shoulder: 15, elbow: 70 };
+
+  // Finger poses: [finger 1 (outer), finger 2 (middle), finger 3 (inner),
+  // thumb]. Rotations are written for the right hand; the left hand
+  // mirrors them. Fingers hang down from the knuckle, so scaleY < 1
+  // reads as a finger curled into the palm.
+  const HAND_POSES = {
+    rest: ["rotate(0deg) scaleY(1)", "rotate(0deg) scaleY(1)", "rotate(0deg) scaleY(1)", "translate(0px, 0px) rotate(0deg) scale(1)"],
+    open: ["rotate(-14deg) scaleY(1.05)", "rotate(0deg) scaleY(1.08)", "rotate(14deg) scaleY(1.05)", "rotate(-14deg) scale(1.05)"],
+    fist: ["rotate(0deg) scaleY(0.45)", "rotate(0deg) scaleY(0.45)", "rotate(0deg) scaleY(0.45)", "translate(0px, 0px) rotate(20deg) scale(0.8)"],
+    // thumb turned out to the side of the fist — straight up when the
+    // forearm is level (RIGHT_THUMB)
+    thumb: ["rotate(0deg) scaleY(0.45)", "rotate(0deg) scaleY(0.45)", "rotate(0deg) scaleY(0.45)", "translate(-9px, 2px) rotate(-126deg) scale(1.2)"],
+    // finger 1 (next to the thumb) stays out, the rest curl in
+    point: ["rotate(4deg) scaleY(1.12)", "rotate(0deg) scaleY(0.45)", "rotate(0deg) scaleY(0.45)", "rotate(30deg) scale(0.75)"],
+  };
+  const mirrorPose = (t) => t.replace(/rotate\((-?[\d.]+)deg\)/, (m, a) => `rotate(${-Number(a)}deg)`);
 
   // Expressions robot.svg can show (#expr-<name>); neutral is the rest face.
   const EXPRESSIONS = ["neutral", "happy", "joy", "think", "wow"];
@@ -207,6 +253,73 @@
 
       this.idle(); // start continuously — the robot should never look frozen
       this._initFace();
+      this._initVisibility();
+      this._initPointerLook();
+    }
+
+    // ============ PAUSE WHEN NOT SEEN ============
+    // Everything (idle, gestures, face) pauses while the robot is
+    // scrolled out of view or the app is in the background, and carries
+    // on from the same frame when it's back — no battery spent on a
+    // robot nobody can see. A gesture chain waiting on a paused
+    // animation simply waits too.
+    _initVisibility() {
+      this._offscreen = false;
+      const update = () => {
+        const hidden = this._offscreen || document.hidden;
+        if (hidden === this._paused) return;
+        this._paused = hidden;
+        const anims = this.svg.getAnimations ? this.svg.getAnimations({ subtree: true }) : [];
+        for (const a of anims) hidden ? a.pause() : a.play();
+      };
+      this._paused = false;
+      document.addEventListener("visibilitychange", update);
+      if (global.IntersectionObserver) {
+        new IntersectionObserver((entries) => {
+          this._offscreen = !entries[entries.length - 1].isIntersecting;
+          update();
+        }).observe(this.svg);
+      }
+    }
+
+    // An animation started while the robot is paused (a gesture's next
+    // phase, idle restarting after it) starts paused too.
+    _held(anim) {
+      if (this._paused) anim.pause();
+      return anim;
+    }
+
+    // ============ EYES FOLLOW THE FINGER ============
+    // A tap or drag anywhere on the page: the eyes turn toward it for a
+    // couple of seconds (and the random glances wait), then drift back.
+    _initPointerLook() {
+      const onPointer = (e) => {
+        if (this._paused || !this.face || !this.face.look) return;
+        const r = this.svg.getBoundingClientRect();
+        if (!r.width) return;
+        // The eyes sit about 10% down the robot's box.
+        const dx = e.clientX - (r.left + r.width / 2);
+        const dy = e.clientY - (r.top + r.height * 0.1);
+        const len = Math.hypot(dx, dy) || 1;
+        this._pointerAt = Date.now();
+        this._lookTo({ x: (dx / len) * 4.5, y: (dy / len) * 2.5 }, 180);
+        this._later("lookBack", () => this._lookTo({ x: 0, y: 0 }, 400), 2500);
+      };
+      document.addEventListener("pointerdown", onPointer, { passive: true });
+      document.addEventListener("pointermove", (e) => { if (e.pointerType !== "mouse" || e.buttons) onPointer(e); }, { passive: true });
+    }
+
+    _lookTo(to, duration) {
+      const eyes = this.face && this.face.look;
+      if (!eyes) return;
+      this._held(eyes.animate(
+        [
+          { transform: `translate(${this._lookAt.x}px, ${this._lookAt.y}px)` },
+          { transform: `translate(${to.x}px, ${to.y}px)` },
+        ],
+        { duration, easing: GESTURE_EASE, fill: "forwards" }
+      ));
+      this._lookAt = to;
     }
 
     // ============ FACE & LIGHTS ============
@@ -255,7 +368,10 @@
 
     _later(kind, fn, ms) {
       clearTimeout(this._faceTimers[kind]);
-      this._faceTimers[kind] = setTimeout(fn, ms);
+      this._faceTimers[kind] = setTimeout(() => {
+        if (this._paused) return this._later(kind, fn, 1000); // wait until seen again
+        fn();
+      }, ms);
     }
 
     // Cross-fades to one of EXPRESSIONS. A pending timed revert from
@@ -307,20 +423,12 @@
       }, 3000 + Math.random() * 3500);
     }
 
-    // The eyes glance somewhere new, or back to the middle.
+    // The eyes glance somewhere new, or back to the middle — unless
+    // they're following the user's finger.
     _glance() {
-      const eyes = this.face && this.face.look;
-      if (!eyes) return;
+      if (Date.now() - (this._pointerAt || 0) < 3000) return;
       const centre = Math.random() < 0.4;
-      const to = centre ? { x: 0, y: 0 } : { x: jitter(0, 4), y: jitter(-0.5, 2) };
-      eyes.animate(
-        [
-          { transform: `translate(${this._lookAt.x}px, ${this._lookAt.y}px)` },
-          { transform: `translate(${to.x}px, ${to.y}px)` },
-        ],
-        { duration: 240, easing: GESTURE_EASE, fill: "forwards" }
-      );
-      this._lookAt = to;
+      this._lookTo(centre ? { x: 0, y: 0 } : { x: jitter(0, 4), y: jitter(-0.5, 2) }, 240);
     }
 
     _scheduleGlint() {
@@ -346,12 +454,12 @@
         if (this._idleAnims[name]) this._idleAnims[name].cancel();
         const el = this.el[name];
         if (!el) return;
-        this._idleAnims[name] = el.animate(keyframes, {
+        this._idleAnims[name] = this._held(el.animate(keyframes, {
           duration,
           delay: delay || 0,
           iterations: Infinity,
           easing: "ease-in-out",
-        });
+        }));
       };
 
       if (want("body")) {
@@ -582,7 +690,7 @@
     _run(specs) {
       const anims = specs
         .filter((spec) => this.el[spec.key])
-        .map((spec) => this.el[spec.key].animate(spec.keyframes, spec.options));
+        .map((spec) => this._held(this.el[spec.key].animate(spec.keyframes, spec.options)));
       this._gestureAnims.push(...anims);
       return Promise.all(anims.map((a) => a.finished)).catch(() => {});
     }
@@ -1161,7 +1269,7 @@
       await sleep(150); // hold at the coiled position — see ANTICIPATION in the file header
       if (gen !== this._gestureGen) return false;
 
-      await this._riseToWelcome(950, true, variation);
+      await Promise.all([this._riseToWelcome(950, true, variation), this._run(this._handSpecs("right", "rest", "open", 450))]);
       if (gen !== this._gestureGen) return false;
 
       await this._settleAtWelcome(260);
@@ -1173,7 +1281,7 @@
       await this._followThrough(260);
       if (gen !== this._gestureGen) return false;
 
-      await this._lowerToHip(950, true, variation);
+      await Promise.all([this._lowerToHip(950, true, variation), this._run(this._handSpecs("right", "open", "rest", 400))]);
       if (gen !== this._gestureGen) return false;
 
       this.setExpression("neutral");
@@ -1203,19 +1311,49 @@
     // the loop stops itself rather than fighting for control — call
     // startWelcomeLoop() again afterward to resume it.
     async startWelcomeLoop(relaxHoldMs) {
-      if (this._welcomeLoopActive) return; // already looping — don't stack a second loop
+      // Each call starts a fresh loop and an older one exits at its next
+      // checkpoint — so calling this right after another gesture (which
+      // already interrupted the old loop, possibly mid-pause) can never
+      // leave the robot with no loop at all.
+      const id = (this._loopId = (this._loopId || 0) + 1);
+      const current = () => this._welcomeLoopActive && id === this._loopId;
       this._welcomeLoopActive = true;
       this._welcomeRelaxMs = typeof relaxHoldMs === "number" ? relaxHoldMs : 850;
 
       this._expressFor("wow", 600); // "oh, hello!" as it notices the user
       await this._noticeAndSettle();
-      if (!this._welcomeLoopActive) return;
+      if (!current()) return;
 
-      while (this._welcomeLoopActive) {
+      while (current()) {
         const completed = await this.welcome();
-        if (!completed || !this._welcomeLoopActive) break;
+        if (!completed || !current()) break;
+        const rested = await this._interlude(current);
+        if (!rested || !current()) break;
       }
-      this._welcomeLoopActive = false;
+      if (id === this._loopId) this._welcomeLoopActive = false;
+    }
+
+    // Between greetings: rest a few seconds (blinking, glancing), and
+    // now and then do something else — point at the chat button, a
+    // thumbs-up, a shrug, or (rarely) a little celebration — so the
+    // loop never feels like the same clip on repeat. Resolves false if
+    // another gesture or loop took over meanwhile.
+    async _interlude(current) {
+      const gen = this._gestureGen;
+      await sleep(jitter(4500, 1500));
+      if (gen !== this._gestureGen || !current()) return false;
+      const roll = Math.random();
+      const pick =
+        roll < 0.25 ? "pointAtChat" :
+        roll < 0.45 ? "thumbsUp" :
+        roll < 0.6 ? "shrug" :
+        roll < 0.68 ? "celebrate" : null;
+      if (!pick) return true;
+      const done = await this[pick]();
+      if (!done || !current()) return false;
+      const gen2 = this._gestureGen;
+      await sleep(jitter(3500, 1000));
+      return gen2 === this._gestureGen && current();
     }
 
     // Stops startWelcomeLoop() after the in-flight welcome() finishes
@@ -1238,7 +1376,7 @@
       this._pauseIdle(keys);
       this.setExpression("happy");
 
-      await this._riseToWelcomeQuick(750);
+      await Promise.all([this._riseToWelcomeQuick(750), this._run(this._handSpecs("right", "rest", "open", 350))]);
       if (gen !== this._gestureGen) return false;
 
       await this._waveCycles2(650, false, { waveAmp: 8 });
@@ -1247,7 +1385,238 @@
       await sleep(120);
       if (gen !== this._gestureGen) return false;
 
-      await this._lowerToHip(700, false, {});
+      await Promise.all([this._lowerToHip(700, false, {}), this._run(this._handSpecs("right", "open", "rest", 300))]);
+      if (gen !== this._gestureGen) return false;
+
+      this.setExpression("neutral");
+      this._finishGesture(keys);
+      return true;
+    }
+
+    // ============ HANDS ============
+    // Finger animation specs taking one hand from one HAND_POSES pose to
+    // another (fingers have no idle loop, so a gesture simply ends them
+    // on "rest").
+    _handSpecs(side, from, to, duration) {
+      const keys = side === "right"
+        ? ["rightFinger1", "rightFinger2", "rightFinger3", "rightThumb"]
+        : ["leftFinger1", "leftFinger2", "leftFinger3", "leftThumb"];
+      const pose = (name, i) => (side === "right" ? HAND_POSES[name][i] : mirrorPose(HAND_POSES[name][i]));
+      return keys.map((key, i) => ({
+        key,
+        keyframes: [{ transform: pose(from, i), offset: 0 }, { transform: pose(to, i), offset: 1 }],
+        // a little stagger, so the fingers don't move as one block
+        options: { duration, delay: i * 25, easing: GESTURE_EASE, fill: "forwards" },
+      }));
+    }
+
+    // Left arm hip rest <-> LEFT_CHEER, for celebrate().
+    _leftArmSpecs(raise, duration) {
+      const a = raise ? LEFT_HIP_BASE : LEFT_CHEER;
+      const b = raise ? LEFT_CHEER : LEFT_HIP_BASE;
+      return [
+        {
+          key: "leftArm",
+          keyframes: [{ transform: `rotate(${a.shoulder}deg)` }, { transform: `rotate(${b.shoulder}deg)` }],
+          options: { duration, easing: GESTURE_EASE, fill: "forwards" },
+        },
+        {
+          key: "leftElbow",
+          keyframes: [
+            { transform: `rotate(${a.elbow}deg)`, offset: 0 },
+            { transform: `rotate(${b.elbow}deg)`, offset: raise ? 0.7 : 0.85 },
+            { transform: `rotate(${b.elbow}deg)`, offset: 1 },
+          ],
+          options: { duration, easing: raise ? "ease-out" : GESTURE_EASE, fill: "forwards" },
+        },
+      ];
+    }
+
+    // Right shoulder + elbow from one { shoulder, elbow } pose to another.
+    _rightArmSpecs(from, to, duration) {
+      return [
+        {
+          key: "rightArm",
+          keyframes: [{ transform: `rotate(${from.shoulder}deg)` }, { transform: `rotate(${to.shoulder}deg)` }],
+          options: { duration, easing: GESTURE_EASE, fill: "forwards" },
+        },
+        {
+          key: "rightElbow",
+          keyframes: [{ transform: `rotate(${from.elbow}deg)` }, { transform: `rotate(${to.elbow}deg)` }],
+          options: { duration, easing: GESTURE_EASE, fill: "forwards" },
+        },
+      ];
+    }
+
+    // 👍 — forearm comes up level, the hand closes with the thumb
+    // pointing up, two small pumps from the elbow, then back to the hip.
+    async thumbsUp() {
+      const keys = ["rightArm", "rightElbow", "rightWrist", "rightHand"];
+      this._cancelGesture();
+      const gen = this._gestureGen;
+      this._pauseIdle(keys);
+      this.setExpression("happy");
+
+      await this._run([...this._rightArmSpecs(RIGHT_HIP_BASE, RIGHT_THUMB, 600), ...this._handSpecs("right", "rest", "thumb", 300)]);
+      if (gen !== this._gestureGen) return false;
+      this.setExpression("joy");
+
+      await this._run([{
+        key: "rightElbow",
+        keyframes: [
+          { transform: `rotate(${RIGHT_THUMB.elbow}deg)` },
+          { transform: `rotate(${RIGHT_THUMB.elbow - 10}deg)`, offset: 0.3 },
+          { transform: `rotate(${RIGHT_THUMB.elbow}deg)`, offset: 0.55 },
+          { transform: `rotate(${RIGHT_THUMB.elbow - 7}deg)`, offset: 0.8 },
+          { transform: `rotate(${RIGHT_THUMB.elbow}deg)` },
+        ],
+        options: { duration: 700, easing: "ease-in-out", fill: "forwards" },
+      }]);
+      if (gen !== this._gestureGen) return false;
+
+      await sleep(350);
+      if (gen !== this._gestureGen) return false;
+
+      await this._run([...this._rightArmSpecs(RIGHT_THUMB, RIGHT_HIP_BASE, 650), ...this._handSpecs("right", "thumb", "rest", 300)]);
+      if (gen !== this._gestureGen) return false;
+
+      this.setExpression("neutral");
+      this._finishGesture(keys);
+      return true;
+    }
+
+    // 🙌 — right hand up high with fingers spread, left fist pumped up
+    // beside the shoulder, two happy bounces, back down.
+    async celebrate() {
+      const keys = ["body", "rightArm", "rightElbow", "rightWrist", "rightHand", "leftArm", "leftElbow", "leftWrist", "leftHand"];
+      this._cancelGesture();
+      const gen = this._gestureGen;
+      this._pauseIdle(keys);
+      this.setExpression("joy");
+
+      await Promise.all([
+        this._riseToWelcomeQuick(600),
+        this._run([...this._leftArmSpecs(true, 600), ...this._handSpecs("right", "rest", "open", 300), ...this._handSpecs("left", "rest", "fist", 300)]),
+      ]);
+      if (gen !== this._gestureGen) return false;
+
+      const bounce = "cubic-bezier(0.34, 1.3, 0.64, 1)";
+      await this._run([
+        {
+          key: "body",
+          keyframes: [
+            { transform: "translateY(0px)" },
+            { transform: "translateY(-10px)", offset: 0.25 },
+            { transform: "translateY(1px)", offset: 0.5 },
+            { transform: "translateY(-7px)", offset: 0.75 },
+            { transform: "translateY(0px)" },
+          ],
+          options: { duration: 900, easing: bounce, fill: "forwards" },
+        },
+        ...["rightWrist", "leftWrist"].map((key, i) => ({
+          key,
+          keyframes: [
+            { transform: "rotate(0deg)" },
+            { transform: `rotate(${i ? 9 : -9}deg)`, offset: 0.25 },
+            { transform: `rotate(${i ? -6 : 6}deg)`, offset: 0.6 },
+            { transform: "rotate(0deg)" },
+          ],
+          options: { duration: 900, easing: "ease-in-out", fill: "forwards" },
+        })),
+      ]);
+      if (gen !== this._gestureGen) return false;
+
+      await Promise.all([
+        this._lowerToHip(750, false, {}),
+        this._run([...this._leftArmSpecs(false, 750), ...this._handSpecs("right", "open", "rest", 300), ...this._handSpecs("left", "fist", "rest", 300)]),
+      ]);
+      if (gen !== this._gestureGen) return false;
+
+      this.setExpression("neutral");
+      this._finishGesture(keys);
+      return true;
+    }
+
+    // 👉 — the right arm points straight out to the side (where the chat
+    // button sits on Home) with the eyes looking the same way, two small
+    // pokes, then back to the hip.
+    async pointAtChat() {
+      const keys = ["rightArm", "rightElbow", "rightWrist", "rightHand"];
+      this._cancelGesture();
+      const gen = this._gestureGen;
+      this._pauseIdle(keys);
+      this.setExpression("happy");
+      this._lookTo({ x: 4.5, y: 0 }, 300);
+
+      const out = (from, to, duration) => this._rightArmSpecs(from, to, duration);
+
+      await this._run([...out(RIGHT_HIP_BASE, RIGHT_POINT, 650), ...this._handSpecs("right", "rest", "point", 300)]);
+      if (gen !== this._gestureGen) return false;
+
+      await this._run([{
+        key: "rightWrist",
+        keyframes: [
+          { transform: "rotate(0deg)" },
+          { transform: "rotate(-7deg)", offset: 0.25 },
+          { transform: "rotate(0deg)", offset: 0.5 },
+          { transform: "rotate(-7deg)", offset: 0.75 },
+          { transform: "rotate(0deg)" },
+        ],
+        options: { duration: 800, easing: "ease-in-out", fill: "forwards" },
+      }]);
+      if (gen !== this._gestureGen) return false;
+
+      await sleep(500);
+      if (gen !== this._gestureGen) return false;
+
+      this._lookTo({ x: 0, y: 0 }, 300);
+      await this._run([...out(RIGHT_POINT, RIGHT_HIP_BASE, 700), ...this._handSpecs("right", "point", "rest", 300)]);
+      if (gen !== this._gestureGen) return false;
+
+      this.setExpression("neutral");
+      this._finishGesture(keys);
+      return true;
+    }
+
+    // 🤷 — forearms out to the sides, palms open, head tilted, a
+    // puzzled face, then back.
+    async shrug() {
+      const keys = ["head", "body", "rightArm", "rightElbow", "leftArm", "leftElbow"];
+      this._cancelGesture();
+      const gen = this._gestureGen;
+      this._pauseIdle(keys);
+      this.setExpression("think");
+
+      const arms = (r0, r1, l0, l1, duration) => [
+        ["rightArm", r0.shoulder, r1.shoulder], ["rightElbow", r0.elbow, r1.elbow],
+        ["leftArm", l0.shoulder, l1.shoulder], ["leftElbow", l0.elbow, l1.elbow],
+      ].map(([key, a, b]) => ({
+        key,
+        keyframes: [{ transform: `rotate(${a}deg)` }, { transform: `rotate(${b}deg)` }],
+        options: { duration, easing: GESTURE_EASE, fill: "forwards" },
+      }));
+      const tilt = (a, b, duration) => [
+        { key: "head", keyframes: [{ transform: `rotate(${a}deg)` }, { transform: `rotate(${b}deg)` }], options: { duration, easing: GESTURE_EASE, fill: "forwards" } },
+        { key: "body", keyframes: [{ transform: `translateY(${a ? -4 : 0}px)` }, { transform: `translateY(${b ? -4 : 0}px)` }], options: { duration, easing: GESTURE_EASE, fill: "forwards" } },
+      ];
+
+      await this._run([
+        ...arms(RIGHT_HIP_BASE, RIGHT_SHRUG, LEFT_HIP_BASE, LEFT_SHRUG, 500),
+        ...tilt(0, 8, 500),
+        ...this._handSpecs("right", "rest", "open", 300),
+        ...this._handSpecs("left", "rest", "open", 300),
+      ]);
+      if (gen !== this._gestureGen) return false;
+
+      await sleep(800);
+      if (gen !== this._gestureGen) return false;
+
+      await this._run([
+        ...arms(RIGHT_SHRUG, RIGHT_HIP_BASE, LEFT_SHRUG, LEFT_HIP_BASE, 550),
+        ...tilt(8, 0, 550),
+        ...this._handSpecs("right", "open", "rest", 300),
+        ...this._handSpecs("left", "open", "rest", 300),
+      ]);
       if (gen !== this._gestureGen) return false;
 
       this.setExpression("neutral");
@@ -1414,6 +1783,12 @@
   };
   global.robotSuccess = function () {
     return global.cmProRobot && global.cmProRobot.success();
+  };
+  global.robotThumbsUp = function () {
+    return global.cmProRobot && global.cmProRobot.thumbsUp();
+  };
+  global.robotCelebrate = function () {
+    return global.cmProRobot && global.cmProRobot.celebrate();
   };
   global.robotAttention = function () {
     return global.cmProRobot && global.cmProRobot.attention();

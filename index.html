@@ -277,6 +277,11 @@ Loading...
       setTimeout(() => window.CMAssistantChat && CMAssistantChat.open(), 450);
     };
     slot.addEventListener("click", tap);
+    // Back from the chat with an answer: a thumbs-up.
+    document.addEventListener("cm-assistant-close", (e) => {
+      if (!e.detail || !e.detail.answered) return;
+      Promise.resolve(robot.thumbsUp()).catch(() => {}).finally(() => robot.startWelcomeLoop());
+    });
     slot.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tap(); } });
   });
 </script>

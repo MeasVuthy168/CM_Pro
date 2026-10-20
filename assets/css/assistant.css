@@ -109,6 +109,9 @@
 .assistant-icon svg{
     width:100%;
     height:100%;
+    /* The viewBox has room for the right-hand wave; the left hand's
+       cheer/shrug reaches a little past it, into the box's padding. */
+    overflow:visible;
 }
 
 /* =========================
