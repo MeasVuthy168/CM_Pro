@@ -926,3 +926,18 @@ body.ac-open{ overflow:hidden; }
 .ac-team-fsro{ background:#F1E8FB; color:#6E3FB0; }
 [data-theme="dark"] .ac-team, [data-theme="darkgray"] .ac-team{ background:rgba(96,140,255,.18); color:#A8BEFF; }
 [data-theme="dark"] .ac-team-fsro, [data-theme="darkgray"] .ac-team-fsro{ background:rgba(158,119,237,.2); color:#C9B3F5; }
+
+/* Header robot faces (assistant-chat.js setFace) */
+.ac-avatar .ac-f{ opacity:0; transition:opacity .18s ease; }
+.ac-avatar[data-face="neutral"] .ac-f-neutral,
+.ac-avatar[data-face="think"] .ac-f-think,
+.ac-avatar[data-face="joy"] .ac-f-joy{ opacity:1; }
+.ac-f-eyes{ transform-box:fill-box; transform-origin:center; animation:acBlink 4.2s infinite; }
+@keyframes acBlink{ 0%,91%,100%{ transform:scaleY(1); } 94%{ transform:scaleY(.1); } }
+.ac-avatar[data-face="think"] svg{ animation:acThink 1.6s ease-in-out infinite; }
+@keyframes acThink{ 0%,100%{ transform:rotate(-6deg); } 50%{ transform:rotate(6deg); } }
+.ac-avatar[data-face="joy"] svg{ animation:acJoy .6s cubic-bezier(.34,1.4,.64,1); }
+@keyframes acJoy{ 0%{ transform:translateY(0) scale(1); } 40%{ transform:translateY(-4px) scale(1.08); } 100%{ transform:none; } }
+@media (prefers-reduced-motion: reduce){
+    .ac-f-eyes, .ac-avatar[data-face] svg{ animation:none; }
+}
