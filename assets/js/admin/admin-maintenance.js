@@ -686,15 +686,17 @@
   // =====================================================
   // Clean Up Reason Arrear — rows whose LD-CIF is no longer in OS
   // (POST /api/maintenance/reasonarrear-orphans). Find lists them;
-  // Delete Permanently sends exactly the previewed LD-CIFs, and the
-  // server re-checks each against OS before deleting.
+  // Delete sends exactly the previewed LD-CIFs, and the server
+  // re-checks each against OS before deleting.
   // =====================================================
   const ra = {
-    previewResult: document.getElementById("raPreviewResult"),
+    stats: document.getElementById("raStats"),
+    empty: document.getElementById("raEmpty"),
     list: document.getElementById("raList"),
     btnPreview: document.getElementById("raBtnPreview"),
-    btnCopy: document.getElementById("raBtnCopy"),
-    btnDelete: document.getElementById("raBtnDelete")
+    btnPreviewText: document.getElementById("raBtnPreviewText"),
+    btnDelete: document.getElementById("raBtnDelete"),
+    btnDeleteText: document.getElementById("raBtnDeleteText")
   };
   const RA_SHOWN = 100;
 
@@ -702,11 +704,12 @@
 
   function resetReasonPreview() {
     raOrphans = null;
-    ra.btnDelete.disabled = true;
-    ra.btnCopy.hidden = true;
-    ra.previewResult.hidden = true;
+    ra.btnDelete.hidden = true;
+    ra.stats.hidden = true;
+    ra.empty.hidden = true;
     ra.list.hidden = true;
     ra.list.innerHTML = "";
+    ra.btnPreviewText.textContent = t("admin.maintenance.raFind");
   }
 
   async function postReasonOrphans(payload) {
@@ -728,47 +731,46 @@
   }
 
   function renderReasonOrphans(data) {
-    ra.previewResult.hidden = false;
+    const stat = (cls, n, key) => `<div class="ra-stat ${cls}"><b>${n.toLocaleString()}</b><span>${escapeHtml(t(key))}</span></div>`;
+    ra.stats.innerHTML =
+      stat("", data.total, "admin.maintenance.raStatTotal") +
+      stat("ra-stat-ok", data.total - data.count, "admin.maintenance.raStatInOs") +
+      stat(data.count ? "ra-stat-bad" : "", data.count, "admin.maintenance.raStatOrphan");
+    ra.stats.hidden = false;
+    ra.btnPreviewText.textContent = t("admin.maintenance.raFindAgain");
+
     if (!data.count) {
-      ra.previewResult.textContent = t("admin.maintenance.raEmpty", { total: data.total.toLocaleString() });
+      ra.empty.innerHTML = `<span class="adm-ico adm-ico-check-circle" aria-hidden="true"></span>${escapeHtml(t("admin.maintenance.raEmpty"))}`;
+      ra.empty.hidden = false;
       return;
     }
-    ra.previewResult.innerHTML = t("admin.maintenance.raResult", {
-      total: data.total.toLocaleString(), os: data.osCount.toLocaleString(), count: data.count.toLocaleString()
-    });
+
     const rows = data.orphans.slice(0, RA_SHOWN).map(o => `
-      <tr>
-        <td style="white-space:nowrap">${escapeHtml(o.cif)}</td>
-        <td>${escapeHtml(o.ak || o.aj || "—")}</td>
-        <td>${escapeHtml(o.uploadedBy || "—")}</td>
-        <td style="white-space:nowrap">${escapeHtml(o.uploadedAt ? o.uploadedAt.slice(0, 10) : "—")}</td>
-      </tr>`).join("");
+      <div class="ra-row">
+        <div class="ra-row-main">
+          <b>${escapeHtml(o.cif)}</b>
+          <span>${escapeHtml(o.ak || o.aj || "—")}</span>
+        </div>
+        <div class="ra-row-meta">
+          <span>${escapeHtml(o.uploadedBy || "—")}</span>
+          <span>${escapeHtml(o.uploadedAt ? o.uploadedAt.slice(0, 10) : "")}</span>
+        </div>
+      </div>`).join("");
     const more = data.count > RA_SHOWN
-      ? `<p class="adm-table-empty">${escapeHtml(t("admin.maintenance.raMore", { n: (data.count - RA_SHOWN).toLocaleString() }))}</p>`
+      ? `<div class="ra-more">${escapeHtml(t("admin.maintenance.raMore", { n: (data.count - RA_SHOWN).toLocaleString() }))}</div>`
       : "";
-    ra.list.innerHTML = `
-      <div style="overflow-x:auto; max-height:360px; overflow-y:auto; margin-bottom:10px;">
-        <table class="adm-table">
-          <thead><tr>
-            <th>LD-CIF</th>
-            <th>${escapeHtml(t("admin.maintenance.raColReason"))}</th>
-            <th>${escapeHtml(t("admin.maintenance.raColBy"))}</th>
-            <th>${escapeHtml(t("admin.maintenance.raColDate"))}</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>${more}`;
+    ra.list.innerHTML = rows + more;
     ra.list.hidden = false;
-    ra.btnCopy.hidden = false;
-    ra.btnDelete.disabled = false;
+    ra.btnDeleteText.textContent = t("admin.maintenance.raDelete", { count: data.count.toLocaleString() });
+    ra.btnDelete.hidden = false;
   }
 
   async function runReasonPreview() {
     ra.btnPreview.disabled = true;
-    resetReasonPreview();
     try {
       const data = await postReasonOrphans({ dryRun: true });
       if (!data) return;
+      resetReasonPreview();
       raOrphans = data.orphans;
       renderReasonOrphans(data);
     } catch (e) {
@@ -777,23 +779,6 @@
     } finally {
       ra.btnPreview.disabled = false;
     }
-  }
-
-  async function copyReasonOrphans() {
-    if (!raOrphans?.length) return;
-    const text = raOrphans.map(o => o.cif).join("\n");
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.cssText = "position:fixed;opacity:0";
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      ta.remove();
-    }
-    AdminUI.toast(t("admin.maintenance.raCopied", { n: raOrphans.length.toLocaleString() }), "success");
   }
 
   function openReasonConfirmModal() {
@@ -821,7 +806,7 @@
         if (!data) return;
         AdminUI.closeModal();
         AdminUI.toast(t("admin.maintenance.raDone", { count: data.deletedCount.toLocaleString() }), "success");
-        resetReasonPreview();
+        runReasonPreview();
       } catch (e) {
         console.error("reason arrear cleanup failed:", e);
         AdminUI.toast(t("admin.maintenance.raFailedServer"), "error");
@@ -832,6 +817,5 @@
   }
 
   ra.btnPreview.addEventListener("click", runReasonPreview);
-  ra.btnCopy.addEventListener("click", copyReasonOrphans);
   ra.btnDelete.addEventListener("click", openReasonConfirmModal);
 })();

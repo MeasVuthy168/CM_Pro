@@ -132,17 +132,24 @@
       <!-- Reason Arrear rows whose LD-CIF is no longer in OS (paid off / -->
       <!-- closed loans), from POST /api/maintenance/reasonarrear-orphans. -->
       <!-- ========================= -->
-      <div class="adm-card">
-        <div class="adm-card-label" data-i18n="admin.maintenance.raLabel">Clean Up Reason Arrear</div>
-        <p class="adm-modal-message" data-i18n="admin.maintenance.raExplain">
-          Find Reason Arrear rows whose LD-CIF is no longer in OS (paid off or closed loans), then permanently delete them. This can't be undone.
-        </p>
-        <p class="adm-modal-message" id="raPreviewResult" hidden></p>
-        <div id="raList" hidden></div>
-        <div class="adm-modal-footer" style="justify-content:flex-start; gap:12px; flex-wrap:wrap;">
-          <button type="button" class="adm-btn" id="raBtnPreview" data-i18n="admin.maintenance.raFind">Find</button>
-          <button type="button" class="adm-btn" id="raBtnCopy" hidden data-i18n="admin.maintenance.raCopy">Copy LD-CIF</button>
-          <button type="button" class="adm-btn adm-btn-danger" id="raBtnDelete" disabled data-i18n="admin.maintenance.deletePermanently">Delete Permanently</button>
+      <div class="adm-card ra-card">
+        <div class="ra-head">
+          <span class="ra-head-ico"><span class="adm-ico adm-ico-broom" aria-hidden="true"></span></span>
+          <div>
+            <div class="ra-title" data-i18n="admin.maintenance.raLabel">Clean Up Reason Arrear</div>
+            <p class="ra-sub" data-i18n="admin.maintenance.raExplain">Reason Arrear rows whose LD-CIF is no longer in OS (paid off or closed loans).</p>
+          </div>
+        </div>
+        <div class="ra-stats" id="raStats" hidden></div>
+        <div class="ra-ok" id="raEmpty" hidden></div>
+        <div class="ra-list" id="raList" hidden></div>
+        <div class="ra-actions">
+          <button type="button" class="adm-btn adm-btn-with-ico" id="raBtnPreview">
+            <span class="adm-ico adm-ico-refresh" aria-hidden="true"></span><span id="raBtnPreviewText" data-i18n="admin.maintenance.raFind">Find</span>
+          </button>
+          <button type="button" class="adm-btn adm-btn-danger adm-btn-with-ico" id="raBtnDelete" hidden>
+            <span class="adm-ico adm-ico-trash" aria-hidden="true"></span><span id="raBtnDeleteText"></span>
+          </button>
         </div>
       </div>
       <!-- ========================= -->
