@@ -107,7 +107,7 @@ CMI18n.register({
   "voice.help": { km: "ជំនួយ", en: "HELP" },
   "voice.micBlocked": { km: "មីក្រូហ្វូនត្រូវបានទប់ស្កាត់", en: "Microphone access blocked" },
   "voice.micBlockedHelp": { km: "មីក្រូហ្វូនត្រូវបានបិទ — សូមអនុញ្ញាត៖ Settings › Safari › Microphone › Allow (ឬ Settings › Privacy › Microphone) ហើយបើក App ម្តងទៀត។", en: "Microphone is blocked — allow it in Settings › Safari › Microphone › Allow (or Settings › Privacy › Microphone), then reopen the app." },
-  "voice.kmUnsupported": { km: "ឧបករណ៍នេះ (iPhone/iPad) មិនទាន់គាំទ្រការស្តាប់សំឡេងជាភាសាខ្មែរទេ — សូមចុច EN ខាងក្រោម ដើម្បីនិយាយជាភាសាអង់គ្លេស ឬវាយអក្សរខ្មែរក្នុង Chat។", en: "This device (iPhone/iPad) can't listen in Khmer yet — tap EN below to speak English, or type your question in Khmer in the chat." },
+  "voice.kmUnsupported": { km: "ឧបករណ៍នេះ (iPhone/iPad) មិនទាន់គាំទ្រការស្តាប់សំឡេងជាភាសាខ្មែរទេ — សូមប្តូរភាសាកម្មវិធីទៅ English ក្នុង ការកំណត់ ដើម្បីនិយាយជាភាសាអង់គ្លេស ឬវាយអក្សរខ្មែរក្នុង Chat។", en: "This device (iPhone/iPad) can't listen in Khmer yet — switch the app language to English in Settings to speak English, or type your question in Khmer in the chat." },
   "voice.dictationOff": { km: "ការស្តាប់សំឡេងត្រូវបានបិទ — សូមបើក Settings › General › Keyboard › Enable Dictation (និង Siri) ហើយសាកម្តងទៀត។", en: "Speech recognition is off — turn on Settings › General › Keyboard › Enable Dictation (and Siri), then try again." },
   "voice.noSpeech": { km: "មិនបានឮអ្វីទេ", en: "Didn't hear anything" },
   "voice.genericError": { km: "មានបញ្ហាកើតឡើង", en: "Something went wrong" },

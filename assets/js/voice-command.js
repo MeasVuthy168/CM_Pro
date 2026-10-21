@@ -120,7 +120,6 @@ function initVoiceCommand() {
 
     function openModal() {
         renderVoiceChips();
-        if (window.CMAssistantChat) CMAssistantChat.setVoiceLang(CMAssistantChat.voiceLang());
         const name = getVoiceUserFirstName();
         greetingEl.textContent = name ? t("voice.greeting", { name }) : t("voice.greetingNoName");
         statusEl.textContent = t("voice.prompt");
@@ -172,25 +171,6 @@ function initVoiceCommand() {
     });
 
     stopBtn.addEventListener("click", userStop);
-
-    // ខ្មែរ / EN switch on the sheet: restart listening in the new
-    // language straight away.
-    modal.querySelectorAll("[data-voice-lang]").forEach((b) => {
-        b.addEventListener("click", (e) => {
-            e.stopPropagation();
-            if (!window.CMAssistantChat) return;
-            CMAssistantChat.setVoiceLang(b.dataset.voiceLang);
-            cancelledByUser = true;
-            stopListening();
-            setTimeout(() => {
-                recognition = createRecognition();
-                btnWrap.classList.add("listening");
-                statusEl.textContent = t("voice.prompt");
-                statusEl.classList.remove("help");
-                try { recognition.start(); } catch (err) {}
-            }, 250);
-        });
-    });
 
     snackbarHelp.addEventListener("click", () => {
         location.href = VOICE_HELP_URL;

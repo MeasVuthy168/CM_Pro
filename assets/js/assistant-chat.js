@@ -15,7 +15,7 @@
    - Voice uses the browser's speech recognition in Khmer (km-KH) or
      English (en-US); the choice is shared with the mic sheet.
 
-   Public: CMAssistantChat.open(question?), .voiceLang(), .setVoiceLang(),
+   Public: CMAssistantChat.open(question?), .voiceLang(),
    .loadWork(), .workQuestion(kind)
 ========================================================= */
 (function () {
@@ -27,7 +27,6 @@
     const OVERVIEW_KEY = "cm_asst_overview2"; // bumped when the overview gains fields
     const OVERVIEW_TTL = 10 * 60 * 1000;
     const HISTORY_KEY = "cm_asst_chat";
-    const VOICE_LANG_KEY = "cm_voice_lang";
     const MAX_HISTORY = 40;
 
     const PAGE_URLS = {
@@ -85,18 +84,9 @@
     }
 
     // ---------- voice language ----------
+    // Voice follows the app language the user chose (Settings).
     function voiceLang() {
-        let v = null;
-        try { v = localStorage.getItem(VOICE_LANG_KEY); } catch (e) {}
-        if (v !== "km" && v !== "en") v = (window.CMLanguage && CMLanguage.get()) === "en" ? "en" : "km";
-        return v;
-    }
-
-    function setVoiceLang(v) {
-        try { localStorage.setItem(VOICE_LANG_KEY, v === "en" ? "en" : "km"); } catch (e) {}
-        document.querySelectorAll("[data-voice-lang]").forEach(b => {
-            b.classList.toggle("on", b.dataset.voiceLang === voiceLang());
-        });
+        return (window.CMLanguage && CMLanguage.get()) === "en" ? "en" : "km";
     }
 
     // What to tell the user when speech recognition fails to start, by
@@ -870,11 +860,6 @@
                     ${quickStrip().map(q => `<button type="button" class="ac-chip">${esc(q)}</button>`).join("")}
                 </div>
                 <div class="ac-bar">
-                    ${hasSpeech ? `
-                    <div class="ac-lang" role="group" aria-label="${esc(t("assistant.voiceLang"))}">
-                        <button type="button" data-voice-lang="km">ខ្មែរ</button>
-                        <button type="button" data-voice-lang="en">EN</button>
-                    </div>` : ""}
                     <input type="text" class="ac-input" enterkeyhint="send" autocomplete="off" placeholder="${esc(t("assistant.placeholder"))}">
                     ${hasSpeech ? `<button type="button" class="ac-mic" aria-label="${esc(t("assistant.speak"))}">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M19 11a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V20H9a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2h-2v-2.08A7 7 0 0 0 19 11Z"/></svg>
@@ -927,13 +912,6 @@
             if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); ask(inputEl.value); }
         });
         sheet.querySelector(".ac-mic")?.addEventListener("click", startRec);
-        sheet.querySelectorAll("[data-voice-lang]").forEach(b => {
-            b.onclick = () => {
-                setVoiceLang(b.dataset.voiceLang);
-                if (rec) { stopRec(); setTimeout(startRec, 250); }
-            };
-        });
-        setVoiceLang(voiceLang());
 
         try { history = JSON.parse(sessionStorage.getItem(HISTORY_KEY) || "[]"); } catch (e) { history = []; }
         if (history.length) {
@@ -1102,17 +1080,14 @@
         });
     }
 
-    window.CMAssistantChat = { open, close, voiceLang, setVoiceLang, speechCode, voiceErrorText, respond, loadWork, workQuestion };
+    window.CMAssistantChat = { open, close, voiceLang, speechCode, voiceErrorText, respond, loadWork, workQuestion };
 
     document.addEventListener("DOMContentLoaded", () => {
-        const btn = document.getElementById("assistantChatBtn");
-        if (btn) btn.addEventListener("click", () => open());
-        // Tapping the greeting itself also opens the chat (alert / update
-        // modes keep their own buttons).
-        const text = document.getElementById("assistantText");
+        // Tapping anywhere on the assistant box opens the chat (the mic
+        // and the alert / update modes' own buttons keep their action).
         const box = document.querySelector(".assistant-box");
-        if (text && box) {
-            text.addEventListener("click", (e) => {
+        if (box) {
+            box.addEventListener("click", (e) => {
                 if (box.dataset.mode === "greeting" && !e.target.closest("button,a")) open();
             });
         }
