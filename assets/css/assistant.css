@@ -592,14 +592,11 @@
 
 /* =========================
    CM PRO AI CHAT (assistant-chat.js)
-   Chat button sits above the mic in the assistant box; the sheet
-   follows the Smart Alert sheet's look (same dim, radius, palette).
+   Tapping the assistant box opens it; the sheet follows the Smart
+   Alert sheet's look (same dim, radius, palette).
 ========================= */
-.assistant-chat-btn{ bottom:56px; }
-.assistant-box[data-mode="greeting"] .assistant-text{ cursor:pointer; }
+.assistant-box[data-mode="greeting"]{ cursor:pointer; }
 .assistant-box .assistant-text{ padding-right:34px; }
-
-.voice-lang{ justify-content:center; margin:14px auto 0; width:max-content; }
 
 /* The chat covers the whole screen, bottom bar included. */
 .ac-dim{
@@ -699,9 +696,6 @@ body.ac-open{ overflow:hidden; }
 @keyframes acDot{ 0%,80%,100%{ opacity:.3; transform:none; } 40%{ opacity:1; transform:translateY(-3px); } }
 
 .ac-bar{ display:flex; align-items:center; gap:8px; padding:10px 12px 4px; border-top:1px solid #E6EAF2; flex:none; }
-.ac-lang{ display:flex; border:1px solid #D9DFEA; border-radius:999px; overflow:hidden; flex:none; background:#fff; }
-.ac-lang button{ border:none; background:none; font:inherit; font-size:12px; font-weight:700; padding:7px 9px; color:#5B6B8C; cursor:pointer; }
-.ac-lang button.on{ background:#0E1B3C; color:#FFD700; }
 .ac-input{
     flex:1; min-width:0; font:inherit; font-size:15px;
     padding:10px 14px; border-radius:999px; border:1px solid #D9DFEA; background:#fff; color:#1C2333; outline:none;
@@ -741,10 +735,7 @@ body.ac-open{ overflow:hidden; }
 [data-theme="dark"] .ac-pill.flat, [data-theme="darkgray"] .ac-pill.flat{ background:rgba(255,255,255,.08); color:#9AA8C7; }
 [data-theme="dark"] .ac-link, [data-theme="darkgray"] .ac-link{ color:#FFD700; }
 [data-theme="dark"] .ac-chip, [data-theme="darkgray"] .ac-chip{ background:rgba(224,165,38,.12); border-color:rgba(224,165,38,.4); color:#FFD76A; }
-[data-theme="dark"] .ac-lang, [data-theme="darkgray"] .ac-lang,
 [data-theme="dark"] .ac-input, [data-theme="darkgray"] .ac-input{ background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.14); color:#EAF0FF; }
-[data-theme="dark"] .ac-lang button, [data-theme="darkgray"] .ac-lang button{ color:#9AA8C7; }
-[data-theme="dark"] .ac-lang button.on, [data-theme="darkgray"] .ac-lang button.on{ background:#D4AF37; color:#0E1B3C; }
 [data-theme="dark"] .ac-mic, [data-theme="darkgray"] .ac-mic{ background:rgba(255,255,255,.1); color:#fff; }
 [data-theme="dark"] .ac-send, [data-theme="darkgray"] .ac-send{ background:#D4AF37; color:#0E1B3C; }
 [data-theme="dark"] .ac-rank li::before, [data-theme="darkgray"] .ac-rank li::before{ background:#D4AF37; color:#0E1B3C; }
