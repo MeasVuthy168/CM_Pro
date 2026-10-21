@@ -701,10 +701,13 @@
         try { sessionStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-MAX_HISTORY))); } catch (e) {}
     }
 
+    // The robot's head, cropped out of robot.svg, beside each bot reply.
+    const BOT_AVATAR = `<span class="ac-av" aria-hidden="true"><img src="/CM_Pro/assets/images/robot.svg#svgView(viewBox(116,-26,224,224))" alt="" decoding="async"></span>`;
+
     function addMessage(role, html, { save = true } = {}) {
         const el = document.createElement("div");
         el.className = `ac-msg ac-${role}`;
-        el.innerHTML = `<div class="ac-bubble">${html}</div>`;
+        el.innerHTML = (role === "bot" ? BOT_AVATAR : "") + `<div class="ac-bubble">${html}</div>`;
         listEl.appendChild(el);
         listEl.scrollTop = listEl.scrollHeight;
         if (save) {
