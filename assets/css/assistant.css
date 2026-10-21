@@ -653,7 +653,15 @@ body.ac-open{ overflow:hidden; }
 .ac-bubble p:last-child{ margin-bottom:0; }
 .ac-me .ac-bubble{ background:#0E1B3C; color:#fff; border-bottom-right-radius:6px; }
 .ac-bot .ac-bubble{ background:#fff; color:#1C2333; border:1px solid #E6EAF2; border-bottom-left-radius:6px; box-shadow:0 1px 3px rgba(14,27,60,.06); }
-.ac-bot .ac-bubble:has(.ac-card){ width:88%; }
+.ac-bot .ac-bubble:has(.ac-card){ width:calc(100% - 46px); }
+/* Bot replies carry the robot's head, like a contact photo in a chat. */
+.ac-bot{ align-items:flex-end; gap:8px; }
+.ac-bot .ac-bubble{ max-width:calc(100% - 46px); }
+.ac-av{
+    flex:none; width:34px; height:34px; border-radius:50%; overflow:hidden;
+    background:#E9EEF7; border:1.5px solid #D4AF37; box-sizing:border-box;
+}
+.ac-av img{ width:100%; height:100%; display:block; }
 
 .ac-card{ margin-top:4px; border:1px solid #E6EAF2; border-radius:14px; padding:10px 12px; background:#FAFBFE; }
 .ac-card-head{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:6px; }
@@ -722,6 +730,7 @@ body.ac-open{ overflow:hidden; }
 [data-theme="dark"] .ac-rank-name small, [data-theme="darkgray"] .ac-rank-name small{ color:#9AA8C7; }
 [data-theme="dark"] .ac-close, [data-theme="darkgray"] .ac-close{ background:rgba(255,255,255,.08); color:#fff; }
 [data-theme="dark"] .ac-grab span, [data-theme="darkgray"] .ac-grab span{ background:#33456F; }
+[data-theme="dark"] .ac-av, [data-theme="darkgray"] .ac-av{ background:#1D2B52; }
 [data-theme="dark"] .ac-bot .ac-bubble{ background:#16223F; color:#EAF0FF; border-color:#223055; }
 [data-theme="darkgray"] .ac-bot .ac-bubble{ background:#363A41; color:#EEF0F4; border-color:#474C55; }
 [data-theme="dark"] .ac-me .ac-bubble, [data-theme="darkgray"] .ac-me .ac-bubble{ background:#D4AF37; color:#1A1A1A; }
