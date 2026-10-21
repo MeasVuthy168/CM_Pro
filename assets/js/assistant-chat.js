@@ -186,11 +186,11 @@
         return esc(JSON.stringify({ kind, branch: path.branch || "", team: path.team || "", officer: path.officer || "" }));
     }
 
-    // Four count tiles. In a work card a tile switches the card to that
-    // kind at the same branch / officer; elsewhere (asAsk) it asks.
-    function workTiles(data, active, path, asAsk) {
+    // Four count tiles; a tile switches the work card to that kind at
+    // the same branch / officer.
+    function workTiles(data, active, path) {
         return `<div class="ac-work-tiles">${WORK_KINDS.map(k => `
-            <button type="button" class="ac-wtile ac-wtile-${k}${k === active ? " on" : ""}" ${asAsk ? `data-ask="${esc(workQuestion(k))}"` : `data-work="${workAttr(k, path)}"`}>
+            <button type="button" class="ac-wtile ac-wtile-${k}${k === active ? " on" : ""}" data-work="${workAttr(k, path)}">
                 ${ico(WORK_ICONS[k], "ac-wtile-ico")}
                 <b>${(Number(data.counts[k]) || 0).toLocaleString("en-US")}</b>
                 <span>${esc(t(`assistant.work.${k}`))}</span>
@@ -290,7 +290,7 @@
                         <span class="ac-card-date">${esc(dmy(data.today))}</span>
                     </div>
                     ${workCrumbs(kind, here)}
-                    ${workTiles(data, kind === "all" ? null : kind, here, false)}
+                    ${workTiles(data, kind === "all" ? null : kind, here)}
                     ${teamSwitch(data)}
                     ${n && levelHint ? `<div class="ac-foot ac-work-sub">${esc(levelHint)}</div>` : ""}
                     ${n ? body : ""}
@@ -929,15 +929,10 @@
         window.addEventListener("pagehide", stopRec);
     }
 
-    // Greeting, today's work at a glance (when there's any), and what to ask.
+    // Greeting and what to ask.
     function welcome() {
         const name = typeof getVoiceUserFirstName === "function" ? getVoiceUserFirstName() : "";
         addMessage("bot", `<p>${esc(name ? t("assistant.hello", { name }) : t("assistant.helloNoName"))}</p>${chipsHtml()}`);
-        loadWork().then(data => {
-            const c = data.counts;
-            if (!c || !(c.unfilled || c.expired || c.promiseToday || c.noOfficer) || history.length !== 1) return;
-            addMessage("bot", `<p>${esc(t("assistant.work.glance"))}</p><div class="ac-card">${workTiles(data, null, {}, true)}</div>`);
-        }).catch(() => {});
     }
 
     function clearChat() {
@@ -950,7 +945,7 @@
 
     // Refresh: drop the cached figures and ask the last question again,
     // so the answer is today's latest (with no question yet, the
-    // greeting and today's work are redrawn).
+    // greeting is redrawn).
     function refreshChat() {
         if (busy) return;
         for (let i = sessionStorage.length - 1; i >= 0; i--) {

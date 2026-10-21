@@ -59,7 +59,6 @@ CMI18n.register({
   "assistant.work.none.noOfficer": { km: "គ្មានកម្ចីដែលគ្មានមន្ត្រីទទួលខុសត្រូវទេ។", en: "No loans without an officer responsible." },
   "assistant.work.leadAll": { km: "ថ្ងៃនេះនៅសល់អតិថិជន {n} នាក់ ត្រូវបំពេញ (មិនទាន់បំពេញ ឬសន្យាផុតកំណត់)៖", en: "{n} clients left today (unfilled or expired promise):" },
   "assistant.work.allDone": { km: "ការងារថ្ងៃនេះរួចរាល់ទាំងអស់!", en: "All of today's work is done!" },
-  "assistant.work.glance": { km: "ការងារថ្ងៃនេះរបស់អ្នក — ចុចប្រអប់ដើម្បីមើលអតិថិជន៖", en: "Your work today — tap a box to see the clients:" },
   "assistant.work.byOfficer": { km: "តាមមន្ត្រី (CO / FSRO) — ចុចដើម្បីមើលអតិថិជន", en: "By officer (CO / FSRO) — tap to see the clients" },
   "assistant.work.byBranch": { km: "តាមសាខា — ចុចដើម្បីមើលតាមមន្ត្រី", en: "By branch — tap to see each officer" },
   "assistant.work.allBranches": { km: "គ្រប់សាខា", en: "All branches" },
