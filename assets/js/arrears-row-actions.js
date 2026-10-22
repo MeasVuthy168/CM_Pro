@@ -20,11 +20,24 @@
     const BLOCK_ROLES = ["admin", "user", "viewer_manager_a", "viewer_manager_b", "viewer_manager_c"];
     const ROW_SEL = ".arr-card[data-index], .arr-group-ld[data-index], #tbodyArrears tr[data-index], tr.arr-cif-ld[data-index]";
 
+    // The signed-in user sits in localStorage ("stay signed in") or
+    // sessionStorage. The server has the final say (canEdit on the
+    // Account Blocking list); the role is only the guess until it answers.
     function role() {
-        try { return String(JSON.parse(localStorage.getItem("loggedInUser") || "{}").role || "").toLowerCase(); }
+        try { return String(JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}").role || "").toLowerCase(); }
         catch (e) { return ""; }
     }
-    const canBlock = () => BLOCK_ROLES.includes(role());
+    let blockAllowed = null;
+    const canBlock = () => (blockAllowed !== null ? blockAllowed : BLOCK_ROLES.includes(role()));
+    fetch(`${API.BASE_URL}/api/accblocking/list`, { headers: { Authorization: `Bearer ${API.getToken()}` } })
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.ok) {
+                blockAllowed = !!data.canEdit;
+                if (sel) mark();
+            }
+        })
+        .catch(() => {});
 
     function toast(msg, type) {
         if (typeof showToast === "function") showToast(msg, type || "success");
