@@ -851,6 +851,18 @@ body.ac-open{ overflow:hidden; }
 .ac-quick + .ac-bar{ border-top:none; padding-top:8px; }
 [data-theme="dark"] .ac-quick, [data-theme="darkgray"] .ac-quick{ border-color:rgba(255,255,255,.08); }
 
+/* LGs loans card: two tiles (inside the limit / refinanced). */
+.ac-lgs-who{ display:flex; align-items:center; gap:4px; margin:-2px 0 8px; font-weight:700; }
+.ac-lgs-tiles{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:6px; }
+.ac-lgs-tile{ display:flex; flex-direction:column; gap:2px; padding:10px; border-radius:12px; background:#F7F9FC; border:1px solid #E6EAF2; }
+.ac-lgs-tile b{ font-size:22px; line-height:1.1; color:#B8860B; font-variant-numeric:tabular-nums; }
+.ac-lgs-refin b{ color:#1E7A48; }
+.ac-lgs-tile span{ font-size:12px; font-weight:700; }
+.ac-lgs-tile small{ font-size:11px; color:#6B7280; }
+[data-theme="dark"] .ac-lgs-tile, [data-theme="darkgray"] .ac-lgs-tile{ background:rgba(255,255,255,.05); border-color:#223055; }
+[data-theme="dark"] .ac-lgs-tile b, [data-theme="darkgray"] .ac-lgs-tile b{ color:#FFD76A; }
+[data-theme="dark"] .ac-lgs-refin b, [data-theme="darkgray"] .ac-lgs-refin b{ color:#7EE2A8; }
+[data-theme="dark"] .ac-lgs-tile small, [data-theme="darkgray"] .ac-lgs-tile small{ color:#9AA8C7; }
 .ac-work-tiles{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px; margin:2px 0 4px; }
 .ac-wtile{
     display:flex; flex-direction:column; align-items:center; gap:2px; min-width:0;
