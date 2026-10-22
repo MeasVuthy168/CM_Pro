@@ -1222,7 +1222,7 @@ arrCardList.addEventListener("click", (e) => {
         if (!row) return;
         arrCardList.querySelectorAll(".is-selected").forEach(c => c.classList.remove("is-selected"));
         ldRow.classList.add("is-selected");
-        openWorkFor(row, group ? group.rows : null);
+        arrRowTap(row, group ? group.rows : null);
         return;
     }
 
@@ -1241,7 +1241,7 @@ arrCardList.addEventListener("click", (e) => {
     if (!row) return;
     arrCardList.querySelectorAll(".arr-card.is-selected").forEach(c => c.classList.remove("is-selected"));
     card.classList.add("is-selected");
-    openWorkFor(row);
+    arrRowTap(row);
 });
 
 // ========================================
@@ -1687,7 +1687,7 @@ arrCifTable?.addEventListener("click", (e) => {
         if (!row) return;
         arrCifTable.querySelectorAll(".row-selected").forEach(r => r.classList.remove("row-selected"));
         ldRow.classList.add("row-selected");
-        openWorkFor(row, group ? group.rows : null);
+        arrRowTap(row, group ? group.rows : null);
         return;
     }
     const head = e.target.closest("tr.arr-cif-row");
@@ -1928,7 +1928,8 @@ function updateRowInTable(row) {
 }
 
 // ========================================
-// ROW CLICK -> WORK TO COMPLETE (that loan's Reason Arrear)
+// ROW CLICK -> Reason Arrear or Account Blocking (arrears-row-actions.js;
+// roles that can't block go straight to Work to complete)
 // ========================================
 
 tbodyArrears.addEventListener("click", (e) => {
@@ -1942,7 +1943,7 @@ tbodyArrears.addEventListener("click", (e) => {
     document.querySelectorAll("#tbodyArrears tr").forEach(r => r.classList.remove("row-selected"));
     tr.classList.add("row-selected");
 
-    openWorkFor(row);
+    arrRowTap(row);
 });
 
 // ========================================
