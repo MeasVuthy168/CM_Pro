@@ -79,6 +79,17 @@
     </div>
   </div>
 </div>
+<div class="arx-dim" id="arxDone" hidden>
+  <div class="arx-sheet arx-done" role="dialog" aria-modal="true" aria-labelledby="arxDoneTitle">
+    <div class="arx-done-ico" aria-hidden="true">✓</div>
+    <div class="arx-title" id="arxDoneTitle" data-arx-t="arrears.act.doneTitle"></div>
+    <div class="arx-done-lines" id="arxDoneLines"></div>
+    <div class="arx-done-btns">
+      <a class="arx-primary arx-done-open" href="/CM_Pro/pages/masterdata/accblocking.html" data-arx-t="arrears.act.openBlocking"></a>
+      <button type="button" class="arx-done-stay" data-arx-close data-arx-t="arrears.act.stay"></button>
+    </div>
+  </div>
+</div>
 <div class="arx-selbar" id="arxSelBar" hidden>
   <div class="arx-selbar-top">
     <span class="arx-seln" id="arxSelN">0</span>
@@ -99,12 +110,12 @@
 
     function openSheet(id) { document.getElementById(id).hidden = false; }
     function closeSheet(id) { document.getElementById(id).hidden = true; }
-    ["arxPick", "arxBlock"].forEach(id => {
+    ["arxPick", "arxBlock", "arxDone"].forEach(id => {
         const el = document.getElementById(id);
         el.addEventListener("click", e => { if (e.target === el || e.target.closest("[data-arx-close]")) closeSheet(id); });
     });
     document.addEventListener("keydown", e => {
-        if (e.key === "Escape") ["arxPick", "arxBlock"].forEach(closeSheet);
+        if (e.key === "Escape") ["arxPick", "arxBlock", "arxDone"].forEach(closeSheet);
     });
 
     // ---------- tap: pick Reason Arrear or Account Blocking ----------
@@ -172,12 +183,16 @@
             closeSheet("arxBlock");
             setBlocked(data.rows);
             endSelect();
-            const parts = [];
-            if (data.added) parts.push(tr("arrears.act.addedN", { n: data.added }));
-            if (data.updated) parts.push(tr("arrears.act.updatedN", { n: data.updated }));
-            toast(parts.join(" · ") || tr("arrears.act.saved"));
-            if (data.notFound && data.notFound.length) toast(tr("arrears.act.notFoundN", { cifs: data.notFound.join(", ") }), "warning");
-            if (data.full) toast(tr("arrears.act.full"), "warning");
+            // Done: open the blocking list, or stay on Daily Arrears.
+            const lines = [];
+            if (data.added) lines.push([tr("arrears.act.doneAddedN", { n: data.added, action: blockAction }), ""]);
+            if (data.updated) lines.push([tr("arrears.act.updatedN", { n: data.updated }), ""]);
+            if (!lines.length) lines.push([tr("arrears.act.saved"), ""]);
+            if (data.notFound && data.notFound.length) lines.push([tr("arrears.act.notFoundN", { cifs: data.notFound.join(", ") }), "warn"]);
+            if (data.full) lines.push([tr("arrears.act.full"), "warn"]);
+            document.getElementById("arxDoneLines").innerHTML = lines
+                .map(([text, kind]) => `<div class="arx-done-line${kind ? ` arx-done-${kind}` : ""}">${esc(text)}</div>`).join("");
+            openSheet("arxDone");
         } catch (err) {
             toast(err.message, "error");
         } finally {
@@ -341,6 +356,17 @@
         const rows = selectedRows();
         if (rows.length) openBlock(rows);
     });
+
+    // ---------- Account Blocking button (left of Work to complete) ----------
+    const workBtn = document.getElementById("btnNoReasonSummary");
+    if (workBtn && role() !== "viewer_staff") {
+        const link = document.createElement("a");
+        link.id = "btnArrBlocking";
+        link.className = "arr-work-btn arr-blocking-btn";
+        link.href = "/CM_Pro/pages/masterdata/accblocking.html";
+        link.innerHTML = `<span class="arx-btn-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></span> <span data-arx-t="arrears.act.blockingBtn">${esc(tr("arrears.act.blockingBtn"))}</span>`;
+        workBtn.before(link);
+    }
 
     window.arrRowTap = tap;
 })();
