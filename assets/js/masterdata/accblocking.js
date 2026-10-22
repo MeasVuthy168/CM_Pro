@@ -27,6 +27,16 @@ function abAmount(v) {
     return (Number(v) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+// One figure on the card: the amount the account ends up blocked at —
+// the new amount for Update / Update&Unblock, otherwise the From amount
+// (Block: the arrears; Unblock: what's blocked now). Export / Print
+// keep both columns, like the sheet.
+function abBlockingAmount(r) {
+    const v = r.toAmount !== null && r.toAmount !== undefined && r.toAmount !== "" ? r.toAmount : r.fromAmount;
+    const text = abAmount(v);
+    return text ? `${text}${r.currency ? ` <small class="ab-cur">${abEsc(r.currency)}</small>` : ""}` : "-";
+}
+
 let abData = null;
 let abAddAction = "Block";
 let abEditRow = null;
@@ -122,9 +132,7 @@ function abPaint(data) {
             <div class="ab-acc">${abEsc(r.accountNo || "")}${r.currency ? ` · ${abEsc(r.currency)}` : ""}${r.accountManual ? ` <span class="ab-acc-tag">${abEsc(t("masterdata.ab.accountEdited"))}</span>` : ""}</div>
             ${r.found === false ? `<div class="ab-warn">${abEsc(t("masterdata.ab.notInPayroll"))}</div>` : ""}
             <div class="ab-amounts">
-                <span><small>${abEsc(t("masterdata.ab.fromAmount"))}</small><b>${abAmount(r.fromAmount) || "-"}</b></span>
-                <span class="ab-arrow" aria-hidden="true">→</span>
-                <span><small>${abEsc(t("masterdata.ab.toAmount"))}</small><b>${abAmount(r.toAmount) || "-"}</b></span>
+                <span><small>${abEsc(t("masterdata.ab.blockingAmount"))}</small><b>${abBlockingAmount(r)}</b></span>
             </div>
             ${r.reference ? `<div class="ab-meta"><small>${abEsc(t("masterdata.ab.reference"))}</small> ${abEsc(r.reference)}</div>` : ""}
             ${r.description ? `<div class="ab-meta"><small>${abEsc(t("masterdata.ab.description"))}</small> ${abEsc(r.description)}</div>` : ""}

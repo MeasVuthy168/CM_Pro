@@ -280,6 +280,7 @@ CMI18n.register({
   "masterdata.ab.fromAmount": { km: "ពីទឹកប្រាក់ចំនួន", en: "From amount" },
   "masterdata.ab.toAmount": { km: "មកទឹកប្រាក់ចំនួន", en: "To amount" },
   "masterdata.ab.reference": { km: "លេខយោង", en: "Reference" },
+  "masterdata.ab.blockingAmount": { km: "ទឹកប្រាក់បង្ខាំង", en: "Blocking amount" },
   "masterdata.ab.account": { km: "លេខគណនី", en: "Account number" },
   "masterdata.ab.accountAuto": { km: "គណនី Payroll (ស្វ័យប្រវត្តិ)", en: "Payroll account (automatic)" },
   "masterdata.ab.accountManual": { km: "វាយបញ្ចូលលេខគណនីខ្លួនឯង…", en: "Type an account number…" },

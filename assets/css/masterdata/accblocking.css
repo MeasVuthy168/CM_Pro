@@ -329,3 +329,5 @@ body.ab-sheet-open{ overflow:hidden; }
     #abPrint .ab-p-update td{ background:#FFEB9C; }
     #abPrint .ab-p-updunblock td{ background:#DDEBF7; }
 }
+.ab-amounts b{ font-size:17px; }
+.ab-amounts b .ab-cur{ font-size:11px; font-weight:700; color:var(--md-text-muted); margin-left:2px; }
