@@ -146,6 +146,25 @@
 .ab-empty{ padding:24px 12px; text-align:center; font-size:13.5px; color:var(--md-text-muted); border-radius:14px; background:var(--md-card-bg); border:1px dashed var(--md-border); }
 .ab-retry{ margin-top:10px; height:34px; padding:0 16px; border:none; border-radius:10px; background:linear-gradient(180deg,#FFD700,#D4AF37); color:#0E1B3C; font:inherit; font-weight:700; }
 
+/* Long-press multi-select on the list (delete). */
+.ab-row{ position:relative; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+.ab-list.ab-selecting .ab-row{ padding-left:44px; }
+.ab-list .ab-check{ left:14px; top:22px; transform:none; }
+.ab-row.ab-sel{ box-shadow:0 0 0 2px #D4AF37, var(--md-shadow); }
+.ab-row-selbar{
+    position:fixed; left:12px; right:12px; z-index:2500; max-width:696px; margin:0 auto;
+    display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:16px;
+    background:var(--md-card-bg); border:1px solid var(--md-border); box-shadow:0 8px 28px rgba(14,27,60,.28);
+}
+.ab-row-selbar[hidden]{ display:none; }
+.ab-row-del{
+    flex:none; display:inline-flex; align-items:center; gap:6px; height:38px; padding:0 14px; border:none; border-radius:12px;
+    background:#E5484D; color:#fff; font:inherit; font-size:13px; font-weight:800; cursor:pointer;
+}
+.ab-row-del:disabled{ opacity:.5; }
+.ab-row-del .ui-ico{ color:#fff; }
+.ab-list.ab-selecting{ padding-bottom:70px; }
+
 /* ---------- Sheets ---------- */
 body.ab-sheet-open{ overflow:hidden; }
 .ab-dim{ position:fixed; inset:0; z-index:3000; background:rgba(10,16,35,.55); display:flex; align-items:flex-end; justify-content:center; }
