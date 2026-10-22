@@ -85,27 +85,39 @@ No Internet Connection
   <div class="lg-meter" aria-hidden="true"><i id="lgMeter"></i></div>
 </section>
 
-<!-- Period: defaults to the 1st of the data month up to the latest disbursement -->
+<!-- Period: quick presets (from the latest disbursement date) or any
+     From / To. Each date is a tappable pill over a hidden native picker. -->
 <section class="lg-period">
-  <label><span data-i18n="masterdata.lgs.from">ពី</span><input type="date" id="lgFrom"></label>
-  <span class="lg-period-arrow" aria-hidden="true">→</span>
-  <label><span data-i18n="masterdata.lgs.to">ដល់</span><input type="date" id="lgTo"></label>
+  <div class="lg-presets" role="group" aria-label="Period" data-i18n-aria-label="masterdata.lgs.period">
+    <button type="button" class="lg-preset" data-preset="month" data-i18n="masterdata.lgs.presetMonth">ខែនេះ</button>
+    <button type="button" class="lg-preset" data-preset="last7" data-i18n="masterdata.lgs.preset7">៧ ថ្ងៃចុងក្រោយ</button>
+    <button type="button" class="lg-preset" data-preset="latest" data-i18n="masterdata.lgs.presetLatest">ថ្ងៃចុងក្រោយ</button>
+    <button type="button" class="lg-preset" data-preset="prevMonth" data-i18n="masterdata.lgs.presetPrevMonth">ខែមុន</button>
+  </div>
+  <div class="lg-range">
+    <label class="lg-date">
+      <span class="lg-date-cap" data-i18n="masterdata.lgs.from">ពី</span>
+      <span class="lg-date-val"><span class="ui-ico ui-ico-calendar" aria-hidden="true"></span> <span id="lgFromText">-</span></span>
+      <input type="date" id="lgFrom" aria-label="From" data-i18n-aria-label="masterdata.lgs.from">
+    </label>
+    <span class="lg-range-mid" aria-hidden="true">→</span>
+    <label class="lg-date">
+      <span class="lg-date-cap" data-i18n="masterdata.lgs.to">ដល់</span>
+      <span class="lg-date-val"><span class="ui-ico ui-ico-calendar" aria-hidden="true"></span> <span id="lgToText">-</span></span>
+      <input type="date" id="lgTo" aria-label="To" data-i18n-aria-label="masterdata.lgs.to">
+    </label>
+  </div>
+  <div class="lg-days" id="lgDays">-</div>
 </section>
-<p class="lg-note" id="lgNote"></p>
 
 <section class="lg-section">
   <h2 data-i18n="masterdata.lgs.byBranch">តាមសាខា</h2>
   <div id="lgBranches" class="lg-list"></div>
 </section>
 
-<section class="lg-section">
-  <h2 data-i18n="masterdata.lgs.daily">ប្រចាំថ្ងៃ</h2>
-  <div id="lgDaily" class="lg-list"></div>
-</section>
-
 </div>
 
-<!-- Loan list (tap a total, a branch or a day) -->
+<!-- Loan list (tap a total or a branch) -->
 <div id="lgSheet" class="lg-dim" hidden>
   <div class="lg-sheet" role="dialog" aria-modal="true" aria-labelledby="lgSheetTitle">
     <div class="lg-sheet-head">
