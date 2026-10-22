@@ -21,6 +21,9 @@
                                            the question names what to
                                            compare with ("ធៀបនឹងចុងខែមុន",
                                            "vs 30/09/2026")
+     { type: "lgs", focus }                loans inside the LGs limit
+                                           disbursed this month; focus
+                                           lgs | refinanced
      { type: "alerts" }                    today's Smart Alerts
      { type: "work", kind }                today's work to complete; kind
                                            unfilled | expired | promiseToday
@@ -76,6 +79,12 @@
     }
 
     // ---------- vocabulary ----------
+    // LGs Loans (Master Data): loans inside the LGs limit and the ones
+    // already refinanced. Declared first — PAGES below uses it.
+    const LGS_WORDS = ["lgs", "lg loan", "lg loans", "lgs loan", "lgs loans", "refinance", "refinanced", "refinancing",
+        "ដែនកំណត់", "បុនហិរញ្ញប្បទាន", "ហិរញ្ញប្បទានឡើងវិញ", "បុនរួច"];
+    const REFIN_WORDS = ["refinance", "refinanced", "refinancing", "បុនហិរញ្ញប្បទាន", "ហិរញ្ញប្បទានឡើងវិញ", "បុនរួច"];
+
     const OPEN_WORDS = ["open", "go to", "goto", "show me", "take me to", "បើក", "ទៅកាន់", "ទៅទំព័រ", "ចូលទៅ", "ចូល"];
 
     // Most specific first — the first page whose keyword appears wins.
@@ -89,6 +98,7 @@
         { page: "officertask", keywords: ["officer task", "ភារកិច្ចមន្ត្រី", "កិច្ចការមន្ត្រី"] },
         { page: "creditReport", keywords: ["credit report", "report", "reports", "របាយការណ៍ឥណទាន", "របាយការណ៍"] },
         { page: "work", keywords: ["work to complete", "ការងារត្រូវបំពេញ"] },
+        { page: "lgs", keywords: LGS_WORDS },
         { page: "outArea", keywords: ["out of area arrears", "edit out-of-area", "កែសម្រួលarrearក្រៅតំបន់", "arrearក្រៅតំបន់"] },
         { page: "masterData", keywords: ["master data", "ទិន្នន័យមូលដ្ឋាន"] },
         { page: "land", keywords: ["land classification", "land", "ចំណាត់ថ្នាក់ដីធ្លី", "ចំណាត់ថ្នាក់ដី", "ដីធ្លី"] },
@@ -244,6 +254,13 @@
         }
 
         const wantsOpen = hasAny(text, OPEN_WORDS);
+
+        // "LGs loans this month", "refinanced Nhor" — "open LGs loans"
+        // goes to the page instead.
+        if (hasAny(text, LGS_WORDS)) {
+            if (wantsOpen) return { type: "navigate", page: "lgs", text };
+            return { type: "lgs", focus: hasAny(text, REFIN_WORDS) ? "refinanced" : "lgs", text };
+        }
 
         // "today's unfilled reason arrear", "client arrear no officer
         // responsible" — unless it's "open work to complete".

@@ -40,8 +40,11 @@ let lgSheetCtx = null; // { branch, title }
 // Latest disbursement date in the data (the server's default "to");
 // the date pickers stop there.
 let lgAnchor = "";
-// Selected branch ("" = all branches in the user's scope).
-let lgBranch = "";
+// Selected branch ("" = all branches in the user's scope); the chat's
+// "Open LGs Loans" link can pass one as ?branch=.
+let lgBranch = (() => {
+    try { return new URLSearchParams(location.search).get("branch") || ""; } catch (e) { return ""; }
+})();
 
 // Pills, day count and the hero's period line for the current period.
 function lgPaintPeriod(from, to) {

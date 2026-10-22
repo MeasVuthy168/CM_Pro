@@ -41,6 +41,7 @@
         masterData: "/CM_Pro/pages/masterdata/index.html",
         work: "/CM_Pro/pages/masterdata/work.html",
         outArea: "/CM_Pro/pages/masterdata/outarea.html",
+        lgs: "/CM_Pro/pages/masterdata/lgs.html",
         land: "/CM_Pro/pages/landClassisfy/index.html",
         loanCalculator: "/CM_Pro/pages/loanCalculate/index.html",
         retirement: "/CM_Pro/pages/retirement/index.html",
@@ -582,6 +583,69 @@
         return { html: `<p>${esc(lead)}</p>${statCard(row, data, metrics, q)}` };
     }
 
+    // ---------- LGs loans ----------
+    // GET /api/creditreport/lgs: loans disbursed this month inside the LGs
+    // limit and how many are already refinanced, per branch (Master Data
+    // → LGs Loans). A branch named in the question narrows the answer.
+    const LGS_KEY = "cm_asst_lgs";
+    const LGS_TTL = 5 * 60 * 1000;
+
+    async function loadLgs() {
+        try {
+            const hit = JSON.parse(sessionStorage.getItem(LGS_KEY) || "null");
+            if (hit && Date.now() - hit.at < LGS_TTL) return hit.data;
+        } catch (e) {}
+        const data = await API.get("/api/creditreport/lgs");
+        if (!data || !data.ok) throw new Error((data && data.message) || "lgs failed");
+        try { sessionStorage.setItem(LGS_KEY, JSON.stringify({ at: Date.now(), data })); } catch (e) {}
+        return data;
+    }
+
+    async function answerLgs(intent) {
+        let data;
+        try {
+            data = await loadLgs();
+        } catch (e) {
+            return { html: esc(t("assistant.loadFailed")) };
+        }
+        const branches = data.branches || [];
+        const hit = N().matchBranch(intent.text, branches);
+        if (!hit) {
+            const other = N().matchBranch(intent.text, ALL_BRANCHES.map(b => ({ branch: b })));
+            if (other) return { html: esc(t("assistant.notYourBranch", { branch: other.branch })) };
+        }
+        const row = hit || (branches.length === 1 ? branches[0] : data.total);
+        const branch = hit ? hit.branch : branches.length === 1 ? branches[0].branch : "";
+        const who = branch || t("assistant.lgs.allBranches");
+        const num = n => (Number(n) || 0).toLocaleString("en-US");
+        const share = row.lgs ? `${Math.round(row.refinanced / row.lgs * 1000) / 10}%` : "0%";
+        const vars = { who, n: num(row.lgs), r: num(row.refinanced), pct: share, from: dmy(data.fromDate), to: dmy(data.toDate) };
+        const lead = t(intent.focus === "refinanced" ? "assistant.lgs.leadRefin" : "assistant.lgs.lead", vars);
+        const list = branch ? [] : [...branches].sort((a, b) => b.lgs - a.lgs || b.refinanced - a.refinanced);
+        const href = PAGE_URLS.lgs + (branch ? `?branch=${encodeURIComponent(branch)}` : "");
+        return {
+            html: `
+                <p>${esc(lead)}</p>
+                <div class="ac-card ac-lgs">
+                    <div class="ac-card-head">
+                        <span class="ac-card-who">${ico("trend-up", "ac-head-ico")}${esc(t("assistant.lgs.title"))}</span>
+                        <span class="ac-card-date">${esc(dmy(data.fromDate))} → ${esc(dmy(data.toDate))}</span>
+                    </div>
+                    <div class="ac-foot ac-lgs-who">${ico("pin")} ${esc(who)}</div>
+                    <div class="ac-lgs-tiles">
+                        <div class="ac-lgs-tile"><b>${num(row.lgs)}</b><span>${esc(t("assistant.lgs.tileLgs"))}</span><small>${esc(t("assistant.lgs.ofDisbursed", { n: num(row.disbursed) }))}</small></div>
+                        <div class="ac-lgs-tile ac-lgs-refin"><b>${num(row.refinanced)}</b><span>${esc(t("assistant.lgs.tileRefin"))}</span><small>${esc(t("assistant.lgs.share", { pct: share }))}</small></div>
+                    </div>
+                    ${list.length > 1 ? `<ol class="ac-rank">${list.map(b => `
+                        <li>
+                            <span class="ac-rank-name">${esc(b.branch)}<small>${esc(t("assistant.lgs.disbursedN", { n: num(b.disbursed) }))}</small></span>
+                            <span class="ac-rank-v">${esc(t("assistant.lgs.rowValue", { n: num(b.lgs), r: num(b.refinanced) }))}</span>
+                        </li>`).join("")}</ol>` : ""}
+                    <a class="ac-link" href="${esc(href)}">${esc(t("assistant.lgs.open"))} ›</a>
+                </div>`
+        };
+    }
+
     async function answerAlerts() {
         try {
             const data = await API.get("/api/notifications/my?limit=50");
@@ -613,6 +677,7 @@
                 <li>🏆 ${esc(t("assistant.help.rank"))}</li>
                 <li>🔎 ${esc(t("assistant.help.customer"))}</li>
                 <li>📝 ${esc(t("assistant.help.work"))}</li>
+                <li>🏦 ${esc(t("assistant.help.lgs"))}</li>
                 <li>⚠️ ${esc(t("assistant.help.alerts"))}</li>
                 <li>🧭 ${esc(t("assistant.help.open"))}</li>
                 <li>🎙️ ${esc(t("assistant.help.voice"))}</li>
@@ -641,6 +706,8 @@
                 return answerAlerts();
             case "work":
                 return answerWork(intent);
+            case "lgs":
+                return answerLgs(intent);
             case "ask":
                 return answerAsk(intent, text);
             default:
@@ -687,14 +754,14 @@
     function suggestionGroups() {
         return [
             { key: "work", items: ["unfilled", "expired", "promiseToday", "noOfficer"].map(workQuestion).concat(t("assistant.chip.work.all")) },
-            { key: "data", items: [t("assistant.chip.summary"), t("assistant.chip.par"), t("assistant.chip.topCo"), t("assistant.chip.lowDisbCo"), t("assistant.chip.alerts")] },
+            { key: "data", items: [t("assistant.chip.summary"), t("assistant.chip.par"), t("assistant.chip.topCo"), t("assistant.chip.lowDisbCo"), t("assistant.chip.lgs"), t("assistant.chip.alerts")] },
             { key: "open", items: [t("assistant.chip.openWork"), t("assistant.chip.customer"), t("assistant.chip.help")] }
         ];
     }
 
     function quickStrip() {
         return [workQuestion("unfilled"), workQuestion("noOfficer"), t("assistant.chip.summary"), workQuestion("expired"),
-            t("assistant.chip.par"), workQuestion("promiseToday"), t("assistant.chip.alerts"), t("assistant.chip.help")];
+            t("assistant.chip.par"), t("assistant.chip.lgs"), workQuestion("promiseToday"), t("assistant.chip.alerts"), t("assistant.chip.help")];
     }
 
     function saveHistory() {
@@ -953,7 +1020,7 @@
         if (busy) return;
         for (let i = sessionStorage.length - 1; i >= 0; i--) {
             const k = sessionStorage.key(i);
-            if (k && (k.startsWith(OVERVIEW_KEY) || k.startsWith(WORK_KEY))) sessionStorage.removeItem(k);
+            if (k && (k.startsWith(OVERVIEW_KEY) || k.startsWith(WORK_KEY) || k.startsWith(LGS_KEY))) sessionStorage.removeItem(k);
         }
         const last = [...history].reverse().find(m => m.role === "me");
         if (!last) return clearChat();
