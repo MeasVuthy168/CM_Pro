@@ -1,0 +1,130 @@
+/* =========================================================
+   Master Data > LGs Loans (pages/masterdata/lgs.html)
+   Totals hero, period, per-branch and per-day rows, loan list sheet.
+   Colors come from masterdata.css's --md-* tokens.
+========================================================= */
+.lg-page{ padding:14px 14px 90px; }
+.lg-page > *{ max-width:720px; margin-left:auto; margin-right:auto; }
+
+/* ---------- Hero ---------- */
+.lg-hero{
+    padding:14px 14px 12px;
+    border-radius:16px;
+    background:linear-gradient(135deg,#0E1B3C,#1A2E57);
+    color:#fff;
+    box-shadow:0 8px 22px rgba(14,27,60,.22);
+}
+.lg-hero-top{ display:flex; align-items:center; gap:12px; }
+.lg-hero-ico{
+    width:42px; height:42px; flex:none; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(255,215,0,.16); color:#FFD700; font-size:20px;
+}
+.lg-hero-text{ flex:1; min-width:0; }
+.lg-hero-title{ font-size:15.5px; font-weight:800; }
+.lg-hero-sub{ margin-top:2px; font-size:12px; opacity:.75; }
+.lg-hero-refresh{
+    width:38px; height:38px; flex:none; border-radius:50%;
+    border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08);
+    color:#fff; font-size:16px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.lg-stats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+.lg-stat{
+    display:flex; flex-direction:column; align-items:flex-start; gap:3px; text-align:left;
+    padding:12px; border-radius:14px; border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.07); color:#fff; font:inherit; cursor:pointer;
+}
+.lg-stat b{ font-size:26px; line-height:1.1; color:#FFD700; }
+.lg-stat-refin b{ color:#7EE2A8; }
+.lg-stat span{ font-size:12px; line-height:1.45; opacity:.92; }
+.lg-stat small{ font-size:11.5px; opacity:.7; }
+.lg-meter{ height:6px; margin-top:12px; border-radius:3px; background:rgba(255,255,255,.14); overflow:hidden; }
+.lg-meter i{ display:block; height:100%; width:0; border-radius:3px; background:linear-gradient(90deg,#3CC380,#7EE2A8); transition:width .5s ease; }
+
+/* ---------- Period ---------- */
+.lg-period{
+    display:flex; align-items:flex-end; gap:8px; margin-top:12px;
+    padding:10px 12px; border-radius:14px;
+    background:var(--md-card-bg); border:1px solid var(--md-border);
+}
+.lg-period label{ flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--md-text-muted); }
+.lg-period input{
+    width:100%; height:38px; padding:0 10px; border-radius:10px;
+    border:1px solid var(--md-border); background:var(--md-page-bg); color:var(--md-text); font:inherit; font-size:14px;
+}
+.lg-period-arrow{ padding-bottom:9px; color:var(--md-text-muted); }
+.lg-note{ margin:8px 2px 0; font-size:12px; line-height:1.5; color:var(--md-text-muted); }
+
+/* ---------- Sections ---------- */
+.lg-section{ margin-top:16px; }
+.lg-section h2{ margin:0 2px 8px; font-size:13px; font-weight:800; letter-spacing:.3px; color:var(--md-text-muted); text-transform:uppercase; }
+.lg-list{
+    border-radius:14px; overflow:hidden;
+    background:var(--md-card-bg); border:1px solid var(--md-border); box-shadow:var(--md-shadow);
+}
+.lg-row{
+    position:relative; display:block; width:100%; padding:12px 34px 12px 14px; text-align:left;
+    border:none; border-bottom:1px solid var(--md-border); background:none; color:var(--md-text); font:inherit; cursor:pointer;
+}
+.lg-row:last-child{ border-bottom:none; }
+.lg-row:active{ background:rgba(212,175,55,.08); }
+.lg-row-main{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.lg-row-label{ min-width:0; font-size:14.5px; font-weight:700; }
+.lg-row-label small{ display:block; margin-top:2px; font-size:11.5px; font-weight:400; color:var(--md-text-muted); }
+.lg-row-nums{ display:flex; gap:6px; flex:none; }
+.lg-chip{
+    padding:4px 9px; border-radius:999px; font-size:11.5px; white-space:nowrap;
+    background:rgba(212,175,55,.14); color:#8A6A00;
+}
+.lg-chip b{ font-size:13px; }
+.lg-chip-refin{ background:rgba(46,160,96,.14); color:#1E7A48; }
+.lg-bar{ height:4px; margin-top:9px; border-radius:2px; background:var(--md-border); overflow:hidden; }
+.lg-bar i{ display:block; height:100%; border-radius:2px; background:#3CC380; }
+.lg-row-arrow{ position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:20px; color:var(--md-text-muted); }
+.lg-empty{ padding:22px 12px; text-align:center; font-size:13.5px; color:var(--md-text-muted); }
+.lg-retry{
+    margin-top:10px; height:34px; padding:0 16px; border:none; border-radius:10px;
+    background:linear-gradient(180deg,#FFD700,#D4AF37); color:#0E1B3C; font:inherit; font-weight:700; cursor:pointer;
+}
+
+[data-theme="dark"] .lg-chip, [data-theme="darkgray"] .lg-chip{ color:#FFD76A; }
+[data-theme="dark"] .lg-chip-refin, [data-theme="darkgray"] .lg-chip-refin{ color:#7EE2A8; }
+
+/* ---------- Loan list sheet ---------- */
+body.lg-sheet-open{ overflow:hidden; }
+.lg-dim{
+    position:fixed; inset:0; z-index:3000; background:rgba(10,16,35,.55);
+    display:flex; align-items:flex-end; justify-content:center;
+}
+.lg-dim[hidden]{ display:none; }
+.lg-sheet{
+    width:100%; max-width:720px; height:min(86vh, 760px);
+    display:flex; flex-direction:column;
+    border-radius:20px 20px 0 0; background:var(--md-page-bg); color:var(--md-text);
+    padding-bottom:env(safe-area-inset-bottom);
+    animation:lgUp .22s ease;
+}
+@keyframes lgUp{ from{ transform:translateY(40px); opacity:.6; } to{ transform:none; opacity:1; } }
+.lg-sheet-head{ display:flex; align-items:center; gap:10px; padding:16px 14px 10px; }
+.lg-sheet-head > div{ flex:1; min-width:0; }
+.lg-sheet-title{ font-size:16px; font-weight:800; }
+.lg-sheet-sub{ font-size:12px; color:var(--md-text-muted); }
+.lg-sheet-close{
+    width:34px; height:34px; flex:none; border:none; border-radius:50%;
+    background:var(--md-card-bg); color:var(--md-text); font-size:20px; cursor:pointer;
+}
+.lg-tabs{ display:flex; gap:8px; padding:0 14px 10px; }
+.lg-tab{
+    flex:1; height:36px; border-radius:999px; border:1px solid var(--md-border);
+    background:var(--md-card-bg); color:var(--md-text-muted); font:inherit; font-size:13px; font-weight:700; cursor:pointer;
+}
+.lg-tab.on{ background:#0E1B3C; border-color:#0E1B3C; color:#FFD700; }
+[data-theme="dark"] .lg-tab.on, [data-theme="darkgray"] .lg-tab.on{ background:#D4AF37; border-color:#D4AF37; color:#0E1B3C; }
+.lg-sheet-list{ flex:1; overflow-y:auto; padding:0 14px 14px; display:flex; flex-direction:column; gap:8px; overscroll-behavior:contain; }
+.lg-loan{ padding:11px 12px; border-radius:12px; background:var(--md-card-bg); border:1px solid var(--md-border); }
+.lg-loan-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:14px; }
+.lg-loan-meta{ margin-top:2px; font-size:12px; color:var(--md-text-muted); overflow-wrap:anywhere; }
+.lg-loan-amt{ display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:6px; font-size:12px; color:var(--md-text-muted); }
+.lg-loan-amt b{ color:var(--md-text); }
+.lg-badge{ flex:none; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background:rgba(46,160,96,.16); color:#1E7A48; }
+[data-theme="dark"] .lg-badge, [data-theme="darkgray"] .lg-badge{ color:#7EE2A8; }
