@@ -119,7 +119,7 @@ function abPaint(data) {
                 <span class="ab-badge">${abEsc(r.action)}</span>
             </div>
             <div class="ab-name">${abEsc(r.accountName || "-")}</div>
-            <div class="ab-acc">${abEsc(r.accountNo || "")}${r.currency ? ` · ${abEsc(r.currency)}` : ""}</div>
+            <div class="ab-acc">${abEsc(r.accountNo || "")}${r.currency ? ` · ${abEsc(r.currency)}` : ""}${r.accountManual ? ` <span class="ab-acc-tag">${abEsc(t("masterdata.ab.accountEdited"))}</span>` : ""}</div>
             ${r.found === false ? `<div class="ab-warn">${abEsc(t("masterdata.ab.notInPayroll"))}</div>` : ""}
             <div class="ab-amounts">
                 <span><small>${abEsc(t("masterdata.ab.fromAmount"))}</small><b>${abAmount(r.fromAmount) || "-"}</b></span>
@@ -279,13 +279,87 @@ document.getElementById("abList").addEventListener("click", e => {
     document.getElementById("abEditRef").value = abEditRow.reference || "";
     abActionButtons(document.getElementById("abEditActions"), abEditAction, a => { abEditAction = a; abSyncToField(); });
     abSyncToField();
+    abFillAccounts(abEditRow);
     abOpen("abEdit");
 });
+
+// ---------- account picker in the edit sheet ----------
+// Choices: the payroll account (the sheet's lookup), the CIF's other
+// accounts from Acc Payroll / ListBlocked, or one typed by hand.
+const AB_ACC_AUTO = "__auto";
+const AB_ACC_MANUAL = "__manual";
+let abAccSeq = 0;
+
+function abAccOption(it) {
+    const tags = [];
+    if (it.payroll) tags.push("Payroll");
+    for (const b of it.blocked || []) tags.push(`${b.currency} ${abAmount(b.amount)}${b.status ? ` ${b.status}` : ""}`);
+    return `${it.account}${it.name ? ` · ${it.name}` : ""}${tags.length ? ` (${tags.join(", ")})` : ""}`;
+}
+
+function abSyncAccField() {
+    const manual = document.getElementById("abEditAcc").value === AB_ACC_MANUAL;
+    document.getElementById("abAccManualWrap").hidden = !manual;
+    return manual;
+}
+
+async function abFillAccounts(row) {
+    const sel = document.getElementById("abEditAcc");
+    const typed = document.getElementById("abEditAccNo");
+    const seq = ++abAccSeq;
+    const paint = items => {
+        const accs = items.map(i => i.account);
+        // A typed account that isn't one of the CIF's still shows as itself.
+        if (row.accountManual && row.accountNo && !accs.includes(row.accountNo)) items = [{ account: row.accountNo, name: row.accountName }, ...items];
+        sel.innerHTML = [
+            `<option value="${AB_ACC_AUTO}">${abEsc(t("masterdata.ab.accountAuto"))}</option>`,
+            ...items.map(i => `<option value="${abEsc(i.account)}">${abEsc(abAccOption(i))}</option>`),
+            `<option value="${AB_ACC_MANUAL}">${abEsc(t("masterdata.ab.accountManual"))}</option>`
+        ].join("");
+        sel.value = row.accountManual && row.accountNo ? row.accountNo : AB_ACC_AUTO;
+        typed.value = "";
+        abSyncAccField();
+    };
+    paint([]);
+    sel.disabled = true;
+    try {
+        const data = await abCall(`accounts?cif=${encodeURIComponent(row.cif)}`);
+        if (seq === abAccSeq) paint(data.items || []);
+    } catch (err) {
+        console.error("[accblocking] accounts failed:", err);
+    } finally {
+        if (seq === abAccSeq) sel.disabled = false;
+    }
+}
+
+document.getElementById("abEditAcc").addEventListener("change", () => {
+    if (abSyncAccField()) document.getElementById("abEditAccNo").focus();
+});
+
+// What to send as accountNo, or undefined when nothing changed. null = invalid.
+function abEditAccountValue() {
+    const v = document.getElementById("abEditAcc").value;
+    let acc;
+    if (v === AB_ACC_AUTO) acc = "";
+    else if (v === AB_ACC_MANUAL) {
+        acc = document.getElementById("abEditAccNo").value.replace(/[\s-]/g, "");
+        if (!/^[0-9A-Za-z]{4,30}$/.test(acc)) return null;
+    } else acc = v;
+    const now = abEditRow.accountManual ? abEditRow.accountNo : "";
+    return acc === now ? undefined : acc;
+}
 
 document.getElementById("btnAbSave").addEventListener("click", async () => {
     if (!abEditRow) return;
     const body = { cif: abEditRow.cif, action: abEditAction, reference: document.getElementById("abEditRef").value };
     if (abEditAction === "Update") body.toAmount = document.getElementById("abEditTo").value;
+    const acc = abEditAccountValue();
+    if (acc === null) {
+        abToast(t("masterdata.ab.accountBad"), "warning");
+        document.getElementById("abEditAccNo").focus();
+        return;
+    }
+    if (acc !== undefined) body.accountNo = acc;
     if (await abChange("update", body)) {
         abClose("abEdit");
         abToast(t("masterdata.ab.saved"));
