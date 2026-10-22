@@ -96,10 +96,23 @@ function abPaint(data) {
     const list = document.getElementById("abList");
     if (!rows.length) {
         list.innerHTML = `<div class="ab-empty">${abEsc(t(canEdit ? "masterdata.ab.emptyEdit" : "masterdata.ab.empty"))}</div>`;
+        abRowSel = null;
+        list.classList.remove("ab-selecting");
+        abPaintRowSelBar();
         return;
     }
-    list.innerHTML = rows.map((r, i) => `
-        <button type="button" class="ab-row ab-row-${AB_CLASS[r.action] || "block"}" data-cif="${abEsc(r.cif)}" ${canEdit ? "" : "disabled"}>
+    // Drop selected CIFs that are no longer on the list.
+    if (abRowSel) {
+        const live = new Set(rows.map(r => r.cif));
+        abRowSel.forEach(c => { if (!live.has(c)) abRowSel.delete(c); });
+        if (!abRowSel.size) abRowSel = null;
+    }
+    list.classList.toggle("ab-selecting", !!abRowSel);
+    list.innerHTML = rows.map((r, i) => {
+        const sel = !!abRowSel && abRowSel.has(r.cif);
+        return `
+        <button type="button" class="ab-row ab-row-${AB_CLASS[r.action] || "block"}${sel ? " ab-sel" : ""}" data-cif="${abEsc(r.cif)}" ${canEdit ? "" : "disabled"}${abRowSel ? ` aria-pressed="${sel}"` : ""}>
+            ${abRowSel ? `<span class="ab-check${sel ? " on" : ""}" aria-hidden="true"></span>` : ""}
             <div class="ab-row-top">
                 <span class="ab-no">${i + 1}</span>
                 <span class="ab-cif">CIF ${abEsc(r.cif)}</span>
@@ -115,7 +128,9 @@ function abPaint(data) {
             </div>
             ${r.reference ? `<div class="ab-meta"><small>${abEsc(t("masterdata.ab.reference"))}</small> ${abEsc(r.reference)}</div>` : ""}
             ${r.description ? `<div class="ab-meta"><small>${abEsc(t("masterdata.ab.description"))}</small> ${abEsc(r.description)}</div>` : ""}
-        </button>`).join("");
+        </button>`;
+    }).join("");
+    abPaintRowSelBar();
 }
 
 async function abLoad(date) {
@@ -186,9 +201,75 @@ function abSyncToField() {
     document.getElementById("abToWrap").hidden = abEditAction !== "Update";
 }
 
+// ---------- multi-select on the list (long press) to delete ----------
+let abRowSel = null;     // Set of CIFs while selecting
+let abRowTimer = null;
+let abRowStart = null;
+let abRowLong = false;
+let abRowSkipUntil = 0;
+
+function abPaintRowSelBar() {
+    const bar = document.getElementById("abRowSelBar");
+    bar.hidden = !abRowSel;
+    if (!abRowSel) return;
+    // Sit just above the bottom bar.
+    const nav = document.querySelector(".bottom-nav");
+    bar.style.bottom = `${(nav ? nav.getBoundingClientRect().height : 0) + 10}px`;
+    document.getElementById("abRowSelN").textContent = t("masterdata.ab.selectedN", { n: abRowSel.size });
+    document.getElementById("btnAbRowDelete").disabled = !abRowSel.size;
+}
+
+function abRowSelSet(next) {
+    abRowSel = next;
+    abPaint(abData);
+}
+
+const abListEl = document.getElementById("abList");
+abListEl.addEventListener("pointerdown", e => {
+    const row = e.target.closest(".ab-row[data-cif]");
+    if (!row || abRowSel || !abData?.canEdit) return;
+    abRowStart = { x: e.clientX, y: e.clientY };
+    clearTimeout(abRowTimer);
+    abRowTimer = setTimeout(() => {
+        abRowTimer = null;
+        abRowLong = true;
+        if (navigator.vibrate) navigator.vibrate(15);
+        abRowSelSet(new Set([row.dataset.cif]));
+    }, 450);
+});
+abListEl.addEventListener("pointermove", e => {
+    if (abRowTimer && abRowStart && Math.hypot(e.clientX - abRowStart.x, e.clientY - abRowStart.y) > 8) {
+        clearTimeout(abRowTimer);
+        abRowTimer = null;
+    }
+});
+["pointerup", "pointercancel", "pointerleave"].forEach(ev => abListEl.addEventListener(ev, () => {
+    clearTimeout(abRowTimer);
+    abRowTimer = null;
+    // A click may follow a long press (phones differ): ignore only that one.
+    if (abRowLong) { abRowLong = false; abRowSkipUntil = Date.now() + 250; }
+}));
+abListEl.addEventListener("contextmenu", e => { if (e.target.closest(".ab-row")) e.preventDefault(); });
+
+document.getElementById("btnAbRowCancel").addEventListener("click", () => abRowSelSet(null));
+document.getElementById("btnAbRowAll").addEventListener("click", () => abRowSelSet(new Set((abData?.rows || []).map(r => r.cif))));
+document.getElementById("btnAbRowDelete").addEventListener("click", async () => {
+    const cifs = [...(abRowSel || [])];
+    if (!cifs.length || !confirm(t("masterdata.ab.confirmRemoveN", { n: cifs.length }))) return;
+    abRowSel = null;
+    if (await abChange("remove", { cifs })) abToast(t("masterdata.ab.removedN", { n: cifs.length }));
+});
+
 document.getElementById("abList").addEventListener("click", e => {
+    if (Date.now() < abRowSkipUntil) return;
     const card = e.target.closest(".ab-row[data-cif]");
     if (!card || !abData?.canEdit) return;
+    if (abRowSel) {
+        const next = new Set(abRowSel);
+        if (next.has(card.dataset.cif)) next.delete(card.dataset.cif); else next.add(card.dataset.cif);
+        abRowSelSet(next.size ? next : null);
+        return;
+    }
     abEditRow = (abData.rows || []).find(r => r.cif === card.dataset.cif);
     if (!abEditRow) return;
     abEditAction = abEditRow.action;
@@ -663,12 +744,14 @@ document.addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
     // The top-most sheet first; Esc in multi-select just leaves it.
     if (!document.getElementById("abPick").hidden) return abClose("abPick");
+    if (abRowSel && [...document.querySelectorAll(".ab-dim")].every(d => d.hidden)) return abRowSelSet(null);
     if (abSel) return abSelEnd();
     ["abEdit", "abBlocked", "abExport"].forEach(id => { if (!document.getElementById(id).hidden) abClose(id); });
 });
 
 // ---------- date ----------
 document.getElementById("abDate").addEventListener("change", e => {
+    abRowSel = null;
     if (e.target.value) abLoad(e.target.value);
 });
 

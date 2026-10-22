@@ -323,6 +323,8 @@ CMI18n.register({
   "masterdata.ab.alreadyAs": { km: "មានក្នុងបញ្ជីរួចហើយជា {action} — ជ្រើសម្តងទៀតដើម្បីប្តូរ", en: "Already on the list as {action} — pick again to change it" },
   "masterdata.ab.alreadyN": { km: "{n} CIF មានក្នុងបញ្ជីរួចហើយ — នឹងប្តូរសកម្មភាព", en: "{n} of these are already on the list — their action will change" },
   "masterdata.ab.selectedN": { km: "បានជ្រើស {n}", en: "{n} selected" },
+  "masterdata.ab.confirmRemoveN": { km: "លុប {n} CIF ចេញពីបញ្ជី?", en: "Remove {n} CIFs from the list?" },
+  "masterdata.ab.removedN": { km: "បានលុប {n}", en: "{n} removed" },
   "masterdata.ab.selectAll": { km: "ជ្រើសទាំងអស់", en: "Select all" },
   "masterdata.ab.cifsN": { km: "{n} CIF", en: "{n} CIFs" },
   "masterdata.ab.colInputBranch": { km: "សាខាអ្នកបញ្ចូល", en: "Inputter branch" },

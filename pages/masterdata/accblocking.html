@@ -98,6 +98,14 @@ No Internet Connection
 
 <div class="ab-list" id="abList"></div>
 
+<!-- Long-press a row to select several, then delete them -->
+<div class="ab-row-selbar" id="abRowSelBar" hidden>
+  <button type="button" class="ab-sel-x" id="btnAbRowCancel" aria-label="Cancel" data-i18n-aria-label="common.cancel">×</button>
+  <span class="ab-sel-n" id="abRowSelN">0</span>
+  <button type="button" class="ab-sel-all" id="btnAbRowAll" data-i18n="masterdata.ab.selectAll">Select all</button>
+  <button type="button" class="ab-row-del" id="btnAbRowDelete"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span> <span data-i18n="common.delete">Delete</span></button>
+</div>
+
 </div>
 
 <!-- Printable sheet (only shown when printing) -->
