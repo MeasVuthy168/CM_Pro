@@ -5,7 +5,7 @@
 // Update, Update&Unblock). The server looks up the account, name,
 // amounts and description the way the sheet's formulas do
 // (lib/acc-blocking.js); Generate Final List looks them up again and
-// sorts by action. Admin / User edit their own list; everyone else
+// sorts by action. Admin / User / Managers edit their own list; everyone else
 // can open the page and List Block, read-only.
 // ========================================
 

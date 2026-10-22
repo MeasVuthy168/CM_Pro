@@ -270,7 +270,7 @@ CMI18n.register({
   "masterdata.ab.act.update": { km: "កែប្រែទឹកប្រាក់បង្ខាំងទៅចំនួនណាមួយ", en: "Change the blocked amount" },
   "masterdata.ab.act.updunblock": { km: "កែប្រែ និងដោះបង្ខាំងគណនី", en: "Change the amount and unblock" },
   "masterdata.ab.add": { km: "បញ្ចូលក្នុងបញ្ជី", en: "Add to list" },
-  "masterdata.ab.readOnly": { km: "មានតែ Admin និង User ប៉ុណ្ណោះដែលអាចបង្កើតបញ្ជីបង្ខាំងគណនីបាន។", en: "Only Admin and User can build a blocking list." },
+  "masterdata.ab.readOnly": { km: "មានតែ Admin, User និង Manager ប៉ុណ្ណោះដែលអាចបង្កើតបញ្ជីបង្ខាំងគណនីបាន។", en: "Only Admin, User and Managers can build a blocking list." },
   "masterdata.ab.final": { km: "បង្កើតបញ្ជីចុងក្រោយ", en: "Generate Final List" },
   "masterdata.ab.finalDone": { km: "បានធ្វើបច្ចុប្បន្នភាពទិន្នន័យ និងតម្រៀបតាមសកម្មភាពរួចហើយ", en: "Looked up again and sorted by action" },
   "masterdata.ab.export": { km: "Export", en: "Export" },
