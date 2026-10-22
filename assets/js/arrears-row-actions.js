@@ -34,6 +34,7 @@
         .then(data => {
             if (data && data.ok) {
                 blockAllowed = !!data.canEdit;
+                setBlocked(data.rows);
                 if (sel) mark();
             }
         })
@@ -169,6 +170,7 @@
             const data = await res.json().catch(() => ({}));
             if (!res.ok || !data.ok) throw new Error(data.message || tr("arrears.act.failed"));
             closeSheet("arxBlock");
+            setBlocked(data.rows);
             endSelect();
             const parts = [];
             if (data.added) parts.push(tr("arrears.act.addedN", { n: data.added }));
@@ -266,7 +268,65 @@
     document.addEventListener("contextmenu", e => { if (e.target.closest(ROW_SEL)) e.preventDefault(); });
 
     // Cards / rows rendered later (scrolling, CIF groups opening) pick up the marks.
-    const observer = new MutationObserver(() => { if (sel) mark(); });
+    // ---------- tags: what's already done for each loan ----------
+    // "Reason Arrear" when the loan has one (or one waiting to be sent),
+    // and the action when its CIF is on today's blocking list.
+    let blockedByCif = new Map();
+    const cifKey = c => String(c || "").trim().replace(/^0+/, "").toUpperCase();
+
+    function setBlocked(rows) {
+        if (!Array.isArray(rows)) return;
+        blockedByCif = new Map(rows.filter(r => r && r.cif).map(r => [cifKey(r.cif), r.action || "Block"]));
+        tagAll();
+    }
+
+    function tagsHtml(row, compact) {
+        const tags = [];
+        const pending = !!row.__pendingSubmit;
+        if (pending) tags.push(`<span class="arx-tag arx-tag-pending" title="${esc(tr("arrears.act.tagPending"))}">⏳${compact ? "" : ` ${esc(tr("arrears.act.tagPending"))}`}</span>`);
+        else if (row.ajReason || row.akSolution || row.alFollowup) tags.push(`<span class="arx-tag arx-tag-reason" title="${esc(tr("arrears.act.tagReason"))}">✓${compact ? "" : ` ${esc(tr("arrears.act.tagReason"))}`}</span>`);
+        const action = row.cif ? blockedByCif.get(cifKey(row.cif)) : "";
+        if (action) tags.push(`<span class="arx-tag arx-tag-block arx-tag-${ACT_CLASS[action] || "block"}" title="${esc(tr("arrears.act.tagBlock"))} · ${esc(action)}">🔒${compact ? "" : ` ${esc(tr("arrears.act.tagBlock"))} · ${esc(action)}`}</span>`);
+        return tags.join("");
+    }
+
+    function tagOne(el) {
+        const row = currentRows[Number(el.dataset.index)];
+        if (!row) return;
+        const compact = el.tagName === "TR";
+        const html = tagsHtml(row, compact);
+        if (el.dataset.arxTags === html && (!html || el.querySelector(".arx-tags"))) return;
+        el.dataset.arxTags = html;
+        el.querySelectorAll(":scope .arx-tags").forEach(x => x.remove());
+        if (!html) return;
+        const box = document.createElement(compact ? "span" : "div");
+        box.className = "arx-tags";
+        box.innerHTML = html;
+        if (el.classList.contains("arr-card")) {
+            const ids = el.querySelector(".arr-card-ids");
+            if (ids) ids.after(box); else el.prepend(box);
+        } else if (el.classList.contains("arr-group-ld")) {
+            const top = el.querySelector(".arr-group-ld-top");
+            if (top) top.after(box); else el.prepend(box);
+        } else {
+            // Table (LD rows and a CIF group's LDs): two small round icons
+            // on the right of the frozen No cell, stacked beside the number.
+            box.classList.add("arx-tags-corner");
+            if (el.cells[0]) el.cells[0].append(box);
+        }
+    }
+
+    let tagQueued = false;
+    function tagAll() {
+        if (tagQueued) return;
+        tagQueued = true;
+        requestAnimationFrame(() => {
+            tagQueued = false;
+            document.querySelectorAll(ROW_SEL).forEach(tagOne);
+        });
+    }
+
+    const observer = new MutationObserver(() => { tagAll(); if (sel) mark(); });
     [typeof arrCardList !== "undefined" ? arrCardList : null, typeof tbodyArrears !== "undefined" ? tbodyArrears : null, typeof arrCifTable !== "undefined" ? arrCifTable : null]
         .filter(Boolean).forEach(el => observer.observe(el, { childList: true, subtree: true }));
 
