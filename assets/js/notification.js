@@ -389,8 +389,11 @@ const DETAIL_TYPES=["smart_alert","officer_reminder"];
 
 // A Reason Arrear submit lists the clients it covered (newer ones carry
 // them in extra.clients).
+// An LGs Loans alert (sent after an OS upload) opens the LGs Loans page.
+const LGS_ALERT_URL="/CM_Pro/pages/masterdata/lgs.html";
+
 function hasDetail(item){
-return DETAIL_TYPES.includes(item.type) ||
+return DETAIL_TYPES.includes(item.type) || item.type==="lgs_alert" ||
 (item.moduleCode==="ReasonArrear_Submit" && Array.isArray(item.extra && item.extra.clients) && item.extra.clients.length>0);
 }
 
@@ -402,6 +405,7 @@ notifyList.addEventListener("click",(e)=>{
     const id=card.dataset.id;
     const item=allNotifications.find(n=>String(n._id)===id);
     if(!item) return;
+    if(item.type==="lgs_alert"){ location.href=LGS_ALERT_URL; return; }
     try{ sessionStorage.setItem("cm_notif_detail",JSON.stringify(item)); }catch(err){}
     location.href=`/CM_Pro/pages/notifications/detail.html?id=${encodeURIComponent(id)}`;
 });
@@ -1137,7 +1141,7 @@ const known=["backup","upload","warning","error","success","update","delete","sy
 
 // Smart Alerts / Officer Reminders carry no emoji in their text — the
 // card's own icon says what they are.
-const byType={ smart_alert:"warning", officer_reminder:"clipboard" };
+const byType={ smart_alert:"warning", officer_reminder:"clipboard", lgs_alert:"success" };
 
 if(byType[type]) return byType[type];
 
