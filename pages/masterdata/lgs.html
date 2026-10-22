@@ -66,7 +66,8 @@ No Internet Connection
     <span class="lg-hero-ico"><span class="ui-ico ui-ico-trend-up" aria-hidden="true"></span></span>
     <div class="lg-hero-text">
       <div class="lg-hero-title" data-i18n="masterdata.lgs.heroTitle">កម្ចីក្នុងដែនកំណត់ LGs</div>
-      <div class="lg-hero-sub"><span data-i18n="masterdata.outArea.dataAt">ទិន្នន័យចុងក្រោយ</span> <span id="lgAsOf">-</span></div>
+      <div class="lg-hero-branch"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span> <span id="lgBranchName">-</span></div>
+      <div class="lg-hero-sub" id="lgPeriodText">-</div>
     </div>
     <button type="button" id="btnLgRefresh" class="lg-hero-refresh" aria-label="Refresh" data-i18n-aria-label="common.refresh"><span class="ui-ico ui-ico-refresh" aria-hidden="true"></span></button>
   </div>
@@ -85,27 +86,34 @@ No Internet Connection
   <div class="lg-meter" aria-hidden="true"><i id="lgMeter"></i></div>
 </section>
 
-<!-- Period: defaults to the 1st of the data month up to the latest disbursement -->
+<!-- Branch filter, then the period: each date is a tappable pill over a
+     hidden native picker. -->
 <section class="lg-period">
-  <label><span data-i18n="masterdata.lgs.from">ពី</span><input type="date" id="lgFrom"></label>
-  <span class="lg-period-arrow" aria-hidden="true">→</span>
-  <label><span data-i18n="masterdata.lgs.to">ដល់</span><input type="date" id="lgTo"></label>
+  <div class="lg-presets" id="lgBranchFilter" role="group" aria-label="Branch" data-i18n-aria-label="masterdata.lgs.branch" hidden></div>
+  <div class="lg-range">
+    <label class="lg-date">
+      <span class="lg-date-cap" data-i18n="masterdata.lgs.from">ពី</span>
+      <span class="lg-date-val"><span class="ui-ico ui-ico-calendar" aria-hidden="true"></span> <span id="lgFromText">-</span></span>
+      <input type="date" id="lgFrom" aria-label="From" data-i18n-aria-label="masterdata.lgs.from">
+    </label>
+    <span class="lg-range-mid" aria-hidden="true">→</span>
+    <label class="lg-date">
+      <span class="lg-date-cap" data-i18n="masterdata.lgs.to">ដល់</span>
+      <span class="lg-date-val"><span class="ui-ico ui-ico-calendar" aria-hidden="true"></span> <span id="lgToText">-</span></span>
+      <input type="date" id="lgTo" aria-label="To" data-i18n-aria-label="masterdata.lgs.to">
+    </label>
+  </div>
+  <div class="lg-days" id="lgDays">-</div>
 </section>
-<p class="lg-note" id="lgNote"></p>
 
 <section class="lg-section">
   <h2 data-i18n="masterdata.lgs.byBranch">តាមសាខា</h2>
   <div id="lgBranches" class="lg-list"></div>
 </section>
 
-<section class="lg-section">
-  <h2 data-i18n="masterdata.lgs.daily">ប្រចាំថ្ងៃ</h2>
-  <div id="lgDaily" class="lg-list"></div>
-</section>
-
 </div>
 
-<!-- Loan list (tap a total, a branch or a day) -->
+<!-- Loan list (tap a total or a branch) -->
 <div id="lgSheet" class="lg-dim" hidden>
   <div class="lg-sheet" role="dialog" aria-modal="true" aria-labelledby="lgSheetTitle">
     <div class="lg-sheet-head">

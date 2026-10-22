@@ -19,7 +19,7 @@ CMI18n.register({
   "masterdata.hub.outArea": { km: "កែសម្រួលArrearក្រៅតំបន់", en: "Edit Out-of-Area Arrears" },
   "masterdata.hub.outAreaSub": { km: "ផ្ទេរ LD NoCoRespone ទៅមន្ត្រីទទួលបន្ទុក", en: "Move NoCoRespone loans to their officer" },
   "masterdata.hub.lgs": { km: "កម្ចីក្នុងដែនកំណត់ LGs", en: "LGs Loans" },
-  "masterdata.hub.lgsSub": { km: "កម្ចីក្នុងដែនកំណត់ និងបុនហិរញ្ញប្បទានរួច ប្រចាំថ្ងៃ", en: "Loans inside the LGs limit and refinanced, daily" },
+  "masterdata.hub.lgsSub": { km: "កម្ចីក្នុងដែនកំណត់ និងបុនហិរញ្ញប្បទានរួច", en: "Loans inside the LGs limit and refinanced" },
   "masterdata.hub.work": { km: "ការងារត្រូវបំពេញ", en: "Work to complete" },
   "masterdata.hub.workSub": { km: "បំពេញមូលហេតុយឺតយ៉ាវ (Reason Arrear)", en: "Fill in Reason Arrear for your loans" },
   "work.heroTitle": { km: "Reason Arrear — ការងារត្រូវបំពេញ", en: "Reason Arrear — work to complete" },
@@ -260,9 +260,10 @@ CMI18n.register({
   "masterdata.lgs.pctOfLgs": { km: "{pct} នៃកម្ចីក្នុងដែនកំណត់", en: "{pct} of LGs loans" },
   "masterdata.lgs.from": { km: "ពី", en: "From" },
   "masterdata.lgs.to": { km: "ដល់", en: "To" },
-  "masterdata.lgs.note": { km: "ក្នុងដែនកំណត់ = សមតុល្យ (OS ជួរ N) មិនលើស {limit}។ បុនហិរញ្ញប្បទានរួច = OS ជួរ AX ជា YES។", en: "Inside the limit = Outstanding (OS column N) at most {limit}. Refinanced = OS column AX is YES." },
+  "masterdata.lgs.branch": { km: "សាខា", en: "Branch" },
+  "masterdata.lgs.periodText": { km: "ចាប់ពីថ្ងៃទី {from} ដល់ថ្ងៃទី {to}", en: "From {from} to {to}" },
+  "masterdata.lgs.daysN": { km: "{n} ថ្ងៃ", en: "{n} days" },
   "masterdata.lgs.byBranch": { km: "តាមសាខា", en: "By branch" },
-  "masterdata.lgs.daily": { km: "ប្រចាំថ្ងៃ", en: "Daily" },
   "masterdata.lgs.chipLgs": { km: "LGs", en: "LGs" },
   "masterdata.lgs.chipRefin": { km: "បុនរួច", en: "refinanced" },
   "masterdata.lgs.disbursedN": { km: "បញ្ចេញ {n}", en: "{n} disbursed" },
@@ -275,5 +276,4 @@ CMI18n.register({
   "masterdata.lgs.loanSize": { km: "ទំហំកម្ចី", en: "Loan size" },
   "masterdata.lgs.empty": { km: "មិនមានកម្ចីក្នុងរយៈពេលនេះទេ", en: "No loans in this period" },
   "masterdata.lgs.loading": { km: "កំពុងផ្ទុកកម្ចី LGs...", en: "Loading LGs loans..." },
-  "masterdata.lgs.badRange": { km: "កាលបរិច្ឆេទចាប់ផ្តើមត្រូវតែមុនកាលបរិច្ឆេទបញ្ចប់", en: "The start date must be before the end date" }
 });

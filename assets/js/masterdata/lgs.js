@@ -2,10 +2,10 @@
 // Master Data > LGs Loans — កម្ចីក្នុងដែនកំណត់ LGs
 // Loans disbursed in the period (OS!S) that sit inside the LGs limit
 // (Outstanding Value, OS!N, <= 20,000) and how many of them are already
-// refinanced (OS!AX = "YES"), in total, per branch and per day — the
-// figures the Daily Credit Monitoring sheet works out with COUNTIFS.
-// Backed by GET /api/creditreport/lgs; tapping a total, a branch or a
-// day lists those loans (?list=lgs|refinanced).
+// refinanced (OS!AX = "YES"), in total and per branch — the figures the
+// Daily Credit Monitoring sheet works out with COUNTIFS. Backed by
+// GET /api/creditreport/lgs; tapping a total or a branch lists those
+// loans (?list=lgs|refinanced).
 // ========================================
 
 const t = (key, vars) => (window.CMI18n ? CMI18n.t(key, vars) : key);
@@ -19,8 +19,45 @@ function lgDate(key) {
     return m ? `${m[3]}/${m[2]}/${m[1]}` : (key || "-");
 }
 
+// "2026-10-20" -> "20 Oct 2026" / "20 តុលា 2026" for the date pills.
+const LG_MONTHS = {
+    en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    km: ["មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា", "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"]
+};
+function lgDateLong(key) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key || "");
+    if (!m) return "-";
+    const lang = (window.CMLanguage && CMLanguage.get()) === "en" ? "en" : "km";
+    return `${+m[3]} ${LG_MONTHS[lang][+m[2] - 1]} ${m[1]}`;
+}
+
+// yyyy-mm-dd -> local Date, and whole days between two keys.
+const lgParse = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
+const lgDays = (a, b) => Math.round((lgParse(b) - lgParse(a)) / 86400000) + 1;
+
 let lgData = null;
-let lgSheetCtx = null; // { branch, date, title }
+let lgSheetCtx = null; // { branch, title }
+// Latest disbursement date in the data (the server's default "to");
+// the date pickers stop there.
+let lgAnchor = "";
+// Selected branch ("" = all branches in the user's scope).
+let lgBranch = "";
+
+// Pills, day count and the hero's period line for the current period.
+function lgPaintPeriod(from, to) {
+    document.getElementById("lgFrom").value = from || "";
+    document.getElementById("lgTo").value = to || "";
+    document.getElementById("lgFromText").textContent = lgDateLong(from);
+    document.getElementById("lgToText").textContent = lgDateLong(to);
+    document.getElementById("lgDays").textContent = from && to ? t("masterdata.lgs.daysN", { n: lgDays(from, to) }) : "-";
+    if (lgAnchor) {
+        document.getElementById("lgFrom").max = lgAnchor;
+        document.getElementById("lgTo").max = lgAnchor;
+    }
+    document.getElementById("lgPeriodText").textContent = from && to
+        ? t("masterdata.lgs.periodText", { from: lgDateLong(from), to: lgDateLong(to) })
+        : "-";
+}
 
 async function lgGet(params) {
     const q = new URLSearchParams(params).toString();
@@ -54,36 +91,40 @@ function lgRow({ label, sub, lgs, refinanced, attrs }) {
     </button>`;
 }
 
+// Branch chips: All + each branch in scope (hidden when there's only one).
+function lgPaintBranchFilter(list) {
+    const wrap = document.getElementById("lgBranchFilter");
+    if (lgBranch && !list.some(b => b.branch === lgBranch)) lgBranch = "";
+    wrap.hidden = list.length < 2;
+    const chips = [{ value: "", label: t("masterdata.lgs.allBranches") }, ...list.map(b => ({ value: b.branch, label: b.branch }))];
+    wrap.innerHTML = chips.map(c => {
+        const on = c.value === lgBranch;
+        return `<button type="button" class="lg-preset${on ? " on" : ""}" aria-pressed="${on}" data-branch="${lgEsc(c.value)}">${lgEsc(c.label)}</button>`;
+    }).join("");
+}
+
 function lgPaint(data) {
     lgData = data;
-    const { total } = data;
-    document.getElementById("lgAsOf").textContent = data.asOf || "-";
+    const list = data.branches || [];
+    lgPaintBranchFilter(list);
+    if (list.length === 1) lgBranch = list[0].branch;
+    const total = (lgBranch && list.find(b => b.branch === lgBranch)) || data.total;
+    document.getElementById("lgBranchName").textContent = lgBranch || t("masterdata.lgs.allBranches");
     document.getElementById("lgTotalLgs").textContent = lgNum(total.lgs);
     document.getElementById("lgTotalRefin").textContent = lgNum(total.refinanced);
     document.getElementById("lgTotalOf").textContent = t("masterdata.lgs.ofDisbursed", { n: lgNum(total.disbursed) });
     document.getElementById("lgTotalPct").textContent = t("masterdata.lgs.pctOfLgs", { pct: lgPct(total.refinanced, total.lgs) });
     document.getElementById("lgMeter").style.width = total.lgs ? `${Math.min(100, total.refinanced / total.lgs * 100)}%` : "0";
-    document.getElementById("lgFrom").value = data.fromDate || "";
-    document.getElementById("lgTo").value = data.toDate || "";
-    document.getElementById("lgNote").textContent = t("masterdata.lgs.note", { limit: lgNum(data.limit) });
+    lgPaintPeriod(data.fromDate, data.toDate);
 
     const branches = document.getElementById("lgBranches");
-    branches.innerHTML = (data.branches || []).length
-        ? data.branches.map(b => lgRow({
+    const shown = lgBranch ? list.filter(b => b.branch === lgBranch) : list;
+    branches.innerHTML = shown.length
+        ? shown.map(b => lgRow({
             label: b.branch,
             sub: t("masterdata.lgs.disbursedN", { n: lgNum(b.disbursed) }),
             lgs: b.lgs, refinanced: b.refinanced,
             attrs: `data-branch="${lgEsc(b.branch)}"`
-        })).join("")
-        : `<div class="lg-empty">${lgEsc(t("masterdata.lgs.empty"))}</div>`;
-
-    const daily = document.getElementById("lgDaily");
-    daily.innerHTML = (data.daily || []).length
-        ? data.daily.map(d => lgRow({
-            label: lgDate(d.date),
-            sub: t("masterdata.lgs.disbursedN", { n: lgNum(d.disbursed) }),
-            lgs: d.lgs, refinanced: d.refinanced,
-            attrs: `data-date="${lgEsc(d.date)}"`
         })).join("")
         : `<div class="lg-empty">${lgEsc(t("masterdata.lgs.empty"))}</div>`;
 }
@@ -91,7 +132,6 @@ function lgPaint(data) {
 function lgShowError() {
     const html = `<div class="lg-empty">${lgEsc(t("masterdata.outArea.loadFailed"))}<br><button type="button" class="lg-retry">${lgEsc(t("masterdata.outArea.retry"))}</button></div>`;
     document.getElementById("lgBranches").innerHTML = html;
-    document.getElementById("lgDaily").innerHTML = "";
     document.querySelector("#lgBranches .lg-retry")?.addEventListener("click", () => lgLoad());
 }
 
@@ -100,7 +140,9 @@ async function lgLoad(params = {}) {
         showAppLoading(t("masterdata.lgs.loading"), { progress: true, key: "masterdata:lgs" });
     }
     try {
-        lgPaint(await lgGet(params));
+        const data = await lgGet(params);
+        if (!params.fromDate && !params.toDate) lgAnchor = data.toDate || lgAnchor;
+        lgPaint(data);
     } catch (err) {
         console.error("[lgs] load failed:", err);
         lgShowError();
@@ -133,8 +175,7 @@ async function lgSheetTab(tab) {
     try {
         const data = await lgGet({
             ...lgPeriodParams(), list: tab,
-            ...(ctx.branch ? { branch: ctx.branch } : {}),
-            ...(ctx.date ? { date: ctx.date } : {})
+            ...(ctx.branch ? { branch: ctx.branch } : {})
         });
         if (lgSheetCtx !== ctx) return;
         const items = data.items || [];
@@ -165,29 +206,36 @@ function lgCloseSheet() {
 }
 
 document.querySelectorAll(".lg-stat").forEach(b => {
-    b.addEventListener("click", () => lgOpenSheet({ title: t("masterdata.lgs.allBranches") }, b.dataset.list));
+    b.addEventListener("click", () => lgOpenSheet({ branch: lgBranch, title: lgBranch || t("masterdata.lgs.allBranches") }, b.dataset.list));
 });
 document.getElementById("lgBranches").addEventListener("click", e => {
     const row = e.target.closest(".lg-row[data-branch]");
     if (row) lgOpenSheet({ branch: row.dataset.branch, title: row.dataset.branch }, "lgs");
-});
-document.getElementById("lgDaily").addEventListener("click", e => {
-    const row = e.target.closest(".lg-row[data-date]");
-    if (row) lgOpenSheet({ date: row.dataset.date, title: lgDate(row.dataset.date) }, "lgs");
 });
 document.querySelectorAll(".lg-tab").forEach(b => b.addEventListener("click", () => lgSheetTab(b.dataset.tab)));
 document.getElementById("btnLgSheetClose").addEventListener("click", lgCloseSheet);
 document.getElementById("lgSheet").addEventListener("click", e => { if (e.target.id === "lgSheet") lgCloseSheet(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !document.getElementById("lgSheet").hidden) lgCloseSheet(); });
 
+// A From after To (or To before From) pulls the other end along, so the
+// period is never empty.
 ["lgFrom", "lgTo"].forEach(id => document.getElementById(id).addEventListener("change", () => {
-    const { fromDate, toDate } = lgPeriodParams();
-    if (fromDate && toDate && fromDate > toDate) {
-        if (typeof showToast === "function") showToast(t("masterdata.lgs.badRange"), "warning");
-        return;
+    const fromEl = document.getElementById("lgFrom");
+    const toEl = document.getElementById("lgTo");
+    if (!fromEl.value || !toEl.value) return lgPaintPeriod(lgData?.fromDate, lgData?.toDate);
+    if (fromEl.value > toEl.value) {
+        if (id === "lgFrom") toEl.value = fromEl.value; else fromEl.value = toEl.value;
     }
+    lgPaintPeriod(fromEl.value, toEl.value);
     lgLoad(lgPeriodParams());
 }));
+// Switching branch only re-reads the figures already loaded.
+document.getElementById("lgBranchFilter").addEventListener("click", e => {
+    const chip = e.target.closest(".lg-preset[data-branch]");
+    if (!chip || !lgData) return;
+    lgBranch = chip.dataset.branch;
+    lgPaint(lgData);
+});
 document.getElementById("btnLgRefresh").addEventListener("click", () => lgLoad(lgPeriodParams()));
 
 lgLoad();
