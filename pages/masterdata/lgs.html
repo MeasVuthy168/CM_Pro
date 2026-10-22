@@ -66,7 +66,8 @@ No Internet Connection
     <span class="lg-hero-ico"><span class="ui-ico ui-ico-trend-up" aria-hidden="true"></span></span>
     <div class="lg-hero-text">
       <div class="lg-hero-title" data-i18n="masterdata.lgs.heroTitle">កម្ចីក្នុងដែនកំណត់ LGs</div>
-      <div class="lg-hero-sub"><span data-i18n="masterdata.outArea.dataAt">ទិន្នន័យចុងក្រោយ</span> <span id="lgAsOf">-</span></div>
+      <div class="lg-hero-branch"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span> <span id="lgBranchName">-</span></div>
+      <div class="lg-hero-sub" id="lgPeriodText">-</div>
     </div>
     <button type="button" id="btnLgRefresh" class="lg-hero-refresh" aria-label="Refresh" data-i18n-aria-label="common.refresh"><span class="ui-ico ui-ico-refresh" aria-hidden="true"></span></button>
   </div>
@@ -85,15 +86,10 @@ No Internet Connection
   <div class="lg-meter" aria-hidden="true"><i id="lgMeter"></i></div>
 </section>
 
-<!-- Period: quick presets (from the latest disbursement date) or any
-     From / To. Each date is a tappable pill over a hidden native picker. -->
+<!-- Branch filter, then the period: each date is a tappable pill over a
+     hidden native picker. -->
 <section class="lg-period">
-  <div class="lg-presets" role="group" aria-label="Period" data-i18n-aria-label="masterdata.lgs.period">
-    <button type="button" class="lg-preset" data-preset="month" data-i18n="masterdata.lgs.presetMonth">ខែនេះ</button>
-    <button type="button" class="lg-preset" data-preset="last7" data-i18n="masterdata.lgs.preset7">៧ ថ្ងៃចុងក្រោយ</button>
-    <button type="button" class="lg-preset" data-preset="latest" data-i18n="masterdata.lgs.presetLatest">ថ្ងៃចុងក្រោយ</button>
-    <button type="button" class="lg-preset" data-preset="prevMonth" data-i18n="masterdata.lgs.presetPrevMonth">ខែមុន</button>
-  </div>
+  <div class="lg-presets" id="lgBranchFilter" role="group" aria-label="Branch" data-i18n-aria-label="masterdata.lgs.branch" hidden></div>
   <div class="lg-range">
     <label class="lg-date">
       <span class="lg-date-cap" data-i18n="masterdata.lgs.from">ពី</span>
