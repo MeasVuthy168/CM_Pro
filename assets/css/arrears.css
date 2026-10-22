@@ -4400,3 +4400,19 @@ span.arx-tags .arx-tag{ padding:0 3px; font-size:10.5px; border-radius:5px; line
 [data-theme="dark"] .arx-tag-pending, [data-theme="darkgray"] .arx-tag-pending, [data-theme="dark"] .arx-tag-update, [data-theme="darkgray"] .arx-tag-update{ color:#fde047; }
 [data-theme="dark"] .arx-tag-block, [data-theme="darkgray"] .arx-tag-block{ color:#fca5a5; }
 [data-theme="dark"] .arx-tag-updunblock, [data-theme="darkgray"] .arx-tag-updunblock{ color:#93c5fd; }
+
+/* After "Add to list": open the blocking list or stay here. */
+.arx-done{ text-align:center; }
+.arx-done-ico{ width:56px; height:56px; margin:4px auto 10px; border-radius:50%; display:grid; place-items:center; background:rgba(22,163,74,.14); color:#16a34a; font-size:28px; font-weight:900; }
+.arx-done .arx-title{ margin-bottom:8px; }
+.arx-done-lines{ display:grid; gap:4px; margin-bottom:16px; font-size:14px; color:var(--arr-text); }
+.arx-done-warn{ color:#b45309; font-size:13px; }
+[data-theme="dark"] .arx-done-warn, [data-theme="darkgray"] .arx-done-warn{ color:#fcd34d; }
+.arx-done-btns{ display:grid; gap:10px; }
+a.arx-primary{ display:grid; place-items:center; text-decoration:none; }
+.arx-done-stay{ height:46px; border-radius:14px; border:1px solid var(--arr-border); background:transparent; color:var(--arr-text); font:inherit; font-size:15px; font-weight:700; cursor:pointer; }
+
+/* Account Blocking: left of Work to complete (same look). */
+.arr-actions a.arr-blocking-btn{ text-decoration:none; }
+.arr-actions .arr-blocking-btn ~ .arr-work-btn{ margin-left:0; }
+.arr-actions .arr-blocking-btn .arx-btn-ico{ display:inline-flex; color:#FFD700; }
