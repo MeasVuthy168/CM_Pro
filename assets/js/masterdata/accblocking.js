@@ -177,7 +177,8 @@ function abOpen(id) {
 
 function abClose(id) {
     document.getElementById(id).hidden = true;
-    if (["abEdit", "abBlocked", "abExport"].every(id => document.getElementById(id).hidden)) document.body.classList.remove("ab-sheet-open");
+    if (["abEdit", "abBlocked", "abExport", "abPick"].every(id => document.getElementById(id).hidden)) document.body.classList.remove("ab-sheet-open");
+    if (id === "abBlocked" && abSel) abSelEnd();
 }
 
 function abSyncToField() {
@@ -394,19 +395,30 @@ function abStatusClass(s) {
     return v.includes("full") ? "full" : v.includes("partial") ? "partial" : "other";
 }
 
-function abBlockedItem(b) {
+// CIF -> action for the CIFs already on this day's list.
+function abListed() {
+    return new Map((abData?.rows || []).map(r => [String(r.cif).replace(/^0+/, ""), r.action]));
+}
+
+function abBlockedItem(b, listed) {
     const status = b.status ? `<span class="ab-st ab-st-${abStatusClass(b.status)}">${abEsc(b.status)}</span>` : "";
+    const key = String(b.cif || "").replace(/^0+/, "");
+    const inList = listed.get(key);
+    const mark = inList ? `<span class="ab-inlist ab-inlist-${AB_CLASS[inList] || "block"}">✓ ${abEsc(inList)}</span>` : "";
+    const sel = abSel && abSel.has(key);
+    const attrs = `data-cif="${abEsc(b.cif)}" data-name="${abEsc(b.name || "")}"${sel ? ' aria-selected="true"' : ""}`;
+    const check = abSel ? `<span class="ab-check${sel ? " on" : ""}" aria-hidden="true"></span>` : "";
     // Account numbers arrive masked ("1300xxxxxxxx20").
     if (abBlView === "list") {
-        return `<div class="ab-bl-row">
+        return `<div class="ab-bl-row ab-pickable${sel ? " ab-sel" : ""}" ${attrs}>${check}
             <div class="ab-bl-main"><b>${abEsc(b.name || b.account || "-")}</b><small>${abEsc(b.account || "-")} · CIF ${abEsc(b.cif || "-")} · ${abEsc(b.branch || "-")}${b.team ? ` · ${abEsc(b.team)}` : ""}</small></div>
-            <div class="ab-bl-side"><b>${abAmount(b.amount)} <small>${abEsc(b.currency)}</small></b>${status}</div>
+            <div class="ab-bl-side"><b>${abAmount(b.amount)} <small>${abEsc(b.currency)}</small></b>${status}${mark}</div>
         </div>`;
     }
-    return `<div class="ab-blocked">
+    return `<div class="ab-blocked ab-pickable${sel ? " ab-sel" : ""}" ${attrs}>${check}
         <div class="ab-blocked-top"><b>${abEsc(b.name || "-")}</b><span>${abAmount(b.amount)} ${abEsc(b.currency)}</span></div>
         <div class="ab-blocked-acc">${abEsc(b.account || "-")} · CIF ${abEsc(b.cif || "-")}</div>
-        <div class="ab-blocked-tags">${status}${b.team ? `<span class="ab-tag">${abEsc(b.team)}</span>` : ""}</div>
+        <div class="ab-blocked-tags">${status}${b.team ? `<span class="ab-tag">${abEsc(b.team)}</span>` : ""}${mark}</div>
         <div class="ab-blocked-meta"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span> ${abEsc(b.branch || "-")} · <span class="ui-ico ui-ico-officer" aria-hidden="true"></span> ${abEsc(b.officer || "-")}</div>
         ${b.inputBranch ? `<div class="ab-blocked-meta"><span class="ui-ico ui-ico-edit" aria-hidden="true"></span> ${abEsc(t("masterdata.ab.colInputBranch"))}: ${abEsc(b.inputBranch)}</div>` : ""}
         ${b.description ? `<div class="ab-blocked-meta">${abEsc(b.description)}</div>` : ""}
@@ -450,7 +462,9 @@ function abPaintBlList() {
         return;
     }
     const more = abBl.items.length < abBl.total;
-    list.innerHTML = abBl.items.map(abBlockedItem).join("") +
+    const listed = abListed();
+    list.classList.toggle("ab-selecting", !!abSel);
+    list.innerHTML = abBl.items.map(b => abBlockedItem(b, listed)).join("") +
         (more ? `<button type="button" class="ab-bl-more" data-more>${abEsc(t("masterdata.ab.showMore", { shown: abBl.items.length.toLocaleString("en-US"), total: abBl.total.toLocaleString("en-US") }))}</button>` : "");
 }
 
@@ -518,17 +532,138 @@ document.querySelector(".ab-view").addEventListener("click", e => {
     abPref("view", abBlView);
     abPaintBlList();
 });
-document.getElementById("abBlockedList").addEventListener("click", e => {
-    if (e.target.closest("[data-more]")) abLoadBlocked(true);
+// ---------- add from List Block ----------
+// Tap an account: pick an action and it joins this day's list. Long-press
+// one to start choosing several (by CIF), then add them all at once.
+let abSel = null;          // Set of CIF keys while multi-selecting
+let abPickCifs = [];       // CIFs the action sheet will add
+let abPressTimer = null;
+let abPressStart = null;
+// A long press may or may not be followed by a click (phones differ), so
+// only a click right after letting go of one is ignored.
+let abLongPressed = false;
+let abSkipUntil = 0;
+
+const abCifKey = c => String(c || "").replace(/^0+/, "");
+
+function abPaintSelBar() {
+    const bar = document.getElementById("abSelBar");
+    bar.hidden = !abSel;
+    if (!abSel) return;
+    document.getElementById("abSelN").textContent = t("masterdata.ab.selectedN", { n: abSel.size });
+    document.getElementById("btnAbSelAdd").disabled = !abSel.size;
+}
+
+function abSelStart(cif) {
+    abSel = new Set([abCifKey(cif)]);
+    if (navigator.vibrate) navigator.vibrate(15);
+    abPaintBlList();
+    abPaintSelBar();
+}
+
+function abSelEnd() {
+    abSel = null;
+    abPaintBlList();
+    abPaintSelBar();
+}
+
+function abSelToggle(cif) {
+    const k = abCifKey(cif);
+    if (abSel.has(k)) abSel.delete(k); else abSel.add(k);
+    abPaintBlList();
+    abPaintSelBar();
+}
+
+function abOpenPick(cifs, label) {
+    abPickCifs = cifs;
+    const listed = abListed();
+    const already = cifs.map(c => listed.get(abCifKey(c))).filter(Boolean);
+    document.getElementById("abPickSub").textContent = label;
+    const note = document.getElementById("abPickNote");
+    note.hidden = !already.length;
+    note.textContent = already.length
+        ? (cifs.length === 1 ? t("masterdata.ab.alreadyAs", { action: already[0] }) : t("masterdata.ab.alreadyN", { n: already.length }))
+        : "";
+    // One tap adds — no separate confirm button.
+    abActionButtons(document.getElementById("abPickActions"), "", action => abAddPicked(action));
+    abOpen("abPick");
+}
+
+async function abAddPicked(action) {
+    const cifs = abPickCifs;
+    abClose("abPick");
+    const data = await abChange("add", { cifs, action });
+    if (!data) return;
+    const parts = [];
+    if (data.added) parts.push(t("masterdata.ab.addedN", { n: data.added }));
+    if (data.updated) parts.push(t("masterdata.ab.updatedN", { n: data.updated }));
+    abToast(`${action}: ${parts.join(" · ") || t("masterdata.ab.saved")}`);
+    if (data.full) abToast(t("masterdata.ab.full"), "warning");
+    if (abSel) abSelEnd(); else abPaintBlList();
+}
+
+const abList = document.getElementById("abBlockedList");
+abList.addEventListener("pointerdown", e => {
+    const item = e.target.closest(".ab-pickable");
+    if (!item || abSel || !abData?.canEdit) return;
+    abPressStart = { x: e.clientX, y: e.clientY };
+    clearTimeout(abPressTimer);
+    abPressTimer = setTimeout(() => {
+        abPressTimer = null;
+        abLongPressed = true;
+        abSelStart(item.dataset.cif);
+    }, 450);
+});
+const abPressCancel = () => { clearTimeout(abPressTimer); abPressTimer = null; };
+abList.addEventListener("pointermove", e => {
+    if (abPressTimer && abPressStart && Math.hypot(e.clientX - abPressStart.x, e.clientY - abPressStart.y) > 8) abPressCancel();
+});
+["pointerup", "pointercancel", "pointerleave"].forEach(ev => abList.addEventListener(ev, () => {
+    abPressCancel();
+    if (abLongPressed) {
+        abLongPressed = false;
+        abSkipUntil = Date.now() + 250;
+    }
+}));
+abList.addEventListener("scroll", abPressCancel, { passive: true });
+abList.addEventListener("contextmenu", e => { if (e.target.closest(".ab-pickable")) e.preventDefault(); });
+
+abList.addEventListener("click", e => {
+    if (Date.now() < abSkipUntil) return;
+    if (e.target.closest("[data-more]")) return abLoadBlocked(true);
+    const item = e.target.closest(".ab-pickable");
+    if (!item || !abData?.canEdit) return;
+    if (abSel) return abSelToggle(item.dataset.cif);
+    abOpenPick([item.dataset.cif], [item.dataset.name, `CIF ${item.dataset.cif}`].filter(Boolean).join(" · "));
+});
+
+document.getElementById("btnAbSelCancel").addEventListener("click", abSelEnd);
+document.getElementById("btnAbSelAll").addEventListener("click", () => {
+    abBl.items.forEach(b => abSel.add(abCifKey(b.cif)));
+    abPaintBlList();
+    abPaintSelBar();
+});
+document.getElementById("btnAbSelAdd").addEventListener("click", () => {
+    // Keep the CIFs as the list shows them (the first row of each).
+    const cifs = [];
+    const seen = new Set();
+    for (const b of abBl.items) {
+        const k = abCifKey(b.cif);
+        if (abSel.has(k) && !seen.has(k)) { seen.add(k); cifs.push(b.cif); }
+    }
+    if (cifs.length) abOpenPick(cifs, t("masterdata.ab.cifsN", { n: cifs.length }));
 });
 
 // Sheets close on ×, the dim, or Esc.
-["abEdit", "abBlocked", "abExport"].forEach(id => {
+["abEdit", "abBlocked", "abExport", "abPick"].forEach(id => {
     const el = document.getElementById(id);
     el.addEventListener("click", e => { if (e.target === el || e.target.closest("[data-close]")) abClose(id); });
 });
 document.addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
+    // The top-most sheet first; Esc in multi-select just leaves it.
+    if (!document.getElementById("abPick").hidden) return abClose("abPick");
+    if (abSel) return abSelEnd();
     ["abEdit", "abBlocked", "abExport"].forEach(id => { if (!document.getElementById(id).hidden) abClose(id); });
 });
 

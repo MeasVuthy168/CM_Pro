@@ -179,6 +179,30 @@ No Internet Connection
     <div class="ab-bl-filters" id="abBlFilters" hidden></div>
     <div class="ab-bl-sum" id="abBlSum"></div>
     <div class="ab-sheet-list" id="abBlockedList"></div>
+    <!-- Multi-select (long press an account) -->
+    <div class="ab-selbar" id="abSelBar" hidden>
+      <button type="button" class="ab-sel-x" id="btnAbSelCancel" aria-label="Cancel" data-i18n-aria-label="common.cancel">×</button>
+      <span class="ab-sel-n" id="abSelN">0</span>
+      <button type="button" class="ab-sel-all" id="btnAbSelAll" data-i18n="masterdata.ab.selectAll">Select all</button>
+      <button type="button" class="ab-primary ab-sel-add" id="btnAbSelAdd"><span class="ui-ico ui-ico-plus" aria-hidden="true"></span> <span data-i18n="masterdata.ab.add">Add to list</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Add from List Block: pick the action -->
+<div id="abPick" class="ab-dim" hidden>
+  <div class="ab-sheet" role="dialog" aria-modal="true" aria-labelledby="abPickTitle">
+    <div class="ab-sheet-head">
+      <div>
+        <div class="ab-sheet-title" id="abPickTitle" data-i18n="masterdata.ab.pickTitle">Add to the list as…</div>
+        <div class="ab-sheet-sub" id="abPickSub">-</div>
+      </div>
+      <button type="button" class="ab-close" data-close aria-label="Close" data-i18n-aria-label="common.close">×</button>
+    </div>
+    <div class="ab-sheet-body">
+      <div class="ab-pick-note" id="abPickNote" hidden></div>
+      <div class="ab-actions" id="abPickActions" role="group"></div>
+    </div>
   </div>
 </div>
 
