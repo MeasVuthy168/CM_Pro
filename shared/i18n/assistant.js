@@ -149,8 +149,6 @@ CMI18n.register({
   "assistant.lgs.tileRefin": { km: "បុនហិរញ្ញប្បទានរួច", en: "Refinanced" },
   "assistant.lgs.ofDisbursed": { km: "ក្នុងចំណោមកម្ចីបញ្ចេញ {n}", en: "of {n} disbursed" },
   "assistant.lgs.share": { km: "{pct} នៃកម្ចី LGs", en: "{pct} of LGs loans" },
-  "assistant.lgs.disbursedN": { km: "បញ្ចេញ {n}", en: "{n} disbursed" },
-  "assistant.lgs.rowValue": { km: "{n} LGs · {r} បុនរួច", en: "{n} LGs · {r} refinanced" },
   "assistant.lgs.open": { km: "បើក កម្ចីក្នុងដែនកំណត់ LGs", en: "Open LGs Loans" },
   "assistant.help.work": { km: "ការងារ៖ «Reason Arrear មិនទាន់បំពេញថ្ងៃនេះ», «អតិថិជនសន្យាផុតកំណត់», «អតិថិជនសន្យាសងថ្ងៃនេះ», «អតិថិជន Arrear គ្មានមន្ត្រីទទួលខុសត្រូវ»", en: "Work: \"today's unfilled Reason Arrear\", \"expired promises\", \"promised to pay today\", \"client arrears with no officer responsible\"" },
   "assistant.help.alerts": { km: "«Alert ថ្ងៃនេះ» — ចំណុចដែលត្រូវយកចិត្តទុកដាក់", en: "\"Today's alerts\" — what needs attention" },

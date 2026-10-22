@@ -586,7 +586,8 @@
     // ---------- LGs loans ----------
     // GET /api/creditreport/lgs: loans disbursed this month inside the LGs
     // limit and how many are already refinanced, per branch (Master Data
-    // → LGs Loans). A branch named in the question narrows the answer.
+    // → LGs Loans). A branch named in the question narrows the answer; the
+    // per-branch detail stays on the page.
     const LGS_KEY = "cm_asst_lgs";
     const LGS_TTL = 5 * 60 * 1000;
 
@@ -621,7 +622,6 @@
         const share = row.lgs ? `${Math.round(row.refinanced / row.lgs * 1000) / 10}%` : "0%";
         const vars = { who, n: num(row.lgs), r: num(row.refinanced), pct: share, from: dmy(data.fromDate), to: dmy(data.toDate) };
         const lead = t(intent.focus === "refinanced" ? "assistant.lgs.leadRefin" : "assistant.lgs.lead", vars);
-        const list = branch ? [] : [...branches].sort((a, b) => b.lgs - a.lgs || b.refinanced - a.refinanced);
         const href = PAGE_URLS.lgs + (branch ? `?branch=${encodeURIComponent(branch)}` : "");
         return {
             html: `
@@ -636,11 +636,6 @@
                         <div class="ac-lgs-tile"><b>${num(row.lgs)}</b><span>${esc(t("assistant.lgs.tileLgs"))}</span><small>${esc(t("assistant.lgs.ofDisbursed", { n: num(row.disbursed) }))}</small></div>
                         <div class="ac-lgs-tile ac-lgs-refin"><b>${num(row.refinanced)}</b><span>${esc(t("assistant.lgs.tileRefin"))}</span><small>${esc(t("assistant.lgs.share", { pct: share }))}</small></div>
                     </div>
-                    ${list.length > 1 ? `<ol class="ac-rank">${list.map(b => `
-                        <li>
-                            <span class="ac-rank-name">${esc(b.branch)}<small>${esc(t("assistant.lgs.disbursedN", { n: num(b.disbursed) }))}</small></span>
-                            <span class="ac-rank-v">${esc(t("assistant.lgs.rowValue", { n: num(b.lgs), r: num(b.refinanced) }))}</span>
-                        </li>`).join("")}</ol>` : ""}
                     <a class="ac-link" href="${esc(href)}">${esc(t("assistant.lgs.open"))} ›</a>
                 </div>`
         };
