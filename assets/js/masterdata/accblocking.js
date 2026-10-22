@@ -438,24 +438,29 @@ async function abExportPdf() {
     try {
         const SCALE = 2;
         const full = await html2canvas(holder, { scale: SCALE, backgroundColor: "#ffffff" });
-        const headCanvas = await html2canvas(holder.querySelector("thead"), { scale: SCALE, backgroundColor: "#ffffff" });
         const top = holder.getBoundingClientRect().top;
         const bounds = [...holder.querySelectorAll("tbody tr")].map(tr => (tr.getBoundingClientRect().bottom - top) * SCALE);
+        // The repeated header is cut from the same render, so it lines up
+        // with the columns below; pages stop at the last row (no blank page
+        // from the sheet's bottom padding).
+        const headRect = holder.querySelector("thead").getBoundingClientRect();
+        const headTop = Math.round((headRect.top - top) * SCALE);
+        const headH = Math.round(headRect.height * SCALE);
+        const lastRow = Math.min(full.height, Math.ceil(bounds[bounds.length - 1] || full.height) + SCALE);
 
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
         const pageW = 297, pageH = 210, margin = 8;
         const usableW = pageW - margin * 2, usableH = pageH - margin * 2;
         const sliceH = full.width * (usableH / usableW);
-        const headH = headCanvas.height;
         // One page at a time, cut between rows; the header repeats.
         let start = 0, first = true, page = 0;
-        while (start < full.height - 2) {
+        while (start < lastRow - 2) {
             const end = start + (first ? sliceH : sliceH - headH);
             let cut = end;
             for (const b of bounds) if (b > start && b <= end) cut = b;
-            if (cut <= start) cut = Math.min(end, full.height);
-            cut = Math.min(cut, full.height);
+            if (cut <= start) cut = Math.min(end, lastRow);
+            cut = Math.min(cut, lastRow);
             const canvas = document.createElement("canvas");
             canvas.width = full.width;
             canvas.height = (cut - start) + (first ? 0 : headH);
@@ -463,7 +468,7 @@ async function abExportPdf() {
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             let y = 0;
-            if (!first) { ctx.drawImage(headCanvas, 0, 0); y = headH; }
+            if (!first) { ctx.drawImage(full, 0, headTop, full.width, headH, 0, 0, full.width, headH); y = headH; }
             ctx.drawImage(full, 0, start, full.width, cut - start, 0, y, full.width, cut - start);
             if (page > 0) pdf.addPage();
             pdf.addImage(canvas.toDataURL("image/jpeg", 0.9), "JPEG", margin, margin, usableW, usableW * (canvas.height / canvas.width));
