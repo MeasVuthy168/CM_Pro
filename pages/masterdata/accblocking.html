@@ -126,6 +126,20 @@ No Internet Connection
   </div>
 </div>
 
+<!-- Export: Excel or PDF -->
+<div id="abExport" class="ab-dim" hidden>
+  <div class="ab-sheet" role="dialog" aria-modal="true" aria-labelledby="abExportTitle">
+    <div class="ab-sheet-head">
+      <div><div class="ab-sheet-title" id="abExportTitle" data-i18n="masterdata.ab.exportTitle">Export the list</div></div>
+      <button type="button" class="ab-close" data-close aria-label="Close" data-i18n-aria-label="common.close">×</button>
+    </div>
+    <div class="ab-export-opts">
+      <button type="button" class="ab-export-opt" data-export="xlsx"><img src="/CM_Pro/assets/icons/arrear/export_excel.png" alt=""><span><b data-i18n="masterdata.ab.exportExcel">Excel (.xlsx)</b><small data-i18n="masterdata.ab.exportExcelSub">Columns A–H, like the sheet</small></span></button>
+      <button type="button" class="ab-export-opt" data-export="pdf"><img src="/CM_Pro/assets/icons/arrear/export_pdf.png" alt=""><span><b data-i18n="masterdata.ab.exportPdf">PDF</b><small data-i18n="masterdata.ab.exportPdfSub">The printed sheet, A4 landscape</small></span></button>
+    </div>
+  </div>
+</div>
+
 <!-- List Block: accounts blocked now (ListBlocked) -->
 <div id="abBlocked" class="ab-dim" hidden>
   <div class="ab-sheet ab-sheet-tall" role="dialog" aria-modal="true" aria-labelledby="abBlockedTitle">
@@ -137,6 +151,31 @@ No Internet Connection
       <button type="button" class="ab-close" data-close aria-label="Close" data-i18n-aria-label="common.close">×</button>
     </div>
     <div class="ab-search"><span class="ui-ico ui-ico-search" aria-hidden="true"></span><input type="search" id="abBlockedQ" autocomplete="off" placeholder="CIF / account / description" data-i18n-placeholder="masterdata.ab.searchBlocked"></div>
+    <!-- Filter / sort / card-or-list view -->
+    <div class="ab-bl-tools">
+      <button type="button" class="ab-bl-btn" id="btnAbBlFilter" aria-expanded="false" aria-controls="abBlFilters">
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 5h16l-6 7v6l-4 2v-8L4 5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        <span data-i18n="masterdata.ab.filter">Filter</span><span class="ab-bl-badge" id="abBlFilterN" hidden></span>
+      </button>
+      <label class="ab-bl-btn ab-bl-sort">
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M7 4v16m0 0-3-3m3 3 3-3M17 20V4m0 0-3 3m3-3 3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <select id="abBlSort" aria-label="Sort" data-i18n-aria-label="masterdata.ab.sort">
+          <option value="amount_desc" data-i18n="masterdata.ab.sortAmountDesc">Amount: high → low</option>
+          <option value="amount_asc" data-i18n="masterdata.ab.sortAmountAsc">Amount: low → high</option>
+          <option value="branch" data-i18n="masterdata.ab.sortBranch">Branch</option>
+          <option value="officer" data-i18n="masterdata.ab.sortOfficer">Officer</option>
+          <option value="status" data-i18n="masterdata.ab.sortStatus">Status</option>
+          <option value="cif" data-i18n="masterdata.ab.sortCif">CIF</option>
+          <option value="account" data-i18n="masterdata.ab.sortAccount">Account</option>
+        </select>
+      </label>
+      <div class="ab-view" role="group" aria-label="View" data-i18n-aria-label="masterdata.ab.view">
+        <button type="button" data-view="card" aria-label="Cards" data-i18n-aria-label="masterdata.ab.viewCard"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="4" y="4" width="16" height="7" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="13" width="16" height="7" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+        <button type="button" data-view="list" aria-label="List" data-i18n-aria-label="masterdata.ab.viewList"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      </div>
+    </div>
+    <div class="ab-bl-filters" id="abBlFilters" hidden></div>
+    <div class="ab-bl-sum" id="abBlSum"></div>
     <div class="ab-sheet-list" id="abBlockedList"></div>
   </div>
 </div>

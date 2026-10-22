@@ -177,7 +177,7 @@ function abOpen(id) {
 
 function abClose(id) {
     document.getElementById(id).hidden = true;
-    if (document.getElementById("abEdit").hidden && document.getElementById("abBlocked").hidden) document.body.classList.remove("ab-sheet-open");
+    if (["abEdit", "abBlocked", "abExport"].every(id => document.getElementById(id).hidden)) document.body.classList.remove("ab-sheet-open");
 }
 
 function abSyncToField() {
@@ -248,79 +248,278 @@ function abLoadScript(src) {
     });
 }
 
-document.getElementById("btnAbExport").addEventListener("click", async () => {
-    if (!abData?.rows?.length) return;
+// Export: Excel (columns A-H, like the sheet's ExportData) or PDF (the
+// printed sheet, A4 landscape — drawn as an image so Khmer renders).
+const AB_LIBS = {
+    xlsx: "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js",
+    html2canvas: "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+    jspdf: "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+};
+const abLibs = {};
+function abLib(name) {
+    if (!abLibs[name]) abLibs[name] = abLoadScript(AB_LIBS[name]).catch(e => { delete abLibs[name]; throw e; });
+    return abLibs[name];
+}
+
+function abFileStamp() {
+    return `${abData.date.replace(/-/g, "")}_${new Date().toTimeString().slice(0, 8).replace(/:/g, "")}`;
+}
+
+async function abExportExcel() {
+    await abLib("xlsx");
+    const title = t("masterdata.ab.sheetTitle", { date: abDmy(abData.date) });
+    const headers = abSheetHeaders().slice(0, 8);
+    const rows = abSheetRows().map(r => r.slice(0, 8));
+    const ws = XLSX.utils.aoa_to_sheet([[title], headers, ...rows]);
+    ws["!cols"] = [{ wch: 5 }, { wch: 11 }, { wch: 18 }, { wch: 24 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 15 }];
+    ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `AccBlock_${abData.date.replace(/-/g, "")}`.slice(0, 31));
+    XLSX.writeFile(wb, `AccBlock_${abFileStamp()}.xlsx`);
+}
+
+async function abExportPdf() {
+    await Promise.all([abLib("html2canvas"), abLib("jspdf")]);
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    // The print sheet, laid out off-screen at a fixed width.
+    const holder = document.createElement("div");
+    holder.className = "ab-print ab-pdf";
+    holder.innerHTML = abPrintHtml();
+    document.body.appendChild(holder);
     try {
-        if (!window.XLSX) await abLoadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
-        const title = t("masterdata.ab.sheetTitle", { date: abDmy(abData.date) });
-        const headers = abSheetHeaders().slice(0, 8);
-        const rows = abSheetRows().map(r => r.slice(0, 8));
-        const ws = XLSX.utils.aoa_to_sheet([[title], headers, ...rows]);
-        ws["!cols"] = [{ wch: 5 }, { wch: 11 }, { wch: 18 }, { wch: 24 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 15 }];
-        ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
-        const wb = XLSX.utils.book_new();
-        const stamp = `${abData.date.replace(/-/g, "")}_${new Date().toTimeString().slice(0, 8).replace(/:/g, "")}`;
-        XLSX.utils.book_append_sheet(wb, ws, `AccBlock_${abData.date.replace(/-/g, "")}`.slice(0, 31));
-        XLSX.writeFile(wb, `AccBlock_${stamp}.xlsx`);
+        const SCALE = 2;
+        const full = await html2canvas(holder, { scale: SCALE, backgroundColor: "#ffffff" });
+        const headCanvas = await html2canvas(holder.querySelector("thead"), { scale: SCALE, backgroundColor: "#ffffff" });
+        const top = holder.getBoundingClientRect().top;
+        const bounds = [...holder.querySelectorAll("tbody tr")].map(tr => (tr.getBoundingClientRect().bottom - top) * SCALE);
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+        const pageW = 297, pageH = 210, margin = 8;
+        const usableW = pageW - margin * 2, usableH = pageH - margin * 2;
+        const sliceH = full.width * (usableH / usableW);
+        const headH = headCanvas.height;
+        // One page at a time, cut between rows; the header repeats.
+        let start = 0, first = true, page = 0;
+        while (start < full.height - 2) {
+            const end = start + (first ? sliceH : sliceH - headH);
+            let cut = end;
+            for (const b of bounds) if (b > start && b <= end) cut = b;
+            if (cut <= start) cut = Math.min(end, full.height);
+            cut = Math.min(cut, full.height);
+            const canvas = document.createElement("canvas");
+            canvas.width = full.width;
+            canvas.height = (cut - start) + (first ? 0 : headH);
+            const ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            let y = 0;
+            if (!first) { ctx.drawImage(headCanvas, 0, 0); y = headH; }
+            ctx.drawImage(full, 0, start, full.width, cut - start, 0, y, full.width, cut - start);
+            if (page > 0) pdf.addPage();
+            pdf.addImage(canvas.toDataURL("image/jpeg", 0.9), "JPEG", margin, margin, usableW, usableW * (canvas.height / canvas.width));
+            pdf.setFontSize(8);
+            pdf.setTextColor(140);
+            pdf.text(String(page + 1), pageW - margin, pageH - 3, { align: "right" });
+            start = cut;
+            first = false;
+            page++;
+        }
+        pdf.save(`AccBlock_${abFileStamp()}.pdf`);
+    } finally {
+        holder.remove();
+    }
+}
+
+document.getElementById("btnAbExport").addEventListener("click", () => {
+    if (abData?.rows?.length) abOpen("abExport");
+});
+
+document.getElementById("abExport").addEventListener("click", async e => {
+    const opt = e.target.closest("[data-export]");
+    if (!opt) return;
+    abClose("abExport");
+    if (typeof showAppLoading === "function") showAppLoading(t("masterdata.ab.exporting"));
+    try {
+        if (opt.dataset.export === "pdf") await abExportPdf();
+        else await abExportExcel();
     } catch (err) {
         console.error("[accblocking] export failed:", err);
         abToast(t("masterdata.ab.exportFailed"), "error");
+    } finally {
+        if (typeof hideAppLoading === "function") hideAppLoading();
     }
 });
 
-document.getElementById("btnAbPrint").addEventListener("click", () => {
-    if (!abData?.rows?.length) return;
-    const head = abSheetHeaders();
-    document.getElementById("abPrint").innerHTML = `
+// The sheet as a table (Print and PDF): title, headers, rows tinted by action.
+function abPrintHtml() {
+    return `
         <h1>${abEsc(t("masterdata.ab.sheetTitle", { date: abDmy(abData.date) }))}</h1>
         <table>
-            <thead><tr>${head.map(h => `<th>${abEsc(h)}</th>`).join("")}</tr></thead>
+            <thead><tr>${abSheetHeaders().map(h => `<th>${abEsc(h)}</th>`).join("")}</tr></thead>
             <tbody>${abSheetRows().map((r, i) => `<tr class="ab-p-${AB_CLASS[abData.rows[i].action] || "block"}">${r.map((v, c) =>
                 `<td${c === 4 || c === 5 ? ' class="num"' : ""}>${abEsc(c === 4 || c === 5 ? abAmount(v) : v)}</td>`).join("")}</tr>`).join("")}</tbody>
         </table>`;
+}
+
+document.getElementById("btnAbPrint").addEventListener("click", () => {
+    if (!abData?.rows?.length) return;
+    document.getElementById("abPrint").innerHTML = abPrintHtml();
     window.print();
 });
 
 // ---------- List Block ----------
-let abBlockedTimer = null;
-let abBlockedSeq = 0;
+// Accounts blocked now (ListBlocked): status, branch, officer, team;
+// search, filter, sort, card or list view, a page at a time.
+const AB_BL_PAGE = 100;
+const abBl = { status: "", branch: "", team: "", items: [], total: 0, seq: 0, facets: null };
+const abPref = (k, v) => {
+    try {
+        if (v === undefined) return localStorage.getItem(`cm_ab_bl_${k}`);
+        localStorage.setItem(`cm_ab_bl_${k}`, v);
+    } catch (e) {}
+    return null;
+};
+let abBlView = abPref("view") === "list" ? "list" : "card";
+let abBlTimer = null;
 
-async function abLoadBlocked() {
-    const seq = ++abBlockedSeq;
+function abStatusClass(s) {
+    const v = String(s || "").toLowerCase();
+    return v.includes("full") ? "full" : v.includes("partial") ? "partial" : "other";
+}
+
+function abBlockedItem(b) {
+    const status = b.status ? `<span class="ab-st ab-st-${abStatusClass(b.status)}">${abEsc(b.status)}</span>` : "";
+    if (abBlView === "list") {
+        return `<div class="ab-bl-row">
+            <div class="ab-bl-main"><b>${abEsc(b.account || "-")}</b><small>CIF ${abEsc(b.cif || "-")} · ${abEsc(b.branch || "-")}${b.team ? ` · ${abEsc(b.team)}` : ""}</small></div>
+            <div class="ab-bl-side"><b>${abAmount(b.amount)} <small>${abEsc(b.currency)}</small></b>${status}</div>
+        </div>`;
+    }
+    return `<div class="ab-blocked">
+        <div class="ab-blocked-top"><b>${abEsc(b.account || "-")}</b><span>${abAmount(b.amount)} ${abEsc(b.currency)}</span></div>
+        <div class="ab-blocked-tags">${status}${b.team ? `<span class="ab-tag">${abEsc(b.team)}</span>` : ""}</div>
+        <div class="ab-blocked-meta"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span> ${abEsc(b.branch || "-")} · <span class="ui-ico ui-ico-officer" aria-hidden="true"></span> ${abEsc(b.officer || "-")}</div>
+        <div class="ab-blocked-meta">CIF ${abEsc(b.cif || "-")}${b.description ? ` · ${abEsc(b.description)}` : ""}</div>
+    </div>`;
+}
+
+// Filter chips (status / branch / team) with counts over the search.
+function abPaintBlFilters() {
+    const f = abBl.facets || { status: [], branch: [], team: [] };
+    const group = (key, label) => {
+        const opts = f[key].filter(o => o.value);
+        if (!opts.length) return "";
+        return `<div class="ab-bl-group">
+            <div class="ab-bl-group-label">${abEsc(label)}</div>
+            <div class="ab-bl-chips">${[{ value: "", n: null }, ...opts].map(o => {
+                const on = abBl[key] === o.value;
+                return `<button type="button" class="ab-chip${on ? " on" : ""}" aria-pressed="${on}" data-key="${key}" data-value="${abEsc(o.value)}">${abEsc(o.value || t("masterdata.ab.all"))}${o.n != null ? ` <small>${o.n.toLocaleString("en-US")}</small>` : ""}</button>`;
+            }).join("")}</div>
+        </div>`;
+    };
+    const n = ["status", "branch", "team"].filter(k => abBl[k]).length;
+    document.getElementById("abBlFilters").innerHTML =
+        group("status", t("masterdata.ab.colStatus")) + group("branch", t("masterdata.ab.colBranch")) + group("team", t("masterdata.ab.colTeam")) +
+        (n ? `<button type="button" class="ab-bl-clear" data-clear>${abEsc(t("masterdata.ab.clearFilters"))}</button>` : "");
+    const badge = document.getElementById("abBlFilterN");
+    badge.hidden = !n;
+    badge.textContent = n;
+}
+
+function abPaintBlList() {
+    const list = document.getElementById("abBlockedList");
+    list.classList.toggle("ab-as-list", abBlView === "list");
+    document.querySelectorAll(".ab-view [data-view]").forEach(b => {
+        const on = b.dataset.view === abBlView;
+        b.classList.toggle("on", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    if (!abBl.items.length) {
+        list.innerHTML = `<div class="ab-empty">${abEsc(t("masterdata.ab.noBlocked"))}</div>`;
+        return;
+    }
+    const more = abBl.items.length < abBl.total;
+    list.innerHTML = abBl.items.map(abBlockedItem).join("") +
+        (more ? `<button type="button" class="ab-bl-more" data-more>${abEsc(t("masterdata.ab.showMore", { shown: abBl.items.length.toLocaleString("en-US"), total: abBl.total.toLocaleString("en-US") }))}</button>` : "");
+}
+
+async function abLoadBlocked(append) {
+    const seq = ++abBl.seq;
     const q = document.getElementById("abBlockedQ").value.trim();
     const list = document.getElementById("abBlockedList");
-    list.innerHTML = `<div class="ab-empty">${abEsc(t("masterdata.ab.loading"))}</div>`;
+    if (!append) list.innerHTML = `<div class="ab-empty">${abEsc(t("masterdata.ab.loading"))}</div>`;
+    const params = new URLSearchParams({
+        limit: AB_BL_PAGE, offset: append ? abBl.items.length : 0, sort: document.getElementById("abBlSort").value,
+        ...(q ? { q } : {}), ...(abBl.status ? { status: abBl.status } : {}),
+        ...(abBl.branch ? { branch: abBl.branch } : {}), ...(abBl.team ? { team: abBl.team } : {})
+    });
     try {
-        const data = await abCall(`blocked?limit=150${q ? `&q=${encodeURIComponent(q)}` : ""}`);
-        if (seq !== abBlockedSeq) return;
-        document.getElementById("abBlockedSub").textContent = t("masterdata.ab.blockedN", { n: (data.total || 0).toLocaleString("en-US") });
-        list.innerHTML = data.items.length ? data.items.map(b => `
-            <div class="ab-blocked">
-                <div class="ab-blocked-top"><b>${abEsc(b.account || "-")}</b><span>${abAmount(b.amount)} ${abEsc(b.currency)}</span></div>
-                <div class="ab-blocked-meta">CIF ${abEsc(b.cif || "-")}${b.description ? ` · ${abEsc(b.description)}` : ""}</div>
-            </div>`).join("") : `<div class="ab-empty">${abEsc(t("masterdata.ab.noBlocked"))}</div>`;
+        const data = await abCall(`blocked?${params}`);
+        if (seq !== abBl.seq) return;
+        abBl.items = append ? abBl.items.concat(data.items) : data.items;
+        abBl.total = data.total;
+        abBl.facets = data.facets;
+        const sums = Object.entries(data.sums || {}).map(([cur, v]) => `${abAmount(v)} ${cur}`).join(" · ");
+        document.getElementById("abBlockedSub").textContent = t("masterdata.ab.blockedN", { n: (data.all || 0).toLocaleString("en-US") });
+        document.getElementById("abBlSum").innerHTML = `<b>${abEsc(t("masterdata.ab.matchN", { n: data.total.toLocaleString("en-US") }))}</b>${sums ? ` · ${abEsc(sums)}` : ""}`;
+        abPaintBlFilters();
+        abPaintBlList();
     } catch (err) {
-        if (seq === abBlockedSeq) list.innerHTML = `<div class="ab-empty">${abEsc(err.message)}</div>`;
+        if (seq === abBl.seq) list.innerHTML = `<div class="ab-empty">${abEsc(err.message)}</div>`;
     }
 }
+
+const abSavedSort = abPref("sort");
+if (abSavedSort && document.querySelector(`#abBlSort option[value="${abSavedSort}"]`)) document.getElementById("abBlSort").value = abSavedSort;
 
 document.getElementById("btnAbBlocked").addEventListener("click", () => {
     abOpen("abBlocked");
     abLoadBlocked();
 });
 document.getElementById("abBlockedQ").addEventListener("input", () => {
-    clearTimeout(abBlockedTimer);
-    abBlockedTimer = setTimeout(abLoadBlocked, 350);
+    clearTimeout(abBlTimer);
+    abBlTimer = setTimeout(() => abLoadBlocked(), 350);
+});
+document.getElementById("abBlSort").addEventListener("change", e => {
+    abPref("sort", e.target.value);
+    abLoadBlocked();
+});
+document.getElementById("btnAbBlFilter").addEventListener("click", e => {
+    const panel = document.getElementById("abBlFilters");
+    panel.hidden = !panel.hidden;
+    e.currentTarget.setAttribute("aria-expanded", panel.hidden ? "false" : "true");
+});
+document.getElementById("abBlFilters").addEventListener("click", e => {
+    if (e.target.closest("[data-clear]")) {
+        abBl.status = abBl.branch = abBl.team = "";
+        abLoadBlocked();
+        return;
+    }
+    const chip = e.target.closest(".ab-chip[data-key]");
+    if (!chip) return;
+    abBl[chip.dataset.key] = chip.dataset.value;
+    abLoadBlocked();
+});
+document.querySelector(".ab-view").addEventListener("click", e => {
+    const b = e.target.closest("[data-view]");
+    if (!b) return;
+    abBlView = b.dataset.view;
+    abPref("view", abBlView);
+    abPaintBlList();
+});
+document.getElementById("abBlockedList").addEventListener("click", e => {
+    if (e.target.closest("[data-more]")) abLoadBlocked(true);
 });
 
 // Sheets close on ×, the dim, or Esc.
-["abEdit", "abBlocked"].forEach(id => {
+["abEdit", "abBlocked", "abExport"].forEach(id => {
     const el = document.getElementById(id);
     el.addEventListener("click", e => { if (e.target === el || e.target.closest("[data-close]")) abClose(id); });
 });
 document.addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
-    ["abEdit", "abBlocked"].forEach(id => { if (!document.getElementById(id).hidden) abClose(id); });
+    ["abEdit", "abBlocked", "abExport"].forEach(id => { if (!document.getElementById(id).hidden) abClose(id); });
 });
 
 // ---------- date ----------
