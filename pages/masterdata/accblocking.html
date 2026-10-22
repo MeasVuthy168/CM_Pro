@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>Account Blocking</title>
+
+<meta
+name="theme-color"
+content="#0e1b3c">
+
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
+  );
+</script>
+
+<link
+rel="stylesheet"
+href="../../assets/css/main.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/masterdata/masterdata.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/masterdata/accblocking.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
+
+<!-- Hold the first paint until the whole page is parsed (its scripts,
+     translations and header), so a page transition slides in a finished
+     page instead of one still filling itself in. No element has this id:
+     the hold simply ends when parsing does. -->
+<link rel="expect" href="#cm-pt-parsed" blocking="render">
+<link rel="preload" href="/CM_Pro/assets/fonts/Krasar-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<script src="/CM_Pro/shared/page-transition.js"></script>
+<script src="/CM_Pro/shared/sw-register.js"></script>
+</head>
+
+<body>
+
+<div id="offlineBanner" data-i18n="common.offline">
+No Internet Connection
+</div>
+
+<div id="topbar-container"></div>
+
+<div class="page-container ab-page">
+
+<!-- Summary: whose list, for which day, and how many rows per action -->
+<section class="ab-hero">
+  <div class="ab-hero-top">
+    <span class="ab-hero-ico"><span class="ui-ico ui-ico-idcard" aria-hidden="true"></span></span>
+    <div class="ab-hero-text">
+      <div class="ab-hero-title" data-i18n="masterdata.ab.heroTitle">List Account Blocking</div>
+      <div class="ab-hero-sub" id="abHeroSub">-</div>
+    </div>
+    <label class="ab-day" title="Date" data-i18n-title="masterdata.ab.date">
+      <span class="ui-ico ui-ico-calendar" aria-hidden="true"></span>
+      <span id="abDateText">-</span>
+      <input type="date" id="abDate" aria-label="Date" data-i18n-aria-label="masterdata.ab.date">
+    </label>
+  </div>
+  <div class="ab-counts" id="abCounts"></div>
+</section>
+
+<!-- Add CIFs (Admin / User only) -->
+<section class="ab-add" id="abAdd" hidden>
+  <label class="ab-add-label" for="abCifs" data-i18n="masterdata.ab.cifLabel">CIF</label>
+  <textarea id="abCifs" rows="2" inputmode="numeric" autocomplete="off" placeholder="4275295, 100200 ..." data-i18n-placeholder="masterdata.ab.cifPlaceholder"></textarea>
+  <div class="ab-actions" id="abAddActions" role="radiogroup" aria-label="Action" data-i18n-aria-label="masterdata.ab.action"></div>
+  <button type="button" class="ab-primary" id="btnAbAdd"><span class="ui-ico ui-ico-plus" aria-hidden="true"></span> <span data-i18n="masterdata.ab.add">Add to list</span></button>
+</section>
+<p class="ab-readonly" id="abReadOnly" hidden data-i18n="masterdata.ab.readOnly">Only Admin and User can build a blocking list.</p>
+
+<!-- Tools: final list, export, print, clear, List Block -->
+<section class="ab-tools">
+  <button type="button" class="ab-tool ab-tool-main" id="btnAbFinal" data-edit><span class="ui-ico ui-ico-clipboard" aria-hidden="true"></span><span data-i18n="masterdata.ab.final">Generate Final List</span></button>
+  <button type="button" class="ab-tool" id="btnAbExport"><span class="ui-ico ui-ico-copy" aria-hidden="true"></span><span data-i18n="masterdata.ab.export">Export</span></button>
+  <button type="button" class="ab-tool" id="btnAbPrint"><span class="ui-ico ui-ico-eye" aria-hidden="true"></span><span data-i18n="masterdata.ab.print">Print</span></button>
+  <button type="button" class="ab-tool" id="btnAbBlocked"><span class="ui-ico ui-ico-search" aria-hidden="true"></span><span data-i18n="masterdata.ab.listBlock">List Block</span></button>
+  <button type="button" class="ab-tool ab-tool-danger" id="btnAbClear" data-edit><span class="ui-ico ui-ico-trash" aria-hidden="true"></span><span data-i18n="masterdata.ab.clear">Delete all</span></button>
+</section>
+<div class="ab-final-note" id="abFinalNote" hidden></div>
+
+<div class="ab-list" id="abList"></div>
+
+</div>
+
+<!-- Printable sheet (only shown when printing) -->
+<div id="abPrint" class="ab-print" aria-hidden="true"></div>
+
+<!-- Edit one row -->
+<div id="abEdit" class="ab-dim" hidden>
+  <div class="ab-sheet" role="dialog" aria-modal="true" aria-labelledby="abEditTitle">
+    <div class="ab-sheet-head">
+      <div>
+        <div class="ab-sheet-title" id="abEditTitle">-</div>
+        <div class="ab-sheet-sub" id="abEditSub">-</div>
+      </div>
+      <button type="button" class="ab-close" data-close aria-label="Close" data-i18n-aria-label="common.close">×</button>
+    </div>
+    <div class="ab-sheet-body">
+      <div class="ab-field-label" data-i18n="masterdata.ab.action">Action</div>
+      <div class="ab-actions" id="abEditActions" role="radiogroup"></div>
+      <label class="ab-field" id="abToWrap"><span data-i18n="masterdata.ab.toAmount">New blocked amount</span><input type="text" inputmode="decimal" id="abEditTo" autocomplete="off"></label>
+      <label class="ab-field"><span data-i18n="masterdata.ab.reference">Reference</span><input type="text" id="abEditRef" maxlength="100" autocomplete="off"></label>
+      <div class="ab-sheet-btns">
+        <button type="button" class="ab-tool ab-tool-danger" id="btnAbRemove"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span><span data-i18n="common.delete">Delete</span></button>
+        <button type="button" class="ab-primary" id="btnAbSave" data-i18n="common.save">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- List Block: accounts blocked now (ListBlocked) -->
+<div id="abBlocked" class="ab-dim" hidden>
+  <div class="ab-sheet ab-sheet-tall" role="dialog" aria-modal="true" aria-labelledby="abBlockedTitle">
+    <div class="ab-sheet-head">
+      <div>
+        <div class="ab-sheet-title" id="abBlockedTitle" data-i18n="masterdata.ab.listBlockTitle">Accounts blocked now</div>
+        <div class="ab-sheet-sub" id="abBlockedSub">-</div>
+      </div>
+      <button type="button" class="ab-close" data-close aria-label="Close" data-i18n-aria-label="common.close">×</button>
+    </div>
+    <div class="ab-search"><span class="ui-ico ui-ico-search" aria-hidden="true"></span><input type="search" id="abBlockedQ" autocomplete="off" placeholder="CIF / account / description" data-i18n-placeholder="masterdata.ab.searchBlocked"></div>
+    <div class="ab-sheet-list" id="abBlockedList"></div>
+  </div>
+</div>
+
+<div id="bottomnav-container"></div>
+
+<script src="../../config/api.js"></script>
+<script src="/CM_Pro/shared/touch-polish.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/masterdata.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<script src="../../assets/js/masterdata/accblocking.js"></script>
+
+</body>
+
+</html>
