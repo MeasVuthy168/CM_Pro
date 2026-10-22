@@ -4416,3 +4416,37 @@ a.arx-primary{ display:grid; place-items:center; text-decoration:none; }
 .arr-actions a.arr-blocking-btn{ text-decoration:none; }
 .arr-actions .arr-blocking-btn ~ .arr-work-btn{ margin-left:0; }
 .arr-actions .arr-blocking-btn .arx-btn-ico{ display:inline-flex; color:#FFD700; }
+
+/* Account Blocking · Work to complete · Refresh · Clear on one line:
+   equal columns, icon above a short label (phones). */
+@media (max-width:640px){
+    .arr-meta-row .arr-actions{
+        display:grid;
+        grid-auto-flow:column;
+        grid-auto-columns:1fr;
+        width:100%;
+        margin-left:0;
+        gap:6px;
+    }
+    .arr-actions .arr-work-btn,
+    .arr-actions #btnRefresh,
+    .arr-actions #btnClear{
+        height:auto;
+        min-height:52px;
+        margin:0;
+        padding:7px 4px;
+        flex-direction:column;
+        justify-content:center;
+        gap:3px;
+        display:flex;
+        align-items:center;
+        font-size:11.5px;
+        line-height:1.2;
+        text-align:center;
+        white-space:normal;
+        border-radius:12px;
+    }
+    .arr-actions .ui-ico, .arr-actions .arx-btn-ico{ width:18px; height:18px; flex:0 0 auto; }
+    .arr-actions .arx-btn-ico svg{ width:18px; height:18px; }
+    .arr-actions #btnClear .ui-ico{ color:currentColor; }
+}
