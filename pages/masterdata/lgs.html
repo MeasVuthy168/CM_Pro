@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>LGs Loans</title>
+
+<meta
+name="theme-color"
+content="#0e1b3c">
+
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
+  );
+</script>
+
+<link
+rel="stylesheet"
+href="../../assets/css/main.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/masterdata/masterdata.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/masterdata/lgs.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
+
+<!-- Hold the first paint until the whole page is parsed (its scripts,
+     translations and header), so a page transition slides in a finished
+     page instead of one still filling itself in. No element has this id:
+     the hold simply ends when parsing does. -->
+<link rel="expect" href="#cm-pt-parsed" blocking="render">
+<link rel="preload" href="/CM_Pro/assets/fonts/Krasar-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<script src="/CM_Pro/shared/page-transition.js"></script>
+<script src="/CM_Pro/shared/sw-register.js"></script>
+</head>
+
+<body>
+
+<div id="offlineBanner" data-i18n="common.offline">
+No Internet Connection
+</div>
+
+<div id="topbar-container"></div>
+
+<div class="page-container lg-page">
+
+<!-- Summary: loans inside the LGs limit and how many are refinanced -->
+<section class="lg-hero">
+  <div class="lg-hero-top">
+    <span class="lg-hero-ico"><span class="ui-ico ui-ico-trend-up" aria-hidden="true"></span></span>
+    <div class="lg-hero-text">
+      <div class="lg-hero-title" data-i18n="masterdata.lgs.heroTitle">កម្ចីក្នុងដែនកំណត់ LGs</div>
+      <div class="lg-hero-sub"><span data-i18n="masterdata.outArea.dataAt">ទិន្នន័យចុងក្រោយ</span> <span id="lgAsOf">-</span></div>
+    </div>
+    <button type="button" id="btnLgRefresh" class="lg-hero-refresh" aria-label="Refresh" data-i18n-aria-label="common.refresh"><span class="ui-ico ui-ico-refresh" aria-hidden="true"></span></button>
+  </div>
+  <div class="lg-stats">
+    <button type="button" class="lg-stat" data-list="lgs">
+      <b id="lgTotalLgs">-</b>
+      <span data-i18n="masterdata.lgs.lgsLabel">កម្ចីក្នុងដែនកំណត់ LGs ដែលបញ្ចេញក្នុងខែ</span>
+      <small id="lgTotalOf"></small>
+    </button>
+    <button type="button" class="lg-stat lg-stat-refin" data-list="refinanced">
+      <b id="lgTotalRefin">-</b>
+      <span data-i18n="masterdata.lgs.refinLabel">កម្ចីដែលបានធ្វើបុនហិរញ្ញប្បទានរួច</span>
+      <small id="lgTotalPct"></small>
+    </button>
+  </div>
+  <div class="lg-meter" aria-hidden="true"><i id="lgMeter"></i></div>
+</section>
+
+<!-- Period: defaults to the 1st of the data month up to the latest disbursement -->
+<section class="lg-period">
+  <label><span data-i18n="masterdata.lgs.from">ពី</span><input type="date" id="lgFrom"></label>
+  <span class="lg-period-arrow" aria-hidden="true">→</span>
+  <label><span data-i18n="masterdata.lgs.to">ដល់</span><input type="date" id="lgTo"></label>
+</section>
+<p class="lg-note" id="lgNote"></p>
+
+<section class="lg-section">
+  <h2 data-i18n="masterdata.lgs.byBranch">តាមសាខា</h2>
+  <div id="lgBranches" class="lg-list"></div>
+</section>
+
+<section class="lg-section">
+  <h2 data-i18n="masterdata.lgs.daily">ប្រចាំថ្ងៃ</h2>
+  <div id="lgDaily" class="lg-list"></div>
+</section>
+
+</div>
+
+<!-- Loan list (tap a total, a branch or a day) -->
+<div id="lgSheet" class="lg-dim" hidden>
+  <div class="lg-sheet" role="dialog" aria-modal="true" aria-labelledby="lgSheetTitle">
+    <div class="lg-sheet-head">
+      <div>
+        <div class="lg-sheet-title" id="lgSheetTitle">-</div>
+        <div class="lg-sheet-sub" id="lgSheetSub">-</div>
+      </div>
+      <button type="button" class="lg-sheet-close" id="btnLgSheetClose" aria-label="Close" data-i18n-aria-label="common.close">×</button>
+    </div>
+    <div class="lg-tabs" role="tablist">
+      <button type="button" class="lg-tab" data-tab="lgs" role="tab" data-i18n="masterdata.lgs.tabLgs">ក្នុងដែនកំណត់ LGs</button>
+      <button type="button" class="lg-tab" data-tab="refinanced" role="tab" data-i18n="masterdata.lgs.tabRefin">បុនហិរញ្ញប្បទានរួច</button>
+    </div>
+    <div class="lg-sheet-list" id="lgSheetList"></div>
+  </div>
+</div>
+
+<div id="bottomnav-container"></div>
+
+<script src="../../config/api.js"></script>
+<script src="/CM_Pro/shared/touch-polish.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/masterdata.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<script src="../../assets/js/masterdata/lgs.js"></script>
+
+</body>
+
+</html>

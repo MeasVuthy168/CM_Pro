@@ -18,6 +18,8 @@ CMI18n.register({
   "masterdata.hub.listProductSub": { km: "គ្រប់គ្រងផលិតផល", en: "Manage products" },
   "masterdata.hub.outArea": { km: "កែសម្រួលArrearក្រៅតំបន់", en: "Edit Out-of-Area Arrears" },
   "masterdata.hub.outAreaSub": { km: "ផ្ទេរ LD NoCoRespone ទៅមន្ត្រីទទួលបន្ទុក", en: "Move NoCoRespone loans to their officer" },
+  "masterdata.hub.lgs": { km: "កម្ចីក្នុងដែនកំណត់ LGs", en: "LGs Loans" },
+  "masterdata.hub.lgsSub": { km: "កម្ចីក្នុងដែនកំណត់ និងបុនហិរញ្ញប្បទានរួច ប្រចាំថ្ងៃ", en: "Loans inside the LGs limit and refinanced, daily" },
   "masterdata.hub.work": { km: "ការងារត្រូវបំពេញ", en: "Work to complete" },
   "masterdata.hub.workSub": { km: "បំពេញមូលហេតុយឺតយ៉ាវ (Reason Arrear)", en: "Fill in Reason Arrear for your loans" },
   "work.heroTitle": { km: "Reason Arrear — ការងារត្រូវបំពេញ", en: "Reason Arrear — work to complete" },
@@ -246,5 +248,32 @@ CMI18n.register({
   "masterdata.location.saveFailed": { km: "បរាជ័យក្នុងការរក្សាទុក។", en: "Failed to save." },
   "masterdata.location.deleteSuccess": { km: "បានលុបដោយជោគជ័យ។", en: "Deleted successfully." },
   "masterdata.location.deleteFailed": { km: "បរាជ័យក្នុងការលុប។", en: "Failed to delete." },
-  "masterdata.location.adminOnly": { km: "មានតែអ្នកគ្រប់គ្រងប៉ុណ្ណោះដែលអាចកែប្រែបាន។", en: "Only admins can make changes." }
+  "masterdata.location.adminOnly": { km: "មានតែអ្នកគ្រប់គ្រងប៉ុណ្ណោះដែលអាចកែប្រែបាន។", en: "Only admins can make changes." },
+
+  // ==================================================================
+  // LGs LOANS (pages/masterdata/lgs.html)
+  // ==================================================================
+  "masterdata.lgs.heroTitle": { km: "កម្ចីក្នុងដែនកំណត់ LGs", en: "Loans inside the LGs limit" },
+  "masterdata.lgs.lgsLabel": { km: "ចំនួនកម្ចីក្នុងដែនកំណត់ LGs ដែលបញ្ចេញក្នុងខែ", en: "Loans inside the LGs limit disbursed in the period" },
+  "masterdata.lgs.refinLabel": { km: "ចំនួនកម្ចីដែលបានធ្វើបុនហិរញ្ញប្បទានរួច", en: "Loans already refinanced" },
+  "masterdata.lgs.ofDisbursed": { km: "ក្នុងចំណោមកម្ចីបញ្ចេញ {n}", en: "of {n} disbursed" },
+  "masterdata.lgs.pctOfLgs": { km: "{pct} នៃកម្ចីក្នុងដែនកំណត់", en: "{pct} of LGs loans" },
+  "masterdata.lgs.from": { km: "ពី", en: "From" },
+  "masterdata.lgs.to": { km: "ដល់", en: "To" },
+  "masterdata.lgs.note": { km: "ក្នុងដែនកំណត់ = សមតុល្យ (OS ជួរ N) មិនលើស {limit}។ បុនហិរញ្ញប្បទានរួច = OS ជួរ AX ជា YES។", en: "Inside the limit = Outstanding (OS column N) at most {limit}. Refinanced = OS column AX is YES." },
+  "masterdata.lgs.byBranch": { km: "តាមសាខា", en: "By branch" },
+  "masterdata.lgs.daily": { km: "ប្រចាំថ្ងៃ", en: "Daily" },
+  "masterdata.lgs.chipLgs": { km: "LGs", en: "LGs" },
+  "masterdata.lgs.chipRefin": { km: "បុនរួច", en: "refinanced" },
+  "masterdata.lgs.disbursedN": { km: "បញ្ចេញ {n}", en: "{n} disbursed" },
+  "masterdata.lgs.loansN": { km: "{n} កម្ចី", en: "{n} loans" },
+  "masterdata.lgs.allBranches": { km: "គ្រប់សាខា", en: "All branches" },
+  "masterdata.lgs.tabLgs": { km: "ក្នុងដែនកំណត់ LGs", en: "Inside LGs limit" },
+  "masterdata.lgs.tabRefin": { km: "បុនហិរញ្ញប្បទានរួច", en: "Refinanced" },
+  "masterdata.lgs.badgeRefin": { km: "បុនរួច", en: "Refinanced" },
+  "masterdata.lgs.outstanding": { km: "សមតុល្យ", en: "Outstanding" },
+  "masterdata.lgs.loanSize": { km: "ទំហំកម្ចី", en: "Loan size" },
+  "masterdata.lgs.empty": { km: "មិនមានកម្ចីក្នុងរយៈពេលនេះទេ", en: "No loans in this period" },
+  "masterdata.lgs.loading": { km: "កំពុងផ្ទុកកម្ចី LGs...", en: "Loading LGs loans..." },
+  "masterdata.lgs.badRange": { km: "កាលបរិច្ឆេទចាប់ផ្តើមត្រូវតែមុនកាលបរិច្ឆេទបញ្ចប់", en: "The start date must be before the end date" }
 });
