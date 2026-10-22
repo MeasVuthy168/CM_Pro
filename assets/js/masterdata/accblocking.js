@@ -372,7 +372,13 @@ document.getElementById("btnAbPrint").addEventListener("click", () => {
 // Accounts blocked now (ListBlocked): status, branch, officer, team;
 // search, filter, sort, card or list view, a page at a time.
 const AB_BL_PAGE = 100;
-const abBl = { status: "", branch: "", team: "", items: [], total: 0, seq: 0, facets: null };
+const AB_BL_FILTERS = [
+    { key: "status", label: "masterdata.ab.colStatus" },
+    { key: "branch", label: "masterdata.ab.colBranch" },
+    { key: "inputBranch", label: "masterdata.ab.colInputBranch" },
+    { key: "team", label: "masterdata.ab.colTeam" }
+];
+const abBl = { status: "", branch: "", inputBranch: "", team: "", items: [], total: 0, seq: 0, facets: null };
 const abPref = (k, v) => {
     try {
         if (v === undefined) return localStorage.getItem(`cm_ab_bl_${k}`);
@@ -390,38 +396,42 @@ function abStatusClass(s) {
 
 function abBlockedItem(b) {
     const status = b.status ? `<span class="ab-st ab-st-${abStatusClass(b.status)}">${abEsc(b.status)}</span>` : "";
+    // Account numbers arrive masked ("1300xxxxxxxx20").
     if (abBlView === "list") {
         return `<div class="ab-bl-row">
-            <div class="ab-bl-main"><b>${abEsc(b.account || "-")}</b><small>CIF ${abEsc(b.cif || "-")} · ${abEsc(b.branch || "-")}${b.team ? ` · ${abEsc(b.team)}` : ""}</small></div>
+            <div class="ab-bl-main"><b>${abEsc(b.name || b.account || "-")}</b><small>${abEsc(b.account || "-")} · CIF ${abEsc(b.cif || "-")} · ${abEsc(b.branch || "-")}${b.team ? ` · ${abEsc(b.team)}` : ""}</small></div>
             <div class="ab-bl-side"><b>${abAmount(b.amount)} <small>${abEsc(b.currency)}</small></b>${status}</div>
         </div>`;
     }
     return `<div class="ab-blocked">
-        <div class="ab-blocked-top"><b>${abEsc(b.account || "-")}</b><span>${abAmount(b.amount)} ${abEsc(b.currency)}</span></div>
+        <div class="ab-blocked-top"><b>${abEsc(b.name || "-")}</b><span>${abAmount(b.amount)} ${abEsc(b.currency)}</span></div>
+        <div class="ab-blocked-acc">${abEsc(b.account || "-")} · CIF ${abEsc(b.cif || "-")}</div>
         <div class="ab-blocked-tags">${status}${b.team ? `<span class="ab-tag">${abEsc(b.team)}</span>` : ""}</div>
         <div class="ab-blocked-meta"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span> ${abEsc(b.branch || "-")} · <span class="ui-ico ui-ico-officer" aria-hidden="true"></span> ${abEsc(b.officer || "-")}</div>
-        <div class="ab-blocked-meta">CIF ${abEsc(b.cif || "-")}${b.description ? ` · ${abEsc(b.description)}` : ""}</div>
+        ${b.inputBranch ? `<div class="ab-blocked-meta"><span class="ui-ico ui-ico-edit" aria-hidden="true"></span> ${abEsc(t("masterdata.ab.colInputBranch"))}: ${abEsc(b.inputBranch)}</div>` : ""}
+        ${b.description ? `<div class="ab-blocked-meta">${abEsc(b.description)}</div>` : ""}
     </div>`;
 }
 
-// Filter chips (status / branch / team) with counts over the search.
+// Filters as dropdowns (status / branch / inputter branch / team), each
+// value with its count over the search.
 function abPaintBlFilters() {
-    const f = abBl.facets || { status: [], branch: [], team: [] };
-    const group = (key, label) => {
-        const opts = f[key].filter(o => o.value);
-        if (!opts.length) return "";
-        return `<div class="ab-bl-group">
-            <div class="ab-bl-group-label">${abEsc(label)}</div>
-            <div class="ab-bl-chips">${[{ value: "", n: null }, ...opts].map(o => {
-                const on = abBl[key] === o.value;
-                return `<button type="button" class="ab-chip${on ? " on" : ""}" aria-pressed="${on}" data-key="${key}" data-value="${abEsc(o.value)}">${abEsc(o.value || t("masterdata.ab.all"))}${o.n != null ? ` <small>${o.n.toLocaleString("en-US")}</small>` : ""}</button>`;
-            }).join("")}</div>
-        </div>`;
-    };
-    const n = ["status", "branch", "team"].filter(k => abBl[k]).length;
-    document.getElementById("abBlFilters").innerHTML =
-        group("status", t("masterdata.ab.colStatus")) + group("branch", t("masterdata.ab.colBranch")) + group("team", t("masterdata.ab.colTeam")) +
-        (n ? `<button type="button" class="ab-bl-clear" data-clear>${abEsc(t("masterdata.ab.clearFilters"))}</button>` : "");
+    const f = abBl.facets || {};
+    const fmt = n => n.toLocaleString("en-US");
+    const n = AB_BL_FILTERS.filter(x => abBl[x.key]).length;
+    document.getElementById("abBlFilters").innerHTML = `<div class="ab-bl-selects">${AB_BL_FILTERS.map(({ key, label }) => {
+        const opts = (f[key] || []).filter(o => o.value);
+        const total = (f[key] || []).reduce((sum, o) => sum + o.n, 0);
+        // Keep a chosen value listed even if the search no longer has it.
+        if (abBl[key] && !opts.some(o => o.value === abBl[key])) opts.unshift({ value: abBl[key], n: 0 });
+        return `<label class="ab-bl-select${abBl[key] ? " on" : ""}">
+            <span>${abEsc(t(label))}</span>
+            <select data-key="${key}" ${opts.length ? "" : "disabled"}>
+                <option value="">${abEsc(t("masterdata.ab.all"))} (${fmt(total)})</option>
+                ${opts.map(o => `<option value="${abEsc(o.value)}"${o.value === abBl[key] ? " selected" : ""}>${abEsc(o.value)} (${fmt(o.n)})</option>`).join("")}
+            </select>
+        </label>`;
+    }).join("")}</div>${n ? `<button type="button" class="ab-bl-clear" data-clear>${abEsc(t("masterdata.ab.clearFilters"))}</button>` : ""}`;
     const badge = document.getElementById("abBlFilterN");
     badge.hidden = !n;
     badge.textContent = n;
@@ -451,8 +461,8 @@ async function abLoadBlocked(append) {
     if (!append) list.innerHTML = `<div class="ab-empty">${abEsc(t("masterdata.ab.loading"))}</div>`;
     const params = new URLSearchParams({
         limit: AB_BL_PAGE, offset: append ? abBl.items.length : 0, sort: document.getElementById("abBlSort").value,
-        ...(q ? { q } : {}), ...(abBl.status ? { status: abBl.status } : {}),
-        ...(abBl.branch ? { branch: abBl.branch } : {}), ...(abBl.team ? { team: abBl.team } : {})
+        ...(q ? { q } : {}),
+        ...Object.fromEntries(AB_BL_FILTERS.filter(x => abBl[x.key]).map(x => [x.key, abBl[x.key]]))
     });
     try {
         const data = await abCall(`blocked?${params}`);
@@ -491,14 +501,14 @@ document.getElementById("btnAbBlFilter").addEventListener("click", e => {
     e.currentTarget.setAttribute("aria-expanded", panel.hidden ? "false" : "true");
 });
 document.getElementById("abBlFilters").addEventListener("click", e => {
-    if (e.target.closest("[data-clear]")) {
-        abBl.status = abBl.branch = abBl.team = "";
-        abLoadBlocked();
-        return;
-    }
-    const chip = e.target.closest(".ab-chip[data-key]");
-    if (!chip) return;
-    abBl[chip.dataset.key] = chip.dataset.value;
+    if (!e.target.closest("[data-clear]")) return;
+    AB_BL_FILTERS.forEach(x => { abBl[x.key] = ""; });
+    abLoadBlocked();
+});
+document.getElementById("abBlFilters").addEventListener("change", e => {
+    const sel = e.target.closest("select[data-key]");
+    if (!sel) return;
+    abBl[sel.dataset.key] = sel.value;
     abLoadBlocked();
 });
 document.querySelector(".ab-view").addEventListener("click", e => {
