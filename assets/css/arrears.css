@@ -4382,3 +4382,21 @@ body.arx-selecting::after{ content:""; display:block; height:150px; }
 #tbodyArrears tr.arx-sel > td:first-child::before, tr.arr-cif-ld.arx-sel > td:first-child::before{ content:"✓ "; }
 .arr-card.arx-sel::before, .arr-group-ld.arx-sel::before{ content:"✓"; position:absolute; top:10px; right:10px; z-index:2; width:26px; height:26px; border-radius:50%; display:grid; place-items:center; background:#D4AF37; color:#0E1B3C; font-weight:900; font-size:15px; }
 .arr-card.arx-sel, .arr-group-ld.arx-sel{ position:relative; }
+
+/* Tags: Reason Arrear done / waiting, CIF on today's blocking list. */
+.arx-tags{ display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 2px; }
+span.arx-tags{ display:inline-flex; flex-wrap:nowrap; gap:2px; margin-left:6px; vertical-align:middle; }
+span.arx-tags.arx-tags-corner{ position:absolute; top:50%; right:2px; transform:translateY(-50%); flex-direction:column; gap:1px; margin:0; }
+span.arx-tags.arx-tags-corner .arx-tag{ width:12px; height:12px; padding:0; justify-content:center; border-radius:50%; border-width:0; font-size:7.5px; line-height:1; }
+.arx-tag{ display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:999px; font-size:12px; font-weight:800; line-height:1.3; border:1px solid transparent; white-space:nowrap; }
+span.arx-tags .arx-tag{ padding:0 3px; font-size:10.5px; border-radius:5px; line-height:1.45; }
+.arx-tag-reason{ background:rgba(22,163,74,.13); color:#15803d; border-color:rgba(22,163,74,.35); }
+.arx-tag-pending{ background:rgba(234,179,8,.16); color:#a16207; border-color:rgba(234,179,8,.45); }
+.arx-tag-block{ background:rgba(220,38,38,.12); color:#b91c1c; border-color:rgba(220,38,38,.35); }
+.arx-tag-unblock{ background:rgba(22,163,74,.13); color:#15803d; border-color:rgba(22,163,74,.35); }
+.arx-tag-update{ background:rgba(234,179,8,.16); color:#a16207; border-color:rgba(234,179,8,.45); }
+.arx-tag-updunblock{ background:rgba(37,99,235,.12); color:#1d4ed8; border-color:rgba(37,99,235,.35); }
+[data-theme="dark"] .arx-tag-reason, [data-theme="darkgray"] .arx-tag-reason, [data-theme="dark"] .arx-tag-unblock, [data-theme="darkgray"] .arx-tag-unblock{ color:#86efac; }
+[data-theme="dark"] .arx-tag-pending, [data-theme="darkgray"] .arx-tag-pending, [data-theme="dark"] .arx-tag-update, [data-theme="darkgray"] .arx-tag-update{ color:#fde047; }
+[data-theme="dark"] .arx-tag-block, [data-theme="darkgray"] .arx-tag-block{ color:#fca5a5; }
+[data-theme="dark"] .arx-tag-updunblock, [data-theme="darkgray"] .arx-tag-updunblock{ color:#93c5fd; }
