@@ -290,13 +290,6 @@ const AB_ACC_AUTO = "__auto";
 const AB_ACC_MANUAL = "__manual";
 let abAccSeq = 0;
 
-function abAccOption(it) {
-    const tags = [];
-    if (it.payroll) tags.push("Payroll");
-    for (const b of it.blocked || []) tags.push(`${b.currency} ${abAmount(b.amount)}${b.status ? ` ${b.status}` : ""}`);
-    return `${it.account}${it.name ? ` · ${it.name}` : ""}${tags.length ? ` (${tags.join(", ")})` : ""}`;
-}
-
 function abSyncAccField() {
     const manual = document.getElementById("abEditAcc").value === AB_ACC_MANUAL;
     document.getElementById("abAccManualWrap").hidden = !manual;
@@ -313,7 +306,7 @@ async function abFillAccounts(row) {
         if (row.accountManual && row.accountNo && !accs.includes(row.accountNo)) items = [{ account: row.accountNo, name: row.accountName }, ...items];
         sel.innerHTML = [
             `<option value="${AB_ACC_AUTO}">${abEsc(t("masterdata.ab.accountAuto"))}</option>`,
-            ...items.map(i => `<option value="${abEsc(i.account)}">${abEsc(abAccOption(i))}</option>`),
+            ...items.map(i => `<option value="${abEsc(i.account)}">${abEsc(i.account)}</option>`),
             `<option value="${AB_ACC_MANUAL}">${abEsc(t("masterdata.ab.accountManual"))}</option>`
         ].join("");
         sel.value = row.accountManual && row.accountNo ? row.accountNo : AB_ACC_AUTO;
@@ -623,11 +616,15 @@ function abPaintBlList() {
         (more ? `<button type="button" class="ab-bl-more" data-more>${abEsc(t("masterdata.ab.showMore", { shown: abBl.items.length.toLocaleString("en-US"), total: abBl.total.toLocaleString("en-US") }))}</button>` : "");
 }
 
-async function abLoadBlocked(append) {
+// Opening, sorting and filtering show the % loader like other pages;
+// typing in search (quiet) keeps the inline note so the keyboard stays.
+async function abLoadBlocked(append, quiet) {
     const seq = ++abBl.seq;
     const q = document.getElementById("abBlockedQ").value.trim();
     const list = document.getElementById("abBlockedList");
+    const overlay = !append && !quiet && typeof showAppLoading === "function";
     if (!append) list.innerHTML = `<div class="ab-empty">${abEsc(t("masterdata.ab.loading"))}</div>`;
+    if (overlay) showAppLoading(t("masterdata.ab.loading"), { progress: true, key: "masterdata:accblocking:blocked" });
     const params = new URLSearchParams({
         limit: AB_BL_PAGE, offset: append ? abBl.items.length : 0, sort: document.getElementById("abBlSort").value,
         ...(q ? { q } : {}),
@@ -646,6 +643,8 @@ async function abLoadBlocked(append) {
         abPaintBlList();
     } catch (err) {
         if (seq === abBl.seq) list.innerHTML = `<div class="ab-empty">${abEsc(err.message)}</div>`;
+    } finally {
+        if (overlay && typeof hideAppLoading === "function") hideAppLoading();
     }
 }
 
@@ -658,7 +657,7 @@ document.getElementById("btnAbBlocked").addEventListener("click", () => {
 });
 document.getElementById("abBlockedQ").addEventListener("input", () => {
     clearTimeout(abBlTimer);
-    abBlTimer = setTimeout(() => abLoadBlocked(), 350);
+    abBlTimer = setTimeout(() => abLoadBlocked(false, true), 350);
 });
 document.getElementById("abBlSort").addEventListener("change", e => {
     abPref("sort", e.target.value);
