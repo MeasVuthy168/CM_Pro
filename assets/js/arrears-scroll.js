@@ -20,6 +20,14 @@
     const cifBox = document.getElementById("arrCifTableWrap");
     if (!bar || !ldBox) return;
 
+    // Marks where the results bar sits in the page (it is sticky, so its
+    // own position can't tell once it's pinned).
+    const sentinel = document.createElement("div");
+    sentinel.className = "arr-pin-sentinel";
+    bar.before(sentinel);
+    const page = bar.closest(".page-container");
+    const scroller = () => (document.body.scrollHeight > window.innerHeight + 2 ? document.body : document.scrollingElement);
+
     // ---------- sizes ----------
     // Cached here so scrolling never reads styles; the CSS variables are
     // written only when a value really changes (writing them restyles the
@@ -42,7 +50,29 @@
         setVar("--arr-bottom", `${navH}px`);
         const hbarRoom = phone.matches ? 0 : HBAR_H;
         setVar("--arr-box-h", `${Math.max(220, window.innerHeight - topH - barH - navH - hbarRoom - 30)}px`);
+        fitPageEnd();
         paintBar();
+    }
+
+    // Table view: the page may scroll only as far as pinning the bar —
+    // any further and the table's top (its header row) slid under the
+    // bar (e.g. a swipe carrying on past the table's end). The space
+    // under the table is sized so the page ends exactly there.
+    function fitPageEnd() {
+        if (!page || !activeBox() || landscape()) return;
+        requestAnimationFrame(() => {
+            const sc = scroller();
+            const max = sc.scrollHeight - window.innerHeight;
+            const pinAt = sc.scrollTop + sentinel.getBoundingClientRect().top + (parseFloat(getComputedStyle(bar).marginTop) || 0) - topH;
+            const cur = parseFloat(getComputedStyle(page).paddingBottom) || 0;
+            const want = Math.max(0, Math.round(cur + pinAt - max));
+            if (Math.abs(want - cur) <= 1) return;
+            // Page was held at its end (e.g. LD → CIF made it shorter):
+            // keep it pinned once there's room again.
+            const atEnd = sc.scrollTop >= max - 2 && pinAt > max;
+            setVar("--arr-pad-bottom", `${want}px`);
+            if (atEnd) requestAnimationFrame(() => { sc.scrollTop = pinAt; });
+        });
     }
 
     // ---------- scrollbars: horizontal (above the bottom bar) and vertical

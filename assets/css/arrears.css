@@ -4566,7 +4566,8 @@ html:has(body.arr-sbars-on), body.arr-sbars-on{ scrollbar-width:none; }
 html:has(body.arr-sbars-on)::-webkit-scrollbar, body.arr-sbars-on::-webkit-scrollbar{ display:none; width:0; height:0; }
 @media print{ .arr-sbar{ display:none !important; } }
 /* Room under the table so the page can scroll far enough to pin the bar. */
-body:not(.arr-view-card):not(.arrears-force-landscape) .page-container{ padding-bottom:calc(var(--arr-bottom, 78px) + 60px); }
+body:not(.arr-view-card):not(.arrears-force-landscape) .page-container{ padding-bottom:var(--arr-pad-bottom, calc(var(--arr-bottom, 78px) + 60px)); }
+.arr-pin-sentinel{ height:0; }
 /* Fixed column widths (arrears-scroll.js): a later row with longer text
    than the first rows had is cut with … instead of re-laying the table. */
 table.arr-locked td{ overflow:hidden; text-overflow:ellipsis; }
