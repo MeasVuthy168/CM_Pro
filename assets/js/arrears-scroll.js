@@ -200,27 +200,6 @@
     ldBox.addEventListener("scroll", onBoxScroll, { passive: true });
     cifBox?.addEventListener("scroll", onBoxScroll, { passive: true });
 
-    // ---------- frozen No + Customer columns ----------
-    // Their body cells (td.arr-fz) follow the sideways scroll through one
-    // CSS rule, set only when the horizontal position changes — far
-    // cheaper than position:sticky on every row. Header cells stay sticky.
-    // One rule per table, edited in place: only td.arr-fz cells restyle.
-    const fzStyle = document.createElement("style");
-    fzStyle.textContent = ".table-scroll td.arr-fz{transform:none}#arrCifTableWrap td.arr-fz{transform:none}";
-    document.head.appendChild(fzStyle);
-    const fzRule = new Map([[ldBox, fzStyle.sheet.cssRules[0]], [cifBox, fzStyle.sheet.cssRules[1]]]);
-    const lastLeft = new WeakMap();
-    function freeze(e) {
-        const box = e.currentTarget;
-        const sl = box.scrollLeft;
-        if (lastLeft.get(box) === sl) return;
-        lastLeft.set(box, sl);
-        const rule = fzRule.get(box);
-        // "none" at the left edge: no transform layer per cell while the
-        // table is only scrolled up / down.
-        if (rule) rule.style.transform = sl > 0 ? `translateX(${sl}px)` : "none";
-    }
-    [ldBox, cifBox].forEach(b => b && b.addEventListener("scroll", freeze, { passive: true }));
 
     // ---------- keep it current ----------
     const io = new IntersectionObserver(entries => {
@@ -252,6 +231,10 @@
     // when the content or the visible columns change.
     const lockQueue = new Set();
     let lockQueued = false;
+    // sample: () => elements added for the measurement only — rows with
+    // the longest values in the whole list (only the rows near the
+    // screen are in the page, so they alone would make columns too narrow).
+    const samplers = new Map();
     function lockTable(table) {
         if (!table || !table.tHead || !table.tHead.rows[0]) return;
         const ths = [...table.tHead.rows[0].cells];
@@ -260,15 +243,21 @@
         table.style.width = "";
         ths.forEach(th => { th.style.width = ""; });
         if (!table.offsetParent) return; // not on screen: measured when shown
-        const ws = ths.map(th => th.getBoundingClientRect().width);
+        const extra = samplers.get(table)?.() || [];
+        extra.forEach(el => el.parent.appendChild(el.node));
+        // A little slack: other rows' digits / letters can be a hair wider
+        // than the sampled longest value.
+        const ws = ths.map((th, i) => { const w = th.getBoundingClientRect().width; return w > 0 ? Math.ceil(w) + (i ? 8 : 2) : 0; });
+        extra.forEach(el => el.node.remove());
         if (!ws.some(w => w > 0)) return;
         ths.forEach((th, i) => { if (ws[i] > 0) th.style.width = `${ws[i]}px`; });
         table.style.width = `${ws.reduce((a, b) => a + b, 0)}px`;
         table.style.tableLayout = "fixed";
         table.classList.add("arr-locked");
     }
-    function lockSoon(table) {
+    function lockSoon(table, sample) {
         if (!table) return;
+        if (typeof sample === "function") samplers.set(table, sample);
         lockQueue.add(table);
         if (lockQueued) return;
         lockQueued = true;
@@ -280,7 +269,7 @@
             paintBar();
         });
     }
-    const relockAll = () => [document.getElementById("arrearsTable"), document.getElementById("arrCifTable")].forEach(lockSoon);
+    const relockAll = () => [document.getElementById("arrearsTable"), document.getElementById("arrCifTable")].forEach(t => lockSoon(t));
     window.addEventListener("cm-language-changed", relockAll);
     // Card/table, LD/CIF or landscape switched: the table shown changed.
     const viewKey = () => ["arr-view-card", "arr-group-cif", "arrears-force-landscape"].map(c => document.body.classList.contains(c) ? 1 : 0).join("");
