@@ -188,7 +188,8 @@ function nplRenderTable() {
     const head = `<thead><tr>${NPL_COLS.map(c => {
         const on = nplSort.key === c.key;
         return `<th${c.money ? ' class="num"' : ""} aria-sort="${on ? (nplSort.dir > 0 ? "ascending" : "descending") : "none"}"><button type="button" class="ci-sort" data-key="${c.key}">${CI.esc(t(c.label))}${on ? (nplSort.dir > 0 ? " ▲" : " ▼") : ""}</button></th>`;
-    }).join("")}</tr></thead>`;
+    }).join("")}${CI.canCreateAction() ? `<th>${CI.esc(t("creditreport.act.col"))}</th>` : ""}</tr></thead>`;
+    const withAction = CI.canCreateAction();
     const body = rows.slice(0, nplShown).map(a => `<tr>${NPL_COLS.map(c => {
         if (c.money) {
             const v = Number(a[c.key]) || 0;
@@ -200,8 +201,11 @@ function nplRenderTable() {
         if (c.key === "reason") return `<td class="ci-reason">${CI.esc(a.reason || "—")}</td>`;
         if (c.key === "name") return `<td>${CI.esc(a.name)}<div class="ci-sub">${CI.esc(a.cif)}</div></td>`;
         return `<td>${CI.esc(a[c.key] || "")}</td>`;
-    }).join("")}</tr>`).join("");
-    document.getElementById("nplTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="${NPL_COLS.length}" class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</td></tr>`}</tbody>`;
+    }).join("")}${withAction ? `<td>${a.category === "recovered" ? "" : `<a class="ci-link" href="${CI.esc(CI.actionLink({
+        loan: a.ld, branch: a.branch, officer: a.officerId, customer: a.name, source: "npl",
+        desc: t(a.category === "new" ? "creditreport.act.descNplNew" : "creditreport.act.descNplCont", { cls: a.curCls, bal: CI.money(a.closeBal) })
+    }))}">${CI.esc(t("creditreport.act.add"))}</a>`}</td>` : ""}</tr>`).join("");
+    document.getElementById("nplTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="${NPL_COLS.length + 1}" class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</td></tr>`}</tbody>`;
     document.getElementById("nplMore").hidden = rows.length <= nplShown;
 }
 
