@@ -457,10 +457,9 @@ function crRenderHistory() {
         return;
     }
 
-    // Always exactly one product — matched via the search box above
-    // (see crResolveSelectedProduct()) — in chronological date order, no
-    // "every product" list and no Total row (there's only ever the one
-    // product being plotted).
+    // One row per date, in order, for the products kept in the search box
+    // (crHistItemForDay(): that product's own row, or several kept — their
+    // combined row). Nothing kept: nothing to show.
     const product = crResolveSelectedProduct();
     if (!product) {
         document.getElementById("crTbody").innerHTML = "";
@@ -470,7 +469,7 @@ function crRenderHistory() {
 
     let rowsHtml = "";
     for (const day of crHistoryData.days) {
-        const item = day.items.find(it => it.product === product);
+        const item = crHistItemForDay(day);
         if (item) rowsHtml += crBuildHistoryRow(day.date, item, section, false, day.t24AsOfText);
     }
 
@@ -485,12 +484,12 @@ async function crFetchHistory() {
     const dateTo = document.getElementById("crHistToDate").value;
     if (!dateFrom || !dateTo) return;
 
-    // Ask only for the one product this view ever shows, same as the
-    // Officer/Location pages. Picking a different product afterwards
-    // re-fetches (see crHistProductSearch's handler).
-    const product = crResolveSelectedProduct();
+    // Ask only for the kept products, same as the Officer/Location pages
+    // — a different set afterwards re-fetches (see crHistProductPicker).
     const params = new URLSearchParams({ dateFrom, dateTo });
-    if (product) params.set("product", product);
+    // Several products: one param each.
+    const picks = crHistProducts();
+    picks.forEach(v => params.append("product", v));
 
     crShowLoading();
     try {
@@ -504,7 +503,7 @@ async function crFetchHistory() {
             return;
         }
         crHistoryData = data;
-        crHistoryData.product = product;
+        crHistoryData.product = picks.length ? crHistProductPicker.key() : null;
         crRenderHistory();
     } catch (e) {
         console.error(e);
@@ -600,10 +599,21 @@ function crAttachSuggestions(fieldEl, wrapEl, getRoster) {
 // against a roster product counts as a real, resolvable product, same
 // "always resolve to exactly one entity" rule Branch's/Officer's own
 // Daily History redesigns already established.
+// The kept products (chips under the search box — see crChipPicker() in
+// cr-multi.js); the first one, or null; one day's row for them: that
+// product's own, or — several kept — the server's combined row (added up,
+// PAR % recomputed).
+let crHistProductPicker = null;
+function crHistProducts() {
+    return crHistProductPicker ? crHistProductPicker.list() : [];
+}
 function crResolveSelectedProduct() {
-    const typed = document.getElementById("crHistProductSearch").value.trim();
-    if (!typed) return null;
-    return crProductRoster.find(p => p === typed) || null;
+    return crHistProducts()[0] || null;
+}
+function crHistItemForDay(day) {
+    const picks = crHistProducts();
+    if (picks.length > 1) return day.combined || null;
+    return picks.length ? day.items.find(it => it.product === picks[0]) || null : null;
 }
 
 // "View History" stays disabled until the typed text exactly matches one
@@ -1199,19 +1209,29 @@ window.addEventListener("pageshow", () => {
 document.getElementById("crModeCurrentBtn").addEventListener("click", () => crSetMode("current"));
 document.getElementById("crModeHistoryBtn").addEventListener("click", () => crSetMode("history"));
 document.getElementById("btnCrHistRun").addEventListener("click", crFetchHistory);
-document.getElementById("crHistProductSearch").addEventListener("input", (e) => {
-    document.getElementById("crHistProductClear").hidden = !e.target.value;
-    crUpdateHistRunButtonState();
-    crUpdateChartButtonVisibility();
-    if (!crHistoryData) return;
-    // Loaded history only carries the product it was fetched for, so a
-    // newly picked product needs its own fetch.
-    const product = crResolveSelectedProduct();
-    if (product && crHistoryData.product && product !== crHistoryData.product) {
-        crFetchHistory();
-    } else {
-        crRenderHistory();
+// Search keeps several products: an exact match (a picked suggestion)
+// becomes a chip and the box clears for the next one. Loaded history only
+// carries the products it was fetched for, so a different set re-fetches.
+crHistProductPicker = crChipPicker({
+    row: document.getElementById("crHistProductRow"),
+    keyOf: v => v,
+    labelOf: v => v,
+    onChange: () => {
+        crUpdateHistRunButtonState();
+        crUpdateChartButtonVisibility();
+        if (!crHistoryData) return;
+        if (crHistProducts().length && crHistProductPicker.key() !== crHistoryData.product) crFetchHistory();
+        else crRenderHistory();
     }
+});
+document.getElementById("crHistProductSearch").addEventListener("input", (e) => {
+    const typed = e.target.value.trim();
+    const match = typed && crProductRoster.find(v => v === typed);
+    if (match) {
+        e.target.value = "";
+        crHistProductPicker.add(match);
+    }
+    document.getElementById("crHistProductClear").hidden = !e.target.value;
 });
 document.getElementById("crHistProductSearch").addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
@@ -1379,8 +1399,8 @@ function crRenderChart(section) {
         headerRoot: document.getElementById("crChartTitle"),
         section,
         days: crHistoryData.days,
-        scope: product,
-        getItemForDay: day => day.items.find(it => it.product === product),
+        scope: crHistProducts().join(", "),
+        getItemForDay: crHistItemForDay,
         getByPath: crGetByPath,
         fmtNum: crFmtNum,
         fmtPct: crFmtPct
@@ -1405,7 +1425,7 @@ function crRenderChart(section) {
         const field = g.fields.find(f => f.label === crChartMetricLabel);
         if (!field) return;
         const data = days.map(day => {
-            const item = day.items.find(it => it.product === product);
+            const item = crHistItemForDay(day);
             const v = item ? crGetByPath(item, field.key) : null;
             return v == null ? null : Number(v) || 0;
         });
