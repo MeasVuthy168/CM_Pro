@@ -4524,42 +4524,46 @@ body:not(.arrears-force-landscape) .arr-cif-table-wrap{ scrollbar-width:none; -m
 body:not(.arrears-force-landscape) .table-scroll::-webkit-scrollbar,
 body:not(.arrears-force-landscape) .arr-cif-table-wrap::-webkit-scrollbar{ display:none; width:0; height:0; }
 
-.arr-hbar{
+.arr-sbar{
     position:fixed;
-    bottom:calc(var(--arr-bottom, 0px) + 4px);
     z-index:45;
-    height:18px;
-    padding:0 10px;
     box-sizing:border-box;
     display:flex;
-    align-items:center;
     pointer-events:none;
 }
-.arr-hbar[hidden]{ display:none; }
-.arr-hbar-track{
+.arr-sbar[hidden]{ display:none; }
+.arr-sbar-x{ bottom:calc(var(--arr-bottom, 0px) + 4px); height:18px; padding:0 10px; align-items:center; }
+.arr-sbar-y{ width:12px; justify-content:center; }
+.arr-sbar-track{
     position:relative;
     flex:1;
-    height:10px;
     border-radius:999px;
     background:rgba(26,46,87,.14);
     box-shadow:inset 0 0 0 1px rgba(26,46,87,.12);
     pointer-events:auto;
     touch-action:none;
 }
-.arr-hbar-thumb{
+.arr-sbar-x .arr-sbar-track{ height:10px; }
+.arr-sbar-y .arr-sbar-track{ width:10px; flex:0 0 10px; }
+.arr-sbar-thumb{
     position:absolute;
     top:0; left:0;
-    height:100%;
     border-radius:999px;
     background:linear-gradient(180deg,#FFD700,#D4AF37);
     box-shadow:0 1px 3px rgba(0,0,0,.25);
     touch-action:none;
     cursor:grab;
 }
-.arr-hbar.dragging .arr-hbar-thumb{ cursor:grabbing; filter:brightness(1.05); }
-[data-theme="dark"] .arr-hbar-track, [data-theme="darkgray"] .arr-hbar-track{ background:rgba(255,255,255,.12); box-shadow:inset 0 0 0 1px rgba(255,255,255,.1); }
-/* Taller touch target than it looks */
-.arr-hbar-thumb::before{ content:""; position:absolute; inset:-10px 0; }
-@media print{ .arr-hbar{ display:none !important; } }
+.arr-sbar-x .arr-sbar-thumb{ height:100%; }
+.arr-sbar-y .arr-sbar-thumb{ width:100%; background:linear-gradient(90deg,#FFD700,#D4AF37); }
+.arr-sbar.dragging .arr-sbar-thumb{ cursor:grabbing; filter:brightness(1.05); }
+[data-theme="dark"] .arr-sbar-track, [data-theme="darkgray"] .arr-sbar-track{ background:rgba(255,255,255,.12); box-shadow:inset 0 0 0 1px rgba(255,255,255,.1); }
+/* Bigger grab area than it looks */
+.arr-sbar-x .arr-sbar-thumb::before{ content:""; position:absolute; inset:-10px 0; }
+.arr-sbar-y .arr-sbar-thumb::before{ content:""; position:absolute; inset:0 -8px; }
+/* While the gold bars show, the page's own scrollbar is hidden (one bar per direction). */
+html:has(body.arr-sbars-on), body.arr-sbars-on{ scrollbar-width:none; }
+html:has(body.arr-sbars-on)::-webkit-scrollbar, body.arr-sbars-on::-webkit-scrollbar{ display:none; width:0; height:0; }
+@media print{ .arr-sbar{ display:none !important; } }
 /* Room under the table so the page can scroll far enough to pin the bar. */
 body:not(.arr-view-card):not(.arrears-force-landscape) .page-container{ padding-bottom:calc(var(--arr-bottom, 78px) + 60px); }
