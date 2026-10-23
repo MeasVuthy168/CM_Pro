@@ -4517,9 +4517,12 @@ body:not(.arrears-force-landscape) .arr-cif-table-wrap{
     overflow:auto;
     overscroll-behavior-x:contain;
 }
-/* The fixed bar below replaces the native horizontal scrollbar. */
-.table-scroll::-webkit-scrollbar:horizontal,
-.arr-cif-table-wrap::-webkit-scrollbar:horizontal{ height:0; }
+/* No native scrollbars on the table boxes: the page keeps the one
+   vertical bar and the fixed gold bar below is the horizontal one. */
+body:not(.arrears-force-landscape) .table-scroll,
+body:not(.arrears-force-landscape) .arr-cif-table-wrap{ scrollbar-width:none; -ms-overflow-style:none; }
+body:not(.arrears-force-landscape) .table-scroll::-webkit-scrollbar,
+body:not(.arrears-force-landscape) .arr-cif-table-wrap::-webkit-scrollbar{ display:none; width:0; height:0; }
 
 .arr-hbar{
     position:fixed;
