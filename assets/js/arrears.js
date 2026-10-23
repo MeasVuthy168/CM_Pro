@@ -2430,85 +2430,133 @@ function openPendingWorkLink() {
     showNoReasonSummary();
 }
 
-// Excel (and other spreadsheet apps) treat a cell string starting with
-// =, +, -, @, or a tab/CR as a formula when the file is opened — several
-// of the fields below are free text loan officers type into the Reason
-// Arrear panel (akSolution etc.), so without this a note that happens to
-// start with one of those characters would silently become a live
-// formula for whoever opens the exported report. Prefixing with a
-// leading apostrophe forces Excel to treat it as plain text instead;
-// non-string values (numbers) pass through untouched.
-function sanitizeForSpreadsheet(value) {
-    if (typeof value !== "string") return value;
-    return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
-}
-
-function exportArrears() {
-    if (!currentRows.length) {
-        notify("Nothing to export.", "warning");
-        return;
-    }
-    const sheetData = currentRows.map((row, i) => ({
-        No: i + 1,
-        Customer: sanitizeForSpreadsheet(row.customer),
-        "Loan Number": sanitizeForSpreadsheet(row.loanNumber),
-        Location: sanitizeForSpreadsheet(row.location),
-        DisDate: row.disDate,
-        "Prn.OS": row.prnOS,
-        "Int.OS": row.intOS,
-        "Prn.Due": row.prnDue,
-        "Int.Due": row.intDue,
-        Penalty: row.penalty,
-        Arreas: row.arreas,
-        Day: row.day,
-        Balnce: row.balance,
-        "Account Loan": sanitizeForSpreadsheet(row.accountLoan),
-        Tell: sanitizeForSpreadsheet(row.tell),
-        CIF: sanitizeForSpreadsheet(row.cif),
-        Occu: sanitizeForSpreadsheet(row.occu),
-        Ministry: sanitizeForSpreadsheet(row.ministry),
-        "Promise Status": sanitizeForSpreadsheet(row.promiseStatus),
-        CO_ID: sanitizeForSpreadsheet(row.coId),
-        "CIF_អ្នករួមខ្ចី": sanitizeForSpreadsheet(row.cifCoborrower),
-        "មុខរបរ": sanitizeForSpreadsheet(row.ajReason),
-        "មូលហេតុ/ដំណោះស្រាយ": sanitizeForSpreadsheet(row.akSolution),
-        "ថ្ងៃសន្យាសង": row.alFollowup,
-        User: sanitizeForSpreadsheet(row.user),
-        DateBackUpReasonArrear: formatRowDateTime12h(row.dateBackup)
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(sheetData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Arrears");
-    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "");
-    XLSX.writeFile(wb, `Arrears_${stamp}.xlsx`);
-}
-
-document.getElementById("btnClear").addEventListener("click", () => runWithLoading(clearFilters, "កំពុងសម្អាត..."));
-document.getElementById("btnRefresh").addEventListener("click", refreshArrears);
-document.getElementById("btnExport").addEventListener("click", exportArrears);
 // ========================================
-// EXPORT PDF
-// A real .pdf file, downloaded directly — not the print dialog.
-// Browsers have no native "generate PDF" API, so this uses the
-// standard approach: html2canvas rasterizes the styled page content,
-// jsPDF assembles the resulting images into pages and triggers the
-// download. Two things this specifically has to work around:
-//   1. html2canvas captures whatever's on SCREEN — it does not know
-//      about @media print rules at all. So the print-specific styling
-//      (white backgrounds instead of navy, columns 1-19 only, etc.)
-//      gets extracted from the stylesheet and re-injected as plain
-//      (non-media-query) rules temporarily, right before capture.
-//   2. A naive canvas slice cut at a fixed pixel height per page can
-//      slice a table row in half across a page break. This measures
-//      each <tr>'s actual position and only cuts BETWEEN rows.
-// Known trade-off (mentioned before this was built): the output is a
-// rasterized image embedded in the PDF, not real selectable/
-// searchable text — that's inherent to this approach in a browser
-// with no server-side rendering.
+// EXPORT EXCEL / PDF (arrears-export.js draws the files)
+// Both export every row of the current filter, in the table's order,
+// with the table's number formats and colours, in the Krasar font.
+//   Excel: No … ថ្ងៃសន្យាសង, plus a CIF sheet (one row per customer)
+//   PDF:   No … Ministry (CIF switch on: one row per customer)
+// Free text goes into Excel as text cells, never formulas, so a note
+// that starts with "=" can't become a live formula.
 // ========================================
 
-function buildExportPdfFilename() {
+const EXPORT_TITLE = "ឥណទានយឺតយ៉ាវប្រចាំថ្ងៃ (Daily Arrears)";
+const exportEn = () => (localStorage.getItem("cm_language") || "km") === "en";
+const exportL = (km, en) => (exportEn() ? en : km);
+
+const CLASS_STYLE = {
+    "row-class-loss": { fill: "#8B0000", color: "#FFFFFF" },
+    "row-class-doubtful": { fill: "#FF0000", color: "#FFFFFF" },
+    "row-class-substandard": { fill: "#FFA500" },
+    "row-class-specialmention": { fill: "#FFFF00" }
+};
+const PROMISE_STYLE = {
+    "cell-promise-today": { fill: "#FFFF00" },
+    "cell-promise-upcoming": { fill: "#92D050" },
+    "cell-promise-expired": { fill: "#FF0000", color: "#FFFFFF" }
+};
+const exportClassStyle = cls => CLASS_STYLE[classRowCssClass(cls)] || null;
+const exportPromiseStyle = p => PROMISE_STYLE[promiseCellCssClass(p)] || null;
+
+// "1,234.5" -> 1234.5; text that isn't a number stays text.
+function exportNum(value) {
+    const s = String(value ?? "").replace(/,/g, "").trim();
+    if (!s) return null;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : String(value);
+}
+const exportAmountText = v => { const n = exportNum(v); return typeof n === "number" ? arrFormatAmount(n) : (n ?? ""); };
+const exportIntText = v => { const n = exportNum(v); return typeof n === "number" ? String(Math.round(n)) : (n ?? ""); };
+const exportDate = v => parseFlexibleDate(v) || (v ? String(v) : null);
+
+// The LD table's columns, No … ថ្ងៃសន្យាសង, same colours as buildRowElement().
+function ldExportCols(rows) {
+    const dupCounts = new Map();
+    rows.forEach(r => dupCounts.set(r.customer, (dupCounts.get(r.customer) || 0) + 1));
+    const text = key => ({ type: "text", value: r => (r[key] ?? "") === "" ? null : String(r[key]) });
+    const amount = key => ({ type: "num", value: r => exportNum(r[key]), text: r => exportAmountText(r[key]) });
+    const followup = r => exportPromiseStyle(r.promiseStatus) || { fill: "#DCE6F1" };
+    return [
+        { label: "No", type: "int", align: "center", value: (r, i) => i + 1, style: r => exportClassStyle(r.class) },
+        { label: "Customer", ...text("customer"), maxPx: 360, style: r => (dupCounts.get(r.customer) || 0) > 1 ? { fill: "#FAC090" } : null },
+        { label: "Loan Number", ...text("loanNumber") },
+        { label: "Location", ...text("location"), maxPx: 380 },
+        { label: "DisDate", type: "date", align: "center", value: r => exportDate(r.disDate), text: r => formatRowDateDMY(r.disDate) },
+        { label: "Prn.OS", ...amount("prnOS") },
+        { label: "Int.OS", ...amount("intOS") },
+        { label: "Prn.Due", ...amount("prnDue") },
+        { label: "Int.Due", ...amount("intDue") },
+        { label: "Penalty", ...amount("penalty") },
+        { label: "Arreas", ...amount("arreas"), style: r => (parseFloat(r.arreas) || 0) > 0 ? { color: "#C0392B", bold: true } : null },
+        { label: "Day", type: "int", align: "center", value: r => exportNum(r.day), text: r => exportIntText(r.day), style: r => exportClassStyle(r.class) },
+        {
+            label: "Balnce", ...amount("balance"),
+            style: r => r.pd === "Balanced_PD" ? { fill: "#C6EFCE", color: "#FF0000", bold: true }
+                : (parseFloat(r.balance) || 0) < 0 ? { color: "#C0392B", bold: true } : null
+        },
+        { label: "Account Loan", ...text("accountLoan") },
+        { label: "Tell", type: "text", value: r => formatPhone(r.tell) || null },
+        { label: "CIF", ...text("cif") },
+        { label: "Occu", ...text("occu") },
+        { label: "Ministry", ...text("ministry"), maxPx: 380 },
+        // ---- the PDF stops here ----
+        { label: "Promise Status", ...text("promiseStatus"), style: r => exportPromiseStyle(r.promiseStatus) },
+        { label: "CO_ID", ...text("coId") },
+        { label: "CIF_អ្នករួមខ្ចី", ...text("cifCoborrower") },
+        { label: "មុខរបរ", ...text("ajReason"), style: followup, maxChars: 40 },
+        { label: "មូលហេតុ/ដំណោះស្រាយ", ...text("akSolution"), style: followup, maxChars: 60 },
+        { label: "ថ្ងៃសន្យាសង", type: "date", align: "center", value: r => exportDate(r.alFollowup), text: r => formatRowDateDMY(r.alFollowup), style: followup }
+    ];
+}
+const LD_PDF_LAST = "Ministry";
+
+// One row per customer — same grouping and order as the CIF table.
+function cifExportCols() {
+    return [
+        { label: "No", type: "int", align: "center", value: (g, i) => i + 1, style: g => exportClassStyle(g.worstClass) },
+        { label: "Customer", type: "text", value: g => g.customer || null, maxPx: 380 },
+        { label: "CIF", type: "text", value: g => g.cif || null },
+        { label: "LD", type: "text", align: "center", value: g => g.totalLd > g.rows.length ? `${g.rows.length} / ${g.totalLd}` : String(g.rows.length) },
+        { label: "OS (USD)", type: "num", value: g => g.osUsd, text: g => arrFormatAmount(g.osUsd) },
+        { label: "Day", type: "int", align: "center", value: g => g.maxDay, text: g => g.maxDay ?? "-" },
+        { label: "Class", type: "text", value: g => g.worstClass || null, style: g => exportClassStyle(g.worstClass) },
+        { label: "Promise Status", type: "text", value: g => g.promise || null, style: g => exportPromiseStyle(g.promise) },
+        { label: "Reason Arrear", type: "text", align: "center", value: g => `${g.withReason} / ${g.rows.length}` },
+        { label: "Tell", type: "text", value: g => formatPhone(g.phone) || null },
+        { label: "CO_ID", type: "text", value: g => g.coId || null }
+    ];
+}
+
+// Data date, totals and the filters in use — under the title.
+function exportInfoLines(rows) {
+    const cifs = new Set(rows.map(r => r.cif).filter(Boolean)).size;
+    const os = rows.reduce((n, r) => n + (parseFloat(r.osUsd) || 0), 0);
+    const filters = Object.entries(filterEls)
+        .map(([key, el]) => {
+            const vals = filterVals(key);
+            if (!vals.length || !el) return "";
+            const lab = document.querySelector(`label[for="${el.id}"], label[for="${el.id}Btn"]`);
+            return `${(lab?.textContent || key).trim()}: ${vals.join(", ")}`;
+        })
+        .filter(Boolean);
+    return [
+        `${exportL("ទិន្នន័យថ្ងៃ", "Data as of")} ${lastUploadAtEl.textContent || "-"} · ${exportL("ដោយ", "By")} ${lastUploadByEl.textContent || "-"}`,
+        `LD: ${rows.length.toLocaleString()} · CIF: ${cifs.toLocaleString()} · OS (USD): ${arrFormatAmount(os)}`,
+        ...(filters.length ? [`${exportL("តម្រង", "Filters")} — ${filters.join(" · ")}`] : [])
+    ];
+}
+
+function exportFooter() {
+    const d = toCambodiaTime(new Date());
+    const pad = n => String(n).padStart(2, "0");
+    let user = "";
+    try { user = JSON.parse(sessionStorage.getItem("loggedInUser") || "{}").username || ""; } catch (e) {}
+    const when = `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+    return `CM_Pro · ${exportL("នាំចេញ", "Exported")} ${when}${user ? " · " + user : ""}`;
+}
+
+// Arrear_<data date>[_<officer>]
+function buildExportFilename() {
     const pad = n => String(n).padStart(2, "0");
     let datePart = "unknown-date";
 
@@ -2525,272 +2573,68 @@ function buildExportPdfFilename() {
     return `Arrear_${datePart}${officerName ? "_" + officerName : ""}`;
 }
 
-// Pulls every rule out of any @media print block in the loaded
-// stylesheets and returns it as plain CSS text (no media-query
-// wrapper), so it can be applied as regular styles temporarily.
-function extractPrintCss() {
-    let css = "";
-    for (const sheet of document.styleSheets) {
-        let rules;
-        try {
-            rules = sheet.cssRules;
-        } catch (err) {
-            continue; // cross-origin stylesheet (e.g. a CDN font) — can't read its rules, skip
-        }
-        for (const rule of rules) {
-            if (rule.type === CSSRule.MEDIA_RULE && rule.media.mediaText.includes("print")) {
-                for (const inner of rule.cssRules) {
-                    css += inner.cssText + "\n";
-                }
-            }
-        }
-    }
-    return css;
-}
-
-// Shared by the LD and CIF exports: captures `container` with
-// html2canvas, slices it into A4-landscape pages at row boundaries
-// (`rows`), repeats `thead` at the top of every page after the first,
-// and saves it as `filename`.
-async function captureToPdf(container, thead, rows, filename) {
-        const SCALE = 2; // retina-quality capture
-        const fullCanvas = await html2canvas(container, { scale: SCALE, backgroundColor: "#ffffff" });
-
-        const theadCanvas = thead
-            ? await html2canvas(thead, { scale: SCALE, backgroundColor: "#ffffff" })
-            : null;
-
-        // A4 landscape at 96 DPI-equivalent proportions, scaled to match SCALE
-        const pageWidthMm = 297, pageHeightMm = 210, marginMm = 10;
-
-        // Page height in CAPTURE-canvas pixels, derived from the
-        // aspect ratio of A4 landscape (minus margins) relative to
-        // the full canvas's actual captured width.
-        const usablePageWidthMm = pageWidthMm - marginMm * 2;
-        const usablePageHeightMm = pageHeightMm - marginMm * 2;
-        const capturePageHeightPx = fullCanvas.width * (usablePageHeightMm / usablePageWidthMm);
-
-        // Row boundaries in CAPTURE-canvas pixel space (relative to container top)
-        const containerRect = container.getBoundingClientRect();
-        const rowBoundaries = rows.map(tr => {
-            const r = tr.getBoundingClientRect();
-            return (r.bottom - containerRect.top) * SCALE;
-        });
-
-        const theadHeightPx = theadCanvas ? theadCanvas.height : 0;
-
-        const slices = [];
-        let sliceStart = 0;
-        let firstSlice = true;
-        while (sliceStart < fullCanvas.height - 2) {
-            const availableHeight = firstSlice ? capturePageHeightPx : (capturePageHeightPx - theadHeightPx);
-            let sliceEnd = sliceStart + availableHeight;
-
-            let bestCut = sliceEnd;
-            for (const b of rowBoundaries) {
-                if (b > sliceStart && b <= sliceEnd) bestCut = b;
-            }
-            if (bestCut <= sliceStart) bestCut = Math.min(sliceEnd, fullCanvas.height);
-
-            slices.push({ start: sliceStart, end: Math.min(bestCut, fullCanvas.height), repeatHeader: !firstSlice });
-            sliceStart = bestCut;
-            firstSlice = false;
-        }
-
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-
-        slices.forEach((slice, i) => {
-            if (i > 0) pdf.addPage();
-
-            const sliceHeightPx = slice.end - slice.start;
-            const pageCanvas = document.createElement("canvas");
-            pageCanvas.width = fullCanvas.width;
-            pageCanvas.height = sliceHeightPx + (slice.repeatHeader ? theadHeightPx : 0);
-            const ctx = pageCanvas.getContext("2d");
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-
-            let yOffset = 0;
-            if (slice.repeatHeader && theadCanvas) {
-                ctx.drawImage(theadCanvas, 0, 0);
-                yOffset = theadHeightPx;
-            }
-            ctx.drawImage(
-                fullCanvas,
-                0, slice.start, fullCanvas.width, sliceHeightPx,
-                0, yOffset, fullCanvas.width, sliceHeightPx
-            );
-
-            const imgData = pageCanvas.toDataURL("image/jpeg", 0.92);
-            const imgHeightMm = usablePageWidthMm * (pageCanvas.height / pageCanvas.width);
-            pdf.addImage(imgData, "JPEG", marginMm, marginMm, usablePageWidthMm, imgHeightMm);
-        });
-
-        pdf.save(filename);
-}
-
-async function exportToPdf() {
-    if (typeof html2canvas === "undefined" || typeof window.jspdf === "undefined") {
-        notify("PDF export library failed to load — check your connection and try again.", "error");
-        return;
-    }
-
-    if (typeof showAppLoading === "function") {
-        showAppLoading("កំពុងបង្កើតឯកសារ PDF...");
-    }
-
-    const tempStyleEl = document.createElement("style");
-    tempStyleEl.id = "pdf-export-temp-style";
-    // Real print engines auto-reflow wide content to fit the physical
-    // page — html2canvas does NOT do this, it just captures whatever
-    // width the container is laid out at on screen right now (the
-    // narrow mobile viewport). Without forcing every level of
-    // container to its full natural content width here, only the
-    // columns visible without horizontal scrolling get captured —
-    // exactly the "lost columns 5-19" bug reported.
-    tempStyleEl.textContent = extractPrintCss() + `
-        html, body { overflow-x: visible !important; width: max-content !important; }
-        .page-container { width: max-content !important; min-width: 100%; overflow: visible !important; }
-        .table-card { width: max-content !important; overflow: visible !important; }
-        .table-scroll { width: max-content !important; max-width: none !important; overflow: visible !important; }
-        .table-card table { width: max-content !important; }
-    `;
-    document.head.appendChild(tempStyleEl);
-
-    // Let the browser actually apply the injected styles and reflow
-    // (sticky→static, columns 20+ hidden, colors changed, full-width
-    // table) before html2canvas reads the resulting layout.
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-
-    try {
-        const container = document.querySelector(".page-container");
-        const thead = document.querySelector(".table-card thead");
-        const rows = Array.from(document.querySelectorAll(".table-card tbody tr"));
-        await captureToPdf(container, thead, rows, `${buildExportPdfFilename()}.pdf`);
-
-    } catch (err) {
-        console.error("[export pdf] failed:", err);
-        notify("មិនអាចបង្កើតឯកសារ PDF បានទេ", "error");
-    } finally {
-        tempStyleEl.remove();
-        void document.body.offsetHeight; // force a reflow so the removed styles take effect immediately, not lazily
-        if (typeof hideAppLoading === "function") {
-            hideAppLoading();
-        }
-    }
-}
-
-
-// ========================================
-// EXPORT PDF — CIF (step 3 of the CIF grouping)
-// When the LD | CIF switch is on CIF, Export PDF exports one row per
-// customer (same grouping, order and OS_USD totals as the CIF card and
-// table views) for ALL customers in the current filter — not just the
-// rows rendered on screen. Built in an off-screen, always-light
-// element so the PDF looks the same whatever theme is on screen.
-// ========================================
-
-function buildCifPdfElement(groups) {
-    const el = document.createElement("div");
-    el.id = "arrCifPdf";
-    el.className = "arr-cif-pdf";
-
-    const ldCount = groups.reduce((n, g) => n + g.rows.length, 0);
-    const osTotal = groups.reduce((n, g) => n + g.osUsd, 0);
-    const filters = [
-        ["Branch", filterVals("branch").join(", ")],
-        ["Officer", filterVals("officerResponse").join(", ")],
-        ["Team", filterVals("teamLeader").join(", ")],
-        ["Keyword", filterEls.keyword.value.trim()]
-    ].filter(([, v]) => v).map(([k, v]) => `${k}: ${escapeHtml(v)}`).join(" · ");
-
-    const rowsHtml = groups.map((g, i) => {
-        const classCss = classRowCssClass(g.worstClass);
-        const promiseCss = promiseCellCssClass(g.promise);
-        const ld = g.totalLd > g.rows.length ? `${g.rows.length} / ${g.totalLd}` : `${g.rows.length}`;
-        return `
-            <tr>
-                <td class="${classCss}">${i + 1}</td>
-                <td>${escapeHtml(g.customer || "-")}</td>
-                <td>${escapeHtml(g.cif || "-")}</td>
-                <td class="num">${escapeHtml(ld)}</td>
-                <td class="num">${escapeHtml(arrFormatAmount(g.osUsd))}</td>
-                <td class="num">${g.maxDay !== null ? g.maxDay : "-"}</td>
-                <td class="${classCss}">${escapeHtml(g.worstClass || "")}</td>
-                <td class="${promiseCss}">${escapeHtml(g.promise || "")}</td>
-                <td class="num">${g.withReason} / ${g.rows.length}</td>
-                <td>${escapeHtml(formatPhone(g.phone))}</td>
-                <td>${escapeHtml(g.coId || "")}</td>
-            </tr>`;
-    }).join("");
-
-    el.innerHTML = `
-        <div class="arr-cif-pdf-head">
-            <div class="arr-cif-pdf-title">Daily Arrears — CIF</div>
-            <div class="arr-cif-pdf-sub">
-                ${escapeHtml(lastUploadAtEl.textContent || "")}
-                · CIF: ${groups.length.toLocaleString()} · LD: ${ldCount.toLocaleString()}
-                · OS (USD): ${escapeHtml(arrFormatAmount(osTotal))}
-            </div>
-            ${filters ? `<div class="arr-cif-pdf-sub">${filters}</div>` : ""}
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>No</th><th>Customer</th><th>CIF</th><th>LD</th><th>OS (USD)</th><th>Day</th>
-                    <th>Class</th><th>Promise Status</th><th>Reason Arrear</th><th>Tell</th><th>CO_ID</th>
-                </tr>
-            </thead>
-            <tbody>${rowsHtml}</tbody>
-        </table>`;
-    return el;
-}
-
-async function exportCifPdf() {
-    if (typeof html2canvas === "undefined" || typeof window.jspdf === "undefined") {
-        notify("PDF export library failed to load — check your connection and try again.", "error");
-        return;
-    }
-
-    const groups = buildGroups(currentRows);
-    if (!groups.length) {
+// Loading overlay with a % while the file is built.
+async function runExport(message, build) {
+    document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
+    if (!currentRows.length) {
         notify(t("arrears.cardNoData"), "warning");
         return;
     }
-
-    if (typeof showAppLoading === "function") showAppLoading("កំពុងបង្កើតឯកសារ PDF...");
-
-    const el = buildCifPdfElement(groups);
-    document.body.appendChild(el);
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-
+    if (typeof showAppLoading === "function") showAppLoading(message, { progress: true, key: "arrears:export" });
+    const wait = exportL("សូមរង់ចាំ...", "Please wait...");
     try {
-        const thead = el.querySelector("thead");
-        const rows = Array.from(el.querySelectorAll("tbody tr"));
-        await captureToPdf(el, thead, rows, `${buildExportPdfFilename().replace(/^Arrear_/, "Arrear_CIF_")}.pdf`);
+        await build(f => window.setAppLoadingProgress?.(f * 100, wait));
     } catch (err) {
-        console.error("[export cif pdf] failed:", err);
-        notify("មិនអាចបង្កើតឯកសារ PDF បានទេ", "error");
+        console.error("[export] failed:", err);
+        notify(exportL("មិនអាចបង្កើតឯកសារបានទេ — សូមពិនិត្យអ៊ីនធឺណិត ហើយសាកម្ដងទៀត", "Couldn't create the file — check your connection and try again."), "error");
     } finally {
-        el.remove();
         if (typeof hideAppLoading === "function") hideAppLoading();
     }
 }
 
-document.getElementById("btnExportPdf")?.addEventListener("click", () => {
-    // CIF switch on -> one row per customer; otherwise the per-LD table.
-    if (arrGroupMode === "cif") {
-        exportCifPdf();
-        document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
-        return;
-    }
-    ensureTableView();
-    // Virtual table: put the rows up to the furthest one shown into the page.
-    ldVirtual.renderFirst(Math.max(RENDER_BATCH_SIZE, ldVirtual.e));
-    Promise.resolve(exportToPdf()).finally(() => ldVirtual.restore());
-    document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
-});
+function exportArrears() {
+    return runExport(exportL("កំពុងបង្កើតឯកសារ Excel...", "Creating the Excel file..."), onProgress => {
+        const rows = currentRows;
+        const info = exportInfoLines(rows);
+        return ArrExport.excel({
+            filename: `${buildExportFilename()}.xlsx`,
+            onProgress,
+            sheets: [
+                { name: "LD", title: EXPORT_TITLE, info, cols: ldExportCols(rows), rows },
+                { name: "CIF", title: `${EXPORT_TITLE} — CIF`, info, cols: cifExportCols(), rows: buildGroups(rows) }
+            ]
+        });
+    });
+}
+
+function exportPdf() {
+    return runExport(exportL("កំពុងបង្កើតឯកសារ PDF...", "Creating the PDF file..."), onProgress => {
+        const rows = currentRows;
+        const common = { info: exportInfoLines(rows), footer: exportFooter(), onProgress };
+        if (arrGroupMode === "cif") {
+            return ArrExport.pdf({
+                ...common,
+                filename: `${buildExportFilename().replace(/^Arrear_/, "Arrear_CIF_")}.pdf`,
+                title: `${EXPORT_TITLE} — CIF`,
+                cols: cifExportCols(),
+                rows: buildGroups(rows)
+            });
+        }
+        const cols = ldExportCols(rows);
+        return ArrExport.pdf({
+            ...common,
+            filename: `${buildExportFilename()}.pdf`,
+            title: EXPORT_TITLE,
+            cols: cols.slice(0, cols.findIndex(c => c.label === LD_PDF_LAST) + 1),
+            rows
+        });
+    });
+}
+
+document.getElementById("btnClear").addEventListener("click", () => runWithLoading(clearFilters, "កំពុងសម្អាត..."));
+document.getElementById("btnRefresh").addEventListener("click", refreshArrears);
+document.getElementById("btnExport").addEventListener("click", exportArrears);
+document.getElementById("btnExportPdf")?.addEventListener("click", exportPdf);
 
 window.addEventListener("afterprint", () => ldVirtual.restore());
 
