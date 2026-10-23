@@ -357,7 +357,6 @@ async function gSaveSettings() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    CI.mountNav(riskView);
     CI.mountFilters({ onChange: riskLoad });
     document.getElementById("riskDims").addEventListener("click", e => {
         const b = e.target.closest("[data-dim]");

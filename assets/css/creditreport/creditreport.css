@@ -257,6 +257,7 @@
     color:var(--cr-text-muted);
 }
 .cr-hub-list + .cr-hub-section-title,
+.cr-hub-grid + .cr-hub-section-title,
 .cr-hub-admin-toolbar + .cr-hub-section-title{ margin-top:18px; }
 .cr-hub-admin-toolbar .cr-hub-section-title{ padding:0; }
 

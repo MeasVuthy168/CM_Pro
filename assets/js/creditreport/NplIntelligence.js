@@ -251,8 +251,7 @@ function nplExport() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    CI.mountNav("npl");
-    CI.mountFilters({ onChange: () => { nplShown = NPL_PAGE; nplLoad(); } });
+    CI.mountFilters({ dates: true, compare: false, onChange: () => { nplShown = NPL_PAGE; nplLoad(); } });
     document.getElementById("nplTabs").addEventListener("click", e => {
         const b = e.target.closest("[data-tab]");
         if (!b || !nplData) return;

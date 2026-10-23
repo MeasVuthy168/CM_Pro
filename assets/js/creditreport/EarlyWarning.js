@@ -223,8 +223,7 @@ async function ewsSaveRules() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    CI.mountNav("warning");
-    CI.mountFilters({ onChange: () => { ewsShown = EWS_PAGE; ewsLoad(); } });
+    CI.mountFilters({ dates: false, compare: false, onChange: () => { ewsShown = EWS_PAGE; ewsLoad(); } });
     document.getElementById("ewsLevelTabs").addEventListener("click", e => {
         const b = e.target.closest("[data-level]");
         if (!b || !ewsData) return;

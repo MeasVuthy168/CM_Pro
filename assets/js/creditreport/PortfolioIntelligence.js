@@ -259,7 +259,6 @@ function piRenderTop() {
 
 // ---------- wiring ----------
 document.addEventListener("DOMContentLoaded", () => {
-    CI.mountNav("overview");
     CI.mountFilters({ onChange: piLoad });
     document.getElementById("piCompTabs").addEventListener("click", e => {
         const b = e.target.closest("[data-tab]");

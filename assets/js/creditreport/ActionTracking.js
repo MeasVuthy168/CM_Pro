@@ -304,7 +304,6 @@ async function actDetailClick(e) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-    CI.mountNav("actions");
     document.getElementById("actTabs").addEventListener("click", e => {
         const b = e.target.closest("[data-status]");
         if (!b) return;

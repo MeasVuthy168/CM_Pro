@@ -12,15 +12,14 @@
 //   CI.query()                       URLSearchParams of the filters
 //   CI.fillOptions(options, scope, period)
 //   CI.renderAsOf(el, data)          data-as-of + comparison line
-//   CI.mountNav(current)             module switcher into #ciNav
 //   CI.get(path, params)             GET an /api/credit-intelligence/* body
 // ========================================
 
 (function () {
     const t = (k, v) => (window.CMI18n ? CMI18n.t(k, v) : k);
     const token = () => localStorage.getItem("token") || sessionStorage.getItem("token");
-    const MULTI = { ciBranch: "branch", ciOfficer: "officer", ciProduct: "product", ciDistrict: "district" };
-    const FOCUS = ["ciOfficer", "ciProduct", "ciDistrict"];
+    const MULTI = { ciBranch: "branch", ciOfficer: "officer", ciProduct: "product" };
+    const FOCUS = ["ciOfficer", "ciProduct"];
     const KEYS = ["fromDate", "toDate", "compare", "compareDate", "branch", "officer", "product", "district"];
     const STORE = "ci_filters";
 
@@ -129,7 +128,6 @@
         fillSelect("ciBranch", (opt.branches || []).map(b => ({ value: b, label: b })));
         fillSelect("ciOfficer", (opt.officers || []).map(o => ({ value: o.id, label: `${o.name || o.id} · ${o.branch}` })));
         fillSelect("ciProduct", (opt.products || []).map(p => ({ value: p, label: p })));
-        fillSelect("ciDistrict", (opt.districts || []).map(d => ({ value: d, label: d })));
         setDisabled("ciBranch", !!scope && scope.type !== "all");
         FOCUS.forEach(id => setDisabled(id, !!scope && scope.type === "officer"));
         focusLock();
@@ -140,8 +138,12 @@
         persist();
     }
 
+    // opts.dates / opts.compare (default true): show the From–To period and
+    // the comparison only on pages whose figures use them.
     function mountFilters(opts) {
         onChange = opts.onChange || onChange;
+        const showDates = opts.dates !== false;
+        const showCompare = opts.compare !== false;
         const box = document.getElementById("ciFilters");
         box.className = "pi-card pi-filters";
         box.innerHTML = `
@@ -150,9 +152,9 @@
 <button type="button" class="pi-btn-ghost" id="ciReset">${esc(t("creditreport.pi.reset"))}</button>
 </div>
 <div class="pi-filter-grid">
-<label class="pi-field"><span>${esc(t("creditreport.pi.fromDate"))}</span><input type="date" id="ciFrom"></label>
-<label class="pi-field"><span>${esc(t("creditreport.pi.toDate"))}</span><input type="date" id="ciTo"></label>
-<label class="pi-field"><span>${esc(t("creditreport.pi.compare"))}</span>
+<label class="pi-field"${showDates ? "" : " hidden"}><span>${esc(t("creditreport.pi.fromDate"))}</span><input type="date" id="ciFrom"></label>
+<label class="pi-field"${showDates ? "" : " hidden"}><span>${esc(t("creditreport.pi.toDate"))}</span><input type="date" id="ciTo"></label>
+<label class="pi-field"${showCompare ? "" : " hidden"}><span>${esc(t("creditreport.pi.compare"))}</span>
 <select id="ciCompare">
 <option value="month">${esc(t("creditreport.pi.compareMonth"))}</option>
 <option value="prev">${esc(t("creditreport.pi.comparePrev"))}</option>
@@ -163,7 +165,6 @@
 <label class="pi-field"><span>${esc(t("creditreport.pi.branch"))}</span><select id="ciBranch"><option value="">${esc(t("creditreport.pi.allBranches"))}</option></select></label>
 <label class="pi-field"><span>${esc(t("creditreport.pi.officer"))}</span><select id="ciOfficer"><option value="">${esc(t("creditreport.pi.allOfficers"))}</option></select></label>
 <label class="pi-field"><span>${esc(t("creditreport.pi.product"))}</span><select id="ciProduct"><option value="">${esc(t("creditreport.pi.allProducts"))}</option></select></label>
-<label class="pi-field"><span>${esc(t("creditreport.pi.district"))}</span><select id="ciDistrict"><option value="">${esc(t("creditreport.pi.allDistricts"))}</option></select></label>
 </div>
 <p class="pi-note">${esc(t("creditreport.pi.focusNote"))}</p>`;
 
@@ -176,7 +177,7 @@
 
         if (window.MultiSelect) Object.keys(MULTI).forEach(id => MultiSelect.enhance(document.getElementById(id), { copyClass: true }));
         const cmp = document.getElementById("ciCompare");
-        const syncCmp = () => { document.getElementById("ciCompareDateWrap").hidden = cmp.value !== "date"; };
+        const syncCmp = () => { document.getElementById("ciCompareDateWrap").hidden = !showCompare || cmp.value !== "date"; };
         syncCmp();
         cmp.addEventListener("change", () => { syncCmp(); if (cmp.value !== "date" || document.getElementById("ciCompareDate").value) changed(); });
         ["ciFrom", "ciTo", "ciCompareDate"].forEach(id => document.getElementById(id).addEventListener("change", changed));
