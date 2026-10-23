@@ -963,8 +963,8 @@ function buildRowElement(row, index) {
     const followupCss = row.__pendingSubmit ? `${followupCssBase} cell-pending-local` : followupCssBase;
 
     tr.innerHTML = `
-        <td class="arr-fz">${index + 1}</td>
-        <td class="arr-fz ${dupClass}">${escapeHtml(row.customer)}</td>
+        <td>${index + 1}</td>
+        <td class="${dupClass}">${escapeHtml(row.customer)}</td>
         <td>${escapeHtml(row.loanNumber)}</td>
         <td>${escapeHtml(row.location)}</td>
         <td>${escapeHtml(formatRowDateDMY(row.disDate))}</td>
@@ -992,6 +992,41 @@ function buildRowElement(row, index) {
     `;
     return tr;
 }
+
+// ========================================
+// VIRTUAL LD TABLE (arrears-virtual.js)
+// Only the rows near the screen are in the page (thousands of rows made
+// scrolling slow on phones); spacer rows stand in for the rest. Rows
+// are all the same height, measured once per render. Zebra stripes come
+// from the row's index (tr.arr-zebra), not its place in the page.
+// ========================================
+let ldRowH = 33;
+let ldMeasured = false;
+const ldVirtual = new ArrVirtualList({
+    box: document.querySelector(".table-scroll"),
+    container: tbodyArrears,
+    makeSpacer: () => {
+        const tr = document.createElement("tr");
+        tr.className = "arr-vspace";
+        tr.setAttribute("aria-hidden", "true");
+        tr.innerHTML = `<td colspan="26"></td>`;
+        return tr;
+    },
+    build: i => {
+        const tr = buildRowElement(currentRows[i], i);
+        if (i % 2 === 1) tr.classList.add("arr-zebra");
+        return tr;
+    },
+    heightOf: () => ldRowH,
+    measure: items => {
+        if (ldMeasured || !items.length) return false;
+        ldMeasured = true;
+        const h = items.reduce((sum, el) => sum + el.getBoundingClientRect().height, 0) / items.length;
+        if (!(h > 0) || Math.abs(h - ldRowH) < 0.5) return false;
+        ldRowH = h;
+        return true;
+    }
+});
 
 // Rows added per scroll-load, a few per animation frame: one frame that
 // builds and lays out 100+ rows of Khmer text is long enough to make
@@ -1063,6 +1098,7 @@ document.querySelector(".table-scroll")?.addEventListener("scroll", () => {
 
 function renderTableView(rows) {
     arrTableStale = false;
+    ldVirtual.stop();
     tbodyArrears.innerHTML = "";
     renderedCount = 0;
 
@@ -1087,7 +1123,11 @@ function renderTableView(rows) {
         customerCountsForRender.set(row.customer, (customerCountsForRender.get(row.customer) || 0) + 1);
     });
 
-    appendMoreRows(true); // renders the first batch only
+    // Every row is "shown" (virtual): only those near the screen are in the page.
+    renderedCount = rows.length;
+    ldMeasured = false;
+    ldVirtual.reset(rows.length);
+    updateRenderedNote();
 
     // This paint-forcing fix is only needed ONCE, on the very first
     // render after data loads — that's when the "far-right columns
@@ -1114,8 +1154,27 @@ function renderTableView(rows) {
         __hasRenderedOnce = true;
     }
     // Fix the column widths now, so rows added on scroll don't make the
-    // browser lay the whole table out again (arrears-scroll.js).
-    window.ArrScroll?.lockSoon(document.getElementById("arrearsTable"));
+    // browser lay the whole table out again (arrears-scroll.js) — measured
+    // with the rows holding each field's longest value.
+    window.ArrScroll?.lockSoon(document.getElementById("arrearsTable"), () =>
+        longestIndexes(currentRows).map(i => ({ parent: tbodyArrears, node: buildRowElement(currentRows[i], i) })));
+}
+
+// For each field, the index of the item with the longest value (+ the last
+// item, whose number is the widest).
+function longestIndexes(items, valueOf = x => x) {
+    const best = new Map();
+    items.forEach((item, i) => {
+        const obj = valueOf(item);
+        for (const k in obj) {
+            const v = obj[k];
+            const len = typeof v === "string" ? v.length : typeof v === "number" ? String(v).length : 0;
+            if (len && (!best.has(k) || len > best.get(k)[1])) best.set(k, [i, len]);
+        }
+    });
+    const out = new Set([...best.values()].map(([i]) => i));
+    if (items.length) out.add(items.length - 1);
+    return [...out];
 }
 
 // ========================================
@@ -1452,6 +1511,8 @@ function toggleGroup(groupEl) {
     groupEl.replaceWith(groupEl.tagName === "TBODY"
         ? buildGroupTbody(g, Number(groupEl.dataset.no))
         : buildGroupElement(g));
+    // CIF table: the spacers below follow the new height.
+    if (groupEl.tagName === "TBODY") cifVirtual.relayout();
 }
 
 // After a Reason Arrear save in CIF mode: recompute and redraw just the
@@ -1647,8 +1708,8 @@ function buildGroupTbody(g, no) {
 
     let html = `
         <tr class="arr-cif-row ${g.pending ? "arr-card-pending" : ""}" aria-expanded="${open}">
-            <td class="arr-fz arr-cif-no ${classCss}">${no + 1}</td>
-            <td class="arr-fz arr-cif-name"><span class="arr-group-chevron" aria-hidden="true">›</span> ${escapeHtml(g.customer || "-")}</td>
+            <td class="arr-cif-no ${classCss}">${no + 1}</td>
+            <td class="arr-cif-name"><span class="arr-group-chevron" aria-hidden="true">›</span> ${escapeHtml(g.customer || "-")}</td>
             <td><span class="arr-ld-count">${escapeHtml(ldText)}</span></td>
             <td class="arr-num"><strong>${escapeHtml(arrFormatAmount(g.osUsd))}</strong></td>
             <td>${shared("location")}</td>
@@ -1685,8 +1746,8 @@ function buildGroupTbody(g, no) {
             const balPdClass = row.pd === "Balanced_PD" ? "cell-balance-pd" : "";
             return `
             <tr class="arr-cif-ld" data-index="${idx}">
-                <td class="arr-fz arr-cif-no ${rowClass}"></td>
-                <td class="arr-fz arr-cif-ld-mark" aria-hidden="true">↳</td>
+                <td class="arr-cif-no ${rowClass}"></td>
+                <td class="arr-cif-ld-mark" aria-hidden="true">↳</td>
                 <td class="arr-cif-ld-no">${escapeHtml(row.loanNumber || "-")}${row.ccy ? ` <small>${escapeHtml(row.ccy)}</small>` : ""}</td>
                 <td class="arr-num">${escapeHtml(arrFormatAmount(row.osUsd))}</td>
                 <td>${escapeHtml(row.location)}</td>
@@ -1720,7 +1781,43 @@ function buildGroupTbody(g, no) {
     return tbody;
 }
 
+// Virtual CIF table: one <tbody> per customer, only those near the
+// screen in the page. A closed customer is one row tall; an open one
+// adds a row per LD — both heights measured from rendered groups.
+let cifRowH = 38;
+let cifLdH = 33;
+let cifMeasured = false;
+const cifVirtual = new ArrVirtualList({
+    box: document.getElementById("arrCifTableWrap"),
+    container: arrCifTable,
+    keep: [arrCifTable.tHead],
+    makeSpacer: () => {
+        const tb = document.createElement("tbody");
+        tb.className = "arr-vspace";
+        tb.setAttribute("aria-hidden", "true");
+        tb.innerHTML = `<tr><td colspan="${CIF_COLS}"></td></tr>`;
+        return tb;
+    },
+    build: i => buildGroupTbody(arrGroups[i], i),
+    heightOf: i => {
+        const g = arrGroups[i];
+        return cifRowH + (g && arrExpandedGroups.has(g.key) ? g.rows.length * cifLdH : 0);
+    },
+    measure: items => {
+        if (cifMeasured || !items.length) return false;
+        cifMeasured = true;
+        const head = items.map(tb => tb.querySelector("tr.arr-cif-row")).filter(Boolean);
+        const ld = items.flatMap(tb => [...tb.querySelectorAll("tr.arr-cif-ld")]);
+        const avg = els => els.reduce((sum, el) => sum + el.getBoundingClientRect().height, 0) / els.length;
+        let changed = false;
+        if (head.length) { const h = avg(head); if (h > 0 && Math.abs(h - cifRowH) >= 0.5) { cifRowH = h; changed = true; } }
+        if (ld.length) { const h = avg(ld); if (h > 0 && Math.abs(h - cifLdH) >= 0.5) { cifLdH = h; changed = true; } }
+        return changed;
+    }
+});
+
 function renderCifTable(rows) {
+    cifVirtual.stop();
     arrCifTable.querySelectorAll("tbody").forEach(tb => tb.remove());
     renderedGroupCount = 0;
     arrGroups = applyCifSort(buildGroups(rows));
@@ -1734,8 +1831,15 @@ function renderCifTable(rows) {
         if (note) note.textContent = "";
         return;
     }
-    appendMoreGroups();
-    window.ArrScroll?.lockSoon(arrCifTable);
+    // Every customer is "shown" (virtual): only those near the screen are in the page.
+    renderedGroupCount = arrGroups.length;
+    cifMeasured = false;
+    cifVirtual.reset(arrGroups.length);
+    const note = document.getElementById("renderedCountNote");
+    if (note) note.textContent = `បង្ហាញទាំងអស់ ${arrGroups.length.toLocaleString()} CIF (${currentRows.length.toLocaleString()} LD)`;
+    window.ArrScroll?.lockSoon(arrCifTable, () =>
+        longestIndexes(arrGroups, g => ({ customer: g.customer, cif: g.cif, phone: g.phone, coId: g.coId, promise: g.promise, worstClass: g.worstClass }))
+            .map(i => ({ parent: arrCifTable, node: buildGroupTbody(arrGroups[i], i) })));
 }
 
 arrCifTable?.addEventListener("click", (e) => {
@@ -2682,12 +2786,17 @@ document.getElementById("btnExportPdf")?.addEventListener("click", () => {
         return;
     }
     ensureTableView();
-    exportToPdf();
+    // Virtual table: put the rows up to the furthest one shown into the page.
+    ldVirtual.renderFirst(Math.max(RENDER_BATCH_SIZE, ldVirtual.e));
+    Promise.resolve(exportToPdf()).finally(() => ldVirtual.restore());
     document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
 });
 
+window.addEventListener("afterprint", () => ldVirtual.restore());
+
 document.getElementById("btnPrint").addEventListener("click", () => {
     ensureTableView();
+    ldVirtual.renderFirst(Math.max(RENDER_BATCH_SIZE, ldVirtual.e));
     window.print();
 });
 
@@ -3254,6 +3363,12 @@ function revealArrearsRow(concate) {
         return true;
     };
     let el = find();
+    // Tables are virtual: bring the row's part of the table into the page.
+    if (!el && arrViewMode !== "card") {
+        if (arrGroupMode === "cif") cifVirtual.reveal(arrGroups.findIndex(g => g.key === groupKeyOf(row)));
+        else ldVirtual.reveal(idx);
+        el = find();
+    }
     while (!el && more()) el = find();
     if (!el) return;
     el.classList.add(el.tagName === "TR" ? "row-selected" : "is-selected");
