@@ -193,7 +193,7 @@ function saButtonLoading(btn, on) {
     wrap.querySelectorAll(".sa-step").forEach((b) => {
       b.addEventListener("click", () => {
         const cur = Number(input.value) || 0;
-        const next = Math.max(min, Math.round((cur + step * Number(b.dataset.dir)) * 10) / 10);
+        const next = Math.max(min, Math.round((cur + step * Number(b.dataset.dir)) * 100) / 100);
         input.value = next;
         refreshButtons();
       });
@@ -427,6 +427,79 @@ function saButtonLoading(btn, on) {
   });
 
   loadCompare();
+
+  // ---------- Management Alerts (Portfolio Intelligence) ----------
+  // Ratios are stored as fractions (0.001 = 0.10 point) and edited in
+  // percentage points.
+  const MA = {
+    nplRatioRisePts: { el: document.getElementById("maNplRise"), pts: true },
+    parRisePts: { el: document.getElementById("maParRise"), pts: true },
+    branchNplMultiple: { el: document.getElementById("maBranchMultiple"), pts: false },
+    branchNplMinGapPts: { el: document.getElementById("maBranchGap"), pts: true },
+    staleBusinessDays: { el: document.getElementById("maStale"), pts: false }
+  };
+  const maSave = document.getElementById("maBtnSave");
+  let maSaved = null;
+  let maDefaults = null;
+
+  const round4 = (n) => Math.round(n * 10000) / 10000;
+  function fillMa(rules) {
+    for (const [k, f] of Object.entries(MA)) f.el.value = f.pts ? round4(rules[k] * 100) : rules[k];
+    refreshMa();
+  }
+  function readMa() {
+    const out = {};
+    for (const [k, f] of Object.entries(MA)) {
+      const v = Number(f.el.value);
+      out[k] = f.el.value === "" || !Number.isFinite(v) ? null : (f.pts ? round4(v / 100) : v);
+    }
+    return out;
+  }
+  function refreshMa() {
+    const cur = readMa();
+    const valid = Object.values(cur).every((v) => v !== null && v >= 0);
+    const dirty = !maSaved || Object.keys(MA).some((k) => cur[k] !== maSaved[k]);
+    maSave.disabled = !valid || !dirty;
+  }
+
+  async function loadMa() {
+    try {
+      const data = await api("/api/admin/credit-intelligence/alert-rules");
+      maSaved = data.rules;
+      maDefaults = data.defaults;
+      fillMa(maSaved);
+    } catch (e) {
+      if (e.message === "unauthorized") return;
+      AdminUI.toast(t("admin.smartAlerts.loadFailed"), "error");
+    }
+  }
+
+  Object.values(MA).forEach((f) => f.el.addEventListener("input", refreshMa));
+  // the shared − / + steppers set the value, then the click bubbles here
+  document.getElementById("maCard").addEventListener("click", (e) => {
+    if (e.target.closest(".sa-step")) refreshMa();
+  });
+  document.getElementById("maBtnDefaults").addEventListener("click", () => {
+    if (maDefaults) fillMa(maDefaults);
+  });
+  maSave.addEventListener("click", async () => {
+    maSave.disabled = true;
+    try {
+      const data = await api("/api/admin/credit-intelligence/alert-rules", {
+        method: "PUT",
+        body: JSON.stringify({ rules: readMa() })
+      });
+      maSaved = data.rules;
+      fillMa(maSaved);
+      AdminUI.toast(t("admin.mgmtAlerts.saved"), "success");
+    } catch (e) {
+      if (e.message === "unauthorized") return;
+      AdminUI.toast(e.serverMessage || t("admin.smartAlerts.saveFailed"), "error");
+      refreshMa();
+    }
+  });
+
+  loadMa();
 })();
 
 /* ---------- Officer Reminders (09:00 / 15:00) ----------
