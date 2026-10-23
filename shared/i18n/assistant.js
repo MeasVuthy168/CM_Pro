@@ -76,7 +76,7 @@ CMI18n.register({
   "assistant.metric.os": { km: "OS (សមតុល្យឥណទាន)", en: "Loan Outstanding" },
   "assistant.metric.par": { km: "PAR (T24)", en: "PAR (T24)" },
   "assistant.metric.overdue": { km: "NBC Overdue (ឥណទានហួសកាលកំណត់)", en: "NBC Overdue" },
-  "assistant.metric.wo": { km: "WO (ឥណទានលុបចេញបញ្ជី)", en: "Write-off (WO)" },
+  "assistant.metric.wo": { km: "WO (ឥណទានលុបចេញពីបញ្ជី)", en: "Write-off (WO)" },
   "assistant.metric.npl": { km: "NPL", en: "NPL" },
   "assistant.metric.disb": { km: "ការបញ្ចេញឥណទាន", en: "Disbursement" },
   "assistant.accounts": { km: "{n} គណនី", en: "{n} accounts" },

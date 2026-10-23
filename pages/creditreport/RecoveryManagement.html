@@ -69,6 +69,21 @@ No Internet Connection
 
 <section id="ciFilters" aria-label="Filters"></section>
 
+<section class="pi-card" id="recWo" hidden aria-labelledby="recWoTitle">
+<div class="pi-card-head">
+<h2 class="pi-card-title" id="recWoTitle" data-i18n="creditreport.rec.woTitle">WO Collection (written-off loans)</h2>
+<div class="pi-tabs ci-tabs-wide" role="tablist" id="recWoDims">
+<button type="button" role="tab" data-dim="branch" data-i18n="creditreport.pi.byBranch">Branch</button>
+<button type="button" role="tab" data-dim="officer" data-i18n="creditreport.risk.byOfficer">Officer</button>
+<button type="button" role="tab" data-dim="product" data-i18n="creditreport.pi.byProduct">Product</button>
+<button type="button" role="tab" data-dim="location" data-i18n="creditreport.pi.byDistrict">District</button>
+</div>
+</div>
+<p class="pi-note" id="recWoPeriod"></p>
+<div class="pi-kpis" id="recWoKpis"></div>
+<div class="pi-table-wrap ci-table-scroll"><table class="pi-table ci-table" id="recWoTable"></table></div>
+</section>
+
 <section class="pi-card" id="recUnavailable" hidden>
 <h2 class="pi-card-title" data-i18n="creditreport.npl.unavailableTitle">NPL movement not available yet</h2>
 <p class="pi-note" id="recUnavailableText"></p>
@@ -118,6 +133,7 @@ No Internet Connection
 <li data-i18n="creditreport.rec.defRecovered">Recovered = opening balance of NPL loans that left NPL by being upgraded, becoming performing or closing. Write-offs are counted separately, not as recovery.</li>
 <li data-i18n="creditreport.rec.defRate">Recovery rate = Recovered ÷ Opening NPL. Net NPL movement = Closing − Opening NPL.</li>
 <li data-i18n="creditreport.rec.defCash">Cash collected exists only for written-off loans (WO collections in the period). Cash paid on NPL loans has no data source, so it is shown as not available.</li>
+<li data-i18n="creditreport.rec.defWo">WO collected = principal + interest from WO_Col_GB in the period (the same figure as the Daily Report's Write Off section). It needs no NPL history.</li>
 <li data-i18n="creditreport.rec.defTarget">Target achievement = Recovered ÷ the monthly targets an admin set for the branches and months in the period.</li>
 </ul>
 </details>
