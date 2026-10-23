@@ -2434,9 +2434,8 @@ function openPendingWorkLink() {
 // EXPORT EXCEL / PDF (arrears-export.js draws the files)
 // Both export every row of the current filter, in the table's order,
 // with the table's number formats and colours, in the Krasar font.
-//   Excel: an LD sheet (No … ថ្ងៃសន្យាសង) and a CIF sheet (No … Ministry,
-//          a row per customer with its LDs under it); the view on
-//          screen comes first
+//   Excel: an LD sheet and a CIF sheet (a row per customer), both
+//          No … ថ្ងៃសន្យាសង; the view on screen comes first
 //   PDF:   No … Ministry — the LD table, or the CIF one when CIF is on
 // Free text goes into Excel as text cells, never formulas, so a note
 // that starts with "=" can't become a live formula.
@@ -2512,85 +2511,62 @@ function ldExportCols(rows) {
 }
 const LD_PDF_LAST = "Ministry";
 
-// The CIF table's columns, No … Ministry: a row per customer (amounts
-// added up per currency, like the table) and, under a customer with
-// more than one LD, a grey row per LD. A customer with one LD shows its
-// Loan Number on its own row instead of "1 LD".
-// Items: { g, no } for a customer, { g, row } for one of its LDs.
-const CIF_LD_FILL = "#EEF2F7";
-function cifExportItems(groups) {
-    const items = [];
-    groups.forEach((g, no) => {
-        items.push({ g, no });
-        if (g.rows.length > 1) g.rows.forEach(row => items.push({ g, row }));
-    });
-    return items;
-}
-
+// The CIF table's columns, No … ថ្ងៃសន្យាសង: one row per customer, as on
+// screen with no customer opened — Loan Number is the LD count, amounts
+// are added up per currency (a line per currency when mixed), the
+// other columns show the value every LD shares. The PDF stops at Ministry.
 function cifExportCols() {
-    const isLd = it => !!it.row;
-    const base = it => ({ fill: isLd(it) ? CIF_LD_FILL : "#FFFFFF" });
-    const style = fn => it => ({ ...base(it), ...((fn && fn(it)) || {}) });
-    const val = (it, key) => (isLd(it) ? it.row[key] : cifSharedValue(it.g.rows, key));
-    const shared = key => ({ type: "text", value: it => val(it, key) || null, style: style() });
+    const shared = key => ({ type: "text", value: g => cifSharedValue(g.rows, key) || null });
     // One currency: a number. Mixed: a line per currency, like the table.
     const groupAmount = (g, key) => {
         const entries = Object.entries(cifAmountTotals(g.rows, key));
         if (entries.length === 1) return entries[0][1];
         return entries.map(([ccy, v]) => `${arrFormatAmount(v)}${ccy ? " " + ccy : ""}`).join("\n");
     };
-    const amount = key => ({
-        type: "num",
-        value: it => (isLd(it) ? exportNum(it.row[key]) : groupAmount(it.g, key)),
-        text: it => (isLd(it) ? exportAmountText(it.row[key]) : exportAmountText(groupAmount(it.g, key))),
-        style: style()
-    });
-    const loanText = row => `${row.loanNumber || "-"}${row.ccy ? " " + row.ccy : ""}`;
-    const classOf = it => (isLd(it) ? it.row.class : it.g.worstClass);
-    const positive = (it, key) => (isLd(it) ? cifNumber(it.row[key]) > 0 : Object.values(cifAmountTotals(it.g.rows, key)).some(v => v > 0));
+    const amount = key => ({ type: "num", value: g => groupAmount(g, key), text: g => exportAmountText(groupAmount(g, key)) });
+    const anyAmount = (g, key, test) => Object.values(cifAmountTotals(g.rows, key)).some(test);
+    // Reason cells: the LDs' shared reason, or "x / y LD" with a reason.
+    const sameReason = g => !!(cifSharedValue(g.rows, "ajReason") || cifSharedValue(g.rows, "akSolution") || cifSharedValue(g.rows, "alFollowup"));
+    const followup = g => (sameReason(g) ? exportPromiseStyle(g.promise) || { fill: "#DCE6F1" } : null);
     return [
-        { label: "No", type: "int", align: "center", value: it => (isLd(it) ? null : it.no + 1), style: style(it => exportClassStyle(classOf(it))) },
-        { label: "Customer", type: "text", maxPx: 360, value: it => (isLd(it) ? null : it.g.customer || "-"), style: style(it => (isLd(it) ? null : { bold: true })) },
-        {
-            label: "Loan Number", type: "text",
-            value: it => (isLd(it) ? `• ${loanText(it.row)}`
-                : it.g.rows.length === 1 ? loanText(it.g.rows[0])
-                : it.g.totalLd > it.g.rows.length ? `${it.g.rows.length} / ${it.g.totalLd} LD` : `${it.g.rows.length} LD`),
-            style: style()
-        },
-        {
-            label: "OS (USD)", type: "num",
-            value: it => (isLd(it) ? exportNum(it.row.osUsd) : it.g.osUsd),
-            text: it => exportAmountText(isLd(it) ? it.row.osUsd : it.g.osUsd),
-            style: style(it => (isLd(it) ? null : { bold: true }))
-        },
+        { label: "No", type: "int", align: "center", value: (g, i) => i + 1, style: g => exportClassStyle(g.worstClass) },
+        { label: "Customer", type: "text", maxPx: 360, value: g => g.customer || "-" },
+        { label: "Loan Number", type: "text", align: "center", value: g => (g.totalLd > g.rows.length ? `${g.rows.length} / ${g.totalLd} LD` : `${g.rows.length} LD`) },
+        { label: "OS (USD)", type: "num", value: g => g.osUsd, text: g => arrFormatAmount(g.osUsd), style: () => ({ bold: true }) },
         { label: "Location", ...shared("location"), maxPx: 380 },
-        { label: "DisDate", type: "date", align: "center", value: it => exportDate(val(it, "disDate")), text: it => formatRowDateDMY(val(it, "disDate")), style: style() },
+        { label: "DisDate", type: "date", align: "center", value: g => exportDate(cifSharedValue(g.rows, "disDate")), text: g => formatRowDateDMY(cifSharedValue(g.rows, "disDate")) },
         { label: "Prn.OS", ...amount("prnOS") },
         { label: "Int.OS", ...amount("intOS") },
         { label: "Prn.Due", ...amount("prnDue") },
         { label: "Int.Due", ...amount("intDue") },
         { label: "Penalty", ...amount("penalty") },
-        { label: "Arreas", ...amount("arreas"), style: style(it => (positive(it, "arreas") ? { color: "#C0392B", bold: true } : null)) },
-        {
-            label: "Day", type: "int", align: "center",
-            value: it => (isLd(it) ? exportNum(it.row.day) : it.g.maxDay),
-            text: it => (isLd(it) ? exportIntText(it.row.day) : it.g.maxDay ?? "-"),
-            style: style(it => exportClassStyle(classOf(it)))
-        },
-        {
-            label: "Balnce", ...amount("balance"),
-            style: style(it => (isLd(it) && it.row.pd === "Balanced_PD" ? { fill: "#C6EFCE", color: "#FF0000", bold: true }
-                : (isLd(it) ? cifNumber(it.row.balance) < 0 : Object.values(cifAmountTotals(it.g.rows, "balance")).some(v => v < 0))
-                    ? { color: "#C0392B", bold: true } : null))
-        },
+        { label: "Arreas", ...amount("arreas"), style: g => (anyAmount(g, "arreas", v => v > 0) ? { color: "#C0392B", bold: true } : null) },
+        { label: "Day", type: "int", align: "center", value: g => g.maxDay, text: g => g.maxDay ?? "-", style: g => exportClassStyle(g.worstClass) },
+        { label: "Balnce", ...amount("balance"), style: g => (anyAmount(g, "balance", v => v < 0) ? { color: "#C0392B", bold: true } : null) },
         { label: "Account Loan", ...shared("accountLoan") },
-        { label: "Tell", type: "text", value: it => formatPhone(isLd(it) ? it.row.tell : it.g.phone) || null, style: style() },
-        { label: "CIF", type: "text", value: it => (isLd(it) ? it.row.cif : it.g.cif) || null, style: style() },
+        { label: "Tell", type: "text", value: g => formatPhone(g.phone) || null },
+        { label: "CIF", type: "text", value: g => g.cif || null },
         { label: "Occu", ...shared("occu") },
-        { label: "Ministry", ...shared("ministry"), maxPx: 380 }
+        { label: "Ministry", ...shared("ministry"), maxPx: 380 },
+        // ---- the PDF stops here ----
+        { label: "Promise Status", type: "text", value: g => g.promise || null, style: g => exportPromiseStyle(g.promise) },
+        { label: "CO_ID", type: "text", value: g => g.coId || null },
+        { label: "CIF_អ្នករួមខ្ចី", ...shared("cifCoborrower") },
+        {
+            label: "មុខរបរ", type: "text", maxChars: 40, style: followup,
+            value: g => (sameReason(g) ? cifSharedValue(g.rows, "ajReason") || null : `${g.withReason} / ${g.rows.length} LD`)
+        },
+        { label: "មូលហេតុ/ដំណោះស្រាយ", type: "text", maxChars: 60, style: followup, value: g => (sameReason(g) ? cifSharedValue(g.rows, "akSolution") || null : null) },
+        {
+            label: "ថ្ងៃសន្យាសង", type: "date", align: "center", style: followup,
+            value: g => (sameReason(g) ? exportDate(cifSharedValue(g.rows, "alFollowup")) : null),
+            text: g => (sameReason(g) ? formatRowDateDMY(cifSharedValue(g.rows, "alFollowup")) : "")
+        }
     ];
 }
+
+// The columns up to and including Ministry (what the PDFs show).
+const upToMinistry = cols => cols.slice(0, cols.findIndex(c => c.label === LD_PDF_LAST) + 1);
 
 // Data date, totals and the filters in use — under the title.
 function exportInfoLines(rows) {
@@ -2663,7 +2639,7 @@ function exportArrears() {
         const info = exportInfoLines(rows);
         const cifView = arrGroupMode === "cif";
         const ld = { name: "LD", title: EXPORT_TITLE, info, cols: ldExportCols(rows), rows };
-        const cif = { name: "CIF", title: `${EXPORT_TITLE} — CIF`, info, cols: cifExportCols(), rows: cifExportItems(applyCifSort(buildGroups(rows))) };
+        const cif = { name: "CIF", title: `${EXPORT_TITLE} — CIF`, info, cols: cifExportCols(), rows: applyCifSort(buildGroups(rows)) };
         // The sheet of the view on screen comes first.
         return ArrExport.excel({
             filename: `${cifView ? buildExportFilename().replace(/^Arrear_/, "Arrear_CIF_") : buildExportFilename()}.xlsx`,
@@ -2682,16 +2658,15 @@ function exportPdf() {
                 ...common,
                 filename: `${buildExportFilename().replace(/^Arrear_/, "Arrear_CIF_")}.pdf`,
                 title: `${EXPORT_TITLE} — CIF`,
-                cols: cifExportCols(),
-                rows: cifExportItems(applyCifSort(buildGroups(rows)))
+                cols: upToMinistry(cifExportCols()),
+                rows: applyCifSort(buildGroups(rows))
             });
         }
-        const cols = ldExportCols(rows);
         return ArrExport.pdf({
             ...common,
             filename: `${buildExportFilename()}.pdf`,
             title: EXPORT_TITLE,
-            cols: cols.slice(0, cols.findIndex(c => c.label === LD_PDF_LAST) + 1),
+            cols: upToMinistry(ldExportCols(rows)),
             rows
         });
     });
