@@ -10,12 +10,14 @@
 const t = CI.t;
 let recData = null;
 let recDim = new URLSearchParams(location.search).get("dim") || "officer";
+let recWoDim = new URLSearchParams(location.search).get("woDim") || "branch";
 
 async function recLoad() {
     const p = new URLSearchParams(location.search);
     p.set("dim", recDim);
+    p.set("woDim", recWoDim);
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
-    const data = await CI.get("recovery", { dim: recDim });
+    const data = await CI.get("recovery", { dim: recDim, woDim: recWoDim });
     if (!data) return;
     recData = data;
     recRender();
@@ -30,6 +32,7 @@ function recRender() {
     }
     CI.fillOptions(d.options, d.scope, d.period);
     CI.renderAsOf(document.getElementById("ciAsOf"), d);
+    recRenderWo(d);
     const off = document.getElementById("recUnavailable");
     const content = document.getElementById("recContent");
     if (!d.movement.available) {
@@ -49,6 +52,44 @@ function recRender() {
     recRenderKpis(d);
     recRenderKinds(d);
     recRenderTable(d);
+}
+
+// ---------- WO collection (written-off loans) — needs no NPL history ----------
+function recRenderWo(d) {
+    const w = d.woCollection;
+    const box = document.getElementById("recWo");
+    box.hidden = !w;
+    if (!w) return;
+    recWoDim = w.dim;
+    document.querySelectorAll("#recWoDims [data-dim]").forEach(b => {
+        const on = b.dataset.dim === w.dim;
+        b.hidden = !w.dims.includes(b.dataset.dim);
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    document.getElementById("recWoPeriod").textContent = t("creditreport.rec.woPeriod", {
+        from: CI.dmy(d.period && d.period.fromDate), to: CI.dmy(d.period && d.period.toDate)
+    });
+    const tt = w.totals;
+    document.getElementById("recWoKpis").innerHTML =
+        recCard(t("creditreport.rec.woCollected"), CI.money(tt.collected), t("creditreport.rec.woPrnInt", { prn: CI.money(tt.collectedPrn), int: CI.money(tt.collectedInt) }), "good") +
+        recCard(t("creditreport.rec.woRate"), w.collectionRate === null ? "—" : CI.pct(w.collectionRate, 1), t("creditreport.rec.woRateSub")) +
+        recCard(t("creditreport.rec.woBalance"), CI.money(tt.balance), t("creditreport.rec.woBalanceSub", { n: CI.num(tt.balanceCount) })) +
+        recCard(t("creditreport.rec.woWrittenOff"), CI.money(tt.writtenOff), t("creditreport.rec.woLoansN", { n: CI.num(tt.writtenOffCount) }), "bad");
+    const head = ["creditreport.risk.colName", "creditreport.rec.colPrn", "creditreport.rec.colInt", "creditreport.rec.colTotal",
+        "creditreport.rec.woBalance", "creditreport.rec.woWrittenOff"];
+    const name = r => (w.dim === "location" && !r.key ? t("creditreport.pi.otherAddress") : (r.name || r.key || "—"));
+    const rows = w.rows.map(r => `<tr>
+        <td>${CI.esc(name(r))}${w.dim === "officer" && r.branch ? `<div class="ci-sub">${CI.esc(r.branch)}</div>` : ""}</td>
+        <td class="num">${CI.money(r.collectedPrn)}</td>
+        <td class="num">${CI.money(r.collectedInt)}</td>
+        <td class="num ci-good">${CI.money(r.collected)}</td>
+        <td class="num">${CI.money(r.balance)}<div class="ci-sub">${CI.esc(t("creditreport.rec.woBalanceSub", { n: CI.num(r.balanceCount) }))}</div></td>
+        <td class="num">${CI.money(r.writtenOff)}<div class="ci-sub">${CI.esc(t("creditreport.rec.woLoansN", { n: CI.num(r.writtenOffCount) }))}</div></td>
+    </tr>`).join("");
+    document.getElementById("recWoTable").innerHTML =
+        `<thead><tr>${head.map((h, i) => `<th${i ? ' class="num"' : ""}>${CI.esc(t(h))}</th>`).join("")}</tr></thead>` +
+        `<tbody>${rows || `<tr><td colspan="${head.length}" class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</td></tr>`}</tbody>`;
 }
 
 function recCard(label, value, sub, tone) {
@@ -178,6 +219,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const b = e.target.closest("[data-dim]");
         if (!b) return;
         recDim = b.dataset.dim;
+        recLoad();
+    });
+    document.getElementById("recWoDims").addEventListener("click", e => {
+        const b = e.target.closest("[data-dim]");
+        if (!b) return;
+        recWoDim = b.dataset.dim;
         recLoad();
     });
     document.getElementById("recSinceFirst").addEventListener("click", () => {
