@@ -67,34 +67,44 @@ function recRenderWo(d) {
         b.classList.toggle("is-active", on);
         b.setAttribute("aria-selected", on ? "true" : "false");
     });
-    document.getElementById("recWoPeriod").textContent = t("creditreport.rec.woPeriod", {
-        from: CI.dmy(d.period && d.period.fromDate), to: CI.dmy(d.period && d.period.toDate)
+    document.getElementById("recWoPeriod").textContent = t("creditreport.rec.woPeriodYtd", {
+        from: CI.dmy(w.period.fromDate), to: CI.dmy(w.period.toDate)
     });
     const tt = w.totals;
+    const plan = w.plan || {};
     document.getElementById("recWoKpis").innerHTML =
-        recCard(t("creditreport.rec.woCollected"), CI.money(tt.collected), t("creditreport.rec.woPrnInt", { prn: CI.money(tt.collectedPrn), int: CI.money(tt.collectedInt) }), "good") +
-        recCard(t("creditreport.rec.woRate"), w.collectionRate === null ? "—" : CI.pct(w.collectionRate, 1), t("creditreport.rec.woRateSub")) +
-        recCard(t("creditreport.rec.woBalance"), CI.money(tt.balance), t("creditreport.rec.woBalanceSub", { n: CI.num(tt.balanceCount) })) +
-        recCard(t("creditreport.rec.woWrittenOff"), CI.money(tt.writtenOff), t("creditreport.rec.woLoansN", { n: CI.num(tt.writtenOffCount) }), "bad") +
-        recCard(t("creditreport.rec.woTarget"),
-            !w.target || w.target.value === null ? t("creditreport.rec.notSet") : CI.pct(w.target.achievement, 1),
-            !w.target || w.target.value === null ? t("creditreport.rec.notSetSub") : t("creditreport.rec.ofTarget", { target: CI.money(w.target.value) }));
-    const showTarget = w.dim === "branch";
-    const head = ["creditreport.risk.colName", "creditreport.rec.colPrn", "creditreport.rec.colInt", "creditreport.rec.colTotal",
-        "creditreport.rec.woBalance", "creditreport.rec.woWrittenOff"].concat(showTarget ? ["creditreport.rec.woTarget"] : []);
+        recCard(t("creditreport.rec.woCollYtd"), CI.money(tt.collected), t("creditreport.rec.woPrnInt", { prn: CI.money(tt.collectedPrn), int: CI.money(tt.collectedInt) }), "good") +
+        recCard(t("creditreport.rec.woPlanPct"),
+            plan.value == null ? t("creditreport.rec.notSet") : CI.pct(plan.achievement, 2),
+            plan.value == null ? t("creditreport.rec.planNotSet", { year: plan.year || "" }) : t("creditreport.rec.ofPlan", { plan: CI.money(plan.value), year: plan.year })) +
+        recCard(t("creditreport.rec.woBalance"), CI.money(tt.balance), t("creditreport.rec.woBalanceSub2", { n: CI.num(tt.balanceCount), int: CI.money(tt.balanceInt) })) +
+        recCard(t("creditreport.rec.woYtd"), CI.money(tt.writtenOff), t("creditreport.rec.woLoansN", { n: CI.num(tt.writtenOffCount) }), "bad");
+
+    // Laid out like the branches' WO report.
+    const showPlan = w.dim === "branch";
     const name = r => (w.dim === "location" && !r.key ? t("creditreport.pi.otherAddress") : (r.name || r.key || "—"));
-    const rows = w.rows.map(r => `<tr>
-        <td>${CI.esc(name(r))}${w.dim === "officer" && r.branch ? `<div class="ci-sub">${CI.esc(r.branch)}</div>` : ""}</td>
-        <td class="num">${CI.money(r.collectedPrn)}</td>
-        <td class="num">${CI.money(r.collectedInt)}</td>
-        <td class="num ci-good">${CI.money(r.collected)}</td>
-        <td class="num">${CI.money(r.balance)}<div class="ci-sub">${CI.esc(t("creditreport.rec.woBalanceSub", { n: CI.num(r.balanceCount) }))}</div></td>
-        <td class="num">${CI.money(r.writtenOff)}<div class="ci-sub">${CI.esc(t("creditreport.rec.woLoansN", { n: CI.num(r.writtenOffCount) }))}</div></td>
-        ${showTarget ? `<td class="num">${r.target ? `${CI.pct(r.collected / r.target, 0)}<div class="ci-sub">${CI.money(r.target)}</div>` : CI.esc(t("creditreport.rec.notSet"))}</td>` : ""}
+    const n0 = v => (Number(v) ? CI.num(v) : "-");
+    const m0 = v => (Number(v) ? CI.num(v) : "-");
+    const cells = r => `
+        <td class="num">${n0(r.balanceCount)}</td><td class="num">${m0(r.balanceInt)}</td><td class="num">${m0(r.balance)}</td>
+        <td class="num">${n0(r.writtenOffCount)}</td><td class="num">${m0(r.writtenOff)}</td>
+        <td class="num">${m0(r.collectedInt)}</td><td class="num">${m0(r.collectedPrn)}</td><td class="num ci-good">${m0(r.collected)}</td>`;
+    const pct = (c, p) => (p ? CI.pct(c / p, 2) : "—");
+    const body = w.rows.map(r => `<tr>
+        <td>${CI.esc(name(r))}${w.dim === "officer" && r.branch ? `<div class="ci-sub">${CI.esc(r.branch)}</div>` : ""}</td>${cells(r)}
+        ${showPlan ? `<td class="num">${r.plan ? CI.num(r.plan) : CI.esc(t("creditreport.rec.notSet"))}</td><td class="num">${pct(r.collected, r.plan)}</td>` : ""}
     </tr>`).join("");
+    const total = w.rows.length ? `<tr class="ci-total"><td>${CI.esc(t("creditreport.rec.total"))}</td>${cells(tt)}
+        ${showPlan ? `<td class="num">${plan.value ? CI.num(plan.value) : "—"}</td><td class="num">${plan.value ? CI.pct(plan.achievement, 2) : "—"}</td>` : ""}</tr>` : "";
+    const g = (k, span) => `<th colspan="${span}" class="ci-grp">${CI.esc(t(k))}</th>`;
+    const cols = ["#", "creditreport.rec.colInt", "creditreport.rec.colPrn", "#", "creditreport.rec.colPrn",
+        "creditreport.rec.colInt", "creditreport.rec.colPrn", "creditreport.rec.colTotalShort"];
+    const span = 1 + cols.length + (showPlan ? 2 : 0);
     document.getElementById("recWoTable").innerHTML =
-        `<thead><tr>${head.map((h, i) => `<th${i ? ' class="num"' : ""}>${CI.esc(t(h))}</th>`).join("")}</tr></thead>` +
-        `<tbody>${rows || `<tr><td colspan="${head.length}" class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</td></tr>`}</tbody>`;
+        `<thead><tr><th rowspan="2">${CI.esc(t("creditreport.risk.colName"))}</th>${g("creditreport.rec.woBalance", 3)}${g("creditreport.rec.woYtd", 2)}${g("creditreport.rec.woCollYtd", 3)}` +
+        (showPlan ? `<th rowspan="2" class="num">${CI.esc(t("creditreport.rec.planCollection"))}</th><th rowspan="2" class="num">(%)</th>` : "") +
+        `</tr><tr>${cols.map(c => `<th class="num">${CI.esc(c === "#" ? "#" : t(c))}</th>`).join("")}</tr></thead>` +
+        `<tbody>${body || `<tr><td colspan="${span}" class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</td></tr>`}${total}</tbody>`;
 }
 
 function recCard(label, value, sub, tone) {
@@ -192,28 +202,64 @@ async function recAdminFetch(method, body) {
 async function recLoadTargets() {
     const branches = (recData && recData.options && recData.options.branches) || [];
     let current = {};
-    let currentWo = {};
     try {
         const r = await recAdminFetch("GET");
-        if (r.ok) { current = r.targets || {}; currentWo = r.woTargets || {}; }
+        if (r.ok) current = r.targets || {};
     } catch (e) {
         console.error(e);
     }
-    const input = (kind, b, v) =>
-        `<input type="number" min="0" step="1" inputmode="numeric" data-kind="${kind}" data-branch="${CI.esc(b)}" value="${v ?? ""}" aria-label="${CI.esc(`${b} ${t(kind === "wo" ? "creditreport.rec.targetWo" : "creditreport.rec.targetNpl")}`)}">`;
-    document.getElementById("recTargetGrid").innerHTML =
-        `<span class="ci-th">${CI.esc(t("creditreport.pi.branch"))}</span><span class="ci-th">${CI.esc(t("creditreport.rec.targetNpl"))}</span><span class="ci-th">${CI.esc(t("creditreport.rec.targetWo"))}</span>` +
-        branches.map(b => `<span class="ci-tb">${CI.esc(b)}</span>${input("npl", b, current[b])}${input("wo", b, currentWo[b])}`).join("");
+    document.getElementById("recTargetGrid").innerHTML = branches.map(b =>
+        `<label class="pi-field"><span>${CI.esc(b)}</span><input type="number" min="0" step="1" inputmode="numeric" data-branch="${CI.esc(b)}" value="${current[b] ?? ""}"></label>`).join("");
 }
 
 async function recSaveTargets() {
     const targets = {};
-    const woTargets = {};
     document.querySelectorAll("#recTargetGrid input[data-branch]").forEach(i => {
-        if (i.value !== "") (i.dataset.kind === "wo" ? woTargets : targets)[i.dataset.branch] = i.value;
+        if (i.value !== "") targets[i.dataset.branch] = i.value;
     });
     try {
-        const r = await recAdminFetch("PUT", { month: document.getElementById("recTargetMonth").value, targets, woTargets });
+        const r = await recAdminFetch("PUT", { month: document.getElementById("recTargetMonth").value, targets });
+        if (!r.ok) throw new Error(r.message || "");
+        CI.toast(t("creditreport.growth.saved"), "success");
+        recLoad();
+    } catch (e) {
+        console.error(e);
+        CI.toast(t("creditreport.pi.loadFailed"), "error");
+    }
+}
+
+// ---------- admin: annual WO collection plan per branch ----------
+async function recPlanFetch(method, body) {
+    const year = document.getElementById("recPlanYear").value;
+    const url = `${API.BASE_URL}/api/admin/credit-intelligence/wo-plans${method === "GET" ? `?year=${encodeURIComponent(year)}` : ""}`;
+    const res = await fetch(url, {
+        method,
+        headers: { Authorization: `Bearer ${localStorage.getItem("token") || sessionStorage.getItem("token")}`, "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined
+    });
+    return res.json();
+}
+
+async function recLoadPlans() {
+    const branches = (recData && recData.options && recData.options.branches) || [];
+    let current = {};
+    try {
+        const r = await recPlanFetch("GET");
+        if (r.ok) current = r.plans || {};
+    } catch (e) {
+        console.error(e);
+    }
+    document.getElementById("recPlanGrid").innerHTML = branches.map(b =>
+        `<label class="pi-field"><span>${CI.esc(b)}</span><input type="number" min="0" step="1" inputmode="numeric" data-branch="${CI.esc(b)}" value="${current[b] ?? ""}"></label>`).join("");
+}
+
+async function recSavePlans() {
+    const plans = {};
+    document.querySelectorAll("#recPlanGrid input[data-branch]").forEach(i => {
+        if (i.value !== "") plans[i.dataset.branch] = i.value;
+    });
+    try {
+        const r = await recPlanFetch("PUT", { year: document.getElementById("recPlanYear").value, plans });
         if (!r.ok) throw new Error(r.message || "");
         CI.toast(t("creditreport.growth.saved"), "success");
         recLoad();
@@ -254,6 +300,13 @@ document.addEventListener("DOMContentLoaded", () => {
         box.addEventListener("toggle", () => { if (box.open) recLoadTargets(); });
         month.addEventListener("change", recLoadTargets);
         document.getElementById("recTargetSave").addEventListener("click", recSaveTargets);
+        const planBox = document.getElementById("recPlanAdmin");
+        planBox.hidden = false;
+        const year = document.getElementById("recPlanYear");
+        year.value = String(new Date(Date.now() + 7 * 3600 * 1000).getUTCFullYear());
+        planBox.addEventListener("toggle", () => { if (planBox.open) recLoadPlans(); });
+        year.addEventListener("change", recLoadPlans);
+        document.getElementById("recPlanSave").addEventListener("click", recSavePlans);
     }
     recLoad();
 });
