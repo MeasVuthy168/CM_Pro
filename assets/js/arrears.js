@@ -3151,14 +3151,20 @@ function openWorkFor(row, navRows, summary) {
     }
     selectedRow = row;
 
-    let nav = (navRows || currentRows).filter(r => r.concate);
-    const cifs = new Set(nav.map(r => r.cif).filter(Boolean));
-    const build = () => {
+    const allNav = (navRows || currentRows).filter(r => r.concate);
+    // `win`: how many loans either side of this one ‹ › walks (null = all);
+    // `cap`: how many answer suggestions go along.
+    const build = (win, cap) => {
+        let nav = allNav;
+        if (win !== null) {
+            const i = Math.max(0, allNav.indexOf(row));
+            nav = allNav.slice(Math.max(0, i - win), i + win + 1);
+        }
+        const cifs = new Set(nav.map(r => r.cif).filter(Boolean));
         const byConcate = new Map(nav.map(r => [r.concate, r]));
         allRows.forEach(r => {
             if (r.concate && r.cif && cifs.has(r.cif) && !byConcate.has(r.concate)) byConcate.set(r.concate, r);
         });
-        const capped = list => list.length > 2000 ? list.slice(0, 2000) : list;
         return JSON.stringify({
             at: Date.now(),
             username: arrearsUsername(),
@@ -3167,39 +3173,56 @@ function openWorkFor(row, navRows, summary) {
             rows: [...byConcate.values()].map(toWorkRow),
             applyAll: arrGroupMode === "cif",
             suggest: {
-                aj: capped(distinctSorted(allRows, "ajReason")),
-                ak: capped(distinctSorted(allRows, "akSolution"))
+                aj: distinctSorted(allRows, "ajReason").slice(0, cap),
+                ak: distinctSorted(allRows, "akSolution").slice(0, cap)
             }
         });
     };
 
-    try {
-        let payload = build();
-        if (payload.length > 3.5 * 1024 * 1024) {
-            // Too many rows on screen for sessionStorage: ‹ › walks the
-            // 1,000 around this loan instead.
-            const i = Math.max(0, nav.indexOf(row));
-            nav = nav.slice(Math.max(0, i - 500), i + 500);
-            cifs.clear();
-            nav.forEach(r => r.cif && cifs.add(r.cif));
-            payload = build();
-        }
-        sessionStorage.setItem(WORK_FOCUS_KEY, payload);
+    const filters = {};
+    Object.entries(filterEls).forEach(([k, el]) => {
+        if (el) filters[k] = el.tagName === "SELECT" ? MultiSelect.values(el) : el.value;
+    });
+    const back = JSON.stringify({
+        at: Date.now(),
+        username: arrearsUsername(),
+        scopeMode: arrearsScopeMode,
+        filters,
+        concate: row.concate,
+        summary: summary || null
+    });
 
-        const filters = {};
-        Object.entries(filterEls).forEach(([k, el]) => {
-            if (el) filters[k] = el.tagName === "SELECT" ? MultiSelect.values(el) : el.value;
-        });
-        sessionStorage.setItem(ARREARS_RETURN_KEY, JSON.stringify({
-            at: Date.now(),
-            username: arrearsUsername(),
-            scopeMode: arrearsScopeMode,
-            filters,
-            concate: row.concate,
-            summary: summary || null
-        }));
-    } catch (e) {
-        notify(e.message || "Could not open the loan.", "error");
+    // sessionStorage holds only ~5 MB, shared with this page's own copy of
+    // the rows: a big list (a whole branch) didn't fit and the browser's
+    // "exceeded the quota" error was all that showed. Each step frees room
+    // or sends less, until it fits.
+    const isQuota = e => e && (e.name === "QuotaExceededError" || e.code === 22 || /quota/i.test(e.message || ""));
+    const steps = [
+        { win: null, cap: 2000 },
+        { win: null, cap: 2000, free: ["cm_work_snapshot_v1"] },      // Work to complete's own cache
+        { win: 500, cap: 1000 },
+        { win: 150, cap: 300 },
+        { win: 40, cap: 100, free: [arrearsCacheKey("all"), arrearsCacheKey("own")] }  // reloaded on the way back
+    ];
+    let saved = false;
+    let lastErr = null;
+    sessionStorage.removeItem(WORK_FOCUS_KEY);
+    for (const step of steps) {
+        (step.free || []).forEach(k => sessionStorage.removeItem(k));
+        try {
+            sessionStorage.setItem(WORK_FOCUS_KEY, build(step.win, step.cap));
+            sessionStorage.setItem(ARREARS_RETURN_KEY, back);
+            saved = true;
+            break;
+        } catch (e) {
+            lastErr = e;
+            sessionStorage.removeItem(WORK_FOCUS_KEY);
+            if (!isQuota(e)) break;
+        }
+    }
+    if (!saved) {
+        console.error("[open work] failed:", lastErr);
+        notify(t("arrears.openWorkFailed"), "error");
         return;
     }
     location.href = "/CM_Pro/pages/masterdata/work.html?from=arrears";
