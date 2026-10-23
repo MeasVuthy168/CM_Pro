@@ -6,7 +6,8 @@
 //   cols: [{ label, type, align, value(row, i), text(row, i), style(row, i), maxPx }]
 //     type   "text" | "num" (#,##0.00) | "int" (0) | "date" (dd/mm/yyyy)
 //     value  the cell's value for Excel (number / Date / string)
-//     text   what's written in the PDF (and how long the Excel column is)
+//     text   what's written in the PDF (and how long the Excel column is);
+//            "\n" splits it over lines
 //     style  { fill, color, bold } — the table's colours (Class, Promise…)
 //
 //   ArrExport.excel({ filename, sheets: [{ name, title, info, cols, rows }], onProgress })
@@ -128,9 +129,10 @@
                     if (fill) c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: argb(fill) } };
                     if (typeof v === "number" || v instanceof Date) c.numFmt = NUM_FMT[col.type] || "General";
                     else c.numFmt = "@";
-                    c.alignment = { vertical: "middle", horizontal: col.align || (col.type === "text" ? "left" : "right") };
+                    const multi = typeof v === "string" && v.includes("\n");
+                    c.alignment = { vertical: "middle", horizontal: col.align || (col.type === "text" ? "left" : "right"), wrapText: multi };
                     c.border = borders;
-                    const len = cellText(col, row, i).length;
+                    const len = Math.max(...cellText(col, row, i).split("\n").map(l => l.length));
                     if (len + 2 > widths[j]) widths[j] = len + 2;
                 });
                 if (++done % 400 === 0) {
@@ -162,11 +164,13 @@
     const PAGE_H = Math.round(210 * PX_PER_MM);
     const MARGIN = Math.round(8 * PX_PER_MM);
     const BASE_PX = 20;                            // measuring size
-    const MAX_PX = 21, MIN_PX = 12;
+    const MAX_PX = 21, MIN_PX = 11;
     const PAD = 8;                                 // cell padding (at BASE_PX)
     const IMG_SCALE = 2;                           // Khmer text images: 2× the layout DPI
     const FONT_URL = "/CM_Pro/assets/fonts/Krasar-Regular.ttf";
-    const KHMER = /[ក-៿᧠-᧿]/;
+    // Anything beyond plain ASCII (Khmer, and letters the embedded font
+    // may not have) is drawn by the browser.
+    const NEEDS_IMAGE = /[^\x20-\x7E\u2022\u00B7\u2026\u2013\u2014\u203A]/;
 
     const fontStr = (px, bold) => `${bold ? "bold " : ""}${px}px "${FONT}", Arial, sans-serif`;
     const mm = px => px / PX_PER_MM;
@@ -219,7 +223,7 @@
             ctx.font = fontStr(px, bold);
             s = fit(ctx, s, w);
             if (!s) return;
-            if (!KHMER.test(s)) {
+            if (!NEEDS_IMAGE.test(s)) {
                 const [r, g, b] = rgb(color);
                 doc.setTextColor(r, g, b);
                 doc.setFontSize(pt(px));
@@ -257,16 +261,19 @@
             }
         }
 
-        // Cell texts once; natural column widths at BASE_PX.
-        const texts = rows.map((row, i) => cols.map(col => cellText(col, row, i)));
+        // Cell texts once (a cell may hold several lines: amounts in two
+        // currencies); natural column widths at BASE_PX.
+        const texts = rows.map((row, i) => cols.map(col => cellText(col, row, i).split("\n")));
         const usable = PAGE_W - MARGIN * 2;
         ctx.font = fontStr(BASE_PX, true);
         const natural = cols.map(col => ctx.measureText(col.label).width + PAD * 2);
         ctx.font = fontStr(BASE_PX);
         for (let i = 0; i < texts.length; i++) {
             for (let j = 0; j < cols.length; j++) {
-                const w = ctx.measureText(texts[i][j]).width + PAD * 2;
-                if (w > natural[j]) natural[j] = w;
+                for (const line of texts[i][j]) {
+                    const w = ctx.measureText(line).width + PAD * 2;
+                    if (w > natural[j]) natural[j] = w;
+                }
             }
             if (i % 2000 === 1999) await nextFrame();
         }
@@ -276,11 +283,22 @@
         const px = Math.max(MIN_PX, Math.min(MAX_PX, BASE_PX * usable / sum));
         const k = px / BASE_PX;
         let widths = capped.map(w => w * k);
+        // Still too wide at the smallest size: the free-text columns (those
+        // with a maxPx) give up room first, down to 40% — numbers and IDs
+        // keep theirs. Then everything is scaled to the page width exactly.
+        const over = widths.reduce((a, b) => a + b, 0) - usable;
+        if (over > 0) {
+            const flex = cols.map((col, j) => (col.maxPx ? widths[j] * 0.6 : 0));
+            const room = flex.reduce((a, b) => a + b, 0);
+            if (room > 0) widths = widths.map((w, j) => w - flex[j] * Math.min(1, over / room));
+        }
         const total = widths.reduce((a, b) => a + b, 0);
-        widths = widths.map(w => w * usable / total);   // fill the page width exactly
+        widths = widths.map(w => w * usable / total);
         const pad = PAD * k;
 
         const rowH = Math.round(px * 2.05);
+        const lineH = Math.round(px * 1.45);
+        const heights = texts.map(cells => rowH + (Math.max(...cells.map(c => c.length)) - 1) * lineH);
         const headH = Math.round(px * 2.4);
         const titlePx = Math.round(px * 1.45);
         const infoPx = Math.round(px * 0.95);
@@ -288,18 +306,25 @@
         const topFirst = MARGIN + titlePx * 1.6 + infoLines.length * infoPx * 1.7 + px * 0.5;
         const topNext = MARGIN + titlePx * 1.6 + px * 0.3;
         const footH = Math.round(px * 1.8);
-        const perFirst = Math.max(1, Math.floor((PAGE_H - MARGIN - footH - topFirst - headH) / rowH));
-        const perNext = Math.max(1, Math.floor((PAGE_H - MARGIN - footH - topNext - headH) / rowH));
-        const pages = rows.length <= perFirst ? 1 : 1 + Math.ceil((rows.length - perFirst) / perNext);
+
+        // Rows per page, by their heights: [start, end) for each page.
+        const pageRanges = [];
+        for (let i = 0; i < rows.length || !pageRanges.length;) {
+            const room = PAGE_H - MARGIN - footH - (pageRanges.length ? topNext : topFirst) - headH;
+            let used = 0, end = i;
+            while (end < rows.length && (end === i || used + heights[end] <= room)) used += heights[end++];
+            pageRanges.push([i, end]);
+            i = end;
+            if (!rows.length) break;
+        }
+        const pages = pageRanges.length;
         const fillRect = (x, y, w, h, hex) => {
             doc.setFillColor(...rgb(hex));
             doc.rect(mm(x), mm(y), mm(w), mm(h), "F");
         };
 
-        let start = 0;
         for (let p = 0; p < pages; p++) {
-            const per = p === 0 ? perFirst : perNext;
-            const end = Math.min(rows.length, start + per);
+            const [start, end] = pageRanges[p];
             if (p > 0) doc.addPage();
 
             // Title (every page) and the info lines (first page).
@@ -323,31 +348,34 @@
             });
             top += headH;
 
-            // Rows: backgrounds, then text.
+            // Rows: backgrounds, then text (lines centred in the row).
+            const rowTops = [top];
             for (let i = start; i < end; i++) {
-                const yRow = top + (i - start) * rowH;
+                const yRow = rowTops[rowTops.length - 1];
+                const h = heights[i];
                 x = MARGIN;
                 for (let j = 0; j < cols.length; j++) {
                     const col = cols[j];
                     const st = (col.style && col.style(rows[i], i)) || {};
                     const bg = st.fill || ((i - start) % 2 === 1 ? ZEBRA : "#FFFFFF");
-                    if (bg !== "#FFFFFF") fillRect(x, yRow, widths[j], rowH, bg);
-                    text(texts[i][j], x + pad, yRow + rowH / 2, widths[j] - pad * 2, rowH - 2, {
-                        px, bold: st.bold, color: st.color || INK, bg,
-                        align: col.align || (col.type === "text" ? "left" : "right")
+                    if (bg !== "#FFFFFF") fillRect(x, yRow, widths[j], h, bg);
+                    const lines = texts[i][j];
+                    lines.forEach((line, n) => {
+                        text(line, x + pad, yRow + h / 2 + (n - (lines.length - 1) / 2) * lineH, widths[j] - pad * 2, (lines.length > 1 ? lineH : rowH) - 2, {
+                            px, bold: st.bold, color: st.color || INK, bg,
+                            align: col.align || (col.type === "text" ? "left" : "right")
+                        });
                     });
                     x += widths[j];
                 }
+                rowTops.push(yRow + h);
             }
 
             // Grid.
-            const bottom = top + (end - start) * rowH;
+            const bottom = rowTops[rowTops.length - 1];
             doc.setDrawColor(...rgb(GRID));
             doc.setLineWidth(0.15);
-            for (let i = 0; i <= end - start; i++) {
-                const yy = mm(top + i * rowH);
-                doc.line(mm(MARGIN), yy, mm(MARGIN + usable), yy);
-            }
+            rowTops.forEach(t => doc.line(mm(MARGIN), mm(t), mm(MARGIN + usable), mm(t)));
             x = MARGIN;
             for (let j = 0; j <= cols.length; j++) {
                 doc.line(mm(x), mm(top - headH), mm(x), mm(bottom));
@@ -360,7 +388,6 @@
             text(footer || "", MARGIN, fy, usable * 0.7, footH, { px: fpx, color: "#6B7280", bg: "#FFFFFF" });
             text(`${p + 1} / ${pages}`, MARGIN + usable * 0.7, fy, usable * 0.3, footH, { px: fpx, color: "#6B7280", bg: "#FFFFFF", align: "right" });
 
-            start = end;
             onProgress && onProgress((p + 1) / pages * 0.95);
             if (p % 3 === 2) await nextFrame();
         }
