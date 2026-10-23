@@ -67,18 +67,20 @@ function recRenderWo(d) {
         b.classList.toggle("is-active", on);
         b.setAttribute("aria-selected", on ? "true" : "false");
     });
-    document.getElementById("recWoPeriod").textContent = t("creditreport.rec.woPeriodYtd", {
-        from: CI.dmy(w.period.fromDate), to: CI.dmy(w.period.toDate)
-    });
+    // Same wording and period as the Daily Report's Write Off section.
+    const dash = k => String(k || "").split("-").reverse().join("-");
+    document.getElementById("recWoPeriod").textContent =
+        `${t("creditreport.detail.writeOffFrom")} ${t("creditreport.detail.dateRange", { from: dash(w.period.fromDate), to: dash(w.period.toDate) })}` +
+        (w.dim === "officer" ? ` · ${t("creditreport.rec.woOwn")}` : "");
     const tt = w.totals;
     const plan = w.plan || {};
     document.getElementById("recWoKpis").innerHTML =
-        recCard(t("creditreport.rec.woCollYtd"), CI.money(tt.collected), t("creditreport.rec.woPrnInt", { prn: CI.money(tt.collectedPrn), int: CI.money(tt.collectedInt) }), "good") +
+        recCard(t("creditreport.detail.woCollected"), CI.money(tt.collected), t("creditreport.rec.woPrnInt", { prn: CI.money(tt.collectedPrn), int: CI.money(tt.collectedInt) }), "good") +
         recCard(t("creditreport.rec.woPlanPct"),
             plan.value == null ? t("creditreport.rec.notSet") : CI.pct(plan.achievement, 2),
             plan.value == null ? t("creditreport.rec.planNotSet", { year: plan.year || "" }) : t("creditreport.rec.ofPlan", { plan: CI.money(plan.value), year: plan.year })) +
-        recCard(t("creditreport.rec.woBalance"), CI.money(tt.balance), t("creditreport.rec.woBalanceSub2", { n: CI.num(tt.balanceCount), int: CI.money(tt.balanceInt) })) +
-        recCard(t("creditreport.rec.woYtd"), CI.money(tt.writtenOff), t("creditreport.rec.woLoansN", { n: CI.num(tt.writtenOffCount) }), "bad");
+        recCard(t("creditreport.detail.woBalanceWO"), CI.money(tt.balance), t("creditreport.rec.woBalanceSub2", { n: CI.num(tt.balanceCount), int: CI.money(tt.balanceInt) })) +
+        recCard(t("creditreport.detail.woWO"), CI.money(tt.writtenOff), t("creditreport.rec.woLoansN", { n: CI.num(tt.writtenOffCount) }), "bad");
 
     // Laid out like the branches' WO report.
     const showPlan = w.dim === "branch";
@@ -97,11 +99,11 @@ function recRenderWo(d) {
     const total = w.rows.length ? `<tr class="ci-total"><td>${CI.esc(t("creditreport.rec.total"))}</td>${cells(tt)}
         ${showPlan ? `<td class="num">${plan.value ? CI.num(plan.value) : "—"}</td><td class="num">${plan.value ? CI.pct(plan.achievement, 2) : "—"}</td>` : ""}</tr>` : "";
     const g = (k, span) => `<th colspan="${span}" class="ci-grp">${CI.esc(t(k))}</th>`;
-    const cols = ["#", "creditreport.rec.colInt", "creditreport.rec.colPrn", "#", "creditreport.rec.colPrn",
-        "creditreport.rec.colInt", "creditreport.rec.colPrn", "creditreport.rec.colTotalShort"];
+    const cols = ["creditreport.detail.colCifHash", "creditreport.detail.colInt", "creditreport.detail.colPrn", "#", "creditreport.detail.colPrn",
+        "creditreport.detail.colInt", "creditreport.detail.colPrn", "creditreport.rec.colTotalShort"];
     const span = 1 + cols.length + (showPlan ? 2 : 0);
     document.getElementById("recWoTable").innerHTML =
-        `<thead><tr><th rowspan="2">${CI.esc(t("creditreport.risk.colName"))}</th>${g("creditreport.rec.woBalance", 3)}${g("creditreport.rec.woYtd", 2)}${g("creditreport.rec.woCollYtd", 3)}` +
+        `<thead><tr><th rowspan="2">${CI.esc(t("creditreport.risk.colName"))}</th>${g("creditreport.detail.woBalanceWO", 3)}${g("creditreport.detail.woWO", 2)}${g("creditreport.detail.woCollected", 3)}` +
         (showPlan ? `<th rowspan="2" class="num">${CI.esc(t("creditreport.rec.planCollection"))}</th><th rowspan="2" class="num">(%)</th>` : "") +
         `</tr><tr>${cols.map(c => `<th class="num">${CI.esc(c === "#" ? "#" : t(c))}</th>`).join("")}</tr></thead>` +
         `<tbody>${body || `<tr><td colspan="${span}" class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</td></tr>`}${total}</tbody>`;

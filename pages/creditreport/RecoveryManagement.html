@@ -132,7 +132,7 @@ No Internet Connection
 <div class="ci-inline-fields ci-admin-fields">
 <label class="pi-field"><span data-i18n="creditreport.rec.year">Year</span><input type="number" min="2000" max="2100" step="1" inputmode="numeric" id="recPlanYear"></label>
 </div>
-<p class="pi-note" data-i18n="creditreport.rec.plansNote">(%) = WO Collection YTD Total (Int + Prn) ÷ the year's plan. Never added to the NPL targets.</p>
+<p class="pi-note" data-i18n="creditreport.rec.plansNote">(%) = WO Collected (Int + Prn) in the year ÷ the year's plan. Never added to the NPL targets.</p>
 <div class="ci-target-grid" id="recPlanGrid"></div>
 <button type="button" class="pi-btn-ghost" id="recPlanSave" data-i18n="creditreport.growth.save">Save</button>
 </details>
@@ -143,8 +143,8 @@ No Internet Connection
 <li data-i18n="creditreport.rec.defRecovered">Recovered = opening balance of NPL loans that left NPL by being upgraded, becoming performing or closing. Write-offs are counted separately, not as recovery.</li>
 <li data-i18n="creditreport.rec.defRate">Recovery rate = Recovered ÷ Opening NPL. Net NPL movement = Closing − Opening NPL.</li>
 <li data-i18n="creditreport.rec.defCash">Cash collected exists only for written-off loans (WO collections in the period). Cash paid on NPL loans has no data source, so it is shown as not available.</li>
-<li data-i18n="creditreport.rec.defWo">WO figures are year to date (1 January → the report day), from the same rows as the Daily Report's Write Off section: Write Off Balance, Write Off YTD and WO Collection YTD (Int + Prn). They need no NPL history.</li>
-<li data-i18n="creditreport.rec.plansNote">(%) = WO Collection YTD Total (Int + Prn) ÷ the year's plan. Never added to the NPL targets.</li>
+<li data-i18n="creditreport.rec.defWo">WO figures are the Daily Report's Write Off section (period 01-01 to 31-12 of the year): Balance WO, WO and WO Collected (Int + Prn). By officer = Own. They need no NPL history.</li>
+<li data-i18n="creditreport.rec.plansNote">(%) = WO Collected (Int + Prn) in the year ÷ the year's plan. Never added to the NPL targets.</li>
 <li data-i18n="creditreport.rec.defTarget">Target achievement = Recovered ÷ the monthly targets an admin set for the branches and months in the period.</li>
 </ul>
 </details>
