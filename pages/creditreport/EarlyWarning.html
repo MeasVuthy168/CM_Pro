@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>Early Warning</title>
+
+<meta
+name="theme-color"
+content="#0e1b3c">
+
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
+  );
+</script>
+
+<link rel="stylesheet" href="../../assets/css/main.css">
+<link rel="stylesheet" href="../../assets/css/multi-select.css">
+<link rel="stylesheet" href="../../assets/css/creditreport/creditreport.css">
+<link rel="stylesheet" href="../../assets/css/creditreport/PortfolioIntelligence.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
+
+<!-- Hold the first paint until the whole page is parsed (its scripts,
+     translations and header), so a page transition slides in a finished
+     page instead of one still filling itself in. -->
+<link rel="expect" href="#cm-pt-parsed" blocking="render">
+<link rel="preload" href="/CM_Pro/assets/fonts/Krasar-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<script src="/CM_Pro/shared/page-transition.js"></script>
+<script src="/CM_Pro/shared/sw-register.js"></script>
+</head>
+
+<body>
+
+<div id="offlineBanner" data-i18n="common.offline">
+No Internet Connection
+</div>
+
+<script src="../../config/api.js"></script>
+<script src="/CM_Pro/shared/touch-polish.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/creditreport.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+
+<div id="topbar-container"></div>
+
+<div class="page-container pi-page">
+
+<nav id="ciNav"></nav>
+<section id="ciFilters" aria-label="Filters"></section>
+<section class="pi-asof" id="ciAsOf" aria-live="polite"></section>
+
+<section aria-labelledby="ewsTitle">
+<h2 class="pi-section-title" id="ewsTitle" data-i18n="creditreport.ews.title">Early Warning Indicators</h2>
+<div class="ci-levels" id="ewsLevels"></div>
+<p class="pi-note" id="ewsHistory"></p>
+</section>
+
+<section class="pi-card" aria-labelledby="ewsRulesTitle">
+<h2 class="pi-card-title" id="ewsRulesTitle" data-i18n="creditreport.ews.rules">Warning rules</h2>
+<div class="pi-table-wrap"><table class="pi-table ci-table" id="ewsRules"></table></div>
+<p class="pi-note" data-i18n="creditreport.ews.rulesNote">Rule-based, not a prediction. The points are a starting point for management to review; an admin can change them.</p>
+</section>
+
+<section class="pi-card" aria-labelledby="ewsAccTitle">
+<div class="pi-card-head">
+<h2 class="pi-card-title" id="ewsAccTitle" data-i18n="creditreport.npl.accounts">Accounts</h2>
+<button type="button" class="pi-btn-ghost" id="ewsExport" data-i18n="creditreport.npl.export">Export Excel</button>
+</div>
+<div class="pi-tabs ci-tabs-wide" role="tablist" id="ewsLevelTabs">
+<button type="button" role="tab" data-level="all" data-i18n="creditreport.ews.all">All</button>
+<button type="button" role="tab" data-level="high" data-i18n="creditreport.ews.level.high">High</button>
+<button type="button" role="tab" data-level="medium" data-i18n="creditreport.ews.level.medium">Medium</button>
+<button type="button" role="tab" data-level="low" data-i18n="creditreport.ews.level.low">Low</button>
+</div>
+<div class="ci-table-tools">
+<input type="search" id="ewsSearch" class="ci-search" data-i18n-placeholder="creditreport.npl.search" placeholder="Search loan, customer, officer…">
+<select id="ewsRuleFilter" class="pi-top-pick"></select>
+<span class="pi-note" id="ewsCount"></span>
+</div>
+<div class="pi-table-wrap ci-table-scroll"><table class="pi-table ci-table" id="ewsTable"></table></div>
+<button type="button" class="pi-btn-ghost ci-more" id="ewsMore" hidden data-i18n="creditreport.npl.more">Show more</button>
+</section>
+
+<details class="pi-card" id="ewsAdmin" hidden>
+<summary class="pi-card-title" data-i18n="creditreport.ews.adminTitle">Edit rules (admin)</summary>
+<div class="ci-rule-edit" id="ewsRuleEdit"></div>
+<div class="ci-inline-fields ci-admin-fields">
+<label class="pi-field"><span data-i18n="creditreport.ews.highFrom">High from score</span><input type="number" id="ewsHigh" min="1" max="100"></label>
+<label class="pi-field"><span data-i18n="creditreport.ews.mediumFrom">Medium from score</span><input type="number" id="ewsMedium" min="1" max="100"></label>
+</div>
+<label class="pi-field"><span data-i18n="creditreport.ews.keywords">Keywords for documented difficulties (one per line)</span><textarea id="ewsKeywords" rows="5" class="ci-textarea"></textarea></label>
+<button type="button" class="pi-btn-ghost" id="ewsSave" data-i18n="creditreport.growth.save">Save</button>
+</details>
+
+</div>
+
+<div id="bottomnav-container"></div>
+
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="../../assets/js/multi-select.js"></script>
+<script src="../../assets/js/creditreport/EarlyWarning-loader.js"></script>
+<script src="../../assets/js/creditreport/ci-filters.js"></script>
+<script src="../../assets/js/creditreport/EarlyWarning.js"></script>
+
+</body>
+
+</html>
