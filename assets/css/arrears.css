@@ -4567,3 +4567,23 @@ html:has(body.arr-sbars-on)::-webkit-scrollbar, body.arr-sbars-on::-webkit-scrol
 @media print{ .arr-sbar{ display:none !important; } }
 /* Room under the table so the page can scroll far enough to pin the bar. */
 body:not(.arr-view-card):not(.arrears-force-landscape) .page-container{ padding-bottom:calc(var(--arr-bottom, 78px) + 60px); }
+/* Fixed column widths (arrears-scroll.js): a later row with longer text
+   than the first rows had is cut with … instead of re-laying the table. */
+table.arr-locked td{ overflow:hidden; text-overflow:ellipsis; }
+@media print{
+    table.arr-locked{ table-layout:auto !important; width:auto !important; }
+    table.arr-locked th{ width:auto !important; }
+}
+
+/* Frozen No + Customer body cells (td.arr-fz): position:sticky on every
+   row's two cells (thousands of them) made the browser recompute them
+   all on each scroll — the cause of the stutter on long lists. They now
+   move with one CSS rule that arrears-scroll.js updates only when the
+   table scrolls sideways, and only these cells restyle. Header cells
+   stay sticky (only a few). */
+.table-card tbody td.arr-fz,
+.arr-cif-table tbody td.arr-fz{
+    position:relative;
+    left:auto;
+}
+@media print{ td.arr-fz{ transform:none !important; } }

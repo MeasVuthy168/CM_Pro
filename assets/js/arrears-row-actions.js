@@ -341,7 +341,36 @@
         });
     }
 
-    const observer = new MutationObserver(() => { tagAll(); if (sel) mark(); });
+    // Only the rows that were added or changed (more loaded on scroll, a
+    // cell rewritten) — not every row on each change, which made long
+    // lists stutter while more loaded. Our own tag boxes are skipped.
+    const pending = new Set();
+    let pendingQueued = false;
+    const observer = new MutationObserver(records => {
+        for (const r of records) {
+            const ownOnly = r.addedNodes.length && [...r.addedNodes].every(n => n.nodeType === 1 && n.classList.contains("arx-tags"));
+            if (ownOnly && !r.removedNodes.length) continue;
+            const host = r.target.nodeType === 1 ? r.target.closest(ROW_SEL) : null;
+            if (host) pending.add(host);
+            r.addedNodes.forEach(n => {
+                if (n.nodeType !== 1 || n.classList.contains("arx-tags")) return;
+                if (n.matches(ROW_SEL)) pending.add(n);
+                n.querySelectorAll(ROW_SEL).forEach(e => pending.add(e));
+            });
+        }
+        if (!pending.size || pendingQueued) return;
+        pendingQueued = true;
+        requestAnimationFrame(() => {
+            pendingQueued = false;
+            const els = [...pending];
+            pending.clear();
+            els.forEach(el => {
+                if (!el.isConnected) return;
+                tagOne(el);
+                if (sel) el.classList.toggle("arx-sel", sel.has(Number(el.dataset.index)));
+            });
+        });
+    });
     [typeof arrCardList !== "undefined" ? arrCardList : null, typeof tbodyArrears !== "undefined" ? tbodyArrears : null, typeof arrCifTable !== "undefined" ? arrCifTable : null]
         .filter(Boolean).forEach(el => observer.observe(el, { childList: true, subtree: true }));
 
