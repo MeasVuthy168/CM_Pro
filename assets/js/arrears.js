@@ -963,8 +963,8 @@ function buildRowElement(row, index) {
     const followupCss = row.__pendingSubmit ? `${followupCssBase} cell-pending-local` : followupCssBase;
 
     tr.innerHTML = `
-        <td>${index + 1}</td>
-        <td class="${dupClass}">${escapeHtml(row.customer)}</td>
+        <td class="arr-fz">${index + 1}</td>
+        <td class="arr-fz ${dupClass}">${escapeHtml(row.customer)}</td>
         <td>${escapeHtml(row.loanNumber)}</td>
         <td>${escapeHtml(row.location)}</td>
         <td>${escapeHtml(formatRowDateDMY(row.disDate))}</td>
@@ -993,19 +993,55 @@ function buildRowElement(row, index) {
     return tr;
 }
 
-function appendMoreRows() {
-    if (renderedCount >= currentRows.length) return;
+// Rows added per scroll-load, a few per animation frame: one frame that
+// builds and lays out 100+ rows of Khmer text is long enough to make
+// scrolling stutter on phones; 25 at a time keeps each frame short.
+const TABLE_APPEND_SIZE = 100;
+const TABLE_APPEND_CHUNK = 25;
+let tableAppending = false;
+let tableAppendGen = 0;
 
+function appendRowsNow(count) {
     const start = renderedCount;
-    const end = Math.min(start + RENDER_BATCH_SIZE, currentRows.length);
-
+    const end = Math.min(start + count, currentRows.length);
     const frag = document.createDocumentFragment();
     for (let i = start; i < end; i++) {
         frag.appendChild(buildRowElement(currentRows[i], i));
     }
     tbodyArrears.appendChild(frag);
     renderedCount = end;
+    updateRenderedNote();
+}
 
+// sync = true: a whole batch right now (first render, or a caller that
+// loops until a row exists) — and any chunked load in progress stops.
+function appendMoreRows(sync) {
+    if (renderedCount >= currentRows.length) return;
+    if (sync) {
+        tableAppendGen++;
+        tableAppending = false;
+        appendRowsNow(RENDER_BATCH_SIZE);
+        return;
+    }
+    if (tableAppending) return;
+    tableAppending = true;
+    const gen = ++tableAppendGen;
+    const rowsRef = currentRows;
+    const stop = Math.min(renderedCount + TABLE_APPEND_SIZE, currentRows.length);
+    const step = () => {
+        // Replaced by a new render or a sync batch: stop here.
+        if (gen !== tableAppendGen || rowsRef !== currentRows) {
+            if (gen === tableAppendGen) tableAppending = false;
+            return;
+        }
+        appendRowsNow(Math.min(TABLE_APPEND_CHUNK, stop - renderedCount));
+        if (renderedCount < stop) requestAnimationFrame(step);
+        else tableAppending = false;
+    };
+    step();
+}
+
+function updateRenderedNote() {
     const note = document.getElementById("renderedCountNote");
     if (note) {
         note.textContent = renderedCount < currentRows.length
@@ -1019,7 +1055,8 @@ function appendMoreRows() {
 document.querySelector(".table-scroll")?.addEventListener("scroll", () => {
     const el = document.querySelector(".table-scroll");
     if (!el || renderedCount >= currentRows.length) return;
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 300) {
+    // Well before the end, so new rows are ready before they're reached.
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 1500) {
         appendMoreRows();
     }
 });
@@ -1050,7 +1087,7 @@ function renderTableView(rows) {
         customerCountsForRender.set(row.customer, (customerCountsForRender.get(row.customer) || 0) + 1);
     });
 
-    appendMoreRows(); // renders the first batch only
+    appendMoreRows(true); // renders the first batch only
 
     // This paint-forcing fix is only needed ONCE, on the very first
     // render after data loads — that's when the "far-right columns
@@ -1076,6 +1113,9 @@ function renderTableView(rows) {
         }
         __hasRenderedOnce = true;
     }
+    // Fix the column widths now, so rows added on scroll don't make the
+    // browser lay the whole table out again (arrears-scroll.js).
+    window.ArrScroll?.lockSoon(document.getElementById("arrearsTable"));
 }
 
 // ========================================
@@ -1607,8 +1647,8 @@ function buildGroupTbody(g, no) {
 
     let html = `
         <tr class="arr-cif-row ${g.pending ? "arr-card-pending" : ""}" aria-expanded="${open}">
-            <td class="arr-cif-no ${classCss}">${no + 1}</td>
-            <td class="arr-cif-name"><span class="arr-group-chevron" aria-hidden="true">›</span> ${escapeHtml(g.customer || "-")}</td>
+            <td class="arr-fz arr-cif-no ${classCss}">${no + 1}</td>
+            <td class="arr-fz arr-cif-name"><span class="arr-group-chevron" aria-hidden="true">›</span> ${escapeHtml(g.customer || "-")}</td>
             <td><span class="arr-ld-count">${escapeHtml(ldText)}</span></td>
             <td class="arr-num"><strong>${escapeHtml(arrFormatAmount(g.osUsd))}</strong></td>
             <td>${shared("location")}</td>
@@ -1645,8 +1685,8 @@ function buildGroupTbody(g, no) {
             const balPdClass = row.pd === "Balanced_PD" ? "cell-balance-pd" : "";
             return `
             <tr class="arr-cif-ld" data-index="${idx}">
-                <td class="arr-cif-no ${rowClass}"></td>
-                <td class="arr-cif-ld-mark" aria-hidden="true">↳</td>
+                <td class="arr-fz arr-cif-no ${rowClass}"></td>
+                <td class="arr-fz arr-cif-ld-mark" aria-hidden="true">↳</td>
                 <td class="arr-cif-ld-no">${escapeHtml(row.loanNumber || "-")}${row.ccy ? ` <small>${escapeHtml(row.ccy)}</small>` : ""}</td>
                 <td class="arr-num">${escapeHtml(arrFormatAmount(row.osUsd))}</td>
                 <td>${escapeHtml(row.location)}</td>
@@ -1695,6 +1735,7 @@ function renderCifTable(rows) {
         return;
     }
     appendMoreGroups();
+    window.ArrScroll?.lockSoon(arrCifTable);
 }
 
 arrCifTable?.addEventListener("click", (e) => {
@@ -3208,7 +3249,7 @@ function revealArrearsRow(concate) {
             appendMoreCards();
         } else {
             if (renderedCount >= currentRows.length) return false;
-            appendMoreRows();
+            appendMoreRows(true);
         }
         return true;
     };
@@ -3487,6 +3528,8 @@ function applyHiddenColumns() {
         })
         .join("");
     styleEl.textContent = rules;
+    window.ArrScroll?.lockSoon(document.getElementById("arrearsTable"));
+    window.ArrScroll?.lockSoon(document.getElementById("arrCifTable"));
 }
 
 function getColumnLabels() {
