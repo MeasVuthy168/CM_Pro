@@ -173,8 +173,7 @@ async function recSaveTargets() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    CI.mountNav("recovery");
-    CI.mountFilters({ onChange: recLoad });
+    CI.mountFilters({ dates: true, compare: false, onChange: recLoad });
     document.getElementById("recDims").addEventListener("click", e => {
         const b = e.target.closest("[data-dim]");
         if (!b) return;

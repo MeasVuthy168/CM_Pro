@@ -373,7 +373,7 @@ CMI18n.register({
   "creditreport.pi.allOfficers": { km: "គ្រប់មន្ត្រី", en: "All Officers" },
   "creditreport.pi.allProducts": { km: "គ្រប់ផលិតផល", en: "All Products" },
   "creditreport.pi.allDistricts": { km: "គ្រប់ស្រុក", en: "All Districts" },
-  "creditreport.pi.focusNote": { km: "មន្ត្រី ផលិតផល និងទីតាំង អាចជ្រើសបានម្ដងមួយប៉ុណ្ណោះ — របាយការណ៍មិនមានតួលេខឆ្លងគ្នារវាងពួកវាទេ។", en: "Officer, Product and Location filter one at a time — the reports have no figures that cross them." },
+  "creditreport.pi.focusNote": { km: "មន្ត្រី និងផលិតផល អាចជ្រើសបានម្ដងមួយប៉ុណ្ណោះ — របាយការណ៍មិនមានតួលេខឆ្លងគ្នារវាងពួកវាទេ។", en: "Officer and Product filter one at a time — the reports have no figures that cross them." },
   "creditreport.pi.loading": { km: "កំពុងផ្ទុកទិដ្ឋភាពទូទៅផលប័ត្រ...", en: "Loading Portfolio Intelligence..." },
   "creditreport.pi.loadFailed": { km: "បរាជ័យក្នុងការផ្ទុកទិន្នន័យ។", en: "Failed to load the data." },
   "creditreport.pi.noAccess": { km: "គណនីរបស់អ្នកមិនទាន់មានសិទ្ធិមើលផលប័ត្រទេ (មិនមានសាខា ឬមន្ត្រី)។", en: "Your account has no portfolio to show yet (no branch or officer is set)." },
