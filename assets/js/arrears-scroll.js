@@ -270,6 +270,17 @@
     }
     const relockAll = () => [document.getElementById("arrearsTable"), document.getElementById("arrCifTable")].forEach(t => lockSoon(t));
     window.addEventListener("cm-language-changed", relockAll);
+    // Turned phone / resized window: the table's font size follows the
+    // screen width (11px on a narrow phone, 12px wider), so the widths
+    // measured before no longer fit — measure again once it settles.
+    let lastWidth = window.innerWidth;
+    let relockTimer = null;
+    window.addEventListener("resize", () => {
+        if (window.innerWidth === lastWidth) return;
+        lastWidth = window.innerWidth;
+        clearTimeout(relockTimer);
+        relockTimer = setTimeout(relockAll, 250);
+    });
     // Card/table, LD/CIF or fullscreen switched: the table shown changed.
     const viewKey = () => ["arr-view-card", "arr-group-cif", "arr-fullscreen"].map(c => document.body.classList.contains(c) ? 1 : 0).join("");
     let lastView = viewKey();
