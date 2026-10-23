@@ -75,9 +75,13 @@ function recRenderWo(d) {
         recCard(t("creditreport.rec.woCollected"), CI.money(tt.collected), t("creditreport.rec.woPrnInt", { prn: CI.money(tt.collectedPrn), int: CI.money(tt.collectedInt) }), "good") +
         recCard(t("creditreport.rec.woRate"), w.collectionRate === null ? "—" : CI.pct(w.collectionRate, 1), t("creditreport.rec.woRateSub")) +
         recCard(t("creditreport.rec.woBalance"), CI.money(tt.balance), t("creditreport.rec.woBalanceSub", { n: CI.num(tt.balanceCount) })) +
-        recCard(t("creditreport.rec.woWrittenOff"), CI.money(tt.writtenOff), t("creditreport.rec.woLoansN", { n: CI.num(tt.writtenOffCount) }), "bad");
+        recCard(t("creditreport.rec.woWrittenOff"), CI.money(tt.writtenOff), t("creditreport.rec.woLoansN", { n: CI.num(tt.writtenOffCount) }), "bad") +
+        recCard(t("creditreport.rec.woTarget"),
+            !w.target || w.target.value === null ? t("creditreport.rec.notSet") : CI.pct(w.target.achievement, 1),
+            !w.target || w.target.value === null ? t("creditreport.rec.notSetSub") : t("creditreport.rec.ofTarget", { target: CI.money(w.target.value) }));
+    const showTarget = w.dim === "branch";
     const head = ["creditreport.risk.colName", "creditreport.rec.colPrn", "creditreport.rec.colInt", "creditreport.rec.colTotal",
-        "creditreport.rec.woBalance", "creditreport.rec.woWrittenOff"];
+        "creditreport.rec.woBalance", "creditreport.rec.woWrittenOff"].concat(showTarget ? ["creditreport.rec.woTarget"] : []);
     const name = r => (w.dim === "location" && !r.key ? t("creditreport.pi.otherAddress") : (r.name || r.key || "—"));
     const rows = w.rows.map(r => `<tr>
         <td>${CI.esc(name(r))}${w.dim === "officer" && r.branch ? `<div class="ci-sub">${CI.esc(r.branch)}</div>` : ""}</td>
@@ -86,6 +90,7 @@ function recRenderWo(d) {
         <td class="num ci-good">${CI.money(r.collected)}</td>
         <td class="num">${CI.money(r.balance)}<div class="ci-sub">${CI.esc(t("creditreport.rec.woBalanceSub", { n: CI.num(r.balanceCount) }))}</div></td>
         <td class="num">${CI.money(r.writtenOff)}<div class="ci-sub">${CI.esc(t("creditreport.rec.woLoansN", { n: CI.num(r.writtenOffCount) }))}</div></td>
+        ${showTarget ? `<td class="num">${r.target ? `${CI.pct(r.collected / r.target, 0)}<div class="ci-sub">${CI.money(r.target)}</div>` : CI.esc(t("creditreport.rec.notSet"))}</td>` : ""}
     </tr>`).join("");
     document.getElementById("recWoTable").innerHTML =
         `<thead><tr>${head.map((h, i) => `<th${i ? ' class="num"' : ""}>${CI.esc(t(h))}</th>`).join("")}</tr></thead>` +
@@ -187,23 +192,28 @@ async function recAdminFetch(method, body) {
 async function recLoadTargets() {
     const branches = (recData && recData.options && recData.options.branches) || [];
     let current = {};
+    let currentWo = {};
     try {
         const r = await recAdminFetch("GET");
-        if (r.ok) current = r.targets || {};
+        if (r.ok) { current = r.targets || {}; currentWo = r.woTargets || {}; }
     } catch (e) {
         console.error(e);
     }
-    document.getElementById("recTargetGrid").innerHTML = branches.map(b =>
-        `<label class="pi-field"><span>${CI.esc(b)}</span><input type="number" min="0" step="1" data-branch="${CI.esc(b)}" value="${current[b] ?? ""}"></label>`).join("");
+    const input = (kind, b, v) =>
+        `<input type="number" min="0" step="1" inputmode="numeric" data-kind="${kind}" data-branch="${CI.esc(b)}" value="${v ?? ""}" aria-label="${CI.esc(`${b} ${t(kind === "wo" ? "creditreport.rec.targetWo" : "creditreport.rec.targetNpl")}`)}">`;
+    document.getElementById("recTargetGrid").innerHTML =
+        `<span class="ci-th">${CI.esc(t("creditreport.pi.branch"))}</span><span class="ci-th">${CI.esc(t("creditreport.rec.targetNpl"))}</span><span class="ci-th">${CI.esc(t("creditreport.rec.targetWo"))}</span>` +
+        branches.map(b => `<span class="ci-tb">${CI.esc(b)}</span>${input("npl", b, current[b])}${input("wo", b, currentWo[b])}`).join("");
 }
 
 async function recSaveTargets() {
     const targets = {};
+    const woTargets = {};
     document.querySelectorAll("#recTargetGrid input[data-branch]").forEach(i => {
-        if (i.value !== "") targets[i.dataset.branch] = i.value;
+        if (i.value !== "") (i.dataset.kind === "wo" ? woTargets : targets)[i.dataset.branch] = i.value;
     });
     try {
-        const r = await recAdminFetch("PUT", { month: document.getElementById("recTargetMonth").value, targets });
+        const r = await recAdminFetch("PUT", { month: document.getElementById("recTargetMonth").value, targets, woTargets });
         if (!r.ok) throw new Error(r.message || "");
         CI.toast(t("creditreport.growth.saved"), "success");
         recLoad();

@@ -123,7 +123,8 @@ No Internet Connection
 <div class="ci-inline-fields ci-admin-fields">
 <label class="pi-field"><span data-i18n="creditreport.rec.month">Month</span><input type="month" id="recTargetMonth"></label>
 </div>
-<div class="ci-target-grid" id="recTargetGrid"></div>
+<p class="pi-note" data-i18n="creditreport.rec.targetsNote">NPL is compared with NPL recovered (left NPL); WO with WO collected (principal + interest). The two are never added together.</p>
+<div class="ci-target-table" id="recTargetGrid"></div>
 <button type="button" class="pi-btn-ghost" id="recTargetSave" data-i18n="creditreport.growth.save">Save</button>
 </details>
 
@@ -134,6 +135,7 @@ No Internet Connection
 <li data-i18n="creditreport.rec.defRate">Recovery rate = Recovered ÷ Opening NPL. Net NPL movement = Closing − Opening NPL.</li>
 <li data-i18n="creditreport.rec.defCash">Cash collected exists only for written-off loans (WO collections in the period). Cash paid on NPL loans has no data source, so it is shown as not available.</li>
 <li data-i18n="creditreport.rec.defWo">WO collected = principal + interest from WO_Col_GB in the period (the same figure as the Daily Report's Write Off section). It needs no NPL history.</li>
+<li data-i18n="creditreport.rec.targetsNote">NPL is compared with NPL recovered (left NPL); WO with WO collected (principal + interest). The two are never added together.</li>
 <li data-i18n="creditreport.rec.defTarget">Target achievement = Recovered ÷ the monthly targets an admin set for the branches and months in the period.</li>
 </ul>
 </details>
