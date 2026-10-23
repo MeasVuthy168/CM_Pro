@@ -8,7 +8,7 @@
 
 const t = CI.t;
 const EWS_PAGE = 50;
-const EWS_RULES = ["delay", "repeated", "payroll", "aging", "increase", "documented"];
+const EWS_RULES = ["delay", "repeated", "payroll", "aging", "increase", "documented", "promise"];
 
 let ewsData = null;
 let ewsLevel = "all";
@@ -55,6 +55,7 @@ function ewsRuleCondition(rule, r) {
         case "aging": return t("creditreport.ews.cond.aging", { days: r.aging.lookbackDays });
         case "increase": return t("creditreport.ews.cond.increase", { pct: r.increase.minPct, days: r.increase.lookbackDays });
         case "documented": return t("creditreport.ews.cond.documented", { n: r.documented.keywords.length });
+        case "promise": return t("creditreport.ews.cond.promise");
         default: return "";
     }
 }
@@ -97,6 +98,7 @@ function ewsWarningText(w) {
         case "aging": return t("creditreport.ews.w.aging", { from: `${x.classThen} ${x.daysThen}`, to: `${x.classNow} ${x.daysNow}`, since: CI.dmy(x.since) });
         case "increase": return t("creditreport.ews.w.increase", { from: CI.money(x.balanceThen), to: CI.money(x.balanceNow), since: CI.dmy(x.since) });
         case "documented": return t("creditreport.ews.w.documented", { keyword: x.keyword });
+        case "promise": return t("creditreport.ews.w.promise", { date: CI.dmy(x.promised) });
         default: return w.rule;
     }
 }
