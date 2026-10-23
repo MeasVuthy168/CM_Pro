@@ -403,10 +403,10 @@ function crActiveSection() {
     const section = crSections()[sectionKey];
 
     if (sectionKey === "nbcOverdue") {
-        const nbcClass = document.getElementById("crNbcClass").value;
-        const idx = CR_NBC_CLASS_INDEX[nbcClass];
-        if (idx === undefined) return section;
-        return { groups: [section.groups[idx]] };
+        // Several classes picked: one group each, in the order listed.
+        const idxs = crPicks("crNbcClass").map(v => CR_NBC_CLASS_INDEX[v]).filter(i => i !== undefined);
+        if (!idxs.length) return section;
+        return { groups: idxs.sort((a, b) => a - b).map(i => section.groups[i]) };
     }
 
     // Current mode already narrows parT24 server-side (see
@@ -415,10 +415,14 @@ function crActiveSection() {
     // (no refetch) needs to pick a different field source for the same
     // single group.
     if (sectionKey === "parT24" && crMode === "history") {
-        const t24Class = document.getElementById("crClass").value;
-        const bucketKey = CR_T24_CLASS_INDEX[t24Class];
-        if (!bucketKey) return section;
-        return { groups: [crT24ClassGroup(`parT24ByClass.${bucketKey}`, section.groups[0].label)] };
+        const picks = crPicks("crClass").filter(v => CR_T24_CLASS_INDEX[v]);
+        if (!picks.length) return section;
+        const label = section.groups[0].label;
+        const optText = v => [...document.getElementById("crClass").options].find(o => o.value === v)?.textContent.trim() || v;
+        return {
+            groups: picks.map(v => crT24ClassGroup(`parT24ByClass.${CR_T24_CLASS_INDEX[v]}`,
+                picks.length > 1 ? `${label} — ${optText(v)}` : label))
+        };
     }
 
     return section;
@@ -847,18 +851,14 @@ function crShowEmpty(msg) {
 function crBuildQuery() {
     const parts = [];
 
-    // "total" (Total T24 Overdue) isn't a server-side filter value — it
-    // just means unfiltered, same as "" (All), so it's never sent.
-    const t24Class = document.getElementById("crClass").value;
-    if (t24Class && t24Class !== "total") parts.push(`t24Class=${encodeURIComponent(t24Class)}`);
-
-    const t24Product = document.getElementById("crProduct").value;
-    if (t24Product) parts.push(`t24Product=${encodeURIComponent(t24Product)}`);
+    // One param per picked value; "total" (Total T24 Overdue) is the
+    // class filter's All — never sent.
+    crPicks("crClass").forEach(v => parts.push(`t24Class=${encodeURIComponent(v)}`));
+    crPicks("crProduct").forEach(v => parts.push(`t24Product=${encodeURIComponent(v)}`));
 
     // crNbcClass is NOT sent — every classification is already in the
     // response (see crActiveSection() above), so it's a display-only pick.
-    const nbcProduct = document.getElementById("crNbcProduct").value;
-    if (nbcProduct) parts.push(`nbcProduct=${encodeURIComponent(nbcProduct)}`);
+    crPicks("crNbcProduct").forEach(v => parts.push(`nbcProduct=${encodeURIComponent(v)}`));
 
     // Branch/Officer/District/Commune: before crPopulateFilters() has run
     // (i.e. on the very first request of a page load), these selects have
@@ -866,17 +866,11 @@ function crBuildQuery() {
     // value read straight off the URL at crReadStateFromUrl() time. Once
     // populated, the select itself is always the source of truth (see
     // crPopulateFilters()), so the pending value is never consulted again.
-    const branch = crFiltersInitialised ? document.getElementById("crBranch").value : crPendingBranch;
-    if (branch) parts.push(`branch=${encodeURIComponent(branch)}`);
-
-    const officerId = crFiltersInitialised ? document.getElementById("crOfficer").value : crPendingOfficerId;
-    if (officerId) parts.push(`officerId=${encodeURIComponent(officerId)}`);
-
-    const district = crFiltersInitialised ? document.getElementById("crDistrict").value : crPendingDistrict;
-    if (district) parts.push(`district=${encodeURIComponent(district)}`);
-
-    const commune = crFiltersInitialised ? document.getElementById("crCommune").value : crPendingCommune;
-    if (commune) parts.push(`commune=${encodeURIComponent(commune)}`);
+    const picks = (id, pending) => (crFiltersInitialised ? crPicks(id) : pending);
+    picks("crBranch", crPendingBranch).forEach(v => parts.push(`branch=${encodeURIComponent(v)}`));
+    picks("crOfficer", crPendingOfficerId).forEach(v => parts.push(`officerId=${encodeURIComponent(v)}`));
+    picks("crDistrict", crPendingDistrict).forEach(v => parts.push(`district=${encodeURIComponent(v)}`));
+    picks("crCommune", crPendingCommune).forEach(v => parts.push(`commune=${encodeURIComponent(v)}`));
 
     return parts.length ? `?${parts.join("&")}` : "";
 }
@@ -923,7 +917,8 @@ function crUpdateClassVisibility() {
 // read from.
 // ========================================
 let crFiltersInitialised = false;
-let crPendingBranch = "", crPendingOfficerId = "", crPendingDistrict = "", crPendingCommune = "";
+// Each a list (several picked); [] = All.
+let crPendingBranch = [], crPendingOfficerId = [], crPendingDistrict = [], crPendingCommune = [];
 let crCommunesList = [];
 let crOfficerRoster = [];
 let crDistrictCommunes = {};
@@ -937,32 +932,34 @@ function crPopulateSelectOptions(selectEl, items) {
     selectEl.insertAdjacentHTML("beforeend", optionsHtml);
 }
 
-// Rebuilds #crCommune's options to just the selected District's own
-// communes (every commune when no District is selected), preserving the
-// current selection only if it's still valid under the new list.
+// Rebuilds #crCommune's options to just the selected Districts' own
+// communes (every commune when no District is selected), keeping the
+// picks that are still on the new list.
 function crRebuildCommuneOptions() {
-    const district = document.getElementById("crDistrict").value;
+    const districts = crPicks("crDistrict");
     const communeSel = document.getElementById("crCommune");
-    const currentValue = communeSel.value;
-    const allowed = district ? (crDistrictCommunes[district] || []) : crCommunesList;
+    const current = crPicks("crCommune");
+    const allowed = districts.length
+        ? [...new Set(districts.flatMap(d => crDistrictCommunes[d] || []))].sort((a, b) => a.localeCompare(b))
+        : crCommunesList;
 
     communeSel.innerHTML = `<option value="" data-i18n="creditreport.detail.all">${t("creditreport.detail.all")}</option>` +
         allowed.map(c => `<option value="${crEscapeHtml(c)}">${crEscapeHtml(c)}</option>`).join("");
-    if (allowed.includes(currentValue)) communeSel.value = currentValue;
+    crRestorePicks("crCommune", current.filter(c => allowed.includes(c)));
 }
 
-// Rebuilds #crOfficer's options to just the selected Branch's own
-// officers (every officer when no Branch is selected), preserving the
-// current selection only if it's still valid under the new list.
+// Rebuilds #crOfficer's options to just the selected Branches' own
+// officers (every officer when no Branch is selected), keeping the
+// picks that are still on the new list.
 function crRebuildOfficerOptions() {
-    const branch = document.getElementById("crBranch").value;
+    const branches = crPicks("crBranch");
     const officerSel = document.getElementById("crOfficer");
-    const currentValue = officerSel.value;
-    const allowed = branch ? crOfficerRoster.filter(o => o.branch === branch) : crOfficerRoster;
+    const current = crPicks("crOfficer");
+    const allowed = branches.length ? crOfficerRoster.filter(o => branches.includes(o.branch)) : crOfficerRoster;
 
     officerSel.innerHTML = `<option value="" data-i18n="creditreport.detail.all">${t("creditreport.detail.all")}</option>` +
         allowed.map(o => `<option value="${crEscapeHtml(o.id)}">${crEscapeHtml(o.name)}</option>`).join("");
-    if (allowed.some(o => o.id === currentValue)) officerSel.value = currentValue;
+    crRestorePicks("crOfficer", current.filter(id => allowed.some(o => o.id === id)));
 }
 
 function crPopulateFilters(data) {
@@ -975,12 +972,9 @@ function crPopulateFilters(data) {
     crPopulateSelectOptions(document.getElementById("crBranch"), data.branches || []);
     crPopulateSelectOptions(document.getElementById("crDistrict"), data.districts || []);
 
-    const restore = (id, pending) => {
-        const sel = document.getElementById(id);
-        if (pending && [...sel.options].some(o => o.value === pending)) sel.value = pending;
-    };
-    // Branch/District first — Officer/Commune cascade off whichever value
-    // ends up restored here.
+    const restore = (id, pending) => crRestorePicks(id, pending);
+    // Branch/District first — Officer/Commune cascade off whichever values
+    // end up restored here.
     restore("crBranch", crPendingBranch);
     restore("crDistrict", crPendingDistrict);
 
@@ -1007,77 +1001,38 @@ function crReadStateFromUrl() {
         document.getElementById("crSection").value = section;
     }
 
-    const t24Class = p.get("t24Class");
-    if (t24Class) {
-        const classSel = document.getElementById("crClass");
-        if ([...classSel.options].some(o => o.value === t24Class)) {
-            classSel.value = t24Class;
-        }
-    }
+    crRestorePicks("crClass", p.getAll("t24Class"));
 
-    const t24Product = p.get("t24Product");
-    if (t24Product) {
-        const productSel = document.getElementById("crProduct");
-        if ([...productSel.options].some(o => o.value === t24Product)) {
-            productSel.value = t24Product;
-        }
-    }
+    crRestorePicks("crProduct", p.getAll("t24Product"));
 
-    const nbcClass = p.get("nbcClass");
-    if (nbcClass) {
-        const nbcClassSel = document.getElementById("crNbcClass");
-        if ([...nbcClassSel.options].some(o => o.value === nbcClass)) {
-            nbcClassSel.value = nbcClass;
-        }
-    }
+    crRestorePicks("crNbcClass", p.getAll("nbcClass"));
 
-    const nbcProduct = p.get("nbcProduct");
-    if (nbcProduct) {
-        const nbcProductSel = document.getElementById("crNbcProduct");
-        if ([...nbcProductSel.options].some(o => o.value === nbcProduct)) {
-            nbcProductSel.value = nbcProduct;
-        }
-    }
+    crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
 
     // Branch/Officer/District/Commune selects have no options yet at this
     // point (they're populated from the first API response) — stash the
     // raw URL value for crBuildQuery()'s first request and crPopulateFilters()
     // to restore once the options exist.
-    crPendingBranch = p.get("branch") || "";
-    crPendingOfficerId = p.get("officerId") || "";
-    crPendingDistrict = p.get("district") || "";
-    crPendingCommune = p.get("commune") || "";
+    crPendingBranch = p.getAll("branch").filter(Boolean);
+    crPendingOfficerId = p.getAll("officerId").filter(Boolean);
+    crPendingDistrict = p.getAll("district").filter(Boolean);
+    crPendingCommune = p.getAll("commune").filter(Boolean);
 }
 
 function crSyncStateToUrl() {
     const p = new URLSearchParams();
     p.set("section", document.getElementById("crSection").value);
 
-    const t24Class = document.getElementById("crClass").value;
-    if (t24Class) p.set("t24Class", t24Class);
-
-    const t24Product = document.getElementById("crProduct").value;
-    if (t24Product) p.set("t24Product", t24Product);
-
-    const nbcClass = document.getElementById("crNbcClass").value;
-    if (nbcClass) p.set("nbcClass", nbcClass);
-
-    const nbcProduct = document.getElementById("crNbcProduct").value;
-    if (nbcProduct) p.set("nbcProduct", nbcProduct);
-
+    crAddPicks(p, "t24Class", "crClass");
+    crAddPicks(p, "t24Product", "crProduct");
+    crAddPicks(p, "nbcClass", "crNbcClass");
+    crAddPicks(p, "nbcProduct", "crNbcProduct");
     // Only reached after crPopulateFilters() has already run (see
     // crRunReport()), so these selects always hold the live, restored value.
-    const branch = document.getElementById("crBranch").value;
-    if (branch) p.set("branch", branch);
-
-    const officerId = document.getElementById("crOfficer").value;
-    if (officerId) p.set("officerId", officerId);
-
-    const district = document.getElementById("crDistrict").value;
-    if (district) p.set("district", district);
-
-    const commune = document.getElementById("crCommune").value;
-    if (commune) p.set("commune", commune);
+    crAddPicks(p, "branch", "crBranch");
+    crAddPicks(p, "officerId", "crOfficer");
+    crAddPicks(p, "district", "crDistrict");
+    crAddPicks(p, "commune", "crCommune");
 
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
 }
@@ -1626,7 +1581,10 @@ function crUpdateChartButtonVisibility() {
     const btn = document.getElementById("btnCrHistChart");
     if (!btn) return;
     const sectionFilter = document.getElementById("crSection").value;
-    const nbcClassAll = sectionFilter === "nbcOverdue" && !document.getElementById("crNbcClass").value;
+    // The chart follows one classification: hidden for All NBC classes,
+    // and when several NBC / T24 classes are picked.
+    const nbcClassAll = (sectionFilter === "nbcOverdue" && crPicks("crNbcClass").length !== 1) ||
+        (sectionFilter === "parT24" && crPicks("crClass").length > 1);
     btn.style.display = (crMode === "history" && crResolveSelectedLocation() && sectionFilter !== "all" && !nbcClassAll) ? "" : "none";
 }
 
@@ -1817,6 +1775,8 @@ document.getElementById("crChartOverlay").addEventListener("click", (e) => {
 // ========================================
 // INIT
 // ========================================
+// Every filter picks several values, except Showing (crSection).
+crMultiEnhance(["crDistrict", "crCommune", "crBranch", "crOfficer", "crClass", "crProduct", "crNbcClass", "crNbcProduct"]);
 crReadStateFromUrl();
 crUpdateClassVisibility();
 crRunReport();

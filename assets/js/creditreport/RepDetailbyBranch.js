@@ -167,55 +167,23 @@ function crReadStateFromUrl() {
         document.getElementById("crSection").value = section;
     }
 
-    const t24Class = p.get("t24Class");
-    if (t24Class) {
-        const classSel = document.getElementById("crClass");
-        if ([...classSel.options].some(o => o.value === t24Class)) {
-            classSel.value = t24Class;
-        }
-    }
+    crRestorePicks("crClass", p.getAll("t24Class"));
 
-    const t24Product = p.get("t24Product");
-    if (t24Product) {
-        const productSel = document.getElementById("crProduct");
-        if ([...productSel.options].some(o => o.value === t24Product)) {
-            productSel.value = t24Product;
-        }
-    }
+    crRestorePicks("crProduct", p.getAll("t24Product"));
 
-    const nbcClass = p.get("nbcClass");
-    if (nbcClass) {
-        const nbcClassSel = document.getElementById("crNbcClass");
-        if ([...nbcClassSel.options].some(o => o.value === nbcClass)) {
-            nbcClassSel.value = nbcClass;
-        }
-    }
+    crRestorePicks("crNbcClass", p.getAll("nbcClass"));
 
-    const nbcProduct = p.get("nbcProduct");
-    if (nbcProduct) {
-        const nbcProductSel = document.getElementById("crNbcProduct");
-        if ([...nbcProductSel.options].some(o => o.value === nbcProduct)) {
-            nbcProductSel.value = nbcProduct;
-        }
-    }
+    crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
 }
 
 function crSyncStateToUrl() {
     const p = new URLSearchParams();
     p.set("section", document.getElementById("crSection").value);
 
-    const t24Class = document.getElementById("crClass").value;
-    if (t24Class) p.set("t24Class", t24Class);
-
-    const t24Product = document.getElementById("crProduct").value;
-    if (t24Product) p.set("t24Product", t24Product);
-
-    const nbcClass = document.getElementById("crNbcClass").value;
-    if (nbcClass) p.set("nbcClass", nbcClass);
-
-    const nbcProduct = document.getElementById("crNbcProduct").value;
-    if (nbcProduct) p.set("nbcProduct", nbcProduct);
-
+    crAddPicks(p, "t24Class", "crClass");
+    crAddPicks(p, "t24Product", "crProduct");
+    crAddPicks(p, "nbcClass", "crNbcClass");
+    crAddPicks(p, "nbcProduct", "crNbcProduct");
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
 }
 
@@ -521,10 +489,10 @@ function crActiveSection(sectionKey) {
     const section = crSections()[sectionKey];
 
     if (sectionKey === "nbcOverdue") {
-        const nbcClass = document.getElementById("crNbcClass").value;
-        const idx = CR_NBC_CLASS_INDEX[nbcClass];
-        if (idx === undefined) return section;
-        return { groups: [section.groups[idx]] };
+        // Several classes picked: one group each, in the order listed.
+        const idxs = crPicks("crNbcClass").map(v => CR_NBC_CLASS_INDEX[v]).filter(i => i !== undefined);
+        if (!idxs.length) return section;
+        return { groups: idxs.sort((a, b) => a - b).map(i => section.groups[i]) };
     }
 
     // Current mode already narrows parT24 server-side (see
@@ -533,10 +501,14 @@ function crActiveSection(sectionKey) {
     // mode (no refetch) needs to pick a different field source for the
     // same single group.
     if (sectionKey === "parT24" && crMode === "history") {
-        const t24Class = document.getElementById("crClass").value;
-        const bucketKey = CR_T24_CLASS_INDEX[t24Class];
-        if (!bucketKey) return section;
-        return { groups: [crT24ClassGroup(`parT24ByClass.${bucketKey}`, section.groups[0].label)] };
+        const picks = crPicks("crClass").filter(v => CR_T24_CLASS_INDEX[v]);
+        if (!picks.length) return section;
+        const label = section.groups[0].label;
+        const optText = v => [...document.getElementById("crClass").options].find(o => o.value === v)?.textContent.trim() || v;
+        return {
+            groups: picks.map(v => crT24ClassGroup(`parT24ByClass.${CR_T24_CLASS_INDEX[v]}`,
+                picks.length > 1 ? `${label} — ${optText(v)}` : label))
+        };
     }
 
     return section;
@@ -679,6 +651,22 @@ function crBuildHistoryBreakdownRow(dateKey, item, section, team, t24AsOfText) {
 // combined total, or — when a Team is selected — that branch's own
 // CO/FSRO/Digital breakdown (already on the item, saved by the daily
 // snapshot itself; no extra fetch).
+// The row a stored day shows for the History Branch / Team picks: one
+// branch's own row (or the All Branch total) and one team's breakdown —
+// or, with several branches / teams picked, the server's `combined` row
+// (those branches' picked teams added up, PAR % recomputed).
+function crHistoryPicks() {
+    return { branches: crPicks("crHistBranch"), teams: crPicks("crHistTeam") };
+}
+function crHistoryKey(picks) {
+    return JSON.stringify(picks);
+}
+function crHistoryItemForDay(day, picks = crHistoryPicks()) {
+    if (picks.branches.length > 1 || picks.teams.length > 1) return day.combined || null;
+    const raw = picks.branches.length ? day.items.find(it => it.branch === picks.branches[0]) : day.total;
+    return crResolveHistoryItem(raw, picks.teams[0] || "");
+}
+
 function crResolveHistoryItem(rawItem, team) {
     if (!rawItem) return null;
     return team ? (rawItem.breakdown ? rawItem.breakdown[team] : null) : rawItem;
@@ -697,8 +685,7 @@ function crRenderHistory() {
         return;
     }
 
-    const branchFilter = document.getElementById("crHistBranch").value;
-    const teamFilter = document.getElementById("crHistTeam").value;
+    const picks = crHistoryPicks();
 
     // Always exactly one row-stream, in chronological date order — a
     // specific branch's own figures, or "All Branch" (the cross-branch
@@ -708,9 +695,8 @@ function crRenderHistory() {
     // total (already on the item, saved by the daily snapshot itself).
     let rowsHtml = "";
     for (const day of crHistoryData.days) {
-        const rawItem = branchFilter ? day.items.find(it => it.branch === branchFilter) : day.total;
-        const item = crResolveHistoryItem(rawItem, teamFilter);
-        if (item) rowsHtml += crBuildHistoryRow(day.date, item, section, !branchFilter, day.t24AsOfText);
+        const item = crHistoryItemForDay(day, picks);
+        if (item) rowsHtml += crBuildHistoryRow(day.date, item, section, picks.branches.length !== 1, day.t24AsOfText);
     }
 
     document.getElementById("crTbody").innerHTML = rowsHtml;
@@ -729,10 +715,12 @@ async function crFetchHistory() {
     // rows, or the All Branch total — so ask for just that part of each
     // day instead of every branch. Switching the Branch filter afterwards
     // re-fetches (see crHistBranch's handler).
-    const branchFilter = document.getElementById("crHistBranch").value;
+    // Several branches / teams: the server also adds them up per day.
+    const picks = crHistoryPicks();
     const params = new URLSearchParams({ dateFrom, dateTo });
-    if (branchFilter) params.set("branch", branchFilter);
+    if (picks.branches.length) picks.branches.forEach(b => params.append("branch", b));
     else params.set("totalOnly", "1");
+    if (picks.branches.length > 1 || picks.teams.length > 1) picks.teams.forEach(tm => params.append("team", tm));
 
     crShowLoading();
     try {
@@ -746,7 +734,7 @@ async function crFetchHistory() {
             return;
         }
         crHistoryData = data;
-        crHistoryData.branchFilter = branchFilter;
+        crHistoryData.key = crHistoryKey(picks);
         crRenderHistory();
     } catch (e) {
         console.error(e);
@@ -1020,18 +1008,14 @@ function crShowEmpty(msg) {
 function crBuildDateQuery() {
     const parts = [];
 
-    // "total" (Total T24 Overdue) isn't a server-side filter value — it
-    // just means unfiltered, same as "" (All), so it's never sent.
-    const t24Class = document.getElementById("crClass").value;
-    if (t24Class && t24Class !== "total") parts.push(`t24Class=${encodeURIComponent(t24Class)}`);
-
-    const t24Product = document.getElementById("crProduct").value;
-    if (t24Product) parts.push(`t24Product=${encodeURIComponent(t24Product)}`);
+    // One param per picked value; "total" (Total T24 Overdue) is the
+    // class filter's All — never sent.
+    crPicks("crClass").forEach(v => parts.push(`t24Class=${encodeURIComponent(v)}`));
+    crPicks("crProduct").forEach(v => parts.push(`t24Product=${encodeURIComponent(v)}`));
 
     // crNbcClass is NOT sent — every classification is already in the
     // response (see crActiveSection() above), so it's a display-only pick.
-    const nbcProduct = document.getElementById("crNbcProduct").value;
-    if (nbcProduct) parts.push(`nbcProduct=${encodeURIComponent(nbcProduct)}`);
+    crPicks("crNbcProduct").forEach(v => parts.push(`nbcProduct=${encodeURIComponent(v)}`));
     return parts.length ? `?${parts.join("&")}` : "";
 }
 
@@ -1515,7 +1499,10 @@ function crUpdateChartButtonVisibility() {
     const btn = document.getElementById("btnCrHistChart");
     if (!btn) return;
     const sectionFilter = document.getElementById("crSection").value;
-    const nbcClassAll = sectionFilter === "nbcOverdue" && !document.getElementById("crNbcClass").value;
+    // The chart follows one classification: hidden for All NBC classes,
+    // and when several NBC / T24 classes are picked.
+    const nbcClassAll = (sectionFilter === "nbcOverdue" && crPicks("crNbcClass").length !== 1) ||
+        (sectionFilter === "parT24" && crPicks("crClass").length > 1);
     btn.style.display = (crMode === "history" && crHistoryFocused() && !nbcClassAll) ? "" : "none";
 }
 
@@ -1539,10 +1526,10 @@ function crChartMetricOptions(section) {
 }
 
 function crChartTitle() {
-    const branchFilter = document.getElementById("crHistBranch").value;
-    const teamFilter = document.getElementById("crHistTeam").value;
-    const teamLabel = { co: t("creditreport.byBranch.teamCo"), fsro: t("creditreport.byCO.fsro"), digital: t("creditreport.byBranch.teamDigital") }[teamFilter] || t("creditreport.byCO.allTeam");
-    return `${branchFilter || t("creditreport.byCO.allBranch")} — ${teamLabel}`;
+    const { branches, teams } = crHistoryPicks();
+    const teamName = tm => ({ co: t("creditreport.byBranch.teamCo"), fsro: t("creditreport.byCO.fsro"), digital: t("creditreport.byBranch.teamDigital") }[tm] || tm);
+    const teamLabel = teams.length ? teams.map(teamName).join(", ") : t("creditreport.byCO.allTeam");
+    return `${branches.length ? branches.join(", ") : t("creditreport.byCO.allBranch")} — ${teamLabel}`;
 }
 
 function crRenderChartMetricTabs(section, metricOptions) {
@@ -1569,18 +1556,13 @@ function crRenderChart(section) {
     }
     crRenderChartMetricTabs(section, metricOptions);
 
-    const branchFilter = document.getElementById("crHistBranch").value;
-    const teamFilter = document.getElementById("crHistTeam").value;
     const days = crHistoryData.days;
     CRGrowthDashboard.render(document.getElementById("crGrowthDashboard"), {
         headerRoot: document.getElementById("crChartTitle"),
         section,
         days: crHistoryData.days,
         scope: crChartTitle(),
-        getItemForDay: day => {
-            const raw = branchFilter ? day.items.find(it => it.branch === branchFilter) : day.total;
-            return crResolveHistoryItem(raw, teamFilter);
-        },
+        getItemForDay: day => crHistoryItemForDay(day),
         getByPath: crGetByPath,
         fmtNum: crFmtNum,
         fmtPct: crFmtPct
@@ -1603,8 +1585,7 @@ function crRenderChart(section) {
         const field = g.fields.find(f => f.label === crChartMetricLabel);
         if (!field) return;
         const data = days.map(day => {
-            const raw = branchFilter ? day.items.find(it => it.branch === branchFilter) : day.total;
-            const item = crResolveHistoryItem(raw, teamFilter);
+            const item = crHistoryItemForDay(day);
             const v = item ? crGetByPath(item, field.key) : null;
             return v == null ? null : Number(v) || 0;
         });
@@ -1720,20 +1701,23 @@ document.getElementById("crChartOverlay").addEventListener("click", (e) => {
 document.getElementById("crModeCurrentBtn").addEventListener("click", () => crSetMode("current"));
 document.getElementById("crModeHistoryBtn").addEventListener("click", () => crSetMode("history"));
 document.getElementById("btnCrHistRun").addEventListener("click", crFetchHistory);
-document.getElementById("crHistBranch").addEventListener("change", () => {
+// Loaded history only carries the branches (or All Branch total) it was
+// fetched for, and a combined row only for the teams it was fetched
+// with — so other branches, or other teams while several branches /
+// teams are picked, need their own fetch. One team switched on what's
+// loaded just re-renders.
+function crOnHistoryPicksChange() {
     crUpdateHistRunButtonState();
-    // Loaded history only carries the branch (or All Branch total) it was
-    // fetched for, so a different pick needs its own fetch.
-    if (crHistoryData && crHistoryData.branchFilter !== document.getElementById("crHistBranch").value) {
-        crFetchHistory();
-    } else {
-        crRenderHistory();
-    }
-});
-document.getElementById("crHistTeam").addEventListener("change", () => {
-    crUpdateHistRunButtonState();
-    crRenderHistory();
-});
+    if (!crHistoryData) return;
+    const now = crHistoryPicks();
+    const was = JSON.parse(crHistoryData.key);
+    const same = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+    const combined = now.branches.length > 1 || now.teams.length > 1;
+    if (!same(now.branches, was.branches) || (combined && !same(now.teams, was.teams))) crFetchHistory();
+    else crRenderHistory();
+}
+document.getElementById("crHistBranch").addEventListener("change", crOnHistoryPicksChange);
+document.getElementById("crHistTeam").addEventListener("change", crOnHistoryPicksChange);
 
 if (crIsAdmin) {
     // Delegated — rows are rebuilt wholesale on every crRenderHistory()
@@ -1807,6 +1791,8 @@ if (crIsAdmin) {
 // ========================================
 // INIT
 // ========================================
+// Every filter picks several values, except Showing (crSection).
+crMultiEnhance(["crHistBranch", "crHistTeam", "crClass", "crProduct", "crNbcClass", "crNbcProduct"]);
 crReadStateFromUrl();
 crUpdateClassVisibility();
 crRunReport();

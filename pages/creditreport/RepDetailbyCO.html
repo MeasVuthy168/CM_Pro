@@ -26,6 +26,7 @@ content="#0e1b3c">
 rel="stylesheet"
 href="../../assets/css/main.css">
 
+<link rel="stylesheet" href="../../assets/css/multi-select.css">
 <link
 rel="stylesheet"
 href="../../assets/css/creditreport/RepDetailbyCO.css">
@@ -155,14 +156,14 @@ No Internet Connection
 <div class="cr-select-row" id="crBranchRow">
 <label for="crBranch" class="cr-select-label" data-i18n="creditreport.detail.branch">Branch</label>
 <select id="crBranch" class="cr-select">
-<option value="All Branch" data-i18n="creditreport.byCO.allBranch">All Branch</option>
+<option value="All Branch" data-ms-all data-i18n="creditreport.byCO.allBranch">All Branch</option>
 </select>
 </div>
 
 <div class="cr-select-row" id="crTeamRow">
 <label for="crTeam" class="cr-select-label" data-i18n="creditreport.byCO.team">Team</label>
 <select id="crTeam" class="cr-select">
-<option value="All Team" data-i18n="creditreport.byCO.allTeam">All Team</option>
+<option value="All Team" data-ms-all data-i18n="creditreport.byCO.allTeam">All Team</option>
 <option value="Credit Officer" data-i18n="creditreport.byCO.creditOfficer">Credit Officer</option>
 <option value="FSRO" data-i18n="creditreport.byCO.fsro">FSRO</option>
 </select>
@@ -188,7 +189,7 @@ No Internet Connection
 <div class="cr-select-row" id="crClassRow" style="display:none;">
 <label for="crClass" class="cr-select-label" data-i18n="creditreport.detail.loanClass">Loan Class</label>
 <select id="crClass" class="cr-select">
-<option value="total" data-i18n="creditreport.detail.classTotalT24">Total T24 Overdue</option>
+<option value="total" data-ms-all data-i18n="creditreport.detail.classTotalT24">Total T24 Overdue</option>
 <option value="Normal_to_SpecialMention" data-i18n="creditreport.detail.classNormalToSpecial">Normal → Special Mention</option>
 <option value="SubStandard_to_Loss" data-i18n="creditreport.detail.classSubToLoss">Sub Standard → Loss</option>
 <option value="Normal" data-i18n="creditreport.detail.classNormal">Normal</option>
@@ -342,6 +343,8 @@ data-i18n-placeholder="creditreport.byCO.searchPlaceholder">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 
 <script src="../../assets/js/creditreport/growth-dashboard.js"></script>
+<script src="../../assets/js/multi-select.js"></script>
+<script src="../../assets/js/creditreport/cr-multi.js"></script>
 <script src="../../assets/js/creditreport/RepDetailbyCO.js"></script>
 <script src="../../assets/js/creditreport/RepDetailbyCO-loader.js"></script>
 
