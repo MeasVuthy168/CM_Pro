@@ -90,7 +90,7 @@ No Internet Connection
 <select id="riskList" class="pi-top-pick">
 <option value="top" data-i18n="creditreport.risk.listTop">Top 10 contributors (NPL amount)</option>
 <option value="bottom" data-i18n="creditreport.risk.listBottom">Bottom 10 performers (NPL ratio)</option>
-<option value="par" data-i18n="creditreport.risk.listPar">Highest PAR (T24) %</option>
+<option value="par" data-i18n="creditreport.risk.listPar">Highest PAR %</option>
 <option value="growth" data-i18n="creditreport.risk.listGrowth">Highest NPL growth</option>
 <option value="newNpl" data-i18n="creditreport.risk.listNew">Highest new NPL formation</option>
 </select>
@@ -140,7 +140,7 @@ No Internet Connection
 <label class="pi-field"><span data-i18n="creditreport.growth.growthAxis">Growth</span>
 <select id="gGrowth"><option value="os" data-i18n="creditreport.growth.osGrowth">Outstanding growth %</option><option value="disb" data-i18n="creditreport.growth.disbGrowth">Disbursement growth %</option></select></label>
 <label class="pi-field"><span data-i18n="creditreport.growth.riskAxis">Risk</span>
-<select id="gRisk"><option value="npl" data-i18n="creditreport.pi.kNplPct">NPL ratio</option><option value="par" data-i18n="creditreport.pi.kParPct">PAR (T24) %</option></select></label>
+<select id="gRisk"><option value="npl" data-i18n="creditreport.pi.kNplPct">NPL ratio</option><option value="par" data-i18n="creditreport.pi.kParPct">PAR %</option></select></label>
 </div>
 </div>
 <p class="pi-note" id="gThresholds"></p>
@@ -166,6 +166,7 @@ No Internet Connection
 <ul>
 <li data-i18n="creditreport.risk.defAbsRel">Contribution = the row's NPL ÷ total NPL (absolute). NPL ratio = its NPL ÷ its own Loan Outstanding (relative) — a large portfolio can contribute most NPL with a low ratio.</li>
 <li data-i18n="creditreport.risk.defGrowth">Growth compares with the Daily History of the comparison date. New NPL comes from the NPL account history.</li>
+<li data-i18n="creditreport.pi.defPar">PAR — NBC Overdue, all classes ÷ Loan Outstanding.</li>
 <li data-i18n="creditreport.quality.defAging">PAR n = NBC Overdue value of accounts at least n days overdue ÷ Loan Outstanding (NBC OS). Totals are never averages of subgroup percentages.</li>
 <li data-i18n="creditreport.growth.defQuadrant">Quadrants: high / low growth and risk against the thresholds shown above.</li>
 </ul>
