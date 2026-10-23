@@ -265,6 +265,15 @@
             if (el.innerHTML.trim()) return;
             // blob: photo URLs die with the page that made them.
             el.innerHTML = snap[el.id].replace(/src="blob:[^"]*"/g, 'src="' + photoSrc() + '"');
+            // The copy also holds what the page moved into its header (a
+            // "⋮" menu and its buttons). Those ids belong to the page's own
+            // elements, still further down: left on the copy, the page's
+            // scripts wired their clicks to it, and the live header that
+            // replaces the copy got a dead menu. Only the bars' own ids stay.
+            var ids = el.querySelectorAll("[id]");
+            for (var i = 0; i < ids.length; i++) {
+                if (!/^(topbar|notificationBadge)/.test(ids[i].id)) ids[i].removeAttribute("id");
+            }
             if (el.id === IDS[1]) {
                 markActiveTab(el);
                 placeTabInd();
