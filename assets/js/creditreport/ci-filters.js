@@ -1,17 +1,19 @@
 // ========================================
 // Credit Portfolio Intelligence — shared filter context
-// Every module page (Overview, NPL Intelligence, Risk Intelligence)
-// mounts the same filter card, data-as-of line and module switcher from
-// here, so the filters mean the same thing everywhere and follow the
+// Every module page (Overview, NPL Intelligence, Risk Intelligence, …)
+// mounts the same header card from here — laid out like the Daily
+// Monitoring reports' filter card: the report's dates as icon rows
+// (tap the disbursement period to change it), then label / select rows —
+//  so the filters mean the same thing everywhere and follow the
 // user from one module to the next: they live in the address bar
 // (replaceState, so Back returns to the same view) and in sessionStorage
 // (so opening another module keeps them). The server enforces scope; the
 // locks here only mirror it.
 //
-//   CI.mountFilters({ onChange })    filter card into #ciFilters
+//   CI.mountFilters({ onChange })    header card into #ciFilters
 //   CI.query()                       URLSearchParams of the filters
 //   CI.fillOptions(options, scope, period)
-//   CI.renderAsOf(el, data)          data-as-of + comparison line
+//   CI.renderAsOf(_, data)           fills the card's date rows
 //   CI.get(path, params)             GET an /api/credit-intelligence/* body
 // ========================================
 
@@ -95,7 +97,7 @@
         const el = document.getElementById(id);
         el.disabled = on;
         if (el._msBtn) el._msBtn.disabled = on;
-        el.closest(".pi-field").classList.toggle("is-disabled", on);
+        el.closest(".cr-select-row").classList.toggle("is-disabled", on);
     }
 
     // One of Officer / Product / District at a time.
@@ -134,53 +136,103 @@
         if (period) {
             if (!document.getElementById("ciFrom").value) document.getElementById("ciFrom").value = period.fromDate || "";
             if (!document.getElementById("ciTo").value) document.getElementById("ciTo").value = period.toDate || "";
+            showPeriod(period);
         }
         persist();
     }
 
-    // opts.dates / opts.compare (default true): show the From–To period and
-    // the comparison only on pages whose figures use them.
+    const dash = k => {
+        if (!k) return "-";
+        const [y, m, d] = String(k).split("-");
+        return `${d}-${m}-${y}`;
+    };
+    function showPeriod(period) {
+        const btn = document.getElementById("ciPeriodText");
+        if (btn && period) btn.textContent = t("creditreport.detail.dateRange", { from: dash(period.fromDate), to: dash(period.toDate) });
+    }
+    const icon = name => `<span class="cr-info-icon cr-ico cr-ico-${name}" aria-hidden="true"></span>`;
+    const selectRow = (id, label, all) =>
+        `<div class="cr-select-row"><label for="${id}" class="cr-select-label">${esc(t(label))}</label><select id="${id}" class="cr-select"><option value="">${esc(t(all))}</option></select></div>`;
+
+    // opts.dates / opts.compare (default true): show the disbursement
+    // period and the comparison only on pages whose figures use them.
     function mountFilters(opts) {
         onChange = opts.onChange || onChange;
         const showDates = opts.dates !== false;
         const showCompare = opts.compare !== false;
         const box = document.getElementById("ciFilters");
-        box.className = "pi-card pi-filters";
+        box.className = "pi-card ci-head";
         box.innerHTML = `
-<div class="pi-filters-head">
-<h2 class="pi-card-title">${esc(t("creditreport.pi.filters"))}</h2>
-<button type="button" class="pi-btn-ghost" id="ciReset">${esc(t("creditreport.pi.reset"))}</button>
+<div class="cr-info-block">
+<div class="cr-info-row"${showDates ? "" : " hidden"}>
+<span class="cr-info-label">${icon("money")}<span>${esc(t("creditreport.detail.loanDisbFrom"))}</span></span>
+<button type="button" class="cr-info-value ci-period-btn" id="ciPeriodBtn" aria-expanded="false" aria-controls="ciPeriodEdit" title="${esc(t("creditreport.ci.changePeriod"))}"><span id="ciPeriodText">-</span><span class="ci-edit-ico" aria-hidden="true">✎</span></button>
 </div>
-<div class="pi-filter-grid">
-<label class="pi-field"${showDates ? "" : " hidden"}><span>${esc(t("creditreport.pi.fromDate"))}</span><input type="date" id="ciFrom"></label>
-<label class="pi-field"${showDates ? "" : " hidden"}><span>${esc(t("creditreport.pi.toDate"))}</span><input type="date" id="ciTo"></label>
-<label class="pi-field"${showCompare ? "" : " hidden"}><span>${esc(t("creditreport.pi.compare"))}</span>
-<select id="ciCompare">
+<div class="ci-period-edit" id="ciPeriodEdit" hidden>
+<div class="cr-select-row"><label for="ciFrom" class="cr-select-label">${esc(t("creditreport.pi.fromDate"))}</label><input type="date" id="ciFrom" class="cr-select"></div>
+<div class="cr-select-row"><label for="ciTo" class="cr-select-label">${esc(t("creditreport.pi.toDate"))}</label><input type="date" id="ciTo" class="cr-select"></div>
+</div>
+<div class="cr-info-row">
+<span class="cr-info-label">${icon("barchart")}<span>${esc(t("creditreport.detail.osGridMerge"))}</span></span>
+<span class="cr-info-value" id="ciInfoOs">-</span>
+</div>
+<div class="cr-info-row">
+<span class="cr-info-label">${icon("warning")}<span>${esc(t("creditreport.detail.overdueGridMerge"))}</span></span>
+<span class="cr-info-value" id="ciInfoOd">-</span>
+</div>
+<div class="cr-info-row"${showCompare ? "" : " hidden"}>
+<span class="cr-info-label">${icon("trend-up")}<span>${esc(t("creditreport.ci.comparedWithLabel"))}</span></span>
+<span class="cr-info-value ci-info-wrap" id="ciInfoCmp">-</span>
+</div>
+<div class="cr-info-row">
+<span class="cr-info-label">${icon("refresh")}<span>${esc(t("creditreport.ci.dataStatus"))}</span></span>
+<span class="cr-info-value" id="ciInfoStatus">-</span>
+</div>
+</div>
+<div class="ci-selects">
+${selectRow("ciBranch", "creditreport.pi.branch", "creditreport.pi.allBranches")}
+${selectRow("ciOfficer", "creditreport.pi.officer", "creditreport.pi.allOfficers")}
+${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts")}
+<div class="cr-select-row"${showCompare ? "" : " hidden"}><label for="ciCompare" class="cr-select-label">${esc(t("creditreport.pi.compare"))}</label>
+<select id="ciCompare" class="cr-select">
 <option value="month">${esc(t("creditreport.pi.compareMonth"))}</option>
 <option value="prev">${esc(t("creditreport.pi.comparePrev"))}</option>
 <option value="year">${esc(t("creditreport.pi.compareYear"))}</option>
 <option value="date">${esc(t("creditreport.pi.compareDate"))}</option>
-</select></label>
-<label class="pi-field" id="ciCompareDateWrap" hidden><span>${esc(t("creditreport.pi.compareOn"))}</span><input type="date" id="ciCompareDate"></label>
-<label class="pi-field"><span>${esc(t("creditreport.pi.branch"))}</span><select id="ciBranch"><option value="">${esc(t("creditreport.pi.allBranches"))}</option></select></label>
-<label class="pi-field"><span>${esc(t("creditreport.pi.officer"))}</span><select id="ciOfficer"><option value="">${esc(t("creditreport.pi.allOfficers"))}</option></select></label>
-<label class="pi-field"><span>${esc(t("creditreport.pi.product"))}</span><select id="ciProduct"><option value="">${esc(t("creditreport.pi.allProducts"))}</option></select></label>
+</select></div>
+<div class="cr-select-row" id="ciCompareDateWrap" hidden><label for="ciCompareDate" class="cr-select-label">${esc(t("creditreport.ci.compareDay"))}</label><input type="date" id="ciCompareDate" class="cr-select"></div>
 </div>
-<p class="pi-note">${esc(t("creditreport.pi.focusNote"))}</p>`;
+<div class="ci-head-foot">
+<p class="pi-note">${esc(t("creditreport.pi.focusNote"))}</p>
+<button type="button" class="pi-btn-ghost" id="ciReset">${esc(t("creditreport.pi.reset"))}</button>
+</div>`;
 
         const p = initialParams();
         if (p.get("fromDate")) document.getElementById("ciFrom").value = p.get("fromDate");
         if (p.get("toDate")) document.getElementById("ciTo").value = p.get("toDate");
         if (p.get("compare")) document.getElementById("ciCompare").value = p.get("compare");
         if (p.get("compareDate")) document.getElementById("ciCompareDate").value = p.get("compareDate");
+        if (p.get("fromDate") && p.get("toDate")) showPeriod({ fromDate: p.get("fromDate"), toDate: p.get("toDate") });
         Object.entries(MULTI).forEach(([id, key]) => { pending[id] = p.getAll(key).filter(Boolean); });
 
         if (window.MultiSelect) Object.keys(MULTI).forEach(id => MultiSelect.enhance(document.getElementById(id), { copyClass: true }));
+        const periodBtn = document.getElementById("ciPeriodBtn");
+        const periodEdit = document.getElementById("ciPeriodEdit");
+        periodBtn.addEventListener("click", () => {
+            periodEdit.hidden = !periodEdit.hidden;
+            periodBtn.setAttribute("aria-expanded", String(!periodEdit.hidden));
+        });
         const cmp = document.getElementById("ciCompare");
         const syncCmp = () => { document.getElementById("ciCompareDateWrap").hidden = !showCompare || cmp.value !== "date"; };
         syncCmp();
         cmp.addEventListener("change", () => { syncCmp(); if (cmp.value !== "date" || document.getElementById("ciCompareDate").value) changed(); });
-        ["ciFrom", "ciTo", "ciCompareDate"].forEach(id => document.getElementById(id).addEventListener("change", changed));
+        ["ciFrom", "ciTo"].forEach(id => document.getElementById(id).addEventListener("change", () => {
+            const f = document.getElementById("ciFrom").value;
+            const to = document.getElementById("ciTo").value;
+            if (f && to) showPeriod({ fromDate: f, toDate: to });
+            changed();
+        }));
+        document.getElementById("ciCompareDate").addEventListener("change", changed);
         Object.keys(MULTI).forEach(id => document.getElementById(id).addEventListener("change", () => {
             pending[id] = [];
             if (FOCUS.includes(id)) focusLock();
@@ -188,6 +240,8 @@
         }));
         document.getElementById("ciReset").addEventListener("click", () => {
             ["ciFrom", "ciTo", "ciCompareDate"].forEach(id => { document.getElementById(id).value = ""; });
+            periodEdit.hidden = true;
+            periodBtn.setAttribute("aria-expanded", "false");
             cmp.value = "month";
             syncCmp();
             Object.keys(MULTI).forEach(id => {
@@ -237,28 +291,21 @@
         });
     }
 
-    // ---------- data-as-of ----------
-    function renderAsOf(el, d) {
+    // ---------- data-as-of: the header card's date rows ----------
+    function renderAsOf(_el, d) {
         const a = d.asOf;
-        if (!a) { el.innerHTML = ""; return; }
-        const c = d.comparison;
-        const status = a.outdated
+        const set = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+        if (d.period && d.period.fromDate) showPeriod(d.period);
+        if (!a) return;
+        set("ciInfoOs", esc(a.osText));
+        set("ciInfoOd", esc(a.overdueText));
+        set("ciInfoStatus", a.outdated
             ? `<span class="pi-badge pi-badge-bad"><span aria-hidden="true">⚠</span> ${esc(t("creditreport.pi.outdated", { days: a.businessDaysBehind }))}</span>`
-            : `<span class="pi-badge pi-badge-good"><span aria-hidden="true">✓</span> ${esc(t("creditreport.pi.upToDate"))}</span>`;
-        const cmp = !c ? "" : c.available
-            ? t("creditreport.pi.comparedWith", { date: dmy(c.date) })
-            : t(`creditreport.pi.cmpReason.${c.reason || "no_snapshot"}`);
-        el.innerHTML = `
-        <div class="pi-asof-row">
-            <span class="pi-asof-label">${esc(t("creditreport.pi.dataAsOf"))}</span>
-            <strong>${esc(dmy(a.osDate))}</strong>
-            ${status}
-        </div>
-        <div class="pi-asof-sources">
-            <span>${esc(t("creditreport.pi.srcOs"))}: ${esc(a.osText)}</span>
-            <span>${esc(t("creditreport.pi.srcOverdue"))}: ${esc(a.overdueText)}</span>
-        </div>
-        <div class="pi-asof-cmp">${esc(t("creditreport.pi.period", { from: dmy(d.period && d.period.fromDate), to: dmy(d.period && d.period.toDate) }))}${cmp ? ` · ${esc(cmp)}` : ""}</div>`;
+            : `<span class="pi-badge pi-badge-good"><span aria-hidden="true">✓</span> ${esc(t("creditreport.pi.upToDate"))}</span>`);
+        const c = d.comparison;
+        set("ciInfoCmp", !c ? "-" : c.available
+            ? esc(dmy(c.date))
+            : `<span class="ci-info-reason">${esc(t(`creditreport.pi.cmpReason.${c.reason || "no_snapshot"}`))}</span>`);
     }
 
     // ---------- fetch ----------

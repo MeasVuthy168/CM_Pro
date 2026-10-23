@@ -76,12 +76,6 @@
 }
 
 /* ===== Filters ===== */
-.pi-filters-head{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:10px;
-}
 .pi-btn-ghost{
     border:1px solid var(--cr-border);
     background:transparent;
@@ -127,33 +121,101 @@
 .pi-field.is-disabled{ opacity:.5; }
 .pi-field[hidden]{ display:none; }
 
-/* ===== Data as of ===== */
-.pi-asof{
-    background:var(--cr-card-bg);
-    border:1px solid var(--cr-border);
-    border-left:4px solid var(--pi-gold);
-    border-radius:14px;
-    padding:12px 14px;
-    margin-bottom:12px;
-    font-size:12.5px;
-}
-.pi-asof:empty{ display:none; }
-.pi-asof-row{
+/* ===== Header card (ci-filters.js) — same layout as the Daily
+   Monitoring reports' filter card (RepDetailbyCO.css): icon date rows,
+   then fixed-width label / select rows. ===== */
+.ci-head .cr-info-block{ display:flex; flex-direction:column; gap:4px; }
+.ci-head .cr-info-row{
     display:flex;
     align-items:center;
-    gap:8px;
-    flex-wrap:wrap;
-    font-size:14px;
+    justify-content:space-between;
+    gap:12px;
+    font-size:12.5px;
+    padding-bottom:5px;
+    border-bottom:1px solid var(--cr-border);
 }
-.pi-asof-label{ color:var(--cr-text-muted); font-size:12.5px; }
-.pi-asof-sources{
-    display:flex;
-    flex-wrap:wrap;
-    gap:4px 14px;
-    margin-top:6px;
+.ci-head .cr-info-row[hidden]{ display:none; }
+.ci-head .cr-info-label{
     color:var(--cr-text-muted);
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:7px;
+    flex:1 1 auto;
+    min-width:0;
+    line-height:1.35;
 }
-.pi-asof-cmp{ margin-top:6px; color:var(--cr-text); }
+.ci-head .cr-info-value{
+    color:var(--cr-navy);
+    font-weight:800;
+    text-align:right;
+    flex:0 0 auto;
+    white-space:nowrap;
+    line-height:1.35;
+}
+[data-theme="dark"] .ci-head .cr-info-value{ color:var(--cr-gold-light); }
+.ci-head .ci-info-wrap{ flex:0 1 auto; white-space:normal; }
+.ci-head .ci-info-reason{ font-weight:600; font-size:11.5px; color:var(--cr-text-muted); }
+.ci-period-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    border:none;
+    background:none;
+    padding:0;
+    font:inherit;
+    font-family:'KRASAR',sans-serif;
+    cursor:pointer;
+}
+.ci-edit-ico{ font-size:12px; opacity:.75; }
+.ci-period-edit{
+    padding:6px 0 8px;
+    border-bottom:1px solid var(--cr-border);
+}
+.ci-period-edit[hidden]{ display:none; }
+.ci-selects{ margin-top:12px; }
+.ci-head .cr-select-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:6px;
+}
+.ci-head .cr-select-row[hidden]{ display:none; }
+.ci-head .cr-select-row.is-disabled{ opacity:.5; }
+.ci-head .cr-select-label{
+    font-size:11.5px;
+    font-weight:700;
+    color:var(--cr-text-muted);
+    white-space:nowrap;
+    flex:0 0 96px;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.ci-head .cr-select{
+    flex:1 1 auto;
+    min-width:0;
+    width:100%;
+    box-sizing:border-box;
+    padding:7px 10px;
+    border-radius:10px;
+    border:1px solid var(--cr-border);
+    min-height:36px;
+    background:var(--cr-input-bg, var(--cr-card-bg));
+    color:var(--cr-input-text, var(--cr-text));
+    font-size:13px;
+    font-weight:700;
+    font-family:'KRASAR',sans-serif;
+}
+.ci-head-foot{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+    margin-top:8px;
+}
+.ci-head-foot .pi-note{ margin:4px 0 0; }
+.ci-head-foot .pi-btn-ghost{ flex:0 0 auto; }
 .pi-badge{
     display:inline-flex;
     align-items:center;
