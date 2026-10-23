@@ -552,22 +552,23 @@ function crRenderHistory() {
         return;
     }
 
-    // Always exactly one location — matched via the search box above
-    // (see crResolveSelectedLocation()) — in chronological date order, no
-    // "every location" list and no Total row. "Other Address" still
-    // expands in place per-date (its own otherAddressDetail for that
-    // day) when it's the one matched location, same toggle as before.
+    // One row per date, in order, for the locations kept in the search box
+    // (crHistItemForDay(): that location's own row, or several kept — their
+    // combined row). Nothing kept: nothing to show. Other Address expands
+    // in place per-date (its own otherAddressDetail for that day) when it
+    // is the one location kept.
     const location = crResolveSelectedLocation();
     if (!location) {
         document.getElementById("crTbody").innerHTML = "";
         crShowEmpty(t("creditreport.byLocation.selectThenViewHistory", { viewHistory: t("creditreport.detail.viewHistory") }));
         return;
     }
-    const isOtherAddress = location === "Other Address";
+    // Other Address expands only when it is the one location kept.
+    const isOtherAddress = location === "Other Address" && crHistLocations().length === 1;
 
     let rowsHtml = "";
     for (const day of crHistoryData.days) {
-        const item = day.items.find(it => it.location === location);
+        const item = crHistItemForDay(day);
         if (!item) continue;
         rowsHtml += crBuildHistoryRow(day.date, item, section, { isOtherAddress, t24AsOfText: day.t24AsOfText });
         if (isOtherAddress && crHistOtherAddressExpanded.has(day.date)) {
@@ -588,13 +589,14 @@ async function crFetchHistory() {
     const dateTo = document.getElementById("crHistToDate").value;
     if (!dateFrom || !dateTo) return;
 
-    // Ask only for the one location this view ever shows — the full
-    // all-location snapshot for a 2-week range is large enough to time out
-    // on the backend's throttled database link. Picking a different
-    // location afterwards re-fetches (see crHistLocationSearch's handler).
-    const location = crResolveSelectedLocation();
+    // Ask only for the kept locations — the full all-location snapshot
+    // for a 2-week range is large enough to time out on the backend's
+    // throttled database link. A different set afterwards re-fetches
+    // (see crHistLocationPicker).
     const params = new URLSearchParams({ dateFrom, dateTo });
-    if (location) params.set("location", location);
+    // Several locations: one param each.
+    const picks = crHistLocations();
+    picks.forEach(v => params.append("location", v));
 
     crShowLoading();
     try {
@@ -608,7 +610,7 @@ async function crFetchHistory() {
             return;
         }
         crHistoryData = data;
-        crHistoryData.location = location;
+        crHistoryData.location = picks.length ? crHistLocationPicker.key() : null;
         crRenderHistory();
     } catch (e) {
         console.error(e);
@@ -747,10 +749,21 @@ function crAttachSuggestions(fieldEl, wrapEl, getRoster) {
 // against a roster location counts as a real, resolvable location, same
 // "always resolve to exactly one entity" rule Branch's/Officer's own
 // Daily History redesigns already established.
+// The kept locations (chips under the search box — see crChipPicker() in
+// cr-multi.js); the first one, or null; one day's row for them: that
+// location's own, or — several kept — the server's combined row (added up,
+// PAR % recomputed).
+let crHistLocationPicker = null;
+function crHistLocations() {
+    return crHistLocationPicker ? crHistLocationPicker.list() : [];
+}
 function crResolveSelectedLocation() {
-    const typed = document.getElementById("crHistLocationSearch").value.trim();
-    if (!typed) return null;
-    return crHistLocationRoster.find(l => l === typed) || null;
+    return crHistLocations()[0] || null;
+}
+function crHistItemForDay(day) {
+    const picks = crHistLocations();
+    if (picks.length > 1) return day.combined || null;
+    return picks.length ? day.items.find(it => it.location === picks[0]) || null : null;
 }
 
 // "View History" stays disabled until the typed text exactly matches one
@@ -1457,19 +1470,29 @@ window.addEventListener("pageshow", () => {
 document.getElementById("crModeCurrentBtn").addEventListener("click", () => crSetMode("current"));
 document.getElementById("crModeHistoryBtn").addEventListener("click", () => crSetMode("history"));
 document.getElementById("btnCrHistRun").addEventListener("click", crFetchHistory);
-document.getElementById("crHistLocationSearch").addEventListener("input", (e) => {
-    document.getElementById("crHistLocationClear").hidden = !e.target.value;
-    crUpdateHistRunButtonState();
-    crUpdateChartButtonVisibility();
-    if (!crHistoryData) return;
-    // Loaded history only carries the location it was fetched for, so a
-    // newly picked location needs its own fetch.
-    const location = crResolveSelectedLocation();
-    if (location && crHistoryData.location && location !== crHistoryData.location) {
-        crFetchHistory();
-    } else {
-        crRenderHistory();
+// Search keeps several locations: an exact match (a picked suggestion)
+// becomes a chip and the box clears for the next one. Loaded history only
+// carries the locations it was fetched for, so a different set re-fetches.
+crHistLocationPicker = crChipPicker({
+    row: document.getElementById("crHistLocationRow"),
+    keyOf: v => v,
+    labelOf: v => v,
+    onChange: () => {
+        crUpdateHistRunButtonState();
+        crUpdateChartButtonVisibility();
+        if (!crHistoryData) return;
+        if (crHistLocations().length && crHistLocationPicker.key() !== crHistoryData.location) crFetchHistory();
+        else crRenderHistory();
     }
+});
+document.getElementById("crHistLocationSearch").addEventListener("input", (e) => {
+    const typed = e.target.value.trim();
+    const match = typed && crHistLocationRoster.find(v => v === typed);
+    if (match) {
+        e.target.value = "";
+        crHistLocationPicker.add(match);
+    }
+    document.getElementById("crHistLocationClear").hidden = !e.target.value;
 });
 document.getElementById("crHistLocationSearch").addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
@@ -1637,8 +1660,8 @@ function crRenderChart(section) {
         headerRoot: document.getElementById("crChartTitle"),
         section,
         days: crHistoryData.days,
-        scope: matchedLocation,
-        getItemForDay: day => day.items.find(it => it.location === matchedLocation),
+        scope: crHistLocations().join(", "),
+        getItemForDay: crHistItemForDay,
         getByPath: crGetByPath,
         fmtNum: crFmtNum,
         fmtPct: crFmtPct
@@ -1663,7 +1686,7 @@ function crRenderChart(section) {
         const field = g.fields.find(f => f.label === crChartMetricLabel);
         if (!field) return;
         const data = days.map(day => {
-            const item = day.items.find(it => it.location === matchedLocation);
+            const item = crHistItemForDay(day);
             const v = item ? crGetByPath(item, field.key) : null;
             return v == null ? null : Number(v) || 0;
         });

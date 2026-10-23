@@ -45,3 +45,47 @@ function crRestorePicks(id, values) {
     else if (found.length) el.value = found[0];
     return want.filter(v => !have.has(v));
 }
+
+// ========================================
+// Daily History search that keeps several picks (officers, products,
+// locations) as chips under the search box: a picked suggestion — or
+// text typed to an exact match — becomes a chip and the box clears for
+// the next search; ✕ on a chip removes it. onChange runs after each.
+//
+//   const picker = crChipPicker({ row, keyOf, labelOf, onChange });
+//   picker.add(item) / picker.list() / picker.key()
+// ========================================
+function crChipPicker({ row, keyOf, labelOf, onChange }) {
+    const items = [];
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const box = document.createElement("div");
+    box.className = "cr-chips";
+    box.hidden = true;
+    row.after(box);
+    // Follows the search row in and out of view (History mode only).
+    new MutationObserver(paint).observe(row, { attributes: true, attributeFilter: ["style", "hidden"] });
+
+    function paint() {
+        box.hidden = !items.length || row.style.display === "none" || row.hidden;
+        box.innerHTML = items.map((it, i) =>
+            `<span class="cr-chip"><span class="cr-chip-text">${esc(labelOf(it))}</span>` +
+            `<button type="button" class="cr-chip-x" data-i="${i}" aria-label="✕">✕</button></span>`).join("");
+    }
+    box.addEventListener("click", e => {
+        const x = e.target.closest(".cr-chip-x");
+        if (!x) return;
+        items.splice(Number(x.dataset.i), 1);
+        paint();
+        onChange();
+    });
+    return {
+        list: () => items.slice(),
+        key: () => items.map(keyOf).join("\u0001"),
+        add(item) {
+            if (!item || items.some(x => keyOf(x) === keyOf(item))) return;
+            items.push(item);
+            paint();
+            onChange();
+        }
+    };
+}

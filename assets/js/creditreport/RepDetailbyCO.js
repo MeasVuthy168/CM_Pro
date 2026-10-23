@@ -28,7 +28,10 @@ let crData = null; // last successful /byco response
 // Area are already separate flat fields, not a toggle).
 // ========================================
 let crMode = "current"; // "current" | "history"
-let crHistoryData = null; // { days: [{ date, items, total }, ...] }
+let crHistoryData = null; // { days: [{ date, items, total, combined? }, ...] }
+// The officers kept in Daily History's search box (chips) — see
+// crChipPicker() in cr-multi.js and the wiring further down.
+let crHistOfficerPicker = null;
 let crHistDatesSeeded = false;
 
 // Daily History always narrows to exactly one officer, found via the
@@ -546,10 +549,9 @@ function crRenderHistory() {
         return;
     }
 
-    // Always exactly one officer — matched via the search box above
-    // (see crResolveSelectedOfficer()) — in chronological date order, no
-    // "every officer" list and no Total row (there's only ever the one
-    // officer being plotted).
+    // One row per date, in order, for the officers kept in the search box
+    // (crHistItemForDay(): that officer's own row, or several kept — their
+    // combined row). Nothing kept: nothing to show.
     const officer = crResolveSelectedOfficer();
     if (!officer) {
         document.getElementById("crTbody").innerHTML = "";
@@ -559,7 +561,7 @@ function crRenderHistory() {
 
     let rowsHtml = "";
     for (const day of crHistoryData.days) {
-        const item = day.items.find(it => it.name === officer.name && it.branch === officer.branch);
+        const item = crHistItemForDay(day);
         if (item) rowsHtml += crBuildHistoryRow(day.date, item, section, false, day.t24AsOfText);
     }
 
@@ -573,21 +575,34 @@ function crHistOfficerKey(officer) {
     return `${officer.name ?? ""}\u0000${officer.branch ?? ""}`;
 }
 
+// The kept officers; one day's row for them: that officer's own, or —
+// several kept — the server's combined row (added up, PAR % recomputed).
+function crHistOfficers() {
+    return crHistOfficerPicker ? crHistOfficerPicker.list() : [];
+}
+function crHistItemForDay(day) {
+    const picks = crHistOfficers();
+    if (picks.length > 1) return day.combined || null;
+    const o = picks[0];
+    return o ? day.items.find(it => it.name === o.name && it.branch === o.branch) : null;
+}
+
 async function crFetchHistory() {
     const dateFrom = document.getElementById("crHistFromDate").value;
     const dateTo = document.getElementById("crHistToDate").value;
     if (!dateFrom || !dateTo) return;
 
-    // Ask only for the one officer this view ever shows — the full
-    // all-officer snapshot for a 2-week range is large enough to time out
-    // on the backend's throttled database link. Picking a different
-    // officer afterwards re-fetches (see crHistOfficerSearch's handler).
-    const officer = crResolveSelectedOfficer();
+    // Ask only for the kept officers — the full all-officer snapshot for
+    // a 2-week range is large enough to time out on the backend's
+    // throttled database link. A different set afterwards re-fetches
+    // (see crHistOfficerPicker).
+    // Several officers: one officerName/officerBranch pair each.
+    const officers = crHistOfficers();
     const params = new URLSearchParams({ dateFrom, dateTo });
-    if (officer) {
-        params.set("officerName", officer.name ?? "");
-        params.set("officerBranch", officer.branch ?? "");
-    }
+    officers.forEach(o => {
+        params.append("officerName", o.name ?? "");
+        params.append("officerBranch", o.branch ?? "");
+    });
 
     crShowLoading();
     try {
@@ -601,7 +616,7 @@ async function crFetchHistory() {
             return;
         }
         crHistoryData = data;
-        crHistoryData.officerKey = officer ? crHistOfficerKey(officer) : null;
+        crHistoryData.officerKey = officers.length ? crHistOfficerPicker.key() : null;
         crRenderHistory();
     } catch (e) {
         console.error(e);
@@ -893,10 +908,9 @@ function crAttachOfficerSuggestions(fieldEl, wrapEl) {
 // against "Name — Branch" counts as a real, resolvable officer, same
 // "always resolve to exactly one entity" rule Branch's Daily History
 // redesign already established for its own Branch/Team filters.
+// The first kept officer (chips under the search box), or null.
 function crResolveSelectedOfficer() {
-    const typed = document.getElementById("crHistOfficerSearch").value.trim();
-    if (!typed) return null;
-    return crOfficerRoster.find(o => crOfficerRosterLabel(o) === typed) || null;
+    return crHistOfficers()[0] || null;
 }
 
 // "View History" stays disabled until the typed text exactly matches one
@@ -1366,19 +1380,29 @@ window.addEventListener("pageshow", () => {
 document.getElementById("crModeCurrentBtn").addEventListener("click", () => crSetMode("current"));
 document.getElementById("crModeHistoryBtn").addEventListener("click", () => crSetMode("history"));
 document.getElementById("btnCrHistRun").addEventListener("click", crFetchHistory);
-document.getElementById("crHistOfficerSearch").addEventListener("input", (e) => {
-    document.getElementById("crHistOfficerClear").hidden = !e.target.value;
-    crUpdateHistRunButtonState();
-    crUpdateChartButtonVisibility();
-    if (!crHistoryData) return;
-    // Loaded history only carries the officer it was fetched for, so a
-    // newly picked officer needs its own fetch.
-    const officer = crResolveSelectedOfficer();
-    if (officer && crHistoryData.officerKey && crHistOfficerKey(officer) !== crHistoryData.officerKey) {
-        crFetchHistory();
-    } else {
-        crRenderHistory();
+// Search keeps several officers: an exact match (a picked suggestion)
+// becomes a chip and the box clears for the next one. Loaded history only
+// carries the officers it was fetched for, so a different set re-fetches.
+crHistOfficerPicker = crChipPicker({
+    row: document.getElementById("crHistOfficerRow"),
+    keyOf: crHistOfficerKey,
+    labelOf: crOfficerRosterLabel,
+    onChange: () => {
+        crUpdateHistRunButtonState();
+        crUpdateChartButtonVisibility();
+        if (!crHistoryData) return;
+        if (crHistOfficers().length && crHistOfficerPicker.key() !== crHistoryData.officerKey) crFetchHistory();
+        else crRenderHistory();
     }
+});
+document.getElementById("crHistOfficerSearch").addEventListener("input", (e) => {
+    const typed = e.target.value.trim();
+    const match = typed && crOfficerRoster.find(o => crOfficerRosterLabel(o) === typed);
+    if (match) {
+        e.target.value = "";
+        crHistOfficerPicker.add(match);
+    }
+    document.getElementById("crHistOfficerClear").hidden = !e.target.value;
 });
 document.getElementById("crHistOfficerSearch").addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
@@ -1548,8 +1572,8 @@ function crRenderChart(section) {
         headerRoot: document.getElementById("crChartTitle"),
         section,
         days: crHistoryData.days,
-        scope: crOfficerRosterLabel(officer),
-        getItemForDay: day => day.items.find(it => it.name === officer.name && it.branch === officer.branch),
+        scope: crHistOfficers().map(crOfficerRosterLabel).join(", "),
+        getItemForDay: crHistItemForDay,
         getByPath: crGetByPath,
         fmtNum: crFmtNum,
         fmtPct: crFmtPct
@@ -1574,7 +1598,7 @@ function crRenderChart(section) {
         const field = g.fields.find(f => f.label === crChartMetricLabel);
         if (!field) return;
         const data = days.map(day => {
-            const item = day.items.find(it => it.name === officer.name && it.branch === officer.branch);
+            const item = crHistItemForDay(day);
             const v = item ? crGetByPath(item, field.key) : null;
             return v == null ? null : Number(v) || 0;
         });
