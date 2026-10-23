@@ -447,6 +447,10 @@ CMI18n.register({
   // RiskIntelligence.html, shared module switcher)
   // ==================================================================
   "creditreport.ci.modules": { km: "ម៉ូឌុល", en: "Modules" },
+  "creditreport.ci.changePeriod": { km: "ចុចដើម្បីប្ដូរថ្ងៃ", en: "Tap to change the dates" },
+  "creditreport.ci.comparedWithLabel": { km: "ប្រៀបធៀបជាមួយប្រវត្តិថ្ងៃ", en: "Compared with Daily History of" },
+  "creditreport.ci.dataStatus": { km: "ស្ថានភាពទិន្នន័យ", en: "Data status" },
+  "creditreport.ci.compareDay": { km: "ថ្ងៃប្រៀបធៀប", en: "Compare day" },
   "creditreport.ci.navOverview": { km: "ទិដ្ឋភាពទូទៅ", en: "Overview" },
   "creditreport.ci.navNpl": { km: "វិភាគ NPL", en: "NPL Intelligence" },
   "creditreport.ci.navContributors": { km: "អ្នករួមចំណែកហានិភ័យ", en: "Risk Contributors" },
