@@ -43,7 +43,7 @@ async function loadComponent(id,file){
                 backBtn.onclick = () => cmNav.back(backTarget);
             }
 
-            // Relocate the page's own "..." menu (Export/Print/Landscape,
+            // Relocate the page's own "..." menu (Export/Print/Fullscreen,
             // built in index.html) into the topbar's right side. This
             // moves the EXISTING elements rather than rebuilding them,
             // so the click handlers already wired in arrears.js keep
