@@ -207,7 +207,9 @@
         { key: "npl", href: "NplIntelligence.html", label: "creditreport.ci.navNpl" },
         { key: "contributors", href: "RiskIntelligence.html?view=contributors", label: "creditreport.ci.navContributors" },
         { key: "quality", href: "RiskIntelligence.html?view=quality", label: "creditreport.ci.navQuality" },
-        { key: "growth", href: "RiskIntelligence.html?view=growth", label: "creditreport.ci.navGrowth" }
+        { key: "growth", href: "RiskIntelligence.html?view=growth", label: "creditreport.ci.navGrowth" },
+        { key: "recovery", href: "RecoveryManagement.html", label: "creditreport.ci.navRecovery" },
+        { key: "warning", href: "EarlyWarning.html", label: "creditreport.ci.navWarning" }
     ];
     let navCurrent = null;
 
