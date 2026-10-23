@@ -10,14 +10,12 @@
 const t = CI.t;
 let recData = null;
 let recDim = new URLSearchParams(location.search).get("dim") || "officer";
-let recWoDim = new URLSearchParams(location.search).get("woDim") || "branch";
 
 async function recLoad() {
     const p = new URLSearchParams(location.search);
     p.set("dim", recDim);
-    p.set("woDim", recWoDim);
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
-    const data = await CI.get("recovery", { dim: recDim, woDim: recWoDim });
+    const data = await CI.get("recovery", { dim: recDim });
     if (!data) return;
     recData = data;
     recRender();
@@ -32,7 +30,6 @@ function recRender() {
     }
     CI.fillOptions(d.options, d.scope, d.period);
     CI.renderAsOf(document.getElementById("ciAsOf"), d);
-    recRenderWo(d);
     const off = document.getElementById("recUnavailable");
     const content = document.getElementById("recContent");
     if (!d.movement.available) {
@@ -52,61 +49,6 @@ function recRender() {
     recRenderKpis(d);
     recRenderKinds(d);
     recRenderTable(d);
-}
-
-// ---------- WO collection (written-off loans) — needs no NPL history ----------
-function recRenderWo(d) {
-    const w = d.woCollection;
-    const box = document.getElementById("recWo");
-    box.hidden = !w;
-    if (!w) return;
-    recWoDim = w.dim;
-    document.querySelectorAll("#recWoDims [data-dim]").forEach(b => {
-        const on = b.dataset.dim === w.dim;
-        b.hidden = !w.dims.includes(b.dataset.dim);
-        b.classList.toggle("is-active", on);
-        b.setAttribute("aria-selected", on ? "true" : "false");
-    });
-    // Same wording and period as the Daily Report's Write Off section.
-    const dash = k => String(k || "").split("-").reverse().join("-");
-    document.getElementById("recWoPeriod").textContent =
-        `${t("creditreport.detail.writeOffFrom")} ${t("creditreport.detail.dateRange", { from: dash(w.period.fromDate), to: dash(w.period.toDate) })}` +
-        (w.dim === "officer" ? ` · ${t("creditreport.rec.woOwn")}` : "");
-    const tt = w.totals;
-    const plan = w.plan || {};
-    document.getElementById("recWoKpis").innerHTML =
-        recCard(t("creditreport.detail.woCollected"), CI.money(tt.collected), t("creditreport.rec.woPrnInt", { prn: CI.money(tt.collectedPrn), int: CI.money(tt.collectedInt) }), "good") +
-        recCard(t("creditreport.rec.woPlanPct"),
-            plan.value == null ? t("creditreport.rec.notSet") : CI.pct(plan.achievement, 2),
-            plan.value == null ? t("creditreport.rec.planNotSet", { year: plan.year || "" }) : t("creditreport.rec.ofPlan", { plan: CI.money(plan.value), year: plan.year })) +
-        recCard(t("creditreport.detail.woBalanceWO"), CI.money(tt.balance), t("creditreport.rec.woBalanceSub2", { n: CI.num(tt.balanceCount), int: CI.money(tt.balanceInt) })) +
-        recCard(t("creditreport.detail.woWO"), CI.money(tt.writtenOff), t("creditreport.rec.woLoansN", { n: CI.num(tt.writtenOffCount) }), "bad");
-
-    // Laid out like the branches' WO report.
-    const showPlan = w.dim === "branch";
-    const name = r => (w.dim === "location" && !r.key ? t("creditreport.pi.otherAddress") : (r.name || r.key || "—"));
-    const n0 = v => (Number(v) ? CI.num(v) : "-");
-    const m0 = v => (Number(v) ? CI.num(v) : "-");
-    const cells = r => `
-        <td class="num">${n0(r.balanceCount)}</td><td class="num">${m0(r.balanceInt)}</td><td class="num">${m0(r.balance)}</td>
-        <td class="num">${n0(r.writtenOffCount)}</td><td class="num">${m0(r.writtenOff)}</td>
-        <td class="num">${m0(r.collectedInt)}</td><td class="num">${m0(r.collectedPrn)}</td><td class="num ci-good">${m0(r.collected)}</td>`;
-    const pct = (c, p) => (p ? CI.pct(c / p, 2) : "—");
-    const body = w.rows.map(r => `<tr>
-        <td>${CI.esc(name(r))}${w.dim === "officer" && r.branch ? `<div class="ci-sub">${CI.esc(r.branch)}</div>` : ""}</td>${cells(r)}
-        ${showPlan ? `<td class="num">${r.plan ? CI.num(r.plan) : CI.esc(t("creditreport.rec.notSet"))}</td><td class="num">${pct(r.collected, r.plan)}</td>` : ""}
-    </tr>`).join("");
-    const total = w.rows.length ? `<tr class="ci-total"><td>${CI.esc(t("creditreport.rec.total"))}</td>${cells(tt)}
-        ${showPlan ? `<td class="num">${plan.value ? CI.num(plan.value) : "—"}</td><td class="num">${plan.value ? CI.pct(plan.achievement, 2) : "—"}</td>` : ""}</tr>` : "";
-    const g = (k, span) => `<th colspan="${span}" class="ci-grp">${CI.esc(t(k))}</th>`;
-    const cols = ["creditreport.detail.colCifHash", "creditreport.detail.colInt", "creditreport.detail.colPrn", "#", "creditreport.detail.colPrn",
-        "creditreport.detail.colInt", "creditreport.detail.colPrn", "creditreport.rec.colTotalShort"];
-    const span = 1 + cols.length + (showPlan ? 2 : 0);
-    document.getElementById("recWoTable").innerHTML =
-        `<thead><tr><th rowspan="2">${CI.esc(t("creditreport.risk.colName"))}</th>${g("creditreport.detail.woBalanceWO", 3)}${g("creditreport.detail.woWO", 2)}${g("creditreport.detail.woCollected", 3)}` +
-        (showPlan ? `<th rowspan="2" class="num">${CI.esc(t("creditreport.rec.planCollection"))}</th><th rowspan="2" class="num">(%)</th>` : "") +
-        `</tr><tr>${cols.map(c => `<th class="num">${CI.esc(c === "#" ? "#" : t(c))}</th>`).join("")}</tr></thead>` +
-        `<tbody>${body || `<tr><td colspan="${span}" class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</td></tr>`}${total}</tbody>`;
 }
 
 function recCard(label, value, sub, tone) {
@@ -230,59 +172,12 @@ async function recSaveTargets() {
     }
 }
 
-// ---------- admin: annual WO collection plan per branch ----------
-async function recPlanFetch(method, body) {
-    const year = document.getElementById("recPlanYear").value;
-    const url = `${API.BASE_URL}/api/admin/credit-intelligence/wo-plans${method === "GET" ? `?year=${encodeURIComponent(year)}` : ""}`;
-    const res = await fetch(url, {
-        method,
-        headers: { Authorization: `Bearer ${localStorage.getItem("token") || sessionStorage.getItem("token")}`, "Content-Type": "application/json" },
-        body: body ? JSON.stringify(body) : undefined
-    });
-    return res.json();
-}
-
-async function recLoadPlans() {
-    const branches = (recData && recData.options && recData.options.branches) || [];
-    let current = {};
-    try {
-        const r = await recPlanFetch("GET");
-        if (r.ok) current = r.plans || {};
-    } catch (e) {
-        console.error(e);
-    }
-    document.getElementById("recPlanGrid").innerHTML = branches.map(b =>
-        `<label class="pi-field"><span>${CI.esc(b)}</span><input type="number" min="0" step="1" inputmode="numeric" data-branch="${CI.esc(b)}" value="${current[b] ?? ""}"></label>`).join("");
-}
-
-async function recSavePlans() {
-    const plans = {};
-    document.querySelectorAll("#recPlanGrid input[data-branch]").forEach(i => {
-        if (i.value !== "") plans[i.dataset.branch] = i.value;
-    });
-    try {
-        const r = await recPlanFetch("PUT", { year: document.getElementById("recPlanYear").value, plans });
-        if (!r.ok) throw new Error(r.message || "");
-        CI.toast(t("creditreport.growth.saved"), "success");
-        recLoad();
-    } catch (e) {
-        console.error(e);
-        CI.toast(t("creditreport.pi.loadFailed"), "error");
-    }
-}
-
 document.addEventListener("DOMContentLoaded", () => {
     CI.mountFilters({ dates: true, compare: false, onChange: recLoad });
     document.getElementById("recDims").addEventListener("click", e => {
         const b = e.target.closest("[data-dim]");
         if (!b) return;
         recDim = b.dataset.dim;
-        recLoad();
-    });
-    document.getElementById("recWoDims").addEventListener("click", e => {
-        const b = e.target.closest("[data-dim]");
-        if (!b) return;
-        recWoDim = b.dataset.dim;
         recLoad();
     });
     document.getElementById("recSinceFirst").addEventListener("click", () => {
@@ -302,13 +197,6 @@ document.addEventListener("DOMContentLoaded", () => {
         box.addEventListener("toggle", () => { if (box.open) recLoadTargets(); });
         month.addEventListener("change", recLoadTargets);
         document.getElementById("recTargetSave").addEventListener("click", recSaveTargets);
-        const planBox = document.getElementById("recPlanAdmin");
-        planBox.hidden = false;
-        const year = document.getElementById("recPlanYear");
-        year.value = String(new Date(Date.now() + 7 * 3600 * 1000).getUTCFullYear());
-        planBox.addEventListener("toggle", () => { if (planBox.open) recLoadPlans(); });
-        year.addEventListener("change", recLoadPlans);
-        document.getElementById("recPlanSave").addEventListener("click", recSavePlans);
     }
     recLoad();
 });
