@@ -216,6 +216,95 @@
       </div>
 
       <!-- ========================= -->
+      <!-- MANAGEMENT ALERTS (Portfolio Intelligence page) — -->
+      <!-- GET/PUT /api/admin/credit-intelligence/alert-rules. Shown on the -->
+      <!-- page only (not sent); kept here so every alert rule is set in -->
+      <!-- one place. -->
+      <!-- ========================= -->
+      <div class="adm-card sa-card" id="maCard">
+        <div class="sa-card-head">
+          <div class="adm-card-label">
+            <span class="adm-ico adm-ico-trend" aria-hidden="true"></span>
+            <span data-i18n="admin.mgmtAlerts.label">Management Alerts — Portfolio Intelligence</span>
+          </div>
+          <button type="button" class="sa-link" id="maBtnDefaults" data-i18n="admin.smartAlerts.resetDefaults">Reset to defaults</button>
+        </div>
+        <p class="adm-modal-message" data-i18n="admin.mgmtAlerts.explain">
+          Shown at the top of Portfolio Intelligence when the page is opened — not sent as notifications. PAR here is NBC Overdue ÷ Loan Outstanding; the daily Smart Alerts above use PAR (T24).
+        </p>
+        <div class="sa-rule-list">
+          <div class="sa-rule-row">
+            <div class="sa-rule-ico sa-npl" aria-hidden="true"><span class="ui-ico ui-ico-trend-up"></span></div>
+            <div class="sa-rule-body">
+              <div class="sa-rule-name" data-i18n="admin.mgmtAlerts.nplRise">NPL ratio rise</div>
+              <div class="sa-rule-hint" data-i18n="admin.mgmtAlerts.vsCompare">vs the “Compare with” day</div>
+            </div>
+            <div class="sa-stepper" data-step="0.05" data-min="0.05">
+              <button type="button" class="sa-step" data-dir="-1" aria-label="−">−</button>
+              <input type="number" id="maNplRise" min="0.05" step="0.05" inputmode="decimal">
+              <button type="button" class="sa-step" data-dir="1" aria-label="+">+</button>
+              <em data-i18n="admin.mgmtAlerts.pts">pts</em>
+            </div>
+          </div>
+          <div class="sa-rule-row">
+            <div class="sa-rule-ico sa-par" aria-hidden="true"><span class="ui-ico ui-ico-trend-up"></span></div>
+            <div class="sa-rule-body">
+              <div class="sa-rule-name" data-i18n="admin.mgmtAlerts.parRise">PAR (NBC Overdue) rise</div>
+              <div class="sa-rule-hint" data-i18n="admin.mgmtAlerts.vsCompare">vs the “Compare with” day</div>
+            </div>
+            <div class="sa-stepper" data-step="0.05" data-min="0.05">
+              <button type="button" class="sa-step" data-dir="-1" aria-label="−">−</button>
+              <input type="number" id="maParRise" min="0.05" step="0.05" inputmode="decimal">
+              <button type="button" class="sa-step" data-dir="1" aria-label="+">+</button>
+              <em data-i18n="admin.mgmtAlerts.pts">pts</em>
+            </div>
+          </div>
+          <div class="sa-rule-row">
+            <div class="sa-rule-ico sa-os" aria-hidden="true"><span class="ui-ico ui-ico-alert"></span></div>
+            <div class="sa-rule-body">
+              <div class="sa-rule-name" data-i18n="admin.mgmtAlerts.branchMultiple">Branch NPL ratio</div>
+              <div class="sa-rule-hint" data-i18n="admin.mgmtAlerts.branchMultipleHint">times the portfolio's NPL ratio</div>
+            </div>
+            <div class="sa-stepper" data-step="0.1" data-min="1">
+              <button type="button" class="sa-step" data-dir="-1" aria-label="−">−</button>
+              <input type="number" id="maBranchMultiple" min="1" step="0.1" inputmode="decimal">
+              <button type="button" class="sa-step" data-dir="1" aria-label="+">+</button>
+              <em>×</em>
+            </div>
+          </div>
+          <div class="sa-rule-row">
+            <div class="sa-rule-ico sa-os" aria-hidden="true"><span class="ui-ico ui-ico-plus"></span></div>
+            <div class="sa-rule-body">
+              <div class="sa-rule-name" data-i18n="admin.mgmtAlerts.branchGap">… and above the portfolio by at least</div>
+              <div class="sa-rule-hint" data-i18n="admin.mgmtAlerts.branchGapHint">percentage points</div>
+            </div>
+            <div class="sa-stepper" data-step="0.1" data-min="0">
+              <button type="button" class="sa-step" data-dir="-1" aria-label="−">−</button>
+              <input type="number" id="maBranchGap" min="0" step="0.1" inputmode="decimal">
+              <button type="button" class="sa-step" data-dir="1" aria-label="+">+</button>
+              <em data-i18n="admin.mgmtAlerts.pts">pts</em>
+            </div>
+          </div>
+          <div class="sa-rule-row">
+            <div class="sa-rule-ico sa-npl" aria-hidden="true"><span class="ui-ico ui-ico-clock"></span></div>
+            <div class="sa-rule-body">
+              <div class="sa-rule-name" data-i18n="admin.mgmtAlerts.stale">Data outdated</div>
+              <div class="sa-rule-hint" data-i18n="admin.mgmtAlerts.staleHint">OS older than this many business days</div>
+            </div>
+            <div class="sa-stepper" data-step="1" data-min="0">
+              <button type="button" class="sa-step" data-dir="-1" aria-label="−">−</button>
+              <input type="number" id="maStale" min="0" step="1" inputmode="decimal">
+              <button type="button" class="sa-step" data-dir="1" aria-label="+">+</button>
+              <em data-i18n="admin.mgmtAlerts.days">days</em>
+            </div>
+          </div>
+        </div>
+        <div class="adm-modal-footer sa-actions">
+          <button type="button" class="adm-btn adm-btn-primary" id="maBtnSave" disabled data-i18n="admin.smartAlerts.save">Save</button>
+        </div>
+      </div>
+
+      <!-- ========================= -->
       <!-- OFFICER REMINDERS (09:00 / 15:00) — GET/PUT -->
       <!-- /api/admin/officer-reminders/settings, POST .../run -->
       <!-- ========================= -->
