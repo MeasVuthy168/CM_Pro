@@ -358,3 +358,150 @@ a.pi-rank-row:active{ background:var(--pi-track); }
 /* ===== Definitions ===== */
 .pi-defs summary{ cursor:pointer; }
 .pi-defs ul{ margin:10px 0 0; padding-left:18px; font-size:12.5px; line-height:1.6; color:var(--cr-text); }
+
+/* ===== Shared across the Intelligence modules (ci-filters.js) ===== */
+.ci-nav{
+    display:flex;
+    gap:6px;
+    overflow-x:auto;
+    scrollbar-width:none;
+    margin:0 auto 12px;
+    padding-bottom:2px;
+}
+.ci-nav::-webkit-scrollbar{ display:none; }
+.ci-nav-link{
+    flex:0 0 auto;
+    padding:8px 14px;
+    border-radius:999px;
+    border:1px solid var(--cr-border);
+    background:var(--cr-card-bg);
+    color:var(--cr-text);
+    font-size:13px;
+    text-decoration:none;
+    white-space:nowrap;
+}
+.ci-nav-link.is-active{
+    background:var(--pi-navy);
+    border-color:var(--pi-navy);
+    color:var(--cr-card-bg);
+    font-weight:700;
+}
+.ci-tabs-wide{ display:flex; flex-wrap:wrap; margin-bottom:10px; }
+.ci-dim-card{ padding:10px 14px; }
+.ci-dim-card .pi-card-head{ margin-bottom:0; }
+.ci-dim-label{ margin:0; }
+
+.ci-table-tools{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:8px;
+}
+.ci-search{
+    flex:1 1 220px;
+    min-height:38px;
+    border:1px solid var(--cr-border);
+    border-radius:10px;
+    background:var(--cr-card-bg);
+    color:var(--cr-text);
+    font-family:'KRASAR',sans-serif;
+    font-size:13px;
+    padding:6px 12px;
+}
+.ci-table-tools .pi-note{ margin:0; }
+.ci-table-scroll{ max-height:70vh; overflow:auto; }
+.ci-table th{ position:sticky; top:0; background:var(--cr-card-bg); z-index:1; }
+.ci-table td,
+.ci-table th{ text-align:left; }
+.ci-table .num{ text-align:right; }
+.ci-table tfoot th{ position:static; border-top:2px solid var(--cr-border); color:var(--cr-text); }
+.ci-sort{
+    border:none;
+    background:none;
+    color:inherit;
+    font:inherit;
+    font-weight:700;
+    padding:0;
+    cursor:pointer;
+    white-space:nowrap;
+}
+.ci-sub{ font-size:11px; color:var(--cr-text-muted); }
+.ci-reason{ white-space:normal !important; min-width:180px; max-width:320px; }
+.ci-wrap{ white-space:normal !important; }
+.ci-good{ color:var(--pi-good); }
+.ci-bad{ color:var(--pi-bad); }
+.ci-more{ margin-top:10px; width:100%; }
+
+/* waterfall + steps */
+.ci-wf-box{ height:240px; }
+.ci-chart-tall{ height:280px; }
+.ci-steps{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    margin-top:12px;
+}
+@media (min-width:720px){
+    .ci-steps{ grid-template-columns:repeat(5,minmax(0,1fr)); }
+}
+.ci-step,
+.ci-age{
+    border:1px solid var(--cr-border);
+    border-radius:12px;
+    padding:10px;
+    min-width:0;
+}
+.ci-step-good{ border-left:4px solid var(--pi-good); }
+.ci-step-bad{ border-left:4px solid var(--pi-bad); }
+.ci-step-base{ border-left:4px solid var(--pi-gold); }
+.ci-step-value{
+    font-size:17px;
+    font-weight:700;
+    color:var(--pi-navy);
+    margin-top:2px;
+    font-variant-numeric:tabular-nums;
+    overflow-wrap:anywhere;
+}
+.ci-recon{ font-size:12.5px; margin:10px 0 0; line-height:1.6; }
+
+/* PAR aging */
+.ci-aging{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+}
+@media (min-width:720px){
+    .ci-aging{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+}
+
+/* growth vs risk */
+.ci-inline-fields{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+.ci-inline-fields .pi-field{ min-width:150px; flex:1 1 150px; }
+.ci-admin-fields{ margin:10px 0; }
+.ci-quads{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin:10px 0;
+}
+.ci-quad{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    border:1px solid var(--cr-border);
+    border-radius:999px;
+    padding:4px 10px;
+    font-size:12.5px;
+}
+.ci-quad-dot{ width:10px; height:10px; border-radius:50%; }
+.ci-quad-healthy .ci-quad-dot{ background:var(--pi-good); }
+.ci-quad-risky .ci-quad-dot{ background:#B8860B; }
+.ci-quad-weak .ci-quad-dot{ background:var(--pi-bad); }
+.ci-quad-stable .ci-quad-dot{ background:var(--pi-bar); }
+[data-theme="dark"] .ci-quad-risky .ci-quad-dot,
+[data-theme="darkgray"] .ci-quad-risky .ci-quad-dot{ background:#B8891A; }

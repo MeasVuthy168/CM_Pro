@@ -5,164 +5,34 @@
 // engines and Daily History snapshots, scoped to the user's role. This
 // page only lays the answer out — it never computes a financial figure
 // itself, and shows "—" where the server says a figure isn't available.
-// Filters live in the address bar (replaceState) so Back returns here
-// with the same view, like the reports.
+// Filters, data-as-of and the module switcher are shared with the other
+// modules (ci-filters.js).
 // ========================================
 
-const piToken = localStorage.getItem("token") || sessionStorage.getItem("token");
-const t = (key, vars) => (window.CMI18n ? CMI18n.t(key, vars) : key);
-
-const PI_MULTI = { piBranch: "branch", piOfficer: "officer", piProduct: "product", piDistrict: "district" };
-const PI_FOCUS = ["piOfficer", "piProduct", "piDistrict"];
+const t = CI.t;
 
 let piData = null;
 let piCompTab = "branch";
-let piReqSeq = 0;
 let piCharts = [];
 
 // ---------- formatting ----------
-function piEsc(text) {
-    return String(text ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
-function piNum(n) {
-    return (Number(n) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
-}
-function piMoney(n) {
-    return "$" + piNum(n);
-}
-function piPct(n, digits = 2) {
-    return ((Number(n) || 0) * 100).toFixed(digits) + "%";
-}
+const piEsc = CI.esc;
+const piNum = CI.num;
+const piMoney = CI.money;
+const piPct = (n, digits = 2) => CI.pct(n || 0, digits);
+const piDMY = CI.dmy;
+const piShortMonth = CI.short;
 function piPts(n) {
     return `${((Number(n) || 0) * 100).toFixed(2)} ${t("creditreport.pi.pts")}`;
 }
-function piDMY(k) {
-    if (!k) return "—";
-    const [y, m, d] = k.split("-");
-    return `${d}/${m}/${y}`;
-}
-function piShortMonth(k) {
-    const [y, m, d] = k.split("-");
-    return `${d}/${m}/${y.slice(2)}`;
-}
-
-// ---------- filters <-> URL ----------
-function piPicks(id) {
-    const el = document.getElementById(id);
-    return el && window.MultiSelect && el._msBtn ? MultiSelect.values(el) : [];
-}
-
-function piQuery() {
-    const p = new URLSearchParams();
-    const from = document.getElementById("piFrom").value;
-    const to = document.getElementById("piTo").value;
-    if (from) p.set("fromDate", from);
-    if (to) p.set("toDate", to);
-    const cmp = document.getElementById("piCompare").value;
-    p.set("compare", cmp);
-    const cmpDate = document.getElementById("piCompareDate").value;
-    if (cmp === "date" && cmpDate) p.set("compareDate", cmpDate);
-    Object.entries(PI_MULTI).forEach(([id, key]) => piPicks(id).forEach(v => p.append(key, v)));
-    return p;
-}
-
-// Picks from the URL, applied once the options exist.
-const piPending = (() => {
-    const p = new URLSearchParams(location.search);
-    const out = {};
-    Object.entries(PI_MULTI).forEach(([id, key]) => { out[id] = p.getAll(key).filter(Boolean); });
-    if (p.get("fromDate")) document.getElementById("piFrom").value = p.get("fromDate");
-    if (p.get("toDate")) document.getElementById("piTo").value = p.get("toDate");
-    if (p.get("compare")) document.getElementById("piCompare").value = p.get("compare");
-    if (p.get("compareDate")) document.getElementById("piCompareDate").value = p.get("compareDate");
-    return out;
-})();
-
-function piQueryFromPending() {
-    const p = piQuery();
-    Object.entries(PI_MULTI).forEach(([id, key]) => {
-        if (!piPicks(id).length) (piPending[id] || []).forEach(v => p.append(key, v));
-    });
-    return p;
-}
-
-// ---------- options ----------
-function piFillSelect(id, items) {
-    const el = document.getElementById(id);
-    const keep = piPending[id] && piPending[id].length ? piPending[id] : piPicks(id);
-    const all = el.options[0];
-    el.innerHTML = "";
-    el.appendChild(all);
-    items.forEach(({ value, label }) => {
-        const o = document.createElement("option");
-        o.value = value;
-        o.textContent = label;
-        el.appendChild(o);
-    });
-    const have = new Set(items.map(i => i.value));
-    if (window.MultiSelect && el._msBtn) MultiSelect.setValues(el, keep.filter(v => have.has(v)));
-    piPending[id] = [];
-}
-
-function piFillOptions(opt, scope) {
-    piFillSelect("piBranch", (opt.branches || []).map(b => ({ value: b, label: b })));
-    piFillSelect("piOfficer", (opt.officers || []).map(o => ({ value: o.id, label: `${o.name || o.id} · ${o.branch}` })));
-    piFillSelect("piProduct", (opt.products || []).map(p => ({ value: p, label: p })));
-    piFillSelect("piDistrict", (opt.districts || []).map(d => ({ value: d, label: d })));
-    // Someone limited to one branch or their own officer row can't widen
-    // it here (the server enforces it either way).
-    const lockBranch = scope && scope.type !== "all";
-    const lockAll = scope && scope.type === "officer";
-    piSetDisabled("piBranch", lockBranch);
-    PI_FOCUS.forEach(id => piSetDisabled(id, lockAll));
-    if (!lockAll) piApplyFocusLock();
-}
-
-function piSetDisabled(id, on) {
-    const el = document.getElementById(id);
-    el.disabled = on;
-    if (el._msBtn) el._msBtn.disabled = on;
-    el.closest(".pi-field").classList.toggle("is-disabled", on);
-}
-
-// One of Officer / Product / District at a time.
-function piApplyFocusLock() {
-    const active = PI_FOCUS.find(id => piPicks(id).length);
-    PI_FOCUS.forEach(id => piSetDisabled(id, !!active && id !== active));
-}
 
 // ---------- load ----------
-async function piLoad({ initial = false } = {}) {
-    const seq = ++piReqSeq;
-    const q = initial ? piQueryFromPending() : piQuery();
-    history.replaceState(null, "", `${location.pathname}?${q.toString()}`);
-    if (typeof showAppLoading === "function") showAppLoading(t("creditreport.pi.loading"), { progress: true, key: "pi-overview" });
-    try {
-        const res = await fetch(`${API.BASE_URL}/api/credit-intelligence/overview?${q.toString()}`, {
-            headers: { Authorization: `Bearer ${piToken}` }
-        });
-        const data = await res.json();
-        if (seq !== piReqSeq) return;
-        if (!data.ok) {
-            piToast(data.code === "focus_conflict" ? t("creditreport.pi.focusNote") : (data.message || t("creditreport.pi.loadFailed")), "error");
-            return;
-        }
-        piData = data;
-        piRender();
-    } catch (e) {
-        console.error(e);
-        if (seq === piReqSeq) piToast(t("creditreport.pi.loadFailed"), "error");
-    } finally {
-        if (seq === piReqSeq && typeof hideAppLoading === "function") hideAppLoading();
-    }
+async function piLoad() {
+    const data = await CI.get("overview");
+    if (!data) return;
+    piData = data;
+    piRender();
 }
-
-function piToast(message, type) {
-    if (typeof CMToast !== "undefined" && typeof CMToast.show === "function") {
-        CMToast.show({ type, title: message, message: "", duration: 3500 });
-    }
-}
-
 // ---------- render ----------
 function piRender() {
     const d = piData;
@@ -170,38 +40,13 @@ function piRender() {
         document.getElementById("piKpis").innerHTML = `<p class="pi-note">${piEsc(t("creditreport.pi.noAccess"))}</p>`;
         return;
     }
-    piFillOptions(d.options || {}, d.scope);
-    if (!document.getElementById("piFrom").value) document.getElementById("piFrom").value = d.period.fromDate || "";
-    if (!document.getElementById("piTo").value) document.getElementById("piTo").value = d.period.toDate || "";
-    piRenderAsOf(d);
+    CI.fillOptions(d.options || {}, d.scope, d.period);
+    CI.renderAsOf(document.getElementById("piAsOf"), d);
     piRenderAlerts(d);
     piRenderKpis(d);
     piRenderTrend(d);
     piRenderComp();
     piRenderTop();
-}
-
-function piRenderAsOf(d) {
-    const a = d.asOf;
-    const c = d.comparison;
-    const status = a.outdated
-        ? `<span class="pi-badge pi-badge-bad"><span aria-hidden="true">⚠</span> ${piEsc(t("creditreport.pi.outdated", { days: a.businessDaysBehind }))}</span>`
-        : `<span class="pi-badge pi-badge-good"><span aria-hidden="true">✓</span> ${piEsc(t("creditreport.pi.upToDate"))}</span>`;
-    const cmp = c.available
-        ? t("creditreport.pi.comparedWith", { date: piDMY(c.date) })
-        : t(`creditreport.pi.cmpReason.${c.reason || "no_snapshot"}`);
-    document.getElementById("piAsOf").innerHTML = `
-        <div class="pi-asof-row">
-            <span class="pi-asof-label">${piEsc(t("creditreport.pi.dataAsOf"))}</span>
-            <strong>${piEsc(piDMY(a.osDate))}</strong>
-            ${status}
-        </div>
-        <div class="pi-asof-sources">
-            <span>${piEsc(t("creditreport.pi.srcOs"))}: ${piEsc(a.osText)}</span>
-            <span>${piEsc(t("creditreport.pi.srcOverdue"))}: ${piEsc(a.overdueText)}</span>
-            <span>${piEsc(t("creditreport.pi.srcT24"))}: ${piEsc(a.t24Text)}</span>
-        </div>
-        <div class="pi-asof-cmp">${piEsc(t("creditreport.pi.period", { from: piDMY(d.period.fromDate), to: piDMY(d.period.toDate) }))} · ${piEsc(cmp)}</div>`;
 }
 
 function piAlertText(a) {
@@ -267,16 +112,6 @@ function piRenderKpis(d) {
     document.getElementById("piKpis").innerHTML = html + note;
 }
 
-function piChartColors() {
-    const dark = ["dark", "darkgray"].includes(document.documentElement.getAttribute("data-theme"));
-    const css = getComputedStyle(document.documentElement);
-    // Validated (dataviz palette check) for each surface: navy + gold
-    // steps that keep 3:1 contrast and stay apart for colour-blind readers.
-    return dark
-        ? { a: "#4C7FD9", b: "#B8891A", grid: "rgba(255,255,255,.08)", text: css.getPropertyValue("--cr-text-muted").trim() || "#8FA0C7" }
-        : { a: "#2456A8", b: "#B8860B", grid: "rgba(0,0,0,.06)", text: css.getPropertyValue("--cr-text-muted").trim() || "#6B7280" };
-}
-
 function piRenderTrend(d) {
     piCharts.forEach(c => c.destroy && c.destroy());
     piCharts = [];
@@ -299,7 +134,7 @@ function piRenderTrend(d) {
         pts.map(p => `<tr><td>${piEsc(piDMY(p.date))}${p.live ? " *" : ""}</td><td>${piMoney(p.os)}</td><td>${piMoney(p.nplValue)}</td><td>${piPct(p.nplPct)}</td><td>${piPct(p.parPct)}</td></tr>`).join("") +
         `</tbody><caption>${piEsc(t("creditreport.pi.liveNote"))}</caption>`;
     if (typeof Chart === "undefined") return;
-    const col = piChartColors();
+    const col = CI.chartColors();
     const font = { family: "KRASAR, sans-serif", size: 11 };
     const base = {
         responsive: true,
@@ -415,36 +250,9 @@ function piRenderTop() {
 }
 
 // ---------- wiring ----------
-let piDebounce = null;
-function piChanged() {
-    clearTimeout(piDebounce);
-    piDebounce = setTimeout(() => piLoad(), 250);
-}
-
 document.addEventListener("DOMContentLoaded", () => {
-    if (window.MultiSelect) Object.keys(PI_MULTI).forEach(id => MultiSelect.enhance(document.getElementById(id), { copyClass: true }));
-    const cmp = document.getElementById("piCompare");
-    const syncCmp = () => { document.getElementById("piCompareDateWrap").hidden = cmp.value !== "date"; };
-    syncCmp();
-    cmp.addEventListener("change", () => { syncCmp(); if (cmp.value !== "date" || document.getElementById("piCompareDate").value) piChanged(); });
-    ["piFrom", "piTo", "piCompareDate"].forEach(id => document.getElementById(id).addEventListener("change", piChanged));
-    Object.keys(PI_MULTI).forEach(id => document.getElementById(id).addEventListener("change", () => {
-        if (PI_FOCUS.includes(id)) piApplyFocusLock();
-        piChanged();
-    }));
-    document.getElementById("piReset").addEventListener("click", () => {
-        ["piFrom", "piTo", "piCompareDate"].forEach(id => { document.getElementById(id).value = ""; });
-        cmp.value = "month";
-        syncCmp();
-        Object.keys(PI_MULTI).forEach(id => {
-            const el = document.getElementById(id);
-            if (!el.disabled || PI_FOCUS.includes(id)) {
-                if (window.MultiSelect && el._msBtn) MultiSelect.setValues(el, []);
-            }
-        });
-        if (!piData || !piData.scope || piData.scope.type !== "officer") piApplyFocusLock();
-        piLoad();
-    });
+    CI.mountNav("overview");
+    CI.mountFilters({ onChange: piLoad });
     document.getElementById("piCompTabs").addEventListener("click", e => {
         const b = e.target.closest("[data-tab]");
         if (!b || !piData) return;
@@ -455,5 +263,5 @@ document.addEventListener("DOMContentLoaded", () => {
     // Charts read the theme's colours when drawn.
     new MutationObserver(() => { if (piData && !piData.empty) piRenderTrend(piData); })
         .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-    piLoad({ initial: true });
+    piLoad();
 });
