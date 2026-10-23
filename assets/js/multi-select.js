@@ -1,7 +1,7 @@
 // ========================================
 // Multi-select for a plain <select>
-// MultiSelect.enhance(select) turns a filter <select> (first option
-// value "" = All) into a button that opens a checklist sheet: pick any
+// MultiSelect.enhance(select) turns a filter <select> (its "All" option:
+// value "", or marked data-ms-all) into a button that opens a checklist sheet: pick any
 // number of values, search long lists, Select all / Clear, OK. The
 // <select> stays in the page (hidden, `multiple`) as the source of
 // truth, so code that fills its options keeps working; read the picks
@@ -13,25 +13,28 @@
     const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
     const SEARCH_FROM = 8; // show the search box for lists longer than this
 
-    const values = el => [...el.options].filter(o => o.selected && o.value !== "").map(o => o.value);
+    // The "All" option: value "", or one marked data-ms-all whose value the
+    // page's own code already treats as All ("All Branch", "total"…).
+    const isAll = o => o.value === "" || o.hasAttribute("data-ms-all");
+    const values = el => [...el.options].filter(o => o.selected && !isAll(o)).map(o => o.value);
 
     function setValues(el, vals) {
         const want = new Set((vals || []).map(String));
         let any = false;
         [...el.options].forEach(o => {
-            o.selected = o.value !== "" && want.has(o.value);
+            o.selected = !isAll(o) && want.has(o.value);
             if (o.selected) any = true;
         });
-        // Nothing picked = the "All" option, so el.value reads "" as before.
-        const all = [...el.options].find(o => o.value === "");
+        // Nothing picked = the "All" option, so el.value reads it as before.
+        const all = [...el.options].find(isAll);
         if (all) all.selected = !any;
         sync(el);
     }
 
     function label(el) {
-        const picked = [...el.options].filter(o => o.selected && o.value !== "");
+        const picked = [...el.options].filter(o => o.selected && !isAll(o));
         if (!picked.length) {
-            const all = [...el.options].find(o => o.value === "");
+            const all = [...el.options].find(isAll);
             return { text: all ? all.textContent : tr("ms.all"), more: "", n: 0 };
         }
         return { text: picked[0].textContent, more: picked.length > 1 ? `+${picked.length - 1}` : "", n: picked.length };
@@ -101,7 +104,7 @@
 
     function paintList() {
         const q = sheet.querySelector(".ms-q").value.trim().toLowerCase();
-        const opts = [...current.options].filter(o => o.value !== "" && (!q || o.textContent.toLowerCase().includes(q)));
+        const opts = [...current.options].filter(o => !isAll(o) && (!q || o.textContent.toLowerCase().includes(q)));
         sheet.querySelector(".ms-list").innerHTML = opts.length
             ? opts.map(o => {
                 const on = picked.has(o.value);
@@ -141,15 +144,18 @@
         if (values(el).join("\u0001") !== before) el.dispatchEvent(new Event("change", { bubbles: true }));
     }
 
-    function enhance(el) {
+    // opts.copyClass: the button also takes the <select>'s own classes, so
+    // it keeps that page's box look (Credit Report's .cr-select).
+    function enhance(el, opts) {
         if (!el || el._msBtn) return;
+        const own = el.className;
         el.multiple = true;
         el.classList.add("ms-native");
         el.tabIndex = -1;
         el.setAttribute("aria-hidden", "true");
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "ms-btn";
+        btn.className = opts && opts.copyClass && own ? `ms-btn ms-copied ${own}` : "ms-btn";
         btn.innerHTML = `<span class="ms-text"></span><span class="ms-more"></span><span class="ms-caret" aria-hidden="true"></span>`;
         btn.addEventListener("click", () => open(el));
         el.after(btn);

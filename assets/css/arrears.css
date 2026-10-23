@@ -4211,49 +4211,6 @@ a.arx-primary{ display:grid; place-items:center; text-decoration:none; }
 }
 
 /* ==========================================
-   MULTI-SELECT FILTERS (multi-select.js)
-   The <select> stays hidden as the source of truth; the button shows
-   "All", the one pick, or "first +N", and opens a checklist sheet.
-========================================== */
-select.ms-native{ display:none !important; }
-.ms-btn{
-    width:100%; box-sizing:border-box; height:42px; padding:0 10px;
-    display:flex; align-items:center; gap:6px;
-    border:1px solid var(--arr-border); border-radius:10px;
-    background:var(--arr-card-bg); color:var(--arr-text);
-    font:inherit; font-size:14px; text-align:left; cursor:pointer;
-}
-.ms-btn .ms-text{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.ms-btn .ms-caret{ flex:0 0 auto; width:9px; height:9px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:translateY(-2px) rotate(45deg); opacity:.6; }
-.ms-btn.ms-on{ border-color:var(--arr-gold); box-shadow:0 0 0 2px rgba(212,175,55,.22); font-weight:700; }
-.ms-btn:focus-visible{ outline:2px solid var(--arr-gold); outline-offset:1px; }
-
-.ms-dim{ position:fixed; inset:0; z-index:1300; background:rgba(8,14,30,.45); display:flex; align-items:flex-end; justify-content:center; }
-.ms-dim[hidden]{ display:none; }
-.ms-sheet{ width:100%; max-width:560px; max-height:82vh; display:flex; flex-direction:column; background:var(--arr-card-bg); color:var(--arr-text); border-radius:22px 22px 0 0; padding:16px 16px calc(14px + env(safe-area-inset-bottom)); box-shadow:var(--arr-shadow-modal); animation:arxUp .18s ease-out; }
-.ms-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
-.ms-title{ font-size:17px; font-weight:800; }
-.ms-x{ width:36px; height:36px; border-radius:50%; border:1px solid var(--arr-border); background:transparent; color:var(--arr-text); font-size:21px; line-height:1; cursor:pointer; }
-.ms-search{ margin-bottom:8px; }
-.ms-search[hidden]{ display:none; }
-.ms-q{ width:100%; box-sizing:border-box; height:42px; padding:0 12px; border-radius:12px; border:1px solid var(--arr-border); background:transparent; color:var(--arr-text); font:inherit; font-size:16px; }
-.ms-tools{ display:flex; align-items:center; gap:12px; margin-bottom:6px; font-size:13px; }
-.ms-count{ flex:1; color:var(--arr-text-muted); }
-.ms-link{ border:0; background:none; padding:4px 2px; color:var(--arr-navy-dark); font:inherit; font-size:13px; font-weight:800; cursor:pointer; }
-.ms-list{ overflow-y:auto; -webkit-overflow-scrolling:touch; margin:0 -6px; padding:0 6px; flex:1; min-height:80px; }
-.ms-item{ display:flex; align-items:center; gap:12px; width:100%; padding:11px 6px; border:0; border-bottom:1px solid var(--arr-border); background:none; color:var(--arr-text); font:inherit; font-size:15px; text-align:left; cursor:pointer; }
-.ms-item:last-child{ border-bottom:0; }
-.ms-box{ flex:0 0 auto; width:22px; height:22px; border-radius:7px; border:2px solid var(--arr-border); display:grid; place-items:center; }
-.ms-item.on .ms-box{ background:#D4AF37; border-color:#D4AF37; }
-.ms-item.on .ms-box::after{ content:""; width:6px; height:11px; border-right:2.5px solid #0E1B3C; border-bottom:2.5px solid #0E1B3C; transform:translateY(-1px) rotate(45deg); }
-.ms-item.on{ font-weight:700; }
-.ms-empty{ padding:18px 4px; text-align:center; color:var(--arr-text-muted); }
-.ms-foot{ padding-top:12px; }
-.ms-ok{ width:100%; height:48px; border:0; border-radius:14px; background:linear-gradient(180deg,#FFD700,#D4AF37); color:#0E1B3C; font:inherit; font-size:16px; font-weight:800; cursor:pointer; }
-.ms-btn .ms-more{ flex:0 0 auto; padding:1px 7px; border-radius:999px; background:rgba(212,175,55,.22); color:var(--arr-navy-dark); font-size:12px; font-weight:800; }
-.ms-btn .ms-more:empty{ display:none; }
-
-/* ==========================================
    EASIER SCROLLING (arrears-scroll.js)
    Results bar sticks under the topbar; each table is a scroll box the
    height of the screen left under it (header row stays in view); a

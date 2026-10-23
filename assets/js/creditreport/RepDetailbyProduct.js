@@ -340,10 +340,10 @@ function crActiveSection() {
     const section = crSections()[sectionKey];
 
     if (sectionKey === "nbcOverdue") {
-        const nbcClass = document.getElementById("crNbcClass").value;
-        const idx = CR_NBC_CLASS_INDEX[nbcClass];
-        if (idx === undefined) return section;
-        return { groups: [section.groups[idx]] };
+        // Several classes picked: one group each, in the order listed.
+        const idxs = crPicks("crNbcClass").map(v => CR_NBC_CLASS_INDEX[v]).filter(i => i !== undefined);
+        if (!idxs.length) return section;
+        return { groups: idxs.sort((a, b) => a - b).map(i => section.groups[i]) };
     }
 
     // Current mode already narrows parT24 server-side (see
@@ -352,10 +352,14 @@ function crActiveSection() {
     // mode (no refetch) needs to pick a different field source for the
     // same single group.
     if (sectionKey === "parT24" && crMode === "history") {
-        const t24Class = document.getElementById("crClass").value;
-        const bucketKey = CR_T24_CLASS_INDEX[t24Class];
-        if (!bucketKey) return section;
-        return { groups: [crT24ClassGroup(`parT24ByClass.${bucketKey}`, section.groups[0].label)] };
+        const picks = crPicks("crClass").filter(v => CR_T24_CLASS_INDEX[v]);
+        if (!picks.length) return section;
+        const label = section.groups[0].label;
+        const optText = v => [...document.getElementById("crClass").options].find(o => o.value === v)?.textContent.trim() || v;
+        return {
+            groups: picks.map(v => crT24ClassGroup(`parT24ByClass.${CR_T24_CLASS_INDEX[v]}`,
+                picks.length > 1 ? `${label} — ${optText(v)}` : label))
+        };
     }
 
     return section;
@@ -700,18 +704,14 @@ function crShowEmpty(msg) {
 function crBuildQuery() {
     const parts = [];
 
-    // "total" (Total T24 Overdue) isn't a server-side filter value — it
-    // just means unfiltered, same as "" (All), so it's never sent.
-    const t24Class = document.getElementById("crClass").value;
-    if (t24Class && t24Class !== "total") parts.push(`t24Class=${encodeURIComponent(t24Class)}`);
-
-    const t24Product = document.getElementById("crProduct").value;
-    if (t24Product) parts.push(`t24Product=${encodeURIComponent(t24Product)}`);
+    // One param per picked value; "total" (Total T24 Overdue) is the
+    // class filter's All — never sent.
+    crPicks("crClass").forEach(v => parts.push(`t24Class=${encodeURIComponent(v)}`));
+    crPicks("crProduct").forEach(v => parts.push(`t24Product=${encodeURIComponent(v)}`));
 
     // crNbcClass is NOT sent — every classification is already in the
     // response (see crActiveSection() above), so it's a display-only pick.
-    const nbcProduct = document.getElementById("crNbcProduct").value;
-    if (nbcProduct) parts.push(`nbcProduct=${encodeURIComponent(nbcProduct)}`);
+    crPicks("crNbcProduct").forEach(v => parts.push(`nbcProduct=${encodeURIComponent(v)}`));
     return parts.length ? `?${parts.join("&")}` : "";
 }
 
@@ -752,55 +752,23 @@ function crReadStateFromUrl() {
         document.getElementById("crSection").value = section;
     }
 
-    const t24Class = p.get("t24Class");
-    if (t24Class) {
-        const classSel = document.getElementById("crClass");
-        if ([...classSel.options].some(o => o.value === t24Class)) {
-            classSel.value = t24Class;
-        }
-    }
+    crRestorePicks("crClass", p.getAll("t24Class"));
 
-    const t24Product = p.get("t24Product");
-    if (t24Product) {
-        const productSel = document.getElementById("crProduct");
-        if ([...productSel.options].some(o => o.value === t24Product)) {
-            productSel.value = t24Product;
-        }
-    }
+    crRestorePicks("crProduct", p.getAll("t24Product"));
 
-    const nbcClass = p.get("nbcClass");
-    if (nbcClass) {
-        const nbcClassSel = document.getElementById("crNbcClass");
-        if ([...nbcClassSel.options].some(o => o.value === nbcClass)) {
-            nbcClassSel.value = nbcClass;
-        }
-    }
+    crRestorePicks("crNbcClass", p.getAll("nbcClass"));
 
-    const nbcProduct = p.get("nbcProduct");
-    if (nbcProduct) {
-        const nbcProductSel = document.getElementById("crNbcProduct");
-        if ([...nbcProductSel.options].some(o => o.value === nbcProduct)) {
-            nbcProductSel.value = nbcProduct;
-        }
-    }
+    crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
 }
 
 function crSyncStateToUrl() {
     const p = new URLSearchParams();
     p.set("section", document.getElementById("crSection").value);
 
-    const t24Class = document.getElementById("crClass").value;
-    if (t24Class) p.set("t24Class", t24Class);
-
-    const t24Product = document.getElementById("crProduct").value;
-    if (t24Product) p.set("t24Product", t24Product);
-
-    const nbcClass = document.getElementById("crNbcClass").value;
-    if (nbcClass) p.set("nbcClass", nbcClass);
-
-    const nbcProduct = document.getElementById("crNbcProduct").value;
-    if (nbcProduct) p.set("nbcProduct", nbcProduct);
-
+    crAddPicks(p, "t24Class", "crClass");
+    crAddPicks(p, "t24Product", "crProduct");
+    crAddPicks(p, "nbcClass", "crNbcClass");
+    crAddPicks(p, "nbcProduct", "crNbcProduct");
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
 }
 
@@ -1355,7 +1323,10 @@ function crUpdateChartButtonVisibility() {
     const btn = document.getElementById("btnCrHistChart");
     if (!btn) return;
     const sectionFilter = document.getElementById("crSection").value;
-    const nbcClassAll = sectionFilter === "nbcOverdue" && !document.getElementById("crNbcClass").value;
+    // The chart follows one classification: hidden for All NBC classes,
+    // and when several NBC / T24 classes are picked.
+    const nbcClassAll = (sectionFilter === "nbcOverdue" && crPicks("crNbcClass").length !== 1) ||
+        (sectionFilter === "parT24" && crPicks("crClass").length > 1);
     btn.style.display = (crMode === "history" && crResolveSelectedProduct() && sectionFilter !== "all" && !nbcClassAll) ? "" : "none";
 }
 
@@ -1546,6 +1517,8 @@ document.getElementById("crChartOverlay").addEventListener("click", (e) => {
 // ========================================
 // INIT
 // ========================================
+// Every filter picks several values, except Showing (crSection).
+crMultiEnhance(["crClass", "crProduct", "crNbcClass", "crNbcProduct"]);
 crReadStateFromUrl();
 crUpdateClassVisibility();
 crRunReport();

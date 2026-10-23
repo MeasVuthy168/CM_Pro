@@ -28,6 +28,7 @@ content="#0e1b3c">
 rel="stylesheet"
 href="../../assets/css/main.css">
 
+<link rel="stylesheet" href="../../assets/css/multi-select.css">
 <link
 rel="stylesheet"
 href="../../assets/css/creditreport/RepDetailbyBranch.css">
@@ -197,7 +198,7 @@ No Internet Connection
 <div class="cr-section-row" id="crClassRow" style="display:none;">
 <label for="crClass" class="cr-section-label" data-i18n="creditreport.detail.loanClass">Loan Class</label>
 <select id="crClass" class="cr-section-select">
-<option value="total" data-i18n="creditreport.detail.classTotalT24">Total T24 Overdue</option>
+<option value="total" data-ms-all data-i18n="creditreport.detail.classTotalT24">Total T24 Overdue</option>
 <option value="Normal_to_SpecialMention" data-i18n="creditreport.detail.classNormalToSpecial">Normal → Special Mention</option>
 <option value="SubStandard_to_Loss" data-i18n="creditreport.detail.classSubToLoss">Sub Standard → Loss</option>
 <option value="Normal" data-i18n="creditreport.detail.classNormal">Normal</option>
@@ -355,6 +356,8 @@ No Internet Connection
 
 <!-- CREDIT REPORT LOGIC -->
 <script src="../../assets/js/creditreport/growth-dashboard.js"></script>
+<script src="../../assets/js/multi-select.js"></script>
+<script src="../../assets/js/creditreport/cr-multi.js"></script>
 <script src="../../assets/js/creditreport/RepDetailbyBranch.js"></script>
 
 <!-- PAGE LOADER (component loader, offline, notification badge) -->
