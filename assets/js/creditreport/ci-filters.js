@@ -253,7 +253,6 @@
         <div class="pi-asof-sources">
             <span>${esc(t("creditreport.pi.srcOs"))}: ${esc(a.osText)}</span>
             <span>${esc(t("creditreport.pi.srcOverdue"))}: ${esc(a.overdueText)}</span>
-            <span>${esc(t("creditreport.pi.srcT24"))}: ${esc(a.t24Text)}</span>
         </div>
         <div class="pi-asof-cmp">${esc(t("creditreport.pi.period", { from: dmy(d.period && d.period.fromDate), to: dmy(d.period && d.period.toDate) }))}${cmp ? ` · ${esc(cmp)}` : ""}</div>`;
     }

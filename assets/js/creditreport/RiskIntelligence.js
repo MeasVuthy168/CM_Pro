@@ -211,7 +211,6 @@ function qRenderTrend() {
         data: {
             labels: pts.map(p => CI.short(p.date)),
             datasets: [
-                line(t("creditreport.quality.overduePct"), "overduePct", col.text, { borderDash: [2, 3], pointStyle: "triangle" }),
                 line(t("creditreport.pi.kParPct"), "parPct", col.b, { borderDash: [6, 3], pointStyle: "rectRot" }),
                 line(t("creditreport.pi.kNplPct"), "nplPct", col.a, {})
             ]
