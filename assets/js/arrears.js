@@ -1160,16 +1160,34 @@ function renderTableView(rows) {
         longestIndexes(currentRows).map(i => ({ parent: tbodyArrears, node: buildRowElement(currentRows[i], i) })));
 }
 
-// For each field, the index of the item with the longest value (+ the last
-// item, whose number is the widest).
+// For each field, the item whose value is drawn widest (plus the last
+// item, whose No is the widest): the rows the column widths are measured with. Same-length
+// values differ in width ("LD…000" is wider than "LD…111"), so the few
+// within 3 characters of the longest are measured in the table's font.
+let arrMeasureCtx = null;
 function longestIndexes(items, valueOf = x => x) {
-    const best = new Map();
-    items.forEach((item, i) => {
-        const obj = valueOf(item);
+    const str = v => (typeof v === "string" ? v : typeof v === "number" ? String(v) : "");
+    const vals = items.map(valueOf);
+    const maxLen = new Map();
+    vals.forEach(obj => {
         for (const k in obj) {
-            const v = obj[k];
-            const len = typeof v === "string" ? v.length : typeof v === "number" ? String(v).length : 0;
-            if (len && (!best.has(k) || len > best.get(k)[1])) best.set(k, [i, len]);
+            const len = str(obj[k]).length;
+            if (len > (maxLen.get(k) || 0)) maxLen.set(k, len);
+        }
+    });
+    if (!arrMeasureCtx) {
+        arrMeasureCtx = document.createElement("canvas").getContext("2d");
+        const td = document.querySelector(".table-card td") || document.body;
+        const cs = getComputedStyle(td);
+        arrMeasureCtx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    }
+    const best = new Map();
+    vals.forEach((obj, i) => {
+        for (const k in obj) {
+            const s = str(obj[k]);
+            if (!s || s.length < (maxLen.get(k) || 0) - 3) continue;
+            const w = arrMeasureCtx.measureText(s).width;
+            if (!best.has(k) || w > best.get(k)[1]) best.set(k, [i, w]);
         }
     });
     const out = new Set([...best.values()].map(([i]) => i));
@@ -3412,17 +3430,36 @@ if (arrearsMenuToggle && arrearsMenuDropdown) {
 // Only the results bar and the table / cards on screen: the topbar,
 // the filters and the bottom bar are hidden, and the browser's own bars
 // too where it allows it (Android, computers; iPhone Safari doesn't).
+// The screen turns with the phone while in it (arrRotate).
 // The ✕ in the results bar, Esc or the browser's own exit comes back.
 // Replaces the old Landscape view (the table turned on its side).
 // ========================================
+// The app is portrait-only (manifest.json); in fullscreen the screen may
+// turn with the phone ("any"), and leaving it puts the lock back. Android
+// allows this only in fullscreen; iPhone follows its own rotation setting.
+function arrRotate(free) {
+    const o = screen.orientation;
+    try {
+        if (free) o?.lock?.("any")?.catch(() => {});
+        else o?.unlock?.();
+    } catch (e) {}
+}
+
 function setArrFullscreen(on) {
     document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
     if (document.body.classList.contains("arr-fullscreen") === on) return;
     document.body.classList.toggle("arr-fullscreen", on);
     try {
         const el = document.documentElement;
-        if (on && !document.fullscreenElement && el.requestFullscreen) el.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
-        if (!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+        if (on && !document.fullscreenElement && el.requestFullscreen) {
+            el.requestFullscreen({ navigationUI: "hide" }).then(() => arrRotate(true)).catch(() => {});
+        } else if (on) {
+            arrRotate(true);
+        }
+        if (!on) {
+            arrRotate(false);
+            if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+        }
     } catch (e) {}
     // Start at the top: the results bar, then the list.
     (document.body.scrollHeight > window.innerHeight + 2 ? document.body : document.scrollingElement).scrollTop = 0;
