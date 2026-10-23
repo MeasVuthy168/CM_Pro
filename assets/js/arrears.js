@@ -1465,6 +1465,7 @@ function buildGroupElement(g) {
     const phoneDigits = String(g.phone || "").replace(/[^\d+]/g, "");
     const promiseCss = promiseCellCssClass(g.promise);
     const pct = g.rows.length ? Math.round(g.withReason / g.rows.length * 100) : 0;
+    const reasonRow = cifReason(g.rows);
     const ldText = g.totalLd > g.rows.length
         ? `${g.rows.length.toLocaleString()} ${t("arrears.groupOf")} ${g.totalLd.toLocaleString()} LD`
         : `${g.rows.length.toLocaleString()} LD`;
@@ -1490,6 +1491,11 @@ function buildGroupElement(g) {
                     <span class="arr-progress"><span style="width:${pct}%"></span></span>
                 </div>
             </div>
+            ${reasonRow.any ? `
+            <div class="arr-card-reason ${promiseCss || "cell-followup-default"}">
+                <div class="arr-reason-text">${escapeHtml([reasonRow.ajReason, reasonRow.akSolution].filter(Boolean).join(" · ") || "-")}</div>
+                ${reasonRow.alFollowup ? `<div class="arr-reason-date"><span class="ui-ico ui-ico-calendar" aria-hidden="true"></span>${escapeHtml(formatRowDateDMY(reasonRow.alFollowup))}</div>` : ""}
+            </div>` : ""}
             <div class="arr-card-metas">
                 ${phone ? `<a class="arr-card-meta arr-card-phone" href="tel:${escapeHtml(phoneDigits)}" data-stop><span class="ui-ico ui-ico-phone" aria-hidden="true"></span>${escapeHtml(phone)}</a>` : ""}
                 ${g.coId ? `<span class="arr-card-meta">CO ${escapeHtml(g.coId)}</span>` : ""}
@@ -1622,6 +1628,22 @@ function cifLatestRow(rows) {
     return best || {};
 }
 
+// A customer's reason cells: for each of មុខរបរ / មូលហេតុ / ថ្ងៃសន្យាសង,
+// the most recently saved non-empty value among its LDs (their reasons
+// often differ a little — the table used to show just "8 / 8 LD" then,
+// with the cells blank). All "" when no LD has a reason yet.
+function cifReason(rows) {
+    const pick = key => {
+        const has = rows.filter(r => r[key]);
+        if (!has.length) return "";
+        // One just typed (not submitted yet) has no newer save time: it wins.
+        return (has.find(r => r.__pendingSubmit) || cifLatestRow(has))[key];
+    };
+    const reason = { ajReason: pick("ajReason"), akSolution: pick("akSolution"), alFollowup: pick("alFollowup") };
+    reason.any = !!(reason.ajReason || reason.akSolution || reason.alFollowup);
+    return reason;
+}
+
 // One value per customer to sort by.
 function cifGroupSortValue(g, key, type) {
     if (key === "customer") return g.customer;
@@ -1697,12 +1719,15 @@ function buildGroupTbody(g, no) {
     const arrearsBad = Object.values(cifAmountTotals(g.rows, "arreas")).some(v => v > 0) ? "cell-negative" : "";
     const latest = cifLatestRow(g.rows);
     const pct = g.rows.length ? Math.round(g.withReason / g.rows.length * 100) : 0;
-    const sameReason = cifSharedValue(g.rows, "ajReason") || cifSharedValue(g.rows, "akSolution") || cifSharedValue(g.rows, "alFollowup");
+    const reasonRow = cifReason(g.rows);
     const followCss = (promiseCss || "cell-followup-default") + (g.pending ? " cell-pending-local" : "");
-    const reasonCells = sameReason
-        ? `<td class="${followCss}">${shared("ajReason")}</td>
-           <td class="${followCss}">${shared("akSolution")}</td>
-           <td class="${followCss}">${escapeHtml(formatRowDateDMY(cifSharedValue(g.rows, "alFollowup")))}</td>`
+    // Some LDs still without a reason: say how many have one.
+    const reasonCount = g.withReason < g.rows.length
+        ? `<div class="arr-cif-reason-count">${g.withReason.toLocaleString()} / ${g.rows.length.toLocaleString()} LD</div>` : "";
+    const reasonCells = reasonRow.any
+        ? `<td class="${followCss}">${escapeHtml(reasonRow.ajReason || "")}${reasonCount}</td>
+           <td class="${followCss}">${escapeHtml(reasonRow.akSolution || "")}</td>
+           <td class="${followCss}">${escapeHtml(formatRowDateDMY(reasonRow.alFollowup))}</td>`
         : `<td class="arr-cif-reason">${g.withReason.toLocaleString()} / ${g.rows.length.toLocaleString()} LD
                <span class="arr-progress"><span style="width:${pct}%"></span></span></td><td></td><td></td>`;
 
@@ -2525,9 +2550,10 @@ function cifExportCols() {
     };
     const amount = key => ({ type: "num", value: g => groupAmount(g, key), text: g => exportAmountText(groupAmount(g, key)) });
     const anyAmount = (g, key, test) => Object.values(cifAmountTotals(g.rows, key)).some(test);
-    // Reason cells: the LDs' shared reason, or "x / y LD" with a reason.
-    const sameReason = g => !!(cifSharedValue(g.rows, "ajReason") || cifSharedValue(g.rows, "akSolution") || cifSharedValue(g.rows, "alFollowup"));
-    const followup = g => (sameReason(g) ? exportPromiseStyle(g.promise) || { fill: "#DCE6F1" } : null);
+    // Reason cells: the latest saved values (as in the table), or
+    // "0 / y LD" when none of the LDs has one yet.
+    const followup = g => (cifReason(g.rows).any ? exportPromiseStyle(g.promise) || { fill: "#DCE6F1" } : null);
+    const reason = (g, key) => cifReason(g.rows)[key];
     return [
         { label: "No", type: "int", align: "center", value: (g, i) => i + 1, style: g => exportClassStyle(g.worstClass) },
         { label: "Customer", type: "text", maxPx: 360, value: g => g.customer || "-" },
@@ -2554,13 +2580,13 @@ function cifExportCols() {
         { label: "CIF_អ្នករួមខ្ចី", ...shared("cifCoborrower") },
         {
             label: "មុខរបរ", type: "text", maxChars: 40, style: followup,
-            value: g => (sameReason(g) ? cifSharedValue(g.rows, "ajReason") || null : `${g.withReason} / ${g.rows.length} LD`)
+            value: g => (cifReason(g.rows).any ? reason(g, "ajReason") || null : `${g.withReason} / ${g.rows.length} LD`)
         },
-        { label: "មូលហេតុ/ដំណោះស្រាយ", type: "text", maxChars: 60, style: followup, value: g => (sameReason(g) ? cifSharedValue(g.rows, "akSolution") || null : null) },
+        { label: "មូលហេតុ/ដំណោះស្រាយ", type: "text", maxChars: 60, style: followup, value: g => reason(g, "akSolution") || null },
         {
             label: "ថ្ងៃសន្យាសង", type: "date", align: "center", style: followup,
-            value: g => (sameReason(g) ? exportDate(cifSharedValue(g.rows, "alFollowup")) : null),
-            text: g => (sameReason(g) ? formatRowDateDMY(cifSharedValue(g.rows, "alFollowup")) : "")
+            value: g => exportDate(reason(g, "alFollowup")),
+            text: g => formatRowDateDMY(reason(g, "alFollowup"))
         }
     ];
 }

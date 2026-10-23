@@ -3660,6 +3660,7 @@ body.arr-group-cif:not(.arr-view-card) .table-card{ display:none; }
 .arr-cif-no{ width:36px; text-align:center; font-weight:700; }
 .arr-cif-reason{ min-width:96px; }
 .arr-cif-reason .arr-progress{ width:80px; }
+.arr-cif-reason-count{ margin-top:2px; font-size:11px; opacity:.7; }
 
 /* Freeze No + Customer while scrolling sideways (same as the LD table) */
 .arr-cif-table th:first-child,
