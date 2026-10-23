@@ -505,3 +505,5 @@ a.pi-rank-row:active{ background:var(--pi-track); }
 .ci-quad-stable .ci-quad-dot{ background:var(--pi-bar); }
 [data-theme="dark"] .ci-quad-risky .ci-quad-dot,
 [data-theme="darkgray"] .ci-quad-risky .ci-quad-dot{ background:#B8891A; }
+
+.pi-grain-note{ margin:0 0 10px; }

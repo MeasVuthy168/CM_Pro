@@ -14,6 +14,8 @@ const t = CI.t;
 let piData = null;
 let piCompTab = "branch";
 let piCharts = [];
+// Trend grain, remembered on this device.
+let piGrain = (() => { try { return localStorage.getItem("ci_trend_grain") || "daily"; } catch (e) { return "daily"; } })();
 
 // ---------- formatting ----------
 const piEsc = CI.esc;
@@ -128,7 +130,13 @@ function piRenderTrend(d) {
     }
     empty.hidden = true;
     box.hidden = false;
-    const pts = tr.points;
+    document.querySelectorAll("#piGrain [data-grain]").forEach(b => {
+        const on = b.dataset.grain === piGrain;
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    document.getElementById("piGrainNote").textContent = t(`creditreport.pi.grainNote.${piGrain}`);
+    const pts = tr[piGrain] || tr.points;
     const labels = pts.map(p => piShortMonth(p.date) + (p.live ? " *" : ""));
     table.innerHTML = `<thead><tr><th>${piEsc(t("creditreport.pi.date"))}</th><th>${piEsc(t("creditreport.pi.kOutstanding"))}</th><th>${piEsc(t("creditreport.pi.kNplValue"))}</th><th>${piEsc(t("creditreport.pi.kNplPct"))}</th><th>${piEsc(t("creditreport.pi.kParPct"))}</th></tr></thead><tbody>` +
         pts.map(p => `<tr><td>${piEsc(piDMY(p.date))}${p.live ? " *" : ""}</td><td>${piMoney(p.os)}</td><td>${piMoney(p.nplValue)}</td><td>${piPct(p.nplPct)}</td><td>${piPct(p.parPct)}</td></tr>`).join("") +
@@ -148,7 +156,7 @@ function piRenderTrend(d) {
     };
     piCharts.push(new Chart(document.getElementById("piChartOs"), {
         type: "line",
-        data: { labels, datasets: [{ label: t("creditreport.pi.kOutstanding"), data: pts.map(p => p.os), borderColor: col.a, backgroundColor: col.a, borderWidth: 2, pointRadius: 4, tension: 0.25 }] },
+        data: { labels, datasets: [{ label: t("creditreport.pi.kOutstanding"), data: pts.map(p => p.os), borderColor: col.a, backgroundColor: col.a, borderWidth: 2, pointRadius: pts.length > 20 ? 2 : 4, tension: 0.25 }] },
         options: {
             ...base,
             plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${piMoney(c.parsed.y)}` } } },
@@ -160,8 +168,8 @@ function piRenderTrend(d) {
         data: {
             labels,
             datasets: [
-                { label: t("creditreport.pi.kNplPct"), data: pts.map(p => p.nplPct * 100), borderColor: col.a, backgroundColor: col.a, borderWidth: 2, pointRadius: 4, tension: 0.25 },
-                { label: t("creditreport.pi.kParPct"), data: pts.map(p => p.parPct * 100), borderColor: col.b, backgroundColor: col.b, borderWidth: 2, pointRadius: 4, pointStyle: "rectRot", borderDash: [6, 3], tension: 0.25 }
+                { label: t("creditreport.pi.kNplPct"), data: pts.map(p => p.nplPct * 100), borderColor: col.a, backgroundColor: col.a, borderWidth: 2, pointRadius: pts.length > 20 ? 2 : 4, tension: 0.25 },
+                { label: t("creditreport.pi.kParPct"), data: pts.map(p => p.parPct * 100), borderColor: col.b, backgroundColor: col.b, borderWidth: 2, pointRadius: pts.length > 20 ? 2 : 4, pointStyle: "rectRot", borderDash: [6, 3], tension: 0.25 }
             ]
         },
         options: {
@@ -260,6 +268,13 @@ document.addEventListener("DOMContentLoaded", () => {
         piRenderComp();
     });
     document.getElementById("piTopPick").addEventListener("change", () => { if (piData) piRenderTop(); });
+    document.getElementById("piGrain").addEventListener("click", e => {
+        const b = e.target.closest("[data-grain]");
+        if (!b) return;
+        piGrain = b.dataset.grain;
+        try { localStorage.setItem("ci_trend_grain", piGrain); } catch (e2) { /* private mode */ }
+        if (piData && !piData.empty) piRenderTrend(piData);
+    });
     // Charts read the theme's colours when drawn.
     new MutationObserver(() => { if (piData && !piData.empty) piRenderTrend(piData); })
         .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
