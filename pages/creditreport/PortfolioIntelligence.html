@@ -87,7 +87,15 @@ No Internet Connection
 
 <!-- ===== Trend ===== -->
 <section class="pi-card" aria-labelledby="piTrendTitle">
-<h2 class="pi-card-title" id="piTrendTitle" data-i18n="creditreport.pi.trend">Trend (month-end)</h2>
+<div class="pi-card-head">
+<h2 class="pi-card-title" id="piTrendTitle" data-i18n="creditreport.pi.trend">Trend</h2>
+<div class="pi-tabs" role="tablist" id="piGrain">
+<button type="button" role="tab" data-grain="daily" data-i18n="creditreport.quality.daily">Daily</button>
+<button type="button" role="tab" data-grain="weekly" data-i18n="creditreport.quality.weekly">Weekly</button>
+<button type="button" role="tab" data-grain="monthly" data-i18n="creditreport.quality.monthly">Monthly</button>
+</div>
+</div>
+<p class="pi-note pi-grain-note" id="piGrainNote"></p>
 <div class="pi-trend-empty pi-note" id="piTrendEmpty" hidden></div>
 <div class="pi-trend" id="piTrend">
 <figure class="pi-chart">
