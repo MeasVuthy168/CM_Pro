@@ -118,7 +118,7 @@ CMI18n.register({
   // section/class/product selects, search, landscape, chart.
   // ==================================================================
   "creditreport.detail.loanDisbFrom": { km: "ការបញ្ចេញឥណទានចាប់ពី", en: "Loan Disbursement from" },
-  "creditreport.detail.writeOffFrom": { km: "ឥណទានលុបចេញបញ្ជីចាប់ពី", en: "Write Off from" },
+  "creditreport.detail.writeOffFrom": { km: "ឥណទានលុបចេញពីបញ្ជីចាប់ពី", en: "Write Off from" },
   "creditreport.detail.osGridMerge": { km: "សមតុល្យ​ឥណទាន​បញ្ចូលគ្នា NBC", en: "NBC Loan Outstanding Grid Merge" },
   "creditreport.detail.overdueGridMerge": { km: "ឥណទានយឺតយ៉ាវបញ្ចូលគ្នា ​NBC", en: "NBC Overdue Loan Grid Merge" },
   "creditreport.detail.arrearsPenalty": { km: "ឥណទានយឺតយ៉ាវមានប្រាក់ពិន័យ​ T24", en: "Payment in Arears with Penalty" },
@@ -137,7 +137,7 @@ CMI18n.register({
   "creditreport.detail.sectionDisburse": { km: "ការបញ្ចេញឥណទាន", en: "Loan Disburse" },
   "creditreport.detail.sectionT24": { km: "សមតុល្យ​ឥណទានយឺតយ៉ាវ (T24)", en: "Balance Loan at Risk (T24)" },
   "creditreport.detail.sectionNbcOverdue": { km: "សមតុល្យ​ឥណទានយឺតយ៉ាវ (NBC Overdue)", en: "Balance Loan at Risk (NBC Overdue)" },
-  "creditreport.detail.sectionWriteOff": { km: "ឥណទានលុបចេញបញ្ជី", en: "Write Off" },
+  "creditreport.detail.sectionWriteOff": { km: "ឥណទានលុបចេញពីបញ្ជី", en: "Write Off" },
 
   "creditreport.detail.loanClass": { km: "ចំណាត់ថ្នាក់ឥណទាន", en: "Loan Class" },
   "creditreport.detail.classTotalT24": { km: "សរុប​ឥណទានយឺតយ៉ាវ", en: "Total T24 Overdue" },
@@ -171,9 +171,9 @@ CMI18n.register({
   "creditreport.detail.colCifHash": { km: "# (cif)", en: "# (cif)" },
   "creditreport.detail.colInt": { km: "ការប្រាក់", en: "Int" },
   "creditreport.detail.colPrn": { km: "ប្រាក់ដើម", en: "Prn" },
-  "creditreport.detail.woBalanceWO": { km: "សមតុល្យឥណទានលុបចេញបញ្ជី", en: "Balance WO" },
-  "creditreport.detail.woWO": { km: "ឥណទានលុបចេញបញ្ជី", en: "WO" },
-  "creditreport.detail.woCollected": { km: "ឥណទានលុបចេញបញ្ជីប្រមូលបាន", en: "WO Collected" },
+  "creditreport.detail.woBalanceWO": { km: "សមតុល្យឥណទានលុបចេញពីបញ្ជី", en: "Balance WO" },
+  "creditreport.detail.woWO": { km: "ឥណទានលុបចេញពីបញ្ជី", en: "WO" },
+  "creditreport.detail.woCollected": { km: "ឥណទានលុបចេញពីបញ្ជីប្រមូលបាន", en: "WO Collected" },
 
   "creditreport.detail.t24AsOfTooltip": { km: "សមតុល្យឥណទានប្រថុយប្រថាន (T24) គឺគិតតាមទិន្នន័យផ្ទាល់របស់វា មិនមែនតាមកាលបរិច្ឆេទជួរដេកនេះទេ", en: "Balance Loan at Risk (T24) is as of its own ArreasT24ByCO feed, not this row's Date" },
   "creditreport.detail.deleteDaySnapshotTitle": { km: "លុបរូបថតរក្សាទុកសម្រាប់ថ្ងៃនេះ", en: "Delete this day's snapshot" },
@@ -247,8 +247,8 @@ CMI18n.register({
   "creditreport.byCO.sectionT24Own": { km: "សមតុល្យ​ឥណទានយឺតយ៉ាវ​(T24)_ផ្ទាល់ខ្លួន", en: "Balance Loan at Risk (T24)_Own" },
   "creditreport.byCO.sectionNbcOverdueArea": { km: "សមតុល្យ​ឥណទានយឺតយ៉ាវ (NBC Overdue)_តំបន់", en: "Balance Loan at Risk (NBC Overdue)_Area" },
   "creditreport.byCO.sectionNbcOverdueOwn": { km: "សមតុល្យ​ឥណទានយឺតយ៉ាវ​ (NBC Overdue)_ផ្ទាល់ខ្លួន", en: "Balance Loan at Risk (NBC Overdue)_Own" },
-  "creditreport.byCO.sectionWriteOffArea": { km: "ឥណទានលុបចេញបញ្ជី_តំបន់", en: "Write Off_Area" },
-  "creditreport.byCO.sectionWriteOffOwn": { km: "ឥណទានលុបចេញបញ្ជី_ផ្ទាល់​ខ្លួន​", en: "Write Off_Own" },
+  "creditreport.byCO.sectionWriteOffArea": { km: "ឥណទានលុបចេញពីបញ្ជី_តំបន់", en: "Write Off_Area" },
+  "creditreport.byCO.sectionWriteOffOwn": { km: "ឥណទានលុបចេញពីបញ្ជី_ផ្ទាល់​ខ្លួន​", en: "Write Off_Own" },
   "creditreport.byCO.selectThenViewHistory": { km: "សូមស្វែងរក ហើយជ្រើសរើសមន្ត្រី រួចចុច \"{viewHistory}\"។", en: "Search and select an officer, then click \"{viewHistory}\"." },
   "creditreport.byCO.noOfficersMatch": { km: "មិនមានមន្ត្រីដែលត្រូវនឹងតម្រងទាំងនេះទេ។", en: "No officers match these filters." },
 
