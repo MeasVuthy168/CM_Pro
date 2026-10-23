@@ -333,3 +333,17 @@
 }
 .cr-hub-admin-buttons .cr-hub-snapshot-btn-icon svg{ width:18px; height:18px; }
 .cr-hub-snapshot-card{ padding:12px; }
+
+/* ===== Credit Report hub: Portfolio Intelligence card + coming soon ===== */
+.cr-hub-pi{ border-left:4px solid #D6AA32; }
+.cr-hub-soon{ opacity:.6; cursor:default; }
+.cr-hub-soon-tag{
+    display:inline-block;
+    margin-top:6px;
+    font-size:11px;
+    font-weight:700;
+    color:var(--cr-text-muted);
+    border:1px solid var(--cr-border);
+    border-radius:999px;
+    padding:1px 8px;
+}

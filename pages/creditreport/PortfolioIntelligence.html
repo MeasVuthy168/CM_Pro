@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>Portfolio Intelligence</title>
+
+<meta
+name="theme-color"
+content="#0e1b3c">
+
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
+  );
+</script>
+
+<link rel="stylesheet" href="../../assets/css/main.css">
+<link rel="stylesheet" href="../../assets/css/multi-select.css">
+<link rel="stylesheet" href="../../assets/css/creditreport/creditreport.css">
+<link rel="stylesheet" href="../../assets/css/creditreport/PortfolioIntelligence.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
+
+<!-- Hold the first paint until the whole page is parsed (its scripts,
+     translations and header), so a page transition slides in a finished
+     page instead of one still filling itself in. -->
+<link rel="expect" href="#cm-pt-parsed" blocking="render">
+<link rel="preload" href="/CM_Pro/assets/fonts/Krasar-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<script src="/CM_Pro/shared/page-transition.js"></script>
+<script src="/CM_Pro/shared/sw-register.js"></script>
+</head>
+
+<body>
+
+<div id="offlineBanner" data-i18n="common.offline">
+No Internet Connection
+</div>
+
+<script src="../../config/api.js"></script>
+<script src="/CM_Pro/shared/touch-polish.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/creditreport.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+
+<div id="topbar-container"></div>
+
+<div class="page-container pi-page">
+
+<!-- ===== Global filters (shared by every Portfolio Intelligence module) ===== -->
+<section class="pi-card pi-filters" aria-labelledby="piFiltersTitle">
+<div class="pi-filters-head">
+<h2 class="pi-card-title" id="piFiltersTitle" data-i18n="creditreport.pi.filters">Filters</h2>
+<button type="button" class="pi-btn-ghost" id="piReset" data-i18n="creditreport.pi.reset">Reset Filters</button>
+</div>
+<div class="pi-filter-grid">
+<label class="pi-field"><span data-i18n="creditreport.pi.fromDate">From Date</span><input type="date" id="piFrom"></label>
+<label class="pi-field"><span data-i18n="creditreport.pi.toDate">To Date</span><input type="date" id="piTo"></label>
+<label class="pi-field"><span data-i18n="creditreport.pi.compare">Compare with</span>
+<select id="piCompare">
+<option value="month" data-i18n="creditreport.pi.compareMonth">Previous month-end</option>
+<option value="prev" data-i18n="creditreport.pi.comparePrev">Previous day</option>
+<option value="year" data-i18n="creditreport.pi.compareYear">Previous year-end</option>
+<option value="date" data-i18n="creditreport.pi.compareDate">A chosen date</option>
+</select>
+</label>
+<label class="pi-field" id="piCompareDateWrap" hidden><span data-i18n="creditreport.pi.compareOn">Snapshot on or before</span><input type="date" id="piCompareDate"></label>
+<label class="pi-field"><span data-i18n="creditreport.pi.branch">Branch</span>
+<select id="piBranch"><option value="" data-i18n="creditreport.pi.allBranches">All Branches</option></select>
+</label>
+<label class="pi-field"><span data-i18n="creditreport.pi.officer">Credit Officer</span>
+<select id="piOfficer"><option value="" data-i18n="creditreport.pi.allOfficers">All Officers</option></select>
+</label>
+<label class="pi-field"><span data-i18n="creditreport.pi.product">Product</span>
+<select id="piProduct"><option value="" data-i18n="creditreport.pi.allProducts">All Products</option></select>
+</label>
+<label class="pi-field"><span data-i18n="creditreport.pi.district">Location (District)</span>
+<select id="piDistrict"><option value="" data-i18n="creditreport.pi.allDistricts">All Districts</option></select>
+</label>
+</div>
+<p class="pi-note" data-i18n="creditreport.pi.focusNote">Officer, Product and Location filter one at a time — the reports have no figures that cross them.</p>
+</section>
+
+<!-- ===== Data as of ===== -->
+<section class="pi-asof" id="piAsOf" aria-live="polite"></section>
+
+<!-- ===== Management alerts ===== -->
+<section class="pi-card" id="piAlertsCard" hidden>
+<h2 class="pi-card-title" data-i18n="creditreport.pi.alerts">Management Alerts</h2>
+<ul class="pi-alerts" id="piAlerts"></ul>
+</section>
+
+<!-- ===== KPIs ===== -->
+<section aria-labelledby="piKpiTitle">
+<h2 class="pi-section-title" id="piKpiTitle" data-i18n="creditreport.pi.overview">Portfolio Overview</h2>
+<div class="pi-kpis" id="piKpis"></div>
+</section>
+
+<!-- ===== Trend ===== -->
+<section class="pi-card" aria-labelledby="piTrendTitle">
+<h2 class="pi-card-title" id="piTrendTitle" data-i18n="creditreport.pi.trend">Trend (month-end)</h2>
+<div class="pi-trend-empty pi-note" id="piTrendEmpty" hidden></div>
+<div class="pi-trend" id="piTrend">
+<figure class="pi-chart">
+<figcaption data-i18n="creditreport.pi.trendOs">Loan Outstanding</figcaption>
+<div class="pi-chart-box"><canvas id="piChartOs" role="img" data-i18n-aria-label="creditreport.pi.trendOs"></canvas></div>
+</figure>
+<figure class="pi-chart">
+<figcaption data-i18n="creditreport.pi.trendRisk">NPL ratio and PAR (T24) %</figcaption>
+<div class="pi-chart-box"><canvas id="piChartRisk" role="img" data-i18n-aria-label="creditreport.pi.trendRisk"></canvas></div>
+</figure>
+</div>
+<details class="pi-table-toggle">
+<summary data-i18n="creditreport.pi.showTable">Show as table</summary>
+<div class="pi-table-wrap"><table class="pi-table" id="piTrendTable"></table></div>
+</details>
+</section>
+
+<!-- ===== Composition ===== -->
+<section class="pi-card" aria-labelledby="piCompTitle">
+<div class="pi-card-head">
+<h2 class="pi-card-title" id="piCompTitle" data-i18n="creditreport.pi.composition">Composition</h2>
+<div class="pi-tabs" role="tablist" id="piCompTabs">
+<button type="button" role="tab" data-tab="branch" data-i18n="creditreport.pi.byBranch">Branch</button>
+<button type="button" role="tab" data-tab="product" data-i18n="creditreport.pi.byProduct">Product</button>
+<button type="button" role="tab" data-tab="location" data-i18n="creditreport.pi.byDistrict">District</button>
+</div>
+</div>
+<div class="pi-bars" id="piComp"></div>
+<p class="pi-note" data-i18n="creditreport.pi.drillHint">Tap a row to open it in its Daily Monitoring report.</p>
+</section>
+
+<!-- ===== Top 10 ===== -->
+<section class="pi-card" aria-labelledby="piTopTitle">
+<div class="pi-card-head">
+<h2 class="pi-card-title" id="piTopTitle" data-i18n="creditreport.pi.top10">Top 10</h2>
+<select id="piTopPick" class="pi-top-pick">
+<option value="officersNpl" data-i18n="creditreport.pi.topOfficersNpl">Officers — NPL outstanding</option>
+<option value="officersPar" data-i18n="creditreport.pi.topOfficersPar">Officers — PAR (T24) %</option>
+<option value="officersNplRise" data-i18n="creditreport.pi.topOfficersRise">Officers — NPL increase</option>
+<option value="branchesNplPct" data-i18n="creditreport.pi.topBranchesNpl">Branches — NPL ratio</option>
+<option value="productsNpl" data-i18n="creditreport.pi.topProductsNpl">Products — NPL outstanding</option>
+<option value="locationsNpl" data-i18n="creditreport.pi.topDistrictsNpl">Districts — NPL outstanding</option>
+</select>
+</div>
+<ol class="pi-rank" id="piTop"></ol>
+<p class="pi-note" id="piTopNote"></p>
+</section>
+
+<!-- ===== Definitions ===== -->
+<details class="pi-card pi-defs">
+<summary class="pi-card-title" data-i18n="creditreport.pi.definitions">How these figures are calculated</summary>
+<ul>
+<li data-i18n="creditreport.pi.defOs">Loan Outstanding — NBC Loan Outstanding (Grid Merge), the same figure as the Daily Monitoring reports.</li>
+<li data-i18n="creditreport.pi.defDisb">Disbursement — loans in NBC OS disbursed between From and To.</li>
+<li data-i18n="creditreport.pi.defNpl">NPL — NBC Overdue Sub-Standard + Doubtful + Loss (value and accounts). NPL ratio = NPL ÷ Loan Outstanding.</li>
+<li data-i18n="creditreport.pi.defPar">PAR (T24) — Balance Loan at Risk (Arrears T24) ÷ Loan Outstanding.</li>
+<li data-i18n="creditreport.pi.defCompare">Previous figures come from the reports' saved Daily History. Closed months keep only their month-end day.</li>
+</ul>
+</details>
+
+</div>
+
+<div id="bottomnav-container"></div>
+
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<script src="../../assets/js/multi-select.js"></script>
+<script src="../../assets/js/creditreport/PortfolioIntelligence-loader.js"></script>
+<script src="../../assets/js/creditreport/PortfolioIntelligence.js"></script>
+
+</body>
+
+</html>
