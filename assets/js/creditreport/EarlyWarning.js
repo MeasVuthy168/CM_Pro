@@ -118,7 +118,7 @@ const EWS_COLS = [
     ["branch", "creditreport.pi.branch"], ["address", "creditreport.npl.colLocation"], ["bal", "creditreport.ews.outstanding"],
     ["day", "creditreport.ews.dpd"], ["warnings", "creditreport.ews.reason"], ["score", "creditreport.ews.score"],
     ["level", "creditreport.ews.levelCol"], ["followUp", "creditreport.ews.followUp"]
-];
+].concat(CI.canCreateAction() ? [["action", "creditreport.act.col"]] : []);
 
 function ewsRenderTable() {
     document.querySelectorAll("#ewsLevelTabs [data-level]").forEach(b => {
@@ -148,6 +148,10 @@ function ewsRenderTable() {
         <td class="num"><strong>${r.score}</strong></td>
         <td><span class="ci-pill ci-pill-${r.level}">${CI.esc(t(`creditreport.ews.level.${r.level}`))}</span></td>
         <td>${r.followUp ? CI.dmy(r.followUp) : "—"}</td>
+        ${CI.canCreateAction() ? `<td><a class="ci-link" href="${CI.esc(CI.actionLink({
+            loan: r.ld, branch: r.branch, officer: r.officerId, customer: r.name, source: "ews",
+            desc: t("creditreport.act.descEws", { reasons: r.warnings.map(ewsWarningText).join("; ") })
+        }))}">${CI.esc(t("creditreport.act.add"))}</a></td>` : ""}
     </tr>`).join("");
     document.getElementById("ewsTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="${EWS_COLS.length}" class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</td></tr>`}</tbody>`;
     document.getElementById("ewsMore").hidden = rows.length <= ewsShown;
@@ -156,12 +160,12 @@ function ewsRenderTable() {
 function ewsExport() {
     if (typeof XLSX === "undefined") { CI.toast(t("creditreport.npl.exportNotReady"), "error"); return; }
     const rows = ewsVisible();
-    const aoa = [EWS_COLS.map(([, l]) => t(l))].concat(rows.map(r => [
+    const aoa = [EWS_COLS.filter(([k]) => k !== "action").map(([, l]) => t(l))].concat(rows.map(r => [
         r.ld, r.name, r.officerName || r.officerId, r.branch, r.district || r.address, r.bal, r.day,
         r.warnings.map(w => `${ewsWarningText(w)} (+${w.points})`).join("; "), r.score, t(`creditreport.ews.level.${r.level}`), r.followUp || ""
     ]));
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws["!cols"] = EWS_COLS.map(([k]) => ({ wch: k === "warnings" ? 60 : 16 }));
+    ws["!cols"] = EWS_COLS.filter(([k]) => k !== "action").map(([k]) => ({ wch: k === "warnings" ? 60 : 16 }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "EarlyWarning");
     XLSX.writeFile(wb, `EarlyWarning_${ewsData.overdueAsOf || ""}.xlsx`);

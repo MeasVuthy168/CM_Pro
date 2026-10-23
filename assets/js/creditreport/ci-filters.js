@@ -209,7 +209,8 @@
         { key: "quality", href: "RiskIntelligence.html?view=quality", label: "creditreport.ci.navQuality" },
         { key: "growth", href: "RiskIntelligence.html?view=growth", label: "creditreport.ci.navGrowth" },
         { key: "recovery", href: "RecoveryManagement.html", label: "creditreport.ci.navRecovery" },
-        { key: "warning", href: "EarlyWarning.html", label: "creditreport.ci.navWarning" }
+        { key: "warning", href: "EarlyWarning.html", label: "creditreport.ci.navWarning" },
+        { key: "actions", href: "ActionTracking.html", label: "creditreport.ci.navActions" }
     ];
     let navCurrent = null;
 
@@ -302,9 +303,26 @@
             : { a: "#2456A8", b: "#B8860B", good: "#15803D", bad: "#B91C1C", grid: "rgba(0,0,0,.06)", text: css.getPropertyValue("--cr-text-muted").trim() || "#6B7280", surface: css.getPropertyValue("--cr-card-bg").trim() || "#FFFFFF" };
     }
 
+    // Action Tracking entry points (other modules' rows). Only roles the
+    // server lets create actions see the link; the server checks again.
+    function canCreateAction() {
+        try {
+            const u = JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}");
+            const r = String(u.role || "").toLowerCase();
+            return r === "admin" || r === "user" || /^viewer_manager_[abc]$/.test(r);
+        } catch (e) {
+            return false;
+        }
+    }
+    function actionLink(p) {
+        const q = new URLSearchParams({ new: "1" });
+        Object.entries(p || {}).forEach(([k, v]) => { if (v) q.set(k, String(v).slice(0, 400)); });
+        return `ActionTracking.html?${q.toString()}`;
+    }
+
     window.CI = {
         t, esc, num, money, pct, signedPct, pts, dmy, short,
-        mountFilters, query, fillOptions, renderAsOf, mountNav, get, toast, chartColors,
+        mountFilters, query, fillOptions, renderAsOf, mountNav, get, toast, chartColors, canCreateAction, actionLink,
         scope: () => scope
     };
 })();
