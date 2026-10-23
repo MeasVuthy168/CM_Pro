@@ -477,8 +477,8 @@ CMI18n.register({
   "admin.maintenance.dataIndexBreakdown": { km: "ទិន្នន័យ {dataMb} MB · លិបិក្រម {indexMb} MB (ទាំងពីរត្រូវបានរាប់បញ្ចូលខាងលើ)", en: "Data {dataMb} MB · Indexes {indexMb} MB (both counted above)" },
   "admin.maintenance.compactLabel": { km: "បង្រួមប្រវត្តិរូបភាពរបាយការណ៍", en: "Compact Report Snapshot History" },
   "admin.maintenance.compactExplain": {
-    km: "ប្រវត្តិរូបភាពប្រចាំថ្ងៃ (Branch/Officer/Location/Product) កើនឡើងមួយជួរក្នុងមួយថ្ងៃធ្វើការជារៀងរហូត។ មុខងារនេះរក្សាទុកតែរូបភាពចុងបំផុតក្នុងខែ (ថ្ងៃធ្វើការចុងក្រោយ មិនរាប់ចុងសប្តាហ៍ និងថ្ងៃឈប់សម្រាកជាតិ) សម្រាប់ខែដែលបានបញ្ចប់ ហើយលុបរូបភាពប្រចាំថ្ងៃផ្សេងទៀតក្នុងខែនោះចោល។ ខែបច្ចុប្បន្នមិនត្រូវបានប៉ះពាល់ទេ។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។",
-    en: "Daily report-history snapshots (Branch/Officer/Location/Product) grow by one row per business day forever. This keeps only the last business day of each already-closed month (skipping weekends and Cambodian public holidays) and deletes the rest of that month's daily rows. The current month is never touched. This can't be undone."
+    km: "ប្រវត្តិរូបភាពប្រចាំថ្ងៃ (Branch/Officer/Location/Product) និងប្រវត្តិ NPL តាមគណនី (Credit Portfolio) កើនឡើងមួយជួរក្នុងមួយថ្ងៃជារៀងរហូត។ មុខងារនេះរក្សាទុកតែរូបភាពចុងបំផុតក្នុងខែ (ថ្ងៃធ្វើការចុងក្រោយ មិនរាប់ចុងសប្តាហ៍ និងថ្ងៃឈប់សម្រាកជាតិ) សម្រាប់ខែដែលបានបញ្ចប់ ហើយលុបរូបភាពប្រចាំថ្ងៃផ្សេងទៀតក្នុងខែនោះចោល។ ខែបច្ចុប្បន្នមិនត្រូវបានប៉ះពាល់ទេ។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។",
+    en: "Daily report-history snapshots (Branch/Officer/Location/Product) and the Credit Portfolio NPL account history grow by one row per day forever. This keeps only the last business day of each already-closed month (skipping weekends and Cambodian public holidays) and deletes the rest of that month's daily rows. The current month is never touched. This can't be undone."
   },
   "admin.maintenance.compactPreview": { km: "មើលមុនលុប", en: "Preview" },
   "admin.maintenance.compactRun": { km: "បង្រួមឥឡូវនេះ", en: "Compact Now" },

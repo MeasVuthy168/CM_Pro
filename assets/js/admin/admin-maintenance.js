@@ -592,9 +592,10 @@
   // =====================================================
   // Compact Report Snapshot History — collapses each already-closed
   // month of daily Branch/Officer/Location/Product report-history
-  // snapshots down to that month's last business day (per the backend's
-  // Cambodian weekend/holiday calendar). No collection/source picker
-  // needed — it always runs across all four report types in one pass,
+  // snapshots — and the Credit Portfolio NPL account history — down to
+  // that month's last business day (per the backend's Cambodian
+  // weekend/holiday calendar). No collection/source picker needed — it
+  // always runs across all of them in one pass,
   // same preview-before-run guard as the other tools.
   // =====================================================
   const cp = {
