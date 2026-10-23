@@ -182,6 +182,7 @@ CMI18n.register({
   "arrears.cardDays": { km: "ថ្ងៃ", en: "days" },
   "arrears.cardNoReason": { km: "មិនទាន់បំពេញ Reason Arrear — ចុចដើម្បីបំពេញ", en: "No Reason Arrear yet — tap to fill in" },
   "arrears.cardNoData": { km: "រកមិនឃើញទិន្នន័យ", en: "No data found" },
+  "arrears.openWorkFailed": { km: "មិនអាចបើក Reason Arrear បានទេ — សូមសាកម្ដងទៀត", en: "Couldn't open Reason Arrear — please try again" },
   "arrears.deleteSelectedBtn": { km: "លុបដែលបានជ្រើសរើស", en: "Delete Selected" },
   "arrears.colName": { km: "ឈ្មោះ", en: "Name" },
   "arrears.colCurrentBranch": { km: "សាខាបច្ចុប្បន្ន", en: "Current Branch" },
