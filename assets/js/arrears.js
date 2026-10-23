@@ -1184,7 +1184,7 @@ function longestIndexes(items, valueOf = x => x) {
 // phone, promise status, reason). Same data (currentRows), same
 // batching (RENDER_BATCH_SIZE, more on scroll) and same tap ->
 // Work to complete on that loan as the table rows. Toggle state is remembered
-// in localStorage ("arr_view"); Print / Export PDF / Landscape work on
+// in localStorage ("arr_view"); Print / Export PDF work on
 // the table, so they switch back to it first (ensureTableView()).
 // ========================================
 
@@ -2039,7 +2039,7 @@ function setArrearsViewMode(mode) {
     }
 }
 
-// Print / Export PDF / Landscape capture the table, so make sure it's
+// Print / Export PDF capture the table, so make sure it's
 // the one on screen (and up to date) first.
 function ensureTableView() {
     setArrearsViewMode("table");
@@ -3408,76 +3408,36 @@ if (arrearsMenuToggle && arrearsMenuDropdown) {
 }
 
 // ========================================
-// LANDSCAPE VIEW TOGGLE
-// iOS Safari does not support the Screen Orientation API's lock() at
-// all in a regular browser tab (only inside fullscreen/installed-PWA
-// contexts on some Android browsers) — there is no way to force real
-// device rotation here. Uses a CSS-transform workaround instead, but
-// scoped to ONLY the table (not the whole page) — rotating the whole
-// body fought the fixed bottomnav/sticky headers/nested scroll and
-// produced a broken overlapping layout in testing. See arrears.css
-// for the full explanation of what changed.
+// FULLSCREEN (⋮ menu)
+// Only the results bar and the table / cards on screen: the topbar,
+// the filters and the bottom bar are hidden, and the browser's own bars
+// too where it allows it (Android, computers; iPhone Safari doesn't).
+// The ✕ in the results bar, Esc or the browser's own exit comes back.
+// Replaces the old Landscape view (the table turned on its side).
 // ========================================
-
-const btnLandscape = document.getElementById("btnLandscape");
-const btnExitLandscape = document.getElementById("btnExitLandscape");
-const landscapeTopBar = document.getElementById("landscapeTopBar");
-const landscapeBottomBar = document.getElementById("landscapeBottomBar");
-const landscapeRowCount = document.getElementById("landscapeRowCount");
-
-let landscapeHideTimer = null;
-
-function showLandscapeBars() {
-    if (landscapeTopBar) landscapeTopBar.classList.remove("hidden");
-    if (landscapeBottomBar) landscapeBottomBar.classList.remove("hidden");
-
-    clearTimeout(landscapeHideTimer);
-    landscapeHideTimer = setTimeout(hideLandscapeBars, 3000);
+function setArrFullscreen(on) {
+    document.getElementById("arrearsMenuDropdown")?.classList.remove("show");
+    if (document.body.classList.contains("arr-fullscreen") === on) return;
+    document.body.classList.toggle("arr-fullscreen", on);
+    try {
+        const el = document.documentElement;
+        if (on && !document.fullscreenElement && el.requestFullscreen) el.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
+        if (!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    } catch (e) {}
+    // Start at the top: the results bar, then the list.
+    (document.body.scrollHeight > window.innerHeight + 2 ? document.body : document.scrollingElement).scrollTop = 0;
 }
-
-function hideLandscapeBars() {
-    if (landscapeTopBar) landscapeTopBar.classList.add("hidden");
-    if (landscapeBottomBar) landscapeBottomBar.classList.add("hidden");
-}
-
-if (btnLandscape) {
-    btnLandscape.addEventListener("click", () => {
-        ensureTableView();
-        document.body.classList.add("arrears-force-landscape");
-        if (landscapeRowCount) {
-            landscapeRowCount.textContent = `${currentRows.length.toLocaleString()} rows`;
-        }
-        showLandscapeBars(); // visible on entry, auto-hides after 3s
-    });
-}
-
-// The topbar (and the "..." menu the toggle button lives in) is
-// hidden while in landscape mode, so this separate always-visible
-// button is the only way back to portrait.
-if (btnExitLandscape) {
-    btnExitLandscape.addEventListener("click", () => {
-        clearTimeout(landscapeHideTimer);
-        document.body.classList.remove("arrears-force-landscape");
-    });
-}
-
-// Tapping the rotated table (anywhere that isn't already a bar
-// button) reveals the bars again and restarts the 3s hide timer.
-document.querySelector(".table-card")?.addEventListener("click", (e) => {
-    if (!document.body.classList.contains("arrears-force-landscape")) return;
-    if (e.target.closest(".landscape-bar")) return; // don't re-trigger from tapping the bar itself
-    showLandscapeBars();
+document.getElementById("btnFullscreen")?.addEventListener("click", () => setArrFullscreen(true));
+document.getElementById("btnExitFullscreen")?.addEventListener("click", () => setArrFullscreen(false));
+// Left the browser's fullscreen (Esc, back gesture): leave ours too.
+document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement) setArrFullscreen(false);
 });
-
-// Defensive reset: never persisted to storage, so a genuine fresh
-// page load always starts in portrait. This additionally covers the
-// bfcache case (Safari can restore a page's exact DOM/class state on
-// back-navigation without a full reload) — matches the same
-// bfcache-awareness already used elsewhere in this project.
-window.addEventListener("pageshow", () => {
-    clearTimeout(landscapeHideTimer);
-    document.body.classList.remove("arrears-force-landscape");
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !document.querySelector(".ms-dim:not([hidden]), .arx-dim:not([hidden])")) setArrFullscreen(false);
 });
+// Never kept: a fresh load, or a page restored from the back/forward cache, starts normal.
+window.addEventListener("pageshow", () => setArrFullscreen(false));
 
 Object.entries(filterEls).forEach(([key, el]) => {
     if (key === "branch") return; // has its own dedicated listener above

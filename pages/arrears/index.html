@@ -236,7 +236,7 @@ No Internet Connection
 <button id="btnExport"><img src="/CM_Pro/assets/icons/arrear/export_excel.png" alt="" class="menu-icon"><span data-i18n="arrears.exportExcel">Export Excel</span></button>
 <button id="btnExportPdf"><img src="/CM_Pro/assets/icons/arrear/export_pdf.png" alt="" class="menu-icon"><span data-i18n="arrears.exportPdf">Export PDF</span></button>
 <button id="btnPrint"><img src="/CM_Pro/assets/icons/arrear/print.png" alt="" class="menu-icon"><span data-i18n="arrears.print">Print</span></button>
-<button id="btnLandscape"><img src="/CM_Pro/assets/icons/arrear/landscape.png" alt="" class="menu-icon"><span data-i18n="arrears.landscape">Landscape</span></button>
+<button id="btnFullscreen"><img src="/CM_Pro/assets/icons/arrear/fullscreen.svg" alt="" class="menu-icon"><span data-i18n="arrears.fullscreen">Fullscreen</span></button>
 <button id="btnColumns"><img src="/CM_Pro/assets/icons/arrear/columns.png" alt="" class="menu-icon"><span data-i18n="arrears.menuColumns">លាក់/បង្ហាញជួរឈរ</span></button>
 </div>
 </div>
@@ -574,6 +574,7 @@ No Internet Connection
 <div class="arr-results-bar">
 <div class="rendered-count-note" id="renderedCountNote"></div>
 <div class="arr-results-tools">
+<button type="button" class="arr-fs-exit" id="btnExitFullscreen" aria-label="Exit fullscreen" data-i18n-aria-label="arrears.exitFullscreenAria">✕ <span data-i18n="arrears.exitFullscreen">ចេញ</span></button>
 <!-- LD = one card per loan, CIF = one card per customer (card view only) -->
 <div class="arr-group-switch" role="group" aria-label="LD / CIF">
 <button type="button" class="arr-group-btn" id="arrGroupLdBtn">LD</button>
@@ -645,15 +646,6 @@ No Internet Connection
 </div>
 
 <div class="table-card">
-
-<div id="landscapeTopBar" class="landscape-bar landscape-top-bar">
-<button id="btnExitLandscape" aria-label="Exit landscape" data-i18n-aria-label="arrears.exitLandscapeAria" data-i18n="arrears.exitLandscapeBtn">✕ ត្រឡប់ក្រោយ</button>
-<span id="landscapeRowCount" class="landscape-row-count"></span>
-</div>
-
-<div id="landscapeBottomBar" class="landscape-bar landscape-bottom-bar">
-<span class="landscape-hint" data-i18n="arrears.landscapeHint">ចុចអេក្រង់ដើម្បីបង្ហាញ/លាក់ម៉ឺនុយ</span>
-</div>
 
 <div class="table-scroll">
 

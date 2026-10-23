@@ -59,7 +59,7 @@
     // bar (e.g. a swipe carrying on past the table's end). The space
     // under the table is sized so the page ends exactly there.
     function fitPageEnd() {
-        if (!page || !activeBox() || landscape()) return;
+        if (!page || !activeBox()) return;
         requestAnimationFrame(() => {
             const sc = scroller();
             const max = sc.scrollHeight - window.innerHeight;
@@ -80,7 +80,6 @@
     // scroll by touch, so neither is shown there. ----------
     const HBAR_H = 18;
     const phone = window.matchMedia("(max-width: 768px), (hover: none) and (pointer: coarse)");
-    const landscape = () => document.body.classList.contains("arrears-force-landscape");
     function activeBox() {
         if (typeof arrViewMode !== "undefined" && arrViewMode === "card") return null;
         return typeof arrGroupMode !== "undefined" && arrGroupMode === "cif" ? cifBox : ldBox;
@@ -154,7 +153,7 @@
     }
     function paintNow() {
         const box = activeBox();
-        const on = !!box && boxOnScreen && !landscape() && !phone.matches;
+        const on = !!box && boxOnScreen && !phone.matches;
         // The gold bars replace the page's own scrollbar while they show.
         document.body.classList.toggle("arr-sbars-on", on);
         hbar.el.hidden = !(on && box.scrollWidth > box.clientWidth + 2);
@@ -186,7 +185,7 @@
         if (!phone.matches) paintBar();
         const prev = lastTop.get(box) || 0;
         lastTop.set(box, box.scrollTop);
-        if (box.scrollTop > prev && !pinned() && !landscape()) {
+        if (box.scrollTop > prev && !pinned()) {
             const by = bar.getBoundingClientRect().top - topH;
             const scroller = document.body.scrollHeight > window.innerHeight + 2 ? document.body : document.scrollingElement;
             scroller.scrollBy({ top: by, behavior: "smooth" });
@@ -271,8 +270,8 @@
     }
     const relockAll = () => [document.getElementById("arrearsTable"), document.getElementById("arrCifTable")].forEach(t => lockSoon(t));
     window.addEventListener("cm-language-changed", relockAll);
-    // Card/table, LD/CIF or landscape switched: the table shown changed.
-    const viewKey = () => ["arr-view-card", "arr-group-cif", "arrears-force-landscape"].map(c => document.body.classList.contains(c) ? 1 : 0).join("");
+    // Card/table, LD/CIF or fullscreen switched: the table shown changed.
+    const viewKey = () => ["arr-view-card", "arr-group-cif", "arr-fullscreen"].map(c => document.body.classList.contains(c) ? 1 : 0).join("");
     let lastView = viewKey();
     new MutationObserver(() => {
         const k = viewKey();
