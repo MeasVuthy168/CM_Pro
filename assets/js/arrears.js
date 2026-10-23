@@ -109,6 +109,21 @@ const filterEls = {
     promiseStatus: document.getElementById("fPromiseStatus")
 };
 
+// Every filter <select> picks several values (multi-select.js); none = All.
+Object.values(filterEls).forEach(el => { if (el && el.tagName === "SELECT") MultiSelect.enhance(el); });
+
+// The values picked in a filter ([] = All).
+function filterVals(key) {
+    const el = filterEls[key];
+    if (!el) return [];
+    if (el.tagName === "SELECT") return MultiSelect.values(el);
+    const v = el.value.trim();
+    return v ? [v] : [];
+}
+
+// A row passes a multi-value filter when nothing is picked or any pick matches.
+const anyOf = (vals, test) => !vals.length || vals.some(test);
+
 let allRows = [];        // every row, parsed to objects, unfiltered
 let arrearsUnsortedRows = []; // post-filter order, never reordered by sort — what "default" restores
 let currentRows = [];    // whatever's currently displayed (post-filter, post-sort)
@@ -215,7 +230,7 @@ function setSelectOptions(selectEl, values, { keepFirstN = 1 } = {}) {
     // "All"+"Digital Products"+"Non-Digital Products") and replaces
     // everything after that with fresh options built from `values`
     const kept = Array.from(selectEl.options).slice(0, keepFirstN);
-    const currentValue = selectEl.value;
+    const currentValues = MultiSelect.values(selectEl);
 
     selectEl.innerHTML = "";
     kept.forEach(opt => selectEl.appendChild(opt));
@@ -227,9 +242,8 @@ function setSelectOptions(selectEl, values, { keepFirstN = 1 } = {}) {
         selectEl.appendChild(opt);
     });
 
-    // restore selection if it's still a valid option, else fall back to "All"
-    const stillValid = Array.from(selectEl.options).some(o => o.value === currentValue);
-    selectEl.value = stillValid ? currentValue : "";
+    // keep the picks that are still options; none left = "All"
+    MultiSelect.setValues(selectEl, currentValues);
 }
 
 // ========================================
@@ -256,9 +270,9 @@ function populateFilterOptions() {
 // cascading behavior requested: pick a Branch, the two Officer
 // dropdowns narrow to only officers who actually appear under it.
 function populateOfficerOptions() {
-    const branch = filterEls.branch.value.trim();
-    const scoped = branch
-        ? allRows.filter(r => r.branch === branch)
+    const branches = filterVals("branch");
+    const scoped = branches.length
+        ? allRows.filter(r => branches.includes(r.branch))
         : allRows;
 
     setSelectOptions(filterEls.officerResponse, distinctSorted(scoped, "coResponse"), { keepFirstN: 1 });
@@ -602,34 +616,35 @@ function escapeFocus(v) {
 }
 
 function applyFilters() {
+    // Each select filter holds 0..n values (any of them matches).
     const f = {
-        branch: filterEls.branch.value.trim(),
-        officerResponse: filterEls.officerResponse.value.trim(),
-        officerOwner: filterEls.officerOwner.value.trim(),
-        teamLeader: filterEls.teamLeader.value.trim(),
-        currency: filterEls.currency.value.trim(),
-        osClassify: filterEls.osClassify.value.trim(),
-        classVal: filterEls.class.value.trim(),
-        pd: filterEls.pd.value.trim(),
-        occupation: filterEls.occupation.value.trim(),
-        productType: filterEls.productType.value.trim(),
+        branch: filterVals("branch"),
+        officerResponse: filterVals("officerResponse"),
+        officerOwner: filterVals("officerOwner"),
+        teamLeader: filterVals("teamLeader"),
+        currency: filterVals("currency"),
+        osClassify: filterVals("osClassify"),
+        classVal: filterVals("class"),
+        pd: filterVals("pd"),
+        occupation: filterVals("occupation"),
+        productType: filterVals("productType"),
         keyword: filterEls.keyword.value.trim(),
-        promiseStatus: filterEls.promiseStatus.value.trim()
+        promiseStatus: filterVals("promiseStatus")
     };
 
     arrearsUnsortedRows = allRows.filter(row => {
-        return containsMatch(row.branch, f.branch)
-            && containsMatch(row.coResponse, f.officerResponse)
-            && exactMatch(row.coId, f.officerOwner)
-            && exactMatch(row.teamLeader, f.teamLeader)
-            && exactMatch(row.ccy, f.currency)
-            && exactMatch(row.osClassify, f.osClassify)
-            && classMatch(row.class, f.classVal)
-            && exactMatch(row.pd, f.pd)
-            && exactMatch(row.occu, f.occupation)
-            && productMatch(row.product, f.productType)
+        return anyOf(f.branch, v => containsMatch(row.branch, v))
+            && anyOf(f.officerResponse, v => containsMatch(row.coResponse, v))
+            && anyOf(f.officerOwner, v => exactMatch(row.coId, v))
+            && anyOf(f.teamLeader, v => exactMatch(row.teamLeader, v))
+            && anyOf(f.currency, v => exactMatch(row.ccy, v))
+            && anyOf(f.osClassify, v => exactMatch(row.osClassify, v))
+            && anyOf(f.classVal, v => classMatch(row.class, v))
+            && anyOf(f.pd, v => exactMatch(row.pd, v))
+            && anyOf(f.occupation, v => exactMatch(row.occu, v))
+            && anyOf(f.productType, v => productMatch(row.product, v))
             && containsMatch(row.customer, f.keyword)
-            && promiseStatusMatch(row, f.promiseStatus)
+            && anyOf(f.promiseStatus, v => promiseStatusMatch(row, v))
             && reminderFocusMatch(row);
     });
 
@@ -653,7 +668,10 @@ btnClearKeyword?.addEventListener("click", () => {
 });
 
 function clearFilters() {
-    Object.values(filterEls).forEach(el => { el.value = ""; });
+    Object.values(filterEls).forEach(el => {
+        if (el.tagName === "SELECT") MultiSelect.setValues(el, []);
+        else el.value = "";
+    });
     syncKeywordClearButton();
     populateOfficerOptions();
     applyFilters();
@@ -2357,7 +2375,8 @@ function buildExportPdfFilename() {
         }
     }
 
-    const officerName = (filterEls.officerResponse.value || "").trim();
+    const officers = filterVals("officerResponse");
+    const officerName = officers.length === 1 ? officers[0] : "";
     return `Arrear_${datePart}${officerName ? "_" + officerName : ""}`;
 }
 
@@ -2535,9 +2554,9 @@ function buildCifPdfElement(groups) {
     const ldCount = groups.reduce((n, g) => n + g.rows.length, 0);
     const osTotal = groups.reduce((n, g) => n + g.osUsd, 0);
     const filters = [
-        ["Branch", filterEls.branch.value],
-        ["Officer", filterEls.officerResponse.value],
-        ["Team", filterEls.teamLeader.value],
+        ["Branch", filterVals("branch").join(", ")],
+        ["Officer", filterVals("officerResponse").join(", ")],
+        ["Team", filterVals("teamLeader").join(", ")],
         ["Keyword", filterEls.keyword.value.trim()]
     ].filter(([, v]) => v).map(([k, v]) => `${k}: ${escapeHtml(v)}`).join(" · ");
 
@@ -3107,7 +3126,9 @@ function openWorkFor(row, navRows, summary) {
         sessionStorage.setItem(WORK_FOCUS_KEY, payload);
 
         const filters = {};
-        Object.entries(filterEls).forEach(([k, el]) => { if (el) filters[k] = el.value; });
+        Object.entries(filterEls).forEach(([k, el]) => {
+            if (el) filters[k] = el.tagName === "SELECT" ? MultiSelect.values(el) : el.value;
+        });
         sessionStorage.setItem(ARREARS_RETURN_KEY, JSON.stringify({
             at: Date.now(),
             username: arrearsUsername(),
@@ -3148,7 +3169,12 @@ function restoreArrearsFilters(filters) {
         const el = filterEls[key];
         const v = filters[key];
         if (!el || v == null) return;
-        if (el.tagName === "SELECT" && v && ![...el.options].some(o => o.value === v)) return;
+        if (el.tagName === "SELECT") {
+            // An array of picks (a single string from before multi-select).
+            const want = (Array.isArray(v) ? v : [v]).filter(x => [...el.options].some(o => o.value === x));
+            MultiSelect.setValues(el, want);
+            return;
+        }
         el.value = v;
     };
     set("branch");
@@ -3403,7 +3429,7 @@ function setAdvancedFiltersOpen(open) {
 
 function updateAdvancedFilterBadge() {
     if (!advancedFilterBadge) return;
-    const activeCount = ADVANCED_FILTER_KEYS.filter(key => filterEls[key].value.trim() !== "").length;
+    const activeCount = ADVANCED_FILTER_KEYS.filter(key => filterVals(key).length > 0).length;
     advancedFilterBadge.textContent = String(activeCount);
     advancedFilterBadge.hidden = activeCount === 0;
 }
