@@ -770,8 +770,8 @@ CMI18n.register({
   "creditreport.list.cards": { km: "▦ កាត", en: "▦ Cards" },
   "creditreport.list.list": { km: "☰ បញ្ជី", en: "☰ List" },
   "creditreport.list.clear": { km: "សម្អាតតម្រង", en: "Clear filters" },
-  "creditreport.list.colAreaOfficer": { km: "មន្ត្រីទទួលខុសត្រូវ (Arrear)", en: "Officer responsible (Arrear)" },
-  "creditreport.list.colOwnOfficer": { km: "មន្ត្រី (លេខមន្ត្រី)", en: "Officer (ID)" },
+  "creditreport.list.colAreaOfficer": { km: "CO Response (តំបន់)", en: "CO Response (area)" },
+  "creditreport.list.colOwnOfficer": { km: "CO (ផ្ទាល់ខ្លួន)", en: "CO (own)" },
   "creditreport.list.colDays": { km: "ថ្ងៃយឺត", en: "Days late" },
   "creditreport.list.daysN": { km: "យឺត {n} ថ្ងៃ", en: "{n} days late" },
   "creditreport.act.status": { km: "ស្ថានភាព", en: "Status" },
@@ -806,6 +806,5 @@ CMI18n.register({
   "creditreport.ci.sideOwn": { km: "ផ្ទាល់ខ្លួន", en: "Own" },
   "creditreport.npl.exit.class_changed": { km: "ប្តូរចំណាត់ថ្នាក់ NPL", en: "moved to another NPL class" },
   "creditreport.npl.defClass": { km: "ពេលជ្រើសចំណាត់ថ្នាក់ NPL ដើមគ្រា និងចុងគ្រា គឺសមតុល្យនៃចំណាត់ថ្នាក់នោះផ្ទាល់ — ឥណទានដែលប្តូររវាងចំណាត់ថ្នាក់ NPL ចូល ឬចេញពីចំណាត់ថ្នាក់នោះ (បង្ហាញថា \"ប្តូរចំណាត់ថ្នាក់ NPL\")។", en: "With an NPL class picked, opening and closing are that class's own balances; a loan that moves between NPL classes enters or leaves the class (shown as \"moved to another NPL class\")." },
-  "creditreport.npl.defSide": { km: "មន្ត្រីតាម៖ ផ្ទាល់ខ្លួន = ឥណទានក្រោមលេខមន្ត្រី (លំនាំដើម); ក្នុងតំបន់ = ឥណទានដែលមន្ត្រីនោះទទួលខុសត្រូវប្រមូលក្នុង Arrear T24 (CO Response) ដូច T24_តំបន់ ក្នុងរបាយការណ៍ប្រចាំថ្ងៃ — ឥណទានដែលមិនមានក្នុង Arrear T24 ប្រើឈ្មោះមន្ត្រីក្នុង NBC Overdue (សម្គាល់ \"NBC\")។", en: "Officer by: Own = loans under the officer's ID (default); In area = loans the officer is responsible for collecting in Arrear T24 (CO Response), like the Daily Report's T24_Area — a loan not in Arrear T24 uses the officer name in NBC Overdue (marked \"NBC\")." },
-  "creditreport.npl.areaFromNbc": { km: "ពី NBC Overdue — មិនមានក្នុង Arrear T24", en: "From NBC Overdue — not in Arrear T24" }
+  "creditreport.npl.defSide": { km: "NPL_តំបន់ និង NPL_ផ្ទាល់ខ្លួន យកពី NBC Overdue ដូចគ្នា (៣ ចំណាត់ថ្នាក់៖ ក្រោមស្តង់ដារ សង្ស័យ បាត់បង់)៖ ផ្ទាល់ខ្លួន = ឥណទានក្រោមលេខមន្ត្រី CO (ជួរ AJ, លំនាំដើម); ក្នុងតំបន់ = ឥណទានដែលមានឈ្មោះមន្ត្រីក្នុង CO Response (ជួរ CE) ដូចរបាយការណ៍ប្រចាំថ្ងៃ។", en: "NPL_Area and NPL_Own both come from NBC Overdue (3 classes: Sub-Standard, Doubtful, Loss): Own = loans under the CO's officer ID (column AJ, default); In area = loans whose CO Response name (column CE) is the officer, like the Daily Report." },
 });

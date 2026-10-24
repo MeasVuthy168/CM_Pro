@@ -202,7 +202,6 @@ function nplRenderTable() {
         if (c.key === "category") return `<td>${CI.esc(nplCategoryText(a))}</td>`;
         if (c.key === "location") return `<td>${CI.esc(a.district || a.location || "")}</td>`;
         if (c.key === "reason") return `<td class="ci-reason">${CI.esc(a.reason || "—")}</td>`;
-        if (c.key === "areaOfficer") return `<td>${CI.esc(a.areaOfficer || "")}${a.areaFrom === "nbc" && a.areaOfficer ? ` <span class="ci-pill ci-pill-low" title="${CI.esc(t("creditreport.npl.areaFromNbc"))}">NBC</span>` : ""}</td>`;
         if (c.key === "name") return `<td>${CI.esc(a.name)}<div class="ci-sub">${CI.esc(a.cif)}</div></td>`;
         return `<td>${CI.esc(a[c.key] || "")}</td>`;
     }).join("")}${withAction ? `<td>${nplActionLink(a)}</td>` : ""}</tr>`).join("");
