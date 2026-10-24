@@ -347,7 +347,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!d) return;
         if (d.open) nplWhyOpen.add(d.dataset.key); else nplWhyOpen.delete(d.dataset.key);
     }, true);
-    CI.mountFilters({ dates: true, compare: false, classes: true, side: true, onChange: () => { nplShown = NPL_PAGE; nplLoad(); } });
+    CI.mountFilters({ dates: true, compare: false, classes: true, side: true, periodLabel: "creditreport.ci.periodNpl", onChange: () => { nplShown = NPL_PAGE; nplLoad(); } });
     document.getElementById("nplTabs").addEventListener("click", e => {
         const b = e.target.closest("[data-tab]");
         if (!b || !nplData) return;

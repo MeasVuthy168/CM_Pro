@@ -893,3 +893,4 @@ button.ci-card{ width:100%; height:100%; }
 .ci-head .ci-side-row .ci-seg{ justify-self:start; }
 .ci-seg button:disabled{ cursor:default; }
 .ci-head .ci-cmp-note{ margin:-2px 0 6px; color:var(--pi-warn); }
+.ci-head .ci-mtd{ margin:2px 0 8px; }

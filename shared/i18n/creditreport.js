@@ -806,4 +806,7 @@ CMI18n.register({
   "creditreport.npl.exit.class_changed": { km: "ប្តូរចំណាត់ថ្នាក់ NPL", en: "moved to another NPL class" },
   "creditreport.npl.defClass": { km: "ពេលជ្រើសចំណាត់ថ្នាក់ NPL ដើមគ្រា និងចុងគ្រា គឺសមតុល្យនៃចំណាត់ថ្នាក់នោះផ្ទាល់ — ឥណទានដែលប្តូររវាងចំណាត់ថ្នាក់ NPL ចូល ឬចេញពីចំណាត់ថ្នាក់នោះ (បង្ហាញថា \"ប្តូរចំណាត់ថ្នាក់ NPL\")។", en: "With an NPL class picked, opening and closing are that class's own balances; a loan that moves between NPL classes enters or leaves the class (shown as \"moved to another NPL class\")." },
   "creditreport.npl.defSide": { km: "NPL_តំបន់ និង NPL_ផ្ទាល់ខ្លួន យកពី NBC Overdue ដូចគ្នា (៣ ចំណាត់ថ្នាក់៖ ក្រោមស្តង់ដារ សង្ស័យ បាត់បង់)៖ ផ្ទាល់ខ្លួន = ឥណទានក្រោមលេខមន្ត្រី CO (ជួរ AJ, លំនាំដើម); តំបន់ = ឥណទានដែលមានឈ្មោះមន្ត្រីក្នុង CO Response (ជួរ CE) ដូចរបាយការណ៍ប្រចាំថ្ងៃ។", en: "NPL_Area and NPL_Own both come from NBC Overdue (3 classes: Sub-Standard, Doubtful, Loss): Own = loans under the CO's officer ID (column AJ, default); Area = loans whose CO Response name (column CE) is the officer, like the Daily Report." },
+  "creditreport.ci.monthToDate": { km: "ដើមខែ–ថ្ងៃចុងក្រោយ", en: "Month to date" },
+  "creditreport.ci.periodNpl": { km: "ចលនា NPL ចាប់ពី", en: "NPL movement from" },
+  "creditreport.ci.periodRecovery": { km: "ការប្រមូលចាប់ពី", en: "Collections from" }
 });

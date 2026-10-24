@@ -189,12 +189,13 @@
         box.innerHTML = `
 <div class="cr-info-block">
 <div class="cr-info-row"${showDates ? "" : " hidden"}>
-<span class="cr-info-label">${icon("money")}<span>${esc(t("creditreport.detail.loanDisbFrom"))}</span></span>
+<span class="cr-info-label">${icon("money")}<span>${esc(t(opts.periodLabel || "creditreport.detail.loanDisbFrom"))}</span></span>
 <button type="button" class="cr-info-value ci-period-btn" id="ciPeriodBtn" aria-expanded="false" aria-controls="ciPeriodEdit" title="${esc(t("creditreport.ci.changePeriod"))}"><span id="ciPeriodText">-</span><span class="ci-edit-ico" aria-hidden="true">✎</span></button>
 </div>
 <div class="ci-period-edit" id="ciPeriodEdit" hidden>
 <div class="cr-select-row"><label for="ciFrom" class="cr-select-label">${esc(t("creditreport.pi.fromDate"))}</label><input type="date" id="ciFrom" class="cr-select"></div>
 <div class="cr-select-row"><label for="ciTo" class="cr-select-label">${esc(t("creditreport.pi.toDate"))}</label><input type="date" id="ciTo" class="cr-select"></div>
+<button type="button" class="pi-btn-ghost ci-mtd" id="ciMtd">${esc(t("creditreport.ci.monthToDate"))}</button>
 </div>
 <div class="cr-info-row">
 <span class="cr-info-label">${icon("barchart")}<span>${esc(t("creditreport.detail.osGridMerge"))}</span></span>
@@ -279,6 +280,15 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
             changed();
         }));
         document.getElementById("ciCompareDate").addEventListener("change", changed);
+        // Back to the default period: the 1st of the month to the latest OS
+        // day (the server fills it in when no dates are sent).
+        document.getElementById("ciMtd").addEventListener("click", () => {
+            document.getElementById("ciFrom").value = "";
+            document.getElementById("ciTo").value = "";
+            periodEdit.hidden = true;
+            periodBtn.setAttribute("aria-expanded", "false");
+            changed();
+        });
         present.forEach(id => document.getElementById(id).addEventListener("change", () => {
             pending[id] = [];
             if (FOCUS.includes(id)) focusLock();
