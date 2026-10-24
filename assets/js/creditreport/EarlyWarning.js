@@ -8,7 +8,7 @@
 
 const t = CI.t;
 const EWS_PAGE = 50;
-const EWS_RULES = ["delay", "repeated", "payroll", "aging", "increase", "documented", "nopromise"];
+const EWS_RULES = ["delay", "repeated", "payroll", "aging", "increase", "documented", "nopromise", "noreason"];
 
 let ewsData = null;
 let ewsLevel = "all";
@@ -56,6 +56,7 @@ function ewsRuleCondition(rule, r) {
         case "increase": return t("creditreport.ews.cond.increase", { pct: r.increase.minPct, days: r.increase.lookbackDays });
         case "documented": return t("creditreport.ews.cond.documented", { n: r.documented.keywords.length });
         case "nopromise": return t("creditreport.ews.cond.nopromise", { min: r.nopromise.minDays, max: r.nopromise.maxDays });
+        case "noreason": return t("creditreport.ews.cond.noreason", { min: r.noreason.minDays });
         default: return "";
     }
 }
@@ -99,6 +100,7 @@ function ewsWarningText(w) {
         case "increase": return t("creditreport.ews.w.increase", { from: CI.money(x.balanceThen), to: CI.money(x.balanceNow), since: CI.dmy(x.since) });
         case "documented": return t("creditreport.ews.w.documented", { keyword: x.keyword });
         case "nopromise": return t("creditreport.ews.w.nopromise", { days: x.days });
+        case "noreason": return t("creditreport.ews.w.noreason", { days: x.days });
         default: return w.rule;
     }
 }
@@ -194,7 +196,8 @@ function ewsFillEditor() {
               (rule === "repeated" ? field(rule, "episodes", t("creditreport.ews.episodes"), x.episodes) + field(rule, "windowDays", t("creditreport.ews.windowDays"), x.windowDays) : "") +
               (rule === "aging" || rule === "increase" ? field(rule, "lookbackDays", t("creditreport.ews.lookback"), x.lookbackDays) : "") +
               (rule === "increase" ? field(rule, "minPct", t("creditreport.ews.minPct"), x.minPct) : "") +
-              (rule === "nopromise" ? field(rule, "minDays", t("creditreport.ews.minDays"), x.minDays) + field(rule, "maxDays", t("creditreport.ews.maxDays"), x.maxDays) : "");
+              (rule === "nopromise" ? field(rule, "minDays", t("creditreport.ews.minDays"), x.minDays) + field(rule, "maxDays", t("creditreport.ews.maxDays"), x.maxDays) : "") +
+              (rule === "noreason" ? field(rule, "minDays", t("creditreport.ews.minDays"), x.minDays) : "");
         return `<fieldset class="ci-rule-box"><legend><label><input type="checkbox" data-rule="${rule}" data-k="on"${x.on ? " checked" : ""}> ${CI.esc(t(`creditreport.ews.r.${rule}`))}</label></legend><div class="ci-inline-fields">${extra}</div>${rule === "payroll" ? `<label class="pi-field"><span>${CI.esc(t("creditreport.ews.productMatch"))}</span><input type="text" data-rule="payroll" data-k="match" value="${CI.esc(x.match)}"></label>` : ""}</fieldset>`;
     }).join("");
     document.getElementById("ewsHigh").value = r.levels.high;
