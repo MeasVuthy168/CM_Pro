@@ -20,9 +20,11 @@
 (function () {
     const t = (k, v) => (window.CMI18n ? CMI18n.t(k, v) : k);
     const token = () => localStorage.getItem("token") || sessionStorage.getItem("token");
-    const MULTI = { ciBranch: "branch", ciOfficer: "officer", ciProduct: "product" };
+    const MULTI = { ciClass: "cls", ciBranch: "branch", ciOfficer: "officer", ciProduct: "product" };
     const FOCUS = ["ciOfficer", "ciProduct"];
-    const KEYS = ["fromDate", "toDate", "compare", "compareDate", "branch", "officer", "product", "district"];
+    const KEYS = ["fromDate", "toDate", "compare", "compareDate", "cls", "branch", "officer", "product", "district", "side"];
+    // NPL classes for the class filter (NPL Intelligence only).
+    const NPL_CLASSES = [["Sub-Standard", "creditreport.detail.classSubStandardHyphen"], ["Doubtful", "creditreport.detail.classDoubtful"], ["Loss", "creditreport.detail.classLoss"]];
     const STORE = "ci_filters";
 
     const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -45,6 +47,10 @@
     let pending = {};
     let scope = null;
     let debounce = null;
+    // Officer side, like the Daily Report: "own" (officer ID, default) or
+    // "area" (the officer's name on the loan). Kept even on pages that
+    // don't show it, so it follows the user back.
+    let side = "own";
 
     function picks(id) {
         const el = document.getElementById(id);
@@ -74,6 +80,7 @@
             const vals = picks(id).length ? picks(id) : (pending[id] || []);
             vals.forEach(x => p.append(key, x));
         });
+        if (side === "area") p.set("side", "area");
         return p;
     }
 
@@ -95,9 +102,25 @@
 
     function setDisabled(id, on) {
         const el = document.getElementById(id);
+        if (!el) return;
         el.disabled = on;
         if (el._msBtn) el._msBtn.disabled = on;
         el.closest(".cr-select-row").classList.toggle("is-disabled", on);
+    }
+
+    // Area / Own only means something once an officer is picked.
+    function syncSide() {
+        const box = document.getElementById("ciSide");
+        if (!box) return;
+        const officerPicked = picks("ciOfficer").length || (pending.ciOfficer || []).length;
+        const off = !officerPicked || (scope && scope.type === "officer");
+        box.closest(".cr-select-row").classList.toggle("is-disabled", !!off);
+        box.querySelectorAll("[data-side]").forEach(b => {
+            const on = b.dataset.side === side;
+            b.disabled = !!off;
+            b.classList.toggle("is-active", on);
+            b.setAttribute("aria-pressed", on ? "true" : "false");
+        });
     }
 
     // One of Officer / Product / District at a time.
@@ -133,6 +156,7 @@
         setDisabled("ciBranch", !!scope && scope.type !== "all");
         FOCUS.forEach(id => setDisabled(id, !!scope && scope.type === "officer"));
         focusLock();
+        syncSide();
         if (period) {
             if (!document.getElementById("ciFrom").value) document.getElementById("ciFrom").value = period.fromDate || "";
             if (!document.getElementById("ciTo").value) document.getElementById("ciTo").value = period.toDate || "";
@@ -190,8 +214,14 @@
 </div>
 </div>
 <div class="ci-selects">
+${opts.classes ? selectRow("ciClass", "creditreport.ci.nplClass", "creditreport.ci.allNplClasses") : ""}
 ${selectRow("ciBranch", "creditreport.pi.branch", "creditreport.pi.allBranches")}
 ${selectRow("ciOfficer", "creditreport.pi.officer", "creditreport.pi.allOfficers")}
+${opts.side ? `<div class="cr-select-row ci-side-row"><span class="cr-select-label">${esc(t("creditreport.ci.officerSide"))}</span>
+<span class="ci-seg" id="ciSide" role="group" aria-label="${esc(t("creditreport.ci.officerSide"))}">
+<button type="button" data-side="area">${esc(t("creditreport.ci.sideArea"))}</button>
+<button type="button" data-side="own">${esc(t("creditreport.ci.sideOwn"))}</button>
+</span></div>` : ""}
 ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts")}
 <div class="cr-select-row"${showCompare ? "" : " hidden"}><label for="ciCompare" class="cr-select-label">${esc(t("creditreport.pi.compare"))}</label>
 <select id="ciCompare" class="cr-select">
@@ -214,8 +244,27 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
         if (p.get("compareDate")) document.getElementById("ciCompareDate").value = p.get("compareDate");
         if (p.get("fromDate") && p.get("toDate")) showPeriod({ fromDate: p.get("fromDate"), toDate: p.get("toDate") });
         Object.entries(MULTI).forEach(([id, key]) => { pending[id] = p.getAll(key).filter(Boolean); });
+        side = p.get("side") === "area" ? "area" : "own";
+        const present = Object.keys(MULTI).filter(id => document.getElementById(id));
+        const cls = document.getElementById("ciClass");
+        if (cls) {
+            cls.insertAdjacentHTML("beforeend", NPL_CLASSES.map(([v, label]) => `<option value="${esc(v)}">${esc(t(label))}</option>`).join(""));
+        }
 
-        if (window.MultiSelect) Object.keys(MULTI).forEach(id => MultiSelect.enhance(document.getElementById(id), { copyClass: true }));
+        if (window.MultiSelect) present.forEach(id => MultiSelect.enhance(document.getElementById(id), { copyClass: true }));
+        if (cls && window.MultiSelect && cls._msBtn) {
+            MultiSelect.setValues(cls, pending.ciClass.filter(v => NPL_CLASSES.some(([c]) => c === v)));
+            pending.ciClass = [];
+        }
+        const sideBox = document.getElementById("ciSide");
+        if (sideBox) sideBox.addEventListener("click", e => {
+            const b = e.target.closest("[data-side]");
+            if (!b || b.disabled || b.dataset.side === side) return;
+            side = b.dataset.side;
+            syncSide();
+            changed();
+        });
+        syncSide();
         const periodBtn = document.getElementById("ciPeriodBtn");
         const periodEdit = document.getElementById("ciPeriodEdit");
         periodBtn.addEventListener("click", () => {
@@ -233,9 +282,10 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
             changed();
         }));
         document.getElementById("ciCompareDate").addEventListener("change", changed);
-        Object.keys(MULTI).forEach(id => document.getElementById(id).addEventListener("change", () => {
+        present.forEach(id => document.getElementById(id).addEventListener("change", () => {
             pending[id] = [];
             if (FOCUS.includes(id)) focusLock();
+            if (id === "ciOfficer") syncSide();
             changed();
         }));
         document.getElementById("ciReset").addEventListener("click", () => {
@@ -247,9 +297,11 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
             Object.keys(MULTI).forEach(id => {
                 pending[id] = [];
                 const el = document.getElementById(id);
-                if (window.MultiSelect && el._msBtn) MultiSelect.setValues(el, []);
+                if (el && window.MultiSelect && el._msBtn) MultiSelect.setValues(el, []);
             });
+            side = "own";
             focusLock();
+            syncSide();
             persist();
             onChange();
         });
