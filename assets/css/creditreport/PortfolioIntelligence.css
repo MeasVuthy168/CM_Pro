@@ -504,7 +504,7 @@ a.pi-rank-row:active{ background:var(--pi-track); }
     margin-top:12px;
 }
 @media (min-width:720px){
-    .ci-steps{ grid-template-columns:repeat(5,minmax(0,1fr)); }
+    .ci-steps{ grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); }
 }
 .ci-step,
 .ci-age{
@@ -574,7 +574,7 @@ a.pi-rank-row:active{ background:var(--pi-track); }
 .ci-kpi-bad{ border-top-color:var(--pi-bad); }
 .ci-kinds{ grid-template-columns:repeat(2,minmax(0,1fr)); }
 @media (min-width:720px){
-    .ci-kinds{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+    .ci-kinds{ grid-template-columns:repeat(3,minmax(0,1fr)); }
 }
 .ci-target-grid{
     display:grid;
@@ -741,3 +741,7 @@ a.pi-rank-row:active{ background:var(--pi-track); }
 .ci-seg button:disabled{ cursor:default; }
 .ci-head .ci-cmp-note{ margin:-2px 0 6px; color:var(--pi-warn); }
 .ci-head .ci-mtd{ margin:2px 0 8px; }
+
+/* NPL Management: Movement / Recovery switch under the filters */
+.ci-view-tabs{ display:flex; width:100%; max-width:none; margin:4px 0 14px; }
+.ci-view-tabs button{ flex:1 1 0; justify-content:center; text-align:center; font-size:14px; }

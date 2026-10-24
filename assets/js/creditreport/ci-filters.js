@@ -1,6 +1,6 @@
 // ========================================
 // Credit Portfolio Intelligence — shared filter context
-// Every module page (Overview, NPL Intelligence, Risk Intelligence, …)
+// Every module page (Overview, NPL Management, Risk Intelligence, …)
 // mounts the same header card from here — laid out like the Daily
 // Monitoring reports' filter card: the report's dates as icon rows
 // (tap the disbursement period to change it), then label / select rows —
@@ -23,7 +23,7 @@
     const MULTI = { ciClass: "cls", ciBranch: "branch", ciOfficer: "officer", ciProduct: "product" };
     const FOCUS = ["ciOfficer", "ciProduct"];
     const KEYS = ["fromDate", "toDate", "compare", "compareDate", "cls", "branch", "officer", "product", "district", "side"];
-    // NPL classes for the class filter (NPL Intelligence only).
+    // NPL classes for the class filter (NPL Management only).
     const NPL_CLASSES = [["Sub-Standard", "creditreport.detail.classSubStandardHyphen"], ["Doubtful", "creditreport.detail.classDoubtful"], ["Loss", "creditreport.detail.classLoss"]];
     const STORE = "ci_filters";
 
@@ -189,7 +189,7 @@
         box.innerHTML = `
 <div class="cr-info-block">
 <div class="cr-info-row"${showDates ? "" : " hidden"}>
-<span class="cr-info-label">${icon("money")}<span>${esc(t(opts.periodLabel || "creditreport.detail.loanDisbFrom"))}</span></span>
+<span class="cr-info-label">${icon("money")}<span id="ciPeriodLabel">${esc(t(opts.periodLabel || "creditreport.detail.loanDisbFrom"))}</span></span>
 <button type="button" class="cr-info-value ci-period-btn" id="ciPeriodBtn" aria-expanded="false" aria-controls="ciPeriodEdit" title="${esc(t("creditreport.ci.changePeriod"))}"><span id="ciPeriodText">-</span><span class="ci-edit-ico" aria-hidden="true">✎</span></button>
 </div>
 <div class="ci-period-edit" id="ciPeriodEdit" hidden>
@@ -315,6 +315,12 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
         persist();
     }
 
+    // A page with tabs names the period after the tab shown.
+    function setPeriodLabel(key) {
+        const el = document.getElementById("ciPeriodLabel");
+        if (el) el.textContent = t(key);
+    }
+
     // ---------- module switcher ----------
     const MODULES = [
         { key: "overview", href: "PortfolioIntelligence.html", label: "creditreport.ci.navOverview" },
@@ -322,7 +328,6 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
         { key: "contributors", href: "RiskIntelligence.html?view=contributors", label: "creditreport.ci.navContributors" },
         { key: "quality", href: "RiskIntelligence.html?view=quality", label: "creditreport.ci.navQuality" },
         { key: "growth", href: "RiskIntelligence.html?view=growth", label: "creditreport.ci.navGrowth" },
-        { key: "recovery", href: "RecoveryManagement.html", label: "creditreport.ci.navRecovery" },
         { key: "warning", href: "EarlyWarning.html", label: "creditreport.ci.navWarning" }
     ];
     let navCurrent = null;
@@ -420,7 +425,7 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
 
     window.CI = {
         t, esc, num, money, pct, signedPct, pts, dmy, short,
-        mountFilters, query, fillOptions, renderAsOf, mountNav, get, toast, chartColors,
+        mountFilters, setPeriodLabel, query, fillOptions, renderAsOf, mountNav, get, toast, chartColors,
         scope: () => scope
     };
 })();
