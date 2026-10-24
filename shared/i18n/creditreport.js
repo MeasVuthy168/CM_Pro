@@ -349,8 +349,7 @@ CMI18n.register({
   "creditreport.hub.sectionComing": { km: "នឹងមកដល់ឆាប់ៗ", en: "Coming soon" },
   "creditreport.hub.piTitle": { km: "ទិដ្ឋភាពទូទៅផលប័ត្រ", en: "Portfolio Intelligence" },
   "creditreport.hub.piSub": { km: "តួលេខសំខាន់ៗ និន្នាការ ការប្រៀបធៀប និងការជូនដំណឹងសម្រាប់ថ្នាក់គ្រប់គ្រង", en: "Key figures, trends, comparison and alerts for management" },
-  "creditreport.hub.nplIntel": { km: "វិភាគ NPL", en: "NPL Intelligence" },
-  "creditreport.hub.recovery": { km: "ការគ្រប់គ្រងការប្រមូលមកវិញ", en: "Recovery Management" },
+  "creditreport.hub.nplIntel": { km: "ការគ្រប់គ្រង NPL", en: "NPL Management" },
   "creditreport.hub.earlyWarning": { km: "ការព្រមានជាមុន", en: "Early Warning" },
   "creditreport.hub.soon": { km: "ឆាប់ៗ", en: "Soon" },
 
@@ -452,15 +451,15 @@ CMI18n.register({
   "creditreport.ci.dataStatus": { km: "ស្ថានភាពទិន្នន័យ", en: "Data status" },
   "creditreport.ci.compareDay": { km: "ថ្ងៃប្រៀបធៀប", en: "Compare day" },
   "creditreport.ci.navOverview": { km: "ទិដ្ឋភាពទូទៅ", en: "Overview" },
-  "creditreport.ci.navNpl": { km: "វិភាគ NPL", en: "NPL Intelligence" },
+  "creditreport.ci.navNpl": { km: "ការគ្រប់គ្រង NPL", en: "NPL Management" },
   "creditreport.ci.navContributors": { km: "អ្នករួមចំណែកហានិភ័យ", en: "Risk Contributors" },
   "creditreport.ci.navQuality": { km: "គុណភាពផលប័ត្រ", en: "Portfolio Quality" },
   "creditreport.ci.navGrowth": { km: "កំណើន និងហានិភ័យ", en: "Growth vs Risk" },
   "creditreport.hub.riskTitle": { km: "វិភាគហានិភ័យ", en: "Risk Intelligence" },
   "creditreport.hub.riskSub": { km: "អ្នករួមចំណែកហានិភ័យ គុណភាពផលប័ត្រ កំណើន និងហានិភ័យ", en: "Risk contributors, portfolio quality, growth vs risk" },
-  "creditreport.hub.nplSub": { km: "NPL ថ្មី ប្រមូលបាន និងបន្ត តាមគណនី", en: "New, recovered and continuing NPL by account" },
+  "creditreport.hub.nplSub": { km: "ចលនា NPL តាមគណនី មូលហេតុ និងការប្រមូលមកវិញ", en: "NPL movement by account, root causes and recovery" },
 
-  "creditreport.npl.title": { km: "វិភាគ NPL", en: "NPL Intelligence" },
+  "creditreport.npl.title": { km: "ការគ្រប់គ្រង NPL", en: "NPL Management" },
   "creditreport.npl.unavailableTitle": { km: "ចលនា NPL មិនទាន់មាន", en: "NPL movement not available yet" },
   "creditreport.npl.sinceFirst": { km: "បង្ហាញចលនាចាប់ពីថ្ងៃរក្សាទុកដំបូង", en: "Show movement since the first saved day" },
   "creditreport.npl.reason.npl_history_empty": { km: "មិនទាន់មានប្រវត្តិ NPL តាមគណនីទេ។ វារក្សាទុកក្រោយការ upload នីមួយៗ ហើយចលនានឹងបង្ហាញពេលមានយ៉ាងតិចពីរថ្ងៃ។", en: "No account-level NPL history saved yet. It is saved after every upload; movement appears once two days are saved." },
@@ -585,18 +584,14 @@ CMI18n.register({
   "creditreport.growth.defQuadrant": { km: "ចតុកោណ៖ កំណើន និងហានិភ័យ ខ្ពស់/ទាប ធៀបនឹងកម្រិតខាងលើ។", en: "Quadrants: high / low growth and risk against the thresholds shown above." },
 
   // ==================================================================
-  // CREDIT PORTFOLIO INTELLIGENCE — Phase 3a (RecoveryManagement.html,
+  // CREDIT PORTFOLIO INTELLIGENCE — Phase 3a (NPL Recovery tab,
   // EarlyWarning.html)
   // ==================================================================
-  "creditreport.ci.navRecovery": { km: "ការប្រមូលមកវិញ", en: "Recovery" },
   "creditreport.ci.navWarning": { km: "ការព្រមានជាមុន", en: "Early Warning" },
-  "creditreport.hub.recoverySub": { km: "NPL ប្រមូលបាន អត្រា និងគោលដៅ — ដាច់ពីការលុបចេញពីបញ្ជី", en: "Recovered NPL, rate and targets — apart from write-offs" },
   "creditreport.hub.warningSub": { km: "ឥណទានដែលអាចធ្លាក់ថ្នាក់ តាមច្បាប់ច្បាស់លាស់", en: "Loans that may deteriorate, by transparent rules" },
 
-  "creditreport.rec.pageTitle": { km: "ការគ្រប់គ្រងការប្រមូលមកវិញ", en: "Recovery Management" },
   "creditreport.rec.title": { km: "លទ្ធផលការប្រមូលមកវិញ", en: "Recovery Performance" },
   "creditreport.rec.recovered": { km: "ទឹកប្រាក់ប្រមូលបាន", en: "Recovered Amount" },
-  "creditreport.rec.recoveredAccounts": { km: "គណនីប្រមូលបាន", en: "Recovered Accounts" },
   "creditreport.rec.rate": { km: "អត្រាប្រមូលបាន", en: "Recovery Rate" },
   "creditreport.rec.rateSub": { km: "ធៀបនឹង NPL ដើមគ្រា {opening}", en: "of Opening NPL {opening}" },
   "creditreport.rec.net": { km: "ចលនា NPL សុទ្ធ", en: "Net NPL Movement" },
@@ -716,5 +711,8 @@ CMI18n.register({
   "creditreport.npl.defSide": { km: "NPL_តំបន់ និង NPL_ផ្ទាល់ខ្លួន យកពី NBC Overdue ដូចគ្នា (៣ ចំណាត់ថ្នាក់៖ ក្រោមស្តង់ដារ សង្ស័យ បាត់បង់)៖ ផ្ទាល់ខ្លួន = ឥណទានក្រោមលេខមន្ត្រី CO (ជួរ AJ, លំនាំដើម); តំបន់ = ឥណទានដែលមានឈ្មោះមន្ត្រីក្នុង CO Response (ជួរ CE) ដូចរបាយការណ៍ប្រចាំថ្ងៃ។", en: "NPL_Area and NPL_Own both come from NBC Overdue (3 classes: Sub-Standard, Doubtful, Loss): Own = loans under the CO's officer ID (column AJ, default); Area = loans whose CO Response name (column CE) is the officer, like the Daily Report." },
   "creditreport.ci.monthToDate": { km: "ដើមខែ–ថ្ងៃចុងក្រោយ", en: "Month to date" },
   "creditreport.ci.periodNpl": { km: "ចលនា NPL ចាប់ពី", en: "NPL movement from" },
-  "creditreport.ci.periodRecovery": { km: "ការប្រមូលចាប់ពី", en: "Collections from" }
+  "creditreport.ci.periodRecovery": { km: "ការប្រមូលចាប់ពី", en: "Collections from" },
+  "creditreport.npl.viewMovement": { km: "ចលនា NPL", en: "NPL Movement" },
+  "creditreport.npl.viewRecovery": { km: "ការប្រមូល NPL", en: "NPL Recovery" },
+  "creditreport.rec.kMoved": { km: "ប្តូរទៅចំណាត់ថ្នាក់ NPL ផ្សេង (មិនមែនការប្រមូល)", en: "Moved to another NPL class (not recovery)" }
 });

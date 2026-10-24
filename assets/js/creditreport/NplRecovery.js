@@ -1,13 +1,14 @@
 // ========================================
-// Credit Portfolio Intelligence — Recovery Performance (Module 06)
+// NPL Management — "NPL Recovery" tab (was Recovery Management)
 // GET /api/credit-intelligence/recovery: what reduced NPL in the period,
 // with cash, outstanding reduction, leaving NPL and write-off kept apart
 // (a fall in NPL is not cash), by officer / branch / product / district /
 // aging, against the admin's monthly targets. Unavailable figures are
-// shown as such, never estimated.
+// shown as such, never estimated. Shares the page's filters and t()
+// with NplIntelligence.js; that file switches tabs and calls recLoad().
+// Opening / closing NPL and new NPL live in the movement tab.
 // ========================================
 
-const t = CI.t;
 let recData = null;
 let recDim = new URLSearchParams(location.search).get("dim") || "officer";
 
@@ -66,10 +67,7 @@ function recRenderKpis(d) {
     const targetSub = tg.value === null ? t("creditreport.rec.notSetSub") : t("creditreport.rec.ofTarget", { target: CI.money(tg.value) });
     document.getElementById("recKpis").innerHTML =
         recCard(t("creditreport.rec.recovered"), CI.money(k.recovered.value), t("creditreport.npl.accountsN", { n: CI.num(k.recovered.count) }), "good") +
-        recCard(t("creditreport.rec.recoveredAccounts"), CI.num(k.recovered.count), "") +
         recCard(t("creditreport.rec.rate"), k.recoveryRate === null ? "—" : CI.pct(k.recoveryRate, 1), t("creditreport.rec.rateSub", { opening: CI.money(k.opening) })) +
-        recCard(t("creditreport.npl.step.new"), `+${CI.money(k.newNpl.value)}`, t("creditreport.npl.accountsN", { n: CI.num(k.newNpl.count) }), "bad") +
-        recCard(t("creditreport.rec.net"), `${k.net > 0 ? "+" : ""}${CI.money(k.net)}`, `${CI.money(k.opening)} → ${CI.money(k.closing)}`, k.net > 0 ? "bad" : k.net < 0 ? "good" : "") +
         recCard(t("creditreport.rec.target"), targetText, targetSub);
 }
 
@@ -87,7 +85,9 @@ function recRenderKinds(d) {
         tile(t("creditreport.rec.kCash"), CI.money(kd.cash.writtenOff.value), `${t("creditreport.rec.kCashWo")} · ${t("creditreport.rec.kCashNpl")}`, "base") +
         tile(t("creditreport.rec.kReduction"), CI.money(kd.reduction.value), t("creditreport.rec.kReductionSub", { n: CI.num(kd.reduction.count) }), "good") +
         tile(t("creditreport.rec.kLeft"), CI.money(kd.left.value), exits || t("creditreport.npl.accountsN", { n: 0 }), "good") +
-        tile(t("creditreport.rec.kWriteOff"), CI.money(kd.writeOff.value), t("creditreport.npl.accountsN", { n: CI.num(kd.writeOff.count) }), "bad");
+        tile(t("creditreport.rec.kWriteOff"), CI.money(kd.writeOff.value), t("creditreport.npl.accountsN", { n: CI.num(kd.writeOff.count) }), "bad") +
+        // NPL class filter only: still NPL, in another class — not recovery.
+        (kd.moved && kd.moved.count ? tile(t("creditreport.rec.kMoved"), CI.money(kd.moved.value), t("creditreport.npl.accountsN", { n: CI.num(kd.moved.count) }), "base") : "");
 }
 
 function recName(r) {
@@ -172,8 +172,8 @@ async function recSaveTargets() {
     }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    CI.mountFilters({ dates: true, compare: false, periodLabel: "creditreport.ci.periodRecovery", onChange: recLoad });
+// Wired once by NplIntelligence.js; data loads when the tab is shown.
+function recInit() {
     document.getElementById("recDims").addEventListener("click", e => {
         const b = e.target.closest("[data-dim]");
         if (!b) return;
@@ -198,5 +198,4 @@ document.addEventListener("DOMContentLoaded", () => {
         month.addEventListener("change", recLoadTargets);
         document.getElementById("recTargetSave").addEventListener("click", recSaveTargets);
     }
-    recLoad();
-});
+}

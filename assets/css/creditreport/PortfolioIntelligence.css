@@ -741,3 +741,7 @@ a.pi-rank-row:active{ background:var(--pi-track); }
 .ci-seg button:disabled{ cursor:default; }
 .ci-head .ci-cmp-note{ margin:-2px 0 6px; color:var(--pi-warn); }
 .ci-head .ci-mtd{ margin:2px 0 8px; }
+
+/* NPL Management: Movement / Recovery switch under the filters */
+.ci-view-tabs{ display:flex; margin:4px 0 14px; }
+.ci-view-tabs button{ flex:1 1 0; justify-content:center; text-align:center; font-size:14px; }

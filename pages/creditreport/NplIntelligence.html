@@ -9,7 +9,7 @@
 name="viewport"
 content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 
-<title>NPL Intelligence</title>
+<title>NPL Management</title>
 
 <meta
 name="theme-color"
@@ -69,6 +69,13 @@ No Internet Connection
 
 <section id="ciFilters" aria-label="Filters"></section>
 
+<!-- NPL Management: movement (who / what) and recovery (how much came back) -->
+<div class="pi-tabs ci-view-tabs" role="tablist" id="nplViews">
+<button type="button" role="tab" data-view="movement" data-i18n="creditreport.npl.viewMovement">NPL Movement</button>
+<button type="button" role="tab" data-view="recovery" data-i18n="creditreport.npl.viewRecovery">NPL Recovery</button>
+</div>
+
+<div id="nplViewMovement">
 <!-- History not long enough for the period: say so, never guess -->
 <section class="pi-card" id="nplUnavailable" hidden>
 <h2 class="pi-card-title" data-i18n="creditreport.npl.unavailableTitle">NPL movement not available yet</h2>
@@ -127,6 +134,62 @@ No Internet Connection
 <li data-i18n="creditreport.npl.defReasons">Reasons are only those officers documented in Reason Arrear — none is guessed.</li>
 </ul>
 </details>
+</div>
+
+<div id="nplViewRecovery" hidden>
+<section class="pi-card" id="recUnavailable" hidden>
+<h2 class="pi-card-title" data-i18n="creditreport.npl.unavailableTitle">NPL movement not available yet</h2>
+<p class="pi-note" id="recUnavailableText"></p>
+<button type="button" class="pi-btn-ghost" id="recSinceFirst" hidden data-i18n="creditreport.npl.sinceFirst">Show movement since the first saved day</button>
+</section>
+
+<div id="recContent" hidden>
+<section aria-labelledby="recKpiTitle">
+<h2 class="pi-section-title" id="recKpiTitle" data-i18n="creditreport.rec.title">Recovery Performance</h2>
+<p class="pi-note" id="recRange"></p>
+<div class="pi-kpis" id="recKpis"></div>
+</section>
+
+<section class="pi-card" aria-labelledby="recKindsTitle">
+<h2 class="pi-card-title" id="recKindsTitle" data-i18n="creditreport.rec.kinds">What reduced NPL — kept apart</h2>
+<div class="ci-steps ci-kinds" id="recKinds"></div>
+<p class="pi-note" data-i18n="creditreport.rec.kindsNote">A fall in NPL is not cash: only collections on written-off loans are cash figures in CM Pro.</p>
+</section>
+
+<section class="pi-card" aria-labelledby="recDimTitle">
+<div class="pi-card-head">
+<h2 class="pi-card-title" id="recDimTitle" data-i18n="creditreport.rec.byDim">Recovery by</h2>
+<div class="pi-tabs ci-tabs-wide" role="tablist" id="recDims">
+<button type="button" role="tab" data-dim="officer" data-i18n="creditreport.risk.byOfficer">Officer</button>
+<button type="button" role="tab" data-dim="branch" data-i18n="creditreport.pi.byBranch">Branch</button>
+<button type="button" role="tab" data-dim="product" data-i18n="creditreport.pi.byProduct">Product</button>
+<button type="button" role="tab" data-dim="location" data-i18n="creditreport.pi.byDistrict">District</button>
+<button type="button" role="tab" data-dim="aging" data-i18n="creditreport.rec.byAging">PAR aging</button>
+</div>
+</div>
+<div class="pi-table-wrap ci-table-scroll"><table class="pi-table ci-table" id="recTable"></table></div>
+</section>
+</div>
+
+<details class="pi-card" id="recAdmin" hidden>
+<summary class="pi-card-title" data-i18n="creditreport.rec.targetsTitle">Monthly NPL recovery targets (admin)</summary>
+<div class="ci-inline-fields ci-admin-fields">
+<label class="pi-field"><span data-i18n="creditreport.rec.month">Month</span><input type="month" id="recTargetMonth"></label>
+</div>
+<div class="ci-target-grid" id="recTargetGrid"></div>
+<button type="button" class="pi-btn-ghost" id="recTargetSave" data-i18n="creditreport.growth.save">Save</button>
+</details>
+
+<details class="pi-card pi-defs">
+<summary class="pi-card-title" data-i18n="creditreport.pi.definitions">How these figures are calculated</summary>
+<ul>
+<li data-i18n="creditreport.rec.defRecovered">Recovered = opening balance of NPL loans that left NPL by being upgraded, becoming performing or closing. Write-offs are counted separately, not as recovery.</li>
+<li data-i18n="creditreport.rec.defRate">Recovery rate = Recovered ÷ Opening NPL. Net NPL movement = Closing − Opening NPL.</li>
+<li data-i18n="creditreport.rec.defCash">Cash collected exists only for written-off loans (WO collections in the period). Cash paid on NPL loans has no data source, so it is shown as not available.</li>
+<li data-i18n="creditreport.rec.defTarget">Target achievement = Recovered ÷ the monthly targets an admin set for the branches and months in the period.</li>
+</ul>
+</details>
+</div>
 
 </div>
 
@@ -139,6 +202,7 @@ No Internet Connection
 <script src="../../assets/js/creditreport/NplIntelligence-loader.js"></script>
 <script src="../../assets/js/creditreport/ci-filters.js"></script>
 <script src="../../assets/js/creditreport/NplIntelligence.js"></script>
+<script src="../../assets/js/creditreport/NplRecovery.js"></script>
 
 </body>
 

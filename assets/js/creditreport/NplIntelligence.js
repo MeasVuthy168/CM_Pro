@@ -1,5 +1,5 @@
 // ========================================
-// Credit Portfolio Intelligence — NPL Intelligence (Module 02)
+// Credit Portfolio Intelligence — NPL Management, "NPL Movement" tab (Module 02)
 // GET /api/credit-intelligence/npl: opening vs closing NPL loans from the
 // account-level NPL history, the waterfall and its reconciliation, every
 // account that moved, and the reasons officers documented. When the saved
@@ -16,6 +16,28 @@ let nplTab = "new";
 let nplSort = { key: "change", dir: -1 };
 let nplShown = NPL_PAGE;
 let nplChart = null;
+// NPL Management tabs: "movement" (this file) and "recovery" (NplRecovery.js).
+// Each tab fetches only when shown, and again after the filters change.
+let nplView = new URLSearchParams(location.search).get("view") === "recovery" ? "recovery" : "movement";
+const nplStale = { movement: true, recovery: true };
+
+function nplShowView(view) {
+    nplView = view === "recovery" ? "recovery" : "movement";
+    document.querySelectorAll("#nplViews [data-view]").forEach(b => {
+        const on = b.dataset.view === nplView;
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    document.getElementById("nplViewMovement").hidden = nplView !== "movement";
+    document.getElementById("nplViewRecovery").hidden = nplView !== "recovery";
+    CI.setPeriodLabel(nplView === "recovery" ? "creditreport.ci.periodRecovery" : "creditreport.ci.periodNpl");
+    const p = new URLSearchParams(location.search);
+    if (nplView === "recovery") p.set("view", "recovery"); else p.delete("view");
+    history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
+    if (!nplStale[nplView]) return;
+    nplStale[nplView] = false;
+    if (nplView === "recovery") recLoad(); else nplLoad();
+}
 function nplExitText(e) {
     return e ? t(`creditreport.npl.exit.${e}`) : "";
 }
@@ -337,7 +359,20 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!d) return;
         if (d.open) nplWhyOpen.add(d.dataset.key); else nplWhyOpen.delete(d.dataset.key);
     }, true);
-    CI.mountFilters({ dates: true, compare: false, classes: true, side: true, periodLabel: "creditreport.ci.periodNpl", onChange: () => { nplShown = NPL_PAGE; nplLoad(); } });
+    CI.mountFilters({
+        dates: true, compare: false, classes: true, side: true,
+        periodLabel: nplView === "recovery" ? "creditreport.ci.periodRecovery" : "creditreport.ci.periodNpl",
+        onChange: () => {
+            nplShown = NPL_PAGE;
+            nplStale.movement = nplStale.recovery = true;
+            nplShowView(nplView);
+        }
+    });
+    document.getElementById("nplViews").addEventListener("click", e => {
+        const b = e.target.closest("[data-view]");
+        if (b) nplShowView(b.dataset.view);
+    });
+    recInit();
     document.getElementById("nplTabs").addEventListener("click", e => {
         const b = e.target.closest("[data-tab]");
         if (!b || !nplData) return;
@@ -370,5 +405,5 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     new MutationObserver(() => { if (nplData && nplData.movement && nplData.movement.available) nplRenderWaterfall(nplData.movement); })
         .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-    nplLoad();
+    nplShowView(nplView);
 });
