@@ -434,6 +434,7 @@ CMI18n.register({
   "creditreport.pi.topProductsNpl": { km: "ផលិតផល — សមតុល្យ NPL", en: "Products — NPL outstanding" },
   "creditreport.pi.topDistrictsNpl": { km: "ស្រុក — សមតុល្យ NPL", en: "Districts — NPL outstanding" },
   "creditreport.pi.parMinNote": { km: "មន្ត្រីដែលមានឥណទានយ៉ាងតិច {n}។", en: "Officers with at least {n} loans." },
+  "creditreport.pi.stopExcluded": { km: "មិនរាប់មន្ត្រី Stop Disburse {n} នាក់ (NPL {npl}) — ឥណទានរបស់ពួកគេនៅតែរាប់ក្នុងតួលេខសរុប", en: "{n} Stop Disburse officers left out (NPL {npl}) — their loans still count in the totals" },
   "creditreport.pi.riseSince": { km: "កំណើនចាប់តាំងពី {date}។", en: "Increase since {date}." },
   "creditreport.pi.definitions": { km: "របៀបគណនាតួលេខ", en: "How these figures are calculated" },
   "creditreport.pi.defOs": { km: "សមតុល្យឥណទាន — NBC Loan Outstanding (Grid Merge) ដូចរបាយការណ៍ប្រចាំថ្ងៃ។", en: "Loan Outstanding — NBC Loan Outstanding (Grid Merge), the same figure as the Daily Monitoring reports." },

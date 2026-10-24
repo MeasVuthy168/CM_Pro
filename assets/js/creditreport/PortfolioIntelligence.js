@@ -235,6 +235,12 @@ function piRenderTop() {
     note.textContent = pick === "officersPar" ? t("creditreport.pi.parMinNote", { n: top.parMinLoans || 0 })
         : pick === "officersNplRise" ? (top.officersNplRiseSince ? t("creditreport.pi.riseSince", { date: piDMY(top.officersNplRiseSince) }) : t("creditreport.pi.cmpReason.no_snapshot"))
         : "";
+    // Officer rankings leave out Stop Disburse officers (their loans still
+    // count in every total) — say how many, so nothing looks missing.
+    const ex = top.stopDisburseExcluded;
+    if (pick.startsWith("officers") && ex && ex.count) {
+        note.textContent = [note.textContent, t("creditreport.pi.stopExcluded", { n: ex.count, npl: piMoney(ex.nplValue) })].filter(Boolean).join(" · ");
+    }
     const box = document.getElementById("piTop");
     if (!rows.length) {
         box.innerHTML = `<li class="pi-note">${piEsc(t("creditreport.pi.nothing"))}</li>`;
