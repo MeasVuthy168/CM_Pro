@@ -743,5 +743,96 @@ a.pi-rank-row:active{ background:var(--pi-track); }
 .ci-head .ci-mtd{ margin:2px 0 8px; }
 
 /* NPL Management: Movement / Recovery switch under the filters */
-.ci-view-tabs{ display:flex; width:100%; max-width:none; margin:4px 0 14px; }
+.ci-view-tabs{ display:flex; width:100%; max-width:960px; margin:4px auto 14px; box-sizing:border-box; }
 .ci-view-tabs button{ flex:1 1 0; justify-content:center; text-align:center; font-size:14px; }
+
+/* ===== Header: quick periods, one-day warning, active-filter chips,
+   phone filter summary ===== */
+.ci-quick{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:8px 0 2px; }
+.ci-quick button{
+    border:1px solid var(--cr-border);
+    background:transparent;
+    color:var(--cr-text-muted);
+    font-family:'KRASAR',sans-serif;
+    font-size:12.5px;
+    border-radius:999px;
+    padding:4px 12px;
+    cursor:pointer;
+}
+.ci-quick button.is-active{ background:var(--pi-navy); border-color:var(--pi-navy); color:#fff; font-weight:700; }
+[data-theme="dark"] .ci-quick button.is-active,
+[data-theme="darkgray"] .ci-quick button.is-active{ background:var(--pi-gold); border-color:var(--pi-gold); color:#0D2D5C; }
+.ci-oneday{ font-size:12px; font-weight:700; color:var(--pi-warn); }
+.ci-chips{ display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 0; }
+.ci-chip-x{
+    border:1px solid var(--pi-gold);
+    background:var(--pi-track);
+    color:var(--cr-text);
+    font-family:'KRASAR',sans-serif;
+    font-size:12px;
+    border-radius:999px;
+    padding:3px 10px;
+    cursor:pointer;
+}
+.ci-chip-x span{ color:var(--cr-text-muted); margin-left:2px; }
+.ci-filter-sum{
+    display:none;
+    width:100%;
+    align-items:center;
+    gap:6px;
+    margin-top:10px;
+    padding:9px 12px;
+    border:1px solid var(--cr-border);
+    border-radius:10px;
+    background:var(--pi-track);
+    color:var(--cr-text);
+    font-family:'KRASAR',sans-serif;
+    font-size:13px;
+    text-align:left;
+    cursor:pointer;
+}
+.ci-filter-sum #ciFilterSumText{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ci-filter-caret{ transition:transform .15s; }
+.ci-head.is-open .ci-filter-caret{ transform:rotate(180deg); }
+@media (max-width:719px){
+    .ci-filter-sum{ display:flex; }
+    .ci-head:not(.is-open) #ciFilterBody{ display:none; }
+}
+
+/* ===== NPL Management: summary, tab subtitles, ⓘ tips, table bars ===== */
+.ci-view-tabs button{ display:flex; flex-direction:column; align-items:center; gap:1px; padding-top:7px; padding-bottom:7px; }
+.ci-view-tabs button small{ font-size:11px; font-weight:400; color:var(--cr-text-muted); line-height:1.3; }
+.ci-summary{ display:flex; flex-direction:column; gap:6px; }
+.ci-sum-head{ font-size:17px; font-weight:800; line-height:1.4; }
+.ci-sum-head.is-down{ color:var(--pi-good); }
+.ci-sum-head.is-up{ color:var(--pi-bad); }
+.ci-sum-sub{ font-size:12.5px; color:var(--cr-text-muted); }
+.ci-sum-parts{ display:flex; flex-wrap:wrap; gap:6px; }
+.ci-sum-part{ font-size:12.5px; padding:3px 10px; border-radius:999px; background:var(--pi-track); color:var(--cr-text); }
+.ci-sum-part b{ font-variant-numeric:tabular-nums; }
+.ci-sum-part.is-bad b{ color:var(--pi-bad); }
+.ci-sum-part.is-good b{ color:var(--pi-good); }
+.ci-sum-part.is-base b{ color:var(--pi-warn); }
+.ci-sum-extra{ font-size:12.5px; color:var(--cr-text); }
+.ci-wf-note{ margin:0 0 4px; }
+.ci-info{
+    border:none;
+    background:transparent;
+    color:var(--cr-text-muted);
+    font-size:13px;
+    line-height:1;
+    padding:0 2px;
+    cursor:pointer;
+    vertical-align:middle;
+}
+.ci-info[aria-expanded="true"]{ color:var(--pi-navy); }
+[data-theme="dark"] .ci-info[aria-expanded="true"],
+[data-theme="darkgray"] .ci-info[aria-expanded="true"]{ color:var(--pi-gold); }
+.ci-tip{ margin-top:6px; padding:6px 8px; border-radius:8px; background:var(--pi-track); font-size:11.5px; line-height:1.5; color:var(--cr-text); }
+.ci-mini{ height:4px; border-radius:3px; background:var(--pi-track); margin-top:3px; overflow:hidden; min-width:48px; }
+.ci-mini span{ display:block; height:100%; background:var(--pi-bar); }
+.ci-mini.is-good span{ background:var(--pi-good); }
+.ci-mini.is-bad span{ background:var(--pi-bad); }
+.ci-row-link{ cursor:pointer; }
+.ci-row-link:hover td{ background:var(--pi-track); }
+.ci-row-hint{ margin:0 0 6px; }

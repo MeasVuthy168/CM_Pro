@@ -71,9 +71,12 @@ No Internet Connection
 
 <!-- NPL Management: movement (who / what) and recovery (how much came back) -->
 <div class="pi-tabs ci-view-tabs" role="tablist" id="nplViews">
-<button type="button" role="tab" data-view="movement" data-i18n="creditreport.npl.viewMovement">NPL Movement</button>
-<button type="button" role="tab" data-view="recovery" data-i18n="creditreport.npl.viewRecovery">NPL Recovery</button>
+<button type="button" role="tab" data-view="movement"><span data-i18n="creditreport.npl.viewMovement">NPL Movement</span><small data-i18n="creditreport.npl.viewMovementSub">How NPL changed — which loans</small></button>
+<button type="button" role="tab" data-view="recovery"><span data-i18n="creditreport.npl.viewRecovery">NPL Recovery</span><small data-i18n="creditreport.npl.viewRecoverySub">How much came back — who did well</small></button>
 </div>
+
+<!-- One-line answer first: did NPL go up or down, and why -->
+<section class="pi-card ci-summary" id="nplSummary" hidden aria-live="polite"></section>
 
 <div id="nplViewMovement">
 <!-- History not long enough for the period: say so, never guess -->
@@ -87,6 +90,7 @@ No Internet Connection
 <section class="pi-card" aria-labelledby="nplWfTitle">
 <h2 class="pi-card-title" id="nplWfTitle" data-i18n="creditreport.npl.movement">NPL Movement</h2>
 <p class="pi-note" id="nplRange"></p>
+<p class="pi-note ci-wf-note" data-i18n="creditreport.npl.wfNote">What moved NPL in the period (opening and closing are in the cards below).</p>
 <div class="pi-chart-box ci-wf-box"><canvas id="nplWaterfall" role="img" data-i18n-aria-label="creditreport.npl.movement"></canvas></div>
 <div class="ci-steps" id="nplSteps"></div>
 <p class="ci-recon" id="nplRecon"></p>
@@ -168,6 +172,7 @@ No Internet Connection
 <button type="button" role="tab" data-dim="aging" data-i18n="creditreport.rec.byAging">PAR aging</button>
 </div>
 </div>
+<p class="pi-note ci-row-hint" id="recTableHint" hidden data-i18n="creditreport.rec.rowHint">Tap a row to see its loans in NPL Movement.</p>
 <div class="pi-table-wrap ci-table-scroll"><table class="pi-table ci-table" id="recTable"></table></div>
 </section>
 </div>
