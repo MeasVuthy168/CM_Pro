@@ -508,7 +508,7 @@ CMI18n.register({
   "creditreport.npl.cat.recovered": { km: "ប្រមូលបាន", en: "Recovered" },
   "creditreport.npl.cat.continuing": { km: "នៅបន្ត", en: "Continuing" },
   "creditreport.npl.rootCause": { km: "មូលហេតុ (ដែលបានកត់ត្រា)", en: "Root Cause (documented reasons)" },
-  "creditreport.npl.whyNote": { km: "{documented} ក្នុងចំណោម {total} គណនី NPL មានមូលហេតុកត់ត្រាក្នុង Reason Arrear។ បង្ហាញតែផ្នែក (មូលហេតុ) តាមអត្ថបទដែលមន្ត្រីសរសេរ — មិនទាយទេ។", en: "{documented} of {total} NPL accounts have a reason documented in Reason Arrear. Only the (reason) part is shown, as officers wrote it — nothing is guessed." },
+  "creditreport.npl.whyNote": { km: "{documented} ក្នុងចំណោម {total} គណនី NPL មានមូលហេតុកត់ត្រាក្នុង Reason Arrear។ ដាក់ជាក្រុមតាមផ្នែក (មូលហេតុ) តាមអត្ថបទដែលមន្ត្រីសរសេរ — មិនទាយទេ។ ចុចលើក្រុមដើម្បីមើលគណនី និងព័ត៌មានលម្អិត។", en: "{documented} of {total} NPL accounts have a reason documented in Reason Arrear. Grouped by the (reason) part, as officers wrote it — nothing is guessed. Tap a group to see its accounts and details." },
   "creditreport.npl.noReasons": { km: "មិនទាន់មានមូលហេតុកត់ត្រា", en: "No documented reasons yet" },
   "creditreport.npl.defOpening": { km: "ដើមគ្រា — ឥណទាន NPL (ក្រោមស្តង់ដារ សង្ស័យ បាត់បង់) ដែលរក្សាទុកនៅថ្ងៃចុងក្រោយមុន ពីថ្ងៃ។", en: "Opening — NPL loans (Sub-Standard, Doubtful, Loss) saved on the last day before From." },
   "creditreport.npl.defClosing": { km: "ចុងគ្រា — ឥណទាន NPL ក្នុង NBC Overdue បច្ចុប្បន្ន (ឬថ្ងៃដែលរក្សាទុកនៅ ដល់ថ្ងៃ)។", en: "Closing — today's NBC Overdue NPL loans (or the day saved at To)." },
@@ -796,5 +796,18 @@ CMI18n.register({
   "creditreport.act.sortPriority": { km: "អាទិភាពខ្ពស់មុន", en: "Highest priority" },
   "creditreport.act.overdueN": { km: "ហួសកំណត់ {n} ថ្ងៃ", en: "{n}d overdue" },
   "creditreport.act.dueToday": { km: "ដល់កំណត់ថ្ងៃនេះ", en: "Due today" },
-  "creditreport.act.dueInN": { km: "នៅសល់ {n} ថ្ងៃ", en: "Due in {n}d" }
+  "creditreport.act.dueInN": { km: "នៅសល់ {n} ថ្ងៃ", en: "Due in {n}d" },
+  "creditreport.npl.why.search": { km: "ស្វែងរកមូលហេតុ ឥណទាន អតិថិជន មន្ត្រី…", en: "Search reason, loan, customer, officer…" },
+  "creditreport.npl.why.cause": { km: "មូលហេតុ", en: "Reason" },
+  "creditreport.npl.why.solution": { km: "ដំណោះស្រាយ", en: "Solution" },
+  "creditreport.npl.why.occupation": { km: "មុខរបរ", en: "Occupation" },
+  "creditreport.npl.why.promise": { km: "ថ្ងៃសន្យាសង", en: "Promise date" },
+  "creditreport.npl.why.promisePast": { km: "ហួសថ្ងៃសន្យា", en: "promise passed" },
+  "creditreport.npl.why.recorded": { km: "កត់ត្រាដោយ", en: "Recorded by" },
+  "creditreport.npl.why.none": { km: "មិនទាន់បំពេញមូលហេតុ", en: "No reason recorded yet" },
+  "creditreport.npl.why.newN": { km: "NPL ថ្មី {n}", en: "New NPL {n}" },
+  "creditreport.npl.why.contN": { km: "NPL នៅបន្ត {n}", en: "Continuing {n}" },
+  "creditreport.npl.why.promiseN": { km: "មានថ្ងៃសន្យា {n}/{total}", en: "Promise date {n}/{total}" },
+  "creditreport.npl.why.cover": { km: "មានមូលហេតុ {pct}% នៃសមតុល្យ NPL ({bal} ក្នុងចំណោម {total})", en: "{pct}% of NPL balance has a reason ({bal} of {total})" },
+  "creditreport.npl.why.more": { km: "បង្ហាញបន្ថែម ({n} ទៀត)", en: "Show more ({n} left)" }
 });
