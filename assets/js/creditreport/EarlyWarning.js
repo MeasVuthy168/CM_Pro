@@ -1,9 +1,10 @@
 // ========================================
 // Credit Portfolio Intelligence — Early Warning Indicators (Module 07)
 // GET /api/credit-intelligence/early-warning: today's overdue loans not
-// yet NPL, each checked against transparent rules (the rule table shows
-// exactly what fires and for how many points). Rows open the customer in
-// Customers (?q=<loan>). Admins can edit the rules; nothing is predicted.
+// yet NPL, each checked against transparent rules (the rule cards show
+// exactly what fires and for how many points). A loan card opens that loan
+// in Work to Complete (?q=<loan>), where its reason and promise to pay are
+// filled in. Admins can edit the rules; nothing is predicted.
 // ========================================
 
 const t = CI.t;
@@ -14,6 +15,9 @@ let ewsData = null;
 let ewsLevel = "all";
 let ewsShown = EWS_PAGE;
 let ewsSort = { key: "score", dir: -1 };
+let ewsRule = "";           // rule chip the list is narrowed to
+let ewsView = "cards";      // "cards" or "officer"
+let ewsOfficer = null;      // { id, name } picked in the officer view
 
 async function ewsLoad() {
     const data = await CI.get("early-warning");
@@ -31,9 +35,10 @@ function ewsRender() {
     CI.fillOptions(d.options, d.scope, d.period);
     CI.renderAsOf(document.getElementById("ciAsOf"), d);
     const s = d.summary;
+    ewsRenderSummary(d);
     const icon = { high: "⚠", medium: "▲", low: "●" };
     document.getElementById("ewsLevels").innerHTML = ["high", "medium", "low"].map(l => `
-        <button type="button" class="ci-level ci-level-${l}" data-level="${l}">
+        <button type="button" class="ci-level ci-level-${l}" data-level="${l}" aria-label="${CI.esc(t("creditreport.ews.showLevel", { level: t(`creditreport.ews.level.${l}`) }))}">
             <span class="ci-level-name"><span aria-hidden="true">${icon[l]}</span> ${CI.esc(t(`creditreport.ews.level.${l}`))}</span>
             <strong>${CI.num(s[l])}</strong>
             <span class="pi-kpi-sub">${CI.money(s.balance[l])}</span>
@@ -42,9 +47,32 @@ function ewsRender() {
     document.getElementById("ewsHistory").textContent = h.savedDays
         ? t("creditreport.ews.historyNote", { days: h.savedDays, first: CI.dmy(h.first) })
         : t("creditreport.ews.historyNone");
+    const counts = { all: s.high + s.medium + s.low, high: s.high, medium: s.medium, low: s.low };
+    document.querySelectorAll("#ewsLevelTabs .ci-tab-n").forEach(n => { n.textContent = `(${CI.num(counts[n.dataset.n])})`; });
     ewsRenderRules(d);
-    ewsFillRuleFilter(d);
-    ewsRenderTable();
+    ewsRenderList();
+}
+
+// One line on what matters most: the high-risk loans, and how many have
+// no promise to pay or no reason yet (the officer's next step).
+function ewsRenderSummary(d) {
+    const s = d.summary;
+    const box = document.getElementById("ewsSummary");
+    const total = s.high + s.medium + s.low;
+    const head = s.high
+        ? t("creditreport.ews.sum.high", { n: CI.num(s.high), bal: CI.money(s.balance.high) })
+        : t(total ? "creditreport.ews.sum.noHigh" : "creditreport.ews.sum.none");
+    const parts = [
+        s.byRule.nopromise ? [t("creditreport.ews.sum.nopromise"), CI.num(s.byRule.nopromise), "bad"] : null,
+        s.byRule.noreason ? [t("creditreport.ews.sum.noreason"), CI.num(s.byRule.noreason), "bad"] : null,
+        [t("creditreport.ews.level.medium"), CI.num(s.medium), ""],
+        [t("creditreport.ews.level.low"), CI.num(s.low), ""]
+    ].filter(Boolean);
+    box.hidden = false;
+    box.innerHTML = `
+        <div class="ci-sum-head is-${s.high ? "up" : "down"}"><span aria-hidden="true">${s.high ? "⚠" : "✓"}</span> ${CI.esc(head)}</div>
+        <div class="ci-sum-sub">${CI.esc(t("creditreport.ews.sum.sub", { n: CI.num(total) }))}</div>
+        <div class="ci-sum-parts">${parts.map(([label, v, tn]) => `<span class="ci-sum-part is-${tn}">${CI.esc(label)} <b>${CI.esc(v)}</b></span>`).join("")}</div>`;
 }
 
 function ewsRuleCondition(rule, r) {
@@ -68,26 +96,35 @@ function ewsRuleAvailable(rule, d) {
     return true;
 }
 
-function ewsRenderRules(d) {
+// What a history rule still needs before it can fire.
+function ewsHistoryNeed(rule, d) {
     const r = d.rules;
-    const pts = rule => rule === "delay" ? `${r.delay.points1} / ${r.delay.points30} / ${r.delay.points60}` : r[rule].points;
-    document.getElementById("ewsRules").innerHTML =
-        `<thead><tr><th>${CI.esc(t("creditreport.ews.rule"))}</th><th>${CI.esc(t("creditreport.ews.condition"))}</th><th class="num">${CI.esc(t("creditreport.ews.points"))}</th><th class="num">${CI.esc(t("creditreport.npl.accounts"))}</th></tr></thead><tbody>` +
-        EWS_RULES.map(rule => {
-            const on = r[rule].on;
-            const avail = ewsRuleAvailable(rule, d);
-            const status = !on ? t("creditreport.ews.off") : !avail ? t("creditreport.ews.unavailable") : "";
-            return `<tr${!on || !avail ? ' class="ci-muted"' : ""}><td><strong>${CI.esc(t(`creditreport.ews.r.${rule}`))}</strong>${status ? `<div class="ci-sub">${CI.esc(status)}</div>` : ""}</td><td class="ci-wrap">${CI.esc(ewsRuleCondition(rule, r))}</td><td class="num">${CI.esc(pts(rule))}</td><td class="num">${CI.num(d.summary.byRule[rule] || 0)}</td></tr>`;
-        }).join("") +
-        `</tbody><caption>${CI.esc(t("creditreport.ews.levelsNote", { high: r.levels.high, medium: r.levels.medium }))}</caption>`;
+    if (rule === "repeated") return t("creditreport.ews.needSaved", { n: 2, have: d.history.savedDays || 0 });
+    const days = rule === "aging" ? r.aging.lookbackDays : r.increase.lookbackDays;
+    return t("creditreport.ews.needDays", { n: days });
 }
 
-function ewsFillRuleFilter(d) {
-    const sel = document.getElementById("ewsRuleFilter");
-    const keep = sel.value;
-    sel.innerHTML = `<option value="">${CI.esc(t("creditreport.ews.allRules"))}</option>` +
-        EWS_RULES.map(r => `<option value="${r}">${CI.esc(t(`creditreport.ews.r.${r}`))} (${CI.num(d.summary.byRule[r] || 0)})</option>`).join("");
-    sel.value = keep;
+function ewsPointsText(rule, r) {
+    if (rule === "delay") return t("creditreport.ews.ptsDelay", { a: r.delay.points1, b: r.delay.points30, c: r.delay.points60 });
+    return `+${r[rule].points}`;
+}
+
+// The rules as small cards: name, points, condition, how many loans hit it.
+function ewsRenderRules(d) {
+    const r = d.rules;
+    document.getElementById("ewsRules").innerHTML = EWS_RULES.map(rule => {
+        const on = r[rule].on;
+        const avail = ewsRuleAvailable(rule, d);
+        const badge = !on ? `<span class="ci-rule-badge">${CI.esc(t("creditreport.ews.off"))}</span>`
+            : !avail ? `<span class="ci-rule-badge is-wait">⏳ ${CI.esc(ewsHistoryNeed(rule, d))}</span>`
+            : `<span class="ci-rule-badge is-n">${CI.esc(t("creditreport.npl.accountsN", { n: CI.num(d.summary.byRule[rule] || 0) }))}</span>`;
+        return `<div class="ci-rule-card${!on || !avail ? " is-muted" : ""}">
+            <div class="ci-rule-head"><strong>${CI.esc(t(`creditreport.ews.r.${rule}`))}</strong><span class="ci-rule-pts">${CI.esc(ewsPointsText(rule, r))}</span></div>
+            <div class="ci-rule-cond">${CI.esc(ewsRuleCondition(rule, r))}</div>
+            ${badge}
+        </div>`;
+    }).join("");
+    document.getElementById("ewsLevelsNote").textContent = t("creditreport.ews.levelsNote", { high: r.levels.high, medium: r.levels.medium });
 }
 
 function ewsWarningText(w) {
@@ -105,16 +142,22 @@ function ewsWarningText(w) {
     }
 }
 
-function ewsVisible() {
+// Rows after the level tab, search and officer — before the rule chip, so
+// the chips can count what each rule would leave.
+function ewsBaseRows() {
     const q = document.getElementById("ewsSearch").value.trim().toLowerCase();
-    const rule = document.getElementById("ewsRuleFilter").value;
     let rows = ewsData.rows || [];
     if (ewsLevel !== "all") rows = rows.filter(r => r.level === ewsLevel);
-    if (rule) rows = rows.filter(r => r.warnings.some(w => w.rule === rule));
+    if (ewsOfficer) rows = rows.filter(r => (r.officerId || r.officerName) === ewsOfficer.id);
     if (q) rows = rows.filter(r => [r.ld, r.cif, r.name, r.officerName, r.officerId, r.branch, r.address, r.product].some(v => String(v || "").toLowerCase().includes(q)));
+    return rows;
+}
+
+function ewsVisible() {
+    let rows = ewsBaseRows();
+    if (ewsRule) rows = rows.filter(r => r.warnings.some(w => w.rule === ewsRule));
     const { key, dir } = ewsSort;
-    const numeric = ["score", "bal", "day"].includes(key);
-    return rows.slice().sort((a, b) => numeric ? dir * ((a[key] || 0) - (b[key] || 0)) : dir * String(a[key] || "").localeCompare(String(b[key] || "")));
+    return rows.slice().sort((a, b) => dir * ((a[key] || 0) - (b[key] || 0)) || (b.score - a.score));
 }
 
 const EWS_COLS = [
@@ -124,36 +167,81 @@ const EWS_COLS = [
     ["level", "creditreport.ews.levelCol"], ["followUp", "creditreport.ews.followUp"]
 ];
 
-function ewsRenderTable() {
+// Work to Complete opens on the tab that holds this loan and searches it.
+function ewsWorkUrl(r) {
+    return `../masterdata/work.html?${new URLSearchParams({ q: r.ld })}`;
+}
+
+function ewsCard(r) {
+    const lv = ewsData.rules.levels;
+    return `<a class="ci-ews-card ci-ews-${r.level}" href="${CI.esc(ewsWorkUrl(r))}">
+        <div class="ci-ews-top">
+            <span class="ci-ews-ld">${CI.esc(r.ld)}</span>
+            <span class="ci-pill ci-pill-${r.level}">${CI.esc(t(`creditreport.ews.level.${r.level}`))}</span>
+            <span class="ci-ews-score">${r.score}</span>
+        </div>
+        <div class="ci-ews-bar" role="img" aria-label="${CI.esc(t("creditreport.ews.scoreOf", { n: r.score }))}">
+            <span class="ci-ews-fill" style="width:${Math.min(100, r.score)}%"></span>
+            <i style="left:${lv.medium}%"></i><i style="left:${lv.high}%"></i>
+        </div>
+        <div class="ci-ews-name">${CI.esc(r.name)} <span class="ci-sub">${CI.esc(r.cif)}</span></div>
+        <div class="ci-ews-meta"><b>${CI.esc(t("creditreport.ews.lateDays", { n: CI.num(r.day) }))}</b> · ${CI.money(r.bal)} · ${CI.esc(r.officerName || r.officerId)} · ${CI.esc(r.branch)}</div>
+        <div class="ci-ews-chips">${r.warnings.map(w => `<span class="ci-ews-chip">${CI.esc(ewsWarningText(w))} <b>+${w.points}</b></span>`).join("")}</div>
+        <div class="ci-ews-foot">${CI.esc(r.followUp ? t("creditreport.ews.promiseOn", { date: CI.dmy(r.followUp) }) : t("creditreport.ews.noPromiseYet"))}<span class="ci-ews-go">${CI.esc(t("creditreport.ews.openInWork"))} ›</span></div>
+    </a>`;
+}
+
+// Officer view: who holds the most high-risk loans.
+function ewsOfficerRows(rows) {
+    const by = new Map();
+    for (const r of rows) {
+        const id = r.officerId || r.officerName;
+        if (!by.has(id)) by.set(id, { id, name: r.officerName || r.officerId, branch: r.branch, high: 0, medium: 0, low: 0, bal: 0, n: 0 });
+        const o = by.get(id);
+        o[r.level]++; o.n++; o.bal += r.bal;
+    }
+    return [...by.values()].sort((a, b) => b.high - a.high || b.medium - a.medium || b.bal - a.bal);
+}
+
+function ewsRenderList() {
     document.querySelectorAll("#ewsLevelTabs [data-level]").forEach(b => {
         const on = b.dataset.level === ewsLevel;
         b.classList.toggle("is-active", on);
         b.setAttribute("aria-selected", on ? "true" : "false");
     });
+    document.querySelectorAll("#ewsViewTabs [data-view]").forEach(b => {
+        const on = b.dataset.view === ewsView;
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    const base = ewsBaseRows();
+    const r = ewsData.rules;
+    const ruleN = rule => base.filter(x => x.warnings.some(w => w.rule === rule)).length;
+    if (ewsRule && !r[ewsRule].on) ewsRule = "";
+    document.getElementById("ewsRuleFilter").innerHTML =
+        `<button type="button" class="pi-chip${!ewsRule ? " is-active" : ""}" data-rule="">${CI.esc(t("creditreport.ews.allRules"))}</button>` +
+        EWS_RULES.filter(rule => r[rule].on && ewsRuleAvailable(rule, ewsData)).map(rule =>
+            `<button type="button" class="pi-chip${ewsRule === rule ? " is-active" : ""}" data-rule="${rule}">${CI.esc(t(`creditreport.ews.r.${rule}`))} (${CI.num(ruleN(rule))})</button>`).join("");
+    const chip = document.getElementById("ewsOfficerChip");
+    chip.hidden = !ewsOfficer;
+    chip.innerHTML = ewsOfficer ? `<button type="button" class="ci-chip-x" id="ewsOfficerClear">${CI.esc(t("creditreport.pi.officer"))}: ${CI.esc(ewsOfficer.name)} ✕</button>` : "";
+
     const rows = ewsVisible();
+    const list = document.getElementById("ewsList");
+    if (ewsView === "officer" && !ewsOfficer) {
+        const offs = ewsOfficerRows(rows);
+        document.getElementById("ewsCount").textContent = t("creditreport.ews.officersN", { n: CI.num(offs.length) });
+        list.innerHTML = offs.length ? offs.slice(0, ewsShown).map(o => `
+            <button type="button" class="ci-ews-off" data-off="${CI.esc(o.id)}" data-name="${CI.esc(o.name)}">
+                <span class="ci-ews-off-main"><b>${CI.esc(o.name)}</b><span class="ci-sub">${CI.esc(o.branch)} · ${CI.money(o.bal)}</span></span>
+                <span class="ci-ews-off-n"><span class="ci-pill ci-pill-high">${CI.num(o.high)}</span><span class="ci-pill ci-pill-medium">${CI.num(o.medium)}</span><span class="ci-pill ci-pill-low">${CI.num(o.low)}</span></span>
+                <span class="ci-ews-go" aria-hidden="true">›</span>
+            </button>`).join("") : `<p class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</p>`;
+        document.getElementById("ewsMore").hidden = offs.length <= ewsShown;
+        return;
+    }
     document.getElementById("ewsCount").textContent = t("creditreport.npl.accountsN", { n: CI.num(rows.length) });
-    const sortable = ["ld", "name", "officerName", "branch", "bal", "day", "score", "followUp"];
-    const head = `<thead><tr>${EWS_COLS.map(([k, l]) => {
-        const num = ["bal", "day", "score"].includes(k);
-        const label = CI.esc(t(l));
-        if (!sortable.includes(k)) return `<th>${label}</th>`;
-        const on = ewsSort.key === k;
-        return `<th${num ? ' class="num"' : ""} aria-sort="${on ? (ewsSort.dir > 0 ? "ascending" : "descending") : "none"}"><button type="button" class="ci-sort" data-key="${k}">${label}${on ? (ewsSort.dir > 0 ? " ▲" : " ▼") : ""}</button></th>`;
-    }).join("")}</tr></thead>`;
-    const body = rows.slice(0, ewsShown).map(r => `<tr>
-        <td><a class="ci-link" href="/CM_Pro/pages/customers/index.html?q=${encodeURIComponent(r.ld)}">${CI.esc(r.ld)}</a></td>
-        <td>${CI.esc(r.name)}<div class="ci-sub">${CI.esc(r.cif)}</div></td>
-        <td>${CI.esc(r.officerName || r.officerId)}</td>
-        <td>${CI.esc(r.branch)}</td>
-        <td>${CI.esc(r.district || r.address)}</td>
-        <td class="num">${CI.money(r.bal)}</td>
-        <td class="num">${CI.num(r.day)}</td>
-        <td class="ci-reason">${r.warnings.map(w => `<div>• ${CI.esc(ewsWarningText(w))} <span class="ci-sub">+${w.points}</span></div>`).join("")}</td>
-        <td class="num"><strong>${r.score}</strong></td>
-        <td><span class="ci-pill ci-pill-${r.level}">${CI.esc(t(`creditreport.ews.level.${r.level}`))}</span></td>
-        <td>${r.followUp ? CI.dmy(r.followUp) : "—"}</td>
-    </tr>`).join("");
-    document.getElementById("ewsTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="${EWS_COLS.length}" class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</td></tr>`}</tbody>`;
+    list.innerHTML = rows.length ? rows.slice(0, ewsShown).map(ewsCard).join("") : `<p class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</p>`;
     document.getElementById("ewsMore").hidden = rows.length <= ewsShown;
 }
 
@@ -187,7 +275,7 @@ function ewsFillEditor() {
     document.getElementById("ewsRuleEdit").innerHTML = EWS_RULES.map(rule => {
         const x = r[rule];
         const extra = rule === "delay"
-            ? field(rule, "points1", "1+", x.points1) + field(rule, "points30", "30+", x.points30) + field(rule, "points60", "60+", x.points60)
+            ? field(rule, "points1", t("creditreport.ews.ptsAt", { n: 1 }), x.points1) + field(rule, "points30", t("creditreport.ews.ptsAt", { n: 30 }), x.points30) + field(rule, "points60", t("creditreport.ews.ptsAt", { n: 60 }), x.points60)
             : field(rule, "points", t("creditreport.ews.points"), x.points) +
               (rule === "repeated" ? field(rule, "episodes", t("creditreport.ews.episodes"), x.episodes) + field(rule, "windowDays", t("creditreport.ews.windowDays"), x.windowDays) : "") +
               (rule === "aging" || rule === "increase" ? field(rule, "lookbackDays", t("creditreport.ews.lookback"), x.lookbackDays) : "") +
@@ -226,40 +314,69 @@ async function ewsSaveRules() {
 
 document.addEventListener("DOMContentLoaded", () => {
     CI.mountFilters({ dates: false, compare: false, onChange: () => { ewsShown = EWS_PAGE; ewsLoad(); } });
+    const relist = () => { ewsShown = EWS_PAGE; if (ewsData) ewsRenderList(); };
     document.getElementById("ewsLevelTabs").addEventListener("click", e => {
         const b = e.target.closest("[data-level]");
-        if (!b || !ewsData) return;
+        if (!b) return;
         ewsLevel = b.dataset.level;
-        ewsShown = EWS_PAGE;
-        ewsRenderTable();
+        relist();
     });
+    // The level cards up top filter the list to that level.
     document.getElementById("ewsLevels").addEventListener("click", e => {
         const b = e.target.closest("[data-level]");
-        if (!b || !ewsData) return;
+        if (!b) return;
         ewsLevel = b.dataset.level;
-        ewsShown = EWS_PAGE;
-        ewsRenderTable();
+        ewsView = "cards";
+        relist();
         document.getElementById("ewsAccTitle").scrollIntoView({ behavior: "smooth", block: "start" });
     });
-    document.getElementById("ewsTable").addEventListener("click", e => {
-        const b = e.target.closest(".ci-sort");
+    document.getElementById("ewsRuleFilter").addEventListener("click", e => {
+        const b = e.target.closest("[data-rule]");
         if (!b) return;
-        ewsSort = ewsSort.key === b.dataset.key ? { key: b.dataset.key, dir: -ewsSort.dir } : { key: b.dataset.key, dir: -1 };
-        ewsRenderTable();
+        ewsRule = b.dataset.rule;
+        relist();
+    });
+    document.getElementById("ewsViewTabs").addEventListener("click", e => {
+        const b = e.target.closest("[data-view]");
+        if (!b) return;
+        ewsView = b.dataset.view;
+        ewsOfficer = null;
+        relist();
+    });
+    document.getElementById("ewsList").addEventListener("click", e => {
+        const o = e.target.closest("[data-off]");
+        if (!o) return;
+        ewsOfficer = { id: o.dataset.off, name: o.dataset.name };
+        relist();
+    });
+    document.getElementById("ewsOfficerChip").addEventListener("click", e => {
+        if (!e.target.closest("#ewsOfficerClear")) return;
+        ewsOfficer = null;
+        relist();
+    });
+    document.getElementById("ewsSortPick").addEventListener("change", e => {
+        ewsSort = { key: e.target.value, dir: -1 };
+        relist();
     });
     let typing = null;
     document.getElementById("ewsSearch").addEventListener("input", () => {
         clearTimeout(typing);
-        typing = setTimeout(() => { ewsShown = EWS_PAGE; if (ewsData) ewsRenderTable(); }, 200);
+        typing = setTimeout(relist, 200);
     });
-    document.getElementById("ewsRuleFilter").addEventListener("change", () => { ewsShown = EWS_PAGE; if (ewsData) ewsRenderTable(); });
-    document.getElementById("ewsMore").addEventListener("click", () => { ewsShown += EWS_PAGE; ewsRenderTable(); });
+    document.getElementById("ewsMore").addEventListener("click", () => { ewsShown += EWS_PAGE; ewsRenderList(); });
     document.getElementById("ewsExport").addEventListener("click", ewsExport);
     if (ewsIsAdmin()) {
         const box = document.getElementById("ewsAdmin");
         box.hidden = false;
         box.addEventListener("toggle", () => { if (box.open && ewsData && ewsData.rules) ewsFillEditor(); });
         document.getElementById("ewsSave").addEventListener("click", ewsSaveRules);
+        // "Edit rules ›" in the rules card opens the editor and scrolls to it.
+        const edit = document.getElementById("ewsEditRules");
+        edit.hidden = false;
+        edit.addEventListener("click", () => {
+            box.open = true;
+            box.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
     }
     ewsLoad();
 });
