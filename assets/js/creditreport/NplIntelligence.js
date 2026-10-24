@@ -190,8 +190,7 @@ function nplRenderTable() {
     const head = `<thead><tr>${NPL_COLS.map(c => {
         const on = nplSort.key === c.key;
         return `<th${c.money || c.num ? ' class="num"' : ""} aria-sort="${on ? (nplSort.dir > 0 ? "ascending" : "descending") : "none"}"><button type="button" class="ci-sort" data-key="${c.key}">${CI.esc(t(c.label))}${on ? (nplSort.dir > 0 ? " ▲" : " ▼") : ""}</button></th>`;
-    }).join("")}${CI.canCreateAction() ? `<th>${CI.esc(t("creditreport.act.col"))}</th>` : ""}</tr></thead>`;
-    const withAction = CI.canCreateAction();
+    }).join("")}</tr></thead>`;
     const body = rows.slice(0, nplShown).map(a => `<tr>${NPL_COLS.map(c => {
         if (c.num) return `<td class="num">${a[c.key] ? CI.num(a[c.key]) : "—"}</td>`;
         if (c.money) {
@@ -204,16 +203,8 @@ function nplRenderTable() {
         if (c.key === "reason") return `<td class="ci-reason">${CI.esc(a.reason || "—")}</td>`;
         if (c.key === "name") return `<td>${CI.esc(a.name)}<div class="ci-sub">${CI.esc(a.cif)}</div></td>`;
         return `<td>${CI.esc(a[c.key] || "")}</td>`;
-    }).join("")}${withAction ? `<td>${nplActionLink(a)}</td>` : ""}</tr>`).join("");
-    document.getElementById("nplTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="${NPL_COLS.length + 1}" class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</td></tr>`}</tbody>`;
-}
-
-function nplActionLink(a) {
-    if (!CI.canCreateAction() || a.category === "recovered") return "";
-    return `<a class="ci-link" href="${CI.esc(CI.actionLink({
-        loan: a.ld, branch: a.branch, officer: a.officerId, customer: a.name, source: "npl",
-        desc: t(a.category === "new" ? "creditreport.act.descNplNew" : "creditreport.act.descNplCont", { cls: a.curCls, bal: CI.money(a.closeBal) })
-    }))}">${CI.esc(t("creditreport.act.add"))}</a>`;
+    }).join("")}</tr>`).join("");
+    document.getElementById("nplTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="${NPL_COLS.length}" class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</td></tr>`}</tbody>`;
 }
 
 // The officer named on a card follows the filter's Area / Own choice.
@@ -249,7 +240,6 @@ function nplCardHtml(a, withCause = true) {
             <span class="ci-card-amt${chg > 0 ? " ci-bad" : chg < 0 ? " ci-good" : ""}">${chg > 0 ? "+" : ""}${CI.esc(CI.money(chg))}</span></div>
         <div class="ci-sub">${CI.esc(CI.money(a.openBal))} → ${CI.esc(CI.money(a.closeBal))}</div>
         ${nplReasonHtml(a, withCause)}
-        ${nplActionLink(a) ? `<div class="ci-card-foot"><span></span>${nplActionLink(a)}</div>` : ""}
     </li>`;
 }
 
