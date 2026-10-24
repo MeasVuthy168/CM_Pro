@@ -542,13 +542,13 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
     }
 
     // ⓘ next to a term opens its one-line meaning in place (inside the
-    // same .ci-step or .pi-kpi card).
+    // same .ci-step, .pi-kpi or .ci-age card).
     const infoBtn = () => ` <button type="button" class="ci-info" aria-expanded="false" aria-label="${esc(t("creditreport.npl.whatIs"))}">ⓘ</button>`;
     const tip = key => `<div class="ci-tip" hidden>${esc(t(key))}</div>`;
     document.addEventListener("click", e => {
         const b = e.target.closest(".ci-info");
         if (!b) return;
-        const box = b.closest(".ci-step, .pi-kpi");
+        const box = b.closest(".ci-step, .pi-kpi, .ci-age");
         const el = box && box.querySelector(".ci-tip");
         if (!el) return;
         el.hidden = !el.hidden;
