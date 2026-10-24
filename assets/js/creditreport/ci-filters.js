@@ -208,7 +208,7 @@
 <span class="cr-info-label">${icon("trend-up")}<span>${esc(t("creditreport.ci.comparedWithLabel"))}</span></span>
 <span class="cr-info-value ci-info-wrap" id="ciInfoCmp">-</span>
 </div>
-<div class="cr-info-row">
+<div class="cr-info-row" id="ciStatusRow" hidden>
 <span class="cr-info-label">${icon("refresh")}<span>${esc(t("creditreport.ci.dataStatus"))}</span></span>
 <span class="cr-info-value" id="ciInfoStatus">-</span>
 </div>
@@ -351,9 +351,13 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
         if (!a) return;
         set("ciInfoOs", esc(a.osText));
         set("ciInfoOd", esc(a.overdueText));
+        // Data status only speaks up when the data is late; up to date is
+        // the normal case and the date rows above already show the day.
+        const statusRow = document.getElementById("ciStatusRow");
+        if (statusRow) statusRow.hidden = !a.outdated;
         set("ciInfoStatus", a.outdated
             ? `<span class="pi-badge pi-badge-bad"><span aria-hidden="true">⚠</span> ${esc(t("creditreport.pi.outdated", { days: a.businessDaysBehind }))}</span>`
-            : `<span class="pi-badge pi-badge-good"><span aria-hidden="true">✓</span> ${esc(t("creditreport.pi.upToDate"))}</span>`);
+            : "");
         const c = d.comparison;
         set("ciInfoCmp", !c ? "-" : c.available
             ? esc(dmy(c.date))
