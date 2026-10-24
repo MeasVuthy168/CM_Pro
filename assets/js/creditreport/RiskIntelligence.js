@@ -238,11 +238,18 @@ function qRender() {
         sub: t("creditreport.risk.sum.nplClasses", { value: CI.money(nplSum.value), n: CI.num(nplSum.count), pct: CI.pct(nplSum.pct) }),
         parts: [["PAR 1", CI.pct(a.par1.pct)], ["PAR 60", CI.pct(a.par60.pct)], ["PAR 90", CI.pct(a.par90.pct)]]
     });
-    document.getElementById("qAging").innerHTML = [1, 30, 60, 90].map(n => {
-        const x = a[`par${n}`];
-        return `<div class="ci-age"><div class="pi-kpi-label">PAR ${n}${CI.infoBtn()}</div><div class="ci-step-value">${CI.pct(x.pct)}</div><div class="pi-kpi-sub">${CI.money(x.value)} · ${CI.esc(t("creditreport.npl.accountsN", { n: CI.num(x.count) }))}</div>${CI.tip(`creditreport.risk.tip.par${n}`)}</div>`;
-    }).join("");
-    document.getElementById("qAgingNote").textContent = t("creditreport.quality.agingNote", { os: CI.money(d.outstanding), date: CI.dmy(d.overdueAsOf) });
+    // NBC "Normal" class split by days late (1-4 / 5-9 / 10-19 / 20-30).
+    const nb = d.normal;
+    document.getElementById("qAging").innerHTML = !nb ? `<p class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</p>` : nb.bands.map((b, i) => `
+        <div class="ci-age"><div class="pi-kpi-label">${CI.esc(t("creditreport.quality.bandDays", { from: b.from, to: b.to }))}${CI.infoBtn()}</div>
+            <div class="ci-step-value">${CI.pct(b.pct)}</div>
+            <div class="pi-kpi-sub">${CI.money(b.value)} · ${CI.esc(t("creditreport.npl.accountsN", { n: CI.num(b.count) }))}</div>
+            <div class="pi-kpi-sub">${CI.esc(t("creditreport.quality.ofNormal", { pct: CI.pct(b.ofNormal, 1) }))}</div>
+            ${CI.tip(`creditreport.quality.tip.band${i + 1}`)}</div>`).join("");
+    document.getElementById("qAgingNote").textContent = !nb ? "" : [
+        t("creditreport.quality.normalNote", { value: CI.money(nb.total.value), n: CI.num(nb.total.count), os: CI.money(d.outstanding), date: CI.dmy(d.overdueAsOf) }),
+        nb.outside.count ? t("creditreport.quality.normalOutside", { n: CI.num(nb.outside.count), value: CI.money(nb.outside.value) }) : ""
+    ].filter(Boolean).join(" ");
 
     // NBC classes with a bar each; the three NPL classes are marked and totalled.
     const maxPct = Math.max(...Q_CLASSES.map(c => d.classes[c[0]].pct), 1e-9);
