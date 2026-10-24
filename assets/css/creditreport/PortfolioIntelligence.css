@@ -857,3 +857,33 @@ button.ci-card{ width:100%; height:100%; }
 .ci-act-table td.ci-desc-cell{ min-width:220px; max-width:360px; white-space:normal; }
 .ci-card-top{ align-items:flex-start; }
 .ci-card-id{ white-space:nowrap; }
+
+/* ===== NPL root cause: reason groups that open to their accounts ===== */
+.ci-why-cover{ margin:8px 0 10px; }
+.ci-why-cover-bar{ height:8px; border-radius:6px; background:var(--pi-track); overflow:hidden; }
+.ci-why-cover-bar span{ display:block; height:100%; background:var(--pi-good); border-radius:6px; }
+.ci-why-cover-text{ font-size:12px; color:var(--cr-text-muted); margin-top:4px; }
+.ci-why-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+.ci-why-group{ border:1px solid var(--cr-border); border-left:4px solid var(--pi-bar); border-radius:12px; background:var(--cr-card-bg); }
+.ci-why-group.is-none{ border-left-color:var(--pi-warn); border-style:dashed; border-left-style:solid; }
+.ci-why-group > summary{ list-style:none; cursor:pointer; padding:10px 12px; display:flex; flex-direction:column; gap:5px; }
+.ci-why-group > summary::-webkit-details-marker{ display:none; }
+.ci-why-head{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+.ci-why-title{ font-weight:700; font-size:13.5px; line-height:1.5; overflow-wrap:anywhere; }
+.ci-why-title::before{ content:"▸ "; color:var(--cr-text-muted); }
+.ci-why-group[open] .ci-why-title::before{ content:"▾ "; }
+.ci-why-amt{ font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.ci-why-bar{ height:5px; border-radius:4px; background:var(--pi-track); overflow:hidden; }
+.ci-why-bar span{ display:block; height:100%; background:var(--pi-bad); }
+.ci-why-group.is-none .ci-why-bar span{ background:var(--pi-warn); }
+.ci-why-meta{ font-size:12px; color:var(--cr-text-muted); }
+.ci-why-chips{ display:flex; flex-wrap:wrap; gap:4px; }
+.ci-why-chips:empty{ display:none; }
+.ci-chip{ font-size:11.5px; padding:2px 8px; border-radius:999px; background:var(--pi-track); color:var(--cr-text); }
+.ci-why-cards{ padding:0 10px 10px; }
+.ci-why-box{ margin-top:4px; padding:6px 8px; border-radius:8px; background:var(--pi-track); display:flex; flex-direction:column; gap:3px; }
+.ci-why-line{ display:flex; gap:6px; font-size:12px; line-height:1.45; }
+.ci-why-line span{ color:var(--cr-text-muted); flex:0 0 auto; }
+.ci-why-line span::after{ content:":"; }
+.ci-why-line b{ font-weight:600; overflow-wrap:anywhere; }
+.ci-why-group .ci-more{ margin:0 10px 10px; }

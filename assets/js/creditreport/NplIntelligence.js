@@ -273,44 +273,107 @@ function nplActionLink(a) {
 }
 
 // One card per account — the phone-friendly view of the same rows.
-function nplRenderCards(rows) {
-    const officer = a => (nplSide === "area" ? a.areaOfficer || a.ownOfficer : a.ownOfficer || a.areaOfficer) || "";
-    const tone = a => a.category === "new" ? "is-bad" : a.category === "recovered" ? "is-good" : a.change > 0 ? "is-bad" : a.change < 0 ? "is-good" : "";
-    document.getElementById("nplCards").innerHTML = rows.length ? rows.slice(0, nplShown).map(a => {
-        const chg = Number(a.change) || 0;
-        return `<li class="ci-card ${tone(a)}">
-            <div class="ci-card-top"><span class="ci-card-id">${CI.esc(a.ld)}</span><span class="ci-pill ci-pill-low">${CI.esc(nplCategoryText(a))}</span></div>
-            <div><span class="ci-card-name">${CI.esc(a.name)}</span> <span class="ci-sub">${CI.esc(a.cif)}</span></div>
-            <div class="ci-sub">${CI.esc([a.branch, officer(a), a.product, a.district || a.location].filter(Boolean).join(" · "))}</div>
-            <div class="ci-card-row"><span class="ci-cls">${CI.esc(a.prevCls || "—")} → <b>${CI.esc(a.curCls || "—")}</b>${a.day ? ` · ${CI.esc(t("creditreport.list.daysN", { n: CI.num(a.day) }))}` : ""}</span>
-                <span class="ci-card-amt${chg > 0 ? " ci-bad" : chg < 0 ? " ci-good" : ""}">${chg > 0 ? "+" : ""}${CI.esc(CI.money(chg))}</span></div>
-            <div class="ci-sub">${CI.esc(CI.money(a.openBal))} → ${CI.esc(CI.money(a.closeBal))}</div>
-            ${a.cause || a.reason ? `<div class="ci-sub ci-reason">${CI.esc(a.cause || a.reason)}</div>` : ""}
-            ${nplActionLink(a) ? `<div class="ci-card-foot"><span></span>${nplActionLink(a)}</div>` : ""}
-        </li>`;
-    }).join("") : `<li class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</li>`;
+function nplOfficerOf(a) {
+    return (nplSide === "area" ? a.areaOfficer || a.ownOfficer : a.ownOfficer || a.areaOfficer) || "";
 }
 
+// What the officer recorded in Reason Arrear, shown as written.
+function nplReasonHtml(a, withCause = true) {
+    const rows = [];
+    const line = (label, value) => value ? `<div class="ci-why-line"><span>${CI.esc(t(label))}</span><b>${CI.esc(value)}</b></div>` : "";
+    if (withCause) rows.push(line("creditreport.npl.why.cause", a.cause || a.reason));
+    rows.push(line("creditreport.npl.why.solution", a.solution));
+    rows.push(line("creditreport.npl.why.occupation", a.reasonNote));
+    if (a.promiseDate) {
+        const late = a.promiseDate < new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+        rows.push(`<div class="ci-why-line"><span>${CI.esc(t("creditreport.npl.why.promise"))}</span><b class="${late ? "ci-bad" : ""}">${CI.esc(CI.dmy(a.promiseDate))}${late ? ` · ${CI.esc(t("creditreport.npl.why.promisePast"))}` : ""}</b></div>`);
+    }
+    const by = [a.reasonBy, a.reasonAt ? CI.dmy(a.reasonAt) : ""].filter(Boolean).join(" · ");
+    rows.push(line("creditreport.npl.why.recorded", by));
+    const html = rows.join("");
+    return html ? `<div class="ci-why-box">${html}</div>` : "";
+}
+
+function nplCardHtml(a, withCause = true) {
+    const tone = a.category === "new" ? "is-bad" : a.category === "recovered" ? "is-good" : a.change > 0 ? "is-bad" : a.change < 0 ? "is-good" : "";
+    const chg = Number(a.change) || 0;
+    return `<li class="ci-card ${tone}">
+        <div class="ci-card-top"><span class="ci-card-id">${CI.esc(a.ld)}</span><span class="ci-pill ci-pill-low">${CI.esc(nplCategoryText(a))}</span></div>
+        <div><span class="ci-card-name">${CI.esc(a.name)}</span> <span class="ci-sub">${CI.esc(a.cif)}</span></div>
+        <div class="ci-sub">${CI.esc([a.branch, nplOfficerOf(a), a.product, a.district || a.location].filter(Boolean).join(" · "))}</div>
+        <div class="ci-card-row"><span class="ci-cls">${CI.esc(a.prevCls || "—")} → <b>${CI.esc(a.curCls || "—")}</b>${a.day ? ` · ${CI.esc(t("creditreport.list.daysN", { n: CI.num(a.day) }))}` : ""}</span>
+            <span class="ci-card-amt${chg > 0 ? " ci-bad" : chg < 0 ? " ci-good" : ""}">${chg > 0 ? "+" : ""}${CI.esc(CI.money(chg))}</span></div>
+        <div class="ci-sub">${CI.esc(CI.money(a.openBal))} → ${CI.esc(CI.money(a.closeBal))}</div>
+        ${nplReasonHtml(a, withCause)}
+        ${nplActionLink(a) ? `<div class="ci-card-foot"><span></span>${nplActionLink(a)}</div>` : ""}
+    </li>`;
+}
+
+function nplRenderCards(rows) {
+    document.getElementById("nplCards").innerHTML = rows.length
+        ? rows.slice(0, nplShown).map(a => nplCardHtml(a)).join("")
+        : `<li class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</li>`;
+}
+
+// Root cause: NPL accounts (not recovered) grouped by the reason (មូលហេតុ)
+// part officers wrote; the words are not interpreted. Each group opens to
+// its accounts with everything recorded for them. Accounts with nothing
+// recorded are their own group, so the gap is visible.
+let nplWhyOpen = new Set();
+const nplWhyShown = new Map();
+const NPL_WHY_PAGE = 6;
+const NPL_WHY_NONE = "\u0000none";
+
 function nplRenderWhy() {
-    const rows = (nplData.accounts || []).filter(a => a.category !== "recovered");
-    const documented = rows.filter(a => a.cause || a.reason);
+    const all = (nplData.accounts || []).filter(a => a.category !== "recovered");
+    const q = (document.getElementById("nplWhySearch").value || "").trim().toLowerCase();
+    const rows = all.filter(a => !q || [a.cause, a.reason, a.solution, a.reasonNote, a.ld, a.cif, a.name, a.branch, a.ownOfficer, a.areaOfficer]
+        .some(v => String(v || "").toLowerCase().includes(q)));
+    const documented = all.filter(a => a.cause || a.reason);
+    const totalBal = all.reduce((s, a) => s + (Number(a.closeBal) || 0), 0);
+    const docBal = documented.reduce((s, a) => s + (Number(a.closeBal) || 0), 0);
     document.getElementById("nplWhyNote").textContent = t("creditreport.npl.whyNote", {
-        documented: CI.num(documented.length), total: CI.num(rows.length)
+        documented: CI.num(documented.length), total: CI.num(all.length)
     });
-    // Grouped by the reason (មូលហេតុ) part officers wrote — the solution
-    // part is left out; the words themselves are not interpreted.
+    const pct = totalBal ? Math.round(docBal / totalBal * 100) : 0;
+    document.getElementById("nplWhyCover").innerHTML = all.length ? `
+        <div class="ci-why-cover-bar" role="img" aria-label="${CI.esc(pct)}%"><span style="width:${pct}%"></span></div>
+        <div class="ci-why-cover-text">${CI.esc(t("creditreport.npl.why.cover", { pct: CI.num(pct), bal: CI.money(docBal), total: CI.money(totalBal) }))}</div>` : "";
+
     const groups = new Map();
-    for (const a of documented) {
-        const k = (a.cause || a.reason).trim();
-        const g = groups.get(k) || { count: 0, value: 0 };
-        g.count++;
+    for (const a of rows) {
+        const k = (a.cause || a.reason || "").trim() || NPL_WHY_NONE;
+        const g = groups.get(k) || { accounts: [], value: 0, fresh: 0, cont: 0, promise: 0, branches: new Map() };
+        g.accounts.push(a);
         g.value += Number(a.closeBal) || 0;
+        if (a.category === "new") g.fresh++; else g.cont++;
+        if (a.promiseDate) g.promise++;
+        if (a.branch) g.branches.set(a.branch, (g.branches.get(a.branch) || 0) + 1);
         groups.set(k, g);
     }
-    const top = [...groups.entries()].sort((a, b) => b[1].value - a[1].value).slice(0, 10);
-    document.getElementById("nplWhy").innerHTML = top.length
-        ? top.map(([text, g]) => `<li><div class="pi-rank-row"><span class="pi-rank-main"><span class="pi-rank-name ci-wrap">${CI.esc(text)}</span><span class="pi-rank-sub">${CI.esc(t("creditreport.npl.accountsN", { n: g.count }))}</span></span><span class="pi-rank-val">${CI.esc(CI.money(g.value))}</span></div></li>`).join("")
-        : `<li class="pi-note">${CI.esc(t("creditreport.npl.noReasons"))}</li>`;
+    const list = [...groups.entries()].sort((x, y) => (x[0] === NPL_WHY_NONE) - (y[0] === NPL_WHY_NONE) || y[1].value - x[1].value);
+    document.getElementById("nplWhy").innerHTML = list.length ? list.map(([text, g]) => {
+        const none = text === NPL_WHY_NONE;
+        const share = totalBal ? Math.round(g.value / totalBal * 100) : 0;
+        const brs = [...g.branches.entries()].sort((x, y) => y[1] - x[1]).slice(0, 3).map(([b, n]) => `${b} ${n}`).join(" · ");
+        const chips = [
+            g.fresh ? t("creditreport.npl.why.newN", { n: CI.num(g.fresh) }) : "",
+            g.cont ? t("creditreport.npl.why.contN", { n: CI.num(g.cont) }) : "",
+            !none ? t("creditreport.npl.why.promiseN", { n: CI.num(g.promise), total: CI.num(g.accounts.length) }) : ""
+        ].filter(Boolean).map(c => `<span class="ci-chip">${CI.esc(c)}</span>`).join("");
+        const sorted = g.accounts.slice().sort((x, y) => (Number(y.closeBal) || 0) - (Number(x.closeBal) || 0));
+        return `<li><details class="ci-why-group${none ? " is-none" : ""}" data-key="${CI.esc(text)}"${nplWhyOpen.has(text) ? " open" : ""}>
+            <summary>
+                <span class="ci-why-head"><span class="ci-why-title">${CI.esc(none ? t("creditreport.npl.why.none") : text)}</span>
+                    <span class="ci-why-amt">${CI.esc(CI.money(g.value))}</span></span>
+                <span class="ci-why-bar"><span style="width:${share}%"></span></span>
+                <span class="ci-why-meta">${CI.esc(t("creditreport.npl.accountsN", { n: g.accounts.length }))} · ${CI.esc(share)}%${brs ? ` · ${CI.esc(brs)}` : ""}</span>
+                <span class="ci-why-chips">${chips}</span>
+            </summary>
+            <ul class="ci-cards ci-why-cards">${sorted.slice(0, nplWhyShown.get(text) || NPL_WHY_PAGE).map(a => nplCardHtml(a, false)).join("")}</ul>
+            ${sorted.length > (nplWhyShown.get(text) || NPL_WHY_PAGE) ? `<button type="button" class="pi-btn-ghost ci-more" data-more="${CI.esc(text)}">${CI.esc(t("creditreport.npl.why.more", { n: CI.num(sorted.length - (nplWhyShown.get(text) || NPL_WHY_PAGE)) }))}</button>` : ""}
+        </details></li>`;
+    }).join("") : `<li class="pi-note">${CI.esc(t(q ? "creditreport.pi.nothing" : "creditreport.npl.noReasons"))}</li>`;
 }
 
 function nplExport() {
@@ -334,6 +397,18 @@ function nplExport() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("nplWhySearch").addEventListener("input", nplRenderWhy);
+    document.getElementById("nplWhy").addEventListener("click", e => {
+        const b = e.target.closest("[data-more]");
+        if (!b) return;
+        nplWhyShown.set(b.dataset.more, (nplWhyShown.get(b.dataset.more) || NPL_WHY_PAGE) + 24);
+        nplRenderWhy();
+    });
+    document.getElementById("nplWhy").addEventListener("toggle", e => {
+        const d = e.target.closest("details[data-key]");
+        if (!d) return;
+        if (d.open) nplWhyOpen.add(d.dataset.key); else nplWhyOpen.delete(d.dataset.key);
+    }, true);
     CI.mountFilters({ dates: true, compare: false, onChange: () => { nplShown = NPL_PAGE; nplLoad(); } });
     document.getElementById("nplTabs").addEventListener("click", e => {
         const b = e.target.closest("[data-tab]");
