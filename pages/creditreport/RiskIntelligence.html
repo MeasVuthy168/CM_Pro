@@ -69,6 +69,16 @@ No Internet Connection
 
 <section id="ciFilters" aria-label="Filters"></section>
 
+<!-- The page's three views -->
+<div class="pi-tabs ci-view-tabs" role="tablist" id="riskViews">
+<button type="button" role="tab" data-view="contributors"><span data-i18n="creditreport.ci.navContributors">Risk Contributors</span><small data-i18n="creditreport.risk.viewContributorsSub">Who holds the NPL</small></button>
+<button type="button" role="tab" data-view="quality"><span data-i18n="creditreport.ci.navQuality">Portfolio Quality</span><small data-i18n="creditreport.risk.viewQualitySub">How late the loans are</small></button>
+<button type="button" role="tab" data-view="growth"><span data-i18n="creditreport.ci.navGrowth">Growth vs Risk</span><small data-i18n="creditreport.risk.viewGrowthSub">Growing safely or not</small></button>
+</div>
+
+<!-- One-line answer for the view -->
+<section class="pi-card ci-summary" id="riskSummary" hidden aria-live="polite"></section>
+
 <section class="pi-card ci-dim-card">
 <div class="pi-card-head">
 <span class="pi-note ci-dim-label" data-i18n="creditreport.risk.dimension">Dimension</span>
@@ -86,18 +96,19 @@ No Internet Connection
 <section class="pi-card">
 <div class="pi-card-head">
 <h2 class="pi-card-title" data-i18n="creditreport.risk.contributors">Top Risk Contributors</h2>
-<select id="riskList" class="pi-top-pick">
-<option value="top" data-i18n="creditreport.risk.listTop">Top 10 contributors (NPL amount)</option>
-<option value="bottom" data-i18n="creditreport.risk.listBottom">Bottom 10 performers (NPL ratio)</option>
-<option value="par" data-i18n="creditreport.risk.listPar">Highest PAR %</option>
-<option value="growth" data-i18n="creditreport.risk.listGrowth">Highest NPL growth</option>
-<option value="newNpl" data-i18n="creditreport.risk.listNew">Highest new NPL formation</option>
-</select>
 </div>
+<div class="pi-chipset" id="riskList" role="tablist" data-i18n-aria-label="creditreport.risk.contributors"></div>
 <p class="pi-note" id="riskListNote"></p>
 <div class="pi-bars" id="riskBars"></div>
+<p class="pi-note ci-row-hint" id="riskHint"></p>
+<details class="pi-table-toggle">
+<summary data-i18n="creditreport.pi.showTable">Show as table</summary>
 <div class="pi-table-wrap ci-table-scroll"><table class="pi-table ci-table" id="riskTable"></table></div>
+</details>
+<details class="pi-table-toggle ci-recon" id="riskReconBox" hidden>
+<summary data-i18n="creditreport.risk.reconQ">Why don't the totals by officer / product / district match?</summary>
 <p class="pi-note" id="riskRecon"></p>
+</details>
 </section>
 </div>
 
@@ -114,20 +125,10 @@ No Internet Connection
 </section>
 <section class="pi-card">
 <h2 class="pi-card-title" data-i18n="creditreport.quality.distribution">Risk Distribution</h2>
-<div class="pi-table-wrap ci-table-scroll"><table class="pi-table ci-table" id="qDist"></table></div>
+<p class="pi-note" id="qDistLegend"></p>
+<div class="ci-dist" id="qDist"></div>
 </section>
-<section class="pi-card">
-<div class="pi-card-head">
-<h2 class="pi-card-title" data-i18n="creditreport.quality.trend">Quality Trend</h2>
-<div class="pi-tabs" role="tablist" id="qGrain">
-<button type="button" role="tab" data-grain="daily" data-i18n="creditreport.quality.daily">Daily</button>
-<button type="button" role="tab" data-grain="weekly" data-i18n="creditreport.quality.weekly">Weekly</button>
-<button type="button" role="tab" data-grain="monthly" data-i18n="creditreport.quality.monthly">Monthly</button>
-</div>
-</div>
-<p class="pi-note" id="qTrendEmpty" hidden></p>
-<div class="pi-chart-box ci-chart-tall"><canvas id="qTrend" role="img" data-i18n-aria-label="creditreport.quality.trend"></canvas></div>
-</section>
+<p class="pi-note ci-trend-link"><a href="PortfolioIntelligence.html" id="qTrendLink" data-i18n="creditreport.risk.trendLink">See the NPL / PAR trend on Portfolio Overview ›</a></p>
 </div>
 
 <!-- Module 05 — Growth vs Risk -->
@@ -142,8 +143,12 @@ No Internet Connection
 <select id="gRisk"><option value="npl" data-i18n="creditreport.pi.kNplPct">NPL ratio</option><option value="par" data-i18n="creditreport.pi.kParPct">PAR %</option></select></label>
 </div>
 </div>
-<p class="pi-note" id="gThresholds"></p>
 <div class="ci-quads" id="gQuads"></div>
+<p class="pi-note" id="gQuadNote"></p>
+<details class="pi-table-toggle">
+<summary data-i18n="creditreport.risk.quadWhat">What does each group mean?</summary>
+<ul class="ci-quad-defs" id="gQuadDefs"></ul>
+</details>
 <p class="pi-note" id="gEmpty" hidden></p>
 <div class="pi-chart-box ci-chart-tall"><canvas id="gChart" role="img" data-i18n-aria-label="creditreport.growth.title"></canvas></div>
 <div class="pi-table-wrap ci-table-scroll"><table class="pi-table ci-table" id="gTable"></table></div>

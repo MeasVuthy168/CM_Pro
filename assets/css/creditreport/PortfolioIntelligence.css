@@ -865,3 +865,24 @@ a.pi-alert:active{ filter:brightness(.95); }
 [data-theme="darkgray"] .pi-chip.is-active{ background:var(--pi-gold); border-color:var(--pi-gold); color:#0D2D5C; }
 .pi-rank-val{ display:flex; flex-direction:column; align-items:flex-end; min-width:72px; }
 .pi-rank-val .ci-mini{ width:100%; }
+
+/* ===== Risk Intelligence: tabs, quadrant chips, NPL classes, distribution cards ===== */
+button.ci-quad{ background:transparent; color:var(--cr-text); font-family:'KRASAR',sans-serif; cursor:pointer; }
+button.ci-quad.is-active{ border-color:var(--pi-navy); box-shadow:inset 0 0 0 1px var(--pi-navy); font-weight:700; }
+[data-theme="dark"] button.ci-quad.is-active,
+[data-theme="darkgray"] button.ci-quad.is-active{ border-color:var(--pi-gold); box-shadow:inset 0 0 0 1px var(--pi-gold); }
+.ci-quad-defs{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:6px; font-size:12.5px; line-height:1.5; }
+.ci-quad-defs li{ display:flex; align-items:baseline; gap:6px; }
+.ci-quad-defs .ci-quad-dot{ flex:0 0 10px; }
+.ci-npl-cls td:first-child{ font-weight:700; }
+.ci-npl-tag{ display:inline-block; font-size:10.5px; font-weight:700; padding:0 6px; border-radius:6px; background:var(--pi-bad-bg); color:var(--pi-bad); }
+.ci-dist{ display:flex; flex-direction:column; }
+.ci-dist-row{ display:block; padding:9px 4px; border-bottom:1px solid var(--cr-border); color:var(--cr-text); text-decoration:none; }
+.ci-dist-row:last-child{ border-bottom:none; }
+a.ci-dist-row:active{ background:var(--pi-track); }
+.ci-dist-rates{ display:flex; flex-wrap:wrap; gap:4px 10px; margin-top:5px; font-size:12px; font-variant-numeric:tabular-nums; }
+.ci-dist-rate{ color:var(--cr-text-muted); }
+.ci-recon summary{ font-size:12.5px; }
+.ci-trend-link a{ color:var(--pi-navy); font-weight:700; text-decoration:none; }
+[data-theme="dark"] .ci-trend-link a,
+[data-theme="darkgray"] .ci-trend-link a{ color:var(--pi-gold); }
