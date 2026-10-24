@@ -105,6 +105,10 @@ No Internet Connection
 <summary data-i18n="creditreport.pi.showTable">Show as table</summary>
 <div class="pi-table-wrap ci-table-scroll"><table class="pi-table ci-table" id="riskTable"></table></div>
 </details>
+<figure class="pi-chart ci-under-chart">
+<figcaption data-i18n="creditreport.risk.chartShares">Share of NPL vs share of outstanding</figcaption>
+<div class="pi-chart-box" id="riskChartBox"><canvas id="riskChart" role="img" data-i18n-aria-label="creditreport.risk.chartShares"></canvas></div>
+</figure>
 <details class="pi-table-toggle ci-recon" id="riskReconBox" hidden>
 <summary data-i18n="creditreport.risk.reconQ">Why don't the totals by officer / product / district match?</summary>
 <p class="pi-note" id="riskRecon"></p>
@@ -115,18 +119,26 @@ No Internet Connection
 <!-- Module 04 — Portfolio Quality -->
 <div id="viewQuality" hidden>
 <section class="pi-card">
-<h2 class="pi-card-title" data-i18n="creditreport.quality.aging">PAR Aging (NBC Overdue)</h2>
+<h2 class="pi-card-title" data-i18n="creditreport.quality.normalBands">Normal class by days late (NBC Overdue)</h2>
 <div class="ci-aging" id="qAging"></div>
 <p class="pi-note" id="qAgingNote"></p>
 </section>
 <section class="pi-card">
 <h2 class="pi-card-title" data-i18n="creditreport.quality.classes">NBC Classification</h2>
 <div class="pi-table-wrap"><table class="pi-table ci-table" id="qClasses"></table></div>
+<figure class="pi-chart ci-under-chart">
+<figcaption data-i18n="creditreport.quality.chartClasses">Amount by NBC class</figcaption>
+<div class="pi-chart-box" id="qClassChartBox"><canvas id="qClassChart" role="img" data-i18n-aria-label="creditreport.quality.chartClasses"></canvas></div>
+</figure>
 </section>
 <section class="pi-card">
 <h2 class="pi-card-title" data-i18n="creditreport.quality.distribution">Risk Distribution</h2>
 <p class="pi-note" id="qDistLegend"></p>
 <div class="ci-dist" id="qDist"></div>
+<figure class="pi-chart ci-under-chart">
+<figcaption id="qDistChartTitle"></figcaption>
+<div class="pi-chart-box" id="qDistChartBox"><canvas id="qDistChart" role="img" data-i18n-aria-label="creditreport.quality.distribution"></canvas></div>
+</figure>
 </section>
 <p class="pi-note ci-trend-link"><a href="PortfolioIntelligence.html" id="qTrendLink" data-i18n="creditreport.risk.trendLink">See the NPL / PAR trend on Portfolio Overview ›</a></p>
 </div>
@@ -171,6 +183,7 @@ No Internet Connection
 <li data-i18n="creditreport.risk.defAbsRel">Contribution = the row's NPL ÷ total NPL (absolute). NPL ratio = its NPL ÷ its own Loan Outstanding (relative) — a large portfolio can contribute most NPL with a low ratio.</li>
 <li data-i18n="creditreport.risk.defGrowth">Growth compares with the Daily History of the comparison date. New NPL comes from the NPL account history.</li>
 <li data-i18n="creditreport.pi.defPar">PAR — NBC Overdue, all classes ÷ Loan Outstanding.</li>
+<li data-i18n="creditreport.quality.defNormal">Normal class by days late — NBC Overdue accounts classed Normal, split 1–4, 5–9, 10–19 and 20–30 days late; % = amount ÷ Loan Outstanding.</li>
 <li data-i18n="creditreport.quality.defAging">PAR n = NBC Overdue value of accounts at least n days overdue ÷ Loan Outstanding (NBC OS). Totals are never averages of subgroup percentages.</li>
 <li data-i18n="creditreport.growth.defQuadrant">Quadrants: high / low growth and risk against the thresholds shown above.</li>
 </ul>
