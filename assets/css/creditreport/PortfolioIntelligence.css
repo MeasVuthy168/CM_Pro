@@ -887,3 +887,9 @@ button.ci-card{ width:100%; height:100%; }
 .ci-why-line span::after{ content:":"; }
 .ci-why-line b{ font-weight:600; overflow-wrap:anywhere; }
 .ci-why-group .ci-more{ margin:0 10px 10px; }
+
+/* Officer Area / Own: a sub-filter of the Officer select */
+.ci-head .ci-side-row .cr-select-label{ padding-left:14px; font-size:12.5px; }
+.ci-head .ci-side-row .cr-select-label::before{ content:"↳ "; color:var(--cr-text-muted); }
+.ci-head .ci-side-row .ci-seg{ justify-self:start; }
+.ci-seg button:disabled{ cursor:default; }

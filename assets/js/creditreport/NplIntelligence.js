@@ -16,29 +16,12 @@ let nplTab = "new";
 let nplSort = { key: "change", dir: -1 };
 let nplShown = NPL_PAGE;
 let nplChart = null;
-// Remembered on this device: officer side (Daily Report's _Area / _Own)
-// and card / list view (cards by default on a phone).
-const nplPref = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
-const nplSave = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } };
-let nplSide = nplPref("ci_npl_side") === "area" ? "area" : "own";
-let nplView = nplPref("ci_npl_view") || (window.matchMedia("(max-width: 719px)").matches ? "card" : "list");
-const nplFilter = { branch: "", cls: "", product: "" };
-// Sort choices for the card view (the table headers sort too).
-const NPL_SORTS = [
-    { id: "change_down", key: "change", dir: -1, label: "creditreport.list.sortChangeDown" },
-    { id: "change_up", key: "change", dir: 1, label: "creditreport.list.sortChangeUp" },
-    { id: "close_down", key: "closeBal", dir: -1, label: "creditreport.list.sortClosing" },
-    { id: "open_down", key: "openBal", dir: -1, label: "creditreport.list.sortOpening" },
-    { id: "day_down", key: "day", dir: -1, label: "creditreport.list.sortDays" },
-    { id: "name_up", key: "name", dir: 1, label: "creditreport.list.sortName" }
-];
-
 function nplExitText(e) {
     return e ? t(`creditreport.npl.exit.${e}`) : "";
 }
 
 async function nplLoad() {
-    const data = await CI.get("npl", { side: nplSide });
+    const data = await CI.get("npl");
     if (!data) return;
     nplData = data;
     nplRender();
@@ -175,14 +158,9 @@ function nplRowsOfTab() {
     return all.filter(a => a.category === nplTab);
 }
 
-const nplClsOf = a => a.curCls || a.prevCls || "";
-
 function nplVisibleRows() {
     const q = document.getElementById("nplSearch").value.trim().toLowerCase();
     let rows = nplRowsOfTab();
-    if (nplFilter.branch) rows = rows.filter(a => a.branch === nplFilter.branch);
-    if (nplFilter.cls) rows = rows.filter(a => nplClsOf(a) === nplFilter.cls);
-    if (nplFilter.product) rows = rows.filter(a => a.product === nplFilter.product);
     if (q) {
         rows = rows.filter(a => [a.ld, a.cif, a.name, a.branch, a.areaOfficer, a.ownOfficer, a.officerId, a.product, a.location, a.district, a.reason]
             .some(v => String(v || "").toLowerCase().includes(q)));
@@ -193,35 +171,6 @@ function nplVisibleRows() {
         if (col && (col.money || col.num)) return dir * ((Number(a[key]) || 0) - (Number(b[key]) || 0));
         return dir * String(a[key] || "").localeCompare(String(b[key] || ""));
     });
-}
-
-// Filter choices from the current tab's rows, keeping a still-valid pick.
-function nplFillFilters() {
-    const rows = nplRowsOfTab();
-    const fill = (id, key, values, allLabel) => {
-        const el = document.getElementById(id);
-        const list = [...new Set(values.filter(Boolean))].sort();
-        if (nplFilter[key] && !list.includes(nplFilter[key])) nplFilter[key] = "";
-        el.innerHTML = `<option value="">${CI.esc(t(allLabel))}</option>` + list.map(v => `<option value="${CI.esc(v)}">${CI.esc(v)}</option>`).join("");
-        el.value = nplFilter[key];
-        el.classList.toggle("is-set", !!nplFilter[key]);
-    };
-    fill("nplFBranch", "branch", rows.map(a => a.branch), "creditreport.pi.allBranches");
-    fill("nplFCls", "cls", rows.map(nplClsOf), "creditreport.list.allClasses");
-    fill("nplFProduct", "product", rows.map(a => a.product), "creditreport.pi.allProducts");
-    const sort = document.getElementById("nplSortSel");
-    const cur = NPL_SORTS.find(o => o.key === nplSort.key && o.dir === nplSort.dir);
-    sort.innerHTML = (cur ? "" : `<option value="">${CI.esc(t("creditreport.list.sortCustom"))}</option>`) +
-        NPL_SORTS.map(o => `<option value="${o.id}">${CI.esc(t(o.label))}</option>`).join("");
-    sort.value = cur ? cur.id : "";
-    document.getElementById("nplClear").hidden = !(nplFilter.branch || nplFilter.cls || nplFilter.product || document.getElementById("nplSearch").value);
-    const seg = (id, attr, val) => document.querySelectorAll(`#${id} [data-${attr}]`).forEach(b => {
-        const on = b.dataset[attr] === val;
-        b.classList.toggle("is-active", on);
-        b.setAttribute("aria-pressed", on ? "true" : "false");
-    });
-    seg("nplSide", "side", nplSide);
-    seg("nplView", "view", nplView);
 }
 
 function nplCategoryText(a) {
@@ -235,14 +184,9 @@ function nplRenderTable() {
         b.classList.toggle("is-active", on);
         b.setAttribute("aria-selected", on ? "true" : "false");
     });
-    nplFillFilters();
     const rows = nplVisibleRows();
     document.getElementById("nplCount").textContent = t("creditreport.npl.accountsN", { n: CI.num(rows.length) });
-    const cards = nplView === "card";
-    document.getElementById("nplCards").hidden = !cards;
-    document.getElementById("nplTableWrap").hidden = cards;
     document.getElementById("nplMore").hidden = rows.length <= nplShown;
-    if (cards) { nplRenderCards(rows); return; }
     const head = `<thead><tr>${NPL_COLS.map(c => {
         const on = nplSort.key === c.key;
         return `<th${c.money || c.num ? ' class="num"' : ""} aria-sort="${on ? (nplSort.dir > 0 ? "ascending" : "descending") : "none"}"><button type="button" class="ci-sort" data-key="${c.key}">${CI.esc(t(c.label))}${on ? (nplSort.dir > 0 ? " ▲" : " ▼") : ""}</button></th>`;
@@ -272,9 +216,9 @@ function nplActionLink(a) {
     }))}">${CI.esc(t("creditreport.act.add"))}</a>`;
 }
 
-// One card per account — the phone-friendly view of the same rows.
+// The officer named on a card follows the filter's Area / Own choice.
 function nplOfficerOf(a) {
-    return (nplSide === "area" ? a.areaOfficer || a.ownOfficer : a.ownOfficer || a.areaOfficer) || "";
+    return (CI.query().get("side") === "area" ? a.areaOfficer || a.ownOfficer : a.ownOfficer || a.areaOfficer) || "";
 }
 
 // What the officer recorded in Reason Arrear, shown as written.
@@ -307,12 +251,6 @@ function nplCardHtml(a, withCause = true) {
         ${nplReasonHtml(a, withCause)}
         ${nplActionLink(a) ? `<div class="ci-card-foot"><span></span>${nplActionLink(a)}</div>` : ""}
     </li>`;
-}
-
-function nplRenderCards(rows) {
-    document.getElementById("nplCards").innerHTML = rows.length
-        ? rows.slice(0, nplShown).map(a => nplCardHtml(a)).join("")
-        : `<li class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</li>`;
 }
 
 // Root cause: NPL accounts (not recovered) grouped by the reason (មូលហេតុ)
@@ -409,7 +347,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!d) return;
         if (d.open) nplWhyOpen.add(d.dataset.key); else nplWhyOpen.delete(d.dataset.key);
     }, true);
-    CI.mountFilters({ dates: true, compare: false, onChange: () => { nplShown = NPL_PAGE; nplLoad(); } });
+    CI.mountFilters({ dates: true, compare: false, classes: true, side: true, onChange: () => { nplShown = NPL_PAGE; nplLoad(); } });
     document.getElementById("nplTabs").addEventListener("click", e => {
         const b = e.target.closest("[data-tab]");
         if (!b || !nplData) return;
@@ -429,34 +367,6 @@ document.addEventListener("DOMContentLoaded", () => {
         typing = setTimeout(() => { nplShown = NPL_PAGE; if (nplData) nplRenderTable(); }, 200);
     });
     document.getElementById("nplMore").addEventListener("click", () => { nplShown += NPL_PAGE; nplRenderTable(); });
-    [["nplFBranch", "branch"], ["nplFCls", "cls"], ["nplFProduct", "product"]].forEach(([id, k]) =>
-        document.getElementById(id).addEventListener("change", e => { nplFilter[k] = e.target.value; nplShown = NPL_PAGE; nplRenderTable(); }));
-    document.getElementById("nplSortSel").addEventListener("change", e => {
-        const o = NPL_SORTS.find(x => x.id === e.target.value);
-        if (o) { nplSort = { key: o.key, dir: o.dir }; nplRenderTable(); }
-    });
-    document.getElementById("nplClear").addEventListener("click", () => {
-        Object.keys(nplFilter).forEach(k => { nplFilter[k] = ""; });
-        document.getElementById("nplSearch").value = "";
-        nplShown = NPL_PAGE;
-        nplRenderTable();
-    });
-    document.getElementById("nplView").addEventListener("click", e => {
-        const b = e.target.closest("[data-view]");
-        if (!b) return;
-        nplView = b.dataset.view;
-        nplSave("ci_npl_view", nplView);
-        if (nplData) nplRenderTable();
-    });
-    // Area / Own changes which loans an officer pick covers — refetch.
-    document.getElementById("nplSide").addEventListener("click", e => {
-        const b = e.target.closest("[data-side]");
-        if (!b || b.dataset.side === nplSide) return;
-        nplSide = b.dataset.side;
-        nplSave("ci_npl_side", nplSide);
-        nplShown = NPL_PAGE;
-        nplLoad();
-    });
     document.getElementById("nplExport").addEventListener("click", nplExport);
     // Movement needs a saved day before From: start the day after the first one.
     document.getElementById("nplSinceFirst").addEventListener("click", () => {

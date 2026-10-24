@@ -100,24 +100,6 @@ No Internet Connection
 <input type="search" id="nplSearch" class="ci-search" data-i18n-placeholder="creditreport.npl.search" placeholder="Search loan, customer, officer…">
 <span class="pi-note" id="nplCount"></span>
 </div>
-<!-- Filters, sort, officer Area / Own (refetches) and card / list view -->
-<div class="ci-toolbar" id="nplTools">
-<select id="nplFBranch" aria-label="Branch" data-i18n-aria-label="creditreport.pi.branch"></select>
-<select id="nplFCls" aria-label="Class" data-i18n-aria-label="creditreport.npl.colCur"></select>
-<select id="nplFProduct" aria-label="Product" data-i18n-aria-label="creditreport.pi.product"></select>
-<select id="nplSortSel" aria-label="Sort" data-i18n-aria-label="creditreport.list.sort"></select>
-<span class="ci-seg-wrap"><span class="ci-seg-label" data-i18n="creditreport.list.officerBy">Officer:</span>
-<span class="ci-seg" id="nplSide" role="group">
-<button type="button" data-side="area" data-i18n="creditreport.list.area">Area</button>
-<button type="button" data-side="own" data-i18n="creditreport.list.own">Own</button>
-</span></span>
-<span class="ci-seg" id="nplView" role="group">
-<button type="button" data-view="card" data-i18n="creditreport.list.cards">▦ Cards</button>
-<button type="button" data-view="list" data-i18n="creditreport.list.list">☰ List</button>
-</span>
-<button type="button" class="pi-btn-ghost ci-clear" id="nplClear" hidden data-i18n="creditreport.list.clear">Clear filters</button>
-</div>
-<ul class="ci-cards" id="nplCards" hidden></ul>
 <div class="pi-table-wrap ci-table-scroll" id="nplTableWrap"><table class="pi-table ci-table" id="nplTable"></table></div>
 <button type="button" class="pi-btn-ghost ci-more" id="nplMore" hidden data-i18n="creditreport.npl.more">Show more</button>
 </section>
@@ -140,6 +122,8 @@ No Internet Connection
 <li data-i18n="creditreport.npl.defClosing">Closing — today's NBC Overdue NPL loans (or the day saved at To).</li>
 <li data-i18n="creditreport.npl.defCategories">New = only in Closing · Recovered = only in Opening · Continuing = in both. Each loan is compared once, so one that changed class several times is counted once.</li>
 <li data-i18n="creditreport.npl.defRecon">Closing = Opening + New − Recovered + Balance changes.</li>
+<li data-i18n="creditreport.npl.defClass">With an NPL class picked, opening and closing are that class's own balances; a loan that moves between NPL classes enters or leaves the class (shown as "moved to another NPL class").</li>
+<li data-i18n="creditreport.npl.defSide">Officer by: Own = loans under the officer's ID (default); In area = loans carrying the officer's name, like the Daily Report.</li>
 <li data-i18n="creditreport.npl.defReasons">Reasons are only those officers documented in Reason Arrear — none is guessed.</li>
 </ul>
 </details>
