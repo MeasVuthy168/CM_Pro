@@ -51,6 +51,10 @@
     // "area" (the officer's name on the loan). Kept even on pages that
     // don't show it, so it follows the user back.
     let side = "own";
+    // Latest OS day (YYYY-MM-DD), from the last response — the quick
+    // period buttons count back from it.
+    let lastOs = null;
+    let shownPeriod = null;
 
     function picks(id) {
         const el = document.getElementById(id);
@@ -93,6 +97,69 @@
         history.replaceState(null, "", `${location.pathname}?${keep.toString()}`);
         try { sessionStorage.setItem(STORE, q.toString()); } catch (e) { /* private mode */ }
         updateNav();
+        renderChips();
+    }
+
+    // ---------- active filters: chips (✕ removes one) + phone summary ----------
+    function chipList() {
+        const out = [];
+        const labelOf = (id, v) => {
+            const el = document.getElementById(id);
+            const o = el && [...el.options].find(x => x.value === v);
+            return o ? o.textContent : v;
+        };
+        Object.keys(MULTI).forEach(id => {
+            if (!document.getElementById(id)) return;
+            const vals = picks(id).length ? picks(id) : (pending[id] || []);
+            vals.forEach(v => out.push({ id, v, label: labelOf(id, v) }));
+        });
+        if (side === "area" && document.getElementById("ciSide") && out.some(c => c.id === "ciOfficer")) {
+            out.push({ id: "side", v: "area", label: `${t("creditreport.ci.officerSide")}: ${t("creditreport.ci.sideArea")}` });
+        }
+        return out;
+    }
+    function renderChips() {
+        const box = document.getElementById("ciChips");
+        if (!box) return;
+        const chips = chipList();
+        box.hidden = !chips.length;
+        box.innerHTML = chips.map(c => `<button type="button" class="ci-chip-x" data-id="${esc(c.id)}" data-v="${esc(c.v)}" aria-label="${esc(t("creditreport.ci.removeFilter", { name: c.label }))}">${esc(c.label)} <span aria-hidden="true">✕</span></button>`).join("");
+        const sum = document.getElementById("ciFilterSumText");
+        if (sum) {
+            const per = shownPeriod ? t("creditreport.detail.dateRange", { from: dash(shownPeriod.fromDate), to: dash(shownPeriod.toDate) }) : "";
+            sum.textContent = [chips.length ? t("creditreport.ci.filtersN", { n: chips.length }) : t("creditreport.ci.filtersNone"), per].filter(Boolean).join(" · ");
+        }
+    }
+    function removeChip(id, v) {
+        if (id === "side") {
+            side = "own";
+            syncSide();
+        } else {
+            const el = document.getElementById(id);
+            const left = (picks(id).length ? picks(id) : (pending[id] || [])).filter(x => x !== v);
+            pending[id] = [];
+            if (el && window.MultiSelect && el._msBtn) MultiSelect.setValues(el, left);
+            if (FOCUS.includes(id)) focusLock();
+            if (id === "ciOfficer") syncSide();
+        }
+        changed();
+    }
+
+    // Sets one filter from code (e.g. a table row opens its officer's
+    // loans). Officer and product are one-at-a-time: the other is cleared.
+    function setFilter(id, values) {
+        const el = document.getElementById(id);
+        if (!el || !window.MultiSelect || !el._msBtn) return;
+        if (FOCUS.includes(id)) FOCUS.filter(o => o !== id).forEach(o => {
+            const other = document.getElementById(o);
+            pending[o] = [];
+            if (other && other._msBtn) MultiSelect.setValues(other, []);
+        });
+        pending[id] = [];
+        MultiSelect.setValues(el, values);
+        focusLock();
+        syncSide();
+        changed();
     }
 
     function changed() {
@@ -173,6 +240,30 @@
     function showPeriod(period) {
         const btn = document.getElementById("ciPeriodText");
         if (btn && period) btn.textContent = t("creditreport.detail.dateRange", { from: dash(period.fromDate), to: dash(period.toDate) });
+        if (!period) return;
+        shownPeriod = period;
+        const one = document.getElementById("ciOneDay");
+        if (one) one.hidden = !(period.fromDate && period.fromDate === period.toDate);
+        document.querySelectorAll("#ciQuick [data-range]").forEach(b => {
+            const r = quickRange(b.dataset.range);
+            const on = !!r && r.from === period.fromDate && r.to === period.toDate;
+            b.classList.toggle("is-active", on);
+            b.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+        renderChips();
+    }
+
+    // Quick periods, counted back from the latest OS day.
+    const keyOf = d => `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+    function quickRange(kind) {
+        if (!lastOs) return null;
+        const os = new Date(`${lastOs}T00:00:00Z`);
+        const y = os.getUTCFullYear(), m = os.getUTCMonth();
+        if (kind === "mtd") return { from: keyOf(new Date(Date.UTC(y, m, 1))), to: lastOs };
+        if (kind === "lastMonth") return { from: keyOf(new Date(Date.UTC(y, m - 1, 1))), to: keyOf(new Date(Date.UTC(y, m, 0))) };
+        if (kind === "week") return { from: keyOf(new Date(Date.UTC(y, m, os.getUTCDate() - 6))), to: lastOs };
+        if (kind === "day") return { from: lastOs, to: lastOs };
+        return null;
     }
     const icon = name => `<span class="cr-info-icon cr-ico cr-ico-${name}" aria-hidden="true"></span>`;
     const selectRow = (id, label, all) =>
@@ -195,7 +286,13 @@
 <div class="ci-period-edit" id="ciPeriodEdit" hidden>
 <div class="cr-select-row"><label for="ciFrom" class="cr-select-label">${esc(t("creditreport.pi.fromDate"))}</label><input type="date" id="ciFrom" class="cr-select"></div>
 <div class="cr-select-row"><label for="ciTo" class="cr-select-label">${esc(t("creditreport.pi.toDate"))}</label><input type="date" id="ciTo" class="cr-select"></div>
-<button type="button" class="pi-btn-ghost ci-mtd" id="ciMtd">${esc(t("creditreport.ci.monthToDate"))}</button>
+</div>
+<div class="ci-quick" id="ciQuick" role="group" aria-label="${esc(t("creditreport.ci.quickPeriod"))}"${showDates ? "" : " hidden"}>
+<button type="button" data-range="mtd">${esc(t("creditreport.ci.qMtd"))}</button>
+<button type="button" data-range="lastMonth">${esc(t("creditreport.ci.qLastMonth"))}</button>
+<button type="button" data-range="week">${esc(t("creditreport.ci.qWeek"))}</button>
+<button type="button" data-range="day">${esc(t("creditreport.ci.qDay"))}</button>
+<span class="ci-oneday" id="ciOneDay" hidden>⚠ ${esc(t("creditreport.ci.oneDay"))}</span>
 </div>
 <div class="cr-info-row">
 <span class="cr-info-label">${icon("barchart")}<span>${esc(t("creditreport.detail.osGridMerge"))}</span></span>
@@ -210,6 +307,9 @@
 <span class="cr-info-value" id="ciInfoStatus">-</span>
 </div>
 </div>
+<button type="button" class="ci-filter-sum" id="ciFilterSum" aria-expanded="false" aria-controls="ciFilterBody"><span aria-hidden="true">⚙</span> <span id="ciFilterSumText"></span> <span class="ci-filter-caret" aria-hidden="true">▾</span></button>
+<div class="ci-chips" id="ciChips" hidden></div>
+<div id="ciFilterBody">
 <div class="ci-selects">
 ${opts.classes ? selectRow("ciClass", "creditreport.ci.nplClass", "creditreport.ci.allNplClasses") : ""}
 ${selectRow("ciBranch", "creditreport.pi.branch", "creditreport.pi.allBranches")}
@@ -233,6 +333,7 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
 <div class="ci-head-foot">
 <p class="pi-note">${esc(t("creditreport.pi.focusNote"))}</p>
 <button type="button" class="pi-btn-ghost" id="ciReset">${esc(t("creditreport.pi.reset"))}</button>
+</div>
 </div>`;
 
         const p = initialParams();
@@ -282,12 +383,28 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
         document.getElementById("ciCompareDate").addEventListener("change", changed);
         // Back to the default period: the 1st of the month to the latest OS
         // day (the server fills it in when no dates are sent).
-        document.getElementById("ciMtd").addEventListener("click", () => {
-            document.getElementById("ciFrom").value = "";
-            document.getElementById("ciTo").value = "";
+        // Quick periods. Month to date sends no dates: the server's default.
+        document.getElementById("ciQuick").addEventListener("click", e => {
+            const b = e.target.closest("[data-range]");
+            if (!b) return;
+            const r = b.dataset.range === "mtd" ? { from: "", to: "" } : quickRange(b.dataset.range);
+            if (!r) return;
+            document.getElementById("ciFrom").value = r.from;
+            document.getElementById("ciTo").value = r.to;
             periodEdit.hidden = true;
             periodBtn.setAttribute("aria-expanded", "false");
             changed();
+        });
+        // Phones: filters fold into one summary line (open by tapping it).
+        const sumBtn = document.getElementById("ciFilterSum");
+        sumBtn.addEventListener("click", () => {
+            const open = !box.classList.contains("is-open");
+            box.classList.toggle("is-open", open);
+            sumBtn.setAttribute("aria-expanded", String(open));
+        });
+        document.getElementById("ciChips").addEventListener("click", e => {
+            const c = e.target.closest("[data-id]");
+            if (c) removeChip(c.dataset.id, c.dataset.v);
         });
         present.forEach(id => document.getElementById(id).addEventListener("change", () => {
             pending[id] = [];
@@ -358,6 +475,7 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
     function renderAsOf(_el, d) {
         const a = d.asOf;
         const set = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+        if (a && a.osDate) lastOs = a.osDate;
         if (d.period && d.period.fromDate) showPeriod(d.period);
         if (!a) return;
         set("ciInfoOs", esc(a.osText));
@@ -425,7 +543,7 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
 
     window.CI = {
         t, esc, num, money, pct, signedPct, pts, dmy, short,
-        mountFilters, setPeriodLabel, query, fillOptions, renderAsOf, mountNav, get, toast, chartColors,
+        mountFilters, setPeriodLabel, setFilter, query, fillOptions, renderAsOf, mountNav, get, toast, chartColors,
         scope: () => scope
     };
 })();

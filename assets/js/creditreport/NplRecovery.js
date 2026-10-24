@@ -34,6 +34,7 @@ function recRender() {
     const off = document.getElementById("recUnavailable");
     const content = document.getElementById("recContent");
     if (!d.movement.available) {
+        nplShowSummary("");
         off.hidden = false;
         content.hidden = true;
         const m = d.movement;
@@ -47,16 +48,38 @@ function recRender() {
         opening: CI.dmy(d.movement.openingDate),
         closing: CI.dmy(d.movement.closingDate) + (d.movement.closingLive ? ` (${t("creditreport.npl.live")})` : "")
     });
+    recRenderSummary();
     recRenderKpis(d);
     recRenderKinds(d);
     recRenderTable(d);
 }
 
-function recCard(label, value, sub, tone) {
+// The tab's one-line answer (same box as the movement tab).
+function recRenderSummary() {
+    const d = recData;
+    if (!d || !d.movement || !d.movement.available) { nplShowSummary(""); return; }
+    const k = d.kpis;
+    const tg = k.target;
+    const extra = CI.esc(t("creditreport.rec.sumLine", {
+        rate: k.recoveryRate === null ? "—" : CI.pct(k.recoveryRate, 1),
+        target: tg.value === null ? t("creditreport.rec.notSet") : `${CI.pct(tg.achievement, 0)} / ${CI.money(tg.value)}`
+    }));
+    nplShowSummary(nplSummaryHtml({
+        fromKey: d.movement.openingDate, toKey: d.movement.closingDate, opening: k.opening, closing: k.closing,
+        parts: [
+            [t("creditreport.rec.recovered"), k.recovered.value, "sub"],
+            [t("creditreport.npl.step.new"), k.newNpl.value, "add"]
+        ],
+        extra
+    }));
+}
+
+function recCard(label, value, sub, tone, tipKey) {
     return `<article class="pi-kpi${tone ? ` ci-kpi-${tone}` : ""}">
-        <div class="pi-kpi-label">${CI.esc(label)}</div>
+        <div class="pi-kpi-label">${CI.esc(label)}${tipKey ? nplInfoBtn(tipKey) : ""}</div>
         <div class="pi-kpi-value">${CI.esc(value)}</div>
         ${sub ? `<div class="pi-kpi-sub">${CI.esc(sub)}</div>` : ""}
+        ${tipKey ? nplTip(tipKey) : ""}
     </article>`;
 }
 
@@ -66,9 +89,9 @@ function recRenderKpis(d) {
     const targetText = tg.value === null ? t("creditreport.rec.notSet") : CI.pct(tg.achievement, 1);
     const targetSub = tg.value === null ? t("creditreport.rec.notSetSub") : t("creditreport.rec.ofTarget", { target: CI.money(tg.value) });
     document.getElementById("recKpis").innerHTML =
-        recCard(t("creditreport.rec.recovered"), CI.money(k.recovered.value), t("creditreport.npl.accountsN", { n: CI.num(k.recovered.count) }), "good") +
-        recCard(t("creditreport.rec.rate"), k.recoveryRate === null ? "—" : CI.pct(k.recoveryRate, 1), t("creditreport.rec.rateSub", { opening: CI.money(k.opening) })) +
-        recCard(t("creditreport.rec.target"), targetText, targetSub);
+        recCard(t("creditreport.rec.recovered"), CI.money(k.recovered.value), t("creditreport.npl.accountsN", { n: CI.num(k.recovered.count) }), "good", "creditreport.rec.tip.recovered") +
+        recCard(t("creditreport.rec.rate"), k.recoveryRate === null ? "—" : CI.pct(k.recoveryRate, 1), t("creditreport.rec.rateSub", { opening: CI.money(k.opening) }), "", "creditreport.rec.tip.rate") +
+        recCard(t("creditreport.rec.target"), targetText, targetSub, "", "creditreport.rec.tip.target");
 }
 
 function recRenderKinds(d) {
@@ -101,22 +124,41 @@ function recRenderTable(d) {
         b.setAttribute("aria-selected", on ? "true" : "false");
     });
     const showTarget = recDim === "branch";
+    // Rate bars are toned against the whole portfolio's rate (the page's
+    // own figure), target bars against 100%.
+    const avg = d.kpis.recoveryRate;
+    const bar = (v, good) => `<div class="ci-mini${good === null ? "" : good ? " is-good" : " is-bad"}"><span style="width:${Math.max(0, Math.min(100, v * 100))}%"></span></div>`;
+    const clickable = ["officer", "branch", "product"].includes(recDim);
     const head = ["creditreport.risk.colName", "creditreport.npl.step.opening", "creditreport.rec.recovered", "creditreport.rec.rate",
         "creditreport.rec.kReduction", "creditreport.npl.step.new", "creditreport.rec.net"]
         .concat(showTarget ? ["creditreport.rec.target"] : []);
-    const rows = (d.byDim || []).map(r => `<tr>
+    const rows = (d.byDim || []).map(r => `<tr${clickable ? ` class="ci-row-link" tabindex="0" data-key="${CI.esc(r.key)}" title="${CI.esc(t("creditreport.rec.openLoans"))}"` : ""}>
         <td>${CI.esc(recName(r))}${recDim === "officer" && r.branch ? `<div class="ci-sub">${CI.esc(r.branch)}</div>` : ""}</td>
         <td class="num">${CI.money(r.opening)}</td>
         <td class="num ci-good">${CI.money(r.left.value)}<div class="ci-sub">${CI.esc(t("creditreport.npl.accountsN", { n: r.left.count }))}</div></td>
-        <td class="num">${r.recoveryRate === null ? "—" : CI.pct(r.recoveryRate, 1)}</td>
+        <td class="num">${r.recoveryRate === null ? "—" : `${CI.pct(r.recoveryRate, 1)}${bar(r.recoveryRate, avg === null ? null : r.recoveryRate >= avg)}`}</td>
         <td class="num">${CI.money(r.reduction.value)}</td>
         <td class="num ci-bad">${CI.money(r.newNpl.value)}</td>
         <td class="num${r.net > 0 ? " ci-bad" : r.net < 0 ? " ci-good" : ""}">${r.net > 0 ? "+" : ""}${CI.money(r.net)}</td>
-        ${showTarget ? `<td class="num">${r.target ? `${CI.pct(r.left.value / r.target, 0)}<div class="ci-sub">${CI.money(r.target)}</div>` : CI.esc(t("creditreport.rec.notSet"))}</td>` : ""}
+        ${showTarget ? `<td class="num">${r.target ? `${CI.pct(r.left.value / r.target, 0)}${bar(r.left.value / r.target, r.left.value >= r.target)}<div class="ci-sub">${CI.money(r.target)}</div>` : CI.esc(t("creditreport.rec.notSet"))}</td>` : ""}
     </tr>`).join("");
     document.getElementById("recTable").innerHTML =
         `<thead><tr>${head.map((h, i) => `<th${i ? ' class="num"' : ""}>${CI.esc(t(h))}</th>`).join("")}</tr></thead>` +
         `<tbody>${rows || `<tr><td colspan="${head.length}" class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</td></tr>`}</tbody>`;
+    document.getElementById("recTableHint").hidden = !clickable || !rows;
+}
+
+// A row opens the movement tab filtered to that officer / branch / product.
+function recOpenRow(key) {
+    const id = { officer: "ciOfficer", branch: "ciBranch", product: "ciProduct" }[recDim];
+    const el = document.getElementById(id);
+    if (!el) return;
+    const strip = v => String(v).replace(/^0+/, "");
+    const opt = [...el.options].find(o => o.value && (recDim === "officer" ? strip(o.value) === strip(key) : o.value === key));
+    if (!opt) return;
+    nplView = "movement";
+    CI.setFilter(id, [opt.value]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 // ---------- admin: monthly targets per branch ----------
@@ -171,6 +213,15 @@ async function recSaveTargets() {
 
 // Wired once by NplIntelligence.js; data loads when the tab is shown.
 function recInit() {
+    const table = document.getElementById("recTable");
+    table.addEventListener("click", e => {
+        const r = e.target.closest("tr[data-key]");
+        if (r) recOpenRow(r.dataset.key);
+    });
+    table.addEventListener("keydown", e => {
+        const r = e.target.closest("tr[data-key]");
+        if (r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); recOpenRow(r.dataset.key); }
+    });
     document.getElementById("recDims").addEventListener("click", e => {
         const b = e.target.closest("[data-dim]");
         if (!b) return;

@@ -33,9 +33,53 @@ function nplShowView(view) {
     const p = new URLSearchParams(location.search);
     if (nplView === "recovery") p.set("view", "recovery"); else p.delete("view");
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
-    if (!nplStale[nplView]) return;
+    if (!nplStale[nplView]) {
+        if (nplView === "recovery") recRenderSummary(); else nplRenderSummary();
+        return;
+    }
     nplStale[nplView] = false;
     if (nplView === "recovery") recLoad(); else nplLoad();
+}
+
+// ---------- summary: the one-line answer above both tabs ----------
+// parts: [label, value, kind] — kind "add" (+, bad), "sub" (−, good),
+// "neutral" (−, not recovery), "signed" (±).
+function nplSummaryHtml({ fromKey, toKey, opening, closing, parts, extra }) {
+    const net = closing - opening;
+    const pct = opening ? net / opening : null;
+    const dir = net < 0 ? "down" : net > 0 ? "up" : "flat";
+    const head = t(`creditreport.npl.sum.${dir}`, { amt: CI.money(Math.abs(net)), pct: pct === null ? "—" : `${(Math.abs(pct) * 100).toFixed(1)}%` });
+    const sign = (v, kind) => kind === "add" ? `+${CI.money(v)}` : kind === "signed" ? `${v > 0 ? "+" : ""}${CI.money(v)}` : CI.money(-Math.abs(v));
+    const tone = (v, kind) => kind === "add" ? "bad" : kind === "sub" ? "good" : kind === "signed" ? (v > 0 ? "bad" : v < 0 ? "good" : "") : "base";
+    return `
+        <div class="ci-sum-head is-${dir}"><span aria-hidden="true">${dir === "down" ? "▼" : dir === "up" ? "▲" : "■"}</span> ${CI.esc(head)}</div>
+        <div class="ci-sum-sub">${CI.esc(t("creditreport.npl.sum.range", { from: CI.dmy(fromKey), to: CI.dmy(toKey), opening: CI.money(opening), closing: CI.money(closing) }))}</div>
+        <div class="ci-sum-parts">${parts.filter(p => p).map(([label, v, kind]) =>
+            `<span class="ci-sum-part is-${tone(v, kind)}">${CI.esc(label)} <b>${CI.esc(sign(v, kind))}</b></span>`).join("")}</div>
+        ${extra ? `<div class="ci-sum-extra">${extra}</div>` : ""}`;
+}
+
+function nplShowSummary(html) {
+    const box = document.getElementById("nplSummary");
+    box.hidden = !html;
+    box.innerHTML = html || "";
+}
+
+function nplRenderSummary() {
+    const m = nplData && nplData.movement;
+    if (!m || !m.available) { nplShowSummary(""); return; }
+    const tt = m.totals;
+    const ex = m.exits || { recovered: tt.recovered, writeOff: { bal: 0, count: 0 }, moved: { bal: 0, count: 0 } };
+    nplShowSummary(nplSummaryHtml({
+        fromKey: m.openingDate, toKey: m.closingDate, opening: tt.opening.bal, closing: tt.closing.bal,
+        parts: [
+            [nplStepLabel("new"), tt.new.bal, "add"],
+            [nplStepLabel("recovered"), ex.recovered.bal, "sub"],
+            ex.writeOff.count ? [nplStepLabel("writeOff"), ex.writeOff.bal, "neutral"] : null,
+            ex.moved.count ? [nplStepLabel("moved"), ex.moved.bal, "neutral"] : null,
+            [nplStepLabel("balanceChange"), tt.balanceChange, "signed"]
+        ]
+    }));
 }
 function nplExitText(e) {
     return e ? t(`creditreport.npl.exit.${e}`) : "";
@@ -61,6 +105,7 @@ function nplRender() {
     const off = document.getElementById("nplUnavailable");
     const content = document.getElementById("nplContent");
     if (!m.available) {
+        nplShowSummary("");
         off.hidden = false;
         content.hidden = true;
         document.getElementById("nplUnavailableText").textContent =
@@ -75,59 +120,59 @@ function nplRender() {
         opening: CI.dmy(m.openingDate),
         closing: CI.dmy(m.closingDate) + (m.closingLive ? ` (${t("creditreport.npl.live")})` : "")
     });
+    nplRenderSummary();
     nplRenderWaterfall(m);
     nplRenderSteps(m);
     nplRenderTable();
     nplRenderWhy();
 }
 
+// ⓘ next to a term opens its one-line meaning in place.
+function nplInfoBtn(key) {
+    return ` <button type="button" class="ci-info" aria-expanded="false" aria-label="${CI.esc(t("creditreport.npl.whatIs"))}">ⓘ</button>`;
+}
+function nplTip(key) {
+    return `<div class="ci-tip" hidden>${CI.esc(t(key))}</div>`;
+}
+
 function nplStepLabel(step) {
     return t(`creditreport.npl.step.${step}`);
 }
 
+// What moved NPL: only the changes, as horizontal bars, so a $3,000
+// write-off is visible next to a $5.9M balance (opening / closing are
+// in the summary and the step cards).
 function nplRenderWaterfall(m) {
     if (nplChart) { nplChart.destroy(); nplChart = null; }
     if (typeof Chart === "undefined") return;
     const col = CI.chartColors();
-    let run = 0;
-    const bars = m.waterfall.map(w => {
-        if (w.step === "opening" || w.step === "closing") {
-            run = w.value;
-            return { step: w.step, range: [0, w.value], value: w.value };
-        }
-        const from = run;
-        run += w.value;
-        return { step: w.step, range: [from, run], value: w.value };
-    });
+    const bars = m.waterfall.filter(w => w.step !== "opening" && w.step !== "closing")
+        .filter(w => w.value || w.step !== "moved");
     const colorOf = b => {
-        if (b.step === "opening" || b.step === "closing") return col.a;
         // Leaving NPL by write-off or class move is not recovery: neutral.
         if (b.step === "writeOff" || b.step === "moved") return col.b;
         return b.value > 0 ? col.bad : col.good;
     };
+    const box = document.getElementById("nplWaterfall").parentElement;
+    box.style.height = `${Math.max(150, bars.length * 44 + 40)}px`;
     nplChart = new Chart(document.getElementById("nplWaterfall"), {
         type: "bar",
         data: {
             labels: bars.map(b => nplStepLabel(b.step)),
-            datasets: [{
-                data: bars.map(b => b.range),
-                backgroundColor: bars.map(colorOf),
-                borderRadius: 4,
-                borderSkipped: false,
-                maxBarThickness: 46
-            }]
+            datasets: [{ data: bars.map(b => b.value), backgroundColor: bars.map(colorOf), borderRadius: 4, maxBarThickness: 28 }]
         },
         options: {
+            indexAxis: "y",
             responsive: true,
             maintainAspectRatio: false,
             animation: false,
             plugins: {
                 legend: { display: false },
-                tooltip: { callbacks: { label: c => `${nplStepLabel(bars[c.dataIndex].step)}: ${CI.money(bars[c.dataIndex].value)}` } }
+                tooltip: { callbacks: { label: c => `${nplStepLabel(bars[c.dataIndex].step)}: ${bars[c.dataIndex].value > 0 ? "+" : ""}${CI.money(bars[c.dataIndex].value)}` } }
             },
             scales: {
-                x: { grid: { display: false }, ticks: { color: col.text, font: { family: "KRASAR, sans-serif", size: 11 } } },
-                y: { grid: { color: col.grid }, border: { display: false }, ticks: { color: col.text, callback: v => CI.money(v) } }
+                x: { grid: { color: col.grid }, border: { display: false }, ticks: { color: col.text, callback: v => CI.money(v), maxTicksLimit: 5 } },
+                y: { grid: { display: false }, ticks: { color: col.text, font: { family: "KRASAR, sans-serif", size: 12 } } }
             }
         }
     });
@@ -142,9 +187,10 @@ function nplRenderSteps(m) {
     const ex = m.exits || { recovered: tt.recovered, writeOff: { count: 0, bal: 0 }, moved: { count: 0, bal: 0 } };
     const card = (step, value, count, sub, tone) => `
         <div class="ci-step ci-step-${tone || "base"}">
-            <div class="pi-kpi-label">${CI.esc(nplStepLabel(step))}</div>
+            <div class="pi-kpi-label">${CI.esc(nplStepLabel(step))}${nplInfoBtn(`creditreport.npl.tip.${step}`)}</div>
             <div class="ci-step-value">${CI.esc(["recovered", "writeOff", "moved"].includes(step) ? CI.money(-Math.abs(value)) : (step === "new" ? "+" : "") + CI.money(value))}</div>
             <div class="pi-kpi-sub">${CI.esc(t("creditreport.npl.accountsN", { n: CI.num(count) }))}${sub ? ` · ${CI.esc(sub)}` : ""}</div>
+            ${nplTip(`creditreport.npl.tip.${step}`)}
         </div>`;
     const bc = tt.balanceChange;
     document.getElementById("nplSteps").innerHTML =
@@ -360,6 +406,15 @@ function nplExport() {
     const m = nplData.movement;
     XLSX.writeFile(wb, `NPL_${nplTab}_${m.openingDate}_${m.closingDate}.xlsx`);
 }
+
+document.addEventListener("click", e => {
+    const b = e.target.closest(".ci-info");
+    if (!b) return;
+    const tip = b.closest(".ci-step, .pi-kpi").querySelector(".ci-tip");
+    if (!tip) return;
+    tip.hidden = !tip.hidden;
+    b.setAttribute("aria-expanded", String(!tip.hidden));
+});
 
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("nplWhySearch").addEventListener("input", nplRenderWhy);
