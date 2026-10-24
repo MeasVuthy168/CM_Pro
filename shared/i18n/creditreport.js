@@ -449,7 +449,6 @@ CMI18n.register({
   // ==================================================================
   "creditreport.ci.modules": { km: "ម៉ូឌុល", en: "Modules" },
   "creditreport.ci.changePeriod": { km: "ចុចដើម្បីប្ដូរថ្ងៃ", en: "Tap to change the dates" },
-  "creditreport.ci.comparedWithLabel": { km: "ប្រៀបធៀបជាមួយប្រវត្តិថ្ងៃ", en: "Compared with Daily History of" },
   "creditreport.ci.dataStatus": { km: "ស្ថានភាពទិន្នន័យ", en: "Data status" },
   "creditreport.ci.compareDay": { km: "ថ្ងៃប្រៀបធៀប", en: "Compare day" },
   "creditreport.ci.navOverview": { km: "ទិដ្ឋភាពទូទៅ", en: "Overview" },
