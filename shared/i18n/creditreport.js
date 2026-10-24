@@ -617,7 +617,7 @@ CMI18n.register({
   "creditreport.risk.reconLine": { km: "សរុបតាម{dim}៖ {npl} (ខុស {diff})", en: "Total by {dim}: {npl} ({diff} apart)" },
   "creditreport.risk.reconQ": { km: "ហេតុអ្វីសរុបតាមមន្ត្រី / ផលិតផល / ស្រុក មិនស្មើគ្នា?", en: "Why don't the totals by officer / product / district match?" },
   "creditreport.risk.openNplHint": { km: "ចុចលើជួរ ដើម្បីបើកក្នុង ការគ្រប់គ្រង NPL។", en: "Tap a row to open it in NPL Management." },
-  "creditreport.risk.osShare": { km: "ចំណែកសមតុល្យ", en: "Share of outstanding" },
+  "creditreport.risk.osShare": { km: "ចំណែកនៃសមតុល្យឥណទាន", en: "Share of outstanding" },
   "creditreport.risk.viewGrowthSub": { km: "កំណើនមានសុវត្ថិភាពឬទេ", en: "Growing safely or not" },
   "creditreport.risk.viewQualitySub": { km: "ឥណទានយឺតប៉ុន្មានថ្ងៃ", en: "How late the loans are" },
   "creditreport.risk.viewContributorsSub": { km: "អ្នកណាមាន NPL ច្រើន", en: "Who holds the NPL" },
