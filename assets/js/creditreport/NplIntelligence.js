@@ -127,13 +127,9 @@ function nplRender() {
     nplRenderWhy();
 }
 
-// ⓘ next to a term opens its one-line meaning in place.
-function nplInfoBtn(key) {
-    return ` <button type="button" class="ci-info" aria-expanded="false" aria-label="${CI.esc(t("creditreport.npl.whatIs"))}">ⓘ</button>`;
-}
-function nplTip(key) {
-    return `<div class="ci-tip" hidden>${CI.esc(t(key))}</div>`;
-}
+// ⓘ next to a term (shared: ci-filters.js).
+const nplInfoBtn = CI.infoBtn;
+const nplTip = CI.tip;
 
 function nplStepLabel(step) {
     return t(`creditreport.npl.step.${step}`);
@@ -406,15 +402,6 @@ function nplExport() {
     const m = nplData.movement;
     XLSX.writeFile(wb, `NPL_${nplTab}_${m.openingDate}_${m.closingDate}.xlsx`);
 }
-
-document.addEventListener("click", e => {
-    const b = e.target.closest(".ci-info");
-    if (!b) return;
-    const tip = b.closest(".ci-step, .pi-kpi").querySelector(".ci-tip");
-    if (!tip) return;
-    tip.hidden = !tip.hidden;
-    b.setAttribute("aria-expanded", String(!tip.hidden));
-});
 
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("nplWhySearch").addEventListener("input", nplRenderWhy);
