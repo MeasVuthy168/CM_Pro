@@ -69,19 +69,22 @@ No Internet Connection
 
 <section id="ciFilters" aria-label="Filters"></section>
 
+<!-- One-line answer: how many high-risk loans, and what to do first -->
+<section class="pi-card ci-summary" id="ewsSummary" hidden aria-live="polite"></section>
+
 <section aria-labelledby="ewsTitle">
 <h2 class="pi-section-title" id="ewsTitle" data-i18n="creditreport.ews.title">Early Warning Indicators</h2>
 <div class="ci-levels" id="ewsLevels"></div>
 <p class="pi-note" id="ewsHistory"></p>
 </section>
 
-<section class="pi-card" aria-labelledby="ewsRulesTitle">
-<h2 class="pi-card-title" id="ewsRulesTitle" data-i18n="creditreport.ews.rules">Warning rules</h2>
-<div class="pi-table-wrap"><table class="pi-table ci-table" id="ewsRules"></table></div>
+<details class="pi-card ci-rules-box" id="ewsRulesBox">
+<summary class="pi-card-title" id="ewsRulesTitle" data-i18n="creditreport.ews.howScore">How is the score worked out?</summary>
+<div class="ci-rule-cards" id="ewsRules"></div>
+<p class="pi-note" id="ewsLevelsNote"></p>
 <p class="pi-note" data-i18n="creditreport.ews.rulesNote">Rule-based, not a prediction. The points are a starting point for management to review; an admin can change them.</p>
-<p class="pi-note"><span data-i18n="creditreport.ews.workNote">Reasons and promises to pay are filled in — and broken promises followed up — in Work to Complete.</span>
-<a class="ci-link" href="../masterdata/work.html?tab=unfilled" data-i18n="creditreport.ews.openWork">Open Work to Complete →</a></p>
-</section>
+<button type="button" class="pi-btn-ghost" id="ewsEditRules" hidden data-i18n="creditreport.ews.editRules">Edit rules ›</button>
+</details>
 
 <section class="pi-card" aria-labelledby="ewsAccTitle">
 <div class="pi-card-head">
@@ -89,18 +92,32 @@ No Internet Connection
 <button type="button" class="pi-btn-ghost" id="ewsExport" data-i18n="creditreport.npl.export">Export Excel</button>
 </div>
 <div class="pi-tabs ci-tabs-wide" role="tablist" id="ewsLevelTabs">
-<button type="button" role="tab" data-level="all" data-i18n="creditreport.ews.all">All</button>
-<button type="button" role="tab" data-level="high" data-i18n="creditreport.ews.level.high">High</button>
-<button type="button" role="tab" data-level="medium" data-i18n="creditreport.ews.level.medium">Medium</button>
-<button type="button" role="tab" data-level="low" data-i18n="creditreport.ews.level.low">Low</button>
+<button type="button" role="tab" data-level="all"><span data-i18n="creditreport.ews.all">All</span> <small class="ci-tab-n" data-n="all"></small></button>
+<button type="button" role="tab" data-level="high"><span data-i18n="creditreport.ews.level.high">High</span> <small class="ci-tab-n" data-n="high"></small></button>
+<button type="button" role="tab" data-level="medium"><span data-i18n="creditreport.ews.level.medium">Medium</span> <small class="ci-tab-n" data-n="medium"></small></button>
+<button type="button" role="tab" data-level="low"><span data-i18n="creditreport.ews.level.low">Low</span> <small class="ci-tab-n" data-n="low"></small></button>
 </div>
 <div class="ci-table-tools">
 <input type="search" id="ewsSearch" class="ci-search" data-i18n-placeholder="creditreport.npl.search" placeholder="Search loan, customer, officer…">
-<select id="ewsRuleFilter" class="pi-top-pick"></select>
+<select id="ewsSortPick" class="pi-top-pick" data-i18n-aria-label="creditreport.ews.sortBy">
+<option value="score" data-i18n="creditreport.ews.sortScore">Highest score</option>
+<option value="day" data-i18n="creditreport.ews.sortDay">Most days late</option>
+<option value="bal" data-i18n="creditreport.ews.sortBal">Largest balance</option>
+</select>
+</div>
+<div class="pi-chipset" id="ewsRuleFilter" role="group" data-i18n-aria-label="creditreport.ews.rules"></div>
+<div class="ci-ews-viewbar">
+<div class="pi-tabs" role="tablist" id="ewsViewTabs">
+<button type="button" role="tab" data-view="cards" data-i18n="creditreport.npl.accounts">Accounts</button>
+<button type="button" role="tab" data-view="officer" data-i18n="creditreport.ews.byOfficer">By officer</button>
+</div>
 <span class="pi-note" id="ewsCount"></span>
 </div>
-<div class="pi-table-wrap ci-table-scroll"><table class="pi-table ci-table" id="ewsTable"></table></div>
+<div class="ci-chips" id="ewsOfficerChip" hidden></div>
+<div class="ci-ews-list" id="ewsList"></div>
 <button type="button" class="pi-btn-ghost ci-more" id="ewsMore" hidden data-i18n="creditreport.npl.more">Show more</button>
+<p class="pi-note"><span data-i18n="creditreport.ews.workNote">Reasons and promises to pay are filled in — and broken promises followed up — in Work to Complete.</span>
+<a class="ci-link" href="../masterdata/work.html?tab=unfilled" data-i18n="creditreport.ews.openWork">Open Work to Complete →</a></p>
 </section>
 
 <details class="pi-card" id="ewsAdmin" hidden>

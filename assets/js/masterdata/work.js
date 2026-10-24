@@ -30,6 +30,9 @@ const wkParams = new URLSearchParams(location.search);
 let wkRows = [];
 let wkTab = ["unfilled", "expired", "today", "filled"].includes(wkParams.get("tab")) ? wkParams.get("tab") : "unfilled";
 let wkBranch = wkParams.get("branch") || "";
+// ?q=<loan> (from Early Warning): open on the tab that holds that loan,
+// with it searched — straight into its editor when it is the only match.
+let wkQuery = wkParams.get("from") === "arrears" ? "" : (wkParams.get("q") || "").trim();
 let wkTeam = "";          // "" | "Credit Officer" | "FSRO"
 // "officer": the list is the officers (CO / FSRO), tap one for their
 // clients; "clients": every client. Managers start by officer; the
@@ -149,8 +152,20 @@ function takeSnapshot() {
 function useRows(rows) {
     wkRows = rows;
     applyPending(wkRows);
+    let only = null;
+    if (wkQuery) {
+        const q = wkQuery.toLowerCase();
+        const hits = wkRows.filter(r => String(r.loanNumber || "").toLowerCase() === q);
+        const tab = ["unfilled", "expired", "today", "filled"].find(tb => hits.some(r => inTab(r, tb)));
+        if (tab) wkTab = tab;
+        wkView = "clients";
+        $("wkSearch").value = wkQuery;
+        if (hits.length === 1) only = hits[0];
+        wkQuery = "";
+    }
     renderChips();
     renderList();
+    if (only) openDetail(only);
 }
 
 async function wkLoad({ fresh = false } = {}) {
