@@ -535,7 +535,7 @@ CMI18n.register({
   "creditreport.risk.listPar": { km: "PAR % ខ្ពស់បំផុត", en: "Highest PAR %" },
   "creditreport.risk.listGrowth": { km: "កំណើន NPL ខ្ពស់បំផុត", en: "Highest NPL growth" },
   "creditreport.risk.listNew": { km: "NPL ថ្មីច្រើនបំផុត", en: "Highest new NPL formation" },
-  "creditreport.risk.absNote": { km: "ចំណែក NPL ដាច់ខាត — ផលប័ត្រធំអាចមាន NPL ច្រើន ទោះអនុបាតទាប។", en: "Absolute NPL contribution — a large portfolio can hold the most NPL with a low ratio." },
+  "creditreport.risk.absNote": { km: "តម្រៀបតាមទឹកប្រាក់ NPL — សាខាធំអាចមានទឹកប្រាក់ NPL ច្រើន ទោះបីអនុបាត NPL ទាបក៏ដោយ។ មើល \"លទ្ធផលខ្សោយ ១០\" ដើម្បីរកគុណភាពខ្សោយ។", en: "Sorted by NPL amount — a large branch can hold a lot of NPL even with a low NPL ratio. See \"Bottom 10\" to find weak quality." },
   "creditreport.risk.relNote": { km: "ហានិភ័យធៀប (NPL ÷ សមតុល្យរបស់ខ្លួន)។", en: "Relative risk (NPL ÷ its own outstanding)." },
   "creditreport.risk.officerScope": { km: "អ្នកឃើញតែតួលេខរបស់ខ្លួន។", en: "You see only your own figures." },
   "creditreport.risk.contribution": { km: "ចំណែក NPL", en: "Share of NPL" },
