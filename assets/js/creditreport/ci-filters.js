@@ -541,9 +541,23 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
             : { a: "#2456A8", b: "#B8860B", good: "#15803D", bad: "#B91C1C", grid: "rgba(0,0,0,.06)", text: css.getPropertyValue("--cr-text-muted").trim() || "#6B7280", surface: css.getPropertyValue("--cr-card-bg").trim() || "#FFFFFF" };
     }
 
+    // ⓘ next to a term opens its one-line meaning in place (inside the
+    // same .ci-step or .pi-kpi card).
+    const infoBtn = () => ` <button type="button" class="ci-info" aria-expanded="false" aria-label="${esc(t("creditreport.npl.whatIs"))}">ⓘ</button>`;
+    const tip = key => `<div class="ci-tip" hidden>${esc(t(key))}</div>`;
+    document.addEventListener("click", e => {
+        const b = e.target.closest(".ci-info");
+        if (!b) return;
+        const box = b.closest(".ci-step, .pi-kpi");
+        const el = box && box.querySelector(".ci-tip");
+        if (!el) return;
+        el.hidden = !el.hidden;
+        b.setAttribute("aria-expanded", String(!el.hidden));
+    });
+
     window.CI = {
         t, esc, num, money, pct, signedPct, pts, dmy, short,
-        mountFilters, setPeriodLabel, setFilter, query, fillOptions, renderAsOf, mountNav, get, toast, chartColors,
+        mountFilters, setPeriodLabel, setFilter, query, infoBtn, tip, fillOptions, renderAsOf, mountNav, get, toast, chartColors,
         scope: () => scope
     };
 })();

@@ -836,3 +836,32 @@ a.pi-rank-row:active{ background:var(--pi-track); }
 .ci-row-link{ cursor:pointer; }
 .ci-row-link:hover td{ background:var(--pi-track); }
 .ci-row-hint{ margin:0 0 6px; }
+
+/* ===== Portfolio Overview: summary, compare label, colour legend, Top 10 chips ===== */
+.pi-cmp-with{ font-weight:400; font-size:12px; color:var(--cr-text-muted); }
+a.pi-alert{ color:var(--cr-text); text-decoration:none; }
+a.pi-alert:active{ filter:brightness(.95); }
+.pi-alert-go{ font-weight:700; color:var(--pi-navy); white-space:nowrap; }
+[data-theme="dark"] .pi-alert-go,
+[data-theme="darkgray"] .pi-alert-go{ color:var(--pi-gold); }
+.pi-comp-legend{ margin:0 0 8px; }
+.pi-rate.pi-bad{ color:var(--pi-bad); font-weight:700; }
+.pi-rate.pi-good{ color:var(--pi-good); }
+.pi-chipset{ display:flex; gap:6px; overflow-x:auto; padding:2px 0 8px; margin-bottom:4px; scrollbar-width:none; }
+.pi-chipset::-webkit-scrollbar{ display:none; }
+.pi-chip{
+    flex:0 0 auto;
+    border:1px solid var(--cr-border);
+    background:transparent;
+    color:var(--cr-text-muted);
+    font-family:'KRASAR',sans-serif;
+    font-size:12.5px;
+    padding:5px 12px;
+    border-radius:999px;
+    cursor:pointer;
+}
+.pi-chip.is-active{ background:var(--pi-navy); border-color:var(--pi-navy); color:#fff; font-weight:700; }
+[data-theme="dark"] .pi-chip.is-active,
+[data-theme="darkgray"] .pi-chip.is-active{ background:var(--pi-gold); border-color:var(--pi-gold); color:#0D2D5C; }
+.pi-rank-val{ display:flex; flex-direction:column; align-items:flex-end; min-width:72px; }
+.pi-rank-val .ci-mini{ width:100%; }

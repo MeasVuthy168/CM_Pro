@@ -72,6 +72,8 @@ No Internet Connection
 
 <!-- ===== Data as of ===== -->
 
+<!-- ===== Summary (one line on how the portfolio moved) ===== -->
+<section class="pi-card ci-summary" id="piSummary" hidden aria-live="polite"></section>
 <!-- ===== Management alerts ===== -->
 <section class="pi-card" id="piAlertsCard" hidden>
 <h2 class="pi-card-title" data-i18n="creditreport.pi.alerts">Management Alerts</h2>
@@ -80,7 +82,7 @@ No Internet Connection
 
 <!-- ===== KPIs ===== -->
 <section aria-labelledby="piKpiTitle">
-<h2 class="pi-section-title" id="piKpiTitle" data-i18n="creditreport.pi.overview">Portfolio Overview</h2>
+<h2 class="pi-section-title" id="piKpiTitle"><span data-i18n="creditreport.pi.keyIndicators">Key indicators</span> <small class="pi-cmp-with" id="piCmpWith"></small></h2>
 <div class="pi-kpis" id="piKpis"></div>
 </section>
 
@@ -122,6 +124,7 @@ No Internet Connection
 <button type="button" role="tab" data-tab="location" data-i18n="creditreport.pi.byDistrict">District</button>
 </div>
 </div>
+<p class="pi-note pi-comp-legend" id="piCompLegend"></p>
 <div class="pi-bars" id="piComp"></div>
 <p class="pi-note" data-i18n="creditreport.pi.drillHint">Tap a row to open it in its Daily Monitoring report.</p>
 </section>
@@ -130,15 +133,8 @@ No Internet Connection
 <section class="pi-card" aria-labelledby="piTopTitle">
 <div class="pi-card-head">
 <h2 class="pi-card-title" id="piTopTitle" data-i18n="creditreport.pi.top10">Top 10</h2>
-<select id="piTopPick" class="pi-top-pick">
-<option value="officersNpl" data-i18n="creditreport.pi.topOfficersNpl">Officers — NPL outstanding</option>
-<option value="officersPar" data-i18n="creditreport.pi.topOfficersPar">Officers — PAR %</option>
-<option value="officersNplRise" data-i18n="creditreport.pi.topOfficersRise">Officers — NPL increase</option>
-<option value="branchesNplPct" data-i18n="creditreport.pi.topBranchesNpl">Branches — NPL ratio</option>
-<option value="productsNpl" data-i18n="creditreport.pi.topProductsNpl">Products — NPL outstanding</option>
-<option value="locationsNpl" data-i18n="creditreport.pi.topDistrictsNpl">Districts — NPL outstanding</option>
-</select>
 </div>
+<div class="pi-chipset" id="piTopPick" role="tablist" data-i18n-aria-label="creditreport.pi.top10"></div>
 <ol class="pi-rank" id="piTop"></ol>
 <p class="pi-note" id="piTopNote"></p>
 </section>
