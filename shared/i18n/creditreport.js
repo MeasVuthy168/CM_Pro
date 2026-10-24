@@ -611,7 +611,7 @@ CMI18n.register({
   "creditreport.risk.sum.above": { km: "{dim} ដែលអនុបាត NPL ខ្ពស់ជាងមធ្យម", en: "{dim} with NPL ratio above average" },
   "creditreport.risk.sum.totals": { km: "NPL សរុប {npl} · អនុបាត NPL {ratio} · PAR {par}", en: "Total NPL {npl} · NPL ratio {ratio} · PAR {par}" },
   "creditreport.risk.sum.none": { km: "គ្មាន NPL ក្នុងតម្រងនេះទេ", en: "No NPL in these filters" },
-  "creditreport.risk.sum.topOver": { km: "{name} មាន {share} នៃ NPL សរុប ({npl}) ខណៈសមតុល្យមានតែ {os}", en: "{name} holds {share} of all NPL ({npl}) but only {os} of the loans" },
+  "creditreport.risk.sum.topOver": { km: "{name} មាន {share} នៃ NPL សរុប ({npl}) ខណៈសមតុល្យឥណទានមានតែ {os}", en: "{name} holds {share} of all NPL ({npl}) but only {os} of the loans" },
   "creditreport.risk.sum.top": { km: "{name} មាន {share} នៃ NPL សរុប ({npl})", en: "{name} holds {share} of all NPL ({npl})" },
   "creditreport.risk.reconWhy": { km: "ឥណទានខ្លះមិនមានមន្ត្រី ផលិតផល ឬស្រុក ក្នុងបញ្ជីមេ ដូច្នេះវាមិនបានរាប់ក្នុងបញ្ជីនោះទេ។ NPL សរុបពិតប្រាកដ = សរុបតាមសាខា {npl}។", en: "Some loans have no officer, product or district in the master lists, so they are not counted in that list. The real NPL total is the branch total, {npl}." },
   "creditreport.risk.reconLine": { km: "សរុបតាម{dim}៖ {npl} (ខុស {diff})", en: "Total by {dim}: {npl} ({diff} apart)" },
