@@ -155,7 +155,6 @@
 }
 [data-theme="dark"] .ci-head .cr-info-value{ color:var(--cr-gold-light); }
 .ci-head .ci-info-wrap{ flex:0 1 auto; white-space:normal; }
-.ci-head .ci-info-reason{ font-weight:600; font-size:11.5px; color:var(--cr-text-muted); }
 .ci-period-btn{
     display:inline-flex;
     align-items:center;
@@ -893,3 +892,4 @@ button.ci-card{ width:100%; height:100%; }
 .ci-head .ci-side-row .cr-select-label::before{ content:"↳ "; color:var(--cr-text-muted); }
 .ci-head .ci-side-row .ci-seg{ justify-self:start; }
 .ci-seg button:disabled{ cursor:default; }
+.ci-head .ci-cmp-note{ margin:-2px 0 6px; color:var(--pi-warn); }

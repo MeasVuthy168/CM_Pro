@@ -204,11 +204,7 @@
 <span class="cr-info-label">${icon("warning")}<span>${esc(t("creditreport.detail.overdueGridMerge"))}</span></span>
 <span class="cr-info-value" id="ciInfoOd">-</span>
 </div>
-<div class="cr-info-row"${showCompare ? "" : " hidden"}>
-<span class="cr-info-label">${icon("trend-up")}<span>${esc(t("creditreport.ci.comparedWithLabel"))}</span></span>
-<span class="cr-info-value ci-info-wrap" id="ciInfoCmp">-</span>
-</div>
-<div class="cr-info-row">
+<div class="cr-info-row" id="ciStatusRow" hidden>
 <span class="cr-info-label">${icon("refresh")}<span>${esc(t("creditreport.ci.dataStatus"))}</span></span>
 <span class="cr-info-value" id="ciInfoStatus">-</span>
 </div>
@@ -231,6 +227,7 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
 <option value="date">${esc(t("creditreport.pi.compareDate"))}</option>
 </select></div>
 <div class="cr-select-row" id="ciCompareDateWrap" hidden><label for="ciCompareDate" class="cr-select-label">${esc(t("creditreport.ci.compareDay"))}</label><input type="date" id="ciCompareDate" class="cr-select"></div>
+<p class="pi-note ci-cmp-note" id="ciCmpNote" data-show-compare="${showCompare ? "1" : "0"}" hidden></p>
 </div>
 <div class="ci-head-foot">
 <p class="pi-note">${esc(t("creditreport.pi.focusNote"))}</p>
@@ -351,13 +348,22 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
         if (!a) return;
         set("ciInfoOs", esc(a.osText));
         set("ciInfoOd", esc(a.overdueText));
+        // Data status only speaks up when the data is late; up to date is
+        // the normal case and the date rows above already show the day.
+        const statusRow = document.getElementById("ciStatusRow");
+        if (statusRow) statusRow.hidden = !a.outdated;
         set("ciInfoStatus", a.outdated
             ? `<span class="pi-badge pi-badge-bad"><span aria-hidden="true">⚠</span> ${esc(t("creditreport.pi.outdated", { days: a.businessDaysBehind }))}</span>`
-            : `<span class="pi-badge pi-badge-good"><span aria-hidden="true">✓</span> ${esc(t("creditreport.pi.upToDate"))}</span>`);
+            : "");
+        // The "Compare with" select names the comparison; only say so when
+        // the chosen comparison has no saved day to compare against.
         const c = d.comparison;
-        set("ciInfoCmp", !c ? "-" : c.available
-            ? esc(dmy(c.date))
-            : `<span class="ci-info-reason">${esc(t(`creditreport.pi.cmpReason.${c.reason || "no_snapshot"}`))}</span>`);
+        const note = document.getElementById("ciCmpNote");
+        if (note) {
+            const off = !!c && !c.available;
+            note.hidden = !off || note.dataset.showCompare === "0";
+            note.textContent = off ? t(`creditreport.pi.cmpReason.${c.reason || "no_snapshot"}`) : "";
+        }
     }
 
     // ---------- fetch ----------
