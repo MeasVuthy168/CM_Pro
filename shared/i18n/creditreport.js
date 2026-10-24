@@ -379,7 +379,7 @@ CMI18n.register({
   "creditreport.pi.noAccess": { km: "គណនីរបស់អ្នកមិនទាន់មានសិទ្ធិមើលផលប័ត្រទេ (មិនមានសាខា ឬមន្ត្រី)។", en: "Your account has no portfolio to show yet (no branch or officer is set)." },
   "creditreport.pi.dataAsOf": { km: "ទិន្នន័យគិតត្រឹម", en: "Data as of" },
   "creditreport.pi.upToDate": { km: "ទាន់សម័យ", en: "Up to date" },
-  "creditreport.pi.outdated": { km: "ហួសសម័យ ({days} ថ្ងៃធ្វើការ)", en: "Outdated ({days} business days)" },
+  "creditreport.pi.outdated": { km: "ទិន្នន័យយឺត {days} ថ្ងៃ", en: "Data {days} days late" },
   "creditreport.pi.srcOs": { km: "NBC OS", en: "NBC OS" },
   "creditreport.pi.srcOverdue": { km: "NBC Overdue", en: "NBC Overdue" },
   "creditreport.pi.period": { km: "ការបញ្ចេញប្រាក់ពី {from} ដល់ {to}", en: "Disbursement {from} – {to}" },
