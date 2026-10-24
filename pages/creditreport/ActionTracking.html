@@ -119,7 +119,19 @@ No Internet Connection
 <input type="search" id="actSearch" class="ci-search" data-i18n-placeholder="creditreport.act.search" placeholder="Search action, loan, officer…">
 <span class="pi-note" id="actCount"></span>
 </div>
-<ul class="ci-act-list" id="actList"></ul>
+<div class="ci-toolbar" id="actTools">
+<select id="actFPriority" aria-label="Priority" data-i18n-aria-label="creditreport.act.priority"></select>
+<select id="actFBranch" aria-label="Branch" data-i18n-aria-label="creditreport.pi.branch"></select>
+<select id="actFSource" aria-label="From" data-i18n-aria-label="creditreport.act.source"></select>
+<select id="actSortSel" aria-label="Sort" data-i18n-aria-label="creditreport.list.sort"></select>
+<span class="ci-seg" id="actView" role="group">
+<button type="button" data-view="card" data-i18n="creditreport.list.cards">▦ Cards</button>
+<button type="button" data-view="list" data-i18n="creditreport.list.list">☰ List</button>
+</span>
+<button type="button" class="pi-btn-ghost ci-clear" id="actClear" hidden data-i18n="creditreport.list.clear">Clear filters</button>
+</div>
+<ul class="ci-cards" id="actList"></ul>
+<div class="pi-table-wrap ci-table-scroll" id="actTableWrap" hidden><table class="pi-table ci-table ci-act-table" id="actTable"></table></div>
 </section>
 
 <!-- Detail -->
