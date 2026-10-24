@@ -100,6 +100,8 @@ No Internet Connection
 <div class="pi-tabs ci-tabs-wide" role="tablist" id="nplTabs">
 <button type="button" role="tab" data-tab="new" data-i18n="creditreport.npl.tabNew">New NPL</button>
 <button type="button" role="tab" data-tab="recovered" data-i18n="creditreport.npl.tabRecovered">Recovered NPL</button>
+<button type="button" role="tab" data-tab="writeoff" data-i18n="creditreport.npl.tabWriteOff">To write-off</button>
+<button type="button" role="tab" data-tab="moved" hidden data-i18n="creditreport.npl.tabMoved">Moved NPL class</button>
 <button type="button" role="tab" data-tab="continuing" data-i18n="creditreport.npl.tabContinuing">Continuing NPL</button>
 <button type="button" role="tab" data-tab="balance" data-i18n="creditreport.npl.tabBalance">Balance Changes</button>
 </div>
@@ -127,8 +129,8 @@ No Internet Connection
 <ul>
 <li data-i18n="creditreport.npl.defOpening">Opening — NPL loans (Sub-Standard, Doubtful, Loss) saved on the last day before From.</li>
 <li data-i18n="creditreport.npl.defClosing">Closing — today's NBC Overdue NPL loans (or the day saved at To).</li>
-<li data-i18n="creditreport.npl.defCategories">New = only in Closing · Recovered = only in Opening · Continuing = in both. Each loan is compared once, so one that changed class several times is counted once.</li>
-<li data-i18n="creditreport.npl.defRecon">Closing = Opening + New − Recovered + Balance changes.</li>
+<li data-i18n="creditreport.npl.defCategories">New = only in Closing · Left = only in Opening, split into Recovered (upgraded, performing, closed), To write-off (NPL is not write-off) and, with an NPL class picked, Moved NPL class · Continuing = in both. Each loan is compared once.</li>
+<li data-i18n="creditreport.npl.defRecon">Closing = Opening + New − Recovered − To write-off (− Moved class) + Balance changes.</li>
 <li data-i18n="creditreport.npl.defClass">With an NPL class picked, opening and closing are that class's own balances; a loan that moves between NPL classes enters or leaves the class (shown as "moved to another NPL class").</li>
 <li data-i18n="creditreport.npl.defSide">NPL_Area and NPL_Own both come from NBC Overdue (3 classes: Sub-Standard, Doubtful, Loss): Own = loans under the CO's officer ID (column AJ, default); Area = loans whose CO Response name (column CE) is the officer, like the Daily Report.</li>
 <li data-i18n="creditreport.npl.defReasons">Reasons are only those officers documented in Reason Arrear — none is guessed.</li>

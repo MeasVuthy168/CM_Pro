@@ -476,7 +476,7 @@ CMI18n.register({
   "creditreport.npl.accountsN": { km: "{n} គណនី", en: "{n} accounts" },
   "creditreport.npl.continuingN": { km: "{n} នៅបន្ត", en: "{n} continuing" },
   "creditreport.npl.reconOk": { km: "ផ្ទៀងផ្ទាត់ត្រូវ", en: "Reconciled" },
-  "creditreport.npl.reconFormula": { km: "{opening} + {add} − {sub} + ({chg}) = {closing}", en: "{opening} + {add} − {sub} + ({chg}) = {closing}" },
+  "creditreport.npl.reconFormula": { km: "{opening} + {add} − {sub} − {wo} + ({chg}) = {closing}", en: "{opening} + {add} − {sub} − {wo} + ({chg}) = {closing}" },
   "creditreport.npl.reconBad": { km: "មិនត្រូវគ្នា {diff} — សូមរាយការណ៍", en: "Does not reconcile by {diff} — please report" },
   "creditreport.npl.exit.upgraded": { km: "ថ្នាក់ប្រសើរឡើង", en: "upgraded" },
   "creditreport.npl.exit.performing": { km: "ល្អធម្មតា", en: "performing" },
@@ -510,8 +510,8 @@ CMI18n.register({
   "creditreport.npl.noReasons": { km: "មិនទាន់មានមូលហេតុកត់ត្រា", en: "No documented reasons yet" },
   "creditreport.npl.defOpening": { km: "ដើមគ្រា — ឥណទាន NPL (ក្រោមស្តង់ដារ សង្ស័យ បាត់បង់) ដែលរក្សាទុកនៅថ្ងៃចុងក្រោយមុន ពីថ្ងៃ។", en: "Opening — NPL loans (Sub-Standard, Doubtful, Loss) saved on the last day before From." },
   "creditreport.npl.defClosing": { km: "ចុងគ្រា — ឥណទាន NPL ក្នុង NBC Overdue បច្ចុប្បន្ន (ឬថ្ងៃដែលរក្សាទុកនៅ ដល់ថ្ងៃ)។", en: "Closing — today's NBC Overdue NPL loans (or the day saved at To)." },
-  "creditreport.npl.defCategories": { km: "ថ្មី = មានតែចុងគ្រា · ប្រមូលបាន = មានតែដើមគ្រា · នៅបន្ត = មានទាំងពីរ។ ឥណទាននីមួយៗប្រៀបធៀបម្តង ដូច្នេះប្តូរថ្នាក់ច្រើនដងក៏រាប់ម្តងដែរ។", en: "New = only in Closing · Recovered = only in Opening · Continuing = in both. Each loan is compared once, so one that changed class several times is counted once." },
-  "creditreport.npl.defRecon": { km: "ចុងគ្រា = ដើមគ្រា + ថ្មី − ប្រមូលបាន + ប្រែប្រួលសមតុល្យ។", en: "Closing = Opening + New − Recovered + Balance changes." },
+  "creditreport.npl.defCategories": { km: "ថ្មី = មានតែចុងគ្រា · ចេញ = មានតែដើមគ្រា ដែលបែងចែកជា ប្រមូលបាន (ប្រសើរថ្នាក់ ល្អធម្មតា បិទ) ចេញទៅ WO (NPL មិនមែន WO) និង ប្តូរចំណាត់ថ្នាក់ NPL (តែពេលជ្រើសចំណាត់ថ្នាក់) · នៅបន្ត = មានទាំងពីរ។ ឥណទាននីមួយៗប្រៀបធៀបតែម្តង។", en: "New = only in Closing · Left = only in Opening, split into Recovered (upgraded, performing, closed), To write-off (NPL is not write-off) and, with an NPL class picked, Moved NPL class · Continuing = in both. Each loan is compared once." },
+  "creditreport.npl.defRecon": { km: "ចុងគ្រា = ដើមគ្រា + ថ្មី − ប្រមូលបាន − ចេញទៅ WO (− ប្តូរចំណាត់ថ្នាក់) + ប្រែប្រួលសមតុល្យ។", en: "Closing = Opening + New − Recovered − To write-off (− Moved class) + Balance changes." },
   "creditreport.npl.defReasons": { km: "មូលហេតុ គឺតែអ្វីដែលមន្ត្រីបានកត់ត្រាក្នុង Reason Arrear — គ្មានការទាយទេ។", en: "Reasons are only those officers documented in Reason Arrear — none is guessed." },
 
   "creditreport.risk.title": { km: "វិភាគហានិភ័យ", en: "Risk Intelligence" },
@@ -708,5 +708,9 @@ CMI18n.register({
   "creditreport.ci.periodRecovery": { km: "ការប្រមូលចាប់ពី", en: "Collections from" },
   "creditreport.npl.viewMovement": { km: "ចលនា NPL", en: "NPL Movement" },
   "creditreport.npl.viewRecovery": { km: "ការប្រមូល NPL", en: "NPL Recovery" },
-  "creditreport.rec.kMoved": { km: "ប្តូរទៅចំណាត់ថ្នាក់ NPL ផ្សេង (មិនមែនការប្រមូល)", en: "Moved to another NPL class (not recovery)" }
+  "creditreport.rec.kMoved": { km: "ប្តូរទៅចំណាត់ថ្នាក់ NPL ផ្សេង (មិនមែនការប្រមូល)", en: "Moved to another NPL class (not recovery)" },
+  "creditreport.npl.step.writeOff": { km: "ចេញទៅ WO", en: "To write-off" },
+  "creditreport.npl.step.moved": { km: "ប្តូរចំណាត់ថ្នាក់ NPL", en: "Moved NPL class" },
+  "creditreport.npl.tabWriteOff": { km: "ចេញទៅ WO", en: "To write-off" },
+  "creditreport.npl.tabMoved": { km: "ប្តូរចំណាត់ថ្នាក់ NPL", en: "Moved NPL class" }
 });

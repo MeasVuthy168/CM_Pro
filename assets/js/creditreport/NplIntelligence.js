@@ -9,7 +9,6 @@
 
 const t = CI.t;
 const NPL_PAGE = 50;
-const NPL_STEP_TONE = { opening: "base", new: "bad", recovered: "good", balanceChange: null, closing: "base" };
 
 let nplData = null;
 let nplTab = "new";
@@ -102,6 +101,8 @@ function nplRenderWaterfall(m) {
     });
     const colorOf = b => {
         if (b.step === "opening" || b.step === "closing") return col.a;
+        // Leaving NPL by write-off or class move is not recovery: neutral.
+        if (b.step === "writeOff" || b.step === "moved") return col.b;
         return b.value > 0 ? col.bad : col.good;
     };
     nplChart = new Chart(document.getElementById("nplWaterfall"), {
@@ -134,24 +135,29 @@ function nplRenderWaterfall(m) {
 
 function nplRenderSteps(m) {
     const tt = m.totals;
-    const exits = Object.entries(tt.recovered.byExit || {})
+    // Recovered excludes write-off and NPL class moves (own steps below).
+    const NOT_RECOVERY = ["written_off", "class_changed"];
+    const exits = Object.entries(tt.recovered.byExit || {}).filter(([k]) => !NOT_RECOVERY.includes(k))
         .map(([k, v]) => `${nplExitText(k)} ${v.count} · ${CI.money(v.bal)}`).join(" · ");
+    const ex = m.exits || { recovered: tt.recovered, writeOff: { count: 0, bal: 0 }, moved: { count: 0, bal: 0 } };
     const card = (step, value, count, sub, tone) => `
         <div class="ci-step ci-step-${tone || "base"}">
             <div class="pi-kpi-label">${CI.esc(nplStepLabel(step))}</div>
-            <div class="ci-step-value">${CI.esc(step === "recovered" ? CI.money(-Math.abs(value)) : (step === "new" ? "+" : "") + CI.money(value))}</div>
+            <div class="ci-step-value">${CI.esc(["recovered", "writeOff", "moved"].includes(step) ? CI.money(-Math.abs(value)) : (step === "new" ? "+" : "") + CI.money(value))}</div>
             <div class="pi-kpi-sub">${CI.esc(t("creditreport.npl.accountsN", { n: CI.num(count) }))}${sub ? ` · ${CI.esc(sub)}` : ""}</div>
         </div>`;
     const bc = tt.balanceChange;
     document.getElementById("nplSteps").innerHTML =
         card("opening", tt.opening.bal, tt.opening.count, "", "base") +
         card("new", tt.new.bal, tt.new.count, "", "bad") +
-        card("recovered", tt.recovered.bal, tt.recovered.count, exits, "good") +
+        card("recovered", ex.recovered.bal, ex.recovered.count, exits, "good") +
+        card("writeOff", ex.writeOff.bal, ex.writeOff.count, "", "base") +
+        (ex.moved.count ? card("moved", ex.moved.bal, ex.moved.count, "", "base") : "") +
         card("balanceChange", bc, tt.continuing.count, t("creditreport.npl.continuingN", { n: CI.num(tt.continuing.count) }), bc > 0 ? "bad" : bc < 0 ? "good" : "base") +
         card("closing", tt.closing.bal, tt.closing.count, "", "base");
     const r = tt.reconciliation;
     document.getElementById("nplRecon").innerHTML = r.ok
-        ? `<span class="pi-badge pi-badge-good"><span aria-hidden="true">✓</span> ${CI.esc(t("creditreport.npl.reconOk"))}</span> ${CI.esc(t("creditreport.npl.reconFormula", { opening: CI.money(tt.opening.bal), add: CI.money(tt.new.bal), sub: CI.money(tt.recovered.bal), chg: CI.money(bc), closing: CI.money(tt.closing.bal) }))}`
+        ? `<span class="pi-badge pi-badge-good"><span aria-hidden="true">✓</span> ${CI.esc(t("creditreport.npl.reconOk"))}</span> ${CI.esc(t("creditreport.npl.reconFormula", { opening: CI.money(tt.opening.bal), add: CI.money(tt.new.bal), sub: CI.money(ex.recovered.bal), wo: CI.money(ex.writeOff.bal + ex.moved.bal), chg: CI.money(bc), closing: CI.money(tt.closing.bal) }))}`
         : `<span class="pi-badge pi-badge-bad"><span aria-hidden="true">⚠</span> ${CI.esc(t("creditreport.npl.reconBad", { diff: CI.money(r.diff) }))}</span>`;
 }
 
@@ -177,6 +183,9 @@ const NPL_COLS = [
 function nplRowsOfTab() {
     const all = nplData.accounts || [];
     if (nplTab === "balance") return all.filter(a => a.category === "continuing" && a.change !== 0);
+    if (nplTab === "writeoff") return all.filter(a => a.category === "recovered" && a.exit === "written_off");
+    if (nplTab === "moved") return all.filter(a => a.category === "recovered" && a.exit === "class_changed");
+    if (nplTab === "recovered") return all.filter(a => a.category === "recovered" && a.exit !== "written_off" && a.exit !== "class_changed");
     return all.filter(a => a.category === nplTab);
 }
 
@@ -196,11 +205,17 @@ function nplVisibleRows() {
 }
 
 function nplCategoryText(a) {
+    if (a.exit === "written_off") return t("creditreport.npl.step.writeOff");
+    if (a.exit === "class_changed") return t("creditreport.npl.step.moved");
     const base = t(`creditreport.npl.cat.${a.category}`);
     return a.exit ? `${base} · ${nplExitText(a.exit)}` : base;
 }
 
 function nplRenderTable() {
+    // "Moved NPL class" exists only with an NPL class filter.
+    const hasMoved = !!(nplData.movement && nplData.movement.exits && nplData.movement.exits.moved.count);
+    document.querySelector('#nplTabs [data-tab="moved"]').hidden = !hasMoved;
+    if (nplTab === "moved" && !hasMoved) nplTab = "new";
     document.querySelectorAll("#nplTabs [data-tab]").forEach(b => {
         const on = b.dataset.tab === nplTab;
         b.classList.toggle("is-active", on);
