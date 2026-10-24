@@ -18,7 +18,6 @@ let riskDim = new URLSearchParams(location.search).get("dim") || "branch";
 let riskData = null;
 let qualityData = null;
 let gChart = null;
-const riskCharts = {};      // charts drawn under the tables, by canvas id
 let cList = "top";          // Contributors: which top-10 list
 let gQuad = "";             // Growth vs Risk: quadrant the table is narrowed to
 let gSettingsLoaded = false;
@@ -112,113 +111,6 @@ function riskSummary({ head, tone, sub, parts }) {
         ${sub ? `<div class="ci-sum-sub">${CI.esc(sub)}</div>` : ""}
         ${parts && parts.length ? `<div class="ci-sum-parts">${parts.map(([label, v, tn]) => `<span class="ci-sum-part is-${tn || ""}">${CI.esc(label)} <b>${CI.esc(v)}</b></span>`).join("")}</div>` : ""}`;
 }
-
-// A horizontal bar chart under a table. fmt formats the values (money
-// or %); the box grows with the number of rows so labels stay readable.
-function riskBarChart(id, labels, datasets, fmt) {
-    if (riskCharts[id]) { riskCharts[id].destroy(); delete riskCharts[id]; }
-    const canvas = document.getElementById(id);
-    const fig = canvas.closest("figure");
-    fig.hidden = !labels.length;
-    if (!labels.length || typeof Chart === "undefined") return;
-    canvas.parentElement.style.height = `${Math.max(140, labels.length * (datasets.length > 1 ? 18 * datasets.length + 10 : 30) + 50)}px`;
-    const col = CI.chartColors();
-    const font = { family: "KRASAR, sans-serif", size: 11 };
-    riskCharts[id] = new Chart(canvas, {
-        type: "bar",
-        data: { labels, datasets },
-        options: {
-            indexAxis: "y", responsive: true, maintainAspectRatio: false, animation: false,
-            plugins: {
-                legend: { display: datasets.length > 1, position: "top", align: "start", labels: { color: col.text, font, boxWidth: 10, boxHeight: 10 } },
-                tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt(c.parsed.x)}` } }
-            },
-            scales: {
-                x: { grid: { color: col.grid }, border: { display: false }, ticks: { color: col.text, font, callback: v => fmt(v, true) } },
-                y: { grid: { display: false }, ticks: { color: col.text, font } }
-            }
-        }
-    });
-}
-// Donut (pie) charts. Colours are fixed by slot and were checked for
-// colour-blind separation in both themes, the wrap-around pair included;
-// past six slices the rest folds into a neutral "Other".
-const RISK_SLOTS = {
-    light: ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300"],
-    dark: ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300"]
-};
-const RISK_OTHER = { light: "#8a8f98", dark: "#6b7280" };
-// NBC classes: Normal, Special Mention, Sub-Standard, Doubtful, Loss.
-const RISK_CLASS_COLORS = {
-    light: ["#2a78d6", "#eda100", "#e87ba4", "#6250d6", "#e34948"],
-    dark: ["#3987e5", "#c98500", "#d55181", "#9085e9", "#e66767"]
-};
-// PAR 1 → 90: one blue hue, more prominent as loans get later.
-const RISK_PAR_RAMP = {
-    light: ["#86b6ef", "#3987e5", "#1c5cab", "#0d366b"],
-    dark: ["#184f95", "#2a78d6", "#5598e7", "#b7d3f6"]
-};
-function riskTheme() {
-    return ["dark", "darkgray"].includes(document.documentElement.getAttribute("data-theme")) ? "dark" : "light";
-}
-
-// rings: [{ label, values }] (outer first); center: { title, value };
-// legend: HTML list items, one per slice.
-function riskDonut(id, labels, colors, rings, center, legendHtml, fmt) {
-    if (riskCharts[id]) { riskCharts[id].destroy(); delete riskCharts[id]; }
-    const canvas = document.getElementById(id);
-    const fig = canvas.closest("figure");
-    fig.hidden = !labels.length;
-    document.getElementById(`${id}Legend`).innerHTML = legendHtml;
-    if (!labels.length || typeof Chart === "undefined") return;
-    const col = CI.chartColors();
-    const centerText = {
-        id: "ciDonutCenter",
-        afterDraw(chart) {
-            const { ctx, chartArea: a } = chart;
-            const x = (a.left + a.right) / 2, y = (a.top + a.bottom) / 2;
-            ctx.save();
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillStyle = col.text;
-            ctx.font = "11px KRASAR, sans-serif";
-            ctx.fillText(center.title, x, y - 10);
-            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--cr-text").trim() || col.text;
-            ctx.font = "bold 15px KRASAR, sans-serif";
-            ctx.fillText(center.value, x, y + 9);
-            ctx.restore();
-        }
-    };
-    riskCharts[id] = new Chart(canvas, {
-        type: "doughnut",
-        data: {
-            labels,
-            datasets: rings.map((r, i) => ({
-                label: r.label, data: r.values, backgroundColor: colors,
-                borderColor: col.surface, borderWidth: 2, borderRadius: 4, hoverOffset: 6,
-                weight: i === 0 ? 1.4 : 1
-            }))
-        },
-        plugins: [centerText],
-        options: {
-            responsive: true, maintainAspectRatio: false, animation: { duration: 350 },
-            cutout: rings.length > 1 ? "48%" : "66%",
-            layout: { padding: 6 },
-            plugins: {
-                legend: { display: false },
-                tooltip: { callbacks: { label: c => ` ${c.label} · ${c.dataset.label}: ${fmt(c.parsed)}` } }
-            }
-        }
-    });
-}
-const riskDot = color => `<span class="ci-donut-dot" style="background:${color}" aria-hidden="true"></span>`;
-
-const riskPctFmt = v => `${(v * 100).toFixed(v * 100 >= 10 ? 0 : 1)}%`;
-const riskMoneyFmt = (v, short) => {
-    if (!short) return CI.money(v);
-    const a = Math.abs(v);
-    return a >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : a >= 1e3 ? `$${(v / 1e3).toFixed(0)}K` : `$${v}`;
-};
 
 // ---------- Module 03 — Top Risk Contributors ----------
 const C_LISTS = [["top", "creditreport.risk.listTop"], ["bottom", "creditreport.risk.listBottom"], ["par", "creditreport.risk.listPar"], ["growth", "creditreport.risk.listGrowth"], ["newNpl", "creditreport.risk.listNew"]];
@@ -316,27 +208,6 @@ function cRender() {
         `<tbody>${rows.map(r => `<tr>${cols.map(([k]) => cell(r, k)).join("")}</tr>`).join("")}</tbody>` +
         `<tfoot><tr><th>${CI.esc(t("creditreport.risk.total"))}</th><th class="num">${CI.money(tot.os)}</th><th class="num">${CI.money(tot.nplValue)}</th><th class="num">${CI.num(tot.npl)}</th><th class="num">${CI.pct(tot.nplPct)}</th><th class="num">${CI.pct(tot.parPct)}</th><th class="num">${CI.signedPct(tot.nplGrowth)}</th><th></th><th class="num">100%</th></tr></tfoot>`;
 
-    // Donut under the table: outer ring = share of NPL, inner ring = share
-    // of outstanding, for the whole dimension (six largest + Other).
-    const theme = riskTheme();
-    const byNpl = (d.rows || []).filter(r => r.nplValue > 0 || r.os > 0).sort((a, b) => b.nplValue - a.nplValue);
-    const shown = byNpl.slice(0, 6);
-    const rest = byNpl.slice(6);
-    const sliceRows = shown.map((r, i) => ({ name: riskName(r), npl: r.contribution || 0, os: totOs ? r.os / totOs : 0, color: RISK_SLOTS[theme][i] }));
-    if (rest.length) sliceRows.push({
-        name: t("creditreport.risk.other", { n: rest.length }),
-        npl: rest.reduce((s2, r) => s2 + (r.contribution || 0), 0),
-        os: totOs ? rest.reduce((s2, r) => s2 + r.os, 0) / totOs : 0,
-        color: RISK_OTHER[theme]
-    });
-    riskDonut("riskChart", sliceRows.map(x => x.name), sliceRows.map(x => x.color), [
-        { label: t("creditreport.risk.contribution"), values: sliceRows.map(x => x.npl) },
-        { label: t("creditreport.risk.osShare"), values: sliceRows.map(x => x.os) }
-    ], { title: t("creditreport.risk.nplTotal"), value: riskMoneyFmt((d.total || {}).nplValue || 0, true) },
-    sliceRows.map(x => `<li>${riskDot(x.color)}<span class="ci-donut-name">${CI.esc(x.name)}</span>
-        <span class="ci-donut-val"><span class="pi-rate${x.npl > x.os ? " pi-bad" : ""}">NPL ${CI.pct(x.npl, 1)}</span> · ${CI.esc(t("creditreport.risk.osShortShare"))} ${CI.pct(x.os, 1)}</span></li>`).join(""),
-    riskPctFmt);
-
     // The four dimensions add up to the same portfolio. When one doesn't
     // (loans with no officer / product / district in the lists), say why
     // in a folded note instead of a line of jargon under the table.
@@ -389,18 +260,6 @@ function qRender() {
             return `<tr${isNpl ? ' class="ci-npl-cls"' : ""}><td>${CI.esc(t(label))}${isNpl ? ' <span class="ci-npl-tag">NPL</span>' : ""}</td><td class="num">${CI.num(c.count)}</td><td class="num">${CI.money(c.value)}</td><td class="num">${CI.pct(c.pct)}<div class="ci-mini${isNpl ? " is-bad" : ""}"><span style="width:${(c.pct / maxPct * 100).toFixed(1)}%"></span></div></td></tr>`;
         }).join("") + "</tbody>" +
         `<tfoot><tr><th>${CI.esc(t("creditreport.risk.nplTotal"))}</th><th class="num">${CI.num(nplSum.count)}</th><th class="num">${CI.money(nplSum.value)}</th><th class="num">${CI.pct(nplSum.pct)}</th></tr></tfoot>`;
-    // Donut: each class's share of all overdue loans (NBC Overdue).
-    const theme = riskTheme();
-    const odTotal = Q_CLASSES.reduce((s2, c) => s2 + d.classes[c[0]].value, 0);
-    riskDonut("qClassChart", Q_CLASSES.map(c => t(c[1])), RISK_CLASS_COLORS[theme],
-        [{ label: t("creditreport.quality.amount"), values: Q_CLASSES.map(c => d.classes[c[0]].value) }],
-        { title: t("creditreport.quality.odTotal"), value: riskMoneyFmt(odTotal, true) },
-        Q_CLASSES.map(([k, label, isNpl], i) => {
-            const c = d.classes[k];
-            return `<li>${riskDot(RISK_CLASS_COLORS[theme][i])}<span class="ci-donut-name">${CI.esc(t(label))}${isNpl ? ' <span class="ci-npl-tag">NPL</span>' : ""}</span>
-                <span class="ci-donut-val">${CI.money(c.value)} · ${CI.pct(odTotal ? c.value / odTotal : 0, 1)}</span></li>`;
-        }).join(""),
-        riskMoneyFmt);
 
     // Risk distribution as cards: each rate red above the portfolio's, green below.
     const os = d.outstanding || 0;
@@ -424,13 +283,6 @@ function qRender() {
             <div class="ci-dist-rates">${rate("PAR 1", r.par1.pct, avg.par1)}${rate("PAR 30", r.par30.pct, avg.par30)}${rate("PAR 60", r.par60.pct, avg.par60)}${rate("PAR 90", r.par90.pct, avg.par90)}${rate(t("creditreport.pi.kNplPct"), r.nplPct, avg.npl)}</div>
         </${tag}>`;
     }).join("") : `<p class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</p>`;
-    // Chart under the cards: PAR 1/30/60/90 of the 10 rows with the most PAR 30.
-    const top = dist.slice(0, 10);
-    document.getElementById("qDistChartTitle").textContent = t(dist.length > 10 ? "creditreport.quality.chartDistTop" : "creditreport.quality.chartDist");
-    const shade = RISK_PAR_RAMP[theme];
-    riskBarChart("qDistChart", top.map(r => riskDim === "location" && !r.name ? t("creditreport.pi.otherAddress") : r.name),
-        [1, 30, 60, 90].map((n, i) => ({ label: `PAR ${n}`, data: top.map(r => r[`par${n}`].pct), backgroundColor: shade[i], borderRadius: 4, borderSkipped: "start", barPercentage: 0.9, categoryPercentage: 0.75 })),
-        riskPctFmt);
     try { document.getElementById("qTrendLink").href = `PortfolioIntelligence.html?${CI.query().toString()}`; } catch (e) { /* keep the plain link */ }
 }
 
@@ -641,8 +493,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("gSave").addEventListener("click", gSaveSettings);
     new MutationObserver(() => {
         if (riskView === "growth" && riskData) gRender();
-        if (riskView === "contributors" && riskData) cRender();
-        if (riskView === "quality" && qualityData) qRender();
     }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     riskLoad();
 });

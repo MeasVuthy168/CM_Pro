@@ -105,11 +105,6 @@ No Internet Connection
 <summary data-i18n="creditreport.pi.showTable">Show as table</summary>
 <div class="pi-table-wrap ci-table-scroll"><table class="pi-table ci-table" id="riskTable"></table></div>
 </details>
-<figure class="pi-chart ci-under-chart ci-donut">
-<figcaption data-i18n="creditreport.risk.chartShares">Share of NPL vs share of outstanding</figcaption>
-<p class="pi-note" data-i18n="creditreport.risk.chartSharesNote">Outer ring = share of NPL · inner ring = share of outstanding</p>
-<div class="ci-donut-row"><div class="ci-donut-box"><canvas id="riskChart" role="img" data-i18n-aria-label="creditreport.risk.chartShares"></canvas></div><ul class="ci-donut-legend" id="riskChartLegend"></ul></div>
-</figure>
 <details class="pi-table-toggle ci-recon" id="riskReconBox" hidden>
 <summary data-i18n="creditreport.risk.reconQ">Why don't the totals by officer / product / district match?</summary>
 <p class="pi-note" id="riskRecon"></p>
@@ -127,19 +122,11 @@ No Internet Connection
 <section class="pi-card">
 <h2 class="pi-card-title" data-i18n="creditreport.quality.classes">NBC Classification</h2>
 <div class="pi-table-wrap"><table class="pi-table ci-table" id="qClasses"></table></div>
-<figure class="pi-chart ci-under-chart ci-donut">
-<figcaption data-i18n="creditreport.quality.chartClasses">Amount by NBC class</figcaption>
-<div class="ci-donut-row"><div class="ci-donut-box"><canvas id="qClassChart" role="img" data-i18n-aria-label="creditreport.quality.chartClasses"></canvas></div><ul class="ci-donut-legend" id="qClassChartLegend"></ul></div>
-</figure>
 </section>
 <section class="pi-card">
 <h2 class="pi-card-title" data-i18n="creditreport.quality.distribution">Risk Distribution</h2>
 <p class="pi-note" id="qDistLegend"></p>
 <div class="ci-dist" id="qDist"></div>
-<figure class="pi-chart ci-under-chart">
-<figcaption id="qDistChartTitle"></figcaption>
-<div class="pi-chart-box" id="qDistChartBox"><canvas id="qDistChart" role="img" data-i18n-aria-label="creditreport.quality.distribution"></canvas></div>
-</figure>
 </section>
 <p class="pi-note ci-trend-link"><a href="PortfolioIntelligence.html" id="qTrendLink" data-i18n="creditreport.risk.trendLink">See the NPL / PAR trend on Portfolio Overview ›</a></p>
 </div>
