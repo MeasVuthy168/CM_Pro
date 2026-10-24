@@ -18,6 +18,7 @@ let riskDim = new URLSearchParams(location.search).get("dim") || "branch";
 let riskData = null;
 let qualityData = null;
 let gChart = null;
+const riskCharts = {};      // charts drawn under the tables, by canvas id
 let cList = "top";          // Contributors: which top-10 list
 let gQuad = "";             // Growth vs Risk: quadrant the table is narrowed to
 let gSettingsLoaded = false;
@@ -111,6 +112,40 @@ function riskSummary({ head, tone, sub, parts }) {
         ${sub ? `<div class="ci-sum-sub">${CI.esc(sub)}</div>` : ""}
         ${parts && parts.length ? `<div class="ci-sum-parts">${parts.map(([label, v, tn]) => `<span class="ci-sum-part is-${tn || ""}">${CI.esc(label)} <b>${CI.esc(v)}</b></span>`).join("")}</div>` : ""}`;
 }
+
+// A horizontal bar chart under a table. fmt formats the values (money
+// or %); the box grows with the number of rows so labels stay readable.
+function riskBarChart(id, labels, datasets, fmt) {
+    if (riskCharts[id]) { riskCharts[id].destroy(); delete riskCharts[id]; }
+    const canvas = document.getElementById(id);
+    const fig = canvas.closest("figure");
+    fig.hidden = !labels.length;
+    if (!labels.length || typeof Chart === "undefined") return;
+    canvas.parentElement.style.height = `${Math.max(140, labels.length * (datasets.length > 1 ? 18 * datasets.length + 10 : 30) + 50)}px`;
+    const col = CI.chartColors();
+    const font = { family: "KRASAR, sans-serif", size: 11 };
+    riskCharts[id] = new Chart(canvas, {
+        type: "bar",
+        data: { labels, datasets },
+        options: {
+            indexAxis: "y", responsive: true, maintainAspectRatio: false, animation: false,
+            plugins: {
+                legend: { display: datasets.length > 1, position: "top", align: "start", labels: { color: col.text, font, boxWidth: 10, boxHeight: 10 } },
+                tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt(c.parsed.x)}` } }
+            },
+            scales: {
+                x: { grid: { color: col.grid }, border: { display: false }, ticks: { color: col.text, font, callback: v => fmt(v, true) } },
+                y: { grid: { display: false }, ticks: { color: col.text, font } }
+            }
+        }
+    });
+}
+const riskPctFmt = v => `${(v * 100).toFixed(v * 100 >= 10 ? 0 : 1)}%`;
+const riskMoneyFmt = (v, short) => {
+    if (!short) return CI.money(v);
+    const a = Math.abs(v);
+    return a >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : a >= 1e3 ? `$${(v / 1e3).toFixed(0)}K` : `$${v}`;
+};
 
 // ---------- Module 03 — Top Risk Contributors ----------
 const C_LISTS = [["top", "creditreport.risk.listTop"], ["bottom", "creditreport.risk.listBottom"], ["par", "creditreport.risk.listPar"], ["growth", "creditreport.risk.listGrowth"], ["newNpl", "creditreport.risk.listNew"]];
@@ -208,6 +243,13 @@ function cRender() {
         `<tbody>${rows.map(r => `<tr>${cols.map(([k]) => cell(r, k)).join("")}</tr>`).join("")}</tbody>` +
         `<tfoot><tr><th>${CI.esc(t("creditreport.risk.total"))}</th><th class="num">${CI.money(tot.os)}</th><th class="num">${CI.money(tot.nplValue)}</th><th class="num">${CI.num(tot.npl)}</th><th class="num">${CI.pct(tot.nplPct)}</th><th class="num">${CI.pct(tot.parPct)}</th><th class="num">${CI.signedPct(tot.nplGrowth)}</th><th></th><th class="num">100%</th></tr></tfoot>`;
 
+    // Chart under the table: each row's share of NPL against its share of outstanding.
+    const colC = CI.chartColors();
+    riskBarChart("riskChart", rows.map(riskName), [
+        { label: t("creditreport.risk.contribution"), data: rows.map(r => r.contribution), backgroundColor: colC.bad, borderRadius: 3 },
+        { label: t("creditreport.risk.osShare"), data: rows.map(r => totOs ? r.os / totOs : 0), backgroundColor: colC.a, borderRadius: 3 }
+    ], riskPctFmt);
+
     // The four dimensions add up to the same portfolio. When one doesn't
     // (loans with no officer / product / district in the lists), say why
     // in a folded note instead of a line of jargon under the table.
@@ -238,11 +280,18 @@ function qRender() {
         sub: t("creditreport.risk.sum.nplClasses", { value: CI.money(nplSum.value), n: CI.num(nplSum.count), pct: CI.pct(nplSum.pct) }),
         parts: [["PAR 1", CI.pct(a.par1.pct)], ["PAR 60", CI.pct(a.par60.pct)], ["PAR 90", CI.pct(a.par90.pct)]]
     });
-    document.getElementById("qAging").innerHTML = [1, 30, 60, 90].map(n => {
-        const x = a[`par${n}`];
-        return `<div class="ci-age"><div class="pi-kpi-label">PAR ${n}${CI.infoBtn()}</div><div class="ci-step-value">${CI.pct(x.pct)}</div><div class="pi-kpi-sub">${CI.money(x.value)} · ${CI.esc(t("creditreport.npl.accountsN", { n: CI.num(x.count) }))}</div>${CI.tip(`creditreport.risk.tip.par${n}`)}</div>`;
-    }).join("");
-    document.getElementById("qAgingNote").textContent = t("creditreport.quality.agingNote", { os: CI.money(d.outstanding), date: CI.dmy(d.overdueAsOf) });
+    // NBC "Normal" class split by days late (1-4 / 5-9 / 10-19 / 20-30).
+    const nb = d.normal;
+    document.getElementById("qAging").innerHTML = !nb ? `<p class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</p>` : nb.bands.map((b, i) => `
+        <div class="ci-age"><div class="pi-kpi-label">${CI.esc(t("creditreport.quality.bandDays", { from: b.from, to: b.to }))}${CI.infoBtn()}</div>
+            <div class="ci-step-value">${CI.pct(b.pct)}</div>
+            <div class="pi-kpi-sub">${CI.money(b.value)} · ${CI.esc(t("creditreport.npl.accountsN", { n: CI.num(b.count) }))}</div>
+            <div class="pi-kpi-sub">${CI.esc(t("creditreport.quality.ofNormal", { pct: CI.pct(b.ofNormal, 1) }))}</div>
+            ${CI.tip(`creditreport.quality.tip.band${i + 1}`)}</div>`).join("");
+    document.getElementById("qAgingNote").textContent = !nb ? "" : [
+        t("creditreport.quality.normalNote", { value: CI.money(nb.total.value), n: CI.num(nb.total.count), os: CI.money(d.outstanding), date: CI.dmy(d.overdueAsOf) }),
+        nb.outside.count ? t("creditreport.quality.normalOutside", { n: CI.num(nb.outside.count), value: CI.money(nb.outside.value) }) : ""
+    ].filter(Boolean).join(" ");
 
     // NBC classes with a bar each; the three NPL classes are marked and totalled.
     const maxPct = Math.max(...Q_CLASSES.map(c => d.classes[c[0]].pct), 1e-9);
@@ -253,6 +302,13 @@ function qRender() {
             return `<tr${isNpl ? ' class="ci-npl-cls"' : ""}><td>${CI.esc(t(label))}${isNpl ? ' <span class="ci-npl-tag">NPL</span>' : ""}</td><td class="num">${CI.num(c.count)}</td><td class="num">${CI.money(c.value)}</td><td class="num">${CI.pct(c.pct)}<div class="ci-mini${isNpl ? " is-bad" : ""}"><span style="width:${(c.pct / maxPct * 100).toFixed(1)}%"></span></div></td></tr>`;
         }).join("") + "</tbody>" +
         `<tfoot><tr><th>${CI.esc(t("creditreport.risk.nplTotal"))}</th><th class="num">${CI.num(nplSum.count)}</th><th class="num">${CI.money(nplSum.value)}</th><th class="num">${CI.pct(nplSum.pct)}</th></tr></tfoot>`;
+    const colQ = CI.chartColors();
+    riskBarChart("qClassChart", Q_CLASSES.map(c => t(c[1])), [{
+        label: t("creditreport.quality.amount"),
+        data: Q_CLASSES.map(c => d.classes[c[0]].value),
+        backgroundColor: Q_CLASSES.map(c => c[2] ? colQ.bad : c[0] === "specialMention" ? colQ.b : colQ.a),
+        borderRadius: 3
+    }], riskMoneyFmt);
 
     // Risk distribution as cards: each rate red above the portfolio's, green below.
     const os = d.outstanding || 0;
@@ -276,6 +332,13 @@ function qRender() {
             <div class="ci-dist-rates">${rate("PAR 1", r.par1.pct, avg.par1)}${rate("PAR 30", r.par30.pct, avg.par30)}${rate("PAR 60", r.par60.pct, avg.par60)}${rate("PAR 90", r.par90.pct, avg.par90)}${rate(t("creditreport.pi.kNplPct"), r.nplPct, avg.npl)}</div>
         </${tag}>`;
     }).join("") : `<p class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</p>`;
+    // Chart under the cards: PAR 1/30/60/90 of the 10 rows with the most PAR 30.
+    const top = dist.slice(0, 10);
+    document.getElementById("qDistChartTitle").textContent = t(dist.length > 10 ? "creditreport.quality.chartDistTop" : "creditreport.quality.chartDist");
+    const shade = [colQ.a, colQ.b, "#C2410C", colQ.bad];
+    riskBarChart("qDistChart", top.map(r => riskDim === "location" && !r.name ? t("creditreport.pi.otherAddress") : r.name),
+        [1, 30, 60, 90].map((n, i) => ({ label: `PAR ${n}`, data: top.map(r => r[`par${n}`].pct), backgroundColor: shade[i], borderRadius: 2 })),
+        riskPctFmt);
     try { document.getElementById("qTrendLink").href = `PortfolioIntelligence.html?${CI.query().toString()}`; } catch (e) { /* keep the plain link */ }
 }
 
@@ -486,6 +549,8 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("gSave").addEventListener("click", gSaveSettings);
     new MutationObserver(() => {
         if (riskView === "growth" && riskData) gRender();
+        if (riskView === "contributors" && riskData) cRender();
+        if (riskView === "quality" && qualityData) qRender();
     }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     riskLoad();
 });

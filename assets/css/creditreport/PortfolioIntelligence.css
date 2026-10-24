@@ -886,3 +886,8 @@ a.ci-dist-row:active{ background:var(--pi-track); }
 .ci-trend-link a{ color:var(--pi-navy); font-weight:700; text-decoration:none; }
 [data-theme="dark"] .ci-trend-link a,
 [data-theme="darkgray"] .ci-trend-link a{ color:var(--pi-gold); }
+
+/* Charts drawn under the Risk Intelligence tables */
+.ci-under-chart{ margin:12px 0 0; }
+.ci-under-chart[hidden]{ display:none; }
+.ci-under-chart figcaption{ font-size:12px; font-weight:700; color:var(--cr-text-muted); margin-bottom:4px; }
