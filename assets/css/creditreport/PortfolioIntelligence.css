@@ -574,7 +574,7 @@ a.pi-rank-row:active{ background:var(--pi-track); }
 .ci-kpi-bad{ border-top-color:var(--pi-bad); }
 .ci-kinds{ grid-template-columns:repeat(2,minmax(0,1fr)); }
 @media (min-width:720px){
-    .ci-kinds{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+    .ci-kinds{ grid-template-columns:repeat(3,minmax(0,1fr)); }
 }
 .ci-target-grid{
     display:grid;

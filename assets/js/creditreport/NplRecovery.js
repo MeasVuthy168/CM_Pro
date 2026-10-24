@@ -1,8 +1,8 @@
 // ========================================
 // NPL Management — "NPL Recovery" tab (was Recovery Management)
 // GET /api/credit-intelligence/recovery: what reduced NPL in the period,
-// with cash, outstanding reduction, leaving NPL and write-off kept apart
-// (a fall in NPL is not cash), by officer / branch / product / district /
+// with outstanding reduction and leaving NPL kept apart — NPL is not
+// write-off, so no write-off figure appears here — by officer / branch / product / district /
 // aging, against the admin's monthly targets. Unavailable figures are
 // shown as such, never estimated. Shares the page's filters and t()
 // with NplIntelligence.js; that file switches tabs and calls recLoad().
@@ -82,10 +82,8 @@ function recRenderKinds(d) {
             <div class="pi-kpi-sub">${CI.esc(sub)}</div>
         </div>`;
     document.getElementById("recKinds").innerHTML =
-        tile(t("creditreport.rec.kCash"), CI.money(kd.cash.writtenOff.value), `${t("creditreport.rec.kCashWo")} · ${t("creditreport.rec.kCashNpl")}`, "base") +
         tile(t("creditreport.rec.kReduction"), CI.money(kd.reduction.value), t("creditreport.rec.kReductionSub", { n: CI.num(kd.reduction.count) }), "good") +
         tile(t("creditreport.rec.kLeft"), CI.money(kd.left.value), exits || t("creditreport.npl.accountsN", { n: 0 }), "good") +
-        tile(t("creditreport.rec.kWriteOff"), CI.money(kd.writeOff.value), t("creditreport.npl.accountsN", { n: CI.num(kd.writeOff.count) }), "bad") +
         // NPL class filter only: still NPL, in another class — not recovery.
         (kd.moved && kd.moved.count ? tile(t("creditreport.rec.kMoved"), CI.money(kd.moved.value), t("creditreport.npl.accountsN", { n: CI.num(kd.moved.count) }), "base") : "");
 }
@@ -104,14 +102,13 @@ function recRenderTable(d) {
     });
     const showTarget = recDim === "branch";
     const head = ["creditreport.risk.colName", "creditreport.npl.step.opening", "creditreport.rec.recovered", "creditreport.rec.rate",
-        "creditreport.rec.kWriteOff", "creditreport.rec.kReduction", "creditreport.npl.step.new", "creditreport.rec.net"]
+        "creditreport.rec.kReduction", "creditreport.npl.step.new", "creditreport.rec.net"]
         .concat(showTarget ? ["creditreport.rec.target"] : []);
     const rows = (d.byDim || []).map(r => `<tr>
         <td>${CI.esc(recName(r))}${recDim === "officer" && r.branch ? `<div class="ci-sub">${CI.esc(r.branch)}</div>` : ""}</td>
         <td class="num">${CI.money(r.opening)}</td>
         <td class="num ci-good">${CI.money(r.left.value)}<div class="ci-sub">${CI.esc(t("creditreport.npl.accountsN", { n: r.left.count }))}</div></td>
         <td class="num">${r.recoveryRate === null ? "—" : CI.pct(r.recoveryRate, 1)}</td>
-        <td class="num">${CI.money(r.writeOff.value)}</td>
         <td class="num">${CI.money(r.reduction.value)}</td>
         <td class="num ci-bad">${CI.money(r.newNpl.value)}</td>
         <td class="num${r.net > 0 ? " ci-bad" : r.net < 0 ? " ci-good" : ""}">${r.net > 0 ? "+" : ""}${CI.money(r.net)}</td>
