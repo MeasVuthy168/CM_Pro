@@ -38,9 +38,9 @@ function actDateTime(v) {
     return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-function actStatusPill(a) {
+function actStatusPill(a, flagOverdue = true) {
     const s = `<span class="ci-pill ci-st-${a.status}">${CI.esc(t(`creditreport.act.s.${a.status}`))}</span>`;
-    return a.overdue ? `${s} <span class="ci-pill ci-pill-high">⚠ ${CI.esc(t("creditreport.act.s.overdue"))}</span>` : s;
+    return a.overdue && flagOverdue ? `${s} <span class="ci-pill ci-pill-high">⚠ ${CI.esc(t("creditreport.act.s.overdue"))}</span>` : s;
 }
 
 function actPriorityPill(p) {
@@ -75,18 +75,129 @@ function actRenderCounts(c) {
     });
 }
 
-function actRenderList() {
+const ACT_PRIORITIES = ["urgent", "high", "medium", "low"];
+const ACT_SOURCES = ["ews", "npl"];
+const ACT_SORTS = {
+    due_up: { label: "creditreport.act.sortDueUp", fn: (x, y) => String(x.dueDate || "9").localeCompare(String(y.dueDate || "9")) },
+    due_down: { label: "creditreport.act.sortDueDown", fn: (x, y) => String(y.dueDate || "").localeCompare(String(x.dueDate || "")) },
+    newest: { label: "creditreport.act.sortNewest", fn: (x, y) => String(y.createdAt || "").localeCompare(String(x.createdAt || "")) },
+    priority: { label: "creditreport.act.sortPriority", fn: (x, y) => ACT_PRIORITIES.indexOf(x.priority) - ACT_PRIORITIES.indexOf(y.priority) || String(x.dueDate || "9").localeCompare(String(y.dueDate || "9")) }
+};
+const actPref = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const actSavePref = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } };
+let actView = ["card", "list"].includes(actPref("ci_act_view")) ? actPref("ci_act_view") : (window.innerWidth <= 719 ? "card" : "list");
+let actSort = ACT_SORTS[actPref("ci_act_sort")] ? actPref("ci_act_sort") : "due_up";
+const actFilter = { priority: "", branch: "", source: "" };
+
+// Days from today (Phnom Penh calendar day) to the due date: <0 overdue.
+function actDueDays(a) {
+    if (!a.dueDate) return null;
+    const today = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+    return Math.round((Date.parse(String(a.dueDate).slice(0, 10)) - Date.parse(today)) / 86400000);
+}
+
+function actDueBadge(a) {
+    if (a.status === "completed" || a.status === "cancelled") {
+        return `<span class="ci-due is-ok">${CI.esc(t("creditreport.act.dueOn", { date: CI.dmy(a.dueDate) }))}</span>`;
+    }
+    const d = actDueDays(a);
+    if (d === null) return "";
+    const [cls, key] = d < 0 ? ["is-bad", "creditreport.act.overdueN"] : d === 0 ? ["is-warn", "creditreport.act.dueToday"] : d <= 3 ? ["is-warn", "creditreport.act.dueInN"] : ["is-ok", "creditreport.act.dueInN"];
+    return `<span class="ci-due ${cls}" title="${CI.esc(CI.dmy(a.dueDate))}">${CI.esc(t(key, { n: CI.num(Math.abs(d)) }))}</span>`;
+}
+
+function actFillSelect(id, allKey, values, labelOf, cur) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = `<option value="">${CI.esc(t(allKey))}</option>` +
+        values.map(v => `<option value="${CI.esc(v)}">${CI.esc(labelOf(v))}</option>`).join("");
+    sel.value = values.includes(cur) ? cur : "";
+    sel.classList.toggle("is-set", !!sel.value);
+    return sel.value;
+}
+
+function actFillTools() {
+    const branches = [...new Set(actItems.map(a => a.branch).filter(Boolean))].sort();
+    const sources = ACT_SOURCES.filter(s => actItems.some(a => a.source && a.source.module === s));
+    actFilter.priority = actFillSelect("actFPriority", "creditreport.act.allPriorities", ACT_PRIORITIES, p => t(`creditreport.act.p.${p}`), actFilter.priority);
+    actFilter.branch = actFillSelect("actFBranch", "creditreport.pi.allBranches", branches, b => b, actFilter.branch);
+    actFilter.source = actFillSelect("actFSource", "creditreport.act.allSources", [...sources, "manual"],
+        s => s === "manual" ? t("creditreport.act.src.manual") : t(`creditreport.act.src.${s}`), actFilter.source);
+    const sort = document.getElementById("actSortSel");
+    sort.innerHTML = Object.entries(ACT_SORTS).map(([k, v]) => `<option value="${k}">${CI.esc(t(v.label))}</option>`).join("");
+    sort.value = actSort;
+    document.getElementById("actClear").hidden = !(actFilter.priority || actFilter.branch || actFilter.source || document.getElementById("actSearch").value.trim());
+    document.querySelectorAll("#actView [data-view]").forEach(b => {
+        const on = b.dataset.view === actView;
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+}
+
+function actVisibleRows() {
     const q = document.getElementById("actSearch").value.trim().toLowerCase();
-    const rows = actItems.filter(a => !q || [a.actionId, a.loanId, a.customerName, a.officerName, a.officerId, a.branch, a.description]
-        .some(v => String(v || "").toLowerCase().includes(q)));
+    return actItems.filter(a => {
+        if (actFilter.priority && a.priority !== actFilter.priority) return false;
+        if (actFilter.branch && a.branch !== actFilter.branch) return false;
+        if (actFilter.source) {
+            const m = a.source && a.source.module;
+            if (actFilter.source === "manual" ? !!m : m !== actFilter.source) return false;
+        }
+        return !q || [a.actionId, a.loanId, a.customerName, a.officerName, a.officerId, a.branch, a.description]
+            .some(v => String(v || "").toLowerCase().includes(q));
+    }).sort(ACT_SORTS[actSort].fn);
+}
+
+function actSourceTag(a) {
+    const m = a.source && a.source.module;
+    return m && ACT_SOURCES.includes(m) ? t(`creditreport.act.src.${m}`) : "";
+}
+
+function actRenderList() {
+    actFillTools();
+    const rows = actVisibleRows();
     document.getElementById("actCount").textContent = t("creditreport.act.countN", { n: CI.num(rows.length) });
-    document.getElementById("actList").innerHTML = rows.length ? rows.map(a => `
-        <li><button type="button" class="ci-act-item${a.overdue ? " is-overdue" : ""}" data-id="${CI.esc(a.id)}">
-            <span class="ci-act-top"><strong>${CI.esc(a.actionId)}</strong> ${actPriorityPill(a.priority)} ${actStatusPill(a)}</span>
-            <span class="ci-act-desc">${CI.esc(a.description)}</span>
-            <span class="ci-sub">${CI.esc([a.branch, a.officerName || a.officerId, a.loanId].filter(Boolean).join(" · "))}</span>
-            <span class="ci-sub">${CI.esc(t("creditreport.act.dueOn", { date: CI.dmy(a.dueDate) }))}</span>
-        </button></li>`).join("") : `<li class="pi-note">${CI.esc(t("creditreport.act.none"))}</li>`;
+    const list = document.getElementById("actList");
+    const wrap = document.getElementById("actTableWrap");
+    const asCards = actView === "card" || !rows.length;
+    list.hidden = !asCards;
+    wrap.hidden = asCards;
+    if (!rows.length) {
+        list.innerHTML = `<li class="pi-note">${CI.esc(t("creditreport.act.none"))}</li>`;
+        return;
+    }
+    if (asCards) {
+        list.innerHTML = rows.map(a => {
+            const d = actDueDays(a);
+            const live = a.status !== "completed" && a.status !== "cancelled";
+            const tone = live && (a.overdue || (d !== null && d < 0)) ? " is-bad" : live && d !== null && d <= 3 ? " is-warn" : a.status === "completed" ? " is-good" : "";
+            const who = [a.customerName, a.loanId].filter(Boolean).join(" · ");
+            return `<li><button type="button" class="ci-card${tone}" data-id="${CI.esc(a.id)}">
+                <span class="ci-card-top"><span class="ci-card-id">${CI.esc(a.actionId)}</span>
+                    <span class="ci-card-pills">${actPriorityPill(a.priority)} ${actStatusPill(a, false)}</span></span>
+                <span class="ci-card-desc">${CI.esc(a.description)}</span>
+                ${who ? `<span class="ci-card-name">${CI.esc(who)}</span>` : ""}
+                <span class="ci-sub">${CI.esc([a.branch, a.officerName || a.officerId || t("creditreport.act.unassigned")].filter(Boolean).join(" · "))}</span>
+                <span class="ci-card-foot"><span class="ci-sub">${CI.esc(actSourceTag(a))}</span>${actDueBadge(a)}</span>
+            </button></li>`;
+        }).join("");
+        return;
+    }
+    list.innerHTML = "";
+    const th = k => `<th scope="col">${CI.esc(t(k))}</th>`;
+    document.getElementById("actTable").innerHTML = `<thead><tr>
+        ${th("creditreport.act.col")}${th("creditreport.act.priority")}${th("creditreport.act.status")}${th("creditreport.act.description")}
+        ${th("creditreport.pi.branch")}${th("creditreport.act.responsible")}${th("creditreport.act.customerLoan")}${th("creditreport.act.dueDate")}${th("creditreport.act.source")}
+        </tr></thead><tbody>${rows.map(a => `<tr data-id="${CI.esc(a.id)}" tabindex="0">
+            <td><strong>${CI.esc(a.actionId)}</strong></td>
+            <td>${actPriorityPill(a.priority)}</td>
+            <td>${actStatusPill(a)}</td>
+            <td class="ci-desc-cell">${CI.esc(a.description)}</td>
+            <td>${CI.esc(a.branch || "")}</td>
+            <td>${CI.esc(a.officerName || a.officerId || t("creditreport.act.unassigned"))}</td>
+            <td>${CI.esc([a.customerName, a.loanId].filter(Boolean).join(" · "))}</td>
+            <td>${CI.esc(CI.dmy(a.dueDate))}<br>${actDueBadge(a)}</td>
+            <td>${CI.esc(actSourceTag(a))}</td>
+        </tr>`).join("")}</tbody>`;
 }
 
 // ---------- create ----------
@@ -321,6 +432,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("actList").addEventListener("click", e => {
         const b = e.target.closest("[data-id]");
         if (b) actShow(b.dataset.id);
+    });
+    const table = document.getElementById("actTable");
+    table.addEventListener("click", e => {
+        const r = e.target.closest("tr[data-id]");
+        if (r) actShow(r.dataset.id);
+    });
+    table.addEventListener("keydown", e => {
+        const r = e.target.closest("tr[data-id]");
+        if (r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); actShow(r.dataset.id); }
+    });
+    [["actFPriority", "priority"], ["actFBranch", "branch"], ["actFSource", "source"]].forEach(([id, k]) =>
+        document.getElementById(id).addEventListener("change", e => { actFilter[k] = e.target.value; actRenderList(); }));
+    document.getElementById("actSortSel").addEventListener("change", e => {
+        actSort = ACT_SORTS[e.target.value] ? e.target.value : "due_up";
+        actSavePref("ci_act_sort", actSort);
+        actRenderList();
+    });
+    document.getElementById("actView").addEventListener("click", e => {
+        const b = e.target.closest("[data-view]");
+        if (!b) return;
+        actView = b.dataset.view;
+        actSavePref("ci_act_view", actView);
+        actRenderList();
+    });
+    document.getElementById("actClear").addEventListener("click", () => {
+        actFilter.priority = actFilter.branch = actFilter.source = "";
+        document.getElementById("actSearch").value = "";
+        actRenderList();
     });
     document.getElementById("actNewBtn").addEventListener("click", () => actOpenForm({}));
     document.getElementById("afBranch").addEventListener("change", () => actFillOfficers());
