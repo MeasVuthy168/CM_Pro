@@ -44,6 +44,7 @@ CMI18n.register({
   "masterdata.plan.colName": { km: "ឈ្មោះ", en: "Name" },
   "masterdata.plan.total": { km: "សរុប", en: "Total" },
   "masterdata.plan.noteLower": { km: "NBC Overdue % និង NPL % ជាកម្រិតខ្ពស់បំផុត — ទាបជាងផែនការ = ល្អ។", en: "NBC Overdue % and NPL % are ceilings — below plan is good." },
+  "masterdata.plan.noteTotalPct": { km: "% ក្នុងជួរសរុប = គិតតាមទម្ងន់សមតុល្យឥណទាន៖ Σ(% × សមតុល្យ) ÷ Σ សមតុល្យ — បង្ហាញតែពេលគ្រប់ជួរមានទាំង % និងសមតុល្យ។", en: "% in the Total row is weighted by Loan Outstanding: Σ(% × outstanding) ÷ Σ outstanding — shown only when every row has both." },
   "masterdata.plan.noteBlank": { km: "ប្រអប់ទទេ = មិនមានផែនការ (Report បង្ហាញ \"—\")។", en: "A blank box = no plan (the report shows \"—\")." },
   "masterdata.plan.note_branch": { km: "សាខា៖ ផែនការសរុបមួយក្នុងមួយសាខា (CO + FSRO + Digital)។ NPL Recovery នេះជាគោលដៅដដែលដែលទំព័រ NPL → Recovery ប្រើ។", en: "Branch: one plan per branch (CO + FSRO + Digital). NPL Recovery is the same target the NPL → Recovery tab uses." },
   "masterdata.plan.note_officer": { km: "មន្ត្រី៖ ប្រៀបធៀបជាមួយតួលេខ ផ្ទាល់ខ្លួន (Own)។ បញ្ចូលដាច់ពីសាខា — ⚠ បង្ហាញពេលផលបូកមន្ត្រីខុសពីផែនការសាខា។", en: "Officer: compared with the officer's Own figures. Entered apart from the branch — ⚠ shows when the officers' sum differs from the branch plan." },
