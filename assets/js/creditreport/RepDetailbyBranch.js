@@ -155,9 +155,8 @@ function crSections() {
 }
 
 // ========================================
-// COMPARISON MODE — Actual Only (the report as it was), Plan vs Actual
-// (only what has a Monthly Plan, each next to its plan) or All (every
-// column, the plan columns added beside the figures they belong to).
+// COMPARISON MODE — Actual Only (the report as it was) or Plan vs
+// Actual (only what has a Monthly Plan, each figure next to its plan).
 // Plans and their actuals come from /api/creditreport/plan-vs-actual
 // (item.planVs): the branch plan of the month and the actual for the
 // report's period (1st of the month to the OS date), without the
@@ -171,7 +170,7 @@ function crSections() {
 function crCompareMode() {
     if (crMode !== "current") return "actual";
     const v = document.getElementById("crCompare")?.value;
-    return v === "plan" || v === "all" ? v : "actual";
+    return v === "plan" ? "plan" : "actual";
 }
 
 // Plan columns of one metric: plan [, due to date], then % (or ± for a
@@ -195,11 +194,10 @@ function crWithPlanAfter(field, metric, opts) {
     return [field, ...crPlanFields(metric, opts)];
 }
 
-// One section's groups for the Comparison Mode in use.
+// One section's groups for the Comparison Mode in use: in Plan vs
+// Actual, only the planned figures, each followed by its plan columns.
 function crCompareSection(sectionKey, section) {
-    const mode = crCompareMode();
-    if (mode === "actual") return section;
-    const plan = mode === "plan";
+    if (crCompareMode() === "actual") return section;
     const groups = [];
     for (const g of section.groups) {
         const first = (g.fields[0] || {}).key || "";
@@ -209,7 +207,6 @@ function crCompareSection(sectionKey, section) {
                 if (field.key === "loanOutstanding.loan") f.push(...crWithPlanAfter(field, "osCount"));
                 else if (field.key === "loanOutstanding.client") f.push(...crWithPlanAfter(field, "osClients"));
                 else if (field.key === "loanOutstanding.value") f.push(...crWithPlanAfter(field, "osAmount", { money: true }));
-                else if (!plan) f.push(field);
             }
             f.push(...crPlanFields("osKhr", { money: true, withActual: true, actualLabel: t("creditreport.plan.khr") }));
             f.push(...crPlanFields("osSmall", { money: true, withActual: true, actualLabel: t("creditreport.plan.small") }));
@@ -220,21 +217,16 @@ function crCompareSection(sectionKey, section) {
                 fields: g.fields.flatMap(field =>
                     field.key === "loanDisburse.loan" ? crWithPlanAfter(field, "disbCount", { toDate: true })
                         : field.key === "loanDisburse.value" ? crWithPlanAfter(field, "disbAmount", { money: true, toDate: true })
-                            : plan ? [] : [field])
+                            : [])
             });
         } else if (first.startsWith("nbcOverdue.total.") || first.startsWith("nbcOverdue.nonPerformingLoan.")) {
             const metric = first.startsWith("nbcOverdue.total.") ? "nbcOverduePct" : "nplPct";
             groups.push({
                 ...g,
-                fields: plan
-                    ? crPlanFields(metric, { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct") })
-                    : [...g.fields, ...crPlanFields(metric, { ceiling: true })]
+                fields: crPlanFields(metric, { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct") })
             });
         } else if (first.startsWith("writeOff.woCollected.")) {
-            const wo = crPlanFields("woCollected", { money: true, withActual: true, actualLabel: t("creditreport.plan.thisMonth") });
-            groups.push({ ...g, fields: plan ? wo : [...g.fields, ...wo] });
-        } else if (!plan) {
-            groups.push(g);
+            groups.push({ ...g, fields: crPlanFields("woCollected", { money: true, withActual: true, actualLabel: t("creditreport.plan.thisMonth") }) });
         }
     }
     // Plan vs Actual with only unplanned sections picked (e.g. T24).
@@ -341,7 +333,7 @@ function crReadStateFromUrl() {
     crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
 
     const compare = p.get("compare");
-    if (compare === "plan" || compare === "all") document.getElementById("crCompare").value = compare;
+    if (compare === "plan") document.getElementById("crCompare").value = compare;
 }
 
 function crSyncStateToUrl() {
