@@ -193,7 +193,18 @@ No Internet Connection
 <option value="parT24" data-i18n="creditreport.detail.sectionT24">Balance Loan at Risk (T24)</option>
 <option value="nbcOverdue" data-i18n="creditreport.detail.sectionNbcOverdue">Balance Loan at Risk (NBC Overdue)</option>
 <option value="writeOff" data-i18n="creditreport.detail.sectionWriteOff">Write Off</option>
-<option value="plan" data-i18n="creditreport.plan.section">Plan vs Actual</option>
+</select>
+</div>
+
+<!-- Comparison Mode: the report's own figures only, only what has a
+     Monthly Plan next to its plan, or every column with the plan added.
+     Current mode only. -->
+<div class="cr-section-row" id="crCompareRow">
+<label for="crCompare" class="cr-section-label" data-i18n="creditreport.plan.compareLabel">Comparison</label>
+<select id="crCompare" class="cr-section-select">
+<option value="actual" data-i18n="creditreport.plan.compareActual">Actual Only</option>
+<option value="plan" data-i18n="creditreport.plan.comparePlan">Plan vs Actual</option>
+<option value="all" data-i18n="creditreport.plan.compareAll">All</option>
 </select>
 </div>
 
@@ -301,8 +312,8 @@ No Internet Connection
      header note "(T24) included Reclass: ($x and n LD)". -->
 <div class="cr-table-note" id="crReclassNote" style="display:none"></div>
 
-<!-- Shown when Plan vs Actual is on screen: which month's plan, which
-     days the actual covers, and a link to set the plan when none. -->
+<!-- Shown when a Comparison Mode with the plan is on: which month's
+     plan, which days the actual covers, and a link to set the plan. -->
 <div class="cr-table-note cr-plan-note" id="crPlanNote" style="display:none"></div>
 
 </div>
