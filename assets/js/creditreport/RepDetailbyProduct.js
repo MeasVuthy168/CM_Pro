@@ -335,8 +335,12 @@ function crT24ClassGroup(prefix, label) {
     };
 }
 
+// Several sections picked: each one's groups side by side (crCombinedSection).
 function crActiveSection() {
-    const sectionKey = document.getElementById("crSection").value;
+    return crCombinedSection(crSectionFor);
+}
+
+function crSectionFor(sectionKey) {
     const section = crSections()[sectionKey];
 
     if (sectionKey === "nbcOverdue") {
@@ -731,9 +735,8 @@ function crBuildQuery() {
 // each pair otherwise so they can't be mistaken for applying to a
 // section they don't affect.
 function crUpdateClassVisibility() {
-    const section = document.getElementById("crSection").value;
-    const isT24 = section === "parT24";
-    const isNbc = section === "nbcOverdue";
+    const isT24 = crHasSection("parT24");
+    const isNbc = crHasSection("nbcOverdue");
     // History rows are precomputed daily snapshots with every
     // classification/product already in them (see crActiveSection()) —
     // the T24/NBC Product Type filters need a server-side recompute this
@@ -757,10 +760,7 @@ function crUpdateClassVisibility() {
 function crReadStateFromUrl() {
     const p = new URLSearchParams(location.search);
 
-    const section = p.get("section");
-    if (section && crSections()[section]) {
-        document.getElementById("crSection").value = section;
-    }
+    crRestoreSections(p, crSections());
 
     crRestorePicks("crClass", p.getAll("t24Class"));
 
@@ -773,7 +773,7 @@ function crReadStateFromUrl() {
 
 function crSyncStateToUrl() {
     const p = new URLSearchParams();
-    p.set("section", document.getElementById("crSection").value);
+    crAddSections(p);
 
     crAddPicks(p, "t24Class", "crClass");
     crAddPicks(p, "t24Product", "crProduct");
@@ -1342,7 +1342,9 @@ let crChartMetricLabel = null; // persists across re-opens until a Showing/metri
 function crUpdateChartButtonVisibility() {
     const btn = document.getElementById("btnCrHistChart");
     if (!btn) return;
-    const sectionFilter = document.getElementById("crSection").value;
+    // The chart follows one section, and one classification within it.
+    const keys = crSectionKeys();
+    const sectionFilter = keys.length === 1 ? keys[0] : "all";
     // The chart follows one classification: hidden for All NBC classes,
     // and when several NBC / T24 classes are picked.
     const nbcClassAll = (sectionFilter === "nbcOverdue" && crPicks("crNbcClass").length !== 1) ||
@@ -1537,8 +1539,8 @@ document.getElementById("crChartOverlay").addEventListener("click", (e) => {
 // ========================================
 // INIT
 // ========================================
-// Every filter picks several values, except Showing (crSection).
-crMultiEnhance(["crClass", "crProduct", "crNbcClass", "crNbcProduct"]);
+// Every filter picks several values, Showing (crSection) included.
+crMultiEnhance(["crSection", "crClass", "crProduct", "crNbcClass", "crNbcProduct"]);
 crReadStateFromUrl();
 crUpdateClassVisibility();
 crRunReport();

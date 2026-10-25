@@ -2,16 +2,23 @@
 // Credit Report — multi-select filters
 // Every filter on the Daily Monitoring pages (by Officer / Branch /
 // Product / Location) picks several values (assets/js/multi-select.js),
-// except "Showing" (crSection), which picks one section. The <select>
-// stays the source of truth: its "All" option is the one marked
-// data-ms-all (or value ""), so until several values are picked its
-// .value still reads what the page's code always read.
+// "Showing" (crSection) included. The <select> stays the source of
+// truth: its "All" option is the one marked data-ms-all (or value ""),
+// so until several values are picked its .value still reads what the
+// page's code always read.
 //
 //   crMultiEnhance(ids)        turn the filters into multi-selects
 //   crPicks(id)                the picked values ([] = All)
 //   crAddPicks(params, key, id) one ?key=value per pick (URLSearchParams)
 //   crRestorePicks(id, values) put picks back (from the URL), once the
 //                              options exist; returns the ones not found
+//
+// Showing (crSection):
+//   crSectionKeys()            the picked sections, in list order ([] = All)
+//   crHasSection(...keys)      is any of these sections on screen
+//   crCombinedSection(build)   one table from every picked section:
+//                              build(key) gives each one's groups, side by
+//                              side in list order; none picked = "all"
 // ========================================
 
 function crMultiEnhance(ids) {
@@ -88,4 +95,28 @@ function crChipPicker({ row, keyOf, labelOf, onChange }) {
             onChange();
         }
     };
+}
+
+function crSectionKeys() {
+    return crPicks("crSection");
+}
+function crHasSection(...keys) {
+    const picked = crSectionKeys();
+    return keys.some(k => picked.includes(k));
+}
+function crCombinedSection(build) {
+    const keys = crSectionKeys();
+    if (keys.length <= 1) return build(keys[0] || "all");
+    return { groups: keys.flatMap(k => build(k).groups) };
+}
+// Section(s) from the URL: ?section=a&section=b (old links: one value,
+// or "all").
+function crRestoreSections(params, sections) {
+    crRestorePicks("crSection", params.getAll("section").filter(k => k !== "all" && sections[k]));
+}
+function crAddSections(params) {
+    const keys = crSectionKeys();
+    if (!keys.length) params.set("section", "all");
+    else keys.forEach(k => params.append("section", k));
+    return params;
 }
