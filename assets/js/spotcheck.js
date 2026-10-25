@@ -505,68 +505,74 @@ function scSetViewMode(mode) {
 }
 
 // ---------------------------------------------------------
-// Export Excel (⋮ menu) — exports scCurrentRows, i.e. whatever is
-// currently visible after search/filter/sort, not the full dataset.
-// Same engine and look as Daily Arrears (assets/js/arrears-export.js,
-// ExcelJS): a title, the filters in use and who exported it on top; a
-// frozen, filterable header; dates and amounts as real Excel dates and
-// numbers; the repayment-history colours and the follow-up conclusions
-// highlighted as on the cards. A second sheet counts the checks by branch.
-// Free text goes in as text cells, never as a formula.
+// Export Excel (⋮ menu) — the monthly Spot Check report, laid out like
+// the bank's paper report: the ACLEDA logo top right, "Facilities Spot
+// Check" and its period, a three-level header (I. Credit Information /
+// II. Physical Inspection, their sections, then each column), one row per
+// check (columns A–AF: No + Branch … សន្និដ្ឋាន, in the stored order),
+// and the prepared / certified / approved signature block at the bottom.
+// A second sheet counts the checks by branch. Exports scCurrentRows —
+// whatever is visible after search / filter / sort. Built with ExcelJS
+// (arrears-export.js loads it); free text goes in as text, never a formula.
 // ---------------------------------------------------------
 
-// Date-typed fields in SC_FIELD_ORDER — exported as real dates (through
-// scStoredToIso, so a raw Excel serial in the data comes out right too).
-const SC_DATE_FIELDS = new Set(["disbursementDate", "maturityDate", "spotCheckDate"]);
-const SC_NUMBER_FIELDS = { loanSize: "#,##0.00", outstanding: "#,##0.00", interestRate: "0.00", term: "0", cycle: "0" };
+const SC_LOGO_URL = "/CM_Pro/assets/images/acleda-logo-whiteBG.png";
+const SC_XL_FONT = "Krasar";
+const SC_KH_DIGITS = "០១២៣៤៥៦៧៨៩";
+const SC_KH_MONTHS = ["មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា", "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"];
 
-// Khmer column labels for every field in SC_FIELD_ORDER, reusing the
-// same wording as the form's own labels where a field maps 1:1 to one
-// (spotcheck.*Label keys in shared/i18n/features.js); a few fields share
-// a generic form label ("ស្ថានភាព", "បញ្ជាក់បន្ថែម" for several notes) so
-// those get a more specific label here to keep export columns unambiguous.
-const SC_EXPORT_LABELS = {
-  branch: "សាខា (Branch)",
-  loanId: "លេខកិច្ចសន្យា (Loan ID)",
-  customerName: "ឈ្មោះអតិថិជន",
-  disbursementDate: "ថ្ងៃបញ្ចេញកម្ចី",
-  maturityDate: "ថ្ងៃផុតកំណត់",
-  loanSize: "ទំហំឥណទាន",
-  currency: "រូបិយប័ណ្ណ",
-  outstanding: "សមតុល្យ",
-  creditOfficer: "មន្ត្រីឥណទាន",
-  interestRate: "អត្រាការប្រាក់",
-  loanType: "ប្រភេទឥណទាន",
-  term: "រយៈពេលខ្ចី",
-  cycle: "វដ្តត្រួតពិនិត្យ",
-  repaymentHistory: "ស្ថានភាពប្រវត្តិសងប្រាក់",
-  lateDays: "មូលហេតុយឺតយ៉ាវ",
-  loanCompletion: "ស្ថានភាពឯកសារឥណទាន",
-  loanCompletionNote: "មូលហេតុ (ឯកសារឥណទាន)",
-  occupationInFile: "មុខរបរពេលខ្ចី",
-  currentOccupation: "មុខរបរបច្ចុប្បន្ន",
-  businessSituation: "ស្ថានភាពជំនួញ",
-  occupationDifferenceNote: "បញ្ជាក់បន្ថែម (មុខរបរ)",
-  collateralType: "ប្រភេទទ្រព្យ",
-  collateralChange: "ទ្រព្យធានា",
-  collateralPrice: "តម្លៃទ្រព្យ",
-  collateralNote: "បញ្ជាក់បន្ថែម (ទ្រព្យធានា)",
-  purpose: "បំណងប្រើប្រាស់",
-  purposeNote: "បញ្ជាក់បន្ថែម (បំណងប្រើប្រាស់)",
-  repaymentSource: "ប្រភពសំណង",
-  repaymentSourceNote: "បញ្ជាក់បន្ថែម (ប្រភពសំណង)",
-  conclusion: "សេចក្តីសន្និដ្ឋាន",
-  spotCheckDate: "ថ្ងៃត្រួតពិនិត្យ",
-  owner: "អ្នកបញ្ចូល",
-  timestamp: "ពេលវេលាកត់ត្រា"
-};
+// [field, column label, width, kind]; kind: date | money | center | bold | wrap
+const SC_XL_COLUMNS = [
+  ["no", "No", 5, "center"],
+  ["branch", "Branch", 11],
+  ["cif", "CIF", 10, "center"],
+  ["loanId", "Contract LD", 17],
+  ["customerName", "Name", 18, "wrap"],
+  ["disbursementDate", "Disburse", 11, "date"],
+  ["maturityDate", "Maturity", 11, "date"],
+  ["loanSize", "Loan Size", 12, "money"],
+  ["currency", "CCY", 6, "center"],
+  ["outstanding", "O.S", 11, "money"],
+  ["creditOfficer", "CO", 8, "bold"],
+  ["interestRate", "អត្រាការប្រាក់", 15, "wrap"],
+  ["loanType", "ប្រភេទឥណទាន", 15, "wrap"],
+  ["term", "រយៈពេល", 8, "center"],
+  ["cycle", "វដ្តត្រួតពិនិត្យ", 9, "center"],
+  ["repaymentHistory", "ស្ថានភាព", 12, "wrap"],
+  ["lateDays", "មូលហេតុ", 16, "wrap"],
+  ["loanCompletion", "ស្ថានភាព", 12, "wrap"],
+  ["loanCompletionNote", "មូលហេតុ", 16, "wrap"],
+  ["occupationInFile", "មុខរបរពេលខ្ចី", 18, "wrap"],
+  ["currentOccupation", "មុខរបរបច្ចុប្បន្ន", 18, "wrap"],
+  ["businessSituation", "ស្ថានភាពជំនួញ", 10, "wrap"],
+  ["occupationDifferenceNote", "បញ្ជាក់បន្ថែម", 16, "wrap"],
+  ["collateralType", "ប្រភេទទ្រព្យ", 15, "wrap"],
+  ["collateralChange", "ស្ថានភាពទ្រព្យ", 12, "wrap"],
+  ["collateralPrice", "តម្លៃ", 13, "wrap"],
+  ["collateralNote", "បញ្ជាក់បន្ថែម", 16, "wrap"],
+  ["purpose", "គោលបំណងប្រើប្រាស់", 18, "wrap"],
+  ["purposeNote", "បញ្ជាក់បន្ថែម", 16, "wrap"],
+  ["repaymentSource", "ប្រភពប្រាក់សម្រាប់សង", 13, "wrap"],
+  ["repaymentSourceNote", "បញ្ជាក់បន្ថែម", 16, "wrap"],
+  ["conclusion", "សន្និដ្ឋាន", 34, "wrap"],
+];
 
-const SC_TONE_STYLE = {
-  good: { fill: "#E7F6EC", color: "#1E7B3A", bold: true },
-  warn: { fill: "#FFF4D6", color: "#9A6B00", bold: true },
-  bad: { fill: "#FDE8E8", color: "#C0392B", bold: true },
-};
-const SC_RISK_STYLE = { fill: "#FFF1E0", color: "#B45309", bold: true };
+// Header levels 1 and 2, by column (1-based, inclusive), as on the paper report.
+const SC_XL_PARTS = [
+  [1, 19, "I. ព័ត៌មានឥណទាន (Credit Information)"],
+  [20, 32, "II. ព័ត៌មានចុះត្រួតពិនិត្យជាក់ស្តែង (Physical Inspection on site visit)"],
+];
+const SC_XL_SECTIONS = [
+  [1, 15, "ក. ព័ត៌មានអតិថិជន"],
+  [16, 17, "ខ. ប្រវត្តិសង"],
+  [18, 19, "គ. ស្ថានភាព"],
+  [20, 23, "ក. ព័ត៌មានមុខរបរ"],
+  [24, 27, "ខ. ព័ត៌មានទ្រព្យដាក់ធានាឥណទាន"],
+  [28, 31, "គ. សញ្ញាណហានិភ័យ"],
+  // សន្និដ្ឋាន (32) runs down through levels 2 and 3.
+];
+
+const scKhDigits = (s) => String(s).replace(/\d/g, (d) => SC_KH_DIGITS[d]);
 
 function scExcelDate(stored) {
   const iso = scStoredToIso(stored || "");
@@ -576,52 +582,50 @@ function scExcelDate(stored) {
 }
 
 function scExcelNumber(value) {
-  const s = String(value ?? "").replace(/[,\s%]/g, "");
+  const s = String(value ?? "").replace(/[,\s]/g, "");
   return /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : null;
 }
 
-function scExportColumns() {
-  const text = (key, extra = {}) => ({
-    label: SC_EXPORT_LABELS[key] || key, type: "text",
-    value: (rec) => (rec[key] ? String(rec[key]) : null), ...extra,
-  });
-  const cols = [
-    { label: "No", type: "int", align: "center", value: (rec, i) => i + 1 },
-    { label: "CIF", type: "text", value: (rec) => rec.cif || null },
-    text("customerName"),
-  ];
-  SC_FIELD_ORDER.forEach((key) => {
-    if (key === "cif" || key === "customerName") return;
-    if (SC_DATE_FIELDS.has(key)) {
-      cols.push({
-        label: SC_EXPORT_LABELS[key], type: "date", align: "center",
-        value: (rec) => scExcelDate(rec[key]) || (rec[key] ? String(rec[key]) : null),
-        text: (rec) => (rec[key] ? scDisplayDate(rec[key]) : ""),
-      });
-    } else if (SC_NUMBER_FIELDS[key]) {
-      cols.push({
-        label: SC_EXPORT_LABELS[key], type: "num", numFmt: SC_NUMBER_FIELDS[key],
-        value: (rec) => { const n = scExcelNumber(rec[key]); return n === null ? (rec[key] ? String(rec[key]) : null) : n; },
-      });
-    } else if (key === "timestamp") {
-      cols.push({
-        label: SC_EXPORT_LABELS[key], type: "date", numFmt: "dd/mm/yyyy hh:mm", align: "center",
-        value: (rec) => {
-          const d = rec.timestamp ? new Date(rec.timestamp) : null;
-          // Excel has no time zones: write the local clock time.
-          return d && !isNaN(d) ? new Date(d.getTime() - d.getTimezoneOffset() * 60000) : (rec.timestamp || null);
-        },
-        text: (rec) => (rec.timestamp ? scFormatTimestamp(rec.timestamp) : ""),
-      });
-    } else if (key === "repaymentHistory") {
-      cols.push(text(key, { style: (rec) => SC_TONE_STYLE[scRepaymentTone(rec.repaymentHistory)] || null }));
-    } else if (key === "conclusion") {
-      cols.push(text(key, { maxChars: 60, style: (rec) => (scIsRisk(rec) ? SC_RISK_STYLE : null) }));
-    } else {
-      cols.push(text(key, /Note$|lateDays/.test(key) ? { maxChars: 45 } : {}));
-    }
-  });
-  return cols;
+// The report period: the Check Month filter's month, else the first and
+// last spot-check date of the exported rows.
+function scExportPeriod(rows) {
+  const pad = (n) => String(n).padStart(2, "0");
+  const fmt = (y, m, d) => `${pad(d)}-${pad(m)}-${String(y).slice(-2)}`;
+  const month = document.getElementById("filterMonth")?.value;
+  if (/^\d{4}-\d{2}$/.test(month || "")) {
+    const [y, m] = month.split("-").map(Number);
+    return `${fmt(y, m, 1)} To ${fmt(y, m, new Date(Date.UTC(y, m, 0)).getUTCDate())}`;
+  }
+  const isos = rows.map((r) => scStoredToIso(r.spotCheckDate || "")).filter(Boolean).sort();
+  if (!isos.length) return "";
+  const f = (iso) => { const [y, m, d] = iso.split("-").map(Number); return fmt(y, m, d); };
+  return `${f(isos[0])} To ${f(isos[isos.length - 1])}`;
+}
+
+function scXlCellValue(rec, key, i) {
+  if (key === "no") return i + 1;
+  const raw = rec[key];
+  if (raw === undefined || raw === null || String(raw).trim() === "") return null;
+  if (key === "disbursementDate" || key === "maturityDate") return scExcelDate(raw) || String(raw);
+  if (key === "loanSize" || key === "outstanding") { const n = scExcelNumber(raw); return n === null ? String(raw) : n; }
+  if (key === "cycle") { const n = scExcelNumber(raw); return n === null ? String(raw) : n; }
+  if (key === "interestRate") return scFormatRate(String(raw));
+  if (key === "term") return scFormatTerm(String(raw));
+  return String(raw);
+}
+
+async function scLogoBase64() {
+  try {
+    const blob = await (await fetch(SC_LOGO_URL)).blob();
+    return await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result));
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+  } catch (e) {
+    return null;   // the report still exports, without the logo
+  }
 }
 
 // Checks per branch: total, each repayment history, and follow-ups.
@@ -640,42 +644,7 @@ function scExportSummary(rows) {
   const list = [...by.values()].sort((a, b) => a.branch.localeCompare(b.branch));
   const total = { branch: "សរុប", total: 0, risk: 0, h: hist.map(() => 0), isTotal: true };
   list.forEach((g) => { total.total += g.total; total.risk += g.risk; g.h.forEach((n, i) => { total.h[i] += n; }); });
-  const bold = (rec) => (rec.isTotal ? { fill: "#FFF4C2", bold: true } : null);
-  const tones = ["good", "warn", "bad"];
-  return {
-    rows: [...list, total],
-    cols: [
-      { label: "សាខា (Branch)", type: "text", value: (g) => g.branch, style: bold },
-      { label: "ចំនួនត្រួតពិនិត្យ", type: "int", numFmt: "#,##0", value: (g) => g.total, style: bold },
-      ...hist.map((h, i) => ({
-        label: h, type: "int", numFmt: "#,##0", value: (g) => g.h[i],
-        style: (g) => (g.isTotal ? bold(g) : g.h[i] ? { color: SC_TONE_STYLE[tones[i]].color } : null),
-      })),
-      { label: "ត្រូវតាមដាន", type: "int", numFmt: "#,##0", value: (g) => g.risk, style: (g) => (g.isTotal ? bold(g) : g.risk ? { color: SC_RISK_STYLE.color, bold: true } : null) },
-    ],
-  };
-}
-
-// The filters behind the exported rows (anything left at All is left out).
-function scExportInfo(rows) {
-  const lines = [`ចំនួន: ${rows.length.toLocaleString()} ករណី · ត្រូវតាមដាន: ${rows.filter(scIsRisk).length.toLocaleString()}`];
-  const filters = [];
-  ["filterMonth", "filterBranch", "filterOfficer", "filterProductType"].forEach((id) => {
-    const el = document.getElementById(id);
-    if (!el || !el.value) return;
-    const label = (el.options[0]?.textContent || "").split("—")[0].trim();
-    filters.push(`${label}: ${el.selectedOptions[0]?.textContent.trim() || el.value}`);
-  });
-  const search = document.getElementById("searchInput")?.value.trim();
-  if (search) filters.push(`ស្វែងរក: "${search}"`);
-  if (scRiskOnly) filters.push(scT("spotcheck.statRiskLabel"));
-  if (filters.length) lines.push(`តម្រង — ${filters.join(" · ")}`);
-  let user = "";
-  try { user = JSON.parse(sessionStorage.getItem("loggedInUser") || localStorage.getItem("loggedInUser") || "{}").username || ""; } catch (e) {}
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  lines.push(`CM_Pro · នាំចេញ ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}${user ? " · " + user : ""}`);
-  return lines;
+  return { head: ["Branch", "ចំនួនត្រួតពិនិត្យ", ...hist, "ត្រូវតាមដាន"], rows: [...list, total].map((g) => [g.branch, g.total, ...g.h, g.risk, !!g.isTotal]) };
 }
 
 async function scExportExcel() {
@@ -684,26 +653,151 @@ async function scExportExcel() {
     scNotify("មិនមានទិន្នន័យសម្រាប់នាំចេញទេ", "warning");
     return;
   }
-  if (!window.ArrExport) {
+  if (!window.ArrExport?.workbook) {
     scNotify("មិនអាចបង្កើតឯកសារបានទេ — សូមពិនិត្យអ៊ីនធឺណិត ហើយសាកម្ដងទៀត", "error");
     return;
   }
-  const title = document.querySelector('[data-i18n="spotcheck.pageTitle"]')?.textContent.trim() || "Spot Check";
-  const info = scExportInfo(rows);
-  const summary = scExportSummary(rows);
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  if (typeof showAppLoading === "function") showAppLoading("កំពុងបង្កើតឯកសារ Excel...", { progress: true, key: "spotcheck:export" });
+  if (typeof showAppLoading === "function") showAppLoading("កំពុងបង្កើតឯកសារ Excel...");
   try {
-    await ArrExport.excel({
-      filename: `SpotCheck_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}.xlsx`,
-      freezeCols: 3,
-      onProgress: (f) => window.setAppLoadingProgress?.(f * 100, "សូមរង់ចាំ..."),
-      sheets: [
-        { name: "SpotCheck", title, info, cols: scExportColumns(), rows },
-        { name: "តាមសាខា", title: `${title} — តាមសាខា`, info, cols: summary.cols, rows: summary.rows, freezeCols: 1 },
-      ],
+    const wb = await ArrExport.workbook();
+    const logo = await scLogoBase64();
+    const logoId = logo ? wb.addImage({ base64: logo, extension: "png" }) : null;
+    const title = "Facilities Spot Check";
+    const period = scExportPeriod(rows);
+    const n = SC_XL_COLUMNS.length;
+    const HEAD = 4;                 // header rows 4–6, data from row 7
+    const thin = { style: "thin", color: { argb: "FF000000" } };
+    const box = { top: thin, left: thin, bottom: thin, right: thin };
+    const font = (extra) => ({ name: SC_XL_FONT, size: 10, ...extra });
+    const headStyle = (c) => {
+      c.font = font({ bold: true });
+      c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF2F2F2" } };
+      c.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+      c.border = box;
+    };
+
+    // ---------- sheet 1: the report ----------
+    const ws = wb.addWorksheet("SpotCheck", {
+      views: [{ state: "frozen", xSplit: 5, ySplit: HEAD + 2 }],
+      pageSetup: {
+        paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+        margins: { left: 0.25, right: 0.25, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 },
+        printTitlesRow: `${HEAD}:${HEAD + 2}`,
+      },
+      headerFooter: { oddFooter: `&R&"${SC_XL_FONT}"&8&P / &N` },
     });
+    SC_XL_COLUMNS.forEach(([, , width], j) => { ws.getColumn(j + 1).width = width; });
+
+    ws.mergeCells(1, 1, 1, 12);
+    Object.assign(ws.getCell(1, 1), { value: title });
+    ws.getCell(1, 1).font = font({ size: 16, bold: true });
+    ws.mergeCells(2, 1, 2, 12);
+    ws.getCell(2, 1).value = period ? `Period: ${period}` : "";
+    ws.getCell(2, 1).font = font({ size: 11, bold: true });
+    ws.getRow(1).height = 26;
+    ws.getRow(2).height = 20;
+    ws.getRow(3).height = 14;
+    if (logoId !== null) {
+      // Top right, over the last columns (about 2.9 : 1, as the logo file).
+      ws.addImage(logoId, { tl: { col: n - 3.2, row: 0.1 }, ext: { width: 200, height: 70 }, editAs: "oneCell" });
+    }
+
+    // Header: parts, sections, columns.
+    SC_XL_PARTS.forEach(([c1, c2, label]) => {
+      ws.mergeCells(HEAD, c1, HEAD, c2);
+      ws.getCell(HEAD, c1).value = label;
+    });
+    SC_XL_SECTIONS.forEach(([c1, c2, label]) => {
+      if (c2 > c1) ws.mergeCells(HEAD + 1, c1, HEAD + 1, c2);
+      ws.getCell(HEAD + 1, c1).value = label;
+    });
+    SC_XL_COLUMNS.forEach(([, label], j) => { ws.getCell(HEAD + 2, j + 1).value = label; });
+    ws.mergeCells(HEAD + 1, n, HEAD + 2, n);   // សន្និដ្ឋាន
+    ws.getCell(HEAD + 1, n).value = SC_XL_COLUMNS[n - 1][1];
+    for (let r = HEAD; r <= HEAD + 2; r++) {
+      for (let j = 1; j <= n; j++) headStyle(ws.getCell(r, j));
+    }
+    ws.getRow(HEAD).height = 22;
+    ws.getRow(HEAD + 1).height = 22;
+    ws.getRow(HEAD + 2).height = 34;
+
+    // One row per check. Row height from the longest wrapped text.
+    rows.forEach((rec, i) => {
+      const r = ws.getRow(HEAD + 3 + i);
+      let lines = 1;
+      SC_XL_COLUMNS.forEach(([key, , width, kind], j) => {
+        const c = r.getCell(j + 1);
+        const v = scXlCellValue(rec, key, i);
+        c.value = v;
+        c.border = box;
+        c.font = font({ bold: kind === "bold" });
+        if (v instanceof Date) c.numFmt = "dd/mm/yyyy";
+        else if (typeof v === "number") c.numFmt = kind === "money" ? "#,##0" : "0";
+        else c.numFmt = "@";
+        const align = kind === "money" ? "right" : (kind === "center" || kind === "bold" || kind === "date") ? "center" : "left";
+        c.alignment = { vertical: "middle", horizontal: align, wrapText: kind === "wrap" };
+        if (kind === "wrap" && typeof v === "string") lines = Math.max(lines, Math.ceil(v.length / Math.max(4, width - 2)));
+      });
+      r.height = Math.max(30, 15 * lines);
+    });
+
+    // Signatures: approved (left), certified (middle), prepared (right).
+    const branches = [...new Set(rows.map((r) => r.branch).filter(Boolean))];
+    const today = new Date();
+    const place = branches.length === 1 ? branches[0] : "..................";
+    const dateLine = `${place}, ថ្ងៃទី${scKhDigits(today.getDate())} ខែ${SC_KH_MONTHS[today.getMonth()]} ឆ្នាំ${scKhDigits(today.getFullYear())}`;
+    const sig = HEAD + 3 + rows.length + 2;
+    const blocks = [[1, 8], [13, 20], [26, n]];
+    const put = (row, [c1, c2], text, bold) => {
+      ws.mergeCells(row, c1, row, c2);
+      const c = ws.getCell(row, c1);
+      c.value = text;
+      c.font = font({ size: 11, bold });
+      c.alignment = { horizontal: "center", vertical: "middle" };
+    };
+    put(sig, blocks[2], dateLine, false);
+    put(sig + 1, blocks[0], "អនុម័តដោយ", true);
+    put(sig + 1, blocks[1], "បញ្ជាក់ដោយ", true);
+    put(sig + 1, blocks[2], "រៀបចំដោយ", true);
+    put(sig + 2, blocks[0], "នាយកជាន់ខ្ពស់", true);
+    put(sig + 2, blocks[1], "ប្រធានឥណទានជាន់ខ្ពស់", true);
+    put(sig + 2, blocks[2], "អនុប្រធានឥណទាន", true);
+    blocks.forEach((b) => put(sig + 7, b, "..................................", false));
+    for (let r = sig; r <= sig + 7; r++) ws.getRow(r).height = 20;
+
+    // ---------- sheet 2: by branch ----------
+    const sum = scExportSummary(rows);
+    const ws2 = wb.addWorksheet("តាមសាខា", {
+      views: [{ state: "frozen", xSplit: 1, ySplit: HEAD }],
+      pageSetup: { paperSize: 9, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+    });
+    ws2.getCell(1, 1).value = title;
+    ws2.getCell(1, 1).font = font({ size: 14, bold: true });
+    ws2.getCell(2, 1).value = period ? `Period: ${period}` : "";
+    ws2.getCell(2, 1).font = font({ size: 11, bold: true });
+    sum.head.forEach((h, j) => {
+      const c = ws2.getCell(HEAD, j + 1);
+      c.value = h;
+      headStyle(c);
+      ws2.getColumn(j + 1).width = j === 0 ? 18 : 14;
+    });
+    ws2.getRow(HEAD).height = 30;
+    sum.rows.forEach((vals, i) => {
+      const isTotal = vals[vals.length - 1];
+      vals.slice(0, -1).forEach((v, j) => {
+        const c = ws2.getCell(HEAD + 1 + i, j + 1);
+        c.value = v;
+        c.border = box;
+        c.font = font({ bold: isTotal });
+        c.alignment = { horizontal: j === 0 ? "left" : "center", vertical: "middle" };
+        if (isTotal) c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF2F2F2" } };
+      });
+    });
+
+    const pad = (x) => String(x).padStart(2, "0");
+    const month = document.getElementById("filterMonth")?.value;
+    const stamp = /^\d{4}-\d{2}$/.test(month || "") ? month.replace("-", "") : `${today.getFullYear()}${pad(today.getMonth() + 1)}${pad(today.getDate())}`;
+    await ArrExport.save(wb, `SpotCheck_${stamp}.xlsx`);
   } catch (err) {
     console.error("[spotcheck export] failed:", err);
     scNotify("មិនអាចបង្កើតឯកសារបានទេ — សូមពិនិត្យអ៊ីនធឺណិត ហើយសាកម្ដងទៀត", "error");

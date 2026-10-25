@@ -17,6 +17,8 @@
 //
 //   ArrExport.excel({ filename, sheets: [{ name, title, info, cols, groups, rows, freezeCols }], freezeCols, onProgress })
 //   ArrExport.pdf({ filename, title, info, cols, groups, rows, footer, onProgress })
+//   ArrExport.workbook() / ArrExport.save(wb, filename) — a blank ExcelJS
+//     workbook for a report with its own layout, and its download
 //
 // Excel: ExcelJS (loaded the first time it's needed) — real numbers and
 // dates, the Krasar font, the table's colours, a frozen header and
@@ -461,5 +463,18 @@
         doc.save(filename);
     }
 
-    window.ArrExport = { excel, pdf };
+    // A blank workbook (ExcelJS loaded on first use) and its download, for
+    // a report with a layout of its own (Spot Check's monthly report).
+    async function workbook() {
+        await loadScript(EXCELJS_URL);
+        const wb = new window.ExcelJS.Workbook();
+        wb.created = new Date();
+        return wb;
+    }
+    async function save(wb, filename) {
+        const buf = await wb.xlsx.writeBuffer();
+        download(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), filename);
+    }
+
+    window.ArrExport = { excel, pdf, workbook, save };
 })();
