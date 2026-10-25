@@ -715,11 +715,14 @@ async function scAskSignatures(rows) {
     overlay.innerHTML = `
       <div class="sc-confirm sc-sign" role="dialog" aria-modal="true" aria-labelledby="scSignTitle">
         <h3 id="scSignTitle">ហត្ថលេខាលើរបាយការណ៍</h3>
+        <div class="sc-sign-role sc-sign-setup">
+        <b>ការរៀបចំ</b>
         <div class="sc-sign-grid">
           <label>ថ្ងៃរៀបចំ<input type="date" id="scSignDate" required></label>
           <label>សាខា<select id="scSignBranch">${branches.map((b) => `<option value="${esc(b)}">${esc(b)}</option>`).join("")}</select></label>
           <label>ប្រភេទសាខា<select id="scSignClass"><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></label>
           <label class="sc-sign-wide">ធ្វើនៅ<input type="text" id="scSignPlace" placeholder="ឧ. ស្វាយរៀង"></label>
+        </div>
         </div>
         <div id="scSignRoles"></div>
         <p class="sc-confirm-warn" id="scSignError" hidden></p>
