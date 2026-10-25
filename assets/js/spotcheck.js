@@ -528,10 +528,10 @@ const SC_XL_COLUMNS = [
   ["cif", "CIF", 10, "center"],
   ["loanId", "Contract LD", 17],
   ["customerName", "Name", 18, "wrap"],
-  ["disbursementDate", "Disburse", 11, "date"],
-  ["maturityDate", "Maturity", 11, "date"],
-  ["loanSize", "Loan Size", 12, "money"],
-  ["currency", "CCY", 6, "center"],
+  ["disbursementDate", "Disburse", 12, "date"],
+  ["maturityDate", "Maturity", 12, "date"],
+  ["loanSize", "Loan Size", 13, "money"],
+  ["currency", "CCY", 7, "center"],
   ["outstanding", "O.S", 11, "money"],
   ["creditOfficer", "CO", 8, "bold"],
   ["interestRate", "អត្រាការប្រាក់", 15, "wrap"],
@@ -612,6 +612,15 @@ function scXlCellValue(rec, key, i) {
   if (key === "interestRate") return scFormatRate(String(raw));
   if (key === "term") return scFormatTerm(String(raw));
   return String(raw);
+}
+
+// "<branch>, ថ្ងៃទី២៥ ខែតុលា ឆ្នាំ២០២៦" over the "prepared by" signature:
+// the branch when every row is from one, and the export date.
+function scSignatureDateLine(rows) {
+  const branches = [...new Set(rows.map((r) => r.branch).filter(Boolean))];
+  const today = new Date();
+  const place = branches.length === 1 ? branches[0] : "..................";
+  return `${place}, ថ្ងៃទី${scKhDigits(today.getDate())} ខែ${SC_KH_MONTHS[today.getMonth()]} ឆ្នាំ${scKhDigits(today.getFullYear())}`;
 }
 
 async function scLogoBase64() {
@@ -742,10 +751,8 @@ async function scExportExcel() {
     });
 
     // Signatures: approved (left), certified (middle), prepared (right).
-    const branches = [...new Set(rows.map((r) => r.branch).filter(Boolean))];
     const today = new Date();
-    const place = branches.length === 1 ? branches[0] : "..................";
-    const dateLine = `${place}, ថ្ងៃទី${scKhDigits(today.getDate())} ខែ${SC_KH_MONTHS[today.getMonth()]} ឆ្នាំ${scKhDigits(today.getFullYear())}`;
+    const dateLine = scSignatureDateLine(rows);
     const sig = HEAD + 3 + rows.length + 2;
     const blocks = [[1, 8], [13, 20], [26, n]];
     const put = (row, [c1, c2], text, bold) => {
@@ -802,6 +809,182 @@ async function scExportExcel() {
     console.error("[spotcheck export] failed:", err);
     scNotify("មិនអាចបង្កើតឯកសារបានទេ — សូមពិនិត្យអ៊ីនធឺណិត ហើយសាកម្ដងទៀត", "error");
   } finally {
+    if (typeof hideAppLoading === "function") hideAppLoading();
+  }
+}
+
+// ---------------------------------------------------------
+// Export PDF (⋮ menu) — the same monthly report as the Excel (title and
+// period, logo, the three-level header, columns A–AF, the signatures), on
+// A4 landscape. The report is laid out as a page of HTML off screen — so
+// the browser shapes the Khmer — then each A4 page is cut from it between
+// rows (never through one), with the header rows repeated on every page
+// and the signature block kept whole. html2canvas and jsPDF load on first
+// use.
+// ---------------------------------------------------------
+const SC_PDF_LIBS = [
+  "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+];
+const SC_PDF_WIDTH_PX = 2600;   // report width before it is fitted to the page
+// Short values (dates, amounts, codes) stay on one line on paper.
+const SC_PDF_NOWRAP = new Set(["date", "money", "center", "bold"]);
+
+const scScriptLoads = {};
+function scLoadScript(url) {
+  if (!scScriptLoads[url]) {
+    scScriptLoads[url] = new Promise((resolve, reject) => {
+      const el = document.createElement("script");
+      el.src = url;
+      el.onload = resolve;
+      el.onerror = () => { delete scScriptLoads[url]; reject(new Error(`Could not load ${url}`)); };
+      document.head.appendChild(el);
+    });
+  }
+  return scScriptLoads[url];
+}
+
+// A cell as it reads on paper (dates dd/mm/yyyy, amounts #,##0).
+function scPdfCellText(rec, key, i) {
+  const v = scXlCellValue(rec, key, i);
+  if (v === null || v === undefined) return "";
+  if (v instanceof Date) {
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${pad(v.getUTCDate())}/${pad(v.getUTCMonth() + 1)}/${v.getUTCFullYear()}`;
+  }
+  if (typeof v === "number") return (key === "loanSize" || key === "outstanding") ? Math.round(v).toLocaleString("en-US") : String(v);
+  return v;
+}
+
+function scBuildReportElement(rows) {
+  const esc = scEscapeHtml;
+  const n = SC_XL_COLUMNS.length;
+  // Short values size their own column; text columns share the rest
+  // (at least about their Excel width each).
+  const cols = SC_XL_COLUMNS.map(([, , width, kind]) => (SC_PDF_NOWRAP.has(kind) ? "<col>" : `<col style="min-width:${width * 6}px">`)).join("");
+  const parts = SC_XL_PARTS.map(([c1, c2, label]) => `<th colspan="${c2 - c1 + 1}">${esc(label)}</th>`).join("");
+  const sections = SC_XL_SECTIONS.map(([c1, c2, label]) => `<th colspan="${c2 - c1 + 1}">${esc(label)}</th>`).join("")
+    + `<th rowspan="2">${esc(SC_XL_COLUMNS[n - 1][1])}</th>`;
+  const labels = SC_XL_COLUMNS.slice(0, n - 1).map((c) => `<th>${esc(c[1])}</th>`).join("");
+  const body = rows.map((rec, i) => `<tr>${SC_XL_COLUMNS.map(([key, , , kind]) => {
+    const cls = kind === "money" ? "r" : (kind === "center" || kind === "date" || kind === "bold") ? "c" : "";
+    return `<td class="${cls}${kind === "bold" ? " b" : ""}${SC_PDF_NOWRAP.has(kind) ? " n" : ""}">${esc(scPdfCellText(rec, key, i))}</td>`;
+  }).join("")}</tr>`).join("");
+  const period = scExportPeriod(rows);
+
+  const el = document.createElement("div");
+  el.className = "sc-pdf-report";
+  el.style.cssText = `position:fixed;left:-${SC_PDF_WIDTH_PX + 200}px;top:0;width:${SC_PDF_WIDTH_PX}px;background:#fff;color:#000;padding:0;`;
+  el.innerHTML = `
+    <style>
+      .sc-pdf-report{font-family:'KRASAR',sans-serif;font-size:14px;line-height:1.35}
+      .sc-pdf-report .top{display:flex;justify-content:space-between;align-items:flex-start;padding:4px 2px 10px}
+      .sc-pdf-report h1{font-size:30px;margin:0 0 4px;font-weight:700}
+      .sc-pdf-report .period{font-size:19px;font-weight:700}
+      .sc-pdf-report .top img{height:96px}
+      .sc-pdf-report table{width:100%;border-collapse:collapse}
+      .sc-pdf-report th,.sc-pdf-report td{border:1px solid #000;padding:3px 4px;vertical-align:middle;overflow-wrap:break-word}
+      .sc-pdf-report td.n{white-space:nowrap}
+      .sc-pdf-report th{background:#F2F2F2;font-weight:700;text-align:center}
+      .sc-pdf-report td.r{text-align:right}.sc-pdf-report td.c{text-align:center}.sc-pdf-report td.b{font-weight:700}
+      .sc-pdf-report .sig{display:grid;grid-template-columns:1fr 1fr 1fr;padding-top:30px;font-size:19px;text-align:center}
+      .sc-pdf-report .sig b{display:block}
+      .sc-pdf-report .sig .line{margin-top:120px}
+    </style>
+    <div class="top">
+      <div><h1>Facilities Spot Check</h1><div class="period">${period ? `Period: ${esc(period)}` : ""}</div></div>
+      <img src="${SC_LOGO_URL}" alt="">
+    </div>
+    <table>
+      <colgroup>${cols}</colgroup>
+      <thead><tr>${parts}</tr><tr>${sections}</tr><tr>${labels}</tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+    <div class="sig">
+      <div><div>&nbsp;</div><b>អនុម័តដោយ</b><b>នាយកជាន់ខ្ពស់</b><div class="line">..................................</div></div>
+      <div><div>&nbsp;</div><b>បញ្ជាក់ដោយ</b><b>ប្រធានឥណទានជាន់ខ្ពស់</b><div class="line">..................................</div></div>
+      <div><div>${esc(scSignatureDateLine(rows))}</div><b>រៀបចំដោយ</b><b>អនុប្រធានឥណទាន</b><div class="line">..................................</div></div>
+    </div>`;
+  return el;
+}
+
+async function scExportPdf() {
+  const rows = scCurrentRows.slice();
+  if (!rows.length) {
+    scNotify("មិនមានទិន្នន័យសម្រាប់នាំចេញទេ", "warning");
+    return;
+  }
+  if (typeof showAppLoading === "function") showAppLoading("កំពុងបង្កើតឯកសារ PDF...");
+  let el = null;
+  try {
+    await Promise.all(SC_PDF_LIBS.map(scLoadScript));
+    try { await document.fonts.load("12px KRASAR"); } catch (e) { /* drawn with the fallback font */ }
+    el = scBuildReportElement(rows);
+    document.body.appendChild(el);
+    const img = el.querySelector(".top img");
+    if (img && !img.complete) await new Promise((r) => { img.onload = img.onerror = r; });
+
+    const SCALE = 2;
+    const canvas = await window.html2canvas(el, { scale: SCALE, backgroundColor: "#ffffff", useCORS: true });
+    const top = el.getBoundingClientRect().top;
+    const y = (node, edge) => (node.getBoundingClientRect()[edge] - top) * SCALE;
+    const thead = el.querySelector("thead");
+    const headTop = y(thead, "top"), headBottom = y(thead, "bottom");
+    // Where a page may end: after any body row, and before / after the signatures.
+    const cuts = [...el.querySelectorAll("tbody tr")].map((tr) => y(tr, "bottom"));
+    const sigTop = y(el.querySelector(".sig"), "top");
+    const end = canvas.height;
+
+    const pageW = 297, pageH = 210, margin = 8, footH = 6;
+    const usableW = pageW - margin * 2, usableH = pageH - margin * 2 - footH;
+    const pxPerMm = canvas.width / usableW;
+    const pageHPx = usableH * pxPerMm;
+    const headH = headBottom - headTop;
+
+    // Pages as [from, to) slices of the canvas; pages after the first
+    // start with the header rows again.
+    const pages = [];
+    let from = 0;
+    while (from < end - 2) {
+      const room = pages.length ? pageHPx - headH : pageHPx;
+      let to = from + room;
+      if (to >= end) { pages.push([from, end]); break; }
+      const fit = cuts.filter((c) => c > from + 1 && c <= to);
+      // The signature block moves whole to the next page when it doesn't fit.
+      to = fit.length ? Math.max(...fit) : (sigTop > from + 1 && sigTop <= to ? sigTop : to);
+      pages.push([from, to]);
+      from = to;
+    }
+
+    const pdf = new window.jspdf.jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
+    pages.forEach(([a, b], k) => {
+      if (k > 0) pdf.addPage();
+      const repeat = k > 0;
+      const page = document.createElement("canvas");
+      page.width = canvas.width;
+      page.height = Math.ceil((b - a) + (repeat ? headH : 0));
+      const ctx = page.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, page.width, page.height);
+      let at = 0;
+      if (repeat) { ctx.drawImage(canvas, 0, headTop, canvas.width, headH, 0, 0, canvas.width, headH); at = headH; }
+      ctx.drawImage(canvas, 0, a, canvas.width, b - a, 0, at, canvas.width, b - a);
+      pdf.addImage(page.toDataURL("image/jpeg", 0.9), "JPEG", margin, margin, usableW, page.height / pxPerMm);
+      pdf.setFontSize(8);
+      pdf.setTextColor(90);
+      pdf.text(`${k + 1} / ${pages.length}`, pageW - margin, pageH - margin + 1, { align: "right" });
+    });
+
+    const pad = (x) => String(x).padStart(2, "0");
+    const today = new Date();
+    const month = document.getElementById("filterMonth")?.value;
+    const stamp = /^\d{4}-\d{2}$/.test(month || "") ? month.replace("-", "") : `${today.getFullYear()}${pad(today.getMonth() + 1)}${pad(today.getDate())}`;
+    pdf.save(`SpotCheck_${stamp}.pdf`);
+  } catch (err) {
+    console.error("[spotcheck pdf] failed:", err);
+    scNotify("មិនអាចបង្កើតឯកសារបានទេ — សូមពិនិត្យអ៊ីនធឺណិត ហើយសាកម្ដងទៀត", "error");
+  } finally {
+    el?.remove();
     if (typeof hideAppLoading === "function") hideAppLoading();
   }
 }
@@ -1451,6 +1634,7 @@ function scBindEvents() {
     });
   }
   document.getElementById("btnScExportExcel").addEventListener("click", scExportExcel);
+  document.getElementById("btnScExportPdf")?.addEventListener("click", scExportPdf);
 
   scBindAutosuggest("txtOccupationInFile", "lstOccupationInFileSuggest");
   scBindAutosuggest("txtCurrentOccupation", "lstCurrentOccupationSuggest");
