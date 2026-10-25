@@ -5,7 +5,7 @@
 .page-container{ padding:14px 14px 150px; }
 
 .mp-hero, .mp-card{
-    max-width:980px;
+    max-width:1400px;
     margin:0 auto 12px;
     background:var(--md-card-bg);
     border:1px solid var(--md-border);
@@ -72,6 +72,10 @@
     background:var(--md-page-bg); font-weight:700; text-align:center; white-space:nowrap;
 }
 .mp-table thead tr:nth-child(2) th{ top:29px; }
+/* A group heading over several columns stays readable next to the name
+   column while the table scrolls sideways. */
+.mp-table th.mp-grp{ text-align:left; }
+.mp-table th.mp-grp span{ position:sticky; left:184px; }
 .mp-table td{ text-align:right; background:var(--md-card-bg); }
 .mp-table .mp-name{
     position:sticky; left:0; z-index:1; text-align:left; min-width:130px; max-width:170px;
@@ -90,6 +94,7 @@
 .mp-in.mp-bad{ border-color:#C62828; background:#FDECEC; }
 .mp-table tfoot td{ position:sticky; bottom:0; background:var(--md-page-bg); font-weight:800; }
 .mp-table tr.mp-group td{ background:var(--md-page-bg); text-align:left; }
+.mp-group-in{ position:sticky; left:6px; width:max-content; max-width:min(560px, calc(100vw - 72px)); }
 .mp-group-n{ font-size:11px; color:var(--md-text-muted); margin-left:4px; }
 .mp-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
 .mp-chip{ font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid var(--md-border); color:var(--md-text-muted); white-space:nowrap; }
@@ -113,4 +118,5 @@
 @media (max-width:480px){
     .mp-table .mp-name{ min-width:110px; max-width:130px; }
     .mp-in{ width:84px; }
+    .mp-table th.mp-grp span{ left:144px; }
 }

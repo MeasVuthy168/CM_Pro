@@ -1,10 +1,10 @@
 // ========================================
 // Master Data > Monthly Plan — ផែនការប្រចាំខែ (admin only)
-// The targets the Daily Monitoring reports by Branch / Officer / Product
-// are measured against, one month at a time:
-//   GET|PUT /api/admin/monthly-plan?month=YYYY-MM&dim=branch|officer|product
-// The table is filled from the server's list of branches / officers /
-// products (plus any planned key no longer in it), edited in place, and
+// The targets the Daily Monitoring reports by Branch / Officer are
+// measured against, one month at a time:
+//   GET|PUT /api/admin/monthly-plan?month=YYYY-MM&dim=branch|officer
+// The table is filled from the server's list of branches / officers
+// (plus any planned key no longer in it), edited in place, and
 // saved for the whole tab at once. "Copy from last month" and Excel
 // import only fill the table — nothing is saved until Save.
 // ========================================
@@ -28,8 +28,17 @@ const MP_EP = API.BASE_URL + "/api/admin/monthly-plan";
 
 // Column groups, in table order. A metric the tab doesn't have is skipped.
 const MP_GROUPS = [
-    { label: "masterdata.plan.grpOs", metrics: [["osCount", "masterdata.plan.colCount"], ["osAmount", "masterdata.plan.colAmount"]] },
-    { label: "masterdata.plan.grpDisb", metrics: [["disbCount", "masterdata.plan.colCount"], ["disbAmount", "masterdata.plan.colAmount"]] },
+    {
+        label: "masterdata.plan.grpOs",
+        metrics: [
+            ["osCount", "masterdata.plan.colLoans"],
+            ["osClients", "masterdata.plan.colClients"],
+            ["osKhr", "masterdata.plan.colKhr"],
+            ["osSmall", "masterdata.plan.colSmall"],
+            ["osAmount", "masterdata.plan.colOsAmount"]
+        ]
+    },
+    { label: "masterdata.plan.grpDisb", metrics: [["disbCount", "masterdata.plan.colLoans"], ["disbAmount", "masterdata.plan.colAmount"]] },
     { label: "masterdata.plan.colNbc", metrics: [["nbcOverduePct"]] },
     { label: "masterdata.plan.colNpl", metrics: [["nplPct"]] },
     { label: "masterdata.plan.colWo", metrics: [["woCollected"]] },
@@ -269,11 +278,11 @@ function mpRender() {
     const groups = mpGroups();
     const cols = groups.flatMap(g => g.metrics.map(([k]) => k));
     const two = groups.some(g => g.metrics.length > 1);
-    const nameHead = t(mp.dim === "branch" ? "masterdata.plan.tabBranch" : mp.dim === "officer" ? "masterdata.plan.tabOfficer" : "masterdata.plan.tabProduct");
+    const nameHead = t(mp.dim === "branch" ? "masterdata.plan.tabBranch" : "masterdata.plan.tabOfficer");
 
     let head = `<thead><tr><th class="mp-name" ${two ? 'rowspan="2"' : ""}>${mpEsc(nameHead)}</th>`;
     head += groups.map(g => g.metrics.length > 1
-        ? `<th colspan="${g.metrics.length}">${mpEsc(t(g.label))}</th>`
+        ? `<th class="mp-grp" colspan="${g.metrics.length}"><span>${mpEsc(t(g.label))}</span></th>`
         : `<th ${two ? 'rowspan="2"' : ""}>${mpEsc(t(g.label))}</th>`).join("");
     head += "</tr>";
     if (two) {
@@ -298,7 +307,9 @@ function mpRender() {
             byBranch.get(b).push(r);
         });
         for (const [b, list] of byBranch) {
-            body += `<tr class="mp-group"><td class="mp-name" colspan="${cols.length + 1}"><b>${mpEsc(b)}</b> <span class="mp-group-n">${list.length}</span><div class="mp-chips">${mpCompareChips(b, list)}</div></td></tr>`;
+            // The cell spans the row; its content stays in view while the
+            // table scrolls sideways.
+            body += `<tr class="mp-group"><td colspan="${cols.length + 1}"><div class="mp-group-in"><b>${mpEsc(b)}</b> <span class="mp-group-n">${list.length}</span><div class="mp-chips">${mpCompareChips(b, list)}</div></div></td></tr>`;
             body += list.map(rowHtml).join("");
         }
     } else {
