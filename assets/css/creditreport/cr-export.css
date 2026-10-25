@@ -1,0 +1,71 @@
+/* ==========================================
+   Credit Report daily reports — Fullscreen and Print (cr-export.js)
+========================================== */
+
+/* FULLSCREEN — only the table: topbar, filters, bottom bar hidden;
+   the table box takes the whole screen and scrolls inside. */
+.cr-fs-bar{ display:none; }
+body.cr-fullscreen #topbar-container,
+body.cr-fullscreen .filter-card,
+body.cr-fullscreen .cr-tabs,
+body.cr-fullscreen .print-only-title,
+body.cr-fullscreen .arrears-menu-wrap,
+body.cr-fullscreen #bottomnav-container,
+body.cr-fullscreen #offlineBanner{ display:none !important; }
+body.cr-fullscreen{ padding-top:0 !important; padding-bottom:0 !important; overflow:hidden; }
+body.cr-fullscreen .page-container{
+    padding:0 !important; margin:0 !important;
+    height:100vh; height:100dvh; max-width:none;
+}
+body.cr-fullscreen .table-card{
+    position:fixed; inset:0; z-index:900;
+    margin:0; border:none; border-radius:0;
+    padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+    display:flex; flex-direction:column; gap:6px;
+}
+body.cr-fullscreen .table-scroll{ flex:1 1 auto; min-height:0; max-height:none !important; }
+body.cr-fullscreen .cr-fs-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    flex:0 0 auto; padding:2px 2px 0;
+}
+.cr-fs-text{ display:flex; flex-direction:column; min-width:0; line-height:1.25; }
+.cr-fs-text b{ font-size:13px; color:var(--cr-text, #1C2333); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cr-fs-text span{ font-size:11px; color:var(--cr-text-muted, #6B7280); }
+.cr-fs-exit{
+    flex:0 0 auto; display:inline-flex; align-items:center; gap:4px;
+    height:34px; padding:0 12px; border:none; border-radius:10px;
+    background:#1A2E57; color:#FFD700;
+    font-family:'KRASAR',sans-serif; font-size:13px; font-weight:700; cursor:pointer;
+}
+[data-theme="dark"] .cr-fs-exit{ background:#FFD700; color:#1A2E57; }
+.cr-fs-exit:active{ transform:scale(.96); }
+
+/* PRINT — #crPrintSheet is the whole printout; the page itself is not
+   printed. On screen the sheet only exists for a moment (measuring). */
+#crPrintSheet{ display:none; }
+#crPrintSheet.crp-measure{
+    display:block; position:absolute; left:-100000px; top:0; visibility:hidden;
+    width:max-content;
+}
+#crPrintSheet{ font-family:'KRASAR',sans-serif; color:#1C2333; }
+#crPrintSheet h1{ font-size:18px; margin:0 0 4px; color:#1A2E57; }
+#crPrintSheet .crp-info{ font-size:10.5px; margin:0 0 2px; color:#4A5568; }
+#crPrintSheet .crp-foot{ font-size:9.5px; margin:6px 0 0; color:#6B7280; }
+#crPrintSheet table{ border-collapse:collapse; margin-top:8px; font-size:12px; white-space:nowrap; }
+#crPrintSheet th, #crPrintSheet td{ border:1px solid #C9D1DD; padding:3px 6px; }
+#crPrintSheet th{ background:#1A2E57; color:#FFD700; font-weight:700; text-align:center; }
+#crPrintSheet td.crp-num{ text-align:right; font-variant-numeric:tabular-nums; }
+#crPrintSheet tbody tr:nth-child(even) td{ background:#F3F6FA; }
+#crPrintSheet tr.crp-total td{ background:#FFF4C2; font-weight:700; }
+#crPrintSheet td.crp-alert{ color:#C0392B; font-weight:700; }
+
+@media print{
+    @page{ size:A4 landscape; margin:10mm; }
+    body.cr-printing > *:not(#crPrintSheet){ display:none !important; }
+    body.cr-printing{ padding:0 !important; margin:0 !important; background:#fff !important; }
+    body.cr-printing #crPrintSheet{ display:block; }
+    #crPrintSheet *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    #crPrintSheet thead{ display:table-header-group; }
+    #crPrintSheet tr{ break-inside:avoid; }
+    #crPrintSheet .crp-band + .crp-band{ break-before:page; }
+}

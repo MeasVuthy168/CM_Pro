@@ -1,7 +1,7 @@
 // ========================================
 // Daily Monitoring by Product — web port, same style as Daily
 // Monitoring by Officer (RepDetailbyCO.js/.css) — filter card, sticky
-// first column, PAR alert colour, skeleton loading, landscape/print.
+// first column, PAR alert colour, skeleton loading, fullscreen/print.
 // Reads GET /api/creditreport/byproduct (see lib/creditreport-product.js
 // for the column mapping behind each figure).
 //
@@ -157,25 +157,6 @@ function crFmtDateDMY(yyyymmdd) {
     if (!yyyymmdd) return "-";
     const [y, m, d] = yyyymmdd.split("-");
     return `${d}-${m}-${y}`;
-}
-// table_to_sheet() reads raw DOM text (product names among it) straight
-// into cells — Excel treats a cell string starting with =, +, -, @, or a
-// tab/CR as a formula when the file is opened, so this neutralizes any
-// such string cell (a leading apostrophe forces plain text) before the
-// workbook is written. Only touches string cells (t:"s"); numeric report
-// figures are untouched.
-function crSanitizeSheetFormulas(ws) {
-    if (!ws["!ref"]) return;
-    const range = XLSX.utils.decode_range(ws["!ref"]);
-    for (let r = range.s.r; r <= range.e.r; r++) {
-        for (let c = range.s.c; c <= range.e.c; c++) {
-            const cell = ws[XLSX.utils.encode_cell({ r, c })];
-            if (cell && cell.t === "s" && /^[=+\-@\t\r]/.test(cell.v)) {
-                cell.v = `'${cell.v}`;
-                if (cell.w) cell.w = cell.v;
-            }
-        }
-    }
 }
 
 function crEscapeHtml(text) {
@@ -941,143 +922,10 @@ function crClearSearchForExport() {
 }
 
 // ========================================
-// EXPORT EXCEL
+// EXPORT EXCEL / PDF, PRINT, FULLSCREEN — the report on screen, same
+// engine and look as Daily Arrears (cr-export.js, arrears-export.js).
 // ========================================
-document.getElementById("btnCrExport")?.addEventListener("click", () => {
-    crClearSearchForExport();
-    if (typeof XLSX === "undefined") {
-        notify(t("creditreport.detail.excelLibFailed"), "error");
-        return;
-    }
-    if (!document.getElementById("crTbody").children.length) {
-        notify(t("creditreport.detail.nothingToExport"), "warning");
-        return;
-    }
-    const ws = XLSX.utils.table_to_sheet(document.getElementById("crTable"));
-    crSanitizeSheetFormulas(ws);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "ByProduct");
-    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "");
-    XLSX.writeFile(wb, `MonitoringByProduct_${stamp}.xlsx`);
-    document.getElementById("crMenuDropdown")?.classList.remove("show");
-});
-
-// ========================================
-// EXPORT PDF
-// html2canvas only captures what's laid out at the current viewport
-// width, so every container is temporarily forced to its full natural
-// width — otherwise columns past the horizontal scroll are cropped out.
-// Page slicing cuts only at row boundaries so no row is split in half.
-// ========================================
-function extractPrintCss() {
-    let css = "";
-    for (const sheet of document.styleSheets) {
-        let rules;
-        try { rules = sheet.cssRules; } catch (e) { continue; } // cross-origin
-        for (const rule of rules) {
-            if (rule.type === CSSRule.MEDIA_RULE && rule.media.mediaText.includes("print")) {
-                for (const inner of rule.cssRules) css += inner.cssText + "\n";
-            }
-        }
-    }
-    return css;
-}
-
-document.getElementById("btnCrExportPdf")?.addEventListener("click", async () => {
-    document.getElementById("crMenuDropdown")?.classList.remove("show");
-    crClearSearchForExport();
-    if (typeof html2canvas === "undefined" || typeof window.jspdf === "undefined") {
-        notify(t("creditreport.detail.pdfLibFailed"), "error");
-        return;
-    }
-    if (!document.getElementById("crTbody").children.length) {
-        notify(t("creditreport.detail.nothingToExport"), "warning");
-        return;
-    }
-    if (typeof showAppLoading === "function") showAppLoading(t("creditreport.detail.generatingPdf"));
-
-    const tempStyle = document.createElement("style");
-    tempStyle.textContent = extractPrintCss() + `
-        html, body { overflow-x: visible !important; width: max-content !important; }
-        .page-container { width: max-content !important; min-width: 100%; overflow: visible !important; }
-        .table-card { width: max-content !important; overflow: visible !important; }
-        .table-scroll { width: max-content !important; max-width: none !important; overflow: visible !important; }
-        .table-card table { width: max-content !important; }
-    `;
-    document.head.appendChild(tempStyle);
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-    try {
-        const container = document.querySelector(".page-container");
-        const thead = document.querySelector(".table-card thead");
-        const rows = Array.from(document.querySelectorAll(".table-card tbody tr"));
-
-        const SCALE = 2;
-        const full = await html2canvas(container, { scale: SCALE, backgroundColor: "#ffffff" });
-        const headCanvas = thead ? await html2canvas(thead, { scale: SCALE, backgroundColor: "#ffffff" }) : null;
-
-        const pageW = 297, pageH = 210, margin = 10;
-        const usableW = pageW - margin * 2;
-        const usableH = pageH - margin * 2;
-        const sliceH = full.width * (usableH / usableW);
-
-        const cRect = container.getBoundingClientRect();
-        const bounds = rows.map(tr => (tr.getBoundingClientRect().bottom - cRect.top) * SCALE);
-        const headH = headCanvas ? headCanvas.height : 0;
-
-        const slices = [];
-        let start = 0, first = true;
-        while (start < full.height - 2) {
-            const avail = first ? sliceH : sliceH - headH;
-            let end = start + avail;
-            let cut = end;
-            for (const b of bounds) if (b > start && b <= end) cut = b;
-            if (cut <= start) cut = Math.min(end, full.height);
-            slices.push({ start, end: Math.min(cut, full.height), repeatHeader: !first });
-            start = cut;
-            first = false;
-        }
-
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-
-        slices.forEach((s, i) => {
-            if (i > 0) pdf.addPage();
-            const h = s.end - s.start;
-            const canvas = document.createElement("canvas");
-            canvas.width = full.width;
-            canvas.height = h + (s.repeatHeader ? headH : 0);
-            const ctx = canvas.getContext("2d");
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            let y = 0;
-            if (s.repeatHeader && headCanvas) { ctx.drawImage(headCanvas, 0, 0); y = headH; }
-            ctx.drawImage(full, 0, s.start, full.width, h, 0, y, full.width, h);
-
-            const imgH = usableW * (canvas.height / canvas.width);
-            pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", margin, margin, usableW, imgH);
-        });
-
-        pdf.save(`MonitoringByProduct_${new Date().toISOString().slice(0, 10).replace(/-/g, "")}.pdf`);
-    } catch (err) {
-        console.error("[export pdf] failed:", err);
-        notify(t("creditreport.detail.pdfGenerateFailed"), "error");
-    } finally {
-        tempStyle.remove();
-        void document.body.offsetHeight;
-        if (typeof hideAppLoading === "function") hideAppLoading();
-    }
-});
-
-// ========================================
-// PRINT
-// ========================================
-document.getElementById("btnCrPrint")?.addEventListener("click", () => {
-    crClearSearchForExport();
-    window.print();
-    document.getElementById("crMenuDropdown")?.classList.remove("show");
-});
+CRExport.wire({ name: "MonitoringByProduct", beforeExport: crClearSearchForExport });
 
 // ========================================
 // SNAPSHOT — admin only, per explicit request 2026-10-08. Same
@@ -1163,45 +1011,6 @@ if (crMenuToggle && crMenuDropdown) {
         if (e.key === "Escape") crMenuDropdown.classList.remove("show");
     });
 }
-
-// ========================================
-// LANDSCAPE
-// ========================================
-const crLandscapeTopBar = document.getElementById("landscapeTopBar");
-const crLandscapeBottomBar = document.getElementById("landscapeBottomBar");
-let crLandscapeTimer = null;
-
-function crShowLandscapeBars() {
-    crLandscapeTopBar?.classList.remove("hidden");
-    crLandscapeBottomBar?.classList.remove("hidden");
-    clearTimeout(crLandscapeTimer);
-    crLandscapeTimer = setTimeout(() => {
-        crLandscapeTopBar?.classList.add("hidden");
-        crLandscapeBottomBar?.classList.add("hidden");
-    }, 3000);
-}
-
-document.getElementById("btnCrLandscape")?.addEventListener("click", () => {
-    document.body.classList.add("cr-force-landscape");
-    const count = document.getElementById("crTbody").children.length;
-    const el = document.getElementById("crLandscapeRowCount");
-    if (el) el.textContent = t("creditreport.detail.rowsCount", { count: count.toLocaleString() });
-    crShowLandscapeBars();
-    document.getElementById("crMenuDropdown")?.classList.remove("show");
-});
-document.getElementById("btnCrExitLandscape")?.addEventListener("click", () => {
-    clearTimeout(crLandscapeTimer);
-    document.body.classList.remove("cr-force-landscape");
-});
-document.querySelector(".table-card")?.addEventListener("click", e => {
-    if (!document.body.classList.contains("cr-force-landscape")) return;
-    if (e.target.closest(".landscape-bar")) return;
-    crShowLandscapeBars();
-});
-window.addEventListener("pageshow", () => {
-    clearTimeout(crLandscapeTimer);
-    document.body.classList.remove("cr-force-landscape");
-});
 
 // ========================================
 // HISTORY MODE — UI wiring

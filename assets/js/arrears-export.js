@@ -3,15 +3,20 @@
 // Both take the same column list, so the two files match each other
 // and the table on screen:
 //
-//   cols: [{ label, type, align, value(row, i), text(row, i), style(row, i), maxPx }]
+//   cols: [{ label, type, align, value(row, i), text(row, i), style(row, i), maxPx, numFmt }]
 //     type   "text" | "num" (#,##0.00) | "int" (0) | "date" (dd/mm/yyyy)
 //     value  the cell's value for Excel (number / Date / string)
 //     text   what's written in the PDF (and how long the Excel column is);
 //            "\n" splits it over lines
 //     style  { fill, color, bold } — the table's colours (Class, Promise…)
+//     numFmt Excel number format instead of the type's own ("0.00%"…)
 //
-//   ArrExport.excel({ filename, sheets: [{ name, title, info, cols, rows }], onProgress })
-//   ArrExport.pdf({ filename, title, info, cols, rows, footer, onProgress })
+//   groups (optional): [{ label, span }] — a second header row above the
+//     columns (Credit Report's "Loan Outstanding" over # Loan / Value…);
+//     a group with no label keeps its column's own label over both rows.
+//
+//   ArrExport.excel({ filename, sheets: [{ name, title, info, cols, groups, rows }], freezeCols, onProgress })
+//   ArrExport.pdf({ filename, title, info, cols, groups, rows, footer, onProgress })
 //
 // Excel: ExcelJS (loaded the first time it's needed) — real numbers and
 // dates, the Krasar font, the table's colours, a frozen header and
@@ -64,7 +69,7 @@
     const argb = hex => "FF" + hex.replace("#", "").toUpperCase();
     const NUM_FMT = { num: "#,##0.00", int: "0", date: "dd/mm/yyyy", text: "@" };
 
-    async function excel({ filename, sheets, onProgress }) {
+    async function excel({ filename, sheets, freezeCols = 2, onProgress }) {
         await loadScript(EXCELJS_URL);
         const wb = new window.ExcelJS.Workbook();
         wb.created = new Date();
@@ -74,14 +79,16 @@
         for (const sheet of sheets) {
             const { cols, rows } = sheet;
             const n = cols.length;
-            const headRow = 2 + (sheet.info || []).length + 1;   // title, info…, blank
+            const groups = (sheet.groups || []).some(g => g.label) ? sheet.groups : null;
+            const headRow = 2 + (sheet.info || []).length + 1 + (groups ? 1 : 0);   // title, info…, blank, [groups]
+            const headTop = groups ? headRow - 1 : headRow;
             const ws = wb.addWorksheet(sheet.name, {
-                views: [{ state: "frozen", xSplit: 2, ySplit: headRow }],
+                views: [{ state: "frozen", xSplit: freezeCols, ySplit: headRow }],
                 pageSetup: {
                     paperSize: 9, orientation: "landscape",
                     fitToPage: true, fitToWidth: 1, fitToHeight: 0,
                     margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 },
-                    printTitlesRow: `${headRow}:${headRow}`
+                    printTitlesRow: `${headTop}:${headRow}`
                 },
                 headerFooter: { oddFooter: "&L&\"Krasar\"&8" + sheet.name + "&R&\"Krasar\"&8&P / &N" }
             });
@@ -100,16 +107,33 @@
                 c.font = { name: FONT, size: 10, color: { argb: "FF5B6475" } };
             });
 
-            const head = ws.getRow(headRow);
-            cols.forEach((col, j) => {
-                const c = head.getCell(j + 1);
-                c.value = col.label;
+            const headCell = (c, value) => {
+                c.value = value;
                 c.font = { name: FONT, size: 10, bold: true, color: { argb: argb(GOLD) } };
                 c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: argb(NAVY) } };
                 c.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
                 c.border = borders;
-            });
+            };
+            const head = ws.getRow(headRow);
+            cols.forEach((col, j) => headCell(head.getCell(j + 1), col.label));
             head.height = 24;
+            if (groups) {
+                // Group label across its columns; a column with no group
+                // keeps its own label, over both header rows.
+                let c = 1;
+                groups.forEach(g => {
+                    for (let j = c; j < c + g.span; j++) headCell(ws.getCell(headTop, j), null);
+                    if (g.label) {
+                        headCell(ws.getCell(headTop, c), g.label);
+                        if (g.span > 1) ws.mergeCells(headTop, c, headTop, c + g.span - 1);
+                    } else {
+                        headCell(ws.getCell(headTop, c), cols[c - 1].label);
+                        ws.mergeCells(headTop, c, headRow, c);
+                    }
+                    c += g.span;
+                });
+                ws.getRow(headTop).height = 22;
+            }
 
             // Column widths from the longest text (Excel units ≈ characters).
             const widths = cols.map(col => Math.max(6, String(col.label).length + 2));
@@ -127,7 +151,7 @@
                     c.font = { name: FONT, size: 10, bold: !!st.bold, color: { argb: argb(st.color || INK) } };
                     const fill = st.fill || (zebra ? ZEBRA : null);
                     if (fill) c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: argb(fill) } };
-                    if (typeof v === "number" || v instanceof Date) c.numFmt = NUM_FMT[col.type] || "General";
+                    if (typeof v === "number" || v instanceof Date) c.numFmt = col.numFmt || NUM_FMT[col.type] || "General";
                     else c.numFmt = "@";
                     const multi = typeof v === "string" && v.includes("\n");
                     c.alignment = { vertical: "middle", horizontal: col.align || (col.type === "text" ? "left" : "right"), wrapText: multi };
@@ -199,7 +223,10 @@
         return fontB64;
     }
 
-    async function pdf({ filename, title, info, cols, rows, footer, onProgress }) {
+    async function pdf({ filename, title: docTitle, info, cols, groups, parts, rows, footer, onProgress }) {
+        // parts: the columns split over several page bands (each its own
+        // { cols, groups, title }), one after the other; default one band.
+        parts = parts || [{ cols, groups }];
         if (!window.jspdf) throw new Error("jsPDF not loaded");
         try {
             await Promise.all([document.fonts.load(fontStr(BASE_PX)), document.fonts.load(fontStr(BASE_PX, true))]);
@@ -261,136 +288,175 @@
             }
         }
 
-        // Cell texts once (a cell may hold several lines: amounts in two
-        // currencies); natural column widths at BASE_PX.
-        const texts = rows.map((row, i) => cols.map(col => cellText(col, row, i).split("\n")));
-        const usable = PAGE_W - MARGIN * 2;
-        ctx.font = fontStr(BASE_PX, true);
-        const natural = cols.map(col => ctx.measureText(col.label).width + PAD * 2);
-        ctx.font = fontStr(BASE_PX);
-        for (let i = 0; i < texts.length; i++) {
-            for (let j = 0; j < cols.length; j++) {
-                for (const line of texts[i][j]) {
-                    const w = ctx.measureText(line).width + PAD * 2;
-                    if (w > natural[j]) natural[j] = w;
-                }
-            }
-            if (i % 2000 === 1999) await nextFrame();
-        }
-        // Long free-text columns (Location, Ministry…) don't get to squeeze the rest.
-        const capped = natural.map((w, j) => Math.min(w, cols[j].maxPx || 420));
-        const sum = capped.reduce((a, b) => a + b, 0);
-        const px = Math.max(MIN_PX, Math.min(MAX_PX, BASE_PX * usable / sum));
-        const k = px / BASE_PX;
-        let widths = capped.map(w => w * k);
-        // Still too wide at the smallest size: the free-text columns (those
-        // with a maxPx) give up room first, down to 40% — numbers and IDs
-        // keep theirs. Then everything is scaled to the page width exactly.
-        const over = widths.reduce((a, b) => a + b, 0) - usable;
-        if (over > 0) {
-            const flex = cols.map((col, j) => (col.maxPx ? widths[j] * 0.6 : 0));
-            const room = flex.reduce((a, b) => a + b, 0);
-            if (room > 0) widths = widths.map((w, j) => w - flex[j] * Math.min(1, over / room));
-        }
-        const total = widths.reduce((a, b) => a + b, 0);
-        widths = widths.map(w => w * usable / total);
-        const pad = PAD * k;
-
-        const rowH = Math.round(px * 2.05);
-        const lineH = Math.round(px * 1.45);
-        const heights = texts.map(cells => rowH + (Math.max(...cells.map(c => c.length)) - 1) * lineH);
-        const headH = Math.round(px * 2.4);
-        const titlePx = Math.round(px * 1.45);
-        const infoPx = Math.round(px * 0.95);
-        const infoLines = info || [];
-        const topFirst = MARGIN + titlePx * 1.6 + infoLines.length * infoPx * 1.7 + px * 0.5;
-        const topNext = MARGIN + titlePx * 1.6 + px * 0.3;
-        const footH = Math.round(px * 1.8);
-
-        // Rows per page, by their heights: [start, end) for each page.
-        const pageRanges = [];
-        for (let i = 0; i < rows.length || !pageRanges.length;) {
-            const room = PAGE_H - MARGIN - footH - (pageRanges.length ? topNext : topFirst) - headH;
-            let used = 0, end = i;
-            while (end < rows.length && (end === i || used + heights[end] <= room)) used += heights[end++];
-            pageRanges.push([i, end]);
-            i = end;
-            if (!rows.length) break;
-        }
-        const pages = pageRanges.length;
-        const fillRect = (x, y, w, h, hex) => {
-            doc.setFillColor(...rgb(hex));
-            doc.rect(mm(x), mm(y), mm(w), mm(h), "F");
-        };
-
-        for (let p = 0; p < pages; p++) {
-            const [start, end] = pageRanges[p];
-            if (p > 0) doc.addPage();
-
-            // Title (every page) and the info lines (first page).
-            let y = MARGIN;
-            text(title, MARGIN, y + titlePx * 0.8, usable, titlePx * 1.6, { px: titlePx, bold: true, color: NAVY, bg: "#FFFFFF" });
-            y += titlePx * 1.6;
-            if (p === 0) {
-                infoLines.forEach(line => {
-                    text(line, MARGIN, y + infoPx * 0.85, usable, infoPx * 1.7, { px: infoPx, color: "#4A5568", bg: "#FFFFFF" });
-                    y += infoPx * 1.7;
-                });
-            }
-            let top = Math.round(p === 0 ? topFirst : topNext);
-
-            // Header row.
-            fillRect(MARGIN, top, usable, headH, NAVY);
-            let x = MARGIN;
-            cols.forEach((col, j) => {
-                text(col.label, x + pad, top + headH / 2, widths[j] - pad * 2, headH - 2, { px, bold: true, color: GOLD, bg: NAVY, align: "center" });
-                x += widths[j];
-            });
-            top += headH;
-
-            // Rows: backgrounds, then text (lines centred in the row).
-            const rowTops = [top];
-            for (let i = start; i < end; i++) {
-                const yRow = rowTops[rowTops.length - 1];
-                const h = heights[i];
-                x = MARGIN;
+        const footers = [];   // per page: its footer size (drawn last, with the page count)
+        for (let pi = 0; pi < parts.length; pi++) {
+            const cols = parts[pi].cols;
+            const groups = (parts[pi].groups || []).some(g => g.label) ? parts[pi].groups : null;
+            const title = parts[pi].title || docTitle;
+            // Cell texts once (a cell may hold several lines: amounts in two
+            // currencies); natural column widths at BASE_PX.
+            const texts = rows.map((row, i) => cols.map(col => cellText(col, row, i).split("\n")));
+            const usable = PAGE_W - MARGIN * 2;
+            ctx.font = fontStr(BASE_PX, true);
+            const natural = cols.map(col => ctx.measureText(col.label).width + PAD * 2);
+            ctx.font = fontStr(BASE_PX);
+            for (let i = 0; i < texts.length; i++) {
                 for (let j = 0; j < cols.length; j++) {
-                    const col = cols[j];
-                    const st = (col.style && col.style(rows[i], i)) || {};
-                    const bg = st.fill || ((i - start) % 2 === 1 ? ZEBRA : "#FFFFFF");
-                    if (bg !== "#FFFFFF") fillRect(x, yRow, widths[j], h, bg);
-                    const lines = texts[i][j];
-                    lines.forEach((line, n) => {
-                        text(line, x + pad, yRow + h / 2 + (n - (lines.length - 1) / 2) * lineH, widths[j] - pad * 2, (lines.length > 1 ? lineH : rowH) - 2, {
-                            px, bold: st.bold, color: st.color || INK, bg,
-                            align: col.align || (col.type === "text" ? "left" : "right")
-                        });
-                    });
-                    x += widths[j];
+                    for (const line of texts[i][j]) {
+                        const w = ctx.measureText(line).width + PAD * 2;
+                        if (w > natural[j]) natural[j] = w;
+                    }
                 }
-                rowTops.push(yRow + h);
+                if (i % 2000 === 1999) await nextFrame();
             }
-
-            // Grid.
-            const bottom = rowTops[rowTops.length - 1];
-            doc.setDrawColor(...rgb(GRID));
-            doc.setLineWidth(0.15);
-            rowTops.forEach(t => doc.line(mm(MARGIN), mm(t), mm(MARGIN + usable), mm(t)));
-            x = MARGIN;
-            for (let j = 0; j <= cols.length; j++) {
-                doc.line(mm(x), mm(top - headH), mm(x), mm(bottom));
-                x += widths[j] || 0;
+            // Long free-text columns (Location, Ministry…) don't get to squeeze the rest.
+            const capped = natural.map((w, j) => Math.min(w, cols[j].maxPx || 420));
+            const sum = capped.reduce((a, b) => a + b, 0);
+            const px = Math.max(MIN_PX, Math.min(MAX_PX, BASE_PX * usable / sum));
+            const k = px / BASE_PX;
+            let widths = capped.map(w => w * k);
+            // Still too wide at the smallest size: the free-text columns (those
+            // with a maxPx) give up room first, down to 40% — numbers and IDs
+            // keep theirs. Then everything is scaled to the page width exactly.
+            const over = widths.reduce((a, b) => a + b, 0) - usable;
+            if (over > 0) {
+                const flex = cols.map((col, j) => (col.maxPx ? widths[j] * 0.6 : 0));
+                const room = flex.reduce((a, b) => a + b, 0);
+                if (room > 0) widths = widths.map((w, j) => w - flex[j] * Math.min(1, over / room));
             }
+            const total = widths.reduce((a, b) => a + b, 0);
+            widths = widths.map(w => w * usable / total);
+            const pad = PAD * k;
 
-            // Footer.
-            const fy = PAGE_H - MARGIN - footH / 2;
-            const fpx = Math.round(px * 0.85);
-            text(footer || "", MARGIN, fy, usable * 0.7, footH, { px: fpx, color: "#6B7280", bg: "#FFFFFF" });
-            text(`${p + 1} / ${pages}`, MARGIN + usable * 0.7, fy, usable * 0.3, footH, { px: fpx, color: "#6B7280", bg: "#FFFFFF", align: "right" });
+            const rowH = Math.round(px * 2.05);
+            const lineH = Math.round(px * 1.45);
+            const heights = texts.map(cells => rowH + (Math.max(...cells.map(c => c.length)) - 1) * lineH);
+            const headH = Math.round(px * 2.4);
+            const groupH = groups ? headH : 0;
+            const titlePx = Math.round(px * 1.45);
+            const infoPx = Math.round(px * 0.95);
+            const infoLines = info || [];
+            const topFirst = MARGIN + titlePx * 1.6 + infoLines.length * infoPx * 1.7 + px * 0.5;
+            const topNext = MARGIN + titlePx * 1.6 + px * 0.3;
+            const footH = Math.round(px * 1.8);
 
-            onProgress && onProgress((p + 1) / pages * 0.95);
-            if (p % 3 === 2) await nextFrame();
+            // Rows per page, by their heights: [start, end) for each page.
+            const pageRanges = [];
+            for (let i = 0; i < rows.length || !pageRanges.length;) {
+                const room = PAGE_H - MARGIN - footH - (pageRanges.length ? topNext : topFirst) - groupH - headH;
+                let used = 0, end = i;
+                while (end < rows.length && (end === i || used + heights[end] <= room)) used += heights[end++];
+                pageRanges.push([i, end]);
+                i = end;
+                if (!rows.length) break;
+            }
+            const pages = pageRanges.length;
+            const fillRect = (x, y, w, h, hex) => {
+                doc.setFillColor(...rgb(hex));
+                doc.rect(mm(x), mm(y), mm(w), mm(h), "F");
+            };
+
+            for (let p = 0; p < pages; p++) {
+                const [start, end] = pageRanges[p];
+                if (p > 0 || pi > 0) doc.addPage();
+
+                // Title (every page) and the info lines (first page).
+                let y = MARGIN;
+                text(title, MARGIN, y + titlePx * 0.8, usable, titlePx * 1.6, { px: titlePx, bold: true, color: NAVY, bg: "#FFFFFF" });
+                y += titlePx * 1.6;
+                if (p === 0) {
+                    infoLines.forEach(line => {
+                        text(line, MARGIN, y + infoPx * 0.85, usable, infoPx * 1.7, { px: infoPx, color: "#4A5568", bg: "#FFFFFF" });
+                        y += infoPx * 1.7;
+                    });
+                }
+                let top = Math.round(p === 0 ? topFirst : topNext);
+
+                // Header row(s): with groups, each group's label over its
+                // columns; a column with no group keeps its label over both.
+                fillRect(MARGIN, top, usable, groupH + headH, NAVY);
+                const headStyle = { px, bold: true, color: GOLD, bg: NAVY, align: "center" };
+                const groupLines = [];   // [x1, x2] under each labelled group
+                let x = MARGIN;
+                if (groups) {
+                    let c = 0;
+                    groups.forEach(g => {
+                        const span = widths.slice(c, c + g.span).reduce((a, b) => a + b, 0);
+                        if (g.label) {
+                            text(g.label, x + pad, top + groupH / 2, span - pad * 2, groupH - 2, headStyle);
+                            let cx = x;
+                            for (let j = c; j < c + g.span; j++) {
+                                text(cols[j].label, cx + pad, top + groupH + headH / 2, widths[j] - pad * 2, headH - 2, headStyle);
+                                cx += widths[j];
+                            }
+                            groupLines.push([x, x + span]);
+                        } else {
+                            text(cols[c].label, x + pad, top + (groupH + headH) / 2, span - pad * 2, headH - 2, headStyle);
+                        }
+                        x += span;
+                        c += g.span;
+                    });
+                } else {
+                    cols.forEach((col, j) => {
+                        text(col.label, x + pad, top + headH / 2, widths[j] - pad * 2, headH - 2, headStyle);
+                        x += widths[j];
+                    });
+                }
+                const headTop = top;
+                top += groupH + headH;
+
+                // Rows: backgrounds, then text (lines centred in the row).
+                const rowTops = [top];
+                for (let i = start; i < end; i++) {
+                    const yRow = rowTops[rowTops.length - 1];
+                    const h = heights[i];
+                    x = MARGIN;
+                    for (let j = 0; j < cols.length; j++) {
+                        const col = cols[j];
+                        const st = (col.style && col.style(rows[i], i)) || {};
+                        const bg = st.fill || ((i - start) % 2 === 1 ? ZEBRA : "#FFFFFF");
+                        if (bg !== "#FFFFFF") fillRect(x, yRow, widths[j], h, bg);
+                        const lines = texts[i][j];
+                        lines.forEach((line, n) => {
+                            text(line, x + pad, yRow + h / 2 + (n - (lines.length - 1) / 2) * lineH, widths[j] - pad * 2, (lines.length > 1 ? lineH : rowH) - 2, {
+                                px, bold: st.bold, color: st.color || INK, bg,
+                                align: col.align || (col.type === "text" ? "left" : "right")
+                            });
+                        });
+                        x += widths[j];
+                    }
+                    rowTops.push(yRow + h);
+                }
+
+                // Grid.
+                const bottom = rowTops[rowTops.length - 1];
+                doc.setDrawColor(...rgb(GRID));
+                doc.setLineWidth(0.15);
+                rowTops.forEach(t => doc.line(mm(MARGIN), mm(t), mm(MARGIN + usable), mm(t)));
+                groupLines.forEach(([x1, x2]) => doc.line(mm(x1), mm(headTop + groupH), mm(x2), mm(headTop + groupH)));
+                // Column lines run through the header, except where a group
+                // label spans them (there they start under it).
+                const inGroup = xv => groupLines.some(([x1, x2]) => xv > x1 + 0.5 && xv < x2 - 0.5);
+                x = MARGIN;
+                for (let j = 0; j <= cols.length; j++) {
+                    doc.line(mm(x), mm(inGroup(x) ? headTop + groupH : headTop), mm(x), mm(bottom));
+                    x += widths[j] || 0;
+                }
+
+                footers.push({ px: Math.round(px * 0.85), h: footH });
+                onProgress && onProgress((pi + (p + 1) / pages) / parts.length * 0.95);
+                if (p % 3 === 2) await nextFrame();
+            }
         }
+
+        // Footer on every page: who / when, and the page number.
+        const usableAll = PAGE_W - MARGIN * 2;
+        footers.forEach((f, i) => {
+            doc.setPage(i + 1);
+            const fy = PAGE_H - MARGIN - f.h / 2;
+            text(footer || "", MARGIN, fy, usableAll * 0.7, f.h, { px: f.px, color: "#6B7280", bg: "#FFFFFF" });
+            text(`${i + 1} / ${footers.length}`, MARGIN + usableAll * 0.7, fy, usableAll * 0.3, f.h, { px: f.px, color: "#6B7280", bg: "#FFFFFF", align: "right" });
+        });
         await nextFrame();
         doc.save(filename);
     }

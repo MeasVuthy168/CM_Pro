@@ -250,25 +250,6 @@ function crFmtDateDMY(yyyymmdd) {
 // ========================================
 // FORMAT HELPERS
 // ========================================
-// table_to_sheet() reads raw DOM text (branch names among it) straight
-// into cells — Excel treats a cell string starting with =, +, -, @, or a
-// tab/CR as a formula when the file is opened, so this neutralizes any
-// such string cell (a leading apostrophe forces plain text) before the
-// workbook is written. Only touches string cells (t:"s"); numeric report
-// figures are untouched.
-function crSanitizeSheetFormulas(ws) {
-    if (!ws["!ref"]) return;
-    const range = XLSX.utils.decode_range(ws["!ref"]);
-    for (let r = range.s.r; r <= range.e.r; r++) {
-        for (let c = range.s.c; c <= range.e.c; c++) {
-            const cell = ws[XLSX.utils.encode_cell({ r, c })];
-            if (cell && cell.t === "s" && /^[=+\-@\t\r]/.test(cell.v)) {
-                cell.v = `'${cell.v}`;
-                if (cell.w) cell.w = cell.v;
-            }
-        }
-    }
-}
 
 function crEscapeHtml(text) {
     const div = document.createElement("div");
@@ -1132,183 +1113,10 @@ function notify(message, type = "info") {
 }
 
 // ========================================
-// EXPORT EXCEL (exports the currently visible section/view)
+// EXPORT EXCEL / PDF, PRINT, FULLSCREEN — the report on screen, same
+// engine and look as Daily Arrears (cr-export.js, arrears-export.js).
 // ========================================
-function crExportExcel() {
-    if (typeof XLSX === "undefined") {
-        notify(t("creditreport.byBranch.excelLibFailedRetry"), "error");
-        return;
-    }
-    const table = document.getElementById("crTable");
-    if (!table || !document.getElementById("crTbody").children.length) {
-        notify(t("creditreport.detail.nothingToExport"), "warning");
-        return;
-    }
-    const ws = XLSX.utils.table_to_sheet(table);
-    crSanitizeSheetFormulas(ws);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "CreditReport");
-    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "");
-    XLSX.writeFile(wb, `CreditReport_${stamp}.xlsx`);
-    document.getElementById("crMenuDropdown")?.classList.remove("show");
-}
-document.getElementById("btnCrExport")?.addEventListener("click", crExportExcel);
-
-// ========================================
-// EXPORT PDF
-// Ported from arrears.js's technique: html2canvas only captures
-// whatever's on screen at current viewport width, so every level of
-// container is temporarily forced to its full natural content width
-// before capture (otherwise only the columns visible without
-// horizontal scroll get exported). A naive fixed-height canvas slice
-// per page can also cut a table row in half at a page break, so this
-// measures each <tr>'s real position and only cuts between rows,
-// repeating the header row on every page after the first.
-// ========================================
-function extractPrintCss() {
-    let css = "";
-    for (const sheet of document.styleSheets) {
-        let rules;
-        try {
-            rules = sheet.cssRules;
-        } catch (err) {
-            continue; // cross-origin stylesheet (e.g. a CDN font) — can't read its rules, skip
-        }
-        for (const rule of rules) {
-            if (rule.type === CSSRule.MEDIA_RULE && rule.media.mediaText.includes("print")) {
-                for (const inner of rule.cssRules) {
-                    css += inner.cssText + "\n";
-                }
-            }
-        }
-    }
-    return css;
-}
-
-async function crExportPdf() {
-    if (typeof html2canvas === "undefined" || typeof window.jspdf === "undefined") {
-        notify(t("creditreport.byBranch.pdfLibFailedRetry"), "error");
-        return;
-    }
-    if (!document.getElementById("crTbody").children.length) {
-        notify(t("creditreport.detail.nothingToExport"), "warning");
-        return;
-    }
-
-    if (typeof showAppLoading === "function") {
-        showAppLoading(t("creditreport.detail.generatingPdf"));
-    }
-
-    const tempStyleEl = document.createElement("style");
-    tempStyleEl.id = "pdf-export-temp-style";
-    tempStyleEl.textContent = extractPrintCss() + `
-        html, body { overflow-x: visible !important; width: max-content !important; }
-        .page-container { width: max-content !important; min-width: 100%; overflow: visible !important; }
-        .table-card { width: max-content !important; overflow: visible !important; }
-        .table-scroll { width: max-content !important; max-width: none !important; overflow: visible !important; }
-        .table-card table { width: max-content !important; }
-    `;
-    document.head.appendChild(tempStyleEl);
-
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-
-    try {
-        const container = document.querySelector(".page-container");
-        const thead = document.querySelector(".table-card thead");
-        const rows = Array.from(document.querySelectorAll(".table-card tbody tr"));
-
-        const SCALE = 2;
-        const fullCanvas = await html2canvas(container, { scale: SCALE, backgroundColor: "#ffffff" });
-        const theadCanvas = thead
-            ? await html2canvas(thead, { scale: SCALE, backgroundColor: "#ffffff" })
-            : null;
-
-        const pageWidthMm = 297, pageHeightMm = 210, marginMm = 10;
-        const usablePageWidthMm = pageWidthMm - marginMm * 2;
-        const usablePageHeightMm = pageHeightMm - marginMm * 2;
-        const capturePageHeightPx = fullCanvas.width * (usablePageHeightMm / usablePageWidthMm);
-
-        const containerRect = container.getBoundingClientRect();
-        const rowBoundaries = rows.map(tr => {
-            const r = tr.getBoundingClientRect();
-            return (r.bottom - containerRect.top) * SCALE;
-        });
-
-        const theadHeightPx = theadCanvas ? theadCanvas.height : 0;
-
-        const slices = [];
-        let sliceStart = 0;
-        let firstSlice = true;
-        while (sliceStart < fullCanvas.height - 2) {
-            const availableHeight = firstSlice ? capturePageHeightPx : (capturePageHeightPx - theadHeightPx);
-            let sliceEnd = sliceStart + availableHeight;
-
-            let bestCut = sliceEnd;
-            for (const b of rowBoundaries) {
-                if (b > sliceStart && b <= sliceEnd) bestCut = b;
-            }
-            if (bestCut <= sliceStart) bestCut = Math.min(sliceEnd, fullCanvas.height);
-
-            slices.push({ start: sliceStart, end: Math.min(bestCut, fullCanvas.height), repeatHeader: !firstSlice });
-            sliceStart = bestCut;
-            firstSlice = false;
-        }
-
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-
-        slices.forEach((slice, i) => {
-            if (i > 0) pdf.addPage();
-
-            const sliceHeightPx = slice.end - slice.start;
-            const pageCanvas = document.createElement("canvas");
-            pageCanvas.width = fullCanvas.width;
-            pageCanvas.height = sliceHeightPx + (slice.repeatHeader ? theadHeightPx : 0);
-            const ctx = pageCanvas.getContext("2d");
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-
-            let yOffset = 0;
-            if (slice.repeatHeader && theadCanvas) {
-                ctx.drawImage(theadCanvas, 0, 0);
-                yOffset = theadHeightPx;
-            }
-            ctx.drawImage(
-                fullCanvas,
-                0, slice.start, fullCanvas.width, sliceHeightPx,
-                0, yOffset, fullCanvas.width, sliceHeightPx
-            );
-
-            const imgData = pageCanvas.toDataURL("image/jpeg", 0.92);
-            const imgHeightMm = usablePageWidthMm * (pageCanvas.height / pageCanvas.width);
-            pdf.addImage(imgData, "JPEG", marginMm, marginMm, usablePageWidthMm, imgHeightMm);
-        });
-
-        const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-        pdf.save(`CreditReport_${stamp}.pdf`);
-    } catch (err) {
-        console.error("[export pdf] failed:", err);
-        notify(t("creditreport.detail.pdfGenerateFailed"), "error");
-    } finally {
-        tempStyleEl.remove();
-        void document.body.offsetHeight;
-        if (typeof hideAppLoading === "function") {
-            hideAppLoading();
-        }
-    }
-}
-document.getElementById("btnCrExportPdf")?.addEventListener("click", () => {
-    crExportPdf();
-    document.getElementById("crMenuDropdown")?.classList.remove("show");
-});
-
-// ========================================
-// PRINT
-// ========================================
-document.getElementById("btnCrPrint")?.addEventListener("click", () => {
-    window.print();
-    document.getElementById("crMenuDropdown")?.classList.remove("show");
-});
+CRExport.wire({ name: "MonitoringByBranch" });
 
 // ========================================
 // SNAPSHOT — admin only, per explicit request 2026-10-08. Same
@@ -1372,12 +1180,6 @@ if (crMenuToggle && crMenuDropdown) {
 }
 
 // ========================================
-// LANDSCAPE VIEW TOGGLE
-// Only .table-card is rotated (via CSS), not the whole page — see
-// creditreport.css for why. Bars auto-hide after 3s, tapping the
-// table brings them back.
-// ========================================
-// ========================================
 // REFRESH DATA
 // Clears the server's raw-row cache (which otherwise holds Mongo data for
 // up to 10 min) then re-runs the report, so a fresh VBA upload shows up
@@ -1423,52 +1225,6 @@ async function crRefreshData() {
     }
 }
 document.getElementById("btnCrRefreshData")?.addEventListener("click", crRefreshData);
-
-const btnCrLandscape = document.getElementById("btnCrLandscape");
-const btnCrExitLandscape = document.getElementById("btnCrExitLandscape");
-const crLandscapeTopBar = document.getElementById("landscapeTopBar");
-const crLandscapeBottomBar = document.getElementById("landscapeBottomBar");
-const crLandscapeRowCount = document.getElementById("crLandscapeRowCount");
-
-let crLandscapeHideTimer = null;
-
-function crShowLandscapeBars() {
-    if (crLandscapeTopBar) crLandscapeTopBar.classList.remove("hidden");
-    if (crLandscapeBottomBar) crLandscapeBottomBar.classList.remove("hidden");
-    clearTimeout(crLandscapeHideTimer);
-    crLandscapeHideTimer = setTimeout(crHideLandscapeBars, 3000);
-}
-function crHideLandscapeBars() {
-    if (crLandscapeTopBar) crLandscapeTopBar.classList.add("hidden");
-    if (crLandscapeBottomBar) crLandscapeBottomBar.classList.add("hidden");
-}
-
-if (btnCrLandscape) {
-    btnCrLandscape.addEventListener("click", () => {
-        document.body.classList.add("cr-force-landscape");
-        if (crLandscapeRowCount) {
-            const rowCount = document.getElementById("crTbody").children.length;
-            crLandscapeRowCount.textContent = t("creditreport.detail.rowsCount", { count: rowCount.toLocaleString() });
-        }
-        crShowLandscapeBars();
-        document.getElementById("crMenuDropdown")?.classList.remove("show");
-    });
-}
-if (btnCrExitLandscape) {
-    btnCrExitLandscape.addEventListener("click", () => {
-        clearTimeout(crLandscapeHideTimer);
-        document.body.classList.remove("cr-force-landscape");
-    });
-}
-document.querySelector(".table-card")?.addEventListener("click", (e) => {
-    if (!document.body.classList.contains("cr-force-landscape")) return;
-    if (e.target.closest(".landscape-bar")) return;
-    crShowLandscapeBars();
-});
-window.addEventListener("pageshow", () => {
-    clearTimeout(crLandscapeHideTimer);
-    document.body.classList.remove("cr-force-landscape");
-});
 
 // ========================================
 // DAILY HISTORY CHART — a line chart of the currently filtered
