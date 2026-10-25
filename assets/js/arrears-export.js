@@ -15,7 +15,7 @@
 //     columns (Credit Report's "Loan Outstanding" over # Loan / Value…);
 //     a group with no label keeps its column's own label over both rows.
 //
-//   ArrExport.excel({ filename, sheets: [{ name, title, info, cols, groups, rows }], freezeCols, onProgress })
+//   ArrExport.excel({ filename, sheets: [{ name, title, info, cols, groups, rows, freezeCols }], freezeCols, onProgress })
 //   ArrExport.pdf({ filename, title, info, cols, groups, rows, footer, onProgress })
 //
 // Excel: ExcelJS (loaded the first time it's needed) — real numbers and
@@ -83,7 +83,7 @@
             const headRow = 2 + (sheet.info || []).length + 1 + (groups ? 1 : 0);   // title, info…, blank, [groups]
             const headTop = groups ? headRow - 1 : headRow;
             const ws = wb.addWorksheet(sheet.name, {
-                views: [{ state: "frozen", xSplit: freezeCols, ySplit: headRow }],
+                views: [{ state: "frozen", xSplit: sheet.freezeCols ?? freezeCols, ySplit: headRow }],
                 pageSetup: {
                     paperSize: 9, orientation: "landscape",
                     fitToPage: true, fitToWidth: 1, fitToHeight: 0,
