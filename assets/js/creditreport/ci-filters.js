@@ -541,6 +541,18 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
             : { a: "#2456A8", b: "#B8860B", good: "#15803D", bad: "#B91C1C", grid: "rgba(0,0,0,.06)", text: css.getPropertyValue("--cr-text-muted").trim() || "#6B7280", surface: css.getPropertyValue("--cr-card-bg").trim() || "#FFFFFF" };
     }
 
+    // An NBC Overdue class as the data spells it ("Special Mention") → its
+    // label in the user's language (Khmer: ឃ្លាំមើល …).
+    const CLS_KEYS = {
+        "normal": "creditreport.detail.classNormal", "special mention": "creditreport.detail.classSpecialMention",
+        "sub-standard": "creditreport.detail.classSubStandardHyphen", "substandard": "creditreport.detail.classSubStandardHyphen",
+        "sub standard": "creditreport.detail.classSubStandardHyphen", "doubtful": "creditreport.detail.classDoubtful", "loss": "creditreport.detail.classLoss"
+    };
+    const clsName = c => {
+        const k = CLS_KEYS[String(c || "").trim().toLowerCase()];
+        return k ? t(k) : (c || "—");
+    };
+
     // ⓘ next to a term opens its one-line meaning in place (inside the
     // same .ci-step, .pi-kpi or .ci-age card).
     const infoBtn = () => ` <button type="button" class="ci-info" aria-expanded="false" aria-label="${esc(t("creditreport.npl.whatIs"))}">ⓘ</button>`;
@@ -567,7 +579,7 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
 
     window.CI = {
         t, esc, num, money, pct, signedPct, pts, dmy, short,
-        mountFilters, setPeriodLabel, setFilter, query, infoBtn, tip, explain, fillOptions, renderAsOf, mountNav, get, toast, chartColors,
+        mountFilters, setPeriodLabel, setFilter, query, infoBtn, tip, explain, clsName, fillOptions, renderAsOf, mountNav, get, toast, chartColors,
         scope: () => scope
     };
 })();

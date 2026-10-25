@@ -134,7 +134,7 @@ function ewsWarningText(w) {
         case "delay": return t("creditreport.ews.w.delay", { days: x.days });
         case "repeated": return t("creditreport.ews.w.repeated", { n: x.episodes, days: x.windowDays });
         case "payroll": return t("creditreport.ews.w.payroll", { product: x.product });
-        case "aging": return t("creditreport.ews.w.aging", { from: `${x.classThen} ${x.daysThen}`, to: `${x.classNow} ${x.daysNow}`, since: CI.dmy(x.since) });
+        case "aging": return t("creditreport.ews.w.aging", { from: `${CI.clsName(x.classThen)} ${x.daysThen}`, to: `${CI.clsName(x.classNow)} ${x.daysNow}`, since: CI.dmy(x.since) });
         case "increase": return t("creditreport.ews.w.increase", { from: CI.money(x.balanceThen), to: CI.money(x.balanceNow), since: CI.dmy(x.since) });
         case "documented": return t("creditreport.ews.w.documented", { keyword: x.keyword });
         case "nopromise": return t("creditreport.ews.w.nopromise", { days: x.days });
