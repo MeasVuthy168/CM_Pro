@@ -162,10 +162,7 @@ function crSections() {
 function crReadStateFromUrl() {
     const p = new URLSearchParams(location.search);
 
-    const section = p.get("section");
-    if (section && crSections()[section]) {
-        document.getElementById("crSection").value = section;
-    }
+    crRestoreSections(p, crSections());
 
     crRestorePicks("crClass", p.getAll("t24Class"));
 
@@ -178,7 +175,7 @@ function crReadStateFromUrl() {
 
 function crSyncStateToUrl() {
     const p = new URLSearchParams();
-    p.set("section", document.getElementById("crSection").value);
+    crAddSections(p);
 
     crAddPicks(p, "t24Class", "crClass");
     crAddPicks(p, "t24Product", "crProduct");
@@ -485,7 +482,12 @@ function crT24ClassGroup(prefix, label) {
     };
 }
 
-function crActiveSection(sectionKey) {
+// Several sections picked: each one's groups side by side (crCombinedSection).
+function crActiveSection() {
+    return crCombinedSection(crSectionFor);
+}
+
+function crSectionFor(sectionKey) {
     const section = crSections()[sectionKey];
 
     if (sectionKey === "nbcOverdue") {
@@ -516,8 +518,7 @@ function crActiveSection(sectionKey) {
 
 function crRenderSummary() {
     if (!crSummaryData) return;
-    const sectionKey = document.getElementById("crSection").value;
-    const section = crActiveSection(sectionKey);
+    const section = crActiveSection();
 
     const displayItems = crApplySort(crSummaryData.items);
 
@@ -526,7 +527,9 @@ function crRenderSummary() {
         displayItems.map(it => crBuildRow(it, section, false)).join("") +
         crBuildRow(crSummaryData.total, section, true);
 
-    crRenderReclassNote(sectionKey);
+    // The note sits under the T24 section only when it's the one shown.
+    const keys = crSectionKeys();
+    crRenderReclassNote(keys.length === 1 ? keys[0] : "all");
     requestAnimationFrame(crSetHeaderOffsets);
 }
 
@@ -674,8 +677,7 @@ function crResolveHistoryItem(rawItem, team) {
 
 function crRenderHistory() {
     if (!crHistoryData) return;
-    const sectionKey = document.getElementById("crSection").value;
-    const section = crActiveSection(sectionKey);
+    const section = crActiveSection();
 
     document.getElementById("crThead").innerHTML = crBuildHistoryThead(section);
 
@@ -754,7 +756,7 @@ async function crFetchHistory() {
 // Showing (including switching back to any "All" default) still filter
 // it client-side exactly as before, no re-fetch needed.
 function crHistoryFocused() {
-    return document.getElementById("crSection").value !== "all";
+    return crSectionKeys().length > 0;
 }
 
 function crUpdateHistRunButtonState() {
@@ -1025,9 +1027,8 @@ function crBuildDateQuery() {
 // each pair otherwise so they can't be mistaken for applying to a
 // section they don't affect.
 function crUpdateClassVisibility() {
-    const section = document.getElementById("crSection").value;
-    const isT24 = section === "parT24";
-    const isNbc = section === "nbcOverdue";
+    const isT24 = crHasSection("parT24");
+    const isNbc = crHasSection("nbcOverdue");
     // History rows are precomputed daily snapshots with every
     // classification/product already in them (see crActiveSection()) —
     // the T24/NBC Product Type filters need a server-side recompute this
@@ -1498,12 +1499,14 @@ let crChartMetricLabel = null; // persists across re-opens until a Showing/metri
 function crUpdateChartButtonVisibility() {
     const btn = document.getElementById("btnCrHistChart");
     if (!btn) return;
-    const sectionFilter = document.getElementById("crSection").value;
+    // The chart follows one section, and one classification within it.
+    const keys = crSectionKeys();
+    const sectionFilter = keys.length === 1 ? keys[0] : "";
     // The chart follows one classification: hidden for All NBC classes,
     // and when several NBC / T24 classes are picked.
     const nbcClassAll = (sectionFilter === "nbcOverdue" && crPicks("crNbcClass").length !== 1) ||
         (sectionFilter === "parT24" && crPicks("crClass").length > 1);
-    btn.style.display = (crMode === "history" && crHistoryFocused() && !nbcClassAll) ? "" : "none";
+    btn.style.display = (crMode === "history" && keys.length === 1 && !nbcClassAll) ? "" : "none";
 }
 
 function crChartSeriesColors() {
@@ -1665,8 +1668,7 @@ function crOpenChart() {
         notify(t("creditreport.detail.chartLibFailed"), "error");
         return;
     }
-    const sectionKey = document.getElementById("crSection").value;
-    const section = crActiveSection(sectionKey);
+    const section = crActiveSection();
     document.getElementById("crChartOverlay").hidden = false;
     document.body.style.overflow = "hidden";
     crRenderChart(section);
@@ -1685,8 +1687,7 @@ document.getElementById("crChartMetricRow").addEventListener("click", (e) => {
     const btn = e.target.closest(".cr-chart-metric-btn");
     if (!btn) return;
     crChartMetricLabel = btn.dataset.metric;
-    const sectionKey = document.getElementById("crSection").value;
-    crRenderChart(crActiveSection(sectionKey));
+    crRenderChart(crActiveSection());
 });
 
 document.getElementById("btnCrHistChart").addEventListener("click", crOpenChart);
@@ -1791,8 +1792,8 @@ if (crIsAdmin) {
 // ========================================
 // INIT
 // ========================================
-// Every filter picks several values, except Showing (crSection).
-crMultiEnhance(["crHistBranch", "crHistTeam", "crClass", "crProduct", "crNbcClass", "crNbcProduct"]);
+// Every filter picks several values, Showing (crSection) included.
+crMultiEnhance(["crSection", "crHistBranch", "crHistTeam", "crClass", "crProduct", "crNbcClass", "crNbcProduct"]);
 crReadStateFromUrl();
 crUpdateClassVisibility();
 crRunReport();
