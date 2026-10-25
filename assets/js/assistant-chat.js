@@ -514,7 +514,14 @@
     function answerRank(intent, data, q) {
         let level = intent.rank.level;
         let list = level === "branch" ? data.branches : data.officers;
-        if (!list.length && level === "branch") { level = "officer"; list = data.officers; }
+        // A one-branch manager has no other branch to rank against: rank
+        // that branch's COs instead, and say so.
+        let note = "";
+        if (level === "branch" && list.length < 2) {
+            level = "officer";
+            list = data.officers;
+            if ((data.scope || {}).type === "branch") note = t("assistant.rank.branchToCo", { branch: data.scope.branch });
+        }
         const metric = intent.metric === "par" ? "overdue" : intent.metric;
         const by = metric === "disb" && intent.rank.by === "loans" ? "loans" : "value";
         const k = by === "loans" ? "disbLoans" : rankKey(metric);
@@ -544,6 +551,7 @@
                         <span class="ac-card-date">${esc(date || "")}</span>
                     </div>
                     ${staleNote(data, date, q)}
+                    ${note ? `<div class="ac-foot">${esc(note)}</div>` : ""}
                     ${metric === "disb" ? rankByBar(by, q) : ""}
                     ${level === "officer" ? `<div class="ac-foot">${esc(t(byPosition ? "assistant.rank.creditOfficersOnly" : "assistant.rank.activeOnly"))}</div>` : ""}
                     <ol class="ac-rank">
@@ -568,6 +576,14 @@
         if (!data.date && !data.officerDate) return { html: esc(t("assistant.noSnapshot")) };
         if ((data.scope || {}).type === "none") return { html: esc(t("assistant.noScope")) };
 
+        // A Credit Officer sees only their own row — a ranking would just be
+        // them at #1, so answer with their own figures and say why.
+        if (intent.rank && (data.scope || {}).type === "officer") {
+            const own = data.officers[0] || data.total;
+            if (!own) return { html: esc(t("assistant.noData")) };
+            const m = intent.metric === "par" ? "overdue" : intent.metric;
+            return { html: `<p>${esc(t("assistant.rank.ownOnly"))}</p>${statCard(own, data, m === "summary" ? ["os", "overdue", "npl", "disb", "wo"] : [m], q)}` };
+        }
         if (intent.rank) return answerRank(intent, data, q);
 
         const nlu = N();
@@ -698,19 +714,67 @@
         warning: ["early-warning", {}, "EarlyWarning.html"]
     };
 
+    // What this user's figures cover — decides what a "which …" question
+    // compares (the server still scopes every answer):
+    //   all     admin, user, a manager of "All Branch" — branches
+    //   branch  a manager of one branch — that branch's officers
+    //   officer a Credit Officer — their own portfolio only
+    function scopeKind() {
+        const role = userRole();
+        if (role === "viewer_staff" || role === "viewer") return "officer";
+        if (/^viewer_manager_/.test(role)) {
+            try {
+                const u = JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}");
+                return String(u.branch || "").trim().toLowerCase() === "all branch" ? "all" : "branch";
+            } catch (e) {
+                return "branch";
+            }
+        }
+        return "all";
+    }
+
+    async function ciGet(path, params) {
+        const q = new URLSearchParams(params || {}).toString();
+        try {
+            const data = await API.get(`/api/credit-intelligence/${path}${q ? `?${q}` : ""}`);
+            return data && data.ok ? data : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
     async function answerExplain(intent) {
-        const src = EXPLAIN_SOURCES[intent.topic];
-        if (!src || !window.CIExplain) return { html: `<p>${esc(t("assistant.unknown", { q: intent.text }))}</p>`, chips: true };
-        const [path, params, page] = src;
-        const q = new URLSearchParams(params).toString();
-        let data = null;
-        try { data = await API.get(`/api/credit-intelligence/${path}${q ? `?${q}` : ""}`); } catch (e) { data = null; }
-        if (!data || !data.ok) return { html: `<p>${esc(t("assistant.explainFailed"))}</p>` };
-        const lines = CIExplain[intent.topic](data, t);
+        const kind = scopeKind();
+        let topic = intent.topic;
+        // A Credit Officer has nobody to be compared with: "which branch /
+        // officer is high-risk" becomes their own portfolio; "my portfolio"
+        // from anyone else is the overview.
+        if (kind === "officer" && (topic === "risk" || topic === "growth")) topic = "mine";
+        if (topic === "mine" && kind !== "officer") topic = "overview";
+        if (!window.CIExplain || (topic !== "mine" && !EXPLAIN_SOURCES[topic])) return { html: `<p>${esc(t("assistant.unknown", { q: intent.text }))}</p>`, chips: true };
+        const dim = kind === "all" ? "branch" : "officer";
+        let data, lines, page;
+        if (topic === "mine") {
+            const [risk, ews] = await Promise.all([ciGet("risk", { dim: "officer" }), ciGet("early-warning")]);
+            if (!risk) return { html: `<p>${esc(t("assistant.explainFailed"))}</p>` };
+            data = risk;
+            lines = CIExplain.mine(risk, ews, t);
+            page = "EarlyWarning.html";
+        } else {
+            const [path, params, pg] = EXPLAIN_SOURCES[topic];
+            data = await ciGet(path, params.dim ? { ...params, dim } : params);
+            if (!data) return { html: `<p>${esc(t("assistant.explainFailed"))}</p>` };
+            lines = CIExplain[topic](data, t);
+            page = params.dim && dim === "officer" ? `${pg}${pg.includes("?") ? "&" : "?"}dim=officer` : pg;
+            // "Which branch …?" from a one-branch manager: say why officers.
+            if (kind === "branch" && params.dim && /សាខា|branch/.test(intent.text) && data.scope && data.scope.branch) {
+                lines = [t("ex.branchToOfficer", { branch: data.scope.branch })].concat(lines.filter(l => l !== t("ex.inBranch", { branch: data.scope.branch })));
+            }
+        }
         const asOf = data.asOf && data.asOf.osText ? ` · ${t("assistant.explainAsOf", { date: data.asOf.osText })}` : "";
         return {
             html: `<div class="ac-card ac-explain">
-                <div class="ac-card-head"><span class="ac-card-who">${esc(t(`assistant.explain.${intent.topic}`))}</span><span class="ac-card-date">${esc(asOf.replace(/^ · /, ""))}</span></div>
+                <div class="ac-card-head"><span class="ac-card-who">${esc(t(`assistant.explain.${topic}`))}</span><span class="ac-card-date">${esc(asOf.replace(/^ · /, ""))}</span></div>
                 <ul class="ac-explain-list">${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul>
                 <p class="ac-explain-note">${esc(t("ex.note"))}</p>
                 <a class="ac-link" href="/CM_Pro/pages/creditreport/${esc(page)}">${esc(t("assistant.explainOpen"))} ›</a>
@@ -788,10 +852,15 @@
     // understand" show them all; the strip above the input the first of
     // each).
     function suggestionGroups() {
+        const kind = scopeKind();
         return [
             { key: "work", items: ["unfilled", "expired", "promiseToday", "noOfficer"].map(workQuestion).concat(t("assistant.chip.work.all")) },
-            { key: "data", items: [t("assistant.chip.summary"), t("assistant.chip.par"), t("assistant.chip.topCo"), t("assistant.chip.lowDisbCo"), t("assistant.chip.lgs"), t("assistant.chip.alerts")] },
-            { key: "explain", items: [t("assistant.chip.whyNpl"), t("assistant.chip.whyRecovery"), t("assistant.chip.whyRisk"), t("assistant.chip.whyWarning")] },
+            { key: "data", items: kind === "officer"
+                ? [t("assistant.chip.summary"), t("assistant.chip.par"), t("assistant.chip.lgs"), t("assistant.chip.alerts")]
+                : [t("assistant.chip.summary"), t("assistant.chip.par"), t("assistant.chip.topCo"), t("assistant.chip.lowDisbCo"), t("assistant.chip.lgs"), t("assistant.chip.alerts")] },
+            { key: "explain", items: [t("assistant.chip.whyNpl"), t("assistant.chip.whyRecovery"),
+                t(kind === "officer" ? "assistant.chip.whyMine" : kind === "branch" ? "assistant.chip.whyRiskCo" : "assistant.chip.whyRisk"),
+                t("assistant.chip.whyWarning")] },
             { key: "open", items: [t("assistant.chip.openWork"), t("assistant.chip.customer"), t("assistant.chip.help")] }
         ];
     }
