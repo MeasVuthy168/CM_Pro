@@ -539,9 +539,9 @@ const SC_XL_COLUMNS = [
   ["term", "រយៈពេល", 8, "center"],
   ["cycle", "វដ្តត្រួតពិនិត្យ", 9, "center"],
   ["repaymentHistory", "ស្ថានភាព", 12, "wrap"],
-  ["lateDays", "មូលហេតុ", 16, "wrap"],
+  ["lateDays", "មូលហេតុ", 11, "wrap"],
   ["loanCompletion", "ស្ថានភាព", 12, "wrap"],
-  ["loanCompletionNote", "មូលហេតុ", 16, "wrap"],
+  ["loanCompletionNote", "មូលហេតុ", 11, "wrap"],
   ["occupationInFile", "មុខរបរពេលខ្ចី", 18, "wrap"],
   ["currentOccupation", "មុខរបរបច្ចុប្បន្ន", 18, "wrap"],
   ["businessSituation", "ស្ថានភាពជំនួញ", 10, "wrap"],
@@ -554,7 +554,7 @@ const SC_XL_COLUMNS = [
   ["purposeNote", "បញ្ជាក់បន្ថែម", 16, "wrap"],
   ["repaymentSource", "ប្រភពប្រាក់សម្រាប់សង", 13, "wrap"],
   ["repaymentSourceNote", "បញ្ជាក់បន្ថែម", 16, "wrap"],
-  ["conclusion", "សន្និដ្ឋាន", 34, "wrap"],
+  ["conclusion", "សន្និដ្ឋាន", 46, "wrap"],
 ];
 
 // Header levels 1 and 2, by column (1-based, inclusive), as on the paper report.
@@ -614,13 +614,214 @@ function scXlCellValue(rec, key, i) {
   return String(raw);
 }
 
-// "<branch>, ថ្ងៃទី២៥ ខែតុលា ឆ្នាំ២០២៦" over the "prepared by" signature:
-// the branch when every row is from one, and the export date.
-function scSignatureDateLine(rows) {
-  const branches = [...new Set(rows.map((r) => r.branch).filter(Boolean))];
-  const today = new Date();
-  const place = branches.length === 1 ? branches[0] : "..................";
-  return `${place}, ថ្ងៃទី${scKhDigits(today.getDate())} ខែ${SC_KH_MONTHS[today.getMonth()]} ឆ្នាំ${scKhDigits(today.getFullYear())}`;
+// ---------------------------------------------------------
+// Signatures — asked each time Excel / PDF is exported: the prepared
+// date, and who prepares, certifies and approves, picked from List
+// Officer by position. Who signs depends on the branch's class (its
+// Branch Manager's "A" / "B" / "C"):
+//   A  prepared: Assistant Branch Credit Manager "A"
+//      certified: Branch Credit Manager "A"
+//      approved: Branch Manager "A"
+//   B  prepared: Branch Credit Manager "B" or Financial Service Relation Manager "B"
+//      certified: — (left blank)
+//      approved: Branch Manager "B"
+//   C  prepared: Financial Service Relation Manager "C"
+//      certified: — (left blank)
+//      approved: Branch Manager "C"
+// The title under each role is filled in from the position and can be
+// edited; the last picks per branch and edited titles are remembered on
+// this device.
+// ---------------------------------------------------------
+const SC_SIGN_RULES = {
+  A: {
+    prepared: ['Assistant Branch Credit Manager "A"'],
+    certified: ['Branch Credit Manager "A"'],
+    approved: ['Branch Manager "A"'],
+  },
+  B: {
+    prepared: ['Branch Credit Manager "B"', 'Financial Service Relation Manager "B"'],
+    certified: null,
+    approved: ['Branch Manager "B"'],
+  },
+  C: {
+    prepared: ['Financial Service Relation Manager "C"'],
+    certified: null,
+    approved: ['Branch Manager "C"'],
+  },
+};
+const SC_SIGN_ROLES = [
+  ["prepared", "រៀបចំដោយ"],
+  ["certified", "បញ្ជាក់ដោយ"],
+  ["approved", "អនុម័តដោយ"],
+];
+// Khmer titles under each role; class A's are the paper report's own,
+// the others are a starting point the user can correct (kept per device).
+const SC_POSITION_TITLES = {
+  'Assistant Branch Credit Manager "A"': "អនុប្រធានឥណទាន",
+  'Branch Credit Manager "A"': "ប្រធានឥណទានជាន់ខ្ពស់",
+  'Branch Manager "A"': "នាយកជាន់ខ្ពស់",
+  'Branch Credit Manager "B"': "ប្រធានឥណទាន",
+  'Financial Service Relation Manager "B"': "ប្រធានផ្នែកទំនាក់ទំនងសេវាហិរញ្ញវត្ថុ",
+  'Branch Manager "B"': "នាយកសាខា",
+  'Financial Service Relation Manager "C"': "ប្រធានផ្នែកទំនាក់ទំនងសេវាហិរញ្ញវត្ថុ",
+  'Branch Manager "C"': "នាយកសាខា",
+};
+const SC_SIGN_STORE = "sc_sign_memory";
+const scNormBranch = (b) => String(b || "").trim().toLowerCase();
+const scClassOf = (position) => (/"([ABC])"/.exec(position || "") || [])[1] || "";
+
+let scOfficerList = null;
+async function scLoadOfficerList() {
+  if (scOfficerList) return scOfficerList;
+  try {
+    const data = await API.get("/api/creditofficer/list");
+    scOfficerList = data && data.ok ? (data.items || []) : [];
+  } catch (e) {
+    scOfficerList = [];
+  }
+  return scOfficerList;
+}
+
+function scSignMemory() {
+  try { return JSON.parse(localStorage.getItem(SC_SIGN_STORE) || "{}"); } catch (e) { return {}; }
+}
+function scSaveSignMemory(mem) {
+  try { localStorage.setItem(SC_SIGN_STORE, JSON.stringify(mem)); } catch (e) {}
+}
+
+// A branch's class from its Branch Manager's position (else any
+// lettered position there); "A" when List Officer has nothing for it.
+function scBranchClass(officers, branch) {
+  const here = officers.filter((o) => scNormBranch(o.branch) === scNormBranch(branch));
+  const bm = here.find((o) => /^Branch Manager "[ABC]"$/.test(o.position || ""));
+  return scClassOf(bm?.position) || scClassOf(here.find((o) => scClassOf(o.position))?.position) || "A";
+}
+
+const scOfficerName = (o) => (o ? (o.nameKh || o.name || "").trim() : "");
+
+// Resolves to { date, dateLine, roles: { prepared|certified|approved: { title, name } | null } },
+// or null when cancelled.
+async function scAskSignatures(rows) {
+  const officers = await scLoadOfficerList();
+  const mem = scSignMemory();
+  const rowBranches = [...new Set(rows.map((r) => r.branch).filter(Boolean))];
+  const branches = [...new Set([...rowBranches, ...officers.map((o) => o.branch).filter((b) => b && scNormBranch(b) !== "stop disburse")])]
+    .sort((a, b) => a.localeCompare(b));
+  const esc = scEscapeHtml;
+
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "sc-overlay sc-overlay-center";
+    overlay.innerHTML = `
+      <div class="sc-confirm sc-sign" role="dialog" aria-modal="true" aria-labelledby="scSignTitle">
+        <h3 id="scSignTitle">ហត្ថលេខាលើរបាយការណ៍</h3>
+        <div class="sc-sign-grid">
+          <label>ថ្ងៃរៀបចំ<input type="date" id="scSignDate" required></label>
+          <label>សាខា<select id="scSignBranch">${branches.map((b) => `<option value="${esc(b)}">${esc(b)}</option>`).join("")}</select></label>
+          <label>ប្រភេទសាខា<select id="scSignClass"><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></label>
+        </div>
+        <div id="scSignRoles"></div>
+        <p class="sc-confirm-warn" id="scSignError" hidden></p>
+        <div class="sc-confirm-actions">
+          <button type="button" class="sc-btn sc-btn-outline" data-sign="cancel">បោះបង់</button>
+          <button type="button" class="sc-btn sc-btn-navy" data-sign="ok">នាំចេញ</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const $ = (sel) => overlay.querySelector(sel);
+    const branchSel = $("#scSignBranch");
+    const classSel = $("#scSignClass");
+    branchSel.value = rowBranches.length === 1 ? rowBranches[0] : (mem.lastBranch && branches.includes(mem.lastBranch) ? mem.lastBranch : branches[0] || "");
+
+    // One row per role: officer (eligible positions in this branch first,
+    // then the same positions elsewhere) and the title.
+    function renderRoles() {
+      const cls = classSel.value;
+      const rule = SC_SIGN_RULES[cls];
+      const branch = branchSel.value;
+      const picks = (mem.branches || {})[scNormBranch(branch)] || {};
+      $("#scSignRoles").innerHTML = SC_SIGN_ROLES.map(([role, label]) => {
+        const positions = rule[role];
+        if (!positions) {
+          return `<div class="sc-sign-role sc-sign-off"><b>${label}</b><span>— មិនមាន (ទុកទទេ) —</span></div>`;
+        }
+        const pool = officers.filter((o) => positions.includes(o.position));
+        const here = pool.filter((o) => scNormBranch(o.branch) === scNormBranch(branch));
+        const others = pool.filter((o) => scNormBranch(o.branch) !== scNormBranch(branch));
+        const opt = (o) => `<option value="${esc(o.officerId)}" data-position="${esc(o.position)}">${esc(scOfficerName(o))} · ${esc(o.position)}${o.branch ? ` · ${esc(o.branch)}` : ""}</option>`;
+        const chosen = picks[role] && pool.some((o) => o.officerId === picks[role]) ? picks[role] : (here[0]?.officerId || "");
+        return `<div class="sc-sign-role" data-role="${role}">
+          <b>${label}</b>
+          <select data-officer>
+            <option value="">— ទុកឈ្មោះទទេ —</option>
+            ${here.length ? `<optgroup label="${esc(branch)}">${here.map(opt).join("")}</optgroup>` : ""}
+            ${others.length ? `<optgroup label="សាខាផ្សេង">${others.map(opt).join("")}</optgroup>` : ""}
+          </select>
+          <input type="text" data-title placeholder="តួនាទី">
+          ${pool.length ? "" : `<small>មិនទាន់មាន ${esc(positions.join(" / "))} ក្នុង List Officer</small>`}
+        </div>`;
+      }).join("");
+      overlay.querySelectorAll(".sc-sign-role[data-role]").forEach((row) => {
+        const sel = row.querySelector("[data-officer]");
+        const title = row.querySelector("[data-title]");
+        const role = row.dataset.role;
+        sel.value = picks[role] && [...sel.options].some((o) => o.value === picks[role]) ? picks[role] : (sel.options[1]?.value || "");
+        const fillTitle = () => {
+          const position = sel.selectedOptions[0]?.dataset.position || rule[role][0];
+          title.value = (mem.titles || {})[position] || SC_POSITION_TITLES[position] || position;
+          title.dataset.position = position;
+        };
+        fillTitle();
+        sel.addEventListener("change", fillTitle);
+      });
+    }
+
+    const syncClass = () => { classSel.value = scBranchClass(officers, branchSel.value); renderRoles(); };
+    branchSel.addEventListener("change", syncClass);
+    classSel.addEventListener("change", renderRoles);
+    syncClass();
+    setTimeout(() => $("#scSignDate").focus(), 50);
+
+    const close = (result) => { overlay.remove(); resolve(result); };
+    overlay.addEventListener("click", (e) => {
+      const act = e.target.closest("[data-sign]")?.dataset.sign;
+      if (e.target === overlay || act === "cancel") return close(null);
+      if (act !== "ok") return;
+      const date = $("#scSignDate").value;
+      if (!date) {
+        const err = $("#scSignError");
+        err.textContent = "សូមបញ្ចូលថ្ងៃរៀបចំ";
+        err.hidden = false;
+        $("#scSignDate").focus();
+        return;
+      }
+      const roles = {};
+      const branchKey = scNormBranch(branchSel.value);
+      mem.branches = mem.branches || {};
+      mem.titles = mem.titles || {};
+      mem.branches[branchKey] = mem.branches[branchKey] || {};
+      SC_SIGN_ROLES.forEach(([role]) => { roles[role] = null; });
+      overlay.querySelectorAll(".sc-sign-role[data-role]").forEach((row) => {
+        const role = row.dataset.role;
+        const id = row.querySelector("[data-officer]").value;
+        const titleEl = row.querySelector("[data-title]");
+        const officer = officers.find((o) => o.officerId === id);
+        roles[role] = { title: titleEl.value.trim(), name: scOfficerName(officer) };
+        mem.branches[branchKey][role] = id;
+        const position = titleEl.dataset.position;
+        if (position && titleEl.value.trim() && titleEl.value.trim() !== SC_POSITION_TITLES[position]) mem.titles[position] = titleEl.value.trim();
+      });
+      mem.lastBranch = branchSel.value;
+      scSaveSignMemory(mem);
+      const [y, m, d] = date.split("-").map(Number);
+      const place = branchSel.value || "..................";
+      close({
+        date,
+        dateLine: `${place}, ថ្ងៃទី${scKhDigits(d)} ខែ${SC_KH_MONTHS[m - 1]} ឆ្នាំ${scKhDigits(y)}`,
+        roles,
+      });
+    });
+  });
 }
 
 async function scLogoBase64() {
@@ -666,6 +867,8 @@ async function scExportExcel() {
     scNotify("មិនអាចបង្កើតឯកសារបានទេ — សូមពិនិត្យអ៊ីនធឺណិត ហើយសាកម្ដងទៀត", "error");
     return;
   }
+  const sign = await scAskSignatures(rows);
+  if (!sign) return;
   if (typeof showAppLoading === "function") showAppLoading("កំពុងបង្កើតឯកសារ Excel...");
   try {
     const wb = await ArrExport.workbook();
@@ -750,9 +953,9 @@ async function scExportExcel() {
       r.height = Math.max(30, 15 * lines);
     });
 
-    // Signatures: approved (left), certified (middle), prepared (right).
+    // Signatures: approved (left), certified (middle), prepared (right);
+    // a role with no signer (certified, for B / C branches) stays blank.
     const today = new Date();
-    const dateLine = scSignatureDateLine(rows);
     const sig = HEAD + 3 + rows.length + 2;
     const blocks = [[1, 8], [13, 20], [26, n]];
     const put = (row, [c1, c2], text, bold) => {
@@ -762,14 +965,14 @@ async function scExportExcel() {
       c.font = font({ size: 11, bold });
       c.alignment = { horizontal: "center", vertical: "middle" };
     };
-    put(sig, blocks[2], dateLine, false);
-    put(sig + 1, blocks[0], "អនុម័តដោយ", true);
-    put(sig + 1, blocks[1], "បញ្ជាក់ដោយ", true);
-    put(sig + 1, blocks[2], "រៀបចំដោយ", true);
-    put(sig + 2, blocks[0], "នាយកជាន់ខ្ពស់", true);
-    put(sig + 2, blocks[1], "ប្រធានឥណទានជាន់ខ្ពស់", true);
-    put(sig + 2, blocks[2], "អនុប្រធានឥណទាន", true);
-    blocks.forEach((b) => put(sig + 7, b, "..................................", false));
+    put(sig, blocks[2], sign.dateLine, false);
+    [["approved", blocks[0]], ["certified", blocks[1]], ["prepared", blocks[2]]].forEach(([role, block]) => {
+      const who = sign.roles[role];
+      if (!who) return;
+      put(sig + 1, block, SC_SIGN_ROLES.find((r) => r[0] === role)[1], true);
+      put(sig + 2, block, who.title, true);
+      put(sig + 7, block, who.name || "..................................", !!who.name);
+    });
     for (let r = sig; r <= sig + 7; r++) ws.getRow(r).height = 20;
 
     // ---------- sheet 2: by branch ----------
@@ -856,7 +1059,7 @@ function scPdfCellText(rec, key, i) {
   return v;
 }
 
-function scBuildReportElement(rows) {
+function scBuildReportElement(rows, sign) {
   const esc = scEscapeHtml;
   const n = SC_XL_COLUMNS.length;
   // Short values size their own column; text columns share the rest
@@ -890,6 +1093,7 @@ function scBuildReportElement(rows) {
       .sc-pdf-report .sig{display:grid;grid-template-columns:1fr 1fr 1fr;padding-top:30px;font-size:19px;text-align:center}
       .sc-pdf-report .sig b{display:block}
       .sc-pdf-report .sig .line{margin-top:120px}
+      .sc-pdf-report .sig .line.name{font-weight:700}
     </style>
     <div class="top">
       <div><h1>Facilities Spot Check</h1><div class="period">${period ? `Period: ${esc(period)}` : ""}</div></div>
@@ -900,11 +1104,13 @@ function scBuildReportElement(rows) {
       <thead><tr>${parts}</tr><tr>${sections}</tr><tr>${labels}</tr></thead>
       <tbody>${body}</tbody>
     </table>
-    <div class="sig">
-      <div><div>&nbsp;</div><b>អនុម័តដោយ</b><b>នាយកជាន់ខ្ពស់</b><div class="line">..................................</div></div>
-      <div><div>&nbsp;</div><b>បញ្ជាក់ដោយ</b><b>ប្រធានឥណទានជាន់ខ្ពស់</b><div class="line">..................................</div></div>
-      <div><div>${esc(scSignatureDateLine(rows))}</div><b>រៀបចំដោយ</b><b>អនុប្រធានឥណទាន</b><div class="line">..................................</div></div>
-    </div>`;
+    <div class="sig">${["approved", "certified", "prepared"].map((role) => {
+      const who = sign.roles[role];
+      const top = role === "prepared" ? esc(sign.dateLine) : "&nbsp;";
+      if (!who) return `<div><div>${top}</div></div>`;
+      const label = SC_SIGN_ROLES.find((r) => r[0] === role)[1];
+      return `<div><div>${top}</div><b>${esc(label)}</b><b>${esc(who.title)}</b><div class="line${who.name ? " name" : ""}">${who.name ? esc(who.name) : ".................................."}</div></div>`;
+    }).join("")}</div>`;
   return el;
 }
 
@@ -914,13 +1120,19 @@ async function scExportPdf() {
     scNotify("មិនមានទិន្នន័យសម្រាប់នាំចេញទេ", "warning");
     return;
   }
+  const sign = await scAskSignatures(rows);
+  if (!sign) return;
   if (typeof showAppLoading === "function") showAppLoading("កំពុងបង្កើតឯកសារ PDF...");
   let el = null;
   try {
     await Promise.all(SC_PDF_LIBS.map(scLoadScript));
     try { await document.fonts.load("12px KRASAR"); } catch (e) { /* drawn with the fallback font */ }
-    el = scBuildReportElement(rows);
+    el = scBuildReportElement(rows, sign);
     document.body.appendChild(el);
+    // The columns' minimum widths can add up to more than the layout
+    // width: widen it to the table, so nothing is cut off on the right.
+    const tableW = el.querySelector("table").scrollWidth;
+    if (tableW > el.clientWidth) el.style.width = `${tableW}px`;
     const img = el.querySelector(".top img");
     if (img && !img.complete) await new Promise((r) => { img.onload = img.onerror = r; });
 
