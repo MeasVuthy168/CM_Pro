@@ -1294,14 +1294,63 @@ function scBuildCard(rec) {
   return card;
 }
 
-async function scExportForm(cif, btn) {
-  const label = btn.querySelector("span");
+// Download (card / list row): pick Word or PDF first. The PDF is the
+// same filled Word form, converted on the server (?format=pdf).
+const SC_FORM_FORMATS = [
+  { format: "docx", label: "ឯកសារ Word (.docx)", badge: "W", cls: "sc-dl-word" },
+  { format: "pdf", label: "ឯកសារ PDF (.pdf)", badge: "PDF", cls: "sc-dl-pdf" },
+];
+
+function scCloseDownloadMenu() {
+  document.getElementById("scDownloadMenu")?.remove();
+}
+
+function scExportForm(cif, btn) {
+  const open = document.getElementById("scDownloadMenu");
+  scCloseDownloadMenu();
+  if (open && open.dataset.cif === cif) return; // second tap on the same button closes it
+  const menu = document.createElement("div");
+  menu.id = "scDownloadMenu";
+  menu.className = "sc-dl-menu";
+  menu.dataset.cif = cif;
+  menu.setAttribute("role", "menu");
+  menu.innerHTML = `<div class="sc-dl-title">ទាញយកទម្រង់ · CIF ${scEscapeHtml(cif)}</div>` +
+    SC_FORM_FORMATS.map((f) => `<button type="button" role="menuitem" data-format="${f.format}">
+      <span class="sc-dl-badge ${f.cls}">${f.badge}</span><span>${scEscapeHtml(f.label)}</span></button>`).join("");
+  document.body.appendChild(menu);
+
+  // Under the button, kept on screen (above it when there's no room below).
+  const r = btn.getBoundingClientRect();
+  const w = menu.offsetWidth, h = menu.offsetHeight;
+  const left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
+  const below = r.bottom + 6 + h <= window.innerHeight - 8;
+  menu.style.left = `${left}px`;
+  menu.style.top = `${below ? r.bottom + 6 : Math.max(8, r.top - h - 6)}px`;
+
+  menu.addEventListener("click", (e) => {
+    const item = e.target.closest("[data-format]");
+    if (!item) return;
+    scCloseDownloadMenu();
+    scDownloadForm(cif, btn, item.dataset.format);
+  });
+}
+
+document.addEventListener("click", (e) => {
+  const menu = document.getElementById("scDownloadMenu");
+  if (menu && !menu.contains(e.target) && !e.target.closest(".sc-export-btn")) scCloseDownloadMenu();
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") scCloseDownloadMenu(); });
+window.addEventListener("scroll", scCloseDownloadMenu, { passive: true });
+
+async function scDownloadForm(cif, btn, format) {
+  const label = btn.querySelector("span:last-child") || btn.querySelector("span");
   const original = label.textContent;
-  label.textContent = "កំពុងទាញយក...";
+  label.textContent = format === "pdf" ? "កំពុងបង្កើត PDF..." : "កំពុងទាញយក...";
   btn.disabled = true;
 
   try {
-    const res = await fetch(SC_EP.export + encodeURIComponent(cif), {
+    const query = format === "pdf" ? "?format=pdf" : "";
+    const res = await fetch(SC_EP.export + encodeURIComponent(cif) + query, {
       headers: scAuthHeaders(),
     });
     if (!res.ok) {
@@ -1313,7 +1362,7 @@ async function scExportForm(cif, btn) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Spotcheck_${cif}.docx`;
+    a.download = `Spotcheck_${cif}.${format}`;
     document.body.appendChild(a);
     a.click();
     a.remove();

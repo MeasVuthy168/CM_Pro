@@ -1171,3 +1171,27 @@ body.sc-fsheet-open { overflow: hidden; }
   background: var(--sc-gold-light); color: #0E1B3C;
   font-family: var(--sc-font); font-size: 15px; font-weight: 800; cursor: pointer;
 }
+
+/* ---------- Download: Word or PDF (pop-up under the button) ---------- */
+.sc-dl-menu {
+  position: fixed; z-index: 1300; min-width: 220px;
+  background: var(--sc-card-bg); color: var(--sc-text); font-family: var(--sc-font);
+  border: 1px solid var(--sc-border); border-radius: 14px; padding: 6px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .22);
+  animation: scDlIn .14s ease-out;
+}
+@keyframes scDlIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.sc-dl-title { font-size: 11.5px; color: var(--sc-text-muted); padding: 4px 8px 6px; }
+.sc-dl-menu button {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 9px 8px; border: none; border-radius: 10px; background: none;
+  color: var(--sc-text); font-family: var(--sc-font); font-size: 13.5px; text-align: left; cursor: pointer;
+}
+.sc-dl-menu button:hover, .sc-dl-menu button:active { background: rgba(212, 175, 55, .16); }
+.sc-dl-badge {
+  flex: 0 0 auto; min-width: 34px; height: 24px; padding: 0 6px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #fff; font-family: Arial, sans-serif; font-size: 11px; font-weight: 800;
+}
+.sc-dl-word { background: #2B579A; }
+.sc-dl-pdf { background: #D93025; }
