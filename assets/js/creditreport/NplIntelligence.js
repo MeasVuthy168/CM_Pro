@@ -80,6 +80,7 @@ function nplRenderSummary() {
             [nplStepLabel("balanceChange"), tt.balanceChange, "signed"]
         ]
     }));
+    if (window.CIExplain) CI.explain(document.getElementById("nplSummary"), CIExplain.npl(nplData, t));
 }
 function nplExitText(e) {
     return e ? t(`creditreport.npl.exit.${e}`) : "";

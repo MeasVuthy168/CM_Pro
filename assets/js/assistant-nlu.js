@@ -28,6 +28,10 @@
      { type: "work", kind }                today's work to complete; kind
                                            unfilled | expired | promiseToday
                                            | noOfficer | all
+     { type: "explain", topic }            why the figures moved (Credit
+                                           Portfolio, ci-explain.js); topic
+                                           overview | npl | recovery | risk
+                                           | quality | growth | warning
      { type: "theme", value }              light | dark | auto
      { type: "help" }
      { type: "unknown" }
@@ -96,6 +100,10 @@
         { page: "turnover", keywords: ["average turnover", "turnover", "ការបង្វិលជុំមធ្យម", "បង្វិលជុំ", "ចរាចរណ៍", "ទឹកប្រាក់ចរាចរ"] },
         { page: "spotcheck", keywords: ["spot check", "spotcheck", "ស្ប៉តឆែក", "ស្ប៉ត់ឆែក", "ពិនិត្យដល់ទីតាំង", "ត្រួតពិនិត្យភ្លាមៗ"] },
         { page: "officertask", keywords: ["officer task", "ភារកិច្ចមន្ត្រី", "កិច្ចការមន្ត្រី"] },
+        { page: "earlyWarning", keywords: ["early warning", "ការព្រមានជាមុន"] },
+        { page: "nplManagement", keywords: ["npl management", "ការគ្រប់គ្រង npl"] },
+        { page: "riskIntelligence", keywords: ["risk intelligence", "risk analysis", "វិភាគហានិភ័យ"] },
+        { page: "portfolioOverview", keywords: ["portfolio overview", "portfolio intelligence", "ទិដ្ឋភាពទូទៅផលប័ត្រ"] },
         { page: "creditReport", keywords: ["credit report", "report", "reports", "របាយការណ៍ឥណទាន", "របាយការណ៍"] },
         { page: "work", keywords: ["work to complete", "ការងារត្រូវបំពេញ"] },
         { page: "lgs", keywords: LGS_WORDS },
@@ -154,6 +162,30 @@
     }
 
     const ALERT_WORDS = ["alert", "alerts", "smart alert", "attention", "warning", "ត្រូវយកចិត្តទុកដាក់", "ការព្រមាន", "ព្រមាន", "ជូនដំណឹងឆ្លាតវៃ"];
+    // "Why …" / "explain …" — or a Credit Portfolio page named on its own
+    // ("ការព្រមានជាមុន") — asks for the explanation of that page's figures.
+    const EXPLAIN_WORDS = ["ហេតុអ្វី", "ហេតុអី", "ពន្យល់", "ដោយសារអ្វី", "មកពីអ្វី", "why", "explain", "what happened", "how come"];
+    const EXPLAIN_DIRECT = ["ការព្រមានជាមុន", "early warning", "ការប្រមូល npl", "npl recovery", "ចលនា npl", "npl movement",
+        "វិភាគហានិភ័យ", "risk analysis", "គុណភាពផលប័ត្រ", "portfolio quality", "កំណើន និងហានិភ័យ", "growth vs risk",
+        "ឥណទានណាត្រូវតាមដាន", "which loans to follow up"];
+    // Most specific first.
+    const EXPLAIN_TOPICS = [
+        { topic: "warning", keywords: ["ការព្រមានជាមុន", "ព្រមាន", "early warning", "warning", "ត្រូវតាមដាន", "follow up"] },
+        { topic: "recovery", keywords: ["ការប្រមូល", "ប្រមូល", "recovery", "recovered", "recover"] },
+        { topic: "growth", keywords: ["កំណើន", "growth"] },
+        { topic: "quality", keywords: ["គុណភាព", "quality", "aging"] },
+        { topic: "risk", keywords: ["វិភាគហានិភ័យ", "អ្នករួមចំណែក", "សាខាណា", "contributor", "contributors", "risk"] },
+        { topic: "npl", keywords: ["npl", "អិនភីអិល"] },
+        { topic: "overview", keywords: ["ផលប័ត្រ", "portfolio", "overview", "ទិដ្ឋភាពទូទៅ"] }
+    ];
+
+    function findExplain(text) {
+        const asked = hasAny(text, EXPLAIN_WORDS);
+        if (!asked && !hasAny(text, EXPLAIN_DIRECT)) return null;
+        const hit = EXPLAIN_TOPICS.find(x => hasAny(text, x.keywords));
+        return hit ? hit.topic : asked ? "overview" : null;
+    }
+
     const HELP_WORDS = ["help", "what can you do", "commands", "ជំនួយ", "អាចធ្វើអ្វី", "ធ្វើអ្វីបាន", "របៀបប្រើ"];
     const THEMES = [
         { value: "dark", keywords: ["dark mode", "dark theme", "រូបរាងងងឹត", "ពណ៌ងងឹត", "របៀបងងឹត"] },
@@ -252,6 +284,9 @@
         for (const th of THEMES) {
             if (hasAny(text, th.keywords)) return { type: "theme", value: th.value, text };
         }
+
+        const explain = findExplain(text);
+        if (explain && !hasAny(text, OPEN_WORDS)) return { type: "explain", topic: explain, text };
 
         const wantsOpen = hasAny(text, OPEN_WORDS);
 

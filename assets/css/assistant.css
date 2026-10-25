@@ -984,3 +984,8 @@ body.ac-open{ overflow:hidden; }
 [data-theme="dark"] .ac-team, [data-theme="darkgray"] .ac-team{ background:rgba(96,140,255,.18); color:#A8BEFF; }
 [data-theme="dark"] .ac-team-fsro, [data-theme="darkgray"] .ac-team-fsro{ background:rgba(158,119,237,.2); color:#C9B3F5; }
 
+
+/* "Why" answers (Phase 4: ci-explain.js) */
+.ac-explain-list{ margin:4px 0 6px; padding-left:18px; display:flex; flex-direction:column; gap:5px; font-size:13px; line-height:1.55; }
+.ac-explain-note{ margin:0; font-size:11px; color:#6B7280; }
+[data-theme="dark"] .ac-explain-note, [data-theme="darkgray"] .ac-explain-note{ color:#9AA4BF; }

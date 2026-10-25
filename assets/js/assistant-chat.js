@@ -38,6 +38,10 @@
         creditReport: "/CM_Pro/pages/creditreport/index.html",
         creditReportBranch: "/CM_Pro/pages/creditreport/RepDetailbyBranch.html",
         creditReportCO: "/CM_Pro/pages/creditreport/RepDetailbyCO.html",
+        portfolioOverview: "/CM_Pro/pages/creditreport/PortfolioIntelligence.html",
+        nplManagement: "/CM_Pro/pages/creditreport/NplIntelligence.html",
+        riskIntelligence: "/CM_Pro/pages/creditreport/RiskIntelligence.html?view=contributors",
+        earlyWarning: "/CM_Pro/pages/creditreport/EarlyWarning.html",
         masterData: "/CM_Pro/pages/masterdata/index.html",
         work: "/CM_Pro/pages/masterdata/work.html",
         outArea: "/CM_Pro/pages/masterdata/outarea.html",
@@ -674,9 +678,44 @@
                 <li>📝 ${esc(t("assistant.help.work"))}</li>
                 <li>🏦 ${esc(t("assistant.help.lgs"))}</li>
                 <li>⚠️ ${esc(t("assistant.help.alerts"))}</li>
+                <li>💬 ${esc(t("assistant.help.explain"))}</li>
                 <li>🧭 ${esc(t("assistant.help.open"))}</li>
                 <li>🎙️ ${esc(t("assistant.help.voice"))}</li>
             </ul>`;
+    }
+
+    // ---------- why the figures moved (Phase 4) ----------
+    // The Credit Portfolio endpoint behind each topic (scoped by the server
+    // like the page), explained by ci-explain.js — sentences only, every
+    // number is one the backend computed.
+    const EXPLAIN_SOURCES = {
+        overview: ["overview", {}, "PortfolioIntelligence.html"],
+        npl: ["npl", {}, "NplIntelligence.html"],
+        recovery: ["recovery", { dim: "branch" }, "NplIntelligence.html?view=recovery"],
+        risk: ["risk", { dim: "branch" }, "RiskIntelligence.html?view=contributors"],
+        quality: ["quality", { dim: "branch" }, "RiskIntelligence.html?view=quality"],
+        growth: ["risk", { dim: "branch" }, "RiskIntelligence.html?view=growth"],
+        warning: ["early-warning", {}, "EarlyWarning.html"]
+    };
+
+    async function answerExplain(intent) {
+        const src = EXPLAIN_SOURCES[intent.topic];
+        if (!src || !window.CIExplain) return { html: `<p>${esc(t("assistant.unknown", { q: intent.text }))}</p>`, chips: true };
+        const [path, params, page] = src;
+        const q = new URLSearchParams(params).toString();
+        let data = null;
+        try { data = await API.get(`/api/credit-intelligence/${path}${q ? `?${q}` : ""}`); } catch (e) { data = null; }
+        if (!data || !data.ok) return { html: `<p>${esc(t("assistant.explainFailed"))}</p>` };
+        const lines = CIExplain[intent.topic](data, t);
+        const asOf = data.asOf && data.asOf.osText ? ` · ${t("assistant.explainAsOf", { date: data.asOf.osText })}` : "";
+        return {
+            html: `<div class="ac-card ac-explain">
+                <div class="ac-card-head"><span class="ac-card-who">${esc(t(`assistant.explain.${intent.topic}`))}</span><span class="ac-card-date">${esc(asOf.replace(/^ · /, ""))}</span></div>
+                <ul class="ac-explain-list">${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul>
+                <p class="ac-explain-note">${esc(t("ex.note"))}</p>
+                <a class="ac-link" href="/CM_Pro/pages/creditreport/${esc(page)}">${esc(t("assistant.explainOpen"))} ›</a>
+            </div>`
+        };
     }
 
     // Returns { html, go? } — go is a URL to open after the reply shows.
@@ -705,6 +744,8 @@
                 return answerLgs(intent);
             case "ask":
                 return answerAsk(intent, text);
+            case "explain":
+                return answerExplain(intent);
             default:
                 return { html: `<p>${esc(t("assistant.unknown", { q: text }))}</p>`, chips: true };
         }
@@ -750,6 +791,7 @@
         return [
             { key: "work", items: ["unfilled", "expired", "promiseToday", "noOfficer"].map(workQuestion).concat(t("assistant.chip.work.all")) },
             { key: "data", items: [t("assistant.chip.summary"), t("assistant.chip.par"), t("assistant.chip.topCo"), t("assistant.chip.lowDisbCo"), t("assistant.chip.lgs"), t("assistant.chip.alerts")] },
+            { key: "explain", items: [t("assistant.chip.whyNpl"), t("assistant.chip.whyRecovery"), t("assistant.chip.whyRisk"), t("assistant.chip.whyWarning")] },
             { key: "open", items: [t("assistant.chip.openWork"), t("assistant.chip.customer"), t("assistant.chip.help")] }
         ];
     }

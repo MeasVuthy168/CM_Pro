@@ -162,6 +162,7 @@ function piRenderSummary(d) {
         <div class="ci-sum-head is-${dir}"><span aria-hidden="true">${dir === "down" ? "▼" : dir === "up" ? "▲" : "■"}</span> ${piEsc(head)}</div>
         <div class="ci-sum-sub">${piEsc(has && c.date ? t("creditreport.pi.cmpWith", { what: piCompareName(c) }) : t("creditreport.pi.noPrev"))}</div>
         <div class="ci-sum-parts">${parts.map(([label, v, tn]) => `<span class="ci-sum-part is-${tn}">${piEsc(label)} <b>${piEsc(v)}</b></span>`).join("")}</div>`;
+    if (window.CIExplain) CI.explain(box, CIExplain.overview(d, t));
 }
 
 function piRenderTrend(d) {

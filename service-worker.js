@@ -6,7 +6,7 @@ console.log("🔥 SERVICE WORKER LOADED");
    CM_Pro – Production Service Worker
 ========================================================= */
 
-const SW_VERSION = "v700";
+const SW_VERSION = "v701";
 
 const CACHE_NAME = `cm-pro-cache-${SW_VERSION}`;
 
@@ -63,6 +63,7 @@ const STATIC_ASSETS = [
     "/CM_Pro/shared/i18n/core.js",
     "/CM_Pro/shared/i18n/settings.js",
     "/CM_Pro/shared/i18n/assistant.js",
+    "/CM_Pro/shared/i18n/explain.js",
     "/CM_Pro/shared/loading.js",
     "/CM_Pro/shared/logout.js",
     "/CM_Pro/shared/topbar.js",

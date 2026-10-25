@@ -103,13 +103,14 @@ function riskDimName() {
     return t(`creditreport.risk.dim.${riskDim}`);
 }
 
-function riskSummary({ head, tone, sub, parts }) {
+function riskSummary({ head, tone, sub, parts, explain }) {
     const box = document.getElementById("riskSummary");
     box.hidden = false;
     box.innerHTML = `
         <div class="ci-sum-head is-${tone || "flat"}">${CI.esc(head)}</div>
         ${sub ? `<div class="ci-sum-sub">${CI.esc(sub)}</div>` : ""}
         ${parts && parts.length ? `<div class="ci-sum-parts">${parts.map(([label, v, tn]) => `<span class="ci-sum-part is-${tn || ""}">${CI.esc(label)} <b>${CI.esc(v)}</b></span>`).join("")}</div>` : ""}`;
+    if (explain && window.CIExplain) CI.explain(box, CIExplain[explain](riskView === "quality" ? qualityData : riskData, t));
 }
 
 // ---------- Module 03 — Top Risk Contributors ----------
@@ -145,7 +146,8 @@ function cSummary(d) {
                 { name: riskName(top), share: CI.pct(top.contribution, 1), npl: CI.money(top.nplValue), os: CI.pct(osShare || 0, 1) }),
         tone: top && osShare !== null && top.contribution > osShare ? "up" : "flat",
         sub: t("creditreport.risk.sum.totals", { npl: CI.money(tot.nplValue), ratio: CI.pct(tot.nplPct), par: CI.pct(tot.parPct) }),
-        parts: d.reason === "officer_scope" ? [] : [[t("creditreport.risk.sum.above", { dim: riskDimName() }), CI.num(above), above ? "bad" : "good"]]
+        parts: d.reason === "officer_scope" ? [] : [[t("creditreport.risk.sum.above", { dim: riskDimName() }), CI.num(above), above ? "bad" : "good"]],
+        explain: "risk"
     });
 }
 
@@ -236,7 +238,8 @@ function qRender() {
         head: t("creditreport.risk.sum.par30", { pct: CI.pct(a.par30.pct), value: CI.money(a.par30.value), n: CI.num(a.par30.count) }),
         tone: "flat",
         sub: t("creditreport.risk.sum.nplClasses", { value: CI.money(nplSum.value), n: CI.num(nplSum.count), pct: CI.pct(nplSum.pct) }),
-        parts: [["PAR 1", CI.pct(a.par1.pct)], ["PAR 60", CI.pct(a.par60.pct)], ["PAR 90", CI.pct(a.par90.pct)]]
+        parts: [["PAR 1", CI.pct(a.par1.pct)], ["PAR 60", CI.pct(a.par60.pct)], ["PAR 90", CI.pct(a.par90.pct)]],
+        explain: "quality"
     });
     // NBC "Normal" class split by days late (1-4 / 5-9 / 10-19 / 20-30).
     const nb = d.normal;
@@ -309,7 +312,8 @@ function gRender() {
             : weak.length ? t("creditreport.risk.sum.weak", { n: weak.length, total: rows.length, dim: riskDimName(), names: weak.slice(0, 3).map(riskName).join(", ") + (weak.length > 3 ? "…" : "") })
             : t("creditreport.risk.sum.noWeak", { dim: riskDimName() }),
         tone: noTh || !rows.length ? "flat" : weak.length ? "up" : "down",
-        sub: noTh ? "" : thText
+        sub: noTh ? "" : thText,
+        explain: "growth"
     });
     if (gQuad && !counts[gQuad]) gQuad = "";
     document.getElementById("gQuads").innerHTML = G_QUADS.map(q =>

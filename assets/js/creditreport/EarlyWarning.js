@@ -73,6 +73,7 @@ function ewsRenderSummary(d) {
         <div class="ci-sum-head is-${s.high ? "up" : "down"}"><span aria-hidden="true">${s.high ? "⚠" : "✓"}</span> ${CI.esc(head)}</div>
         <div class="ci-sum-sub">${CI.esc(t("creditreport.ews.sum.sub", { n: CI.num(total) }))}</div>
         <div class="ci-sum-parts">${parts.map(([label, v, tn]) => `<span class="ci-sum-part is-${tn}">${CI.esc(label)} <b>${CI.esc(v)}</b></span>`).join("")}</div>`;
+    if (window.CIExplain) CI.explain(box, CIExplain.warning(d, t));
 }
 
 function ewsRuleCondition(rule, r) {
