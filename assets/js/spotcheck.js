@@ -965,18 +965,20 @@ async function scExportExcel() {
       c.font = font({ size, bold });
       c.alignment = { horizontal: "center", vertical: "middle" };
     };
-    put(sig, blocks[2], sign.dateLine, false);
+    // Date line, roles and titles 1.75× the old 11 pt; names 2×.
+    put(sig, blocks[2], sign.dateLine, false, 19);
     [["approved", blocks[0]], ["certified", blocks[1]], ["prepared", blocks[2]]].forEach(([role, block]) => {
       const who = sign.roles[role];
       if (!who) return;
-      put(sig + 1, block, SC_SIGN_ROLES.find((r) => r[0] === role)[1], true);
-      put(sig + 2, block, who.title, true);
+      put(sig + 1, block, SC_SIGN_ROLES.find((r) => r[0] === role)[1], true, 19);
+      put(sig + 2, block, who.title, true, 19);
       // Signer's name twice the size, bold.
       put(sig + 7, block, who.name || "..................................", true, who.name ? 22 : 11);
     });
     // Room to sign (rows 3–6 under the title) is twice the old height.
     for (let r = sig; r <= sig + 7; r++) ws.getRow(r).height = r >= sig + 3 && r <= sig + 6 ? 40 : 20;
     ws.getRow(sig + 7).height = 34;
+    for (let r = sig; r <= sig + 2; r++) ws.getRow(r).height = 30;
 
     // ---------- sheet 2: by branch ----------
     const sum = scExportSummary(rows);
@@ -1093,7 +1095,7 @@ function scBuildReportElement(rows, sign) {
       .sc-pdf-report td.n{white-space:nowrap}
       .sc-pdf-report th{background:#F2F2F2;font-weight:700;text-align:center}
       .sc-pdf-report td.r{text-align:right}.sc-pdf-report td.c{text-align:center}.sc-pdf-report td.b{font-weight:700}
-      .sc-pdf-report .sig{display:grid;grid-template-columns:1fr 1fr 1fr;padding-top:30px;font-size:19px;text-align:center}
+      .sc-pdf-report .sig{display:grid;grid-template-columns:1fr 1fr 1fr;padding-top:30px;font-size:33px;line-height:1.45;text-align:center}
       .sc-pdf-report .sig b{display:block}
       .sc-pdf-report .sig .line{margin-top:240px}
       .sc-pdf-report .sig .line.name{font-weight:700;font-size:38px}
