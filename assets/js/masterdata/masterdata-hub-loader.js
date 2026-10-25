@@ -6,6 +6,8 @@
         role = String(JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}").role || "").toLowerCase();
     } catch (e) {}
     if (role !== "admin" && role !== "user") document.getElementById("mdOutAreaCard")?.remove();
+    // Monthly Plan: admin only (the backend's /api/admin/monthly-plan).
+    if (role !== "admin") document.getElementById("mdPlanCard")?.remove();
 })();
 
 // =========================

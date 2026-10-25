@@ -663,6 +663,7 @@ CMI18n.register({
   "creditreport.rec.aging.d180": { km: "១៨០–៣៥៩ ថ្ងៃ", en: "180–359 days" },
   "creditreport.rec.aging.d360": { km: "៣៦០ ថ្ងៃ ឡើងទៅ", en: "360+ days" },
   "creditreport.rec.targetsTitle": { km: "គោលដៅប្រមូល NPL ប្រចាំខែ (admin)", en: "Monthly NPL recovery targets (admin)" },
+  "creditreport.rec.targetsMoved": { km: "គោលដៅ NPL Recovery ប្រចាំខែ ឥឡូវកំណត់នៅ Master Data → ផែនការប្រចាំខែ", en: "Monthly NPL recovery targets are now set in Master Data → Monthly Plan" },
   "creditreport.rec.month": { km: "ខែ", en: "Month" },
   "creditreport.rec.defRecovered": { km: "ប្រមូលបាន = សមតុល្យដើមគ្រានៃឥណទាន NPL ដែលចេញពី NPL ដោយ ប្រសើរថ្នាក់ ល្អធម្មតា ឬបិទ/សងរួច។ ឥណទានលុបចេញពីបញ្ជី មិនមែនជាការប្រមូល NPL ទេ ហើយមិនបង្ហាញនៅទីនេះ។", en: "Recovered = opening balance of NPL loans that left NPL by being upgraded, becoming performing or closing. Write-off is not NPL recovery and is not shown here." },
   "creditreport.rec.defRate": { km: "អត្រាប្រមូល = ប្រមូលបាន ÷ NPL ដើមគ្រា។ ចលនា NPL សុទ្ធ = NPL ចុងគ្រា − ដើមគ្រា។", en: "Recovery rate = Recovered ÷ Opening NPL. Net NPL movement = Closing − Opening NPL." },

@@ -941,3 +941,12 @@ a.ci-ews-card:active{ background:var(--pi-track); }
 [data-theme="darkgray"] .ci-explain summary{ color:var(--pi-gold); }
 .ci-explain ul{ margin:8px 0 4px; padding-left:18px; display:flex; flex-direction:column; gap:5px; font-size:13px; line-height:1.55; color:var(--cr-text); }
 .ci-explain-note{ margin:0; font-size:11px; color:var(--cr-text-muted); }
+
+/* NPL → Recovery: link to Master Data → Monthly Plan (admin) */
+.ci-plan-link{
+    display:block;
+    text-decoration:none;
+    color:inherit;
+    font-weight:700;
+}
+.ci-plan-link[hidden]{ display:none; }
