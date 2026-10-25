@@ -279,6 +279,7 @@ function nplRenderTable() {
             return `<td class="num${tone}">${CI.esc(CI.money(v))}</td>`;
         }
         if (c.key === "category") return `<td>${CI.esc(nplCategoryText(a))}</td>`;
+        if (c.key === "prevCls" || c.key === "curCls") return `<td>${CI.esc(a[c.key] ? CI.clsName(a[c.key]) : "—")}</td>`;
         if (c.key === "location") return `<td>${CI.esc(a.district || a.location || "")}</td>`;
         if (c.key === "reason") return `<td class="ci-reason">${CI.esc(a.reason || "—")}</td>`;
         if (c.key === "name") return `<td>${CI.esc(a.name)}<div class="ci-sub">${CI.esc(a.cif)}</div></td>`;
@@ -316,7 +317,7 @@ function nplCardHtml(a, withCause = true) {
         <div class="ci-card-top"><span class="ci-card-id">${CI.esc(a.ld)}</span><span class="ci-pill ci-pill-low">${CI.esc(nplCategoryText(a))}</span></div>
         <div><span class="ci-card-name">${CI.esc(a.name)}</span> <span class="ci-sub">${CI.esc(a.cif)}</span></div>
         <div class="ci-sub">${CI.esc([a.branch, nplOfficerOf(a), a.product, a.district || a.location].filter(Boolean).join(" · "))}</div>
-        <div class="ci-card-row"><span class="ci-cls">${CI.esc(a.prevCls || "—")} → <b>${CI.esc(a.curCls || "—")}</b>${a.day ? ` · ${CI.esc(t("creditreport.list.daysN", { n: CI.num(a.day) }))}` : ""}</span>
+        <div class="ci-card-row"><span class="ci-cls">${CI.esc(a.prevCls ? CI.clsName(a.prevCls) : "—")} → <b>${CI.esc(a.curCls ? CI.clsName(a.curCls) : "—")}</b>${a.day ? ` · ${CI.esc(t("creditreport.list.daysN", { n: CI.num(a.day) }))}` : ""}</span>
             <span class="ci-card-amt${chg > 0 ? " ci-bad" : chg < 0 ? " ci-good" : ""}">${chg > 0 ? "+" : ""}${CI.esc(CI.money(chg))}</span></div>
         <div class="ci-sub">${CI.esc(CI.money(a.openBal))} → ${CI.esc(CI.money(a.closeBal))}</div>
         ${nplReasonHtml(a, withCause)}
