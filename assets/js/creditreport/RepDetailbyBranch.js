@@ -30,6 +30,10 @@ let crExpandedBranches = new Set();
 const CR_PAR_ALERT = 0.04;
 
 let crLoanReclass = null;  // { value, count } — rendered in the note under the T24 columns
+// Plan vs Actual (/api/creditreport/plan-vs-actual), fetched the first
+// time that section is shown after a (re)load; null = not fetched.
+let crPlanData = null;
+let crPlanLoading = null;
 let crBalancePD = null;    // { value, count } — the other half of that note
 
 // ========================================
@@ -138,6 +142,9 @@ function crSections() {
             ]
         }
     };
+    S.plan = { groups: crPlanGroups() };
+    // "All Sections" stays the report's own five; Plan vs Actual is picked
+    // on its own.
     S.all = {
         groups: [
             ...S.outstanding.groups,
@@ -148,6 +155,121 @@ function crSections() {
         ]
     };
     return S;
+}
+
+// ========================================
+// PLAN VS ACTUAL — each metric: the branch plan of the month, the
+// actual for the report's period, and how far along it is. Disbursement
+// also shows what the plan comes to by the report's last day. NBC
+// Overdue % and NPL % are ceilings: shown as points above (+) or below
+// (−) the plan. KHR loans and loans ≤ $50,000 have no actual yet.
+// ========================================
+const CR_PLAN_METRICS = [
+    { key: "osCount", group: "creditreport.detail.sectionOutstanding", label: "creditreport.plan.loans" },
+    { key: "osClients", group: "creditreport.detail.sectionOutstanding", label: "creditreport.plan.clients" },
+    { key: "osKhr", group: "creditreport.detail.sectionOutstanding", label: "creditreport.plan.khr", money: true },
+    { key: "osSmall", group: "creditreport.detail.sectionOutstanding", label: "creditreport.plan.small", money: true },
+    { key: "osAmount", group: "creditreport.detail.sectionOutstanding", label: "creditreport.plan.osAmount", money: true },
+    { key: "disbCount", group: "creditreport.detail.sectionDisburse", label: "creditreport.plan.loans", toDate: true },
+    { key: "disbAmount", group: "creditreport.detail.sectionDisburse", label: "creditreport.plan.amount", money: true, toDate: true },
+    { key: "nbcOverduePct", label: "creditreport.plan.nbcPct", ceiling: true },
+    { key: "nplPct", label: "creditreport.plan.nplPct", ceiling: true },
+    { key: "woCollected", label: "creditreport.detail.woCollected", money: true }
+];
+
+function crPlanGroups() {
+    return CR_PLAN_METRICS.map(m => {
+        const base = `planVs.${m.key}`;
+        const kind = m.ceiling ? "pct" : m.money ? "money" : "num";
+        const fields = [{ key: `${base}.plan`, label: t(m.ceiling ? "creditreport.plan.planMax" : "creditreport.plan.plan"), pv: kind }];
+        if (m.toDate) fields.push({ key: `${base}.expected`, label: t("creditreport.plan.expected"), pv: kind });
+        fields.push({ key: `${base}.actual`, label: t("creditreport.plan.actual"), pv: kind });
+        fields.push(m.ceiling
+            ? { key: base, label: t("creditreport.plan.diff"), pv: "diff" }
+            : { key: `${base}.ach`, label: "%", pv: "ach" });
+        return { label: m.group ? `${t(m.group)} · ${t(m.label)}` : t(m.label), fields };
+    });
+}
+
+// One Plan vs Actual cell; "—" where there is no plan / no actual.
+function crFmtPlanField(item, field) {
+    const v = crGetByPath(item, field.key);
+    const dash = cls => `<td class="${cls} cr-pv-none">—</td>`;
+    if (field.pv === "ach") {
+        if (v === null || v === undefined) return dash("cr-col-pct");
+        const cls = v >= 1 ? "cr-pv-good" : v >= 0.8 ? "cr-pv-warn" : "cr-pv-bad";
+        return `<td class="cr-col-pct ${cls}">${Math.round(v * 100)}%</td>`;
+    }
+    if (field.pv === "diff") {
+        if (!v || v.plan === null || v.plan === undefined || v.actual === null || v.actual === undefined) return dash("cr-col-pct");
+        const d = Math.round((v.actual - v.plan) * 100) / 100;
+        return `<td class="cr-col-pct ${d <= 0 ? "cr-pv-good" : "cr-pv-bad"}">${d > 0 ? "+" : ""}${d.toFixed(2)}</td>`;
+    }
+    const cls = field.pv === "pct" ? "cr-col-pct" : field.pv === "money" ? "cr-col-money" : "cr-col-num";
+    if (v === null || v === undefined) return dash(cls);
+    return `<td class="${cls}">${field.pv === "pct" ? Number(v).toFixed(2) + "%" : crFmtNum(v)}</td>`;
+}
+
+// Fetch Plan vs Actual (once per report load) and hang each branch's
+// metrics on its row as item.planVs, the Total's on the Total row.
+async function crEnsurePlan() {
+    if (!crSummaryData || crMode !== "current" || !crHasSection("plan")) return crRenderPlanNote();
+    if (crPlanData) return crRenderPlanNote();
+    if (!crPlanLoading) {
+        crPlanLoading = (async () => {
+            const res = await fetch(`${API.BASE_URL}/api/creditreport/plan-vs-actual`, { headers: { Authorization: `Bearer ${crToken}` } });
+            const data = await res.json();
+            if (!res.ok || !data.ok) throw new Error(data.message || `HTTP ${res.status}`);
+            return data;
+        })();
+    }
+    try {
+        const data = await crPlanLoading;
+        crPlanData = data;
+        const byBranch = new Map((data.rows || []).map(r => [r.branch, r.metrics]));
+        crSummaryData.items.forEach(it => { it.planVs = byBranch.get(it.branch) || null; });
+        if (crSummaryData.total) crSummaryData.total.planVs = data.total ? data.total.metrics : null;
+        crRenderSummary();
+    } catch (e) {
+        console.error("plan vs actual failed:", e);
+        notify(t("creditreport.plan.loadFailed"), "error");
+    } finally {
+        crPlanLoading = null;
+        crRenderPlanNote();
+    }
+}
+
+function crRenderPlanNote() {
+    const el = document.getElementById("crPlanNote");
+    if (!el) return;
+    const show = crHasSection("plan");
+    el.style.display = show ? "" : "none";
+    if (!show) return;
+    if (crMode !== "current") {
+        el.innerHTML = `<span>${crEscapeHtml(t("creditreport.plan.currentOnly"))}</span>`;
+        return;
+    }
+    if (!crPlanData) {
+        el.innerHTML = `<span>${crEscapeHtml(t("creditreport.plan.loading"))}</span>`;
+        return;
+    }
+    const [y, m] = crPlanData.month.split("-");
+    const lines = [
+        t("creditreport.plan.noteMonth", {
+            month: `${m}-${y}`,
+            from: crFmtDateDMY(crPlanData.fromDate),
+            to: crFmtDateDMY(crPlanData.toDate),
+            done: crPlanData.daysDone,
+            days: crPlanData.daysInMonth
+        }),
+        t("creditreport.plan.noteRules")
+    ];
+    if (crPicks("crNbcProduct").length || crPicks("crClass").length || crPicks("crProduct").length) lines.push(t("creditreport.plan.noteFilters"));
+    let html = lines.map(l => `<span>${crEscapeHtml(l)}</span>`).join("");
+    if (!crPlanData.hasPlan) {
+        html += `<span class="cr-plan-missing">${crEscapeHtml(t("creditreport.plan.noPlan"))}${crIsAdmin ? ` <a href="/CM_Pro/pages/masterdata/plan.html">${crEscapeHtml(t("creditreport.plan.setPlan"))} ›</a>` : ""}</span>`;
+    }
+    el.innerHTML = html;
 }
 
 // ========================================
@@ -268,6 +390,7 @@ function crGetByPath(obj, path) {
     return path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj);
 }
 function crFmtField(item, field) {
+    if (field.pv) return crFmtPlanField(item, field);
     const v = crGetByPath(item, field.key);
     const cls = crFieldClass(field);
     if (field.pct) {
@@ -773,6 +896,7 @@ function crSetMode(mode) {
         document.getElementById("crTableScroll").style.display = "none";
         crShowEmpty("Pick a Showing section, then click \"View History\".");
     }
+    crEnsurePlan();
 }
 
 // ========================================
@@ -896,6 +1020,7 @@ document.getElementById("crTbody").addEventListener("click", (e) => {
 });
 
 document.getElementById("crSection").addEventListener("change", () => {
+    crEnsurePlan();
     crUpdateClassVisibility();
     crUpdateChartButtonVisibility();
     if (crMode === "history") {
@@ -1063,6 +1188,7 @@ async function crRunReport() {
     // Dates changed — any cached Detailed data is now stale, and any
     // inline breakdown expanded under a Summary row no longer applies.
     crDetailedData = null;
+    crPlanData = null;
     crExpandedBranches.clear();
 
     try {
@@ -1095,6 +1221,7 @@ async function crRunReport() {
         crPopulateHistoryBranchFilter(data);
         document.getElementById("crTableScroll").style.display = "block";
         crRenderSummary();
+        crEnsurePlan();
     } catch (e) {
         console.error(e);
         crHideLoading();
@@ -1262,7 +1389,8 @@ function crUpdateChartButtonVisibility() {
     // and when several NBC / T24 classes are picked.
     const nbcClassAll = (sectionFilter === "nbcOverdue" && crPicks("crNbcClass").length !== 1) ||
         (sectionFilter === "parT24" && crPicks("crClass").length > 1);
-    btn.style.display = (crMode === "history" && keys.length === 1 && !nbcClassAll) ? "" : "none";
+    // Plan vs Actual has no daily history to chart.
+    btn.style.display = (crMode === "history" && keys.length === 1 && !nbcClassAll && sectionFilter !== "plan") ? "" : "none";
 }
 
 function crChartSeriesColors() {

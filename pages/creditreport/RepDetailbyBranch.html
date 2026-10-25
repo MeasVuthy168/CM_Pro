@@ -193,6 +193,7 @@ No Internet Connection
 <option value="parT24" data-i18n="creditreport.detail.sectionT24">Balance Loan at Risk (T24)</option>
 <option value="nbcOverdue" data-i18n="creditreport.detail.sectionNbcOverdue">Balance Loan at Risk (NBC Overdue)</option>
 <option value="writeOff" data-i18n="creditreport.detail.sectionWriteOff">Write Off</option>
+<option value="plan" data-i18n="creditreport.plan.section">Plan vs Actual</option>
 </select>
 </div>
 
@@ -299,6 +300,10 @@ No Internet Connection
 <!-- Shown only when the T24 columns are on screen — mirrors the Excel
      header note "(T24) included Reclass: ($x and n LD)". -->
 <div class="cr-table-note" id="crReclassNote" style="display:none"></div>
+
+<!-- Shown when Plan vs Actual is on screen: which month's plan, which
+     days the actual covers, and a link to set the plan when none. -->
+<div class="cr-table-note cr-plan-note" id="crPlanNote" style="display:none"></div>
 
 </div>
 

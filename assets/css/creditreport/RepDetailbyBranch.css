@@ -983,3 +983,16 @@ body.cr-force-landscape .landscape-bar.hidden{
     }
     .cr-par-high{ color:#000 !important; text-decoration:underline; }
 }
+
+/* ===== Plan vs Actual ===== */
+.table-card td.cr-pv-good{ color:#0A7A35; font-weight:800; }
+.table-card td.cr-pv-warn{ color:#B26A00; font-weight:800; }
+.table-card td.cr-pv-bad{ color:var(--cr-danger); font-weight:800; }
+.cr-total-row td.cr-pv-good{ color:#0A7A35 !important; }
+.cr-total-row td.cr-pv-warn{ color:#B26A00 !important; }
+.cr-total-row td.cr-pv-bad{ color:var(--cr-danger) !important; }
+.table-card td.cr-pv-none{ color:var(--cr-text-muted, #8a93a6); }
+[data-theme="dark"] .table-card td.cr-pv-good{ color:#5BD38A; }
+[data-theme="dark"] .table-card td.cr-pv-warn{ color:#F2B544; }
+.cr-plan-note .cr-plan-missing{ font-weight:700; }
+.cr-plan-note a{ color:inherit; text-decoration:underline; font-weight:800; }
