@@ -72,6 +72,7 @@ function recRenderSummary() {
         ],
         extra
     }));
+    if (window.CIExplain) CI.explain(document.getElementById("nplSummary"), CIExplain.recovery(d, t));
 }
 
 function recCard(label, value, sub, tone, tipKey) {

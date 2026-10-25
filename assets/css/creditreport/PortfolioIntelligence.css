@@ -932,3 +932,12 @@ a.ci-ews-card:active{ background:var(--pi-track); }
 .ci-ews-off{ display:flex; align-items:center; gap:10px; width:100%; text-align:left; border:1px solid var(--cr-border); border-radius:12px; padding:10px 12px; background:var(--cr-card-bg); color:var(--cr-text); font-family:'KRASAR',sans-serif; cursor:pointer; }
 .ci-ews-off-main{ flex:1 1 auto; display:flex; flex-direction:column; min-width:0; font-size:13px; }
 .ci-ews-off-n{ display:flex; gap:4px; }
+
+/* "💬 Explain" fold under a summary card (ci-explain.js) */
+.ci-explain{ margin-top:6px; border-top:1px dashed var(--cr-border); padding-top:6px; }
+.ci-explain summary{ cursor:pointer; font-size:13px; font-weight:700; color:var(--pi-navy); list-style:none; }
+.ci-explain summary::-webkit-details-marker{ display:none; }
+[data-theme="dark"] .ci-explain summary,
+[data-theme="darkgray"] .ci-explain summary{ color:var(--pi-gold); }
+.ci-explain ul{ margin:8px 0 4px; padding-left:18px; display:flex; flex-direction:column; gap:5px; font-size:13px; line-height:1.55; color:var(--cr-text); }
+.ci-explain-note{ margin:0; font-size:11px; color:var(--cr-text-muted); }

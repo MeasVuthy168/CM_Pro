@@ -555,9 +555,19 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
         b.setAttribute("aria-expanded", String(!el.hidden));
     });
 
+    // "💬 Explain": a fold under a summary card with plain sentences about
+    // the figures (assets/js/ci-explain.js — rule-based, no new numbers).
+    function explain(box, lines) {
+        if (!box || !lines || !lines.length) return;
+        const d = document.createElement("details");
+        d.className = "ci-explain";
+        d.innerHTML = `<summary>${esc(t("ex.button"))}</summary><ul>${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul><p class="ci-explain-note">${esc(t("ex.note"))}</p>`;
+        box.appendChild(d);
+    }
+
     window.CI = {
         t, esc, num, money, pct, signedPct, pts, dmy, short,
-        mountFilters, setPeriodLabel, setFilter, query, infoBtn, tip, fillOptions, renderAsOf, mountNav, get, toast, chartColors,
+        mountFilters, setPeriodLabel, setFilter, query, infoBtn, tip, explain, fillOptions, renderAsOf, mountNav, get, toast, chartColors,
         scope: () => scope
     };
 })();
