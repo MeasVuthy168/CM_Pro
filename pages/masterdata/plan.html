@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>Monthly Plan</title>
+
+<meta
+name="theme-color"
+content="#0e1b3c">
+
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
+  );
+</script>
+
+<link
+rel="stylesheet"
+href="../../assets/css/main.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/masterdata/masterdata.css">
+
+<link
+rel="stylesheet"
+href="../../assets/css/masterdata/plan.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
+
+<!-- Hold the first paint until the whole page is parsed (its scripts,
+     translations and header), so a page transition slides in a finished
+     page instead of one still filling itself in. No element has this id:
+     the hold simply ends when parsing does. -->
+<link rel="expect" href="#cm-pt-parsed" blocking="render">
+<link rel="preload" href="/CM_Pro/assets/fonts/Krasar-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<script src="/CM_Pro/shared/page-transition.js"></script>
+<script src="/CM_Pro/shared/sw-register.js"></script>
+</head>
+
+<body>
+
+<div id="offlineBanner" data-i18n="common.offline">
+No Internet Connection
+</div>
+
+<div id="topbar-container"></div>
+
+<div class="page-container">
+
+<section class="mp-hero">
+  <div class="mp-hero-top">
+    <span class="mp-hero-ico"><span class="ui-ico ui-ico-calendar" aria-hidden="true"></span></span>
+    <div class="mp-hero-text">
+      <div class="mp-hero-title" data-i18n="masterdata.plan.heroTitle">ផែនការប្រចាំខែ</div>
+      <div class="mp-hero-sub" data-i18n="masterdata.plan.heroSub">គោលដៅសម្រាប់ Daily Report តាមសាខា មន្ត្រី និងផលិតផល</div>
+    </div>
+  </div>
+  <div class="mp-tools">
+    <label class="mp-month"><span data-i18n="masterdata.plan.month">ខែ</span><input type="month" id="mpMonth"></label>
+    <button type="button" class="mp-btn" id="mpCopyPrev"><span class="ui-ico ui-ico-copy" aria-hidden="true"></span><span data-i18n="masterdata.plan.copyPrev">ចម្លងពីខែមុន</span></button>
+    <button type="button" class="mp-btn" id="mpExport"><span class="ui-ico ui-ico-install" aria-hidden="true"></span><span>Excel</span></button>
+    <button type="button" class="mp-btn" id="mpImportBtn"><span class="ui-ico ui-ico-plus" aria-hidden="true"></span><span data-i18n="masterdata.plan.import">នាំចូល Excel</span></button>
+    <input type="file" id="mpImport" accept=".xlsx" hidden>
+  </div>
+  <div class="mp-tabs" role="tablist">
+    <button type="button" class="mp-tab active" data-dim="branch" role="tab" data-i18n="masterdata.plan.tabBranch">សាខា</button>
+    <button type="button" class="mp-tab" data-dim="officer" role="tab" data-i18n="masterdata.plan.tabOfficer">មន្ត្រី</button>
+    <button type="button" class="mp-tab" data-dim="product" role="tab" data-i18n="masterdata.plan.tabProduct">ផលិតផល</button>
+  </div>
+</section>
+
+<section class="mp-card">
+  <div class="mp-card-head">
+    <div>
+      <div class="mp-card-title" id="mpTitle">-</div>
+      <div class="mp-card-sub" id="mpUpdated"></div>
+    </div>
+    <div class="mp-filters" id="mpOfficerFilters" hidden>
+      <select id="mpBranchFilter" aria-label="Branch"></select>
+      <input type="search" id="mpSearch" placeholder="ឈ្មោះ / ID" data-i18n-placeholder="masterdata.plan.searchOfficer" autocomplete="off">
+    </div>
+  </div>
+  <div class="mp-table-wrap"><table class="mp-table" id="mpTable"></table></div>
+  <div class="mp-state" id="mpState" hidden></div>
+  <ul class="mp-notes">
+    <li data-i18n="masterdata.plan.noteLower">NBC Overdue % និង NPL % ជាកម្រិតខ្ពស់បំផុត — ទាបជាងផែនការ = ល្អ។</li>
+    <li data-i18n="masterdata.plan.noteBlank">ប្រអប់ទទេ = មិនមានផែនការ (Report បង្ហាញ "—")។</li>
+    <li id="mpNoteDim"></li>
+  </ul>
+</section>
+
+<div class="mp-savebar" id="mpSaveBar" hidden>
+  <span id="mpDirtyText" data-i18n="masterdata.plan.unsaved">មានការកែប្រែមិនទាន់រក្សាទុក</span>
+  <button type="button" class="mp-btn" id="mpCancel" data-i18n="common.cancel">បោះបង់</button>
+  <button type="button" class="mp-btn mp-btn-primary" id="mpSave" data-i18n="common.save">រក្សាទុក</button>
+</div>
+
+</div>
+
+<div id="bottomnav-container"></div>
+
+<script src="../../config/api.js"></script>
+<script src="/CM_Pro/shared/touch-polish.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/features.js"></script>
+<script src="/CM_Pro/shared/i18n/masterdata.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<script src="../../assets/js/arrears-export.js"></script>
+<script src="../../assets/js/masterdata/plan.js"></script>
+
+</body>
+
+</html>

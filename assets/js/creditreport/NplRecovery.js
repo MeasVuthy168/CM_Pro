@@ -162,53 +162,13 @@ function recOpenRow(key) {
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-// ---------- admin: monthly targets per branch ----------
+// ---------- admin: link to where the monthly targets are entered ----------
 function recIsAdmin() {
     try {
         const u = JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}");
         return String(u.role || "").toLowerCase() === "admin";
     } catch (e) {
         return false;
-    }
-}
-
-async function recAdminFetch(method, body) {
-    const month = document.getElementById("recTargetMonth").value;
-    const url = `${API.BASE_URL}/api/admin/credit-intelligence/recovery-targets${method === "GET" ? `?month=${encodeURIComponent(month)}` : ""}`;
-    const res = await fetch(url, {
-        method,
-        headers: { Authorization: `Bearer ${localStorage.getItem("token") || sessionStorage.getItem("token")}`, "Content-Type": "application/json" },
-        body: body ? JSON.stringify(body) : undefined
-    });
-    return res.json();
-}
-
-async function recLoadTargets() {
-    const branches = (recData && recData.options && recData.options.branches) || [];
-    let current = {};
-    try {
-        const r = await recAdminFetch("GET");
-        if (r.ok) current = r.targets || {};
-    } catch (e) {
-        console.error(e);
-    }
-    document.getElementById("recTargetGrid").innerHTML = branches.map(b =>
-        `<label class="pi-field"><span>${CI.esc(b)}</span><input type="number" min="0" step="1" inputmode="numeric" data-branch="${CI.esc(b)}" value="${current[b] ?? ""}"></label>`).join("");
-}
-
-async function recSaveTargets() {
-    const targets = {};
-    document.querySelectorAll("#recTargetGrid input[data-branch]").forEach(i => {
-        if (i.value !== "") targets[i.dataset.branch] = i.value;
-    });
-    try {
-        const r = await recAdminFetch("PUT", { month: document.getElementById("recTargetMonth").value, targets });
-        if (!r.ok) throw new Error(r.message || "");
-        CI.toast(t("creditreport.growth.saved"), "success");
-        recLoad();
-    } catch (e) {
-        console.error(e);
-        CI.toast(t("creditreport.pi.loadFailed"), "error");
     }
 }
 
@@ -238,13 +198,6 @@ function recInit() {
         from.value = d.toISOString().slice(0, 10);
         from.dispatchEvent(new Event("change"));
     });
-    if (recIsAdmin()) {
-        const box = document.getElementById("recAdmin");
-        box.hidden = false;
-        const month = document.getElementById("recTargetMonth");
-        month.value = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 7);
-        box.addEventListener("toggle", () => { if (box.open) recLoadTargets(); });
-        month.addEventListener("change", recLoadTargets);
-        document.getElementById("recTargetSave").addEventListener("click", recSaveTargets);
-    }
+    // Targets are entered in Master Data → Monthly Plan (admin).
+    if (recIsAdmin()) document.getElementById("recAdmin").hidden = false;
 }
