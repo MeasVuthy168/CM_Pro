@@ -31,7 +31,12 @@ const SC_EP = {
   delete: API.BASE_URL + "/api/reportsp/delete",
   nbcosByCif: API.BASE_URL + "/api/nbcos/byCif/",
   export: API.BASE_URL + "/api/spotcheck/export/",
+  exportBatch: API.BASE_URL + "/api/spotcheck/export-batch",
 };
+
+// Most forms the "Download Word (all)" zip takes at once (same limit as
+// the backend's SPOTCHECK_BATCH_MAX).
+const SC_WORD_BATCH_MAX = 300;
 
 // 0-based indices into the nbcos "values" array (178 cols) — confirmed
 // from the live collection, used to autofill Section I on Add New.
@@ -1294,63 +1299,14 @@ function scBuildCard(rec) {
   return card;
 }
 
-// Download (card / list row): pick Word or PDF first. The PDF is the
-// same filled Word form, converted on the server (?format=pdf).
-const SC_FORM_FORMATS = [
-  { format: "docx", label: "ឯកសារ Word (.docx)", badge: "W", cls: "sc-dl-word" },
-  { format: "pdf", label: "ឯកសារ PDF (.pdf)", badge: "PDF", cls: "sc-dl-pdf" },
-];
-
-function scCloseDownloadMenu() {
-  document.getElementById("scDownloadMenu")?.remove();
-}
-
-function scExportForm(cif, btn) {
-  const open = document.getElementById("scDownloadMenu");
-  scCloseDownloadMenu();
-  if (open && open.dataset.cif === cif) return; // second tap on the same button closes it
-  const menu = document.createElement("div");
-  menu.id = "scDownloadMenu";
-  menu.className = "sc-dl-menu";
-  menu.dataset.cif = cif;
-  menu.setAttribute("role", "menu");
-  menu.innerHTML = `<div class="sc-dl-title">ទាញយកទម្រង់ · CIF ${scEscapeHtml(cif)}</div>` +
-    SC_FORM_FORMATS.map((f) => `<button type="button" role="menuitem" data-format="${f.format}">
-      <span class="sc-dl-badge ${f.cls}">${f.badge}</span><span>${scEscapeHtml(f.label)}</span></button>`).join("");
-  document.body.appendChild(menu);
-
-  // Under the button, kept on screen (above it when there's no room below).
-  const r = btn.getBoundingClientRect();
-  const w = menu.offsetWidth, h = menu.offsetHeight;
-  const left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
-  const below = r.bottom + 6 + h <= window.innerHeight - 8;
-  menu.style.left = `${left}px`;
-  menu.style.top = `${below ? r.bottom + 6 : Math.max(8, r.top - h - 6)}px`;
-
-  menu.addEventListener("click", (e) => {
-    const item = e.target.closest("[data-format]");
-    if (!item) return;
-    scCloseDownloadMenu();
-    scDownloadForm(cif, btn, item.dataset.format);
-  });
-}
-
-document.addEventListener("click", (e) => {
-  const menu = document.getElementById("scDownloadMenu");
-  if (menu && !menu.contains(e.target) && !e.target.closest(".sc-export-btn")) scCloseDownloadMenu();
-});
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") scCloseDownloadMenu(); });
-window.addEventListener("scroll", scCloseDownloadMenu, { passive: true });
-
-async function scDownloadForm(cif, btn, format) {
-  const label = btn.querySelector("span:last-child") || btn.querySelector("span");
+async function scExportForm(cif, btn) {
+  const label = btn.querySelector("span:last-child");
   const original = label.textContent;
-  label.textContent = format === "pdf" ? "កំពុងបង្កើត PDF..." : "កំពុងទាញយក...";
+  label.textContent = "កំពុងទាញយក...";
   btn.disabled = true;
 
   try {
-    const query = format === "pdf" ? "?format=pdf" : "";
-    const res = await fetch(SC_EP.export + encodeURIComponent(cif) + query, {
+    const res = await fetch(SC_EP.export + encodeURIComponent(cif), {
       headers: scAuthHeaders(),
     });
     if (!res.ok) {
@@ -1362,7 +1318,7 @@ async function scDownloadForm(cif, btn, format) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Spotcheck_${cif}.${format}`;
+    a.download = `Spotcheck_${cif}.docx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1373,6 +1329,48 @@ async function scDownloadForm(cif, btn, format) {
   } finally {
     label.textContent = original;
     btn.disabled = false;
+  }
+}
+
+// ⋮ menu → Download Word (all): every form in the current list (after
+// search / filter / sort) as one .zip of .docx files, in list order.
+async function scExportWordBatch() {
+  const cifs = scCurrentRows.map((rec) => rec.cif).filter(Boolean);
+  if (!cifs.length) {
+    scNotify(scT("spotcheck.exportNothing"));
+    return;
+  }
+  if (cifs.length > SC_WORD_BATCH_MAX) {
+    scNotify(scT("spotcheck.wordBatchTooMany").replace("{n}", cifs.length).replace("{max}", SC_WORD_BATCH_MAX));
+    return;
+  }
+  if (!window.confirm(scT("spotcheck.wordBatchConfirm").replace("{n}", cifs.length))) return;
+
+  if (typeof showAppLoading === "function") showAppLoading(scT("spotcheck.wordBatchLoading").replace("{n}", cifs.length));
+  try {
+    const res = await fetch(SC_EP.exportBatch, {
+      method: "POST",
+      headers: { ...scAuthHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ cifs }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.message || `HTTP ${res.status}`);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Spotcheck_${cifs.length}_forms_${new Date().toISOString().slice(0, 10)}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error("Word batch export failed:", err);
+    scNotify(`មិនអាចទាញយកទម្រង់បានទេ — ${err.message || ""}`);
+  } finally {
+    if (typeof hideAppLoading === "function") hideAppLoading();
   }
 }
 
@@ -1959,6 +1957,7 @@ function scBindEvents() {
   }
   document.getElementById("btnScExportExcel").addEventListener("click", scExportExcel);
   document.getElementById("btnScExportPdf")?.addEventListener("click", scExportPdf);
+  document.getElementById("btnScExportWordAll")?.addEventListener("click", scExportWordBatch);
 
   scBindAutosuggest("txtOccupationInFile", "lstOccupationInFileSuggest");
   scBindAutosuggest("txtCurrentOccupation", "lstCurrentOccupationSuggest");
