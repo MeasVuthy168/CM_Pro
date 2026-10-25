@@ -35,8 +35,10 @@ const SC_EP = {
 };
 
 // Most forms the "Download Word (all)" zip takes at once (same limit as
-// the backend's SPOTCHECK_BATCH_MAX).
+// the backend's SPOTCHECK_BATCH_MAX), and how many each request fills.
 const SC_WORD_BATCH_MAX = 300;
+const SC_WORD_BATCH_CHUNK = 10;
+const SC_JSZIP_URL = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
 
 // 0-based indices into the nbcos "values" array (178 cols) — confirmed
 // from the live collection, used to autofill Section I on Add New.
@@ -519,7 +521,7 @@ function scBuildTable(rows) {
     });
     tr.querySelector(".sc-export-btn").addEventListener("click", (e) => {
       e.stopPropagation();
-      scExportForm(rec.cif, e.currentTarget);
+      scExportForm(rec, e.currentTarget);
     });
     tr.addEventListener("click", () => scOpenForm(rec));
   });
@@ -1059,7 +1061,8 @@ async function scExportExcel() {
     const pad = (x) => String(x).padStart(2, "0");
     const month = document.getElementById("filterMonth")?.value;
     const stamp = /^\d{4}-\d{2}$/.test(month || "") ? month.replace("-", "") : `${today.getFullYear()}${pad(today.getMonth() + 1)}${pad(today.getDate())}`;
-    await ArrExport.save(wb, `SpotCheck_${stamp}.xlsx`);
+    const user = scUsername();
+    await ArrExport.save(wb, `SpotCheck_${stamp}${user ? `_${user}` : ""}.xlsx`);
   } catch (err) {
     console.error("[spotcheck export] failed:", err);
     scNotify("មិនអាចបង្កើតឯកសារបានទេ — សូមពិនិត្យអ៊ីនធឺណិត ហើយសាកម្ដងទៀត", "error");
@@ -1243,7 +1246,8 @@ async function scExportPdf() {
     const today = new Date();
     const month = document.getElementById("filterMonth")?.value;
     const stamp = /^\d{4}-\d{2}$/.test(month || "") ? month.replace("-", "") : `${today.getFullYear()}${pad(today.getMonth() + 1)}${pad(today.getDate())}`;
-    pdf.save(`SpotCheck_${stamp}.pdf`);
+    const user = scUsername();
+    pdf.save(`SpotCheck_${stamp}${user ? `_${user}` : ""}.pdf`);
   } catch (err) {
     console.error("[spotcheck pdf] failed:", err);
     scNotify("មិនអាចបង្កើតឯកសារបានទេ — សូមពិនិត្យអ៊ីនធឺណិត ហើយសាកម្ដងទៀត", "error");
@@ -1292,14 +1296,15 @@ function scBuildCard(rec) {
   });
   card.querySelector(".sc-export-btn").addEventListener("click", (e) => {
     e.stopPropagation();
-    scExportForm(rec.cif, e.currentTarget);
+    scExportForm(rec, e.currentTarget);
   });
   card.addEventListener("click", () => scOpenForm(rec));
   card.addEventListener("keydown", (e) => { if (e.key === "Enter") scOpenForm(rec); });
   return card;
 }
 
-async function scExportForm(cif, btn) {
+async function scExportForm(rec, btn) {
+  const cif = rec.cif;
   const label = btn.querySelector("span:last-child");
   const original = label.textContent;
   label.textContent = "កំពុងទាញយក...";
@@ -1318,7 +1323,7 @@ async function scExportForm(cif, btn) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Spotcheck_${cif}.docx`;
+    a.download = scWordFileName(rec, false);
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1335,42 +1340,100 @@ async function scExportForm(cif, btn) {
 // ⋮ menu → Download Word (all): every form in the current list (after
 // search / filter / sort) as one .zip of .docx files, in list order.
 async function scExportWordBatch() {
-  const cifs = scCurrentRows.map((rec) => rec.cif).filter(Boolean);
-  if (!cifs.length) {
+  const rows = scCurrentRows.filter((rec) => rec.cif);
+  if (!rows.length) {
     scNotify(scT("spotcheck.exportNothing"));
     return;
   }
-  if (cifs.length > SC_WORD_BATCH_MAX) {
-    scNotify(scT("spotcheck.wordBatchTooMany").replace("{n}", cifs.length).replace("{max}", SC_WORD_BATCH_MAX));
+  if (rows.length > SC_WORD_BATCH_MAX) {
+    scNotify(scT("spotcheck.wordBatchTooMany").replace("{n}", rows.length).replace("{max}", SC_WORD_BATCH_MAX));
     return;
   }
-  if (!window.confirm(scT("spotcheck.wordBatchConfirm").replace("{n}", cifs.length))) return;
+  if (!window.confirm(scT("spotcheck.wordBatchConfirm").replace("{n}", rows.length))) return;
 
-  if (typeof showAppLoading === "function") showAppLoading(scT("spotcheck.wordBatchLoading").replace("{n}", cifs.length));
-  try {
-    const res = await fetch(SC_EP.exportBatch, {
-      method: "POST",
-      headers: { ...scAuthHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify({ cifs }),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body.message || `HTTP ${res.status}`);
+  const total = rows.length;
+  const names = scWordFileNames(rows);
+  const progress = (done) => {
+    if (typeof setAppLoadingProgress === "function") {
+      setAppLoadingProgress((done / total) * 95, `${done} / ${total}`);
     }
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Spotcheck_${cifs.length}_forms_${new Date().toISOString().slice(0, 10)}.zip`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+  };
+  if (typeof showAppLoading === "function") {
+    showAppLoading(scT("spotcheck.wordBatchLoading").replace("{n}", total), { progress: true, key: "spotcheck-word-batch" });
+  }
+  progress(0);
+  try {
+    await scLoadScript(SC_JSZIP_URL);
+    // The server fills SC_WORD_BATCH_CHUNK forms per request, so the bar
+    // moves as each part comes back; the parts are joined into one zip.
+    const out = new JSZip();
+    let done = 0;
+    for (let i = 0; i < total; i += SC_WORD_BATCH_CHUNK) {
+      const part = rows.slice(i, i + SC_WORD_BATCH_CHUNK);
+      const res = await fetch(SC_EP.exportBatch, {
+        method: "POST",
+        headers: { ...scAuthHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ cifs: part.map((rec) => rec.cif) }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || `HTTP ${res.status}`);
+      }
+      const zip = await JSZip.loadAsync(await res.arrayBuffer());
+      for (const rec of part) {
+        const file = zip.file(`Spotcheck_${String(rec.cif).replace(/[\\/:*?"<>|\s]+/g, "_")}.docx`);
+        if (file) out.file(names.get(rec.cif), await file.async("uint8array"));
+      }
+      done += part.length;
+      progress(done);
+    }
+
+    const blob = await out.generateAsync({ type: "blob", compression: "STORE" });
+    if (typeof setAppLoadingProgress === "function") setAppLoadingProgress(100, `${total} / ${total}`);
+    scSaveBlob(blob, `Spotcheck_${total}_forms_${new Date().toISOString().slice(0, 10)}.zip`);
   } catch (err) {
     console.error("Word batch export failed:", err);
     scNotify(`មិនអាចទាញយកទម្រង់បានទេ — ${err.message || ""}`);
   } finally {
     if (typeof hideAppLoading === "function") hideAppLoading();
+  }
+}
+
+// "Spotcheck_<customer name>.docx" for each row (the CIF when there is
+// no name); when two rows share a name, each gets "_<CIF>" too.
+function scWordFileName(rec, withCif) {
+  const name = String(rec.customerName || "").replace(/[\\/:*?"<>|\x00-\x1f]+/g, " ").replace(/\s+/g, " ").trim();
+  const base = name || String(rec.cif);
+  return `Spotcheck_${base}${withCif && name ? `_${rec.cif}` : ""}.docx`;
+}
+
+function scWordFileNames(rows) {
+  const seen = new Map();
+  rows.forEach((rec) => {
+    const key = scWordFileName(rec, false).toLowerCase();
+    seen.set(key, (seen.get(key) || 0) + 1);
+  });
+  return new Map(rows.map((rec) => [rec.cif, scWordFileName(rec, seen.get(scWordFileName(rec, false).toLowerCase()) > 1)]));
+}
+
+function scSaveBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// The logged-in username (staff ID), for export file names.
+function scUsername() {
+  try {
+    const user = JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}");
+    return String(user.username || "").replace(/[\\/:*?"<>|\s]+/g, "_");
+  } catch {
+    return "";
   }
 }
 
