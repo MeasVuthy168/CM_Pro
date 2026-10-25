@@ -539,7 +539,7 @@ const SC_XL_COLUMNS = [
   ["term", "រយៈពេល", 8, "center"],
   ["cycle", "វដ្តត្រួតពិនិត្យ", 9, "center"],
   ["repaymentHistory", "ស្ថានភាព", 12, "wrap"],
-  ["lateDays", "មូលហេតុ", 11, "wrap"],
+  ["lateDays", "មូលហេតុ", 7, "wrap"],
   ["loanCompletion", "ស្ថានភាព", 12, "wrap"],
   ["loanCompletionNote", "មូលហេតុ", 11, "wrap"],
   ["occupationInFile", "មុខរបរពេលខ្ចី", 18, "wrap"],
@@ -554,7 +554,7 @@ const SC_XL_COLUMNS = [
   ["purposeNote", "បញ្ជាក់បន្ថែម", 16, "wrap"],
   ["repaymentSource", "ប្រភពប្រាក់សម្រាប់សង", 13, "wrap"],
   ["repaymentSourceNote", "បញ្ជាក់បន្ថែម", 16, "wrap"],
-  ["conclusion", "សន្និដ្ឋាន", 46, "wrap"],
+  ["conclusion", "សន្និដ្ឋាន", 56, "wrap"],
 ];
 
 // Header levels 1 and 2, by column (1-based, inclusive), as on the paper report.
@@ -958,11 +958,11 @@ async function scExportExcel() {
     const today = new Date();
     const sig = HEAD + 3 + rows.length + 2;
     const blocks = [[1, 8], [13, 20], [26, n]];
-    const put = (row, [c1, c2], text, bold) => {
+    const put = (row, [c1, c2], text, bold, size = 11) => {
       ws.mergeCells(row, c1, row, c2);
       const c = ws.getCell(row, c1);
       c.value = text;
-      c.font = font({ size: 11, bold });
+      c.font = font({ size, bold });
       c.alignment = { horizontal: "center", vertical: "middle" };
     };
     put(sig, blocks[2], sign.dateLine, false);
@@ -971,9 +971,12 @@ async function scExportExcel() {
       if (!who) return;
       put(sig + 1, block, SC_SIGN_ROLES.find((r) => r[0] === role)[1], true);
       put(sig + 2, block, who.title, true);
-      put(sig + 7, block, who.name || "..................................", !!who.name);
+      // Signer's name twice the size, bold.
+      put(sig + 7, block, who.name || "..................................", true, who.name ? 22 : 11);
     });
-    for (let r = sig; r <= sig + 7; r++) ws.getRow(r).height = 20;
+    // Room to sign (rows 3–6 under the title) is twice the old height.
+    for (let r = sig; r <= sig + 7; r++) ws.getRow(r).height = r >= sig + 3 && r <= sig + 6 ? 40 : 20;
+    ws.getRow(sig + 7).height = 34;
 
     // ---------- sheet 2: by branch ----------
     const sum = scExportSummary(rows);
@@ -1092,8 +1095,8 @@ function scBuildReportElement(rows, sign) {
       .sc-pdf-report td.r{text-align:right}.sc-pdf-report td.c{text-align:center}.sc-pdf-report td.b{font-weight:700}
       .sc-pdf-report .sig{display:grid;grid-template-columns:1fr 1fr 1fr;padding-top:30px;font-size:19px;text-align:center}
       .sc-pdf-report .sig b{display:block}
-      .sc-pdf-report .sig .line{margin-top:120px}
-      .sc-pdf-report .sig .line.name{font-weight:700}
+      .sc-pdf-report .sig .line{margin-top:240px}
+      .sc-pdf-report .sig .line.name{font-weight:700;font-size:38px}
     </style>
     <div class="top">
       <div><h1>Facilities Spot Check</h1><div class="period">${period ? `Period: ${esc(period)}` : ""}</div></div>
