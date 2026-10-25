@@ -32,6 +32,7 @@ rel="stylesheet"
 href="../../assets/css/creditreport/RepDetailbyCO.css">
 <link rel="stylesheet" href="../../assets/css/creditreport/growth-dashboard.css">
 <link rel="stylesheet" href="../../assets/css/creditreport/cr-icons.css">
+<link rel="stylesheet" href="../../assets/css/creditreport/cr-export.css">
 
 <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
 
@@ -253,7 +254,7 @@ No Internet Connection
 <button id="btnCrExport"><img src="/CM_Pro/assets/icons/arrear/export_excel.png" alt="" class="menu-icon"><span data-i18n="creditreport.menu.exportExcel">Export Excel</span></button>
 <button id="btnCrExportPdf"><img src="/CM_Pro/assets/icons/arrear/export_pdf.png" alt="" class="menu-icon"><span data-i18n="creditreport.menu.exportPdf">Export PDF</span></button>
 <button id="btnCrPrint"><img src="/CM_Pro/assets/icons/arrear/print.png" alt="" class="menu-icon"><span data-i18n="creditreport.menu.print">Print</span></button>
-<button id="btnCrLandscape"><img src="/CM_Pro/assets/icons/arrear/landscape.png" alt="" class="menu-icon"><span data-i18n="creditreport.menu.landscape">Landscape</span></button>
+<button id="btnCrFullscreen"><img src="/CM_Pro/assets/icons/arrear/fullscreen.svg" alt="" class="menu-icon"><span data-i18n="creditreport.menu.fullscreen">Fullscreen</span></button>
 <button id="btnCrRefreshData"><img src="/CM_Pro/assets/icons/arrear/refresh.png" alt="" class="menu-icon"><span data-i18n="creditreport.menu.refreshData">Refresh Data</span></button>
 </div>
 </div>
@@ -263,15 +264,6 @@ No Internet Connection
 <!-- ========================= -->
 
 <div class="table-card">
-
-<div id="landscapeTopBar" class="landscape-bar landscape-top-bar">
-<button id="btnCrExitLandscape" aria-label="Exit landscape" data-i18n="creditreport.menu.exitLandscape" data-i18n-aria-label="creditreport.detail.exitLandscapeAria">✕ ត្រឡប់ក្រោយ</button>
-<span id="crLandscapeRowCount" class="landscape-row-count"></span>
-</div>
-
-<div id="landscapeBottomBar" class="landscape-bar landscape-bottom-bar">
-<span class="landscape-hint" data-i18n="creditreport.menu.landscapeHint">ចុចអេក្រង់ដើម្បីបង្ហាញ/លាក់ម៉ឺនុយ</span>
-</div>
 
 <div id="crSkeleton" class="cr-skeleton">
 <div class="cr-skel-row cr-skel-head"></div>
@@ -336,8 +328,6 @@ data-i18n-placeholder="creditreport.byCO.searchPlaceholder">
 
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
 
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
@@ -345,6 +335,8 @@ data-i18n-placeholder="creditreport.byCO.searchPlaceholder">
 <script src="../../assets/js/creditreport/growth-dashboard.js"></script>
 <script src="../../assets/js/multi-select.js"></script>
 <script src="../../assets/js/creditreport/cr-multi.js"></script>
+<script src="../../assets/js/arrears-export.js"></script>
+<script src="../../assets/js/creditreport/cr-export.js"></script>
 <script src="../../assets/js/creditreport/RepDetailbyCO.js"></script>
 <script src="../../assets/js/creditreport/RepDetailbyCO-loader.js"></script>
 
