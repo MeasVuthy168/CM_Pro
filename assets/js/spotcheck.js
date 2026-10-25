@@ -719,6 +719,7 @@ async function scAskSignatures(rows) {
           <label>ថ្ងៃរៀបចំ<input type="date" id="scSignDate" required></label>
           <label>សាខា<select id="scSignBranch">${branches.map((b) => `<option value="${esc(b)}">${esc(b)}</option>`).join("")}</select></label>
           <label>ប្រភេទសាខា<select id="scSignClass"><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></label>
+          <label class="sc-sign-wide">ធ្វើនៅ<input type="text" id="scSignPlace" placeholder="ឧ. ស្វាយរៀង"></label>
         </div>
         <div id="scSignRoles"></div>
         <p class="sc-confirm-warn" id="scSignError" hidden></p>
@@ -776,7 +777,13 @@ async function scAskSignatures(rows) {
       });
     }
 
-    const syncClass = () => { classSel.value = scBranchClass(officers, branchSel.value); renderRoles(); };
+    // "ធ្វើនៅ" — the place written before the date ("ស្វាយរៀង, ថ្ងៃទី…");
+    // the last one typed for this branch, else the branch's own name.
+    const placeInput = $("#scSignPlace");
+    const fillPlace = () => {
+      placeInput.value = ((mem.places || {})[scNormBranch(branchSel.value)]) || branchSel.value || "";
+    };
+    const syncClass = () => { classSel.value = scBranchClass(officers, branchSel.value); fillPlace(); renderRoles(); };
     branchSel.addEventListener("change", syncClass);
     classSel.addEventListener("change", renderRoles);
     syncClass();
@@ -812,9 +819,11 @@ async function scAskSignatures(rows) {
         if (position && titleEl.value.trim() && titleEl.value.trim() !== SC_POSITION_TITLES[position]) mem.titles[position] = titleEl.value.trim();
       });
       mem.lastBranch = branchSel.value;
+      mem.places = mem.places || {};
+      if (placeInput.value.trim()) mem.places[branchKey] = placeInput.value.trim();
       scSaveSignMemory(mem);
       const [y, m, d] = date.split("-").map(Number);
-      const place = branchSel.value || "..................";
+      const place = placeInput.value.trim() || "..................";
       close({
         date,
         dateLine: `${place}, ថ្ងៃទី${scKhDigits(d)} ខែ${SC_KH_MONTHS[m - 1]} ឆ្នាំ${scKhDigits(y)}`,
