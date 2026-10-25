@@ -667,6 +667,7 @@ const SC_POSITION_TITLES = {
   'Branch Manager "C"': "នាយកសាខា",
 };
 const SC_SIGN_STORE = "sc_sign_memory";
+const SC_SIGN_PLACE = "ស្វាយរៀង";
 const scNormBranch = (b) => String(b || "").trim().toLowerCase();
 const scClassOf = (position) => (/"([ABC])"/.exec(position || "") || [])[1] || "";
 
@@ -781,11 +782,9 @@ async function scAskSignatures(rows) {
     }
 
     // "ធ្វើនៅ" — the place written before the date ("ស្វាយរៀង, ថ្ងៃទី…");
-    // the last one typed for this branch, else the branch's own name.
+    // always starts as ស្វាយរៀង (editable for this export).
     const placeInput = $("#scSignPlace");
-    const fillPlace = () => {
-      placeInput.value = ((mem.places || {})[scNormBranch(branchSel.value)]) || branchSel.value || "";
-    };
+    const fillPlace = () => { placeInput.value = SC_SIGN_PLACE; };
     const syncClass = () => { classSel.value = scBranchClass(officers, branchSel.value); fillPlace(); renderRoles(); };
     branchSel.addEventListener("change", syncClass);
     classSel.addEventListener("change", renderRoles);
@@ -822,8 +821,6 @@ async function scAskSignatures(rows) {
         if (position && titleEl.value.trim() && titleEl.value.trim() !== SC_POSITION_TITLES[position]) mem.titles[position] = titleEl.value.trim();
       });
       mem.lastBranch = branchSel.value;
-      mem.places = mem.places || {};
-      if (placeInput.value.trim()) mem.places[branchKey] = placeInput.value.trim();
       scSaveSignMemory(mem);
       const [y, m, d] = date.split("-").map(Number);
       const place = placeInput.value.trim() || "..................";
