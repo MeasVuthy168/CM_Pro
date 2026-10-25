@@ -376,6 +376,7 @@ CMI18n.register({
   "spotcheck.viewListAria": { km: "ទិដ្ឋភាពបញ្ជី", en: "List view" },
   "spotcheck.moreActionsAria": { km: "សកម្មភាពបន្ថែម", en: "More actions" },
   "spotcheck.exportExcel": { km: "នាំចេញ Excel", en: "Export Excel" },
+  "spotcheck.exportPdf": { km: "នាំចេញ PDF", en: "Export PDF" },
   "spotcheck.exportNothing": { km: "មិនមានទិន្នន័យសម្រាប់នាំចេញទេ", en: "Nothing to export." },
   "spotcheck.colBranch": { km: "សាខា", en: "Branch" },
   "spotcheck.colOfficer": { km: "មន្ត្រីឥណទាន", en: "Officer" },
