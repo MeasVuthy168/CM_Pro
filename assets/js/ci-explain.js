@@ -30,6 +30,12 @@
     };
     const fmt = { num, money, signedMoney, pct, dmy };
 
+    // A branch manager compares the officers of their own branch.
+    function scopeLead(d, t) {
+        const sc = d && d.scope;
+        return sc && sc.type === "branch" && d.dim === "officer" ? [t("ex.inBranch", { branch: sc.branch })] : [];
+    }
+
     const maxBy = (rows, f) => rows.reduce((best, r) => (best === null || f(r) > f(best) ? r : best), null);
     const nameOf = r => r.name || r.key || "—";
 
@@ -89,7 +95,8 @@
     function recovery(d, t) {
         if (!d || !d.movement || !d.movement.available) return [t("ex.npl.na")];
         const k = d.kpis;
-        const out = [t("ex.rec.main", { value: money(k.recovered.value), n: num(k.recovered.count), rate: pct(k.recoveryRate, 1), open: money(k.opening) })];
+        const out = scopeLead(d, t);
+        out.push(t("ex.rec.main", { value: money(k.recovered.value), n: num(k.recovered.count), rate: pct(k.recoveryRate, 1), open: money(k.opening) }));
         if (k.target && k.target.value) {
             out.push(t(k.target.achievement >= 1 ? "ex.rec.targetMet" : "ex.rec.targetMiss", { ach: pct(k.target.achievement, 0), target: money(k.target.value) }));
         }
@@ -108,7 +115,15 @@
         const rows = ((d && d.rows) || []).filter(r => r.os > 0 || r.nplValue > 0);
         const tot = (d && d.total) || {};
         if (!rows.length) return [t("ex.none")];
-        const out = [];
+        const out = scopeLead(d, t);
+        if (rows.length === 1) {
+            // Nothing to compare with: that one row's own figures.
+            const r = rows[0];
+            out.push(t("ex.risk.one", { name: nameOf(r), npl: money(r.nplValue), pct: pct(r.nplPct), par: pct(r.parPct) }));
+            if (r.nplChange) out.push(t("ex.risk.change", { change: signedMoney(r.nplChange) }));
+            out.push(t("ex.single"));
+            return out;
+        }
         const top = maxBy(rows, r => r.nplValue);
         if (top && top.nplValue > 0) {
             out.push(t("ex.risk.top", { name: nameOf(top), npl: money(top.nplValue), share: pct(top.contribution, 1), total: money(tot.nplValue), os: money(top.os), totalOs: money(tot.os) }));
@@ -126,7 +141,8 @@
     function quality(d, t) {
         if (!d || !d.aging) return [t("ex.none")];
         const a = d.aging;
-        const out = [t("ex.q.par", { p1: pct(a.par1.pct), p30: pct(a.par30.pct), p90: pct(a.par90.pct), v90: money(a.par90.value) })];
+        const out = scopeLead(d, t);
+        out.push(t("ex.q.par", { p1: pct(a.par1.pct), p30: pct(a.par30.pct), p90: pct(a.par90.pct), v90: money(a.par90.value) }));
         const nb = d.normal;
         if (nb && nb.bands && nb.total && nb.total.count) {
             const big = maxBy(nb.bands, b => b.value);
@@ -147,8 +163,10 @@
         const gr = d && d.growthRisk;
         const rows = ((d && d.rows) || []).filter(r => r.quadrant);
         if (!gr || !rows.length) return [t("ex.growth.na")];
+        if (rows.length === 1) return [t("ex.growth.one", { name: nameOf(rows[0]), q: t(`ex.quad.${rows[0].quadrant}`) }), t("ex.single")];
         const n = q => rows.filter(r => r.quadrant === q).length;
-        const out = [t("ex.growth.counts", { healthy: n("healthy"), risky: n("risky"), weak: n("weak"), stable: n("stable"), total: rows.length })];
+        const out = scopeLead(d, t);
+        out.push(t("ex.growth.counts", { healthy: n("healthy"), risky: n("risky"), weak: n("weak"), stable: n("stable"), total: rows.length }));
         const weak = rows.filter(r => r.quadrant === "weak").sort((a, b) => b.os - a.os);
         if (weak.length) out.push(t("ex.growth.weak", { names: weak.slice(0, 3).map(nameOf).join(", ") }));
         const risky = rows.filter(r => r.quadrant === "risky").sort((a, b) => b.os - a.os);
@@ -182,7 +200,25 @@
         return out;
     }
 
-    const api = { overview, npl, recovery, risk, quality, growth, warning, fmt };
+    // ---------- A Credit Officer's own portfolio ----------
+    // risk: /risk?dim=officer (their one row); ews: /early-warning (theirs).
+    function mine(risk, ews, t) {
+        const r = ((risk && risk.rows) || [])[0];
+        if (!r) return [t("ex.none")];
+        const out = [t("ex.mine.npl", { npl: money(r.nplValue), n: num(r.npl), pct: pct(r.nplPct), os: money(r.os) })];
+        const c = risk.comparison || {};
+        if (r.nplChange != null && c.available && c.date) out.push(t("ex.mine.change", { change: signedMoney(r.nplChange), date: dmy(c.date) }));
+        out.push(t("ex.mine.par", { par: pct(r.parPct) }));
+        const s = ews && ews.summary;
+        if (s) {
+            out.push(t("ex.mine.ews", { high: num(s.high), medium: num(s.medium) }));
+            const by = s.byRule || {};
+            if (by.nopromise || by.noreason) out.push(t("ex.ew.todo", { np: num(by.nopromise || 0), nr: num(by.noreason || 0) }));
+        }
+        return out;
+    }
+
+    const api = { overview, npl, recovery, risk, quality, growth, warning, mine, fmt };
     root.CIExplain = api;
     if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

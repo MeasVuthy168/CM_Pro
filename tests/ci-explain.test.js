@@ -93,3 +93,41 @@ test("NPL: says which side drove the change", () => {
   assert.equal(plain(X.npl(m(1000, 1200, 500), t)).at(-1), dict["ex.npl.whyUpNew"].en);
   assert.equal(plain(X.npl(m(1000, 800, 100), t)).at(-1), dict["ex.npl.whyDownRec"].en);
 });
+
+// ---------- scope: a one-branch manager and a Credit Officer ----------
+const guard = (topic, lines, ...datas) => {
+  const ok = new Set(datas.flatMap(d => [...allowed(d), ...rowCounts(d)]));
+  for (const line of lines) {
+    for (const n of numbersIn(line)) assert.ok(ok.has(n), `${topic}: "${n}" is not a figure from the data — ${line}`);
+  }
+};
+
+test("one-branch manager: officers of that branch are compared, with the branch named", () => {
+  for (const lang of ["km", "en"]) {
+    const t = tr(lang);
+    for (const [topic, file] of [["risk", "mgr-risk"], ["recovery", "mgr-rec"], ["growth", "mgr-risk"]]) {
+      const data = load(file);
+      const lines = X[topic](data, t);
+      assert.ok(lines[0].includes("Romeas Haek"), `${topic}/${lang} should open with the branch: ${lines[0]}`);
+      guard(topic, lines, data);
+    }
+  }
+});
+
+test("a single row (manager by branch, officer on the page) is described, not ranked", () => {
+  const t = tr("en");
+  const lines = X.risk(load("mgr-riskbranch"), t).map(l => l.replace(/[\u0001\u0002]/g, ""));
+  assert.ok(!lines.some(l => /holds the most|of \d+ have/.test(l)), lines.join(" / "));
+  assert.equal(lines.at(-1), dict["ex.single"].en);
+  assert.equal(X.growth(load("mgr-riskbranch"), t).at(-1), dict["ex.single"].en);
+});
+
+test("Credit Officer: their own portfolio, every number from the two responses", () => {
+  for (const lang of ["km", "en"]) {
+    const risk = load("staff-risk"), ews = load("staff-ews");
+    const lines = X.mine(risk, ews, tr(lang));
+    assert.ok(lines.length >= 3);
+    guard("mine", lines, risk, ews);
+  }
+  assert.deepEqual(X.mine({ rows: [] }, null, tr("en")), [dict["ex.none"].en]);
+});

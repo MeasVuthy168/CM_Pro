@@ -31,7 +31,8 @@
      { type: "explain", topic }            why the figures moved (Credit
                                            Portfolio, ci-explain.js); topic
                                            overview | npl | recovery | risk
-                                           | quality | growth | warning
+                                           | quality | growth | warning | mine
+                                           (a Credit Officer's own portfolio)
      { type: "theme", value }              light | dark | auto
      { type: "help" }
      { type: "unknown" }
@@ -167,14 +168,15 @@
     const EXPLAIN_WORDS = ["ហេតុអ្វី", "ហេតុអី", "ពន្យល់", "ដោយសារអ្វី", "មកពីអ្វី", "why", "explain", "what happened", "how come"];
     const EXPLAIN_DIRECT = ["ការព្រមានជាមុន", "early warning", "ការប្រមូល npl", "npl recovery", "ចលនា npl", "npl movement",
         "វិភាគហានិភ័យ", "risk analysis", "គុណភាពផលប័ត្រ", "portfolio quality", "កំណើន និងហានិភ័យ", "growth vs risk",
-        "ឥណទានណាត្រូវតាមដាន", "which loans to follow up"];
+        "ឥណទានណាត្រូវតាមដាន", "which loans to follow up", "ផលប័ត្ររបស់ខ្ញុំ", "my portfolio"];
     // Most specific first.
     const EXPLAIN_TOPICS = [
         { topic: "warning", keywords: ["ការព្រមានជាមុន", "ព្រមាន", "early warning", "warning", "ត្រូវតាមដាន", "follow up"] },
+        { topic: "mine", keywords: ["ផលប័ត្ររបស់ខ្ញុំ", "របស់ខ្ញុំ", "my portfolio", "my loans", "my npl"] },
         { topic: "recovery", keywords: ["ការប្រមូល", "ប្រមូល", "recovery", "recovered", "recover"] },
         { topic: "growth", keywords: ["កំណើន", "growth"] },
         { topic: "quality", keywords: ["គុណភាព", "quality", "aging"] },
-        { topic: "risk", keywords: ["វិភាគហានិភ័យ", "អ្នករួមចំណែក", "សាខាណា", "contributor", "contributors", "risk"] },
+        { topic: "risk", keywords: ["វិភាគហានិភ័យ", "អ្នករួមចំណែក", "សាខាណា", "មន្ត្រីណា", "which officer", "contributor", "contributors", "risk"] },
         { topic: "npl", keywords: ["npl", "អិនភីអិល"] },
         { topic: "overview", keywords: ["ផលប័ត្រ", "portfolio", "overview", "ទិដ្ឋភាពទូទៅ"] }
     ];
