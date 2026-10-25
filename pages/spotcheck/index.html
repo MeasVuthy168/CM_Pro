@@ -70,17 +70,8 @@ No Internet Connection
 <!-- ========================= -->
 <main class="sc-main">
 
-  <!-- ============ PAGE HEADER ============ -->
-  <div class="sc-header">
-
-    <div class="sc-header-text">
-      <h1 data-i18n="spotcheck.pageTitle">ការត្រួតពិនិត្យហ្វាស៊ីលីធីក្រោយពេលបញ្ចេញ</h1>
-      <p class="sc-header-sub" data-i18n="spotcheck.pageSubtitle">Facilities Spot Check</p>
-    </div>
-    <button id="btnAddNew" class="sc-btn sc-btn-gold">
-      <span class="ui-ico ui-ico-plus" aria-hidden="true"></span> <span data-i18n="spotcheck.addNewBtn">បញ្ចូលថ្មី</span>
-    </button>
-  </div>
+  <!-- Topbar carries the page name; the h1 stays for screen readers. -->
+  <h1 class="sc-sr-only" data-i18n="spotcheck.pageTitle">ការត្រួតពិនិត្យហ្វាស៊ីលីធីក្រោយពេលបញ្ចេញ</h1>
 
   <!-- "..." menu (Export Excel) gets relocated into the topbar's right
        side by spotcheck-loader.js once the topbar component has loaded —
@@ -94,52 +85,89 @@ No Internet Connection
     </div>
   </div>
 
-  <!-- ============ SUMMARY STRIP ============ -->
-  <!-- Tap a tile to filter: all / this month / needs follow-up -->
-  <div class="sc-summary">
-    <button type="button" class="sc-summary-item" data-sc-stat="total">
-      <span class="sc-summary-value" id="statTotal">—</span>
-      <span class="sc-summary-label" data-i18n="spotcheck.statTotalLabel">សរុបទាំងអស់</span>
-    </button>
-    <button type="button" class="sc-summary-item" data-sc-stat="month">
-      <span class="sc-summary-value" id="statMonth">—</span>
-      <span class="sc-summary-label" data-i18n="spotcheck.statMonthLabel">ខែនេះ</span>
-    </button>
-    <button type="button" class="sc-summary-item sc-summary-risk" data-sc-stat="risk">
-      <span class="sc-summary-value" id="statRisk">—</span>
-      <span class="sc-summary-label" data-i18n="spotcheck.statRiskLabel">ត្រូវតាមដាន</span>
-    </button>
-  </div>
+  <!-- ============ HEADER CARD (same shape as Daily Arrears) ============ -->
+  <!-- Search + Filters button on one line; the active filters as
+       removable chips; the three counts on one line (tap to filter);
+       then the Add New button. The filters themselves live in the
+       bottom sheet (#scFilterPanel). -->
+  <div class="sc-head-card">
+    <div class="sc-toolbar">
+      <div class="sc-search">
+        <span class="sc-search-icon ui-ico ui-ico-search" aria-hidden="true"></span>
+        <input type="text" id="searchInput" placeholder="ស្វែងរកតាម CIF ឬ ឈ្មោះអតិថិជន..." data-i18n-placeholder="spotcheck.searchPlaceholder">
+        <button type="button" id="searchClear" class="sc-search-clear" aria-label="Clear search" data-i18n-aria-label="spotcheck.searchClearAria" style="display:none"><span class="ui-ico ui-ico-close" aria-hidden="true"></span></button>
+      </div>
+      <button type="button" id="btnScFilterToggle" class="sc-filter-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="scFilterPanel">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="16" cy="6" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="12" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="18" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        <span data-i18n="spotcheck.filtersBtn">តម្រង</span>
+        <span class="sc-filter-badge" id="scFilterBadge" hidden>0</span>
+      </button>
+    </div>
 
-  <!-- ============ SEARCH / FILTER ============ -->
-  <div class="sc-toolbar">
-    <div class="sc-search">
-      <span class="sc-search-icon ui-ico ui-ico-search" aria-hidden="true"></span>
-      <input type="text" id="searchInput" placeholder="ស្វែងរកតាម CIF ឬ ឈ្មោះអតិថិជន..." data-i18n-placeholder="spotcheck.searchPlaceholder">
-      <button type="button" id="searchClear" class="sc-search-clear" aria-label="Clear search" data-i18n-aria-label="spotcheck.searchClearAria" style="display:none"><span class="ui-ico ui-ico-close" aria-hidden="true"></span></button>
+    <div class="sc-chips" id="scActiveChips" hidden>
+      <div class="sc-chip-list" id="scChipList"></div>
+      <button type="button" id="btnClearFilter" class="sc-chip-clear" data-i18n="spotcheck.clearAll">សម្អាតទាំងអស់</button>
+    </div>
+
+    <!-- Tap a count to filter: all / this month / needs follow-up -->
+    <div class="sc-summary">
+      <button type="button" class="sc-summary-item" data-sc-stat="total">
+        <span class="sc-summary-label" data-i18n="spotcheck.statTotalLabel">សរុបទាំងអស់</span>
+        <span class="sc-summary-value" id="statTotal">—</span>
+      </button>
+      <button type="button" class="sc-summary-item" data-sc-stat="month">
+        <span class="sc-summary-label" data-i18n="spotcheck.statMonthLabel">ខែនេះ</span>
+        <span class="sc-summary-value" id="statMonth">—</span>
+      </button>
+      <button type="button" class="sc-summary-item sc-summary-risk" data-sc-stat="risk">
+        <span class="sc-summary-label" data-i18n="spotcheck.statRiskLabel">ត្រូវតាមដាន</span>
+        <span class="sc-summary-value" id="statRisk">—</span>
+      </button>
+    </div>
+
+    <div class="sc-head-actions">
+      <button id="btnAddNew" class="sc-btn sc-btn-gold">
+        <span class="ui-ico ui-ico-plus" aria-hidden="true"></span> <span data-i18n="spotcheck.addNewBtn">បញ្ចូលថ្មី</span>
+      </button>
     </div>
   </div>
 
-  <!-- Filters fold away behind one button (badge = how many are set);
-       sort stays visible next to it. -->
-  <div class="sc-filter-bar">
-    <button type="button" id="btnScFilterToggle" class="sc-filter-toggle" aria-expanded="false" aria-controls="scFilterPanel">
-      <span data-i18n="spotcheck.filtersBtn">តម្រង</span>
-      <span class="sc-filter-badge" id="scFilterBadge" hidden>0</span>
-      <span class="sc-filter-chevron" aria-hidden="true">▾</span>
-    </button>
-    <select id="sortSelect" class="sc-select-filter sc-select-sort">
-      <option value="name_asc" data-i18n="spotcheck.sortNameAsc">ឈ្មោះ (A-Z)</option>
-      <option value="name_desc" data-i18n="spotcheck.sortNameDesc">ឈ្មោះ (Z-A)</option>
-      <option value="officer_asc" data-i18n="spotcheck.sortOfficerAsc">មន្ត្រីឥណទាន (A-Z)</option>
-      <option value="officer_desc" data-i18n="spotcheck.sortOfficerDesc">មន្ត្រីឥណទាន (Z-A)</option>
-      <option value="checkdate_desc" data-i18n="spotcheck.sortCheckDateDesc">ថ្ងៃត្រួតពិនិត្យ (ថ្មី➝ចាស់)</option>
-      <option value="checkdate_asc" data-i18n="spotcheck.sortCheckDateAsc">ថ្ងៃត្រួតពិនិត្យ (ចាស់➝ថ្មី)</option>
-      <option value="bookdate_desc" data-i18n="spotcheck.sortBookDateDesc">ថ្ងៃបញ្ចេញកម្ចី (ថ្មី➝ចាស់)</option>
-      <option value="bookdate_asc" data-i18n="spotcheck.sortBookDateAsc">ថ្ងៃបញ្ចេញកម្ចី (ចាស់➝ថ្មី)</option>
-    </select>
+  <!-- Results bar: count, then card / list view -->
+  <div class="sc-results-bar">
+    <span id="scResultCount" class="sc-result-count">0 ករណី</span>
+    <div class="sc-view-toggle" id="scViewToggle">
+      <button type="button" class="sc-view-btn" id="scViewCardBtn" data-view="card" aria-label="Card view" data-i18n-aria-label="spotcheck.viewCardAria">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+      </button>
+      <button type="button" class="sc-view-btn" id="scViewListBtn" data-view="list" aria-label="List view" data-i18n-aria-label="spotcheck.viewListAria">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+      </button>
+    </div>
   </div>
-  <div class="sc-filter-panel" id="scFilterPanel" hidden>
+
+  <!-- ============ LIST ============ -->
+  <div id="listContainer" class="sc-list"></div>
+
+  <div id="emptyState" class="sc-empty" hidden>
+    <p data-i18n="spotcheck.emptyStateText">មិនទាន់មានទិន្នន័យត្រួតពិនិត្យនៅឡើយទេ</p>
+    <button class="sc-btn sc-btn-outline" id="btnEmptyAdd" data-i18n="spotcheck.addFirstBtn">បញ្ចូលដំបូង</button>
+  </div>
+
+  <div id="noResultsState" class="sc-empty" hidden>
+    <p data-i18n="spotcheck.noResultsText">រកមិនឃើញលទ្ធផលដែលត្រូវនឹងការស្វែងរក</p>
+  </div>
+
+</main>
+
+<!-- ============ FILTER SHEET (opened by Filters) ============ -->
+<div class="sc-fsheet-dim" id="scFilterDim" hidden></div>
+<div class="sc-fsheet" id="scFilterPanel" role="dialog" aria-modal="true" aria-labelledby="scFilterTitle" hidden>
+  <div class="sc-fsheet-grab" aria-hidden="true"></div>
+  <div class="sc-fsheet-head">
+    <span id="scFilterTitle" data-i18n="spotcheck.filtersBtn">តម្រង</span>
+    <button type="button" id="btnClearFilterSheet" class="sc-chip-clear" data-i18n="spotcheck.clearAll">សម្អាតទាំងអស់</button>
+  </div>
+  <div class="sc-fsheet-body">
   <div class="sc-filter-row">
     <select id="filterMonth" class="sc-select-filter">
       <option value="" data-i18n="spotcheck.filterMonthAll">ខែត្រួតពិនិត្យ — ទាំងអស់</option>
@@ -156,33 +184,22 @@ No Internet Connection
       <option value="" data-i18n="spotcheck.filterProductAll">ប្រភេទឥណទាន — ទាំងអស់</option>
     </select>
   </div>
+    <div class="sc-fgroup-title" data-i18n="spotcheck.sortLabel">តម្រៀប</div>
+    <select id="sortSelect" class="sc-select-filter sc-select-sort">
+      <option value="name_asc" data-i18n="spotcheck.sortNameAsc">ឈ្មោះ (A-Z)</option>
+      <option value="name_desc" data-i18n="spotcheck.sortNameDesc">ឈ្មោះ (Z-A)</option>
+      <option value="officer_asc" data-i18n="spotcheck.sortOfficerAsc">មន្ត្រីឥណទាន (A-Z)</option>
+      <option value="officer_desc" data-i18n="spotcheck.sortOfficerDesc">មន្ត្រីឥណទាន (Z-A)</option>
+      <option value="checkdate_desc" data-i18n="spotcheck.sortCheckDateDesc">ថ្ងៃត្រួតពិនិត្យ (ថ្មី➝ចាស់)</option>
+      <option value="checkdate_asc" data-i18n="spotcheck.sortCheckDateAsc">ថ្ងៃត្រួតពិនិត្យ (ចាស់➝ថ្មី)</option>
+      <option value="bookdate_desc" data-i18n="spotcheck.sortBookDateDesc">ថ្ងៃបញ្ចេញកម្ចី (ថ្មី➝ចាស់)</option>
+      <option value="bookdate_asc" data-i18n="spotcheck.sortBookDateAsc">ថ្ងៃបញ្ចេញកម្ចី (ចាស់➝ថ្មី)</option>
+    </select>
   </div>
-  <div class="sc-filter-actions">
-    <div class="sc-view-toggle" id="scViewToggle">
-      <button type="button" class="sc-view-btn" id="scViewCardBtn" data-view="card" aria-label="Card view" data-i18n-aria-label="spotcheck.viewCardAria">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
-      </button>
-      <button type="button" class="sc-view-btn" id="scViewListBtn" data-view="list" aria-label="List view" data-i18n-aria-label="spotcheck.viewListAria">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
-      </button>
-    </div>
-    <span id="scResultCount" class="sc-result-count">0 ករណី</span>
-    <button type="button" id="btnClearFilter" class="sc-btn-clear-filter" data-i18n="spotcheck.clearFilter">សម្អាតតម្រង</button>
+  <div class="sc-fsheet-foot">
+    <button type="button" id="btnScFilterDone" class="sc-fsheet-apply">-</button>
   </div>
-
-  <!-- ============ LIST ============ -->
-  <div id="listContainer" class="sc-list"></div>
-
-  <div id="emptyState" class="sc-empty" hidden>
-    <p data-i18n="spotcheck.emptyStateText">មិនទាន់មានទិន្នន័យត្រួតពិនិត្យនៅឡើយទេ</p>
-    <button class="sc-btn sc-btn-outline" id="btnEmptyAdd" data-i18n="spotcheck.addFirstBtn">បញ្ចូលដំបូង</button>
-  </div>
-
-  <div id="noResultsState" class="sc-empty" hidden>
-    <p data-i18n="spotcheck.noResultsText">រកមិនឃើញលទ្ធផលដែលត្រូវនឹងការស្វែងរក</p>
-  </div>
-
-</main>
+</div>
 
 <div id="bottomnav-container"></div>
 

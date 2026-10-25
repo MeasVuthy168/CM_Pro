@@ -322,6 +322,9 @@ function scSyncFilterUi() {
   badge.hidden = !active;
   const anyFilter = active > 0 || scRiskOnly || !!document.getElementById("searchInput").value.trim();
   document.getElementById("btnClearFilter").hidden = !anyFilter;
+  scRenderActiveChips();
+  const done = document.getElementById("btnScFilterDone");
+  if (done) done.textContent = `${scT("spotcheck.showResults").replace("{n}", scCurrentRows.length.toLocaleString())}`;
   document.querySelectorAll("[data-sc-stat]").forEach((tile) => {
     const kind = tile.dataset.scStat;
     tile.classList.toggle("active",
@@ -329,6 +332,36 @@ function scSyncFilterUi() {
       kind === "month" ? (!scRiskOnly && month === scCurrentMonthKey() && active === 1) :
       !anyFilter);
   });
+}
+
+// Each filter in use as a removable chip under the search box (same as
+// Daily Arrears): "សាខា: Svay Rieng ✕" — the label is the filter's
+// "… — ទាំងអស់" option text before the dash.
+const SC_FILTER_IDS = ["filterMonth", "filterBranch", "filterOfficer", "filterProductType"];
+function scRenderActiveChips() {
+  const wrap = document.getElementById("scActiveChips");
+  const list = document.getElementById("scChipList");
+  if (!wrap || !list) return;
+  const chips = SC_FILTER_IDS.map((id) => {
+    const el = document.getElementById(id);
+    if (!el.value) return "";
+    const label = (el.options[0]?.textContent || "").split("—")[0].trim();
+    const value = el.selectedOptions[0]?.textContent.trim() || el.value;
+    return `<button type="button" class="sc-fchip" data-chip="${id}"><span class="sc-fchip-k">${scEscapeHtml(label)}:</span> <b>${scEscapeHtml(value)}</b><span class="sc-fchip-x" aria-hidden="true">✕</span></button>`;
+  });
+  if (scRiskOnly) chips.push(`<button type="button" class="sc-fchip sc-fchip-risk" data-chip="risk"><b>${scEscapeHtml(scT("spotcheck.statRiskLabel"))}</b><span class="sc-fchip-x" aria-hidden="true">✕</span></button>`);
+  list.innerHTML = chips.join("");
+  wrap.hidden = !chips.some(Boolean) && !document.getElementById("searchInput").value.trim();
+}
+
+function scSetFilterSheetOpen(open) {
+  const sheet = document.getElementById("scFilterPanel");
+  const dim = document.getElementById("scFilterDim");
+  if (!sheet) return;
+  sheet.hidden = !open;
+  dim.hidden = !open;
+  document.body.classList.toggle("sc-fsheet-open", open);
+  document.getElementById("btnScFilterToggle").setAttribute("aria-expanded", String(open));
 }
 
 function scClearFilters() {
@@ -1804,19 +1837,35 @@ function scBindEvents() {
   document.getElementById("filterProductType").addEventListener("change", scRenderList);
   document.getElementById("sortSelect").addEventListener("change", scRenderList);
 
-  document.getElementById("btnClearFilter").addEventListener("click", () => {
+  const clearAll = () => {
     scClearFilters();
     searchInput.value = "";
     scUpdateSearchClearVisibility();
     scRenderList();
+  };
+  document.getElementById("btnClearFilter").addEventListener("click", clearAll);
+  document.getElementById("btnClearFilterSheet").addEventListener("click", clearAll);
+
+  // Filters open in a bottom sheet; they apply as they change, the
+  // sheet's button just closes it (showing how many checks are left).
+  document.getElementById("btnScFilterToggle").addEventListener("click", () => scSetFilterSheetOpen(true));
+  document.getElementById("btnScFilterDone").addEventListener("click", () => scSetFilterSheetOpen(false));
+  document.getElementById("scFilterDim").addEventListener("click", () => scSetFilterSheetOpen(false));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !document.getElementById("scFilterPanel").hidden) scSetFilterSheetOpen(false);
   });
 
-  const filterToggle = document.getElementById("btnScFilterToggle");
-  filterToggle.addEventListener("click", () => {
-    const panel = document.getElementById("scFilterPanel");
-    panel.hidden = !panel.hidden;
-    filterToggle.setAttribute("aria-expanded", String(!panel.hidden));
-    filterToggle.classList.toggle("open", !panel.hidden);
+  // A chip's ✕ clears just that filter.
+  document.getElementById("scChipList").addEventListener("click", (e) => {
+    const chip = e.target.closest("[data-chip]");
+    if (!chip) return;
+    if (chip.dataset.chip === "risk") {
+      scRiskOnly = false;
+    } else {
+      document.getElementById(chip.dataset.chip).value = "";
+      if (chip.dataset.chip === "filterBranch") scPopulateOfficerOptions();
+    }
+    scRenderList();
   });
 
   // Summary tiles double as quick filters.

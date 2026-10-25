@@ -1063,3 +1063,111 @@
 .sc-sign-role b { color: var(--sc-navy-dark); font-size: 13px; }
 .sc-sign-role small { color: var(--sc-danger); font-size: 11.5px; }
 .sc-sign-off span { font-size: 12.5px; color: var(--sc-text-muted, #6B7280); }
+
+/* ===========================================================
+   Compact header — same shape as Daily Arrears: one card with
+   search + Filters, active-filter chips, the three counts on one
+   line and Add New; a results bar; filters in a bottom sheet.
+   =========================================================== */
+.sc-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.sc-main { padding-top: 10px; }
+
+.sc-head-card {
+  background: var(--sc-card-bg);
+  border: 1px solid var(--sc-border);
+  border-radius: var(--sc-radius);
+  padding: 10px;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .06);
+}
+.sc-head-card .sc-toolbar { display: flex; gap: 8px; align-items: center; margin: 0; }
+.sc-head-card .sc-search { flex: 1 1 auto; min-width: 0; }
+.sc-head-card .sc-search input { height: 40px; border-radius: 12px; }
+.sc-filter-btn {
+  flex: 0 0 auto; height: 40px; padding: 0 12px;
+  display: inline-flex; align-items: center; gap: 6px;
+  border: none; border-radius: 12px;
+  background: var(--sc-navy-dark); color: #fff;
+  font-family: var(--sc-font); font-size: 13.5px; font-weight: 700; cursor: pointer;
+}
+[data-theme="dark"] .sc-filter-btn { background: #2A3F6E; }
+.sc-filter-btn svg { color: var(--sc-gold-light); }
+.sc-filter-btn:active { transform: scale(.97); }
+.sc-filter-btn .sc-filter-badge { background: var(--sc-gold-light); color: #0E1B3C; font-weight: 800; }
+
+/* active filters as chips */
+.sc-chips { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+.sc-chips[hidden] { display: none; }
+.sc-chip-list { display: flex; gap: 6px; overflow-x: auto; min-width: 0; scrollbar-width: none; }
+.sc-chip-list::-webkit-scrollbar { display: none; }
+.sc-fchip {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 3px;
+  height: 28px; padding: 0 9px; max-width: 220px;
+  border: 1px solid var(--sc-border); border-radius: 999px;
+  background: rgba(26, 46, 87, .06); color: var(--sc-text);
+  font-family: var(--sc-font); font-size: 12px; cursor: pointer; white-space: nowrap;
+}
+[data-theme="dark"] .sc-fchip { background: rgba(255, 255, 255, .06); }
+.sc-fchip b { overflow: hidden; text-overflow: ellipsis; }
+.sc-fchip-k { color: var(--sc-text-muted); }
+.sc-fchip-x { margin-left: 3px; color: var(--sc-text-muted); font-size: 11px; }
+.sc-fchip-risk { border-color: #F59E0B; background: rgba(245, 158, 11, .1); }
+.sc-chip-clear {
+  flex: 0 0 auto; border: none; background: none; padding: 4px 2px;
+  color: var(--sc-danger); font-family: var(--sc-font); font-size: 12.5px;
+  text-decoration: underline; cursor: pointer; white-space: nowrap;
+}
+.sc-chip-clear[hidden] { display: none; }
+
+/* the three counts on one line */
+.sc-head-card .sc-summary {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+  margin: 10px 0 0; padding-top: 10px; border-top: 1px solid var(--sc-border);
+}
+.sc-head-card .sc-summary-item {
+  border: none; border-radius: 10px; background: none; box-shadow: none;
+  padding: 2px 10px; display: flex; flex-direction: column; align-items: flex-start; gap: 0;
+}
+.sc-head-card .sc-summary-item + .sc-summary-item { border-left: 1px solid var(--sc-border); border-radius: 0; }
+.sc-head-card .sc-summary-label { font-size: 11.5px; order: 0; }
+.sc-head-card .sc-summary-value { font-size: 19px; font-weight: 800; order: 1; }
+.sc-head-card .sc-summary-item.active { box-shadow: none; }
+.sc-head-card .sc-summary-item.active .sc-summary-label { color: var(--sc-navy-dark); font-weight: 700; }
+.sc-head-card .sc-summary-item.active .sc-summary-value { text-decoration: underline; text-decoration-color: var(--sc-gold); text-decoration-thickness: 3px; text-underline-offset: 4px; }
+[data-theme="dark"] .sc-head-card .sc-summary-item.active .sc-summary-label { color: var(--sc-gold-light); }
+
+/* Add New: one slim full-width button */
+.sc-head-actions { margin-top: 10px; }
+.sc-head-actions .sc-btn { width: 100%; height: 38px; min-height: 0; justify-content: center; border-radius: 10px; font-size: 13.5px; }
+
+/* results bar */
+.sc-results-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 2px 10px; }
+
+/* filter bottom sheet */
+.sc-fsheet-dim { position: fixed; inset: 0; z-index: 1200; background: rgba(8, 14, 30, .45); }
+.sc-fsheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 1201;
+  max-width: 620px; margin: 0 auto; max-height: 88vh; max-height: 88dvh;
+  display: flex; flex-direction: column;
+  background: var(--sc-card-bg); color: var(--sc-text); font-family: var(--sc-font);
+  border-radius: 20px 20px 0 0; box-shadow: 0 -8px 28px rgba(0, 0, 0, .25);
+  padding-bottom: env(safe-area-inset-bottom);
+  animation: scSheetUp .2s ease-out;
+}
+.sc-fsheet[hidden], .sc-fsheet-dim[hidden] { display: none; }
+@keyframes scSheetUp { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
+body.sc-fsheet-open { overflow: hidden; }
+.sc-fsheet-grab { width: 40px; height: 5px; border-radius: 3px; background: var(--sc-border); margin: 8px auto 2px; }
+.sc-fsheet-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 16px 8px; }
+.sc-fsheet-head > span { font-size: 17px; font-weight: 800; color: var(--sc-navy-dark); }
+[data-theme="dark"] .sc-fsheet-head > span { color: var(--sc-text); }
+.sc-fsheet-body { overflow-y: auto; padding: 0 16px 10px; }
+.sc-fsheet-body .sc-filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.sc-fsheet-body .sc-select-filter { width: 100%; margin: 0; }
+.sc-fgroup-title { font-size: 12px; font-weight: 700; color: var(--sc-text-muted); margin: 10px 0 6px; }
+.sc-fsheet-foot { padding: 10px 16px 14px; border-top: 1px solid var(--sc-border); }
+.sc-fsheet-apply {
+  width: 100%; height: 44px; border: none; border-radius: 12px;
+  background: var(--sc-gold-light); color: #0E1B3C;
+  font-family: var(--sc-font); font-size: 15px; font-weight: 800; cursor: pointer;
+}
