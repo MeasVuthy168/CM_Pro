@@ -262,6 +262,25 @@ function mpSum(rows, metric) {
     return any ? s : null;
 }
 
+// The Total row's figure for one column. Counts and amounts add up. A %
+// can't: it is weighted by each row's Loan Outstanding plan —
+// Σ(% × outstanding) ÷ Σ outstanding — and only when every row shown has
+// both, so a partial total never reads as the whole one.
+function mpTotal(rows, metric) {
+    if (mpKind(metric) !== "pct") return mpSum(rows, metric);
+    if (!rows.length) return null;
+    let weighted = 0, os = 0;
+    for (const r of rows) {
+        const v = mp.values[r.key] || {};
+        const pct = mpParse(v[metric]);
+        const amt = mpParse(v.osAmount);
+        if (pct === null || Number.isNaN(pct) || amt === null || Number.isNaN(amt)) return null;
+        weighted += pct * amt;
+        os += amt;
+    }
+    return os > 0 ? Math.round((weighted / os) * 100) / 100 : null;
+}
+
 // Officer tab: each branch's officers added up next to its branch plan.
 function mpCompareChips(branch, rows) {
     return MP_COMPARE.filter(k => mp.metrics.some(m => m.key === k)).map(k => {
@@ -317,9 +336,8 @@ function mpRender() {
     }
 
     const totals = cols.map(c => {
-        const kind = mpKind(c);
-        const s = kind === "pct" ? null : mpSum(rows, c);
-        return `<td>${s === null ? "—" : mpEsc(mpFormat(kind, s))}</td>`;
+        const s = mpTotal(rows, c);
+        return `<td>${s === null ? "—" : mpEsc(mpFormat(mpKind(c), s))}</td>`;
     }).join("");
     const foot = rows.length ? `<tfoot><tr><td class="mp-name"><b>${mpEsc(t("masterdata.plan.total"))}</b></td>${totals}</tr></tfoot>` : "";
 
@@ -379,9 +397,8 @@ function mpPaintTotals() {
     const rows = mpVisibleRows();
     const cols = mpGroups().flatMap(g => g.metrics.map(([k]) => k));
     cols.forEach((c, i) => {
-        const kind = mpKind(c);
-        const s = kind === "pct" ? null : mpSum(rows, c);
-        foot.children[i + 1].textContent = s === null ? "—" : mpFormat(kind, s);
+        const s = mpTotal(rows, c);
+        foot.children[i + 1].textContent = s === null ? "—" : mpFormat(mpKind(c), s);
     });
 }
 
