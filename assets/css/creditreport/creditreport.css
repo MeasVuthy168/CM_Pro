@@ -348,3 +348,81 @@
     border-radius:999px;
     padding:1px 8px;
 }
+
+/* ===== Credit Report hub: every tile fits the phone screen =====
+   On phones the hub fills exactly the space between the topbar and the
+   bottom nav (both publish their heights as --topbar-h / --bottomnav-h);
+   the two tile grids share what's left, so all 8 tiles show without
+   scrolling on any screen height. Icons and text shrink with the height;
+   when there is little room the tiles keep icon + title only. If the admin tools'
+   results card makes it taller than the screen, the hub scrolls. */
+@media (max-width:760px){
+    .page-container.cr-hub-fit{
+        height:calc(100vh - var(--topbar-h, 78px) - var(--bottomnav-h, 78px));
+        height:calc(100dvh - var(--topbar-h, 78px) - var(--bottomnav-h, 78px));
+        min-height:0;
+        padding:clamp(6px, 1.4dvh, 14px) 0;
+        display:flex;
+        flex-direction:column;
+        overflow-y:auto;
+    }
+    .cr-hub-fit > .cr-hub-admin-toolbar,
+    .cr-hub-fit > .cr-hub-section-title{ flex:0 0 auto; width:100%; }
+    .cr-hub-fit > .cr-hub-section-title{ margin-top:0; margin-bottom:clamp(4px, 1dvh, 8px); }
+    .cr-hub-fit > .cr-hub-grid + .cr-hub-section-title,
+    .cr-hub-fit > .cr-hub-admin-toolbar + .cr-hub-section-title{ margin-top:clamp(8px, 1.8dvh, 18px); }
+    .cr-hub-fit > .cr-hub-grid{
+        flex:1 1 0;
+        min-height:0;
+        width:100%;
+        grid-template-rows:repeat(2, minmax(0, 1fr));
+        gap:clamp(8px, 1.4dvh, 12px);
+    }
+    .cr-hub-fit .cr-hub-tile{
+        min-height:0;
+        overflow:hidden;
+        padding:clamp(8px, 1.6dvh, 14px) 12px;
+        gap:2px;
+    }
+    .cr-hub-fit .cr-hub-icon{
+        width:clamp(30px, 5.4dvh, 46px);
+        height:clamp(30px, 5.4dvh, 46px);
+        flex-basis:auto;
+        border-radius:clamp(9px, 1.5dvh, 13px);
+    }
+    .cr-hub-fit .cr-hub-icon svg{ width:clamp(18px, 3.1dvh, 26px); height:clamp(18px, 3.1dvh, 26px); }
+    .cr-hub-fit .cr-hub-tile .cr-hub-icon{ margin-bottom:clamp(2px, .7dvh, 6px); }
+    .cr-hub-fit .cr-hub-tile-title{ font-size:clamp(13px, 2dvh, 15px); line-height:1.3; }
+    .cr-hub-fit .cr-hub-card-sub{
+        font-size:clamp(10.5px, 1.5dvh, 12px);
+        line-height:1.4;
+        display:-webkit-box;
+        -webkit-line-clamp:2;
+        -webkit-box-orient:vertical;
+        overflow:hidden;
+    }
+}
+/* How much each grid really gets decides the tile layout (the admin
+   tools above take space too): a short grid drops the sub-lines, a very
+   short one lays each tile out in a row (icon beside the title). */
+@media (max-width:760px){
+    .cr-hub-fit > .cr-hub-grid{ container-type:size; container-name:crhub; }
+    .cr-hub-fit .cr-hub-admin-buttons .cr-hub-snapshot-btn,
+    .cr-hub-fit .cr-hub-admin-buttons .cr-hub-refresh-btn{ padding:clamp(6px, 1.2dvh, 11px) 8px; }
+    .cr-hub-fit .cr-hub-snapshot-card{ padding:clamp(8px, 1.4dvh, 12px); }
+}
+@container crhub (max-height:250px){
+    .cr-hub-fit .cr-hub-card-sub{ display:none; }
+}
+@container crhub (max-height:180px){
+    .cr-hub-fit .cr-hub-tile{ flex-direction:row; align-items:center; gap:10px; padding:6px 10px; }
+    .cr-hub-fit .cr-hub-tile .cr-hub-icon{ margin-bottom:0; width:30px; height:30px; flex:0 0 30px; }
+    .cr-hub-fit .cr-hub-tile .cr-hub-icon svg{ width:18px; height:18px; }
+    .cr-hub-fit .cr-hub-tile-title{ font-size:13px; }
+}
+/* Browsers without container queries: drop the sub-lines on short screens. */
+@supports not (container-type:size){
+    @media (max-width:760px) and (max-height:700px){
+        .cr-hub-fit .cr-hub-card-sub{ display:none; }
+    }
+}
