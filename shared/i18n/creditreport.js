@@ -345,7 +345,7 @@ CMI18n.register({
   // PORTFOLIO INTELLIGENCE (pages/creditreport/PortfolioIntelligence.html)
   // and the hub's new Credit Portfolio section
   // ==================================================================
-  "creditreport.hub.sectionPortfolio": { km: "បញ្ញាផលប័ត្រឥណទាន", en: "Credit Portfolio" },
+  "creditreport.hub.sectionPortfolio": { km: "ផលប័ត្រឥណទាន", en: "Credit Portfolio" },
   "creditreport.hub.sectionComing": { km: "នឹងមកដល់ឆាប់ៗ", en: "Coming soon" },
   "creditreport.hub.piTitle": { km: "ទិដ្ឋភាពទូទៅផលប័ត្រ", en: "Portfolio Intelligence" },
   "creditreport.hub.piSub": { km: "តួលេខសំខាន់ៗ និន្នាការ ការប្រៀបធៀប និងការជូនដំណឹងសម្រាប់ថ្នាក់គ្រប់គ្រង", en: "Key figures, trends, comparison and alerts for management" },
