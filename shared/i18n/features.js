@@ -14,8 +14,14 @@ CMI18n.register({
   // ARREARS (pages/arrears/index.html, assets/js/arrears-loader.js)
   // =========================================================
   "arrears.printTitle": { km: "របាយណ៍ឥណទានយឺតយ៉ាវប្រចាំថ្ងៃ", en: "Daily Arrears Report" },
-  "arrears.filterKeywordLabel": { km: "ស្វែងរកឈ្មោះ", en: "Search by Name" },
-  "arrears.filterKeywordPlaceholder": { km: "វាយឈ្មោះអតិថិជន...", en: "Type customer name..." },
+  "arrears.filterKeywordLabel": { km: "ស្វែងរក ឈ្មោះ, LD, CIF", en: "Search name, LD, CIF" },
+  "arrears.filterKeywordPlaceholder": { km: "វាយឈ្មោះ, LD, CIF...", en: "Name, LD, CIF..." },
+  "arrears.filtersBtn": { km: "តម្រង", en: "Filters" },
+  "arrears.clearAll": { km: "សម្អាតទាំងអស់", en: "Clear all" },
+  "arrears.fgResponsible": { km: "អ្នកទទួលខុសត្រូវ", en: "Responsibility" },
+  "arrears.fgOther": { km: "ផ្សេងៗ", en: "Other" },
+  "arrears.showResults": { km: "បង្ហាញ {n} LD", en: "Show {n} LD" },
+  "arrears.removeFilterAria": { km: "ដកតម្រង {f}", en: "Remove filter {f}" },
   "arrears.filterBranchLabel": { km: "សាខា", en: "Branch" },
   "arrears.optionAll": { km: "ទាំងអស់", en: "All" },
   "arrears.filterOfficerResponseLabel": { km: "ភ្នាក់ងារទទួលខុសត្រូវ", en: "Responsible Officer" },

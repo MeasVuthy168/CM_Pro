@@ -104,91 +104,70 @@ No Internet Connection
 
 <div class="filter-card">
 
-<!-- Most-used filters — always visible. The remaining ones are less
-     commonly touched day-to-day, so they're tucked behind the
-     "advanced filters" toggle below instead of all 12 competing for
-     attention at once on a phone screen. -->
-<div class="filter-grid filter-grid-primary">
-
-<div class="filter-group filter-group-wide">
-<label for="fKeyword" data-i18n="arrears.filterKeywordLabel">ស្វែងរកឈ្មោះ</label>
+<!-- Search + Filters button on one line. All 11 filter boxes live in
+     the bottom sheet below (opened by Filters); what's picked shows as
+     removable chips under the search box, so nothing active is hidden. -->
+<div class="arr-toolbar">
 <div class="arr-search-field">
 <span class="ui-ico ui-ico-search arr-search-ico" aria-hidden="true"></span>
-<input type="search" id="fKeyword" placeholder="វាយឈ្មោះអតិថិជន..." data-i18n-placeholder="arrears.filterKeywordPlaceholder" autocomplete="off" enterkeyhint="search">
+<input type="search" id="fKeyword" placeholder="វាយឈ្មោះ, LD, CIF..." data-i18n-placeholder="arrears.filterKeywordPlaceholder" aria-label="ស្វែងរក" data-i18n-aria-label="arrears.filterKeywordLabel" autocomplete="off" enterkeyhint="search">
 <button type="button" id="btnClearKeyword" class="arr-clear-btn" aria-label="Clear" data-i18n-aria-label="customers.clearAria" hidden><span class="ui-ico ui-ico-close" aria-hidden="true"></span></button>
 </div>
+<button type="button" id="btnFilters" class="arr-filter-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="arrFilterSheet">
+<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="16" cy="6" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="12" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="18" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+<span data-i18n="arrears.filtersBtn">តម្រង</span>
+<span id="filterCountBadge" class="arr-filter-count" hidden>0</span>
+</button>
 </div>
 
+<div class="arr-chips" id="arrActiveChips" hidden>
+<div class="arr-chip-list" id="arrChipList"></div>
+<button type="button" id="btnClear" class="arr-chip-clear" data-i18n="arrears.clearAll">សម្អាតទាំងអស់</button>
+</div>
+
+<!-- FILTER SHEET (moved to <body> by arrears.js so it's never clipped) -->
+<div class="arr-fsheet-dim" id="arrFilterDim" hidden></div>
+<div class="arr-fsheet" id="arrFilterSheet" role="dialog" aria-modal="true" aria-labelledby="arrFilterTitle" hidden>
+<div class="arr-fsheet-grab" aria-hidden="true"></div>
+<div class="arr-fsheet-head">
+<span id="arrFilterTitle" data-i18n="arrears.filtersBtn">តម្រង</span>
+<button type="button" id="btnClearSheet" class="arr-chip-clear" data-i18n="arrears.clearAll">សម្អាតទាំងអស់</button>
+</div>
+<div class="arr-fsheet-body">
+
+<div class="arr-fgroup-title" data-i18n="arrears.fgResponsible">អ្នកទទួលខុសត្រូវ</div>
+<div class="filter-grid arr-fgrid">
 <div class="filter-group">
 <label for="fBranch" data-i18n="arrears.filterBranchLabel">សាខា</label>
 <select id="fBranch">
 <option value="" data-i18n="arrears.optionAll">All</option>
 </select>
 </div>
-
 <div class="filter-group">
 <label for="fOfficerResponse" data-i18n="arrears.filterOfficerResponseLabel">ភ្នាក់ងារទទួលខុសត្រូវ</label>
 <select id="fOfficerResponse">
 <option value="" data-i18n="arrears.optionAll">All</option>
 </select>
 </div>
-
 <div class="filter-group">
 <label for="fTeamLeader" data-i18n="arrears.filterTeamLeaderLabel">អនុប្រធាន/ផ្នែកFSRO</label>
 <select id="fTeamLeader">
 <option value="" data-i18n="arrears.optionAll">All</option>
 </select>
 </div>
-
-</div>
-
-<button type="button" id="btnToggleAdvancedFilters" class="filter-advanced-toggle" aria-expanded="false">
-<span data-i18n="arrears.advancedFiltersToggle">តម្រងបន្ថែម</span>
-<span id="advancedFilterBadge" class="filter-advanced-badge" hidden>0</span>
-<span class="filter-advanced-caret" aria-hidden="true">▾</span>
-</button>
-
-<div class="filter-grid filter-grid-advanced" id="advancedFilterGrid">
-
-<!-- Column 1 (D2:D4 in the sheet) -->
 <div class="filter-group">
 <label for="fOfficerOwner" data-i18n="arrears.filterOfficerOwnerLabel">ភ្នាក់ងារផ្ទាល់ខ្លួន(ID)</label>
 <select id="fOfficerOwner">
 <option value="" data-i18n="arrears.optionAll">All</option>
 </select>
 </div>
-
-<div class="filter-group">
-<label for="fPromiseStatus" data-i18n="arrears.filterPromiseStatusLabel">ស្ថានភាពសន្យា</label>
-<select id="fPromiseStatus">
-<option value="" data-i18n="arrears.optionAll">All</option>
-<option value="មិនទាន់សន្យា" data-i18n="arrears.promiseNotYet">មិនទាន់សន្យា</option>
-<option value="Today_Payment">Today_Payment</option>
-<option value="Upcoming_left">Upcoming_left</option>
-<option value="Expired">Expired</option>
-</select>
 </div>
 
-<div class="filter-group">
-<label for="fCurrency" data-i18n="arrears.filterCurrencyLabel">រូបិយប័ណ្ណ</label>
-<select id="fCurrency">
-<option value="" data-i18n="arrears.optionAll">All</option>
-<option value="USD">USD</option>
-<option value="KHR">KHR</option>
-</select>
-</div>
-
-<div class="filter-group">
-<label for="fOsClassify" data-i18n="arrears.filterOsClassifyLabel">សមតុល្យឥណទាន</label>
-<select id="fOsClassify">
-<option value="" data-i18n="arrears.optionAll">All</option>
-</select>
-</div>
-
-<!-- Column 3 (I2:I4) -->
-<div class="filter-group">
-<label for="fClass" data-i18n="arrears.filterClassLabel">ចំណាត់ថ្នាក់ឥណទាន</label>
-<select id="fClass">
+<!-- Class + Promise Status: the <select> stays the source of truth;
+     arrears.js draws its options as tap chips (data-chips-for). -->
+<div class="arr-fgroup-title" data-i18n="arrears.filterClassLabel">ចំណាត់ថ្នាក់ឥណទាន</div>
+<div class="arr-fchip-host">
+<select id="fClass" aria-label="ចំណាត់ថ្នាក់ឥណទាន" data-i18n-aria-label="arrears.filterClassLabel">
 <option value="" data-i18n="arrears.optionAll">All</option>
 <option value="Normal_to_SpecialMention">Normal → Special Mention</option>
 <option value="SubStandard_to_Loss">Sub Standard → Loss</option>
@@ -198,8 +177,37 @@ No Internet Connection
 <option value="Doubtful">Doubtful</option>
 <option value="Loss">Loss</option>
 </select>
+<div class="arr-fchips" data-chips-for="class"></div>
 </div>
 
+<div class="arr-fgroup-title" data-i18n="arrears.filterPromiseStatusLabel">ស្ថានភាពសន្យា</div>
+<div class="arr-fchip-host">
+<select id="fPromiseStatus" aria-label="ស្ថានភាពសន្យា" data-i18n-aria-label="arrears.filterPromiseStatusLabel">
+<option value="" data-i18n="arrears.optionAll">All</option>
+<option value="មិនទាន់សន្យា" data-i18n="arrears.promiseNotYet">មិនទាន់សន្យា</option>
+<option value="Today_Payment">Today_Payment</option>
+<option value="Upcoming_left">Upcoming_left</option>
+<option value="Expired">Expired</option>
+</select>
+<div class="arr-fchips" data-chips-for="promiseStatus"></div>
+</div>
+
+<div class="arr-fgroup-title" data-i18n="arrears.fgOther">ផ្សេងៗ</div>
+<div class="filter-grid arr-fgrid">
+<div class="filter-group">
+<label for="fCurrency" data-i18n="arrears.filterCurrencyLabel">រូបិយប័ណ្ណ</label>
+<select id="fCurrency">
+<option value="" data-i18n="arrears.optionAll">All</option>
+<option value="USD">USD</option>
+<option value="KHR">KHR</option>
+</select>
+</div>
+<div class="filter-group">
+<label for="fOsClassify" data-i18n="arrears.filterOsClassifyLabel">សមតុល្យឥណទាន</label>
+<select id="fOsClassify">
+<option value="" data-i18n="arrears.optionAll">All</option>
+</select>
+</div>
 <div class="filter-group">
 <label for="fPD" data-i18n="arrears.filterPDLabel">មាន/គ្មានសមតុល្យPD</label>
 <select id="fPD">
@@ -208,15 +216,12 @@ No Internet Connection
 <option value="No Balanced_PD">No Balanced_PD</option>
 </select>
 </div>
-
 <div class="filter-group">
 <label for="fOccupation" data-i18n="arrears.filterOccupationLabel">មុខរបរ/មុខងារ</label>
 <select id="fOccupation">
 <option value="" data-i18n="arrears.optionAll">All</option>
 </select>
 </div>
-
-<!-- Column 4 (M2:M4) -->
 <div class="filter-group">
 <label for="fProductType" data-i18n="arrears.filterProductTypeLabel">ប្រភេទផលិតផល</label>
 <select id="fProductType">
@@ -225,7 +230,12 @@ No Internet Connection
 <option value="Non-Digital Products">Non-Digital Products</option>
 </select>
 </div>
+</div>
 
+</div>
+<div class="arr-fsheet-foot">
+<button type="button" id="btnFilterDone" class="arr-fsheet-apply"><span id="filterResultText">-</span></button>
+</div>
 </div>
 
 <!-- Export/Print get relocated into the topbar's "..." menu
@@ -242,8 +252,8 @@ No Internet Connection
 </div>
 </div>
 
-<!-- SUMMARY TILES — LD / CIF / OS for the current filter, with the
-     Gov / Worker / Other split under them (renderSummary() fills these) -->
+<!-- SUMMARY — LD / CIF / OS for the current filter on one line, and
+     the Gov / Worker / Other split as one bar + legend (renderSummary()) -->
 <div class="arr-summary" id="summaryRow">
 
 <div class="arr-kpis">
@@ -265,12 +275,12 @@ No Internet Connection
 <span><span data-i18n="arrears.lastUploadByLabel">ដោយៈ</span> <span class="num" id="lastUploadBy">-</span></span>
 </div>
 
-<div class="button-row arr-actions">
-<button type="button" id="btnNoReasonSummary" class="arr-work-btn"><span class="ui-ico ui-ico-clipboard" aria-hidden="true"></span> <span data-i18n="arrears.menuNoReasonSummary">ការងារត្រូវបំពេញ</span></button>
-<button id="btnRefresh"><span class="ui-ico ui-ico-refresh" aria-hidden="true"></span> <span data-i18n="common.refresh">Refresh</span></button>
-<button id="btnClear"><span class="ui-ico ui-ico-close" aria-hidden="true"></span> <span data-i18n="arrears.clearBtn">Clear</span></button>
+<button type="button" id="btnRefresh" class="arr-icon-btn" aria-label="Refresh" data-i18n-aria-label="common.refresh" title="Refresh" data-i18n-title="common.refresh"><span class="ui-ico ui-ico-refresh" aria-hidden="true"></span></button>
+
 </div>
 
+<div class="button-row arr-actions">
+<button type="button" id="btnNoReasonSummary" class="arr-work-btn"><span class="ui-ico ui-ico-clipboard" aria-hidden="true"></span> <span data-i18n="arrears.menuNoReasonSummary">ការងារត្រូវបំពេញ</span></button>
 </div>
 
 <div class="summary-row pending-row" id="pendingRow" style="display:none;">

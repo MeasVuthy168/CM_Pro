@@ -643,7 +643,9 @@ function applyFilters() {
             && anyOf(f.pd, v => exactMatch(row.pd, v))
             && anyOf(f.occupation, v => exactMatch(row.occu, v))
             && anyOf(f.productType, v => productMatch(row.product, v))
-            && containsMatch(row.customer, f.keyword)
+            && (containsMatch(row.customer, f.keyword)
+                || containsMatch(row.loanNumber, f.keyword)
+                || containsMatch(row.cif, f.keyword))
             && anyOf(f.promiseStatus, v => promiseStatusMatch(row, v))
             && reminderFocusMatch(row);
     });
@@ -652,7 +654,7 @@ function applyFilters() {
     renderTable(currentRows);
     renderSummary(currentRows);
     renderReminderFocusBanner(currentRows.length);
-    updateAdvancedFilterBadge();
+    updateFilterUi();
 }
 
 // Show the search box's x button only while it has text.
@@ -890,17 +892,30 @@ function renderSummary(rows) {
     summaryCIF.textContent = uniqueCifs.size.toLocaleString();
     summaryOS.textContent = formatShortAmount(totalOS);
 
-    // Gov / Worker / Other split: count + OS per occupation group.
-    summarySplit.innerHTML = [
-        ["Gov", govCnt, govOS],
-        ["Worker", workerCnt, workerOS],
-        ["Other", otherCnt, otherOS]
-    ].map(([label, cnt, os]) => `
-        <div class="arr-split-item">
-            <span class="arr-split-label">${label}</span>
-            <span class="arr-split-value">${cnt.toLocaleString()}</span>
-            <span class="arr-split-os">${formatShortAmount(os)}</span>
-        </div>`).join("");
+    // Gov / Worker / Other split: one bar sized by LD count, and a
+    // legend with each group's count + OS.
+    const groups = [
+        ["gov", "Gov", govCnt, govOS],
+        ["worker", "Worker", workerCnt, workerOS],
+        ["other", "Other", otherCnt, otherOS]
+    ];
+    const total = rows.length;
+    const bar = total
+        ? groups.filter(g => g[2] > 0)
+            .map(([key, , cnt]) => `<i class="arr-split-seg arr-split-${key}" style="flex-grow:${cnt}"></i>`).join("")
+        : "";
+    summarySplit.innerHTML = `
+        <div class="arr-split-bar" aria-hidden="true">${bar}</div>
+        <div class="arr-split-legend">${groups.map(([key, label, cnt, os]) => `
+            <span class="arr-split-item">
+                <span class="arr-split-top">
+                    <i class="arr-split-dot arr-split-${key}" aria-hidden="true"></i>
+                    <span class="arr-split-label">${label}</span>
+                    <span class="arr-split-value">${cnt.toLocaleString()}</span>
+                </span>
+                <span class="arr-split-os">${formatShortAmount(os)}</span>
+            </span>`).join("")}
+        </div>`;
 }
 
 // ========================================
@@ -1108,6 +1123,7 @@ function renderTableView(rows) {
                 <td colspan="26">No data found</td>
             </tr>
         `;
+        updateRenderedNote(); // else the last result's count stays
         return;
     }
 
@@ -3487,47 +3503,145 @@ Object.entries(filterEls).forEach(([key, el]) => {
 });
 
 // ========================================
-// ADVANCED FILTERS TOGGLE
-// The 8 less-frequently-used filter boxes (Officer Owner(ID), Promise
-// Status, Currency, OS Classify, Class, PD, Occupation, Product Type)
-// are collapsed by default so a phone screen isn't showing all 12
-// filter boxes before the table itself. Collapsed state persists per
-// device; the badge shows how many of the HIDDEN filters are
-// currently active, so a collapsed panel never silently hides an
-// active filter from view.
+// FILTER SHEET + ACTIVE-FILTER CHIPS
+// Only the search box and a "Filters" button sit above the table; the
+// 11 filter boxes live in a bottom sheet. Filters still apply the
+// moment they change (same listeners as before) — the sheet's button
+// just closes it and shows how many LD the current picks leave. Each
+// active filter shows as a removable chip under the search box, and
+// the button's badge counts them, so nothing picked is ever hidden.
+// Class and Promise Status are drawn as tap chips inside the sheet;
+// their <select> stays the source of truth (multi-value, none = All).
 // ========================================
 
-const ADVANCED_FILTER_KEYS = [
-    "officerOwner", "promiseStatus", "currency", "osClassify",
-    "class", "pd", "occupation", "productType"
+const FILTER_CHIP_KEYS = [
+    "branch", "officerResponse", "teamLeader", "officerOwner",
+    "class", "promiseStatus",
+    "currency", "osClassify", "pd", "occupation", "productType"
 ];
-const ADVANCED_FILTERS_OPEN_KEY = "arrears_advanced_filters_open";
 
-const btnToggleAdvancedFilters = document.getElementById("btnToggleAdvancedFilters");
-const advancedFilterGrid = document.getElementById("advancedFilterGrid");
-const advancedFilterBadge = document.getElementById("advancedFilterBadge");
+const btnFilters = document.getElementById("btnFilters");
+const filterSheet = document.getElementById("arrFilterSheet");
+const filterDim = document.getElementById("arrFilterDim");
+const filterCountBadge = document.getElementById("filterCountBadge");
+const activeChipsWrap = document.getElementById("arrActiveChips");
+const activeChipList = document.getElementById("arrChipList");
+const filterResultText = document.getElementById("filterResultText");
 
-function setAdvancedFiltersOpen(open) {
-    if (!btnToggleAdvancedFilters || !advancedFilterGrid) return;
-    advancedFilterGrid.classList.toggle("show", open);
-    btnToggleAdvancedFilters.setAttribute("aria-expanded", open ? "true" : "false");
-    localStorage.setItem(ADVANCED_FILTERS_OPEN_KEY, open ? "1" : "0");
+const escHtml = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// Fixed-position sheet lives on <body>, so no ancestor's overflow or
+// transform can clip it.
+if (filterSheet) document.body.append(filterDim, filterSheet);
+
+function filterLabel(key) {
+    const el = filterEls[key];
+    const lab = el && (el._msLabel || document.querySelector(`label[for="${CSS.escape(el.id)}"]`));
+    return (lab ? lab.textContent : el?.getAttribute("aria-label") || key).trim();
 }
 
-function updateAdvancedFilterBadge() {
-    if (!advancedFilterBadge) return;
-    const activeCount = ADVANCED_FILTER_KEYS.filter(key => filterVals(key).length > 0).length;
-    advancedFilterBadge.textContent = String(activeCount);
-    advancedFilterBadge.hidden = activeCount === 0;
+function optionText(el, value) {
+    const opt = [...el.options].find(o => o.value === value);
+    return opt ? opt.textContent.trim() : value;
 }
 
-if (btnToggleAdvancedFilters && advancedFilterGrid) {
-    btnToggleAdvancedFilters.addEventListener("click", () => {
-        setAdvancedFiltersOpen(!advancedFilterGrid.classList.contains("show"));
+// Setting a filter from code: same path as picking it in its box.
+function setFilterValues(key, vals) {
+    const el = filterEls[key];
+    if (!el) return;
+    MultiSelect.setValues(el, vals);
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function renderActiveChips() {
+    const active = FILTER_CHIP_KEYS.filter(key => filterVals(key).length > 0);
+    if (filterCountBadge) {
+        filterCountBadge.textContent = String(active.length);
+        filterCountBadge.hidden = active.length === 0;
+    }
+    if (!activeChipsWrap) return;
+    activeChipsWrap.hidden = active.length === 0;
+    activeChipList.innerHTML = active.map(key => {
+        const vals = filterVals(key);
+        const first = optionText(filterEls[key], vals[0]);
+        const more = vals.length > 1 ? ` +${vals.length - 1}` : "";
+        const label = filterLabel(key);
+        const aria = window.CMI18n ? CMI18n.t("arrears.removeFilterAria", { f: label }) : label;
+        return `<button type="button" class="arr-chip" data-chip-key="${key}" aria-label="${escHtml(aria)}">
+            <span class="arr-chip-k">${escHtml(label)}:</span> <span class="arr-chip-v">${escHtml(first)}${more}</span>
+            <span class="arr-chip-x" aria-hidden="true">✕</span></button>`;
+    }).join("");
+}
+
+function renderSheetChips() {
+    document.querySelectorAll(".arr-fchips[data-chips-for]").forEach(box => {
+        const key = box.dataset.chipsFor;
+        const el = filterEls[key];
+        if (!el) return;
+        const picked = new Set(filterVals(key));
+        box.innerHTML = [...el.options].map(o => {
+            const all = o.value === "";
+            const on = all ? picked.size === 0 : picked.has(o.value);
+            return `<button type="button" class="arr-fchip${on ? " on" : ""}" data-v="${escHtml(o.value)}" aria-pressed="${on}">${escHtml(o.textContent.trim())}</button>`;
+        }).join("");
     });
-    setAdvancedFiltersOpen(localStorage.getItem(ADVANCED_FILTERS_OPEN_KEY) === "1");
-    updateAdvancedFilterBadge();
 }
+
+function renderFilterResult() {
+    if (!filterResultText) return;
+    const n = currentRows.length.toLocaleString();
+    filterResultText.textContent = window.CMI18n ? CMI18n.t("arrears.showResults", { n }) : `Show ${n} LD`;
+}
+
+function updateFilterUi() {
+    renderActiveChips();
+    renderSheetChips();
+    renderFilterResult();
+}
+
+function setFilterSheetOpen(open) {
+    if (!filterSheet) return;
+    filterSheet.hidden = !open;
+    filterDim.hidden = !open;
+    document.body.classList.toggle("arr-fsheet-open", open);
+    btnFilters?.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) {
+        updateFilterUi();
+        filterSheet.querySelector(".arr-fsheet-body").scrollTop = 0;
+        document.getElementById("btnFilterDone")?.focus({ preventScroll: true });
+    } else {
+        btnFilters?.focus({ preventScroll: true });
+    }
+}
+
+btnFilters?.addEventListener("click", () => setFilterSheetOpen(true));
+filterDim?.addEventListener("click", () => setFilterSheetOpen(false));
+document.getElementById("btnFilterDone")?.addEventListener("click", () => setFilterSheetOpen(false));
+document.getElementById("btnClearSheet")?.addEventListener("click", () => runWithLoading(clearFilters, "កំពុងសម្អាត..."));
+document.addEventListener("keydown", (e) => {
+    // A multi-select picker open on top of the sheet closes first.
+    if (e.key === "Escape" && filterSheet && !filterSheet.hidden
+        && !document.querySelector(".ms-dim:not([hidden])")) setFilterSheetOpen(false);
+});
+
+activeChipList?.addEventListener("click", (e) => {
+    const chip = e.target.closest("[data-chip-key]");
+    if (chip) setFilterValues(chip.dataset.chipKey, []);
+});
+
+filterSheet?.addEventListener("click", (e) => {
+    const chip = e.target.closest(".arr-fchip");
+    if (!chip) return;
+    const key = chip.closest("[data-chips-for]").dataset.chipsFor;
+    const v = chip.dataset.v;
+    if (v === "") { setFilterValues(key, []); return; }
+    const vals = new Set(filterVals(key));
+    if (vals.has(v)) vals.delete(v); else vals.add(v);
+    setFilterValues(key, [...vals]);
+});
+
+window.addEventListener("cm-language-changed", updateFilterUi);
+updateFilterUi();
 
 // ========================================
 // COLUMN VISIBILITY
