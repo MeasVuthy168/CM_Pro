@@ -293,9 +293,15 @@ data-i18n-placeholder="creditreport.byProduct.searchPlaceholder">
 <button type="button" id="btnCrChartClose" class="cr-chart-close" aria-label="Close chart" data-i18n-aria-label="creditreport.detail.closeChartAria">✕</button>
 </div>
 <div class="cr-chart-metric-row" id="crChartMetricRow"></div>
+<!-- Drawn by cr-chart-view.js: latest figure / plan, the chart card,
+     the other figures and Key insights. -->
+<div class="crv-hero" id="crChartHero" hidden></div>
+<section class="crv-card crv-chart-card">
+<div id="crChartCardHead"></div>
 <div class="cr-chart-canvas-wrap">
 <canvas id="crChartCanvas"></canvas>
 </div>
+</section>
 <div class="cr-growth-dashboard" id="crGrowthDashboard" aria-live="polite" hidden></div>
 </div>
 </div>
@@ -309,6 +315,7 @@ data-i18n-placeholder="creditreport.byProduct.searchPlaceholder">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 
 <script src="../../assets/js/creditreport/growth-dashboard.js"></script>
+<script src="../../assets/js/creditreport/cr-chart-view.js"></script>
 <script src="../../assets/js/multi-select.js"></script>
 <script src="../../assets/js/creditreport/cr-multi.js"></script>
 <script src="../../assets/js/arrears-export.js"></script>

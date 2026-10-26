@@ -1206,108 +1206,27 @@ function crRenderChart(section) {
     }
     crRenderChartMetricTabs(section, metricOptions);
 
-    CRGrowthDashboard.render(document.getElementById("crGrowthDashboard"), {
-        headerRoot: document.getElementById("crChartTitle"),
-        section,
-        days: crHistoryData.days,
-        scope: crHistProducts().join(", "),
-        getItemForDay: crHistItemForDay,
-        getByPath: crGetByPath,
-        fmtNum: crFmtNum,
-        fmtPct: crFmtPct
-    });
-
     const days = crHistoryData.days;
-    // Balance Loan at Risk (T24) is never date-filtered — it always
-    // reflects whichever ArreasT24ByCO data was live at snapshot time,
-    // which can carry its own "as of" moment different from each row's
-    // own Date (same reason crBuildHistoryRow shows a separate "T24: ..."
-    // note under Date for this section). The chart's own X axis follows
-    // that same T24 "as of" moment instead of the row Date whenever
-    // Showing is T24, per explicit request 2026-10-05.
-    const labels = days.map(d => crSectionHasT24(section) && d.t24AsOfText
+    // Balance Loan at Risk (T24) is never date-filtered — it reflects the
+    // ArreasT24ByCO data live at snapshot time, so with T24 shown the X
+    // axis follows that "as of" moment instead of the row Date.
+    const xLabels = days.map(d => crSectionHasT24(section) && d.t24AsOfText
         ? CRGrowthDashboard.fmtShortDateTime(d.t24AsOfText)
         : CRGrowthDashboard.fmtShortDate(d.date));
-    const colors = crChartSeriesColors();
-    const activeField = metricOptions.find(f => f.label === crChartMetricLabel);
-
-    const datasets = [];
-    section.groups.forEach((g, idx) => {
-        const field = g.fields.find(f => f.label === crChartMetricLabel);
-        if (!field) return;
-        const data = days.map(day => {
-            const item = crHistItemForDay(day);
-            const v = item ? crGetByPath(item, field.key) : null;
-            return v == null ? null : Number(v) || 0;
-        });
-        const color = colors[idx % colors.length];
-        datasets.push({
-            label: g.label,
-            data,
-            borderColor: color,
-            backgroundColor: color,
-            pointBackgroundColor: color,
-            pointBorderColor: getComputedStyle(document.documentElement).getPropertyValue("--cr-chart-surface").trim(),
-            pointBorderWidth: 2,
-            pointRadius: 4,
-            borderWidth: 2,
-            tension: 0
-        });
-    });
-
-
-    const isPct = !!activeField?.pct;
-    // A slow-moving aggregate (e.g. Loan Outstanding) barely changes day to
-    // day relative to its own size, so an axis anchored at 0 flattens every
-    // real move into an invisible near-straight line. Zooming to the data's
-    // own range (padded) makes that movement visible — skipped for % fields,
-    // where 0 is a meaningful, bounded reference point worth keeping.
-    const crChartValues = datasets.flatMap(ds => ds.data).filter(v => v != null);
-    const crChartMin = crChartValues.length ? Math.min(...crChartValues) : 0;
-    const crChartMax = crChartValues.length ? Math.max(...crChartValues) : 0;
-    const crChartPad = Math.max((crChartMax - crChartMin) * 0.1, Math.abs(crChartMax) * 0.02, 1);
-    const ctx = document.getElementById("crChartCanvas").getContext("2d");
-    const textMuted = getComputedStyle(document.documentElement).getPropertyValue("--cr-text-muted").trim();
-    const grid = getComputedStyle(document.documentElement).getPropertyValue("--cr-chart-grid").trim();
-
-    const config = {
-        type: "line",
-        data: { labels, datasets },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: "index", intersect: false },
-            plugins: {
-                legend: { display: datasets.length > 1, labels: { color: textMuted, boxWidth: 12 } },
-                tooltip: {
-                    callbacks: {
-                        label: (ctx2) => `${ctx2.dataset.label}: ${isPct ? crFmtPct(ctx2.parsed.y) : crFmtNum(ctx2.parsed.y)}`
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: isPct,
-                    min: isPct ? undefined : Math.max(0, crChartMin - crChartPad),
-                    max: isPct ? undefined : crChartMax + crChartPad,
-                    ticks: {
-                        color: textMuted,
-                        // Money axis in short form (132.00M); the tooltip keeps the full figure.
-                        callback: (v) => isPct ? crFmtPct(v) : activeField?.money ? CRGrowthDashboard.fmtCompact(v) : crFmtNum(v)
-                    },
-                    title: { display: !!activeField?.money, text: "USD", color: textMuted },
-                    grid: { color: grid }
-                },
-                x: {
-                    ticks: { color: textMuted },
-                    grid: { display: false }
-                }
-            }
-        }
-    };
-
+    // Header, hero card, chart card, other figures and Key insights —
+    // cr-chart-view.js.
     if (crChartInstance) crChartInstance.destroy();
-    crChartInstance = new Chart(ctx, config);
+    crChartInstance = CRChartView.render({
+        section,
+        days,
+        metricLabel: crChartMetricLabel,
+        scopeParts: crHistProducts(),
+        xLabels,
+        colors: crChartSeriesColors(),
+        getItemForDay: crHistItemForDay,
+        getByPath: crGetByPath,
+        fmtNum: crFmtNum
+    });
 }
 
 function crOpenChart() {
