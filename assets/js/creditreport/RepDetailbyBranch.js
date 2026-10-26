@@ -94,6 +94,24 @@ function crSections() {
                 ]
             }]
         },
+        // KHR loans / loans ≤ $50,000 on their own (also columns of Loan
+        // Outstanding, so not repeated in All Sections).
+        khr: {
+            groups: [{
+                label: t("creditreport.detail.sectionKhr"),
+                fields: [
+                    { key: "osMix.khr", label: t("creditreport.detail.colValue"), money: true, optional: true }
+                ]
+            }]
+        },
+        small: {
+            groups: [{
+                label: t("creditreport.detail.sectionSmall"),
+                fields: [
+                    { key: "osMix.small", label: t("creditreport.detail.colValue"), money: true, optional: true }
+                ]
+            }]
+        },
         los: {
             groups: [{
                 label: t("creditreport.detail.sectionLos"),
@@ -231,6 +249,8 @@ function crCompareSection(sectionKey, section) {
                         : field.key === "loanDisburse.value" ? crWithPlanAfter(field, "disbAmount", { money: true, toDate: true })
                             : [])
             });
+        } else if (first === "osMix.khr" || first === "osMix.small") {
+            groups.push({ ...g, fields: crWithPlanAfter(g.fields[0], first === "osMix.khr" ? "osKhr" : "osSmall", { money: true }) });
         } else if (first.startsWith("loanLos.")) {
             groups.push({ ...g, fields: crWithPlanAfter(g.fields[0], "losCount", { toDate: true }) });
         } else if (first.startsWith("nbcOverdue.total.") || first.startsWith("nbcOverdue.nonPerformingLoan.")) {

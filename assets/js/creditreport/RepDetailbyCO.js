@@ -113,6 +113,40 @@ function crSections() {
                 ]
             }]
         },
+        // KHR loans / loans ≤ $50,000 on their own, Area / Own (also
+        // columns of Loan Outstanding, so not repeated in All Sections).
+        khrArea: {
+            groups: [{
+                label: crAreaLabel("creditreport.detail.sectionKhr"),
+                fields: [
+                    { key: "osMixArea.khr", label: t("creditreport.detail.colValue"), money: true, optional: true }
+                ]
+            }]
+        },
+        khr: {
+            groups: [{
+                label: crOwnLabel("creditreport.detail.sectionKhr"),
+                fields: [
+                    { key: "osMix.khr", label: t("creditreport.detail.colValue"), money: true, optional: true }
+                ]
+            }]
+        },
+        smallArea: {
+            groups: [{
+                label: crAreaLabel("creditreport.detail.sectionSmall"),
+                fields: [
+                    { key: "osMixArea.small", label: t("creditreport.detail.colValue"), money: true, optional: true }
+                ]
+            }]
+        },
+        small: {
+            groups: [{
+                label: crOwnLabel("creditreport.detail.sectionSmall"),
+                fields: [
+                    { key: "osMix.small", label: t("creditreport.detail.colValue"), money: true, optional: true }
+                ]
+            }]
+        },
         losArea: {
             groups: [{
                 label: crAreaLabel("creditreport.detail.sectionLos"),
