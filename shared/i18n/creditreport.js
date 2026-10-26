@@ -249,7 +249,7 @@ CMI18n.register({
   "creditreport.detail.classLoss": { km: "បាត់បង់", en: "Loss" },
   "creditreport.detail.classMinorDefault": { km: "ធម្មតា​", en: "Minor Default" },
   "creditreport.detail.classMajorDefault": { km: "Major Default", en: "Major Default" },
-  "creditreport.detail.classNonPerformingLoan": { km: "ឥឥណទានមិនដំណើរការ", en: "Non Performing Loan" },
+  "creditreport.detail.classNonPerformingLoan": { km: "ឥណទានមិនដំណើរការ", en: "Non Performing Loan" },
   "creditreport.detail.classTotalNbcOverdue": { km: "ឥណទាន​យឺតយ៉ាវ​សរុប NBC", en: "Total NBC Overdue" },
 
   "creditreport.detail.productType": { km: "ប្រភេទផលិតផល", en: "Product Type" },
