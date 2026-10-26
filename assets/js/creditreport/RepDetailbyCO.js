@@ -77,7 +77,9 @@ function crSections() {
                 fields: [
                     { key: "loanOutstandingArea.loan", label: t("creditreport.detail.colLoanHash") },
                     { key: "loanOutstandingArea.client", label: t("creditreport.detail.colClient") },
-                    { key: "loanOutstandingArea.value", label: t("creditreport.detail.colValue"), money: true }
+                    { key: "loanOutstandingArea.value", label: t("creditreport.detail.colValue"), money: true },
+                    { key: "osMixArea.khr", label: t("creditreport.plan.khr"), money: true, optional: true },
+                    { key: "osMixArea.small", label: t("creditreport.plan.small"), money: true, optional: true }
                 ]
             }]
         },
@@ -87,7 +89,9 @@ function crSections() {
                 fields: [
                     { key: "loanOutstanding.loan", label: t("creditreport.detail.colLoanHash") },
                     { key: "loanOutstanding.client", label: t("creditreport.detail.colClient") },
-                    { key: "loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
+                    { key: "loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true },
+                    { key: "osMix.khr", label: t("creditreport.plan.khr"), money: true, optional: true },
+                    { key: "osMix.small", label: t("creditreport.plan.small"), money: true, optional: true }
                 ]
             }]
         },
@@ -106,6 +110,40 @@ function crSections() {
                 fields: [
                     { key: "loanDisburse.loan", label: t("creditreport.detail.colLoanHash") },
                     { key: "loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
+                ]
+            }]
+        },
+        // KHR loans / loans ≤ $50,000 on their own, Area / Own (also
+        // columns of Loan Outstanding, so not repeated in All Sections).
+        khrArea: {
+            groups: [{
+                label: crAreaLabel("creditreport.detail.sectionKhr"),
+                fields: [
+                    { key: "osMixArea.khr", label: t("creditreport.detail.colValue"), money: true, optional: true }
+                ]
+            }]
+        },
+        khr: {
+            groups: [{
+                label: crOwnLabel("creditreport.detail.sectionKhr"),
+                fields: [
+                    { key: "osMix.khr", label: t("creditreport.detail.colValue"), money: true, optional: true }
+                ]
+            }]
+        },
+        smallArea: {
+            groups: [{
+                label: crAreaLabel("creditreport.detail.sectionSmall"),
+                fields: [
+                    { key: "osMixArea.small", label: t("creditreport.detail.colValue"), money: true, optional: true }
+                ]
+            }]
+        },
+        small: {
+            groups: [{
+                label: crOwnLabel("creditreport.detail.sectionSmall"),
+                fields: [
+                    { key: "osMix.small", label: t("creditreport.detail.colValue"), money: true, optional: true }
                 ]
             }]
         },
@@ -289,6 +327,8 @@ function crFmtField(item, field) {
         const alert = n >= CR_PAR_ALERT ? " cr-par-high" : "";
         return `<td class="${cls}${alert}">${crFmtPct(n)}</td>`;
     }
+    // optional: a figure older snapshots don't have — "—", not 0.
+    if (field.optional && (v === undefined || v === null)) return `<td class="${cls}">—</td>`;
     return `<td class="${cls}">${crFmtNum(v)}</td>`;
 }
 
