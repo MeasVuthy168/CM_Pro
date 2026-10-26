@@ -240,8 +240,10 @@ function mpVisibleRows() {
     let rows = mpAllRows();
     if (mp.dim !== "officer") return rows;
     const branch = document.getElementById("mpBranchFilter").value;
+    const team = document.getElementById("mpTeamFilter").value;
     const q = document.getElementById("mpSearch").value.trim().toLowerCase();
     if (branch) rows = rows.filter(r => (r.branch || "") === branch);
+    if (team) rows = rows.filter(r => r.team === team);
     if (q) rows = rows.filter(r => `${r.label} ${r.id || r.key}`.toLowerCase().includes(q));
     return rows;
 }
@@ -282,8 +284,13 @@ function mpTotal(rows, metric) {
     return os > 0 ? Math.round((weighted / os) * 100) / 100 : null;
 }
 
-// Officer tab: each branch's officers added up next to its branch plan.
-function mpCompareChips(branch, rows) {
+// Officer tab: each branch's officers added up next to its branch plan —
+// all of them, whatever the team / search filter shows.
+function mpBranchOfficers(branch) {
+    return mpAllRows().filter(r => (r.branch || "—") === branch);
+}
+
+function mpCompareChips(branch, rows = mpBranchOfficers(branch)) {
     return MP_COMPARE.filter(k => mp.metrics.some(m => m.key === k)).map(k => {
         const sum = mpSum(rows, k);
         const plan = (mp.branchPlan[branch] || {})[k];
@@ -329,7 +336,7 @@ function mpRender() {
         for (const [b, list] of byBranch) {
             // The cell spans the row; its content stays in view while the
             // table scrolls sideways.
-            body += `<tr class="mp-group"><td colspan="${cols.length + 1}"><div class="mp-group-in"><b>${mpEsc(b)}</b> <span class="mp-group-n">${list.length}</span><div class="mp-chips">${mpCompareChips(b, list)}</div></div></td></tr>`;
+            body += `<tr class="mp-group"><td colspan="${cols.length + 1}"><div class="mp-group-in"><b>${mpEsc(b)}</b> <span class="mp-group-n">${list.length}</span><div class="mp-chips">${mpCompareChips(b)}</div></div></td></tr>`;
             body += list.map(rowHtml).join("");
         }
     } else {
@@ -358,6 +365,11 @@ function mpPaintFilters() {
     sel.innerHTML = `<option value="">${mpEsc(t("masterdata.plan.allBranches"))}</option>` +
         branches.map(b => `<option value="${mpEsc(b)}">${mpEsc(b)}</option>`).join("");
     if (branches.includes(keep)) sel.value = keep;
+    const team = document.getElementById("mpTeamFilter");
+    const keepTeam = team.value;
+    team.innerHTML = [["", "masterdata.plan.allTeams"], ["co", "masterdata.plan.teamCo"], ["fsro", "masterdata.plan.teamFsro"]]
+        .map(([v, k]) => `<option value="${v}">${mpEsc(t(k))}</option>`).join("");
+    team.value = keepTeam;
 }
 
 // ---------- editing ----------
@@ -404,10 +416,9 @@ function mpPaintTotals() {
 }
 
 function mpRepaintChips() {
-    const rows = mpVisibleRows();
     document.querySelectorAll("#mpTable tr.mp-group").forEach(tr => {
         const b = tr.querySelector("b").textContent;
-        tr.querySelector(".mp-chips").innerHTML = mpCompareChips(b, rows.filter(r => (r.branch || "—") === b));
+        tr.querySelector(".mp-chips").innerHTML = mpCompareChips(b);
     });
 }
 
@@ -566,6 +577,7 @@ document.querySelectorAll(".mp-tab").forEach(btn => btn.addEventListener("click"
     mpLoad();
 }));
 document.getElementById("mpBranchFilter").addEventListener("change", mpRender);
+document.getElementById("mpTeamFilter").addEventListener("change", mpRender);
 document.getElementById("mpSearch").addEventListener("input", mpRender);
 document.getElementById("mpSave").addEventListener("click", mpSave);
 document.getElementById("mpCancel").addEventListener("click", () => { if (mpConfirmDiscard()) mpLoad(); });
