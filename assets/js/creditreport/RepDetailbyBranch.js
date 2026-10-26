@@ -79,7 +79,9 @@ function crSections() {
                 fields: [
                     { key: "loanOutstanding.loan", label: t("creditreport.detail.colLoanHash") },
                     { key: "loanOutstanding.client", label: t("creditreport.detail.colClient") },
-                    { key: "loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
+                    { key: "loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true },
+                    { key: "osMix.khr", label: t("creditreport.plan.khr"), money: true, optional: true },
+                    { key: "osMix.small", label: t("creditreport.plan.small"), money: true, optional: true }
                 ]
             }]
         },
@@ -173,7 +175,8 @@ function crSections() {
 // to by the report's last day. NBC Overdue % and NPL % are ceilings,
 // shown as points above (+) or below (−) the plan. WO Collected is
 // compared for this month (the WO columns themselves cover the year).
-// KHR loans and loans ≤ $50,000 have a plan but no actual yet.
+// KHR loans and loans ≤ $50,000: outstanding of the KHR loans / of the
+// loans disbursed at $50,000 or less.
 // Current mode only; never part of the daily snapshot.
 // ========================================
 function crCompareMode() {
@@ -453,6 +456,8 @@ function crFmtField(item, field) {
         const parCls = n >= CR_PAR_ALERT ? " cr-par-high" : "";
         return `<td class="${cls}${parCls}">${crFmtPct(n)}</td>`;
     }
+    // optional: a figure older snapshots don't have — "—", not 0.
+    if (field.optional && (v === undefined || v === null)) return `<td class="${cls}">—</td>`;
     return `<td class="${cls}">${crFmtNum(v)}</td>`;
 }
 
