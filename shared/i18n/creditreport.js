@@ -153,6 +153,8 @@ CMI18n.register({
   "creditreport.plan.compareLabel": { km: "ប្រៀបធៀប", en: "Comparison" },
   "creditreport.plan.compareActual": { km: "សម្រេចប៉ុណ្ណោះ", en: "Actual Only" },
   "creditreport.plan.comparePlan": { km: "ផែនការ vs សម្រេច", en: "Plan vs Actual" },
+  "creditreport.chartv.viewChart": { km: "ក្រាហ្វ", en: "Chart" },
+  "creditreport.chartv.viewInsights": { km: "ការវិភាគ", en: "Analysis" },
   "creditreport.chartv.asOf": { km: "{metric} គិតត្រឹម {date}", en: "{metric} as of {date}" },
   "creditreport.chartv.vsFirst": { km: "ធៀបនឹង {value} នៅ {date}", en: "vs. {value} on {date}" },
   "creditreport.chartv.was": { km: "ពីមុន {value}", en: "Was {value}" },

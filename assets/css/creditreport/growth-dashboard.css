@@ -172,3 +172,98 @@
     .crv-mini-value{ font-size:21px; }
     .crv-hero, .crv-card, .crv-mini{ padding:14px; }
 }
+
+/* ========================================
+   Fit to the screen, no scrolling (crv-fit, set by cr-chart-view.js):
+   the panel takes the whole viewport; the chart card takes whatever
+   height is left. Key insights sit on their own view (Chart | Analysis).
+======================================== */
+.cr-chart-panel.crv-fit{
+    height:100vh; height:100dvh; max-height:none;
+    border-radius:0;
+    display:flex; flex-direction:column; overflow:hidden;
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+}
+@media (min-width:720px){
+    .cr-chart-panel.crv-fit{ height:min(92vh, 900px); border-radius:18px; }
+}
+.crv-fit > *{ flex:0 0 auto; }
+.crv-fit .cr-chart-header{ margin-bottom:6px; align-items:center; }
+.crv-fit .crv-head{ gap:10px; }
+.crv-fit .crv-head-icon{ width:36px; height:36px; border-radius:10px; font-size:18px; }
+.crv-fit .crv-title{ font-size:16px; }
+.crv-fit .crv-sub{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:12px; }
+.crv-fit .crv-head-text{ flex:1 1 auto; }
+.crv-fit .cr-chart-metric-row{ margin:4px 0 8px; padding:3px; border-radius:12px; }
+.crv-fit .cr-chart-metric-row .cr-chart-metric-btn{ padding:6px 6px; font-size:13px; }
+
+/* hero: value + change on one line */
+.crv-fit .crv-hero{ padding:10px 14px; border-radius:14px; }
+.crv-hero-main{ display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px; margin-top:2px; }
+.crv-fit .crv-hero-value{ margin-top:0; font-size:26px; }
+.crv-fit .crv-hero-change .crv-chip{ margin-top:0; font-size:12px; padding:3px 8px; }
+.crv-fit .crv-vs{ margin-top:2px; font-size:11.5px; }
+.crv-fit .crv-hero-plan{ margin-top:8px; }
+.crv-fit .crv-plan-row{ font-size:12.5px; }
+.crv-fit .crv-bar{ height:6px; margin-top:6px; }
+.crv-fit .crv-bar b{ top:-3px; height:12px; }
+.crv-fit .crv-plan-note{ margin-top:4px; font-size:11.5px; }
+.crv-fit .crv-noplan{ margin-top:6px; }
+
+/* Chart | Analysis */
+.crv-views{ display:flex; gap:6px; margin:8px 0; }
+.crv-view-btn{
+    flex:1 1 0; padding:7px 8px; border-radius:10px; cursor:pointer;
+    border:1px solid var(--crv-line); background:transparent;
+    font:inherit; font-size:13px; font-weight:700; color:var(--cr-text-muted);
+}
+.crv-view-btn.active{ background:var(--crv-card); color:var(--cr-text); border-color:var(--cr-series-1, #3987e5); }
+
+/* chart view: the chart card fills the height left over */
+.crv-fit .crv-chart-card{
+    flex:1 1 auto; min-height:0; margin-top:0;
+    display:flex; flex-direction:column; padding:10px 10px 6px;
+}
+.crv-fit .crv-chart-card .cr-chart-canvas-wrap{ flex:1 1 auto; min-height:120px; height:auto; }
+.crv-fit .crv-legend{ margin-top:0; font-size:12px; gap:4px 14px; }
+.crv-mtd{ color:var(--cr-text-muted); }
+.crv-fit .cr-growth-dashboard{ margin-top:8px; }
+.crv-fit .crv-minis{ margin-top:0; gap:8px; }
+.crv-fit .crv-mini{ padding:8px 12px; border-radius:12px; }
+.crv-mini-top{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
+.crv-mini-top .crv-chip{ margin-top:0; padding:2px 7px; font-size:11.5px; }
+.crv-fit .crv-mini-value{ margin-top:2px; font-size:19px; }
+.crv-fit .crv-mini .crv-muted{ margin-top:2px; font-size:11.5px; }
+.crv-fit .crv-mini-plan{ margin-top:4px; }
+.crv-fit .crv-mini .crv-plan-row{ font-size:11.5px; }
+
+.crv-fit[data-crv-view="chart"] .crv-about{ display:none; }
+.crv-fit[data-crv-view="insights"] .crv-chart-card,
+.crv-fit[data-crv-view="insights"] .crv-minis{ display:none; }
+/* analysis view: the About card takes the space the chart had */
+.crv-fit[data-crv-view="insights"] .cr-growth-dashboard{
+    flex:1 1 auto; min-height:0; display:flex; flex-direction:column; margin-top:0;
+}
+.crv-fit[data-crv-view="insights"] .crv-about{ flex:1 1 auto; min-height:0; margin-top:0; overflow:auto; }
+
+/* short phones: tighter still */
+@media (max-height:700px){
+    .crv-fit .crv-hero-value{ font-size:22px; }
+    .crv-fit .crv-vs, .crv-fit .crv-plan-note{ display:none; }
+    .crv-fit .crv-mini-value{ font-size:17px; }
+}
+
+/* Analysis view: the figures are in the header / insights already —
+   the hero and metric tabs make room for the insights. */
+.crv-fit[data-crv-view="insights"] .cr-chart-metric-row,
+.crv-fit[data-crv-view="insights"] .crv-hero{ display:none; }
+.crv-fit .crv-about{ padding:12px 14px; }
+.crv-fit .crv-about p{ margin-top:6px; font-size:13px; line-height:1.55; }
+.crv-fit .crv-insights-title{ margin-top:10px; padding-top:10px; }
+.crv-fit .crv-insights{ margin-top:6px; gap:8px; }
+.crv-fit .crv-insights li{ font-size:13px; line-height:1.5; }
+.crv-fit .crv-foot{ margin-top:10px; font-size:11.5px; }
+@media (max-height:700px){
+    .crv-fit .crv-about p{ display:none; }
+    .crv-fit .crv-insights-title{ margin-top:0; padding-top:0; border-top:0; }
+}

@@ -342,6 +342,16 @@
         };
     }
 
+    // Chart | Analysis: the popup fits the screen without scrolling, so
+    // Key insights sit on their own view. Kept across re-renders.
+    let view = "chart";
+
+    function setView(panel, v) {
+        view = v === "insights" ? "insights" : "chart";
+        panel.dataset.crvView = view;
+        panel.querySelectorAll(".crv-view-btn").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+    }
+
     function render(opts) {
         const { section, days, metricLabel, scopeParts = [], xLabels, colors, getItemForDay, getByPath, fmtNum,
             getPlan, hasPlanFor, planDataset } = opts;
@@ -366,12 +376,8 @@
                 <div class="crv-head-icon">${icon(field.key)}</div>
                 <div class="crv-head-text">
                     <div class="crv-title">${esc(title)}</div>
-                    <div class="crv-sub">${esc(unit)}</div>
+                    <div class="crv-sub">${esc([unit, ...scopeParts.filter(Boolean), range].join(" · "))}</div>
                 </div>
-            </div>
-            <div class="crv-chips">
-                ${scopeParts.filter(Boolean).map(s => `<span class="crv-scope">${esc(s)}</span>`).join("")}
-                <span class="crv-scope crv-scope-date">${esc(range)}</span>
             </div>`;
 
         // ---- hero ----
@@ -384,13 +390,35 @@
                 <span class="crv-kicker">${esc(tr("asOf", { metric: field.label, date: fmtDay(last.date) }, "{metric} as of {date}"))}</span>
                 ${pb ? badge(pb.status, plan.ceiling) : ""}
             </div>
-            <div class="crv-hero-value">${esc(f.full(last.value))}</div>
-            ${ch ? `<div class="crv-hero-change">${chip(field, f, ch)}</div>
-                <div class="crv-muted">${esc(tr("vsFirst", { value: f.full(ch.first.value), date: fmtDay(ch.first.date) }, "vs. {value} on {date}"))}</div>` : ""}
+            <div class="crv-hero-main">
+                <span class="crv-hero-value">${esc(f.full(last.value))}</span>
+                ${ch ? `<span class="crv-hero-change" title="${esc(tr("vsFirst", { value: f.full(ch.first.value), date: fmtDay(ch.first.date) }, "vs. {value} on {date}"))}">${chip(field, f, ch)}</span>` : ""}
+            </div>
+            ${ch ? `<div class="crv-muted crv-vs">${esc(tr("vsFirst", { value: f.full(ch.first.value), date: fmtDay(ch.first.date) }, "vs. {value} on {date}"))}</div>` : ""}
             ${pb ? `<div class="crv-hero-plan">${pb.html}</div>`
                 : hasPlanFor && hasPlanFor(field.key) && getPlan ? `<div class="crv-muted crv-noplan">${esc(tr("noPlan", null, "No plan set"))}</div>` : ""}
         ` : `<div class="crv-muted">${esc(tr("noData", null, "No figures for these days."))}</div>`;
         hero.hidden = false;
+
+        // ---- Chart | Analysis switch ----
+        const panel = hero.closest(".cr-chart-panel");
+        let views = document.getElementById("crChartViews");
+        if (!views) {
+            views = document.createElement("div");
+            views.id = "crChartViews";
+            views.className = "crv-views";
+            views.setAttribute("role", "tablist");
+            hero.after(views);
+            views.addEventListener("click", e => {
+                const b = e.target.closest(".crv-view-btn");
+                if (b) setView(panel, b.dataset.view);
+            });
+        }
+        views.innerHTML = `
+            <button type="button" class="crv-view-btn" data-view="chart" role="tab">${esc(tr("viewChart", null, "Chart"))}</button>
+            <button type="button" class="crv-view-btn" data-view="insights" role="tab">${esc(tr("viewInsights", null, "Analysis"))}</button>`;
+        panel.classList.add("crv-fit");
+        setView(panel, view);
 
         // ---- chart card head + datasets ----
         const datasets = [];
@@ -425,11 +453,7 @@
             planIndex >= 0 && groups.length === 1 ? `<span class="crv-key"><i class="band"></i>${esc(tr("abovePlanKey", null, "Above plan"))}</span>` : ""
         ].join("");
         document.getElementById("crChartCardHead").innerHTML = `
-            <div class="crv-card-title">${esc(planIndex >= 0
-                ? tr("dailyVsPlan", { metric: field.label }, "Daily {metric} vs. plan")
-                : tr("daily", { metric: field.label }, "Daily {metric}"))}</div>
-            <div class="crv-muted">${esc([f.unit, range].filter(Boolean).join(" · "))}${monthToDate(field.key) ? " · " + esc(tr("mtd", null, "month to date")) : ""}</div>
-            <div class="crv-legend">${legend}</div>`;
+            <div class="crv-legend">${legend}${monthToDate(field.key) ? `<span class="crv-key crv-mtd">${esc(tr("mtd", null, "month to date"))}</span>` : ""}</div>`;
 
         // ---- other figures + insights ----
         const others = group.fields.filter(x => x.key !== field.key).map(x => {
@@ -443,12 +467,10 @@
             const xpb = planOf(x, xf, xl.value, xplan, { big: false });
             return `
                 <article class="crv-mini">
-                    <div class="crv-kicker">${esc(x.label)}</div>
+                    <div class="crv-mini-top"><span class="crv-kicker">${esc(x.label)}</span>${xch ? chip(x, xf, xch) : ""}</div>
                     <div class="crv-mini-value">${esc(xf.full(xl.value))}</div>
-                    ${xch ? chip(x, xf, xch) : ""}
-                    ${xch ? `<div class="crv-muted">${esc(tr("was", { value: xf.full(xch.first.value) }, "Was {value}"))}</div>` : ""}
                     ${xpb ? `<div class="crv-mini-plan">${xpb.html}</div>`
-                        : hasPlanFor && hasPlanFor(x.key) && getPlan ? `<div class="crv-muted crv-noplan">${esc(tr("noPlan", null, "No plan set"))}</div>` : ""}
+                        : xch ? `<div class="crv-muted">${esc(tr("was", { value: xf.full(xch.first.value) }, "Was {value}"))}${hasPlanFor && hasPlanFor(x.key) && getPlan ? " · " + esc(tr("noPlan", null, "No plan set")) : ""}</div>` : ""}
                 </article>`;
         }).filter(Boolean);
 
