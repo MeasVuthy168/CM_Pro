@@ -140,6 +140,12 @@
 .cr-growth-change.good{ color:var(--cr-growth-good); background:var(--cr-growth-good-bg); }
 .cr-growth-change.bad{ color:var(--cr-growth-bad); background:var(--cr-growth-bad-bg); }
 .cr-growth-change.flat{ color:var(--cr-text-muted); background:var(--cr-row-alt); }
+/* Plan vs the latest day (Daily Report by Branch / Officer). */
+.cr-growth-plan{ margin-top:8px; font-size:12px; font-weight:700; color:var(--cr-text-muted); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.cr-growth-plan.good{ color:var(--cr-growth-good); }
+.cr-growth-plan.warn{ color:#B26A00; }
+.cr-growth-plan.bad{ color:var(--cr-growth-bad); }
+[data-theme="dark"] .cr-growth-plan.warn{ color:#F2B544; }
 
 @media (max-width:420px){
     .cr-growth-icon{ width:42px; height:42px; font-size:21px; }

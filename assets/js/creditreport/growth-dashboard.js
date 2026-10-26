@@ -18,7 +18,8 @@
 // Usage (from a page's crRenderChart):
 //   CRGrowthDashboard.render(document.getElementById("crGrowthDashboard"), {
 //     headerRoot: document.getElementById("crChartTitle"),
-//     section, days, scope, getItemForDay, getByPath, fmtNum, fmtPct
+//     section, days, scope, getItemForDay, getByPath, fmtNum, fmtPct,
+//     getPlan   // optional: (field, dateKey) → { value, ceiling } | null
 //   });
 //
 // Also exposes the chart's short formats: fmtShortDate("2026-09-30") ->
@@ -94,7 +95,22 @@
         return points;
     }
 
-    function crGrowthColumn(field, points, fmtNum, fmtPct) {
+    // plan: { value, ceiling } for the latest day (Daily Report by Branch /
+    // Officer, CRPlanLine) — shown as "Plan X · Y%", or "Plan ≤ X" for a
+    // ceiling (NBC Overdue % / NPL %, lower is better).
+    function crGrowthPlanLine(plan, current, fmt) {
+        if (!plan || plan.value == null) return "";
+        if (plan.ceiling) {
+            const ok = current <= plan.value;
+            return `<div class="cr-growth-plan ${ok ? "good" : "bad"}">${esc(tr("creditreport.growth.planMax", { value: fmt(plan.value) }, "Plan ≤ " + fmt(plan.value)))}</div>`;
+        }
+        const ach = plan.value ? current / plan.value : null;
+        const tone = ach == null ? "" : ach >= 1 ? "good" : ach >= 0.8 ? "warn" : "bad";
+        const pct = ach == null ? "—" : Math.round(ach * 100) + "%";
+        return `<div class="cr-growth-plan ${tone}">${esc(tr("creditreport.growth.plan", { value: fmt(plan.value), pct }, "Plan " + fmt(plan.value) + " · " + pct))}</div>`;
+    }
+
+    function crGrowthColumn(field, points, fmtNum, fmtPct, getPlan) {
         const fmt = v => field.pct ? fmtPct(v) : fmtNum(v);
         const current = points[points.length - 1];
         const start = points.length > 1 ? points[0] : null;
@@ -112,12 +128,13 @@
                 <div class="cr-growth-current">${esc(fmt(current.value))}</div>
                 <div class="cr-growth-previous">${esc(start ? tr("creditreport.growth.previous", { value: fmt(start.value) }, "Was " + fmt(start.value)) : "—")}</div>
                 <div class="cr-growth-change ${tone}"><span aria-hidden="true">${arrow}</span> ${esc(deltaText)}</div>
+                ${getPlan ? crGrowthPlanLine(getPlan(field, current.date), current.value, fmt) : ""}
             </div>`;
     }
 
     function render(root, opts) {
         if (!root) return;
-        const { headerRoot, section, days = [], scope = "", getItemForDay, getByPath, fmtNum, fmtPct } = opts;
+        const { headerRoot, section, days = [], scope = "", getItemForDay, getByPath, fmtNum, fmtPct, getPlan } = opts;
 
         let rangeStart = null;
         let rangeEnd = null;
@@ -128,7 +145,7 @@
                 if (!points.length) continue;
                 if (!rangeStart || points[0].date < rangeStart) rangeStart = points[0].date;
                 if (!rangeEnd || points[points.length - 1].date > rangeEnd) rangeEnd = points[points.length - 1].date;
-                cols.push(crGrowthColumn(field, points, fmtNum, fmtPct));
+                cols.push(crGrowthColumn(field, points, fmtNum, fmtPct, getPlan));
             }
             if (!cols.length) return "";
             const firstKey = group.fields[0]?.key || "";
