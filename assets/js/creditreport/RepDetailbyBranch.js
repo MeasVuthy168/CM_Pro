@@ -188,8 +188,7 @@ function crSections() {
 // Plans and their actuals come from /api/creditreport/plan-vs-actual
 // (item.planVs): the branch plan of the month and the actual for the
 // report's period (1st of the month to the OS date), without the
-// class / product filters. Disbursement also shows what the plan comes
-// to by the report's last day. NBC Overdue % and NPL % are ceilings,
+// class / product filters. NBC Overdue % and NPL % are ceilings,
 // shown as points above (+) or below (−) the plan. WO Collected is
 // compared for this month (the WO columns themselves cover the year).
 // KHR loans and loans ≤ $50,000: outstanding of the KHR loans / of the
@@ -202,16 +201,15 @@ function crCompareMode() {
     return v === "plan" ? "plan" : "actual";
 }
 
-// Plan columns of one metric: plan [, due to date], then % (or ± for a
+// Plan columns of one metric: plan, then % (or ± for a
 // ceiling). withActual adds the actual first (from planVs, for figures
 // the report table doesn't already show for the same period / filters).
-function crPlanFields(metric, { money = false, ceiling = false, toDate = false, withActual = false, actualLabel } = {}) {
+function crPlanFields(metric, { money = false, ceiling = false, withActual = false, actualLabel } = {}) {
     const base = `planVs.${metric}`;
     const kind = ceiling ? "pct" : money ? "money" : "num";
     const f = [];
     if (withActual) f.push({ key: `${base}.actual`, label: actualLabel || t("creditreport.plan.actual"), pv: kind });
     f.push({ key: `${base}.plan`, label: t(ceiling ? "creditreport.plan.planMax" : "creditreport.plan.plan"), pv: kind, planCol: true });
-    if (toDate) f.push({ key: `${base}.expected`, label: t("creditreport.plan.expected"), pv: kind, planCol: true });
     f.push(ceiling
         ? { key: base, label: "±", pv: "diff", planCol: true }
         : { key: `${base}.ach`, label: "%", pv: "ach", planCol: true });
@@ -242,14 +240,14 @@ function crCompareSection(sectionKey, section) {
             groups.push({
                 ...g,
                 fields: g.fields.flatMap(field =>
-                    field.key === "loanDisburse.loan" ? crWithPlanAfter(field, "disbCount", { toDate: true })
-                        : field.key === "loanDisburse.value" ? crWithPlanAfter(field, "disbAmount", { money: true, toDate: true })
+                    field.key === "loanDisburse.loan" ? crWithPlanAfter(field, "disbCount")
+                        : field.key === "loanDisburse.value" ? crWithPlanAfter(field, "disbAmount", { money: true })
                             : [])
             });
         } else if (first === "osMix.khr" || first === "osMix.small") {
             groups.push({ ...g, fields: crWithPlanAfter(g.fields[0], first === "osMix.khr" ? "osKhr" : "osSmall", { money: true }) });
         } else if (first.startsWith("loanLos.")) {
-            groups.push({ ...g, fields: crWithPlanAfter(g.fields[0], "losCount", { toDate: true }) });
+            groups.push({ ...g, fields: crWithPlanAfter(g.fields[0], "losCount") });
         } else if (first.startsWith("nbcOverdue.total.") || first.startsWith("nbcOverdue.nonPerformingLoan.")) {
             const metric = first.startsWith("nbcOverdue.total.") ? "nbcOverduePct" : "nplPct";
             groups.push({

@@ -483,15 +483,14 @@ function crCompareMode() {
     return document.getElementById("crCompare")?.value === "plan" ? "plan" : "actual";
 }
 
-// Plan columns of one metric: plan [, due to date], then % (or ± for a
+// Plan columns of one metric: plan, then % (or ± for a
 // ceiling). withActual adds the actual first (from planVs).
-function crPlanFields(metric, { money = false, ceiling = false, toDate = false, withActual = false, actualLabel } = {}) {
+function crPlanFields(metric, { money = false, ceiling = false, withActual = false, actualLabel } = {}) {
     const base = `planVs.${metric}`;
     const kind = ceiling ? "pct" : money ? "money" : "num";
     const f = [];
     if (withActual) f.push({ key: `${base}.actual`, label: actualLabel || t("creditreport.plan.actual"), pv: kind });
     f.push({ key: `${base}.plan`, label: t(ceiling ? "creditreport.plan.planMax" : "creditreport.plan.plan"), pv: kind, planCol: true });
-    if (toDate) f.push({ key: `${base}.expected`, label: t("creditreport.plan.expected"), pv: kind, planCol: true });
     f.push(ceiling
         ? { key: base, label: "±", pv: "diff", planCol: true }
         : { key: `${base}.ach`, label: "%", pv: "ach", planCol: true });
@@ -520,12 +519,12 @@ function crCompareSection(section) {
             groups.push({
                 ...g,
                 fields: g.fields.flatMap(f =>
-                    f.key === "loanDisburse.loan" ? crWithPlanAfter(f, "disbCount", { toDate: true })
-                        : f.key === "loanDisburse.value" ? crWithPlanAfter(f, "disbAmount", { money: true, toDate: true })
+                    f.key === "loanDisburse.loan" ? crWithPlanAfter(f, "disbCount")
+                        : f.key === "loanDisburse.value" ? crWithPlanAfter(f, "disbAmount", { money: true })
                             : [])
             });
         } else if (first.startsWith("loanLos.")) {
-            groups.push({ ...g, fields: crWithPlanAfter(g.fields[0], "losCount", { toDate: true }) });
+            groups.push({ ...g, fields: crWithPlanAfter(g.fields[0], "losCount") });
         } else if (first.startsWith("nbcOverdue.totalOwn.") || first.startsWith("nbcOverdue.nonPerformingLoan.")) {
             const metric = first.startsWith("nbcOverdue.totalOwn.") ? "nbcOverduePct" : "nplPct";
             groups.push({ ...g, fields: crPlanFields(metric, { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct") }) });
