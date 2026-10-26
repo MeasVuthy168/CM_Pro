@@ -530,7 +530,7 @@ function crCompareSection(section) {
             const metric = first.startsWith("nbcOverdue.totalOwn.") ? "nbcOverduePct" : "nplPct";
             groups.push({ ...g, fields: crPlanFields(metric, { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct") }) });
         } else if (first.startsWith("writeOffOwn.woCollected.")) {
-            groups.push({ ...g, fields: crPlanFields("woCollected", { money: true, withActual: true, actualLabel: t("creditreport.plan.thisMonth") }) });
+            groups.push({ ...g, fields: crPlanFields("woCollected", { money: true, withActual: true, actualLabel: t("creditreport.plan.thisYear"), planLabel: t("creditreport.plan.yearPlan") }) });
         }
     }
     return { groups };
