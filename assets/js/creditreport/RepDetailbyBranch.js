@@ -79,9 +79,7 @@ function crSections() {
                 fields: [
                     { key: "loanOutstanding.loan", label: t("creditreport.detail.colLoanHash") },
                     { key: "loanOutstanding.client", label: t("creditreport.detail.colClient") },
-                    { key: "loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true },
-                    { key: "osMix.khr", label: t("creditreport.plan.khr"), money: true, optional: true },
-                    { key: "osMix.small", label: t("creditreport.plan.small"), money: true, optional: true }
+                    { key: "loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
                 ]
             }]
         },
@@ -94,8 +92,7 @@ function crSections() {
                 ]
             }]
         },
-        // KHR loans / loans ≤ $50,000 on their own (also columns of Loan
-        // Outstanding, so not repeated in All Sections).
+        // KHR loans / loans ≤ $50,000 ($ outstanding).
         khr: {
             groups: [{
                 label: t("creditreport.detail.sectionKhr"),
@@ -173,6 +170,8 @@ function crSections() {
     S.all = {
         groups: [
             ...S.outstanding.groups,
+            ...S.khr.groups,
+            ...S.small.groups,
             ...S.disburse.groups,
             ...S.los.groups,
             ...S.parT24.groups,
@@ -238,8 +237,6 @@ function crCompareSection(sectionKey, section) {
                 else if (field.key === "loanOutstanding.client") f.push(...crWithPlanAfter(field, "osClients"));
                 else if (field.key === "loanOutstanding.value") f.push(...crWithPlanAfter(field, "osAmount", { money: true }));
             }
-            f.push(...crPlanFields("osKhr", { money: true, withActual: true, actualLabel: t("creditreport.plan.khr") }));
-            f.push(...crPlanFields("osSmall", { money: true, withActual: true, actualLabel: t("creditreport.plan.small") }));
             groups.push({ ...g, fields: f });
         } else if (first.startsWith("loanDisburse.")) {
             groups.push({
@@ -671,7 +668,7 @@ function crActiveSection() {
     // All Sections: each section's own groups, so the plan columns land
     // beside the figures they belong to.
     return crCombinedSection(k => k === "all"
-        ? { groups: ["outstanding", "disburse", "los", "parT24", "nbcOverdue", "writeOff"].flatMap(sk => crCompareSection(sk, crSections()[sk]).groups) }
+        ? { groups: ["outstanding", "khr", "small", "disburse", "los", "parT24", "nbcOverdue", "writeOff"].flatMap(sk => crCompareSection(sk, crSections()[sk]).groups) }
         : crCompareSection(k, crSectionFor(k)));
 }
 
