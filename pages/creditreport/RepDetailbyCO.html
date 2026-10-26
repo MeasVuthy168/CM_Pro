@@ -193,6 +193,16 @@ No Internet Connection
 </select>
 </div>
 
+<!-- Comparison Mode: the report's own figures only, or each officer's
+     planned Own figures next to the officer plan. Current mode only. -->
+<div class="cr-select-row" id="crCompareRow">
+<label for="crCompare" class="cr-select-label" data-i18n="creditreport.plan.compareLabel">Comparison</label>
+<select id="crCompare" class="cr-select">
+<option value="actual" data-i18n="creditreport.plan.compareActual">Actual Only</option>
+<option value="plan" data-i18n="creditreport.plan.comparePlan">Plan vs Actual</option>
+</select>
+</div>
+
 <div class="cr-select-row" id="crClassRow" style="display:none;">
 <label for="crClass" class="cr-select-label" data-i18n="creditreport.detail.loanClass">Loan Class</label>
 <select id="crClass" class="cr-select">
@@ -303,6 +313,10 @@ data-i18n-placeholder="creditreport.byCO.searchPlaceholder">
 <tbody id="crTbody"></tbody>
 </table>
 </div>
+
+<!-- Shown in Plan vs Actual: which month's plan, which days the actual
+     covers, and a link to set the plan. -->
+<div class="cr-table-note cr-plan-note" id="crPlanNote" style="display:none"></div>
 
 <div class="cr-empty" id="crEmptyMsg" style="display:none"></div>
 

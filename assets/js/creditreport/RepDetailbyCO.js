@@ -17,6 +17,10 @@ const crToken =
 const CR_PAR_ALERT = 0.04; // PAR % at or above this renders red
 
 let crData = null; // last successful /byco response
+// Plan vs Actual (/api/creditreport/officer-plan-vs-actual), fetched the
+// first time Comparison Mode needs it after a report load.
+let crPlanData = null;
+let crPlanLoading = null;
 
 // ========================================
 // DAILY HISTORY — "current" (today's live report, unchanged default
@@ -319,6 +323,7 @@ function crFieldClass(f) {
     return "cr-col-num";
 }
 function crFmtField(item, field) {
+    if (field.pv) return crFmtPlanField(item, field);
     const v = crGetByPath(item, field.key);
     const cls = crFieldClass(field);
     if (field.pct) {
@@ -385,7 +390,7 @@ function crBuildThead(section) {
         `<th colspan="${g.fields.length}">${g.label}</th>`
     ).join("");
     const subCells = section.groups.map(g =>
-        g.fields.map(f => `<th class="${crFieldClass(f)}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
+        g.fields.map(f => `<th class="${crFieldClass(f)}${f.planCol ? " cr-plan-col" : ""}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
     ).join("");
 
     return `
@@ -462,9 +467,167 @@ function crT24ClassGroup(prefix, label) {
     };
 }
 
+// ========================================
+// COMPARISON MODE — Actual Only (the report as it was) or Plan vs
+// Actual: each officer's Own figures (OS!AA = the officer's ID) next to
+// their officer plan of the month, from
+// /api/creditreport/officer-plan-vs-actual (item.planVs) — the month to
+// date (1st of the month to the OS date), without the class / product
+// filters, with the report's branch / officer-type filters. Area
+// sections have no plan and are left out. Same columns and colours as
+// the Daily Report by Branch. Current mode only; never part of the
+// daily snapshot.
+// ========================================
+function crCompareMode() {
+    if (crMode !== "current") return "actual";
+    return document.getElementById("crCompare")?.value === "plan" ? "plan" : "actual";
+}
+
+// Plan columns of one metric: plan [, due to date], then % (or ± for a
+// ceiling). withActual adds the actual first (from planVs).
+function crPlanFields(metric, { money = false, ceiling = false, toDate = false, withActual = false, actualLabel } = {}) {
+    const base = `planVs.${metric}`;
+    const kind = ceiling ? "pct" : money ? "money" : "num";
+    const f = [];
+    if (withActual) f.push({ key: `${base}.actual`, label: actualLabel || t("creditreport.plan.actual"), pv: kind });
+    f.push({ key: `${base}.plan`, label: t(ceiling ? "creditreport.plan.planMax" : "creditreport.plan.plan"), pv: kind, planCol: true });
+    if (toDate) f.push({ key: `${base}.expected`, label: t("creditreport.plan.expected"), pv: kind, planCol: true });
+    f.push(ceiling
+        ? { key: base, label: "±", pv: "diff", planCol: true }
+        : { key: `${base}.ach`, label: "%", pv: "ach", planCol: true });
+    return f;
+}
+
+function crWithPlanAfter(field, metric, opts) {
+    return [field, ...crPlanFields(metric, opts)];
+}
+
+// Own sections with a plan, in table order (All Sections in Plan vs Actual).
+const CR_PLAN_SECTIONS = ["outstanding", "khr", "small", "disburse", "los", "nbcOverdue", "writeOff"];
+
+// One section's groups in Plan vs Actual: only the planned Own figures,
+// each followed by its plan columns.
+function crCompareSection(section) {
+    const groups = [];
+    for (const g of section.groups) {
+        const first = (g.fields[0] || {}).key || "";
+        if (first.startsWith("loanOutstanding.")) {
+            const plan = { "loanOutstanding.loan": ["osCount"], "loanOutstanding.client": ["osClients"], "loanOutstanding.value": ["osAmount", { money: true }] };
+            groups.push({ ...g, fields: g.fields.flatMap(f => plan[f.key] ? crWithPlanAfter(f, ...plan[f.key]) : []) });
+        } else if (first === "osMix.khr" || first === "osMix.small") {
+            groups.push({ ...g, fields: crWithPlanAfter(g.fields[0], first === "osMix.khr" ? "osKhr" : "osSmall", { money: true }) });
+        } else if (first.startsWith("loanDisburse.")) {
+            groups.push({
+                ...g,
+                fields: g.fields.flatMap(f =>
+                    f.key === "loanDisburse.loan" ? crWithPlanAfter(f, "disbCount", { toDate: true })
+                        : f.key === "loanDisburse.value" ? crWithPlanAfter(f, "disbAmount", { money: true, toDate: true })
+                            : [])
+            });
+        } else if (first.startsWith("loanLos.")) {
+            groups.push({ ...g, fields: crWithPlanAfter(g.fields[0], "losCount", { toDate: true }) });
+        } else if (first.startsWith("nbcOverdue.totalOwn.") || first.startsWith("nbcOverdue.nonPerformingLoan.")) {
+            const metric = first.startsWith("nbcOverdue.totalOwn.") ? "nbcOverduePct" : "nplPct";
+            groups.push({ ...g, fields: crPlanFields(metric, { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct") }) });
+        } else if (first.startsWith("writeOffOwn.woCollected.")) {
+            groups.push({ ...g, fields: crPlanFields("woCollected", { money: true, withActual: true, actualLabel: t("creditreport.plan.thisMonth") }) });
+        }
+    }
+    return { groups };
+}
+
+// One Plan vs Actual cell; "—" where there is no plan / no actual.
+function crFmtPlanField(item, field) {
+    const v = crGetByPath(item, field.key);
+    const dash = cls => `<td class="${cls} cr-pv-none">—</td>`;
+    if (field.pv === "ach") {
+        if (v === null || v === undefined) return dash("cr-col-pct cr-plan-col");
+        const cls = v >= 1 ? "cr-pv-good" : v >= 0.8 ? "cr-pv-warn" : "cr-pv-bad";
+        return `<td class="cr-col-pct cr-plan-col ${cls}">${Math.round(v * 100)}%</td>`;
+    }
+    if (field.pv === "diff") {
+        if (!v || v.plan === null || v.plan === undefined || v.actual === null || v.actual === undefined) return dash("cr-col-pct cr-plan-col");
+        const d = Math.round((v.actual - v.plan) * 100) / 100;
+        return `<td class="cr-col-pct cr-plan-col ${d <= 0 ? "cr-pv-good" : "cr-pv-bad"}">${d > 0 ? "+" : ""}${d.toFixed(2)}</td>`;
+    }
+    const cls = (field.pv === "pct" ? "cr-col-pct" : field.pv === "money" ? "cr-col-money" : "cr-col-num") + (field.planCol ? " cr-plan-col" : "");
+    if (v === null || v === undefined) return dash(cls);
+    return `<td class="${cls}">${field.pv === "pct" ? Number(v).toFixed(2) + "%" : crFmtNum(v)}</td>`;
+}
+
+// Officer IDs in the plan carry no leading zeros.
+function crPlanKey(id) {
+    return String(id ?? "").trim().replace(/^0+(?=.)/, "");
+}
+
+// Fetch Plan vs Actual (once per report load, same branch / type
+// filters) and hang each officer's metrics on its row as item.planVs.
+async function crEnsurePlan() {
+    if (!crData || crCompareMode() === "actual") return crRenderPlanNote();
+    if (crPlanData) return crRenderPlanNote();
+    if (!crPlanLoading) {
+        const q = new URLSearchParams();
+        crAddPicks(q, "branch", "crBranch");
+        crAddPicks(q, "team", "crTeam");
+        crPlanLoading = (async () => {
+            const res = await fetch(`${API.BASE_URL}/api/creditreport/officer-plan-vs-actual?${q.toString()}`, { headers: { Authorization: `Bearer ${crToken}` } });
+            const data = await res.json();
+            if (!res.ok || !data.ok) throw new Error(data.message || `HTTP ${res.status}`);
+            return data;
+        })();
+    }
+    try {
+        const data = await crPlanLoading;
+        crPlanData = data;
+        const byId = new Map((data.rows || []).map(r => [r.branch, r.metrics]));
+        crData.items.forEach(it => { it.planVs = byId.get(crPlanKey(it.id)) || null; });
+        if (crData.total) crData.total.planVs = data.total ? data.total.metrics : null;
+        crRenderSection();
+    } catch (e) {
+        console.error("officer plan vs actual failed:", e);
+        notify(t("creditreport.plan.loadFailed"), "error");
+    } finally {
+        crPlanLoading = null;
+        crRenderPlanNote();
+    }
+}
+
+function crRenderPlanNote() {
+    const el = document.getElementById("crPlanNote");
+    if (!el) return;
+    const show = crCompareMode() !== "actual";
+    el.style.display = show ? "" : "none";
+    if (!show) return;
+    if (!crPlanData) {
+        el.innerHTML = `<span>${crEscapeHtml(t("creditreport.plan.loading"))}</span>`;
+        return;
+    }
+    const [y, m] = crPlanData.month.split("-");
+    const lines = [
+        t("creditreport.plan.noteMonth", {
+            month: `${m}-${y}`,
+            from: crFmtDateDMY(crPlanData.fromDate),
+            to: crFmtDateDMY(crPlanData.toDate),
+            done: crPlanData.daysDone,
+            days: crPlanData.daysInMonth
+        }),
+        t("creditreport.plan.noteOwn"),
+        t("creditreport.plan.noteRules")
+    ];
+    if (crPicks("crNbcProduct").length || crPicks("crClass").length || crPicks("crProduct").length) lines.push(t("creditreport.plan.noteFilters"));
+    let html = lines.map(l => `<span>${crEscapeHtml(l)}</span>`).join("");
+    if (!crPlanData.hasPlan) {
+        html += `<span class="cr-plan-missing">${crEscapeHtml(t("creditreport.plan.noPlan"))}${crIsAdmin ? ` <a href="/CM_Pro/pages/masterdata/plan.html">${crEscapeHtml(t("creditreport.plan.setPlan"))} ›</a>` : ""}</span>`;
+    }
+    el.innerHTML = html;
+}
+
 // Several sections picked: each one's groups side by side (crCombinedSection).
 function crActiveSection() {
-    return crCombinedSection(crSectionFor);
+    if (crCompareMode() === "actual") return crCombinedSection(crSectionFor);
+    return crCombinedSection(k => k === "all"
+        ? { groups: CR_PLAN_SECTIONS.flatMap(sk => crCompareSection(crSections()[sk]).groups) }
+        : crCompareSection(crSectionFor(k)));
 }
 
 function crSectionFor(sectionKey) {
@@ -500,6 +663,14 @@ function crSectionFor(sectionKey) {
 function crRenderSection() {
     if (!crData) return;
     const section = crActiveSection();
+
+    // Plan vs Actual with only sections that have no plan (Area, T24).
+    if (!section.groups.length) {
+        document.getElementById("crThead").innerHTML = "";
+        document.getElementById("crTbody").innerHTML =
+            `<tr><td class="cr-plan-empty">${crEscapeHtml(t("creditreport.plan.noPlannedSectionOfficer"))}</td></tr>`;
+        return;
+    }
 
     crDisplayItems = crApplySort(crData.items);
 
@@ -674,6 +845,8 @@ function crSetMode(mode) {
     document.getElementById("crHistoryPanel").style.display = mode === "history" ? "block" : "none";
     document.getElementById("crHistOfficerRow").style.display = mode === "history" ? "" : "none";
     document.getElementById("crSearchWrap").style.display = mode === "current" && crData ? "flex" : "none";
+    // Comparison Mode is for the current report only.
+    document.getElementById("crCompareRow").style.display = mode === "history" ? "none" : "";
     crUpdateClassVisibility();
     crUpdateHistRunButtonState();
     crUpdateChartButtonVisibility();
@@ -692,6 +865,7 @@ function crSetMode(mode) {
             crShowEmpty(t("creditreport.byCO.selectThenViewHistory", { viewHistory: t("creditreport.detail.viewHistory") }));
         }
     }
+    crRenderPlanNote();
 }
 
 // ========================================
@@ -994,6 +1168,8 @@ function crReadStateFromUrl() {
     crRestorePicks("crProduct", p.getAll("t24Product"));
     crRestorePicks("crNbcClass", p.getAll("nbcClass"));
     crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
+
+    if (p.get("compare") === "plan") document.getElementById("crCompare").value = "plan";
 }
 
 function crSyncStateToUrl() {
@@ -1006,6 +1182,7 @@ function crSyncStateToUrl() {
     crAddPicks(p, "t24Product", "crProduct");
     crAddPicks(p, "nbcClass", "crNbcClass");
     crAddPicks(p, "nbcProduct", "crNbcProduct");
+    if (document.getElementById("crCompare").value !== "actual") p.set("compare", document.getElementById("crCompare").value);
 
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
 }
@@ -1025,6 +1202,8 @@ function crSeedHistoryDates(data) {
 
 async function crRunReport() {
     crShowLoading();
+    // Branch / type changed: the plan rows are fetched again.
+    crPlanData = null;
     try {
         const res = await fetch(`${API.BASE_URL}/api/creditreport/byco${crBuildQuery()}`, {
             headers: { Authorization: `Bearer ${crToken}` }
@@ -1065,6 +1244,7 @@ async function crRunReport() {
         document.getElementById("crSearchWrap").style.display = "flex";
         document.getElementById("crTableScroll").style.display = "block";
         crRenderSection();
+        crEnsurePlan();
     } catch (e) {
         console.error(e);
         crHideLoading();
@@ -1085,6 +1265,11 @@ document.getElementById("crSection").addEventListener("change", () => {
     crSyncStateToUrl();
 });
 document.getElementById("crBranch").addEventListener("change", crRunReport);
+document.getElementById("crCompare").addEventListener("change", () => {
+    crEnsurePlan();
+    crRenderSection();
+    crSyncStateToUrl();
+});
 document.getElementById("crTeam").addEventListener("change", crRunReport);
 // In History mode, the T24 Loan Class filter is a local display pick
 // among the already-fetched parT24ByClass/parT24AreaByClass buckets (see
