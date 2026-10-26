@@ -189,8 +189,8 @@ function crSections() {
 // (item.planVs): the branch plan of the month and the actual for the
 // report's period (1st of the month to the OS date), without the
 // class / product filters. NBC Overdue % and NPL % are ceilings,
-// shown as points above (+) or below (−) the plan. WO Collected is
-// compared for this month (the WO columns themselves cover the year).
+// shown as points above (+) or below (−) the plan. LOS and WO Collected
+// are yearly plans, compared with the year to date.
 // KHR loans and loans ≤ $50,000: outstanding of the KHR loans / of the
 // loans disbursed at $50,000 or less.
 // Current mode only; never part of the daily snapshot.
@@ -256,7 +256,7 @@ function crCompareSection(sectionKey, section) {
                 fields: crPlanFields(metric, { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct") })
             });
         } else if (first.startsWith("writeOff.woCollected.")) {
-            groups.push({ ...g, fields: crPlanFields("woCollected", { money: true, withActual: true, actualLabel: t("creditreport.plan.thisMonth") }) });
+            groups.push({ ...g, fields: crPlanFields("woCollected", { money: true, withActual: true, actualLabel: t("creditreport.plan.thisYear"), planLabel: t("creditreport.plan.yearPlan") }) });
         }
     }
     // Plan vs Actual with only unplanned sections picked (e.g. T24).
