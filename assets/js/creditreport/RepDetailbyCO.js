@@ -485,12 +485,12 @@ function crCompareMode() {
 
 // Plan columns of one metric: plan, then % (or ± for a
 // ceiling). withActual adds the actual first (from planVs).
-function crPlanFields(metric, { money = false, ceiling = false, withActual = false, actualLabel } = {}) {
+function crPlanFields(metric, { money = false, ceiling = false, withActual = false, actualLabel, planLabel } = {}) {
     const base = `planVs.${metric}`;
     const kind = ceiling ? "pct" : money ? "money" : "num";
     const f = [];
     if (withActual) f.push({ key: `${base}.actual`, label: actualLabel || t("creditreport.plan.actual"), pv: kind });
-    f.push({ key: `${base}.plan`, label: t(ceiling ? "creditreport.plan.planMax" : "creditreport.plan.plan"), pv: kind, planCol: true });
+    f.push({ key: `${base}.plan`, label: planLabel || t(ceiling ? "creditreport.plan.planMax" : "creditreport.plan.plan"), pv: kind, planCol: true });
     f.push(ceiling
         ? { key: base, label: "±", pv: "diff", planCol: true }
         : { key: `${base}.ach`, label: "%", pv: "ach", planCol: true });
@@ -524,7 +524,8 @@ function crCompareSection(section) {
                             : [])
             });
         } else if (first.startsWith("loanLos.")) {
-            groups.push({ ...g, fields: crWithPlanAfter(g.fields[0], "losCount") });
+            // LOS is a yearly plan: the year to date's # loans vs that plan.
+            groups.push({ ...g, fields: crPlanFields("losCount", { withActual: true, actualLabel: t("creditreport.plan.thisYear"), planLabel: t("creditreport.plan.yearPlan") }) });
         } else if (first.startsWith("nbcOverdue.totalOwn.") || first.startsWith("nbcOverdue.nonPerformingLoan.")) {
             const metric = first.startsWith("nbcOverdue.totalOwn.") ? "nbcOverduePct" : "nplPct";
             groups.push({ ...g, fields: crPlanFields(metric, { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct") }) });
@@ -611,6 +612,7 @@ function crRenderPlanNote() {
             days: crPlanData.daysInMonth
         }),
         t("creditreport.plan.noteOwn"),
+        t("creditreport.plan.noteLos", { from: crFmtDateDMY(crPlanData.ytdFrom), to: crFmtDateDMY(crPlanData.toDate) }),
         t("creditreport.plan.noteRules")
     ];
     if (crPicks("crNbcProduct").length || crPicks("crClass").length || crPicks("crProduct").length) lines.push(t("creditreport.plan.noteFilters"));

@@ -34,7 +34,7 @@ CMI18n.register({
   "masterdata.plan.teamFsro": { km: "FSRO", en: "FSRO" },
   "masterdata.plan.grpOs": { km: "សមតុល្យឥណទាន", en: "Loan Outstanding" },
   "masterdata.plan.grpDisb": { km: "ការបញ្ចេញក្នុងខែ", en: "Disbursed in month" },
-  "masterdata.plan.grpLos": { km: "បញ្ចេញឥណទានតាមប្រព័ន្ធ LOS (ចំនួនកម្ចី)", en: "Disbursed via LOS (loans)" },
+  "masterdata.plan.grpLos": { km: "បញ្ចេញឥណទានតាមប្រព័ន្ធ LOS (ផែនការឆ្នាំ · ចំនួនកម្ចី)", en: "Disbursed via LOS (yearly plan · loans)" },
   "masterdata.plan.colLoans": { km: "ចំនួនកម្ចី", en: "Loans" },
   "masterdata.plan.colClients": { km: "ចំនួនអតិថិជន", en: "Clients" },
   "masterdata.plan.colKhr": { km: "កម្ចីប្រាក់រៀល $", en: "KHR loans $" },
