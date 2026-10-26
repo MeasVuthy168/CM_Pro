@@ -313,6 +313,7 @@ function crRenderPlanNote() {
         }),
         t("creditreport.plan.noteRules")
     ];
+    if (crPlanData.bankPlan) lines.push(t("creditreport.plan.noteBank"));
     if (crPicks("crNbcProduct").length || crPicks("crClass").length || crPicks("crProduct").length) lines.push(t("creditreport.plan.noteFilters"));
     let html = lines.map(l => `<span>${crEscapeHtml(l)}</span>`).join("");
     if (!crPlanData.hasPlan) {

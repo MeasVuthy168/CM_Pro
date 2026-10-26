@@ -93,6 +93,10 @@
 .mp-in:focus{ outline:2px solid var(--md-gold); outline-offset:0; }
 .mp-in.mp-bad{ border-color:#C62828; background:#FDECEC; }
 .mp-table tfoot td{ position:sticky; bottom:0; background:var(--md-page-bg); font-weight:800; }
+/* The bank plan row under the sum: inputs, so not pinned (the sum stays pinned). */
+.mp-table tfoot tr.mp-bank td{ position:static; font-weight:400; border-top:2px solid var(--md-gold); }
+.mp-table tfoot tr.mp-bank td.mp-name{ position:sticky; left:0; z-index:1; }
+.mp-table tfoot tr.mp-bank td.mp-name small{ white-space:normal; }
 .mp-table tr.mp-group td{ background:var(--md-page-bg); text-align:left; }
 .mp-group-in{ position:sticky; left:6px; width:max-content; max-width:min(560px, calc(100vw - 72px)); }
 .mp-group-n{ font-size:11px; color:var(--md-text-muted); margin-left:4px; }

@@ -7,6 +7,8 @@
 // (plus any planned key no longer in it), edited in place, and
 // saved for the whole tab at once. "Copy from last month" and Excel
 // import only fill the table — nothing is saved until Save.
+// The Branch tab also takes the whole bank's plan (MP_BANK row, under
+// the branches' sum): the Daily Report's Total is measured against it.
 // ========================================
 
 const mpUser = (() => {
@@ -25,6 +27,7 @@ const t = (key, vars) => {
 };
 
 const MP_EP = API.BASE_URL + "/api/admin/monthly-plan";
+const MP_BANK = "__bank__";
 
 // Column groups, in table order. A metric the tab doesn't have is skipped.
 const MP_GROUPS = [
@@ -231,7 +234,7 @@ function mpGroups() {
 // so its plan isn't silently lost on the next save).
 function mpAllRows() {
     const known = new Set(mp.options.map(o => o.key));
-    const extra = Object.keys(mp.values).filter(k => !known.has(k))
+    const extra = Object.keys(mp.values).filter(k => !known.has(k) && k !== MP_BANK)
         .map(k => ({ key: k, label: k, missing: true }));
     return mp.options.concat(extra);
 }
@@ -340,7 +343,12 @@ function mpRender() {
         const s = mpTotal(rows, c);
         return `<td>${s === null ? "—" : mpEsc(mpFormat(mpKind(c), s))}</td>`;
     }).join("");
-    const foot = rows.length ? `<tfoot><tr><td class="mp-name"><b>${mpEsc(t("masterdata.plan.total"))}</b></td>${totals}</tr></tfoot>` : "";
+    // Branch tab: the bank's own plan under the branches' sum (no NPL
+    // Recovery — that target is per branch).
+    const bank = mp.dim === "branch"
+        ? `<tr class="mp-bank"><td class="mp-name"><b>${mpEsc(t("masterdata.plan.bankTotal"))}</b><small>${mpEsc(t("masterdata.plan.bankTotalHint"))}</small></td>${cols.map(c => c === "nplRecovery" ? "<td></td>" : mpInputCell(MP_BANK, c)).join("")}</tr>`
+        : "";
+    const foot = rows.length ? `<tfoot><tr class="mp-sum"><td class="mp-name"><b>${mpEsc(t(mp.dim === "branch" ? "masterdata.plan.sumBranches" : "masterdata.plan.total"))}</b></td>${totals}</tr>${bank}</tfoot>` : "";
 
     document.getElementById("mpTable").innerHTML = head + `<tbody>${body}</tbody>` + foot;
     document.getElementById("mpTitle").textContent = `${nameHead} · ${t("masterdata.plan.heroTitle")} ${mpMonthText(mp.month)}`;
@@ -393,7 +401,7 @@ document.getElementById("mpTable").addEventListener("focusin", e => {
 
 // Total row (and the officer chips) without rebuilding the inputs.
 function mpPaintTotals() {
-    const foot = document.querySelector("#mpTable tfoot tr");
+    const foot = document.querySelector("#mpTable tfoot tr.mp-sum");
     if (!foot) return;
     const rows = mpVisibleRows();
     const cols = mpGroups().flatMap(g => g.metrics.map(([k]) => k));
@@ -490,7 +498,8 @@ async function mpExport() {
         hr.font = { bold: true };
         hr.alignment = { wrapText: true, vertical: "middle", horizontal: "center" };
         hr.eachCell(c => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE7ECF5" } }; });
-        mpAllRows().forEach(r => {
+        const bankRow = mp.dim === "branch" ? [{ key: MP_BANK, label: t("masterdata.plan.bankTotal") }] : [];
+        mpAllRows().concat(bankRow).forEach(r => {
             const v = mp.values[r.key] || {};
             ws.addRow([r.key, r.label].concat(mp.dim === "officer" ? [r.branch || ""] : [])
                 .concat(metrics.map(k => { const n = mpParse(v[k]); return n === null || Number.isNaN(n) ? null : n; })));
@@ -525,6 +534,7 @@ async function mpImport(file) {
         if (!headRow) throw new Error(t("masterdata.plan.importNoHeader"));
 
         const known = new Map(mpAllRows().map(r => [String(r.key), r.key]));
+        if (mp.dim === "branch") known.set(MP_BANK, MP_BANK);
         const norm = k => mp.dim === "officer" ? String(k).replace(/^0+/, "") : String(k);
         let matched = 0;
         const unknown = [];
