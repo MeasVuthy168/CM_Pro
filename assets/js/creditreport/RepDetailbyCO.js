@@ -150,7 +150,7 @@ function crSections() {
             groups: [{
                 label: crAreaLabel("creditreport.detail.sectionLos"),
                 fields: [
-                    { key: "loanLosArea.loan", label: t("creditreport.detail.colLoanHash") }
+                    { key: "loanLosArea.loan", label: t("creditreport.detail.colLoanHash"), optional: true }
                 ]
             }]
         },
@@ -158,7 +158,7 @@ function crSections() {
             groups: [{
                 label: crOwnLabel("creditreport.detail.sectionLos"),
                 fields: [
-                    { key: "loanLos.loan", label: t("creditreport.detail.colLoanHash") }
+                    { key: "loanLos.loan", label: t("creditreport.detail.colLoanHash"), optional: true }
                 ]
             }]
         },
