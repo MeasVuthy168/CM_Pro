@@ -1,155 +1,269 @@
 /* ========================================
-   Daily History growth / decline dashboard — shared by the 4 Daily
-   Monitoring pages, shown under the Daily History chart
-   (assets/js/creditreport/growth-dashboard.js). Uses each page's own
-   --cr-* theme tokens, so light/dark themes follow automatically.
+   Daily History chart popup — shared by the 4 Daily Monitoring pages
+   (assets/js/creditreport/cr-chart-view.js): header + scope chips,
+   hero card (latest figure, change, plan bar, status), chart card,
+   small cards for the other figures, About + Key insights. Uses each
+   page's own --cr-* theme tokens, so light / dark follow automatically.
 ======================================== */
-.cr-growth-dashboard,
-.cr-growth-head{
-    --cr-growth-good:#218653;
-    --cr-growth-good-bg:rgba(45,170,105,.13);
-    --cr-growth-bad:#b23a3a;
-    --cr-growth-bad-bg:rgba(210,65,65,.13);
-    --cr-growth-accent:#2f6b34;
+.cr-chart-panel{
+    --crv-good:#1f8a52;
+    --crv-good-bg:rgba(45,170,105,.14);
+    --crv-warn:#b26a00;
+    --crv-warn-bg:rgba(230,160,40,.16);
+    --crv-bad:#c03a3a;
+    --crv-bad-bg:rgba(214,69,69,.13);
+    --crv-plan:#D4A017;
+    --crv-card:var(--cr-chart-surface, var(--cr-card-bg));
+    --crv-line:var(--cr-border);
 }
-.cr-growth-dashboard{ margin-top:16px; }
-[data-theme="dark"] .cr-growth-dashboard,
-[data-theme="dark"] .cr-growth-head{
-    --cr-growth-good:#5fd394;
-    --cr-growth-good-bg:rgba(95,211,148,.16);
-    --cr-growth-bad:#ff8a8a;
-    --cr-growth-bad-bg:rgba(255,138,138,.16);
-    --cr-growth-accent:#5fb36a;
+[data-theme="dark"] .cr-chart-panel{
+    --crv-good:#5fd394;
+    --crv-good-bg:rgba(95,211,148,.15);
+    --crv-warn:#f2b544;
+    --crv-warn-bg:rgba(242,181,68,.15);
+    --crv-bad:#ff8a8a;
+    --crv-bad-bg:rgba(255,138,138,.15);
+    --crv-plan:#E8B931;
+    --crv-card:#18233A;
+    --crv-line:#2A3A5C;
 }
-.cr-growth-dashboard[hidden]{ display:none; }
 
-/* The header sits in the chart popup's title (#crChartTitle), next to
-   its close button. */
+/* ---------- header (inside #crChartTitle, next to the close button) ---------- */
+.cr-chart-header{ align-items:flex-start; }
 .cr-chart-header .cr-chart-title{ flex:1 1 auto; min-width:0; }
-.cr-growth-head{
-    display:flex;
-    align-items:center;
-    gap:12px;
+.crv-head{ display:flex; align-items:center; gap:12px; }
+.crv-head-icon{
+    flex:0 0 auto; width:46px; height:46px; border-radius:13px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; color:var(--cr-text);
+    background:var(--crv-good-bg);
 }
-.cr-growth-icon{
-    flex:0 0 auto;
-    width:48px;
-    height:48px;
-    border-radius:14px;
-    background:var(--cr-growth-good-bg);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:24px;
-    color:var(--cr-text);
+.crv-head-text{ min-width:0; }
+.crv-title{ font-family:'KRASAR',sans-serif; font-size:18px; font-weight:800; color:var(--cr-text); line-height:1.3; overflow-wrap:anywhere; }
+.crv-sub{ margin-top:2px; font-size:12.5px; color:var(--cr-text-muted); }
+.crv-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.crv-scope{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 12px; border-radius:10px;
+    border:1px solid var(--crv-line); background:var(--crv-card);
+    font-size:12.5px; font-weight:600; color:var(--cr-text);
+    max-width:100%; overflow-wrap:anywhere;
 }
-.cr-growth-head-text{ flex:1 1 auto; min-width:0; }
-.cr-growth-title{
-    font-family:'KRASAR',sans-serif;
-    font-size:17px;
-    font-weight:700;
-    color:var(--cr-text);
-    line-height:1.3;
-    overflow-wrap:anywhere;
+.crv-scope-date::before{ content:"▦"; font-size:11px; color:var(--cr-text-muted); }
+
+/* ---------- metric tabs: one segmented control ---------- */
+.cr-chart-metric-row{
+    display:flex; gap:4px; padding:4px; margin:14px 0 12px;
+    border:1px solid var(--crv-line); border-radius:14px; background:var(--crv-card);
 }
-.cr-growth-scope{
-    margin-top:2px;
-    font-size:12px;
+.cr-chart-metric-row:empty{ display:none; }
+.cr-chart-metric-row .cr-chart-metric-btn{
+    flex:1 1 0; border:1px solid transparent; border-radius:10px;
+    background:transparent; padding:9px 6px; font-size:13.5px; font-weight:700;
     color:var(--cr-text-muted);
-    line-height:1.35;
-    overflow-wrap:anywhere;
 }
-.cr-growth-range{
-    display:inline-block;
-    margin-top:6px;
-    padding:5px 11px;
-    border-radius:999px;
-    background:var(--cr-row-alt);
-    color:var(--cr-text-muted);
-    font-size:12px;
-    font-weight:700;
-    text-align:center;
-    font-variant-numeric:tabular-nums;
+.cr-chart-metric-row .cr-chart-metric-btn.active{
+    background:var(--cr-card-bg); color:var(--cr-text);
+    border-color:var(--crv-line); box-shadow:0 1px 3px rgba(0,0,0,.12);
+}
+[data-theme="dark"] .cr-chart-metric-row .cr-chart-metric-btn.active{
+    background:#1f2b45; color:#fff; border-color:#3b4d72;
 }
 
-.cr-growth-card{
-    border:1px solid var(--cr-border);
-    border-top:5px solid var(--cr-growth-accent);
+/* ---------- cards ---------- */
+.crv-hero, .crv-card, .crv-mini{
+    background:var(--crv-card);
+    border:1px solid var(--crv-line);
     border-radius:16px;
-    background:var(--cr-card-bg);
-    box-shadow:0 2px 8px rgba(0,0,0,.05);
-    overflow:hidden;
+    padding:16px;
 }
-.cr-growth-card + .cr-growth-card{ margin-top:10px; }
-.cr-growth-card-title{
-    padding:10px 12px 0;
-    font-size:13px;
-    font-weight:700;
-    color:var(--cr-text);
+.crv-hero[hidden]{ display:none; }
+.crv-chart-card{ margin-top:12px; padding:16px 12px 10px; }
+.crv-chart-card .cr-chart-canvas-wrap{ height:250px; padding:6px 0 0; background:transparent; border-radius:0; }
+.crv-kicker{
+    font-size:12px; font-weight:700; letter-spacing:.02em;
+    color:var(--cr-text-muted); overflow-wrap:anywhere;
 }
-.cr-growth-cols{
-    display:grid;
-    grid-template-columns:repeat(var(--cr-growth-cols,3),minmax(0,1fr));
+.crv-muted{ font-size:12.5px; color:var(--cr-text-muted); margin-top:6px; overflow-wrap:anywhere; }
+.crv-card-title{ font-family:'KRASAR',sans-serif; font-size:16px; font-weight:800; color:var(--cr-text); display:flex; align-items:center; gap:8px; }
+
+/* hero */
+.crv-hero-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.crv-hero-value{
+    margin-top:8px; font-size:34px; font-weight:800; line-height:1.1;
+    color:var(--cr-text); font-variant-numeric:tabular-nums; overflow-wrap:anywhere;
 }
-.cr-growth-col{
-    container-type:inline-size;
-    min-width:0;
-    padding:14px 6px;
-    text-align:center;
+.crv-hero-change{ margin-top:10px; }
+.crv-hero-plan{ margin-top:14px; }
+.crv-noplan{ margin-top:12px; }
+.crv-badge{ flex:0 0 auto; padding:4px 10px; border-radius:8px; font-size:12px; font-weight:800; }
+.crv-badge.good{ color:var(--crv-good); background:var(--crv-good-bg); }
+.crv-badge.warn{ color:var(--crv-warn); background:var(--crv-warn-bg); }
+.crv-badge.bad{ color:var(--crv-bad); background:var(--crv-bad-bg); }
+
+/* change chip */
+.crv-chip{
+    display:inline-flex; align-items:center; gap:4px; margin-top:8px;
+    padding:4px 10px; border-radius:8px; font-size:13px; font-weight:800;
+    font-variant-numeric:tabular-nums; overflow-wrap:anywhere;
 }
-.cr-growth-col + .cr-growth-col{ border-left:1px solid var(--cr-border); }
-.cr-growth-label{
-    font-size:13px;
-    font-weight:700;
-    color:var(--cr-text-muted);
-    line-height:1.4;
-    overflow-wrap:anywhere;
+.crv-hero-change .crv-chip{ margin-top:0; }
+.crv-chip.good{ color:var(--crv-good); background:var(--crv-good-bg); }
+.crv-chip.bad{ color:var(--crv-bad); background:var(--crv-bad-bg); }
+.crv-chip.flat{ color:var(--cr-text-muted); background:var(--cr-row-alt, rgba(127,127,127,.12)); }
+
+/* plan row + bar (the marker is the plan) */
+.crv-plan-row{ display:flex; justify-content:space-between; gap:8px; font-size:13.5px; color:var(--cr-text-muted); }
+.crv-plan-row b{ color:var(--cr-text); font-variant-numeric:tabular-nums; }
+.crv-ach{ font-weight:800; font-variant-numeric:tabular-nums; }
+.crv-ach.good{ color:var(--crv-good); }
+.crv-ach.warn{ color:var(--crv-warn); }
+.crv-ach.bad{ color:var(--crv-bad); }
+.crv-bar{ position:relative; height:8px; margin-top:8px; border-radius:99px; background:var(--cr-row-alt, rgba(127,127,127,.15)); }
+.crv-bar i{ position:absolute; left:0; top:0; bottom:0; border-radius:99px; background:var(--cr-text-muted); }
+.crv-bar.good i{ background:var(--crv-good); }
+.crv-bar.warn i{ background:var(--crv-warn); }
+.crv-bar.bad i{ background:var(--crv-bad); }
+.crv-bar b{ position:absolute; top:-4px; width:3px; height:16px; margin-left:-1.5px; border-radius:2px; background:var(--crv-plan); }
+.crv-plan-note{ margin-top:6px; font-size:12.5px; color:var(--cr-text-muted); font-variant-numeric:tabular-nums; }
+
+/* chart card legend */
+.crv-legend{ display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:10px; font-size:12.5px; color:var(--cr-text); }
+.crv-key{ display:inline-flex; align-items:center; gap:6px; }
+.crv-key i{ display:inline-block; width:16px; }
+.crv-key i.line{ height:3px; border-radius:2px; }
+.crv-key i.dash{ height:0; border-top:3px dashed var(--crv-plan); }
+.crv-key i.band{ height:10px; border-radius:3px; }
+/* The band is green on the good side of the plan and red on the other. */
+.crv-key i.band{ background:linear-gradient(90deg, rgba(46,160,110,.38) 50%, rgba(214,69,69,.32) 50%); }
+
+/* small cards */
+.crv-minis{ display:grid; grid-template-columns:repeat(var(--crv-cols,2),minmax(0,1fr)); gap:10px; margin-top:12px; }
+.crv-mini{ padding:14px; }
+.crv-mini-value{ margin-top:6px; font-size:24px; font-weight:800; color:var(--cr-text); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.crv-mini-plan{ margin-top:10px; }
+.crv-mini .crv-plan-row{ font-size:12.5px; }
+
+/* about + insights */
+.cr-growth-dashboard{ margin-top:0; }
+.cr-growth-dashboard[hidden]{ display:none; }
+.crv-about{ margin-top:12px; }
+.crv-about p{ margin:10px 0 0; font-size:14px; line-height:1.65; color:var(--cr-text); }
+.crv-info{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:20px; height:20px; border-radius:50%; border:2px solid var(--cr-series-1, #3987e5);
+    color:var(--cr-series-1, #3987e5); font-size:12px; font-weight:800; font-family:Georgia,serif;
 }
-.cr-growth-current{
-    margin-top:4px;
-    font-size:20px;
-    font-size:clamp(14px,15cqi,24px);
-    font-weight:800;
-    color:var(--cr-text);
-    line-height:1.2;
-    font-variant-numeric:tabular-nums;
-    overflow-wrap:anywhere;
+.crv-insights-title{ margin-top:16px; padding-top:14px; border-top:1px solid var(--crv-line); }
+.crv-insights{ list-style:none; margin:10px 0 0; padding:0; display:flex; flex-direction:column; gap:12px; }
+.crv-insights li{ position:relative; padding-left:20px; font-size:14px; line-height:1.6; color:var(--cr-text); }
+.crv-insights li::before{
+    content:""; position:absolute; left:2px; top:.55em; width:9px; height:9px; border-radius:50%;
+    background:var(--cr-series-1, #3987e5);
 }
-.cr-growth-previous{
-    margin-top:4px;
-    font-size:12px;
-    color:var(--cr-text-muted);
-    line-height:1.35;
-    font-variant-numeric:tabular-nums;
-    overflow-wrap:anywhere;
-}
-.cr-growth-change{
-    display:inline-flex;
-    align-items:center;
-    gap:4px;
-    max-width:100%;
-    margin-top:10px;
-    padding:6px 12px;
-    border-radius:999px;
-    font-size:13px;
-    font-weight:800;
-    line-height:1.25;
-    font-variant-numeric:tabular-nums;
-    overflow-wrap:anywhere;
-}
-.cr-growth-change.good{ color:var(--cr-growth-good); background:var(--cr-growth-good-bg); }
-.cr-growth-change.bad{ color:var(--cr-growth-bad); background:var(--cr-growth-bad-bg); }
-.cr-growth-change.flat{ color:var(--cr-text-muted); background:var(--cr-row-alt); }
-/* Plan vs the latest day (Daily Report by Branch / Officer). */
-.cr-growth-plan{ margin-top:8px; font-size:12px; font-weight:700; color:var(--cr-text-muted); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
-.cr-growth-plan.good{ color:var(--cr-growth-good); }
-.cr-growth-plan.warn{ color:#B26A00; }
-.cr-growth-plan.bad{ color:var(--cr-growth-bad); }
-[data-theme="dark"] .cr-growth-plan.warn{ color:#F2B544; }
+.crv-insights li.good::before{ background:var(--crv-good); }
+.crv-insights li.warn::before{ background:var(--crv-warn); }
+.crv-insights li.bad::before{ background:var(--crv-bad); }
+.crv-insights li b{ font-weight:800; }
+.crv-foot{ margin-top:16px; font-size:12px; color:var(--cr-text-muted); }
 
 @media (max-width:420px){
-    .cr-growth-icon{ width:42px; height:42px; font-size:21px; }
-    .cr-growth-range{ padding:4px 9px; font-size:11px; }
-    .cr-growth-col{ padding:12px 4px; }
-    .cr-growth-change{ padding:5px 8px; font-size:12px; }
+    .crv-hero-value{ font-size:29px; }
+    .crv-mini-value{ font-size:21px; }
+    .crv-hero, .crv-card, .crv-mini{ padding:14px; }
+}
+
+/* ========================================
+   Fit to the screen, no scrolling (crv-fit, set by cr-chart-view.js):
+   the panel takes the whole viewport; the chart card takes whatever
+   height is left. Key insights sit on their own view (Chart | Analysis).
+======================================== */
+.cr-chart-panel.crv-fit{
+    height:100vh; height:100dvh; max-height:none;
+    border-radius:0;
+    display:flex; flex-direction:column; overflow:hidden;
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+}
+@media (min-width:720px){
+    .cr-chart-panel.crv-fit{ height:min(92vh, 900px); border-radius:18px; }
+}
+.crv-fit > *{ flex:0 0 auto; }
+.crv-fit .cr-chart-header{ margin-bottom:6px; align-items:center; }
+.crv-fit .crv-head{ gap:10px; }
+.crv-fit .crv-head-icon{ width:36px; height:36px; border-radius:10px; font-size:18px; }
+.crv-fit .crv-title{ font-size:16px; }
+.crv-fit .crv-sub{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:12px; }
+.crv-fit .crv-head-text{ flex:1 1 auto; }
+.crv-fit .cr-chart-metric-row{ margin:4px 0 8px; padding:3px; border-radius:12px; }
+.crv-fit .cr-chart-metric-row .cr-chart-metric-btn{ padding:6px 6px; font-size:13px; }
+
+/* hero: value + change on one line */
+.crv-fit .crv-hero{ padding:10px 14px; border-radius:14px; }
+.crv-hero-main{ display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px; margin-top:2px; }
+.crv-fit .crv-hero-value{ margin-top:0; font-size:26px; }
+.crv-fit .crv-hero-change .crv-chip{ margin-top:0; font-size:12px; padding:3px 8px; }
+.crv-fit .crv-vs{ margin-top:2px; font-size:11.5px; }
+.crv-fit .crv-hero-plan{ margin-top:8px; }
+.crv-fit .crv-plan-row{ font-size:12.5px; }
+.crv-fit .crv-bar{ height:6px; margin-top:6px; }
+.crv-fit .crv-bar b{ top:-3px; height:12px; }
+.crv-fit .crv-plan-note{ margin-top:4px; font-size:11.5px; }
+.crv-fit .crv-noplan{ margin-top:6px; }
+
+/* Chart | Analysis */
+.crv-views{ display:flex; gap:6px; margin:8px 0; }
+.crv-view-btn{
+    flex:1 1 0; padding:7px 8px; border-radius:10px; cursor:pointer;
+    border:1px solid var(--crv-line); background:transparent;
+    font:inherit; font-size:13px; font-weight:700; color:var(--cr-text-muted);
+}
+.crv-view-btn.active{ background:var(--crv-card); color:var(--cr-text); border-color:var(--cr-series-1, #3987e5); }
+
+/* chart view: the chart card fills the height left over */
+.crv-fit .crv-chart-card{
+    flex:1 1 auto; min-height:0; margin-top:0;
+    display:flex; flex-direction:column; padding:10px 10px 6px;
+}
+.crv-fit .crv-chart-card .cr-chart-canvas-wrap{ flex:1 1 auto; min-height:120px; height:auto; }
+.crv-fit .crv-legend{ margin-top:0; font-size:12px; gap:4px 14px; }
+.crv-mtd{ color:var(--cr-text-muted); }
+.crv-fit .cr-growth-dashboard{ margin-top:8px; }
+.crv-fit .crv-minis{ margin-top:0; gap:8px; }
+.crv-fit .crv-mini{ padding:8px 12px; border-radius:12px; }
+.crv-mini-top{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
+.crv-mini-top .crv-chip{ margin-top:0; padding:2px 7px; font-size:11.5px; }
+.crv-fit .crv-mini-value{ margin-top:2px; font-size:19px; }
+.crv-fit .crv-mini .crv-muted{ margin-top:2px; font-size:11.5px; }
+.crv-fit .crv-mini-plan{ margin-top:4px; }
+.crv-fit .crv-mini .crv-plan-row{ font-size:11.5px; }
+
+.crv-fit[data-crv-view="chart"] .crv-about{ display:none; }
+.crv-fit[data-crv-view="insights"] .crv-chart-card,
+.crv-fit[data-crv-view="insights"] .crv-minis{ display:none; }
+/* analysis view: the About card takes the space the chart had */
+.crv-fit[data-crv-view="insights"] .cr-growth-dashboard{
+    flex:1 1 auto; min-height:0; display:flex; flex-direction:column; margin-top:0;
+}
+.crv-fit[data-crv-view="insights"] .crv-about{ flex:1 1 auto; min-height:0; margin-top:0; overflow:auto; }
+
+/* short phones: tighter still */
+@media (max-height:700px){
+    .crv-fit .crv-hero-value{ font-size:22px; }
+    .crv-fit .crv-vs, .crv-fit .crv-plan-note{ display:none; }
+    .crv-fit .crv-mini-value{ font-size:17px; }
+}
+
+/* Analysis view: the figures are in the header / insights already —
+   the hero and metric tabs make room for the insights. */
+.crv-fit[data-crv-view="insights"] .cr-chart-metric-row,
+.crv-fit[data-crv-view="insights"] .crv-hero{ display:none; }
+.crv-fit .crv-about{ padding:12px 14px; }
+.crv-fit .crv-about p{ margin-top:6px; font-size:13px; line-height:1.55; }
+.crv-fit .crv-insights-title{ margin-top:10px; padding-top:10px; }
+.crv-fit .crv-insights{ margin-top:6px; gap:8px; }
+.crv-fit .crv-insights li{ font-size:13px; line-height:1.5; }
+.crv-fit .crv-foot{ margin-top:10px; font-size:11.5px; }
+@media (max-height:700px){
+    .crv-fit .crv-about p{ display:none; }
+    .crv-fit .crv-insights-title{ margin-top:0; padding-top:0; border-top:0; }
 }
