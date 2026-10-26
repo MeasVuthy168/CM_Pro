@@ -92,6 +92,14 @@ function crSections() {
                 ]
             }]
         },
+        los: {
+            groups: [{
+                label: t("creditreport.detail.sectionLos"),
+                fields: [
+                    { key: "loanLos.loan", label: t("creditreport.detail.colLoanHash") }
+                ]
+            }]
+        },
         parT24: {
             groups: [{
                 key: "parT24",
@@ -146,6 +154,7 @@ function crSections() {
         groups: [
             ...S.outstanding.groups,
             ...S.disburse.groups,
+            ...S.los.groups,
             ...S.parT24.groups,
             ...S.nbcOverdue.groups,
             ...S.writeOff.groups
@@ -219,6 +228,8 @@ function crCompareSection(sectionKey, section) {
                         : field.key === "loanDisburse.value" ? crWithPlanAfter(field, "disbAmount", { money: true, toDate: true })
                             : [])
             });
+        } else if (first.startsWith("loanLos.")) {
+            groups.push({ ...g, fields: crWithPlanAfter(g.fields[0], "losCount", { toDate: true }) });
         } else if (first.startsWith("nbcOverdue.total.") || first.startsWith("nbcOverdue.nonPerformingLoan.")) {
             const metric = first.startsWith("nbcOverdue.total.") ? "nbcOverduePct" : "nplPct";
             groups.push({
@@ -635,7 +646,7 @@ function crActiveSection() {
     // All Sections: each section's own groups, so the plan columns land
     // beside the figures they belong to.
     return crCombinedSection(k => k === "all"
-        ? { groups: ["outstanding", "disburse", "parT24", "nbcOverdue", "writeOff"].flatMap(sk => crCompareSection(sk, crSections()[sk]).groups) }
+        ? { groups: ["outstanding", "disburse", "los", "parT24", "nbcOverdue", "writeOff"].flatMap(sk => crCompareSection(sk, crSections()[sk]).groups) }
         : crCompareSection(k, crSectionFor(k)));
 }
 

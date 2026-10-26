@@ -109,6 +109,22 @@ function crSections() {
                 ]
             }]
         },
+        losArea: {
+            groups: [{
+                label: crAreaLabel("creditreport.detail.sectionLos"),
+                fields: [
+                    { key: "loanLosArea.loan", label: t("creditreport.detail.colLoanHash") }
+                ]
+            }]
+        },
+        los: {
+            groups: [{
+                label: crOwnLabel("creditreport.detail.sectionLos"),
+                fields: [
+                    { key: "loanLos.loan", label: t("creditreport.detail.colLoanHash") }
+                ]
+            }]
+        },
         parT24Area: {
             groups: [{
                 key: "parT24",
@@ -222,6 +238,8 @@ function crSections() {
             ...S.outstanding.groups,
             ...S.disburseArea.groups,
             ...S.disburse.groups,
+            ...S.losArea.groups,
+            ...S.los.groups,
             ...S.parT24Area.groups,
             ...S.parT24.groups,
             ...S.nbcOverdueArea.groups,
