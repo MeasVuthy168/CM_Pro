@@ -1549,6 +1549,22 @@ if (crIsAdmin) {
 // ========================================
 let crChartInstance = null;
 let crChartMetricLabel = null; // persists across re-opens until a Showing/metric change resets it
+let crChartPlan = null;        // the plan line's series (CRPlanLine), loaded on open
+
+// The plan line follows the kept officers (their plans by CO ID — the
+// IDs come from the loaded history rows). Only _Own figures have a plan.
+async function crLoadChartPlan() {
+    if (typeof CRPlanLine === "undefined") return null;
+    const ids = crHistOfficers().map(o => {
+        for (const day of crHistoryData.days) {
+            const it = (day.items || []).find(x => x.name === o.name && x.branch === o.branch);
+            if (it && it.id) return String(it.id);
+        }
+        return "";
+    });
+    if (!ids.length || ids.some(id => !id)) return null;
+    return CRPlanLine.load({ dim: "officer", keys: ids, days: crHistoryData.days, token: crToken });
+}
 
 // Visible only once BOTH boxes are set — a real officer matched AND a
 // specific "Showing" section picked (not left at "All Sections") — per
@@ -1630,7 +1646,11 @@ function crRenderChart(section) {
         getItemForDay: crHistItemForDay,
         getByPath: crGetByPath,
         fmtNum: crFmtNum,
-        fmtPct: crFmtPct
+        fmtPct: crFmtPct,
+        getPlan: (field, dateKey) => {
+            const value = CRPlanLine.planFor(crChartPlan, field.key, dateKey);
+            return value === null ? null : { value, ceiling: CRPlanLine.isCeiling(field.key) };
+        }
     });
 
     const days = crHistoryData.days;
@@ -1669,6 +1689,10 @@ function crRenderChart(section) {
             borderWidth: 2,
             tension: 0
         });
+        // The plan of each day's month, dashed (Monthly Plan).
+        const plan = CRPlanLine.dataset(crChartPlan, field, days,
+            section.groups.length > 1 ? `${t("creditreport.plan.lineLabel")} — ${g.label}` : t("creditreport.plan.lineLabel"));
+        if (plan) datasets.push(plan);
     });
 
 
@@ -1726,7 +1750,7 @@ function crRenderChart(section) {
     crChartInstance = new Chart(ctx, config);
 }
 
-function crOpenChart() {
+async function crOpenChart() {
     if (!crHistoryData || !crHistoryData.days.length) return;
     if (!crResolveSelectedOfficer()) return;
     if (typeof Chart === "undefined") {
@@ -1736,7 +1760,15 @@ function crOpenChart() {
     const section = crActiveSection();
     document.getElementById("crChartOverlay").hidden = false;
     document.body.style.overflow = "hidden";
+    crChartPlan = null;
     crRenderChart(section);
+    // The plan line arrives after the chart (one small request).
+    const history = crHistoryData;
+    const plan = await crLoadChartPlan();
+    if (plan && history === crHistoryData && !document.getElementById("crChartOverlay").hidden) {
+        crChartPlan = plan;
+        crRenderChart(crActiveSection());
+    }
 }
 
 function crCloseChart() {

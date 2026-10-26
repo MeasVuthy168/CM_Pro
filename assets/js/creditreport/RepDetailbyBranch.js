@@ -1461,6 +1461,16 @@ document.getElementById("btnCrRefreshData")?.addEventListener("click", crRefresh
 // ========================================
 let crChartInstance = null;
 let crChartMetricLabel = null; // persists across re-opens until a Showing/metric change resets it
+let crChartPlan = null;        // the plan line's series (CRPlanLine), loaded on open
+
+// The plan line follows the branches the history shows (none = All
+// Branch). Plans are per branch (CO + FSRO + Digital), so a team pick
+// has no plan line.
+async function crLoadChartPlan() {
+    const { branches, teams } = crHistoryPicks();
+    if (teams.length || typeof CRPlanLine === "undefined") return null;
+    return CRPlanLine.load({ dim: "branch", keys: branches, days: crHistoryData.days, token: crToken });
+}
 
 // Chart is visible only when "View History" is also enabled — same
 // crHistoryFocused() condition (Showing narrowed away from "All
@@ -1548,7 +1558,11 @@ function crRenderChart(section) {
         getItemForDay: day => crHistoryItemForDay(day),
         getByPath: crGetByPath,
         fmtNum: crFmtNum,
-        fmtPct: crFmtPct
+        fmtPct: crFmtPct,
+        getPlan: (field, dateKey) => {
+            const value = CRPlanLine.planFor(crChartPlan, field.key, dateKey);
+            return value === null ? null : { value, ceiling: CRPlanLine.isCeiling(field.key) };
+        }
     });
     // Balance Loan at Risk (T24) is never date-filtered — it always
     // reflects whichever ArreasT24ByCO data was live at snapshot time,
@@ -1585,6 +1599,10 @@ function crRenderChart(section) {
             borderWidth: 2,
             tension: 0
         });
+        // The plan of each day's month, dashed (Monthly Plan).
+        const plan = CRPlanLine.dataset(crChartPlan, field, days,
+            section.groups.length > 1 ? `${t("creditreport.plan.lineLabel")} — ${g.label}` : t("creditreport.plan.lineLabel"));
+        if (plan) datasets.push(plan);
     });
 
 
@@ -1642,7 +1660,7 @@ function crRenderChart(section) {
     crChartInstance = new Chart(ctx, config);
 }
 
-function crOpenChart() {
+async function crOpenChart() {
     if (!crHistoryData || !crHistoryData.days.length) return;
     if (typeof Chart === "undefined") {
         notify(t("creditreport.detail.chartLibFailed"), "error");
@@ -1651,7 +1669,15 @@ function crOpenChart() {
     const section = crActiveSection();
     document.getElementById("crChartOverlay").hidden = false;
     document.body.style.overflow = "hidden";
+    crChartPlan = null;
     crRenderChart(section);
+    // The plan line arrives after the chart (one small request).
+    const history = crHistoryData;
+    const plan = await crLoadChartPlan();
+    if (plan && history === crHistoryData && !document.getElementById("crChartOverlay").hidden) {
+        crChartPlan = plan;
+        crRenderChart(crActiveSection());
+    }
 }
 
 function crCloseChart() {
