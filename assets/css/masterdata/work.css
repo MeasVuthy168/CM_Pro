@@ -226,3 +226,10 @@
 .wk-teamseg{ flex:1; }
 .wk-teamseg button{ flex:1; justify-content:center; padding:6px 6px; }
 .wk-viewbar .wk-viewseg button{ padding:6px 9px; }
+
+/* × clear button inside Occupation / Reason-Solution */
+.wk-clear-wrap{ position:relative; }
+.wk-clear-wrap > input, .wk-clear-wrap > textarea{ padding-right:44px !important; }
+.wk-clear{ position:absolute; top:6px; right:6px; width:32px; height:32px; border:0; border-radius:50%; background:rgba(127,127,127,.16); color:var(--arr-text-muted); font-size:20px; line-height:1; display:grid; place-items:center; cursor:pointer; padding:0 0 2px; }
+.wk-clear:hover, .wk-clear:active{ background:rgba(220,38,38,.14); color:#dc2626; }
+.wk-clear-wrap > input:placeholder-shown ~ .wk-clear, .wk-clear-wrap > textarea:placeholder-shown ~ .wk-clear{ display:none; }

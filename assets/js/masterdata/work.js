@@ -747,6 +747,31 @@ const distinct = field => wkFocus?.suggest?.[field] ||
 ReasonKit.attachSuggestions(reasonAJ, () => distinct("aj"));
 ReasonKit.attachSuggestions(reasonAK, () => distinct("ak"));
 
+// A × inside the right of Occupation and Reason / Solution that empties
+// the field. CSS hides it while the field is empty (:placeholder-shown),
+// so it follows values set in code too.
+[reasonAJ, reasonAK].forEach(field => {
+    const wrap = document.createElement("div");
+    wrap.className = "wk-clear-wrap";
+    field.before(wrap);
+    wrap.appendChild(field);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "wk-clear";
+    btn.innerHTML = "×";
+    const label = () => { btn.setAttribute("aria-label", t("work.clear")); btn.title = t("work.clear"); };
+    label();
+    window.addEventListener("cm-language-changed", label);
+    // mousedown keeps the field's focus from moving first (its blur
+    // handlers would run before the clear).
+    btn.addEventListener("mousedown", e => e.preventDefault());
+    btn.addEventListener("click", () => {
+        field.value = "";
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    wrap.appendChild(btn);
+});
+
 reasonGPS.addEventListener("input", () => {
     updateGpsButtons();
     const raw = reasonGPS.value.trim();
