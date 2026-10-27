@@ -1667,9 +1667,11 @@ input.sa-date {
 .ra-row-meta span:first-child { font-weight: 600; color: var(--adm-text); }
 .ra-more { padding: 9px 12px; text-align: center; font-size: 0.78rem; color: var(--adm-text-muted); }
 
-.ra-actions { display: flex; gap: 10px; margin-top: 14px; }
+.ra-actions { display: flex; gap: 8px; margin-top: 14px; }
 .ra-actions .adm-btn { flex: 1; justify-content: center; padding: 10px 14px; font-weight: 600; }
 .ra-actions .adm-btn[hidden] { display: none; }
+.ra-actions .adm-btn { white-space: nowrap; padding-left: 10px; padding-right: 10px; }
+.ra-actions .ra-btn-excel { flex: 0 0 auto; color: #1d6f42; border-color: rgba(29,111,66,.45); }
 .ra-actions .adm-btn-danger { background: var(--adm-danger); color: #fff; }
 .ra-actions .adm-btn-danger:hover { background: #a93226; }
 /* Find fills up like a progress bar while it runs */
