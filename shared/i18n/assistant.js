@@ -4,7 +4,6 @@
 // the Home page. Key namespace: assistant.*
 
 CMI18n.register({
-  "assistant.t24Newer": { km: "T24 មានទិន្នន័យថ្មី {at} — PAR នេះនៅជាទិន្នន័យថ្ងៃ {date} រហូតដល់ Snapshot បន្ទាប់", en: "T24 was updated {at} — this PAR is still the {date} figure until the next snapshot" },
   "assistant.openChat": { km: "ជជែកជាមួយ CM Pro AI", en: "Chat with CM Pro AI" },
   "assistant.subtitle": { km: "ជំនួយការឆ្លាតវៃ", en: "Your Smart Assistant" },
   "assistant.thinking": { km: "កំពុងរកចម្លើយ…", en: "Finding the answer…" },
