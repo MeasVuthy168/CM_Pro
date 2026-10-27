@@ -131,3 +131,10 @@
 [data-theme="dark"] .md-hub-arrow{ color:var(--md-gold-light); }
 
 .md-hub-link:active{ opacity:.85; transform:scale(.99); }
+
+/* Shortcut to Daily Arrears in the hero of Account Blocking, Work to
+   complete and Arrear out of area. */
+.md-go-arrears{ display:flex; align-items:center; gap:10px; margin-top:12px; padding:9px 14px; border-radius:14px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); color:#fff; text-decoration:none; font-weight:700; font-size:14px; -webkit-tap-highlight-color:transparent; }
+.md-go-arrears img{ width:26px; height:26px; flex:none; object-fit:contain; background:#fff; border-radius:8px; padding:2px; }
+.md-go-arrears .md-go-chev{ margin-left:auto; width:26px; height:26px; border-radius:50%; display:grid; place-items:center; background:#D4AF37; color:#0E1B3C; font-size:20px; line-height:1; padding-bottom:2px; }
+.md-go-arrears:active{ transform:scale(.98); background:rgba(255,255,255,.16); }
