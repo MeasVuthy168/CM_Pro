@@ -697,6 +697,7 @@
     btnPreview: document.getElementById("raBtnPreview"),
     btnPreviewText: document.getElementById("raBtnPreviewText"),
     btnDelete: document.getElementById("raBtnDelete"),
+    btnExport: document.getElementById("raBtnExport"),
     btnDeleteText: document.getElementById("raBtnDeleteText")
   };
   const RA_SHOWN = 100;
@@ -706,6 +707,7 @@
   function resetReasonPreview() {
     raOrphans = null;
     ra.btnDelete.hidden = true;
+    ra.btnExport.hidden = true;
     ra.stats.hidden = true;
     ra.empty.hidden = true;
     ra.list.hidden = true;
@@ -764,6 +766,73 @@
     ra.list.hidden = false;
     ra.btnDeleteText.textContent = t("admin.maintenance.raDelete", { count: data.count.toLocaleString() });
     ra.btnDelete.hidden = false;
+    ra.btnExport.hidden = false;
+  }
+
+  // Export the whole found list (not just the first RA_SHOWN on screen)
+  // to Excel, so it can be checked before deleting.
+  let raExcelLib = null;
+  function loadExcelJs() {
+    if (window.ExcelJS) return Promise.resolve();
+    if (!raExcelLib) {
+      raExcelLib = new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js";
+        s.onload = resolve;
+        s.onerror = () => { raExcelLib = null; reject(new Error("ExcelJS failed to load")); };
+        document.head.appendChild(s);
+      });
+    }
+    return raExcelLib;
+  }
+
+  async function exportReasonOrphans() {
+    if (!raOrphans?.length) return;
+    ra.btnExport.disabled = true;
+    try {
+      await loadExcelJs();
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet("Not in OS", { views: [{ state: "frozen", ySplit: 2 }] });
+      const headers = ["admin.maintenance.raColNo", "admin.maintenance.raColKey", "admin.maintenance.raColAj",
+        "admin.maintenance.raColAk", "admin.maintenance.raColAl", "admin.maintenance.raColBy", "admin.maintenance.raColAt"].map(k => t(k));
+      ws.columns = [6, 24, 36, 50, 14, 14, 18].map(width => ({ width }));
+      ws.mergeCells(1, 1, 1, headers.length);
+      const title = ws.getCell(1, 1);
+      title.value = t("admin.maintenance.raExportTitle", { count: raOrphans.length.toLocaleString(), date: new Date().toLocaleDateString("en-GB") });
+      title.font = { bold: true, size: 13 };
+      const thin = { style: "thin", color: { argb: "FFBFBFBF" } };
+      const border = { top: thin, left: thin, bottom: thin, right: thin };
+      const head = ws.addRow(headers);
+      head.eachCell(c => {
+        c.font = { bold: true, color: { argb: "FFFFFFFF" } };
+        c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1A2E57" } };
+        c.border = border;
+        c.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+      });
+      raOrphans.forEach((o, i) => {
+        const row = ws.addRow([i + 1, o.cif || "", o.aj || "", o.ak || "", o.al ? String(o.al).slice(0, 10) : "",
+          o.uploadedBy || "", o.uploadedAt ? String(o.uploadedAt).slice(0, 16).replace("T", " ") : ""]);
+        row.eachCell({ includeEmpty: true }, (c, col) => {
+          c.border = border;
+          c.alignment = { vertical: "top", wrapText: col === 3 || col === 4 };
+        });
+      });
+      ws.autoFilter = { from: { row: 2, column: 1 }, to: { row: 2, column: headers.length } };
+      const buf = await wb.xlsx.writeBuffer();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+      const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      a.download = `ReasonArrear_NotInOS_${stamp}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    } catch (e) {
+      console.error("reason arrear export failed:", e);
+      AdminUI.toast(t("admin.maintenance.raExportFailed"), "error");
+    } finally {
+      ra.btnExport.disabled = false;
+    }
   }
 
   function setReasonProgress(pct) {
@@ -868,4 +937,5 @@
 
   ra.btnPreview.addEventListener("click", runReasonPreview);
   ra.btnDelete.addEventListener("click", openReasonConfirmModal);
+  ra.btnExport.addEventListener("click", exportReasonOrphans);
 })();
