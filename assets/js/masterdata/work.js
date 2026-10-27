@@ -519,6 +519,14 @@ function setGpsHint(message, kind) {
 
 function updateGpsButtons() {
     $("btnGpsOpen").style.display = ReasonKit.parseGps(reasonGPS.value) ? "" : "none";
+    // Runs after every row load, so the date's × follows loaded values.
+    syncDateClear();
+}
+
+// A date input has no :placeholder-shown, so its × is toggled here.
+function syncDateClear() {
+    const wrap = reasonAL.parentElement;
+    if (wrap && wrap.classList.contains("wk-clear-wrap")) wrap.classList.toggle("wk-empty", !reasonAL.value);
 }
 
 function updateNav() {
@@ -746,6 +754,36 @@ const distinct = field => wkFocus?.suggest?.[field] ||
     [...new Set(wkRows.map(r => String(r[field] || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 ReasonKit.attachSuggestions(reasonAJ, () => distinct("aj"));
 ReasonKit.attachSuggestions(reasonAK, () => distinct("ak"));
+
+// A × inside the right of Occupation, Reason / Solution, Promised
+// Payment Date and GPS that empties the field. CSS hides it while the
+// field is empty (:placeholder-shown; the date via syncDateClear), so it
+// follows values set in code too.
+[reasonAJ, reasonAK, reasonAL, reasonGPS].forEach(field => {
+    const wrap = document.createElement("div");
+    wrap.className = "wk-clear-wrap";
+    field.before(wrap);
+    wrap.appendChild(field);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "wk-clear";
+    btn.innerHTML = "×";
+    const label = () => { btn.setAttribute("aria-label", t("work.clear")); btn.title = t("work.clear"); };
+    label();
+    window.addEventListener("cm-language-changed", label);
+    // mousedown keeps the field's focus from moving first (its blur
+    // handlers would run before the clear).
+    btn.addEventListener("mousedown", e => e.preventDefault());
+    btn.addEventListener("click", () => {
+        field.value = "";
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+        field.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    wrap.appendChild(btn);
+});
+reasonAL.addEventListener("input", syncDateClear);
+reasonAL.addEventListener("change", syncDateClear);
+syncDateClear();
 
 reasonGPS.addEventListener("input", () => {
     updateGpsButtons();

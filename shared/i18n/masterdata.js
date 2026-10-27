@@ -122,6 +122,7 @@ CMI18n.register({
   "work.submitting": { km: "កំពុងដាក់ស្នើ {n} កំណត់ត្រា...", en: "Submitting {n} records..." },
   "work.submitted": { km: "បានដាក់ស្នើដោយជោគជ័យ ({n})", en: "Submitted ({n})" },
   "work.submitFailed": { km: "ការដាក់ស្នើបរាជ័យ — ទិន្នន័យនៅតែរក្សាទុកក្នុងទូរស័ព្ទ", en: "Submit failed — your edits are still saved on this phone" },
+  "work.clear": { km: "សម្អាត", en: "Clear" },
   "work.leaveUnsaved": { km: "អ្នកមិនទាន់រក្សាទុកការកែប្រែទេ។ ចាកចេញដោយមិនរក្សាទុក?", en: "You have unsaved changes. Leave without saving?" },
   "work.keepEdits": { km: "អ្នកមិនទាន់រក្សាទុកការកែប្រែទេ។\n\nចុច OK ដើម្បីរក្សាទុក ឬ Cancel ដើម្បីបោះបង់។", en: "You have unsaved changes.\n\nOK to save them, Cancel to discard." },
   "work.badGps": { km: "ទម្រង់ GPS មិនត្រឹមត្រូវ — ឧ. 11.5564, 104.9282", en: "Invalid GPS — e.g. 11.5564, 104.9282" },
