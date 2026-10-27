@@ -111,6 +111,8 @@ CMI18n.register({
   "arrears.act.d.prnOs": { km: "Prn.OS", en: "Prn.OS" },
   "arrears.act.d.arrear": { km: "Arrear", en: "Arrear" },
   "arrears.act.d.call": { km: "ហៅទូរស័ព្ទ", en: "Call" },
+  "arrears.act.d.openMap": { km: "បើកទីតាំង GPS ក្នុងផែនទី", en: "Open the GPS location in Maps" },
+  "arrears.act.d.noGps": { km: "គ្មាន GPS", en: "No GPS" },
   "arrears.act.copied": { km: "បានចម្លង {what}៖ {value}", en: "Copied {what}: {value}" },
   "arrears.act.copyFailed": { km: "មិនអាចចម្លងបានទេ", en: "Couldn't copy" },
   "arrears.act.blockSub": { km: "បញ្ជី Account Blocking ថ្ងៃនេះរបស់អ្នក", en: "Your Account Blocking list for today" },

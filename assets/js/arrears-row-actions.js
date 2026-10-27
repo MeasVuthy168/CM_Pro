@@ -64,11 +64,11 @@
     <div class="arx-opts">
       <button type="button" class="arx-opt" data-arx="reason">
         <span class="arx-ico arx-ico-reason" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M5 4h10l4 4v12H5z M14 4v5h5 M8 13h8 M8 17h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
-        <span><b data-arx-t="arrears.act.reason"></b><small data-arx-t="arrears.act.reasonSub"></small></span>
+        <span><b data-arx-t="arrears.act.reason"></b><small data-arx-t="arrears.act.reasonSub"></small></span><span class="arx-chev" aria-hidden="true">›</span>
       </button>
       <button type="button" class="arx-opt" data-arx="block">
         <span class="arx-ico arx-ico-block" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>
-        <span><b data-arx-t="arrears.act.block"></b><small data-arx-t="arrears.act.blockSub"></small></span>
+        <span><b data-arx-t="arrears.act.block"></b><small data-arx-t="arrears.act.blockSub"></small></span><span class="arx-chev" aria-hidden="true">›</span>
       </button>
     </div>
   </div>
@@ -179,7 +179,14 @@
             [tr("arrears.act.d.prnOs"), hasAmount(row.prnOS) ? amount(row.prnOS) : ""],
             [tr("arrears.act.d.occu"), row.occu]
         ].filter(x => x[1]).map(([k, v, cls]) => `<div class="arx-stat${cls ? ` arx-stat-${cls}` : ""}"><span class="arx-k">${esc(k)}</span><b>${esc(v)}</b></div>`).join("");
-        const address = row.location ? `<div class="arx-addr"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span><span><span class="arx-k">${esc(tr("arrears.act.d.address"))}</span>${esc(row.location)}</span></div>` : "";
+        // GPS saved with the loan's Reason Arrear; an unsent local edit wins.
+        const pending = window.ReasonKit && row.concate ? ReasonKit.getPending()[row.concate] : null;
+        const gpsText = pending && pending.gps !== undefined ? pending.gps : row.gps;
+        const gps = window.ReasonKit ? ReasonKit.parseGps(gpsText) : null;
+        const gpsBtn = gps
+            ? `<button type="button" class="arx-gps" data-gps="${gps.lat},${gps.lng}" aria-label="${esc(tr("arrears.act.d.openMap"))}"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span>GPS</button>`
+            : `<span class="arx-gps arx-gps-none">${esc(tr("arrears.act.d.noGps"))}</span>`;
+        const address = (row.location || gps) ? `<div class="arx-addr"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span><span class="arx-addr-txt"><span class="arx-k">${esc(tr("arrears.act.d.address"))}</span>${esc(row.location || "-")}${gps ? `<small class="arx-gps-xy">${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}</small>` : ""}</span>${gpsBtn}</div>` : "";
         // one card for who the loan is, one for what can be copied
         document.getElementById("arxPickStats").innerHTML = (stats ? `<div class="arx-stats">${stats}</div>` : "") + address;
         const idsBox = document.getElementById("arxPickIds");
@@ -204,6 +211,12 @@
     }
 
     document.getElementById("arxPick").addEventListener("click", async e => {
+        const gpsBtn = e.target.closest("[data-gps]");
+        if (gpsBtn) {
+            const [lat, lng] = gpsBtn.dataset.gps.split(",").map(Number);
+            ReasonKit.openInMaps(lat, lng);
+            return;
+        }
         const btn = e.target.closest("[data-copy]");
         if (!btn || !btn.dataset.copy) return;
         const ok = await copyText(btn.dataset.copy);

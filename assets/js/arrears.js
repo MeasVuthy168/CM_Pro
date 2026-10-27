@@ -2200,6 +2200,7 @@ function applyReasonArrearOverlay(rows, map) {
                 row.alFollowup = found.al ? formatRowDateDMY(found.al) : "";
                 row.user = found.uploadedBy || row.user;
                 row.dateBackup = found.uploadedAt || row.dateBackup;
+                row.gps = found.gps || "";
             }
         }
 
