@@ -408,7 +408,7 @@ CMI18n.register({
   "masterdata.ab.exportExcel": { km: "Excel (.xlsx)", en: "Excel (.xlsx)" },
   "masterdata.ab.exportExcelSub": { km: "ទម្រង់ដូច PDF · តួលេខគណនាបាន", en: "Same layout as the PDF · numbers you can sum" },
   "masterdata.ab.exportPdf": { km: "PDF", en: "PDF" },
-  "masterdata.ab.pdfDisabled": { km: "បិទការ Export ជាបណ្ដោះអាសន្ន តាមសំណើរបស់នាយកដ្ឋានប្រតិបត្តិការ សម្រាប់ឯកសារ Excel សម្រាប់ booking។", en: "Export temporarily disabled per Operations Department request for the booking Excel file." },
+  "masterdata.ab.pdfDisabled": { km: "បិទការ Export ជាបណ្ដោះអាសន្ន តាមសំណើរបស់ផ្នែកប្រតិបត្តិការសាខា សម្រាប់ឯកសារ Excel សម្រាប់ booking។", en: "Export temporarily disabled per Operations Department request for the booking Excel file." },
   "masterdata.ab.exportPdfSub": { km: "សន្លឹកបោះពុម្ព A4 ផ្តេក", en: "The printed sheet, A4 landscape" },
   "masterdata.ab.exporting": { km: "កំពុង Export...", en: "Exporting..." },
 
