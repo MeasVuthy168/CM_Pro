@@ -462,16 +462,34 @@
         recompare(note, null);
     }
 
+    // "27/10/2026 16:07" in Phnom Penh time (UTC+7, no DST).
+    function dmyHm(iso) {
+        const ms = Date.parse(iso || "");
+        if (!Number.isFinite(ms)) return "";
+        const d = new Date(ms + 7 * 3600 * 1000);
+        const p = n => String(n).padStart(2, "0");
+        return `${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+    }
+
     function statCard(row, data, metrics, q) {
-        const date = row.id != null ? (data.officerDate || data.date) : data.date;
-        const prevDate = row.id != null ? (data.officerPrevDate || data.prevDate) : data.prevDate;
+        const officer = row.id != null;
+        const date = officer ? (data.officerDate || data.date) : data.date;
+        const prevDate = officer ? (data.officerPrevDate || data.prevDate) : data.prevDate;
         const link = reportLink(row, data);
+        // A PAR (T24) card is dated by the T24 upload behind its figure,
+        // when the server knows it; a newer T24 upload not yet in the
+        // figure is pointed out instead of being claimed.
+        const parOnly = metrics.length === 1 && metrics[0] === "par";
+        const parAt = parOnly ? (officer ? data.officerParAt : data.parAt) : null;
+        const parNewer = parOnly ? (officer ? data.officerParNewer : data.parNewer) : null;
+        const headDate = parAt ? dmyHm(parAt) : (date || "");
         return `
             <div class="ac-card">
                 <div class="ac-card-head">
                     <span class="ac-card-who">${esc(whoLabel(row, data))}</span>
-                    <span class="ac-card-date">${esc(date || "")}</span>
+                    <span class="ac-card-date">${esc(headDate)}</span>
                 </div>
+                ${parNewer ? `<div class="ac-foot">${esc(t("assistant.t24Newer", { at: dmyHm(parNewer), date: dmy(date) }))}</div>` : ""}
                 ${staleNote(data, date, q)}
                 ${metrics.map(m => `
                     <div class="ac-row ac-${m}">
