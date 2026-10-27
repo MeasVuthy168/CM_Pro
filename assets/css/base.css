@@ -52,6 +52,12 @@ body{
 
     font-family:"Krasar",Arial,sans-serif;
 
+    /* iOS Safari otherwise enlarges text in wide blocks (the long
+       Occupation / Reason cells of the Daily Arrears tables). */
+    -webkit-text-size-adjust:100%;
+
+    text-size-adjust:100%;
+
 }
 
 /* Form controls don't inherit the page font by default — browsers give
