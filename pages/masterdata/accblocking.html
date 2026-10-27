@@ -126,9 +126,9 @@ No Internet Connection
       <div class="ab-actions" id="abEditActions" role="radiogroup"></div>
       <label class="ab-field"><span data-i18n="masterdata.ab.account">Account number</span><select id="abEditAcc"></select></label>
       <label class="ab-field" id="abAccManualWrap" hidden><span data-i18n="masterdata.ab.accountType">Type the account number</span><input type="text" inputmode="numeric" id="abEditAccNo" maxlength="34" autocomplete="off" placeholder="1300xxxxxxxxxx"></label>
+      <label class="ab-field" id="abNameWrap" hidden><span data-i18n="masterdata.ab.nameType">Name (not found — type it)</span><input type="text" id="abEditName" maxlength="100" autocomplete="off"></label>
       <label class="ab-field" id="abFromWrap" hidden><span data-i18n="masterdata.ab.blockAmount">Blocked amount</span><input type="text" inputmode="decimal" id="abEditFrom" autocomplete="off"><small class="ab-field-hint" id="abFromHint"></small></label>
       <label class="ab-field" id="abToWrap"><span data-i18n="masterdata.ab.toAmount">New blocked amount</span><input type="text" inputmode="decimal" id="abEditTo" autocomplete="off"></label>
-      <label class="ab-field"><span data-i18n="masterdata.ab.reference">Reference</span><input type="text" id="abEditRef" maxlength="100" autocomplete="off"></label>
       <div class="ab-sheet-btns">
         <button type="button" class="ab-tool ab-tool-danger" id="btnAbRemove"><span class="ui-ico ui-ico-trash" aria-hidden="true"></span><span data-i18n="common.delete">Delete</span></button>
         <button type="button" class="ab-primary" id="btnAbSave" data-i18n="common.save">Save</button>
@@ -145,7 +145,7 @@ No Internet Connection
       <button type="button" class="ab-close" data-close aria-label="Close" data-i18n-aria-label="common.close">×</button>
     </div>
     <div class="ab-export-opts">
-      <button type="button" class="ab-export-opt" data-export="xlsx"><img src="/CM_Pro/assets/icons/arrear/export_excel.png" alt=""><span><b data-i18n="masterdata.ab.exportExcel">Excel (.xlsx)</b><small data-i18n="masterdata.ab.exportExcelSub">Columns A–H, like the sheet</small></span></button>
+      <button type="button" class="ab-export-opt" data-export="xlsx"><img src="/CM_Pro/assets/icons/arrear/export_excel.png" alt=""><span><b data-i18n="masterdata.ab.exportExcel">Excel (.xlsx)</b><small data-i18n="masterdata.ab.exportExcelSub">Same layout as the PDF · numbers you can sum</small></span></button>
       <button type="button" class="ab-export-opt" data-export="pdf"><img src="/CM_Pro/assets/icons/arrear/export_pdf.png" alt=""><span><b data-i18n="masterdata.ab.exportPdf">PDF</b><small data-i18n="masterdata.ab.exportPdfSub">The printed sheet, A4 landscape</small></span></button>
     </div>
   </div>
