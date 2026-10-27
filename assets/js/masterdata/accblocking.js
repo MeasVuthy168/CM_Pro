@@ -298,6 +298,10 @@ document.getElementById("abList").addEventListener("click", e => {
     document.getElementById("abEditTo").value = abEditRow.action === "Update" && abEditRow.toAmount != null ? abEditRow.toAmount : "";
     document.getElementById("abEditRef").value = abEditRow.reference || "";
     abFillFromField(abEditRow);
+    // No name from Acc Payroll: it can be typed (a found name always wins).
+    const noName = abEditRow.accountNameFound === false || !abEditRow.accountName;
+    document.getElementById("abNameWrap").hidden = !noName;
+    document.getElementById("abEditName").value = noName ? abEditRow.accountNameManual || abEditRow.accountName || "" : "";
     abActionButtons(document.getElementById("abEditActions"), abEditAction, a => { abEditAction = a; abSyncToField(); });
     abSyncToField();
     abFillAccounts(abEditRow);
@@ -366,6 +370,7 @@ function abEditAccountValue() {
 document.getElementById("btnAbSave").addEventListener("click", async () => {
     if (!abEditRow) return;
     const body = { cif: abEditRow.cif, action: abEditAction, reference: document.getElementById("abEditRef").value };
+    if (!document.getElementById("abNameWrap").hidden) body.accountName = document.getElementById("abEditName").value;
     if (abEditAction === "Update") body.toAmount = document.getElementById("abEditTo").value;
     if (abEditAction === "Block") {
         const typed = document.getElementById("abEditFrom").value.trim();
@@ -428,10 +433,10 @@ function abLoadScript(src) {
     });
 }
 
-// Export: Excel (columns A-H, like the sheet's ExportData) or PDF (the
-// printed sheet, A4 landscape — drawn as an image so Khmer renders).
+// Export: Excel or PDF, both laid out like the printed sheet (the PDF is
+// drawn as an image so Khmer renders).
 const AB_LIBS = {
-    xlsx: "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js",
+    exceljs: "https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js",
     html2canvas: "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
     jspdf: "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
 };
@@ -445,17 +450,64 @@ function abFileStamp() {
     return `${abData.date.replace(/-/g, "")}_${new Date().toTimeString().slice(0, 8).replace(/:/g, "")}`;
 }
 
+// Excel laid out like the PDF: the underlined title, blue headers, all
+// nine columns, rows tinted by action, amounts as numbers (#,##0.00),
+// A4 landscape with the header repeated on every printed page.
+const AB_XL_FILL = { block: "FFFFC7CE", unblock: "FFC6EFCE", update: "FFFFEB9C", updunblock: "FFDDEBF7" };
+
 async function abExportExcel() {
-    await abLib("xlsx");
+    await abLib("exceljs");
     const title = t("masterdata.ab.sheetTitle", { date: abDmy(abData.date) });
-    const headers = abSheetHeaders().slice(0, 8);
-    const rows = abSheetRows().map(r => r.slice(0, 8));
-    const ws = XLSX.utils.aoa_to_sheet([[title], headers, ...rows]);
-    ws["!cols"] = [{ wch: 5 }, { wch: 11 }, { wch: 18 }, { wch: 24 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 15 }];
-    ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, `AccBlock_${abData.date.replace(/-/g, "")}`.slice(0, 31));
-    XLSX.writeFile(wb, `AccBlock_${abFileStamp()}.xlsx`);
+    const headers = abSheetHeaders();
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet(`AccBlock_${abData.date.replace(/-/g, "")}`.slice(0, 31), {
+        pageSetup: { paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+            margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 }, printTitlesRow: "2:2" },
+        views: [{ state: "frozen", ySplit: 2 }]
+    });
+    ws.columns = [5, 11, 18, 26, 14, 14, 14, 15, 30].map(width => ({ width }));
+    const thin = { style: "thin", color: { argb: "FF999999" } };
+    const border = { top: thin, left: thin, bottom: thin, right: thin };
+
+    ws.mergeCells(1, 1, 1, headers.length);
+    const t1 = ws.getCell(1, 1);
+    t1.value = title;
+    t1.font = { bold: true, size: 14, underline: true };
+    t1.alignment = { horizontal: "center", vertical: "middle" };
+    ws.getRow(1).height = 26;
+
+    const head = ws.addRow(headers);
+    head.eachCell(c => {
+        c.font = { bold: true };
+        c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF9BC2E6" } };
+        c.border = border;
+        c.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    });
+
+    abSheetRows().forEach((r, i) => {
+        const vals = r.map((v, c) => ((c === 4 || c === 5) && v !== "" && v !== null ? Number(v) : v));
+        const row = ws.addRow(vals);
+        const fill = { type: "pattern", pattern: "solid", fgColor: { argb: AB_XL_FILL[AB_CLASS[abData.rows[i].action]] || AB_XL_FILL.block } };
+        for (let c = 1; c <= headers.length; c++) {
+            const cell = row.getCell(c);
+            cell.fill = fill;
+            cell.border = border;
+            cell.alignment = { vertical: "middle", wrapText: c === 4 || c === 9 };
+            if (c === 5 || c === 6) { cell.numFmt = "#,##0.00"; cell.alignment.horizontal = "right"; }
+            // Long digit strings (CIF, account) stay text, not 1.3E+13.
+            if (c === 2 || c === 3) cell.value = String(cell.value ?? "");
+        }
+    });
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `AccBlock_${abFileStamp()}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
 
 async function abExportPdf() {
