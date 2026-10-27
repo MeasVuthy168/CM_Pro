@@ -295,15 +295,28 @@
         );
     }
 
-    // Opens the platform's map app at a coordinate.
+    // Opens a coordinate in Google Maps. On iPhone / iPad that means the
+    // Google Maps app (comgooglemaps://); when it isn't installed the
+    // page is still showing a moment later, so fall back to Google Maps
+    // on the web rather than Apple Maps.
     function openInMaps(lat, lng) {
-        // maps.apple.com rather than maps://, so it resolves where custom
-        // schemes are blocked.
-        const isApple = /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent);
-        const url = isApple
-            ? `https://maps.apple.com/?q=${lat},${lng}`
-            : `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-        window.open(url, "_blank", "noopener");
+        const web = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+            || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+        if (!isIOS) {
+            window.open(web, "_blank", "noopener");
+            return;
+        }
+        let left = false;
+        const away = () => { left = true; };
+        document.addEventListener("visibilitychange", away, { once: true });
+        window.addEventListener("pagehide", away, { once: true });
+        window.location.href = `comgooglemaps://?q=${lat},${lng}&center=${lat},${lng}&zoom=17`;
+        setTimeout(() => {
+            document.removeEventListener("visibilitychange", away);
+            window.removeEventListener("pagehide", away);
+            if (!left && !document.hidden) window.location.href = web;
+        }, 1500);
     }
 
     // ---------- field templates ----------
