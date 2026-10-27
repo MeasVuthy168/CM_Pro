@@ -185,6 +185,7 @@ body.ab-sheet-open{ overflow:hidden; }
 .ab-field-label{ font-size:12px; font-weight:700; color:var(--md-text-muted); }
 .ab-field{ display:flex; flex-direction:column; gap:4px; margin-top:8px; font-size:12px; font-weight:700; color:var(--md-text-muted); }
 .ab-field[hidden]{ display:none; }
+.ab-field-hint{ font-size:11.5px; font-weight:500; color:var(--md-text-muted); }
 .ab-field select{ height:42px; padding:0 10px; border-radius:12px; border:1px solid var(--md-border); background:var(--md-card-bg); color:var(--md-text); font:inherit; font-size:14px; font-weight:400; width:100%; min-width:0; text-overflow:ellipsis; }
 .ab-acc-tag{ display:inline-block; margin-left:4px; padding:1px 7px; border-radius:999px; background:rgba(37,99,235,.14); color:#2563eb; font-size:10.5px; font-weight:700; vertical-align:1px; }
 [data-theme="dark"] .ab-acc-tag, [data-theme="darkgray"] .ab-acc-tag{ background:rgba(96,165,250,.18); color:#93c5fd; }

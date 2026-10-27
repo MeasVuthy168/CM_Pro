@@ -132,7 +132,7 @@ function abPaint(data) {
             <div class="ab-acc">${abEsc(r.accountNo || "")}${r.currency ? ` · ${abEsc(r.currency)}` : ""}${r.accountManual ? ` <span class="ab-acc-tag">${abEsc(t("masterdata.ab.accountEdited"))}</span>` : ""}</div>
             ${r.found === false ? `<div class="ab-warn">${abEsc(t("masterdata.ab.notInPayroll"))}</div>` : ""}
             <div class="ab-amounts">
-                <span><small>${abEsc(t("masterdata.ab.blockingAmount"))}</small><b>${abBlockingAmount(r)}</b></span>
+                <span><small>${abEsc(t("masterdata.ab.blockingAmount"))}</small><b>${abBlockingAmount(r)}</b>${r.fromAmountManual != null && r.action === "Block" ? ` <span class="ab-acc-tag">${abEsc(t("masterdata.ab.amountEdited"))}</span>` : ""}</span>
             </div>
             ${r.reference ? `<div class="ab-meta"><small>${abEsc(t("masterdata.ab.reference"))}</small> ${abEsc(r.reference)}</div>` : ""}
             ${r.description ? `<div class="ab-meta"><small>${abEsc(t("masterdata.ab.description"))}</small> ${abEsc(r.description)}</div>` : ""}
@@ -207,6 +207,18 @@ function abClose(id) {
 function abSyncToField() {
     // Only Update takes a typed amount; Update&Unblock's comes from the currency.
     document.getElementById("abToWrap").hidden = abEditAction !== "Update";
+    // Block: the arrears by default (the placeholder); a typed amount wins.
+    document.getElementById("abFromWrap").hidden = abEditAction !== "Block";
+}
+
+function abFillFromField(row) {
+    const input = document.getElementById("abEditFrom");
+    const arrears = row.action === "Block" && row.arrears != null ? row.arrears : (row.action === "Block" ? row.fromAmount : null);
+    input.value = row.fromAmountManual != null ? row.fromAmountManual : "";
+    input.placeholder = arrears != null ? abAmount(arrears) : "";
+    document.getElementById("abFromHint").textContent = arrears != null
+        ? t("masterdata.ab.blockAmountHint", { amount: abAmount(arrears) })
+        : t("masterdata.ab.blockAmountHintNew");
 }
 
 // ---------- multi-select on the list (long press) to delete ----------
@@ -285,6 +297,7 @@ document.getElementById("abList").addEventListener("click", e => {
     document.getElementById("abEditSub").textContent = [`CIF ${abEditRow.cif}`, abEditRow.accountNo].filter(Boolean).join(" · ");
     document.getElementById("abEditTo").value = abEditRow.action === "Update" && abEditRow.toAmount != null ? abEditRow.toAmount : "";
     document.getElementById("abEditRef").value = abEditRow.reference || "";
+    abFillFromField(abEditRow);
     abActionButtons(document.getElementById("abEditActions"), abEditAction, a => { abEditAction = a; abSyncToField(); });
     abSyncToField();
     abFillAccounts(abEditRow);
@@ -354,6 +367,16 @@ document.getElementById("btnAbSave").addEventListener("click", async () => {
     if (!abEditRow) return;
     const body = { cif: abEditRow.cif, action: abEditAction, reference: document.getElementById("abEditRef").value };
     if (abEditAction === "Update") body.toAmount = document.getElementById("abEditTo").value;
+    if (abEditAction === "Block") {
+        const typed = document.getElementById("abEditFrom").value.trim();
+        const n = Number(typed.replace(/,/g, ""));
+        if (typed && !(Number.isFinite(n) && n > 0)) {
+            abToast(t("masterdata.ab.blockAmountBad"), "warning");
+            document.getElementById("abEditFrom").focus();
+            return;
+        }
+        body.fromAmount = typed;
+    }
     const acc = abEditAccountValue();
     if (acc === null) {
         abToast(t("masterdata.ab.accountBad"), "warning");
