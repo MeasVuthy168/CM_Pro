@@ -519,6 +519,14 @@ function setGpsHint(message, kind) {
 
 function updateGpsButtons() {
     $("btnGpsOpen").style.display = ReasonKit.parseGps(reasonGPS.value) ? "" : "none";
+    // Runs after every row load, so the date's × follows loaded values.
+    syncDateClear();
+}
+
+// A date input has no :placeholder-shown, so its × is toggled here.
+function syncDateClear() {
+    const wrap = reasonAL.parentElement;
+    if (wrap && wrap.classList.contains("wk-clear-wrap")) wrap.classList.toggle("wk-empty", !reasonAL.value);
 }
 
 function updateNav() {
@@ -747,10 +755,11 @@ const distinct = field => wkFocus?.suggest?.[field] ||
 ReasonKit.attachSuggestions(reasonAJ, () => distinct("aj"));
 ReasonKit.attachSuggestions(reasonAK, () => distinct("ak"));
 
-// A × inside the right of Occupation and Reason / Solution that empties
-// the field. CSS hides it while the field is empty (:placeholder-shown),
-// so it follows values set in code too.
-[reasonAJ, reasonAK].forEach(field => {
+// A × inside the right of Occupation, Reason / Solution, Promised
+// Payment Date and GPS that empties the field. CSS hides it while the
+// field is empty (:placeholder-shown; the date via syncDateClear), so it
+// follows values set in code too.
+[reasonAJ, reasonAK, reasonAL, reasonGPS].forEach(field => {
     const wrap = document.createElement("div");
     wrap.className = "wk-clear-wrap";
     field.before(wrap);
@@ -768,9 +777,13 @@ ReasonKit.attachSuggestions(reasonAK, () => distinct("ak"));
     btn.addEventListener("click", () => {
         field.value = "";
         field.dispatchEvent(new Event("input", { bubbles: true }));
+        field.dispatchEvent(new Event("change", { bubbles: true }));
     });
     wrap.appendChild(btn);
 });
+reasonAL.addEventListener("input", syncDateClear);
+reasonAL.addEventListener("change", syncDateClear);
+syncDateClear();
 
 reasonGPS.addEventListener("input", () => {
     updateGpsButtons();
