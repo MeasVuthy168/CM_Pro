@@ -296,7 +296,6 @@ document.getElementById("abList").addEventListener("click", e => {
     document.getElementById("abEditTitle").textContent = abEditRow.accountName || `CIF ${abEditRow.cif}`;
     document.getElementById("abEditSub").textContent = [`CIF ${abEditRow.cif}`, abEditRow.accountNo].filter(Boolean).join(" · ");
     document.getElementById("abEditTo").value = abEditRow.action === "Update" && abEditRow.toAmount != null ? abEditRow.toAmount : "";
-    document.getElementById("abEditRef").value = abEditRow.reference || "";
     abFillFromField(abEditRow);
     // No name from Acc Payroll: it can be typed (a found name always wins).
     const noName = abEditRow.accountNameFound === false || !abEditRow.accountName;
@@ -369,7 +368,9 @@ function abEditAccountValue() {
 
 document.getElementById("btnAbSave").addEventListener("click", async () => {
     if (!abEditRow) return;
-    const body = { cif: abEditRow.cif, action: abEditAction, reference: document.getElementById("abEditRef").value };
+    // No Reference here: the operation officer fills it, not the CO, so
+    // it isn't sent (a saved one stays as it is).
+    const body = { cif: abEditRow.cif, action: abEditAction };
     if (!document.getElementById("abNameWrap").hidden) body.accountName = document.getElementById("abEditName").value;
     if (abEditAction === "Update") body.toAmount = document.getElementById("abEditTo").value;
     if (abEditAction === "Block") {
