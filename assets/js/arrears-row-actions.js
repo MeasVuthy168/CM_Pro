@@ -40,8 +40,10 @@
         })
         .catch(() => {});
 
-    function toast(msg, type) {
-        if (typeof showToast === "function") showToast(msg, type || "success");
+    // The app's toast (toast.js); this page has no global showToast().
+    function toast(msg, type, duration) {
+        if (typeof CMToast !== "undefined" && CMToast.show) CMToast.show({ type: type || "success", title: msg, message: "", duration: duration || 3000 });
+        else if (typeof showToast === "function") showToast(msg, type || "success");
     }
 
     // ---------- sheets ----------
@@ -49,9 +51,15 @@
     host.innerHTML = `
 <div class="arx-dim" id="arxPick" hidden>
   <div class="arx-sheet" role="dialog" aria-modal="true" aria-labelledby="arxPickTitle">
-    <div class="arx-head">
-      <div><div class="arx-title" id="arxPickTitle">-</div><div class="arx-sub" id="arxPickSub">-</div></div>
-      <button type="button" class="arx-x" data-arx-close aria-label="Close">×</button>
+    <div class="arx-info">
+      <div class="arx-sum">
+        <div class="arx-head">
+          <div class="arx-pick-who"><button type="button" class="arx-title arx-name" id="arxPickTitle" data-copy="">-</button><div class="arx-sub" id="arxPickSub">-</div></div>
+          <button type="button" class="arx-x" data-arx-close aria-label="Close">×</button>
+        </div>
+        <div id="arxPickStats"></div>
+      </div>
+      <div class="arx-ids" id="arxPickIds"></div>
     </div>
     <div class="arx-opts">
       <button type="button" class="arx-opt" data-arx="reason">
@@ -127,10 +135,83 @@
         if (!canBlock()) { openWorkFor(row, navRows); return; }
         pickRow = row;
         pickNav = navRows || null;
-        document.getElementById("arxPickTitle").textContent = row.customer || "-";
-        document.getElementById("arxPickSub").textContent = [row.loanNumber, row.cif ? `CIF ${row.cif}` : ""].filter(Boolean).join(" · ");
+        paintPick(row);
         openSheet("arxPick");
     }
+
+    // ---------- the loan's details on the pick sheet ----------
+    const COPY_ICO = `<svg class="arx-cp-ico" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 15V5a1 1 0 0 1 1-1h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+    const amount = v => (typeof arrFormatAmount === "function" ? arrFormatAmount(v) : String(v ?? "-"));
+    const phoneOf = v => (typeof formatPhone === "function" ? formatPhone(v) : String(v || "").trim());
+    const hasAmount = v => String(v ?? "").trim() !== "";
+
+    function paintPick(row) {
+        const title = document.getElementById("arxPickTitle");
+        title.textContent = row.customer || "-";
+        title.dataset.copy = row.customer || "";
+        title.dataset.copyLabel = tr("arrears.act.d.name");
+        const day = parseInt(row.day, 10);
+        document.getElementById("arxPickSub").innerHTML = [
+            Number.isFinite(day) ? `<span class="arx-day">${esc(day.toLocaleString())} ${esc(tr("arrears.act.d.days"))}</span>` : "",
+            row.class ? `<span class="arx-chip">${esc(row.class)}</span>` : "",
+            row.ccy ? `<span class="arx-chip">${esc(row.ccy)}</span>` : "",
+            row.coId ? `<span class="arx-chip">CO ${esc(row.coId)}</span>` : ""
+        ].filter(Boolean).join("");
+
+        const phone = phoneOf(row.tell);
+        const copy = (label, value, extra) => value ? `
+            <div class="arx-cp-row">
+              <button type="button" class="arx-cp" data-copy="${esc(value)}" data-copy-label="${esc(label)}">
+                <span class="arx-k">${esc(label)}</span><span class="arx-v">${esc(value)}</span>${COPY_ICO}
+              </button>${extra || ""}
+            </div>` : "";
+        const call = phone ? `<a class="arx-call" href="tel:${esc(phone.replace(/[^\d+]/g, ""))}" aria-label="${esc(tr("arrears.act.d.call"))}"><span class="ui-ico ui-ico-phone" aria-hidden="true"></span></a>` : "";
+        const ids = [
+            copy("LD", row.loanNumber),
+            copy("CIF", row.cif),
+            copy(tr("arrears.act.d.phone"), phone, call),
+            copy(tr("arrears.act.d.account"), row.accountLoan),
+            copy(tr("arrears.act.d.coCif"), row.cifCoborrower)
+        ].join("");
+        const arrears = parseFloat(String(row.arreas ?? "").replace(/,/g, "")) || 0;
+        const stats = [
+            [tr("arrears.act.d.arrear"), hasAmount(row.arreas) ? amount(row.arreas) : "", arrears > 0 ? "bad" : ""],
+            [tr("arrears.act.d.prnOs"), hasAmount(row.prnOS) ? amount(row.prnOS) : ""],
+            [tr("arrears.act.d.occu"), row.occu]
+        ].filter(x => x[1]).map(([k, v, cls]) => `<div class="arx-stat${cls ? ` arx-stat-${cls}` : ""}"><span class="arx-k">${esc(k)}</span><b>${esc(v)}</b></div>`).join("");
+        const address = row.location ? `<div class="arx-addr"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span><span><span class="arx-k">${esc(tr("arrears.act.d.address"))}</span>${esc(row.location)}</span></div>` : "";
+        // one card for who the loan is, one for what can be copied
+        document.getElementById("arxPickStats").innerHTML = (stats ? `<div class="arx-stats">${stats}</div>` : "") + address;
+        const idsBox = document.getElementById("arxPickIds");
+        idsBox.innerHTML = ids;
+        idsBox.hidden = !ids;
+    }
+
+    async function copyText(text) {
+        try {
+            if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; }
+        } catch (e) { /* fall back below */ }
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;";
+        document.body.appendChild(ta);
+        ta.select();
+        let ok = false;
+        try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+        ta.remove();
+        return ok;
+    }
+
+    document.getElementById("arxPick").addEventListener("click", async e => {
+        const btn = e.target.closest("[data-copy]");
+        if (!btn || !btn.dataset.copy) return;
+        const ok = await copyText(btn.dataset.copy);
+        if (!ok) { toast(tr("arrears.act.copyFailed"), "error"); return; }
+        btn.classList.add("arx-copied");
+        setTimeout(() => btn.classList.remove("arx-copied"), 1100);
+        toast(tr("arrears.act.copied", { what: btn.dataset.copyLabel || "", value: btn.dataset.copy }), "success", 1800);
+    });
 
     document.getElementById("arxPick").addEventListener("click", e => {
         const opt = e.target.closest("[data-arx]");
