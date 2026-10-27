@@ -53,8 +53,10 @@ async function abCall(path, body) {
     return data;
 }
 
+// The app's toast (toast.js); there is no global showToast() here.
 function abToast(msg, type) {
-    if (typeof showToast === "function") showToast(msg, type || "success");
+    if (typeof CMToast !== "undefined" && CMToast.show) CMToast.show({ type: type || "success", title: msg, message: "", duration: 3500 });
+    else if (typeof showToast === "function") showToast(msg, type || "success");
 }
 
 // Four action buttons with their Khmer meaning (the sheet's dropdown note).
@@ -573,9 +575,31 @@ document.getElementById("btnAbExport").addEventListener("click", () => {
     if (abData?.rows?.length) abOpen("abExport");
 });
 
+// PDF export is off for now: Operations asked for the booking Excel
+// file only. Set to false to bring it back.
+const AB_PDF_DISABLED = true;
+
+function abPaintPdfOff() {
+    const opt = document.querySelector('#abExport [data-export="pdf"]');
+    if (!opt) return;
+    opt.classList.toggle("ab-export-off", AB_PDF_DISABLED);
+    opt.setAttribute("aria-disabled", String(AB_PDF_DISABLED));
+    // The page's i18n paints the subtitle from its key, in either language.
+    const sub = opt.querySelector("small");
+    if (sub && AB_PDF_DISABLED) {
+        sub.dataset.i18n = "masterdata.ab.pdfDisabled";
+        sub.textContent = t("masterdata.ab.pdfDisabled");
+    }
+}
+abPaintPdfOff();
+
 document.getElementById("abExport").addEventListener("click", async e => {
     const opt = e.target.closest("[data-export]");
     if (!opt) return;
+    if (opt.dataset.export === "pdf" && AB_PDF_DISABLED) {
+        abToast(t("masterdata.ab.pdfDisabled"), "warning");
+        return;
+    }
     abClose("abExport");
     if (typeof showAppLoading === "function") showAppLoading(t("masterdata.ab.exporting"));
     try {

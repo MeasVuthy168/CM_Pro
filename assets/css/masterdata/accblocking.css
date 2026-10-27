@@ -295,6 +295,9 @@ body.ab-sheet-open{ overflow:hidden; }
 .ab-export-opts{ display:flex; flex-direction:column; gap:8px; padding:0 14px 18px; }
 .ab-export-opt{ display:flex; align-items:center; gap:12px; padding:12px; border-radius:14px; border:1px solid var(--md-border); background:var(--md-card-bg); color:var(--md-text); font:inherit; text-align:left; cursor:pointer; }
 .ab-export-opt img{ width:34px; height:34px; flex:none; }
+.ab-export-opt.ab-export-off{ opacity:.55; cursor:not-allowed; border-style:dashed; }
+.ab-export-opt.ab-export-off img{ filter:grayscale(1); }
+.ab-export-opt.ab-export-off small{ color:#b45309; font-weight:600; }
 .ab-export-opt span{ display:flex; flex-direction:column; }
 .ab-export-opt b{ font-size:14.5px; }
 .ab-export-opt small{ font-size:12px; color:var(--md-text-muted); }
