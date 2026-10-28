@@ -7,6 +7,8 @@
 /* Header: navy with gold text and a gold line under it. */
 .table-card thead th,
 .table-card thead th.cr-branch-col,
+.table-card thead th.cr-name-col,
+[data-theme="dark"] .table-card thead th.cr-name-col,
 [data-theme="dark"] .table-card thead th,
 [data-theme="dark"] .table-card thead th.cr-branch-col{
     background:#1A2747;
@@ -20,7 +22,8 @@
 
 /* Rows: lines between rows only, a light zebra. */
 .table-card td{ border:0; border-bottom:1px solid var(--cr-border); }
-.table-card td.cr-branch-col{ white-space:nowrap; }
+.table-card td.cr-branch-col,
+.table-card td.cr-name-col{ white-space:nowrap; }
 .cr-rank{
     display:inline-block;
     min-width:16px;
@@ -59,7 +62,8 @@
     border-top:2px solid var(--cr-gold-light);
     border-bottom:0;
 }
-.table-card tbody tr.cr-total-row td.cr-branch-col{ z-index:4; }
+.table-card tbody tr.cr-total-row td.cr-branch-col,
+.table-card tbody tr.cr-total-row td.cr-name-col{ z-index:4; }
 
 /* Last Month (+/-) arrows. */
 .cr-arrow{ font-size:9px; margin-right:1px; }

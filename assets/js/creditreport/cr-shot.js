@@ -36,7 +36,8 @@ window.CRShot = (() => {
                 scale: 2,
                 backgroundColor: bg,
                 windowWidth: Math.max(document.documentElement.clientWidth, el.scrollWidth + 80),
-                ignoreElements: n => n.classList && (n.classList.contains("cr-shot-btn") || n.classList.contains("cr-skeleton")),
+                // Controls aren't part of the picture (the button, the name search).
+                ignoreElements: n => n.classList && ["cr-shot-btn", "cr-skeleton", "cr-search-wrap"].some(c => n.classList.contains(c)),
                 // In html2canvas's own copy of the page: as wide as the
                 // whole table there (the notes wrap under it), at least a
                 // phone's width.
