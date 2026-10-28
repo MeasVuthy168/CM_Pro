@@ -6,9 +6,10 @@
 // the last day of the month before the report's own OS date (e.g. an
 // OS date of 27/10/2026 → the snapshot of 30/09/2026, or the newest day
 // before it when that one wasn't saved), fetched from the report's own
-// history endpoint with ?latest=1. Every figure on screen is followed
-// by its Last Month value and the change (±): flows (Disburse, WO
-// Collected …) are compared with the whole of last month, as saved.
+// history endpoint with ?latest=1. Each group on screen becomes three
+// blocks, as in the Excel report: last month | now | (+/-); flows
+// (Disburse, WO Collected …) are compared with the whole of last month,
+// as saved.
 //
 // Snapshots are saved without the Loan Class / Product Type filters,
 // so a report with such a filter picked shows "—" (see block below).
@@ -74,36 +75,56 @@ window.CRLastMonth = (() => {
         item.lastMonthDiff = prev ? diffTree(item, prev) : null;
     }
 
-    // Each field followed by its Last Month value and ±.
-    function expand(section) {
+    // "2026-09-30" -> "30-Sep-26"
+    const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    function shortDate(dateKey) {
+        const [y, m, d] = String(dateKey || "").split("-");
+        return y && m && d ? `${d}-${MON[Number(m) - 1]}-${y.slice(2)}` : "";
+    }
+
+    // Each group as three blocks side by side, like the Excel report:
+    // last month (its date) | now (the OS date) | (+/-), each with the
+    // group's own columns. dates: { last, now } (date keys; last may be
+    // unknown while loading).
+    function expand(section, dates = {}) {
+        // One group: just the date, as in the Excel report; several: "group · date".
+        const head = (label, tail) => (section.groups.length > 1 ? `${label} · ${tail}` : tail);
+        const lastLabel = dates.last ? shortDate(dates.last) : t("creditreport.lastMonth.col");
         return {
             ...section,
-            groups: section.groups.map(g => ({
-                ...g,
-                fields: g.fields.flatMap(f => [
-                    f,
-                    { key: `lastMonth.${f.key}`, label: t("creditreport.lastMonth.col"), money: f.money, pct: f.pct, lm: "value" },
-                    { key: `lastMonthDiff.${f.key}`, label: "±", money: f.money, pct: f.pct, lm: "diff", risk: RISK.test(f.key) }
-                ])
-            }))
+            groups: section.groups.flatMap(g => [
+                { ...g, lm: "value", label: head(g.label, lastLabel),
+                    fields: g.fields.map(f => ({ ...f, key: `lastMonth.${f.key}`, lm: "value" })) },
+                { ...g, lm: "cur", label: head(g.label, dates.now ? shortDate(dates.now) : t("creditreport.lastMonth.now")),
+                    fields: g.fields.map(f => ({ ...f, lm: "cur" })) },
+                { ...g, lm: "diff", label: head(g.label, "(+/-)"),
+                    fields: g.fields.map(f => ({ ...f, key: `lastMonthDiff.${f.key}`, lm: "diff", risk: RISK.test(f.key) })) }
+            ])
         };
     }
 
     const get = (obj, path) => path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj);
     const fmtNum = n => Number(n).toLocaleString(undefined, { maximumFractionDigits: 0 });
-    const cls = f => (f.pct ? "cr-col-pct" : f.money ? "cr-col-money" : "cr-col-num") + " cr-lm-col";
+    const cls = f => (f.pct ? "cr-col-pct" : f.money ? "cr-col-money" : "cr-col-num") + ` cr-lm-${f.lm}`;
+    const PAR_ALERT = 0.04; // same red as the reports' own PAR columns
 
     function cell(item, field) {
-        const v = get(item, field.key);
-        if (typeof v !== "number" || !Number.isFinite(v)) return `<td class="${cls(field)} cr-lm-none">—</td>`;
-        if (field.lm === "value") {
-            return `<td class="${cls(field)}">${field.pct ? (v * 100).toFixed(2) + "%" : fmtNum(v)}</td>`;
+        let v = get(item, field.key);
+        if (field.lm === "cur" && (typeof v !== "number" || !Number.isFinite(v))) {
+            // The report's own figure: "—" only where it may be missing.
+            if (field.optional) return `<td class="${cls(field)} cr-lm-none">—</td>`;
+            v = Number(v) || 0;
         }
-        // ±: points for a %, else the amount; 0 stays plain.
+        if (typeof v !== "number" || !Number.isFinite(v)) return `<td class="${cls(field)} cr-lm-none">—</td>`;
+        if (field.lm !== "diff") {
+            if (field.pct) return `<td class="${cls(field)}${v >= PAR_ALERT ? " cr-par-high" : ""}">${(v * 100).toFixed(2)}%</td>`;
+            return `<td class="${cls(field)}">${fmtNum(v)}</td>`;
+        }
+        // (+/-): points for a %, else the amount; 0 stays plain.
         const shown = field.pct ? Math.round(v * 10000) / 100 : Math.round(v);
         if (!shown) return `<td class="${cls(field)}">0</td>`;
         const good = field.risk ? shown < 0 : shown > 0;
-        const text = field.pct ? shown.toFixed(2) : fmtNum(shown);
+        const text = field.pct ? shown.toFixed(2) + "%" : fmtNum(shown);
         return `<td class="${cls(field)} ${good ? "cr-lm-good" : "cr-lm-bad"}">${shown > 0 ? "+" : ""}${text}</td>`;
     }
 
@@ -178,8 +199,14 @@ window.CRLastMonth = (() => {
             note();
         }
 
-        return { ensure, note, itemFor };
+        // The report's section as last month | now | (+/-) blocks.
+        function expandSection(section) {
+            const data = opts.data();
+            return expand(section, { last: info && info.date, now: data && data.toDate });
+        }
+
+        return { ensure, note, itemFor, expand: expandSection };
     }
 
-    return { cutoff, load, attach, diffTree, expand, cell, renderNote, hideNote, controller };
+    return { cutoff, shortDate, load, attach, diffTree, expand, cell, renderNote, hideNote, controller };
 })();
