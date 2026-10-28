@@ -874,6 +874,29 @@ async function fetchArrearsInfo() {
     }
 }
 
+// Balance DG: OverdueDG's column CU, one figure per CIF (the same on
+// every LD of that CIF). GET /api/arreast24byco/balance-dg returns it
+// only for the CIFs this user may see, keyed by CIF without leading
+// zeros. Missing or failed → every row shows "-"; the table still loads.
+const balanceDgKey = cif => String(cif ?? "").trim().replace(/^0+/, "");
+
+async function fetchBalanceDg() {
+    try {
+        const scopeQuery = arrearsScopeMode === "own" ? "?scope=own" : "";
+        const res = await fetch(`${API.BASE_URL}/api/arreast24byco/balance-dg${scopeQuery}`, {
+            headers: { Authorization: `Bearer ${arrearsToken}` }
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.message || "Failed to load Balance DG.");
+        return new Map(Object.entries(data.items || {}));
+    } catch (err) {
+        console.error(err);
+        return new Map();
+    }
+}
+
+const balanceDgText = v => (typeof v === "number" ? arrFormatAmount(v) : "-");
+
 function renderSummary(rows) {
     let govCnt = 0, workerCnt = 0, otherCnt = 0;
     let govOS = 0, workerOS = 0, otherOS = 0, totalOS = 0;
@@ -991,6 +1014,7 @@ function buildRowElement(row, index) {
         <td class="${arreaClass}">${escapeHtml(row.arreas)}</td>
         <td>${escapeHtml(row.day)}</td>
         <td class="${balClass} ${balPdClass}">${escapeHtml(row.balance)}</td>
+        <td class="arr-num">${escapeHtml(balanceDgText(row.balanceDg))}</td>
         <td>${escapeHtml(row.accountLoan)}</td>
         <td>${escapeHtml(formatPhone(row.tell))}</td>
         <td>${escapeHtml(row.cif)}</td>
@@ -1024,7 +1048,7 @@ const ldVirtual = new ArrVirtualList({
         const tr = document.createElement("tr");
         tr.className = "arr-vspace";
         tr.setAttribute("aria-hidden", "true");
-        tr.innerHTML = `<td colspan="26"></td>`;
+        tr.innerHTML = `<td colspan="27"></td>`;
         return tr;
     },
     build: i => {
@@ -1120,7 +1144,7 @@ function renderTableView(rows) {
     if (!rows.length) {
         tbodyArrears.innerHTML = `
             <tr class="row-empty">
-                <td colspan="26">No data found</td>
+                <td colspan="27">No data found</td>
             </tr>
         `;
         updateRenderedNote(); // else the last result's count stays
@@ -1618,7 +1642,7 @@ function renderCifCards(rows) {
 // its LD rows show each loan in full.
 const arrCifTable = document.getElementById("arrCifTable");
 const CIF_AMOUNT_KEYS = ["prnOS", "intOS", "prnDue", "intDue", "penalty", "arreas", "balance"];
-const CIF_COLS = 27;
+const CIF_COLS = 28;
 
 // Column header sort for the CIF table — same ▲ / ▼ / default cycle as
 // the LD table. Sorts the customers, and the LDs inside each customer.
@@ -1684,6 +1708,7 @@ function cifGroupSortValue(g, key, type) {
     if (key === "loanNumber") return g.rows.length;
     if (key === "osUsd") return g.osUsd;
     if (key === "day") return g.maxDay;
+    if (key === "balanceDg") return g.rows[0]?.balanceDg ?? "";
     if (key === "promiseStatus") return g.promise;
     if (key === "promiseRank") return g.promiseRank;
     if (key === "reasonPct") return g.rows.length ? g.withReason / g.rows.length : 0;
@@ -1781,6 +1806,7 @@ function buildGroupTbody(g, no) {
             <td class="arr-num ${arrearsBad}">${amount("arreas")}</td>
             <td class="arr-num ${classCss}">${g.maxDay !== null ? g.maxDay.toLocaleString() : "-"}</td>
             <td class="arr-num">${amount("balance")}</td>
+            <td class="arr-num">${escapeHtml(balanceDgText(g.rows[0]?.balanceDg))}</td>
             <td>${shared("accountLoan")}</td>
             <td>${escapeHtml(formatPhone(g.phone))}</td>
             <td>${escapeHtml(g.cif || "")}</td>
@@ -1819,6 +1845,7 @@ function buildGroupTbody(g, no) {
                 <td class="arr-num ${arreaClass}">${escapeHtml(row.arreas)}</td>
                 <td class="arr-num ${rowClass}">${escapeHtml(row.day)}</td>
                 <td class="arr-num ${balClass} ${balPdClass}">${escapeHtml(row.balance)}</td>
+                <td class="arr-num">${escapeHtml(balanceDgText(row.balanceDg))}</td>
                 <td>${escapeHtml(row.accountLoan)}</td>
                 <td>${escapeHtml(formatPhone(row.tell))}</td>
                 <td>${escapeHtml(row.cif)}</td>
@@ -2124,27 +2151,27 @@ function updateRowInTable(row) {
     if (!tr) return false;
 
     const cells = tr.children;
-    if (cells.length < 26) return false; // sanity check — fall back to full render if structure looks unexpected
+    if (cells.length < 27) return false; // sanity check — fall back to full render if structure looks unexpected
 
     const promiseCss = promiseCellCssClass(row.promiseStatus);
     const followupCss = promiseCss || "cell-followup-default";
     const pendingCss = row.__pendingSubmit ? " cell-pending-local" : "";
 
-    cells[18].textContent = row.promiseStatus; // Promise Status
-    cells[18].className = promiseCss;
+    cells[19].textContent = row.promiseStatus; // Promise Status
+    cells[19].className = promiseCss;
 
-    cells[21].textContent = row.ajReason;      // មុខរបរ
-    cells[21].className = followupCss + pendingCss;
-
-    cells[22].textContent = row.akSolution;    // មូលហេតុ/ដំណោះស្រាយ
+    cells[22].textContent = row.ajReason;      // មុខរបរ
     cells[22].className = followupCss + pendingCss;
 
-    cells[23].textContent = formatRowDateDMY(row.alFollowup); // ថ្ងៃសន្យាសង
+    cells[23].textContent = row.akSolution;    // មូលហេតុ/ដំណោះស្រាយ
     cells[23].className = followupCss + pendingCss;
 
-    cells[24].textContent = row.user;          // User
+    cells[24].textContent = formatRowDateDMY(row.alFollowup); // ថ្ងៃសន្យាសង
+    cells[24].className = followupCss + pendingCss;
 
-    cells[25].textContent = formatRowDateTime12h(row.dateBackup); // DateBackUpReasonArrear
+    cells[25].textContent = row.user;          // User
+
+    cells[26].textContent = formatRowDateTime12h(row.dateBackup); // DateBackUpReasonArrear
 
     return true;
 }
@@ -2386,15 +2413,17 @@ async function refreshArrears() {
     }
 
     try {
-        const [rows] = await Promise.all([
+        const [rows, balanceDg] = await Promise.all([
             fetchAllArrearsRows(),
+            fetchBalanceDg(),
             fetchArrearsInfo()
         ]);
+        rows.forEach(r => { r.balanceDg = balanceDg.get(balanceDgKey(r.cif)) ?? null; });
         allRows = rows;
     } catch (err) {
         console.error(err);
         notify(err.message || "Failed to load arrears data.", "error");
-        tbodyArrears.innerHTML = `<tr class="row-empty"><td colspan="26">Failed to load data</td></tr>`;
+        tbodyArrears.innerHTML = `<tr class="row-empty"><td colspan="27">Failed to load data</td></tr>`;
         arrCardList.innerHTML = `<div class="arr-card-empty">Failed to load data</div>`;
         if (typeof hideAppLoading === "function") hideAppLoading();
         return;
@@ -2555,6 +2584,7 @@ function ldExportCols(rows) {
             style: r => r.pd === "Balanced_PD" ? { fill: "#C6EFCE", color: "#FF0000", bold: true }
                 : (parseFloat(r.balance) || 0) < 0 ? { color: "#C0392B", bold: true } : null
         },
+        { label: "Balance DG", type: "num", value: r => r.balanceDg ?? "-", text: r => balanceDgText(r.balanceDg) },
         { label: "Account Loan", ...text("accountLoan") },
         { label: "Tell", type: "text", value: r => formatPhone(r.tell) || null },
         { label: "CIF", ...text("cif") },
@@ -2604,6 +2634,7 @@ function cifExportCols() {
         { label: "Arreas", ...amount("arreas"), style: g => (anyAmount(g, "arreas", v => v > 0) ? { color: "#C0392B", bold: true } : null) },
         { label: "Day", type: "int", align: "center", value: g => g.maxDay, text: g => g.maxDay ?? "-", style: g => exportClassStyle(g.worstClass) },
         { label: "Balnce", ...amount("balance"), style: g => (anyAmount(g, "balance", v => v < 0) ? { color: "#C0392B", bold: true } : null) },
+        { label: "Balance DG", type: "num", value: g => g.rows[0]?.balanceDg ?? "-", text: g => balanceDgText(g.rows[0]?.balanceDg) },
         { label: "Account Loan", ...shared("accountLoan") },
         { label: "Tell", type: "text", value: g => formatPhone(g.phone) || null },
         { label: "CIF", type: "text", value: g => g.cif || null },
@@ -3672,6 +3703,16 @@ function saveHiddenColumns(set) {
 }
 
 let hiddenColumns = loadHiddenColumns();
+
+// Balance DG went in as column 14: saved picks for column 14 and
+// after (from before it existed) move one place along, once.
+try {
+    if (!localStorage.getItem("arrears_hidden_columns_v2")) {
+        hiddenColumns = new Set(Array.from(hiddenColumns).map(n => (n >= 14 ? n + 1 : n)));
+        saveHiddenColumns(hiddenColumns);
+        localStorage.setItem("arrears_hidden_columns_v2", "1");
+    }
+} catch (e) {}
 
 function applyHiddenColumns() {
     let styleEl = document.getElementById("arrearsHiddenColsStyle");
