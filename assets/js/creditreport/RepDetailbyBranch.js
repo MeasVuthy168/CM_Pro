@@ -261,22 +261,60 @@ function crCompareSection(sectionKey, section) {
     return { groups };
 }
 
+// Plan vs Actual laid out like Last Month: each group as three blocks,
+// Plan | Actual (highlighted) | % (or ± for a ceiling), every block with
+// the group's own figures as its columns. A group's fields come from
+// crCompareSection as runs of [actual, plan, % / ±].
+function crPlanBlocks(section) {
+    const many = section.groups.length > 1;
+    const head = (label, tail) => (many ? `${label} · ${tail}` : tail);
+    const yearPlan = t("creditreport.plan.yearPlan");
+    const groups = section.groups.flatMap(g => {
+        const runs = [];
+        g.fields.forEach(f => { if (!f.planCol || !runs.length) runs.push([f]); else runs[runs.length - 1].push(f); });
+        const name = run => run[0].label;
+        const plans = runs.map(r => ({ ...r[1], label: r[1].label === yearPlan ? yearPlan : name(r) }));
+        const actuals = runs.map(r => ({ ...r[0], pvCur: true }));
+        const ratios = runs.map(r => ({ ...r[2], label: name(r) }));
+        const kinds = new Set(ratios.map(f => f.pv));
+        const ratioHead = kinds.size > 1 ? "% / ±" : kinds.has("diff") ? "±" : "%";
+        const first = fields => fields.map((f, i) => (i ? f : { ...f, grpStart: true }));
+        return [
+            { ...g, pvBlock: "plan", label: head(g.label, t("creditreport.plan.plan")), fields: first(plans) },
+            { ...g, pvBlock: "cur", label: head(g.label, t("creditreport.plan.actual")), fields: first(actuals) },
+            { ...g, pvBlock: "ratio", label: head(g.label, ratioHead), fields: first(ratios) }
+        ];
+    });
+    return { ...section, groups };
+}
+
 // One Plan vs Actual cell; "—" where there is no plan / no actual.
 function crFmtPlanField(item, field) {
     const v = crGetByPath(item, field.key);
     const dash = cls => `<td class="${cls} cr-pv-none">—</td>`;
+    // % of plan: the figure with a progress bar (green ≥ 100%, amber ≥ 80%).
     if (field.pv === "ach") {
         if (v === null || v === undefined) return dash("cr-col-pct cr-plan-col");
+        const pct = Math.round(v * 100);
         const cls = v >= 1 ? "cr-pv-good" : v >= 0.8 ? "cr-pv-warn" : "cr-pv-bad";
-        return `<td class="cr-col-pct cr-plan-col ${cls}">${Math.round(v * 100)}%</td>`;
+        return `<td class="cr-col-pct cr-plan-col cr-ach ${cls}" data-x="${pct}%">${pct}%<div class="cr-ach-bar"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></div></td>`;
     }
+    // ± against a ceiling (NBC Overdue % / NPL %): ▲ above the plan (red), ▼ under it (green).
     if (field.pv === "diff") {
         if (!v || v.plan === null || v.plan === undefined || v.actual === null || v.actual === undefined) return dash("cr-col-pct cr-plan-col");
         const d = Math.round((v.actual - v.plan) * 100) / 100;
-        return `<td class="cr-col-pct cr-plan-col ${d <= 0 ? "cr-pv-good" : "cr-pv-bad"}">${d > 0 ? "+" : ""}${d.toFixed(2)}</td>`;
+        if (!d) return `<td class="cr-col-pct cr-plan-col" data-x="0.00">0.00</td>`;
+        return `<td class="cr-col-pct cr-plan-col ${d < 0 ? "cr-pv-good" : "cr-pv-bad"}" data-x="${d.toFixed(2)}"><span class="cr-arrow">${d > 0 ? "▲" : "▼"}</span>${Math.abs(d).toFixed(2)}</td>`;
     }
-    const cls = (field.pv === "pct" ? "cr-col-pct" : field.pv === "money" ? "cr-col-money" : "cr-col-num") + (field.planCol ? " cr-plan-col" : "");
+    const cls = (field.pv === "pct" ? "cr-col-pct" : field.pv === "money" ? "cr-col-money" : "cr-col-num") + (field.planCol ? " cr-plan-col cr-plan-val" : "");
     if (v === null || v === undefined) return dash(cls);
+    // An actual % against its ceiling: a pill, green within the plan, red above it.
+    if (field.pv === "pct" && !field.planCol) {
+        const plan = crGetByPath(item, field.key.replace(/\.actual$/, ".plan"));
+        const ok = plan === null || plan === undefined ? null : Number(v) <= Number(plan);
+        const pill = ok === null ? "" : ok ? "cr-pill-ok" : "cr-pill-bad";
+        return `<td class="${cls}">${pill ? `<span class="cr-pill ${pill}">${Number(v).toFixed(2)}%</span>` : Number(v).toFixed(2) + "%"}</td>`;
+    }
     return `<td class="${cls}">${field.pv === "pct" ? Number(v).toFixed(2) + "%" : crFmtNum(v)}</td>`;
 }
 
@@ -493,7 +531,14 @@ function crGetByPath(obj, path) {
 let crBarMax = null;
 let crBarItems = new Set();
 
+// Plan vs Actual: a line before each figure's block of columns.
 function crFmtField(item, field) {
+    const html = crFmtFieldCell(item, field);
+    const extra = (field.grpStart ? "cr-grp-start " : "") + (field.pvCur ? "cr-pv-cur " : "");
+    return extra ? html.replace('<td class="', `<td class="${extra}`) : html;
+}
+
+function crFmtFieldCell(item, field) {
     if (field.pv) return crFmtPlanField(item, field);
     if (field.lm) return CRLastMonth.cell(item, field);
     const v = crGetByPath(item, field.key);
@@ -572,11 +617,11 @@ function crBuildThead(section) {
         return crSortState.dir === 1 ? " cr-sort-asc" : " cr-sort-desc";
     };
     const groupCells = section.groups.map(g =>
-        `<th colspan="${g.fields.length}"${g.lm ? ` class="cr-lm-${g.lm}"` : ""}>${g.label}</th>`
+        `<th colspan="${g.fields.length}"${g.lm ? ` class="cr-lm-${g.lm}"` : g.pvBlock ? ` class="cr-grp-start cr-pv-${g.pvBlock}"` : ""}>${g.label}</th>`
     ).join("");
 
     const subCells = section.groups.map(g =>
-        g.fields.map(f => `<th class="${crFieldClass(f)}${f.planCol ? " cr-plan-col" : ""}${f.lm ? ` cr-lm-${f.lm}` : ""}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
+        g.fields.map(f => `<th class="${crFieldClass(f)}${f.planCol ? " cr-plan-col" : ""}${f.grpStart ? " cr-grp-start" : ""}${f.pvCur ? " cr-pv-cur" : ""}${f.lm ? ` cr-lm-${f.lm}` : ""}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
     ).join("");
 
     const allExpanded = crIsAllExpanded();
@@ -703,9 +748,10 @@ function crActiveSection() {
     if (crCompareMode() === "lastMonth") return crLastMonth.expand(crCombinedSection(crSectionFor));
     // All Sections: each section's own groups, so the plan columns land
     // beside the figures they belong to.
-    return crCombinedSection(k => k === "all"
+    const section = crCombinedSection(k => k === "all"
         ? { groups: ["outstanding", "khr", "small", "disburse", "los", "parT24", "nbcOverdue", "writeOff"].flatMap(sk => crCompareSection(sk, crSections()[sk]).groups) }
         : crCompareSection(k, crSectionFor(k)));
+    return crPlanBlocks(section);
 }
 
 function crSectionFor(sectionKey) {
