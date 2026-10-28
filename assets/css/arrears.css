@@ -1020,14 +1020,14 @@ cursor:default;
    long text, so this trades "see the full text inline" for "every
    row is the same height" (the full text is still available by
    tapping the row to open the Reason Arrear panel). If you add/
-   remove/reorder table columns, these nth-child indexes (22, 23, 24)
+   remove/reorder table columns, these nth-child indexes (23, 24, 25)
    need to be updated to match. */
-.table-card th:nth-child(22),
-.table-card td:nth-child(22),
 .table-card th:nth-child(23),
 .table-card td:nth-child(23),
 .table-card th:nth-child(24),
-.table-card td:nth-child(24){
+.table-card td:nth-child(24),
+.table-card th:nth-child(25),
+.table-card td:nth-child(25){
 
 width:110px;
 
@@ -1043,11 +1043,11 @@ text-overflow:ellipsis;
 
 }
 
-/* DateBackUpReasonArrear (column 26) — sized to fit its full
+/* DateBackUpReasonArrear (column 27) — sized to fit its full
    "yyyy-mm-dd hh:mm AM/PM" value without truncating, rather than
    sharing the narrower 110px width above. */
-.table-card th:nth-child(26),
-.table-card td:nth-child(26){
+.table-card th:nth-child(27),
+.table-card td:nth-child(27){
 
 width:160px;
 
@@ -1680,7 +1680,7 @@ font-size:11px;
    PRINT
    Triggered by the existing window.print() call on the Print button
    — no JS changes needed, browsers apply @media print automatically.
-   Only the table prints (No through Promise Status, columns 1-19),
+   Only the table prints (No through Promise Status, columns 1-20),
    forced to landscape paper orientation. Sticky positioning is
    switched off for print since it's meaningless on paper and can
    otherwise cause odd repeated-header artifacts across page breaks.
@@ -1919,10 +1919,10 @@ border:1px solid #999 !important;
 
 }
 
-/* Hide columns 20 (CO_ID) through 26 (DateBackUpReasonArrear) —
-   keep only No through Promise Status (columns 1-19). */
-.table-card th:nth-child(n+20),
-.table-card td:nth-child(n+20){
+/* Hide columns 21 (CO_ID) through 27 (DateBackUpReasonArrear) —
+   keep only No through Promise Status (columns 1-20). */
+.table-card th:nth-child(n+21),
+.table-card td:nth-child(n+21){
 
 display:none !important;
 
