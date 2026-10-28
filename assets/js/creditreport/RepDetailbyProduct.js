@@ -181,6 +181,7 @@ function crFieldClass(f) {
     return "cr-col-num";
 }
 function crFmtField(item, field) {
+    if (field.lm) return CRLastMonth.cell(item, field);
     const v = crGetByPath(item, field.key);
     const cls = crFieldClass(field);
     if (field.pct) {
@@ -238,7 +239,7 @@ function crBuildThead(section) {
         `<th colspan="${g.fields.length}">${g.label}</th>`
     ).join("");
     const subCells = section.groups.map(g =>
-        g.fields.map(f => `<th class="${crFieldClass(f)}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
+        g.fields.map(f => `<th class="${crFieldClass(f)}${f.lm ? " cr-lm-col" : ""}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
     ).join("");
 
     return `
@@ -318,6 +319,7 @@ function crT24ClassGroup(prefix, label) {
 
 // Several sections picked: each one's groups side by side (crCombinedSection).
 function crActiveSection() {
+    if (crCompareMode() === "lastMonth") return CRLastMonth.expand(crCombinedSection(crSectionFor));
     return crCombinedSection(crSectionFor);
 }
 
@@ -504,9 +506,12 @@ function crSetMode(mode) {
     document.getElementById("crHistoryPanel").style.display = mode === "history" ? "block" : "none";
     document.getElementById("crHistProductRow").style.display = mode === "history" ? "" : "none";
     document.getElementById("crSearchWrap").style.display = mode === "current" && crData ? "flex" : "none";
+    // Comparison is for the current report only.
+    document.getElementById("crCompareRow").style.display = mode === "history" ? "none" : "";
     crUpdateClassVisibility();
     crUpdateHistRunButtonState();
     crUpdateChartButtonVisibility();
+    crLastMonth.note();
 
     if (mode === "current") {
         if (crData) {
@@ -733,6 +738,44 @@ function crUpdateClassVisibility() {
 }
 
 // ========================================
+// COMPARISON — Actual Only (the report as it was) or Last Month: each
+// figure next to last month's (the last saved Daily History day of
+// last month, see cr-last-month.js) and the change. Current mode only.
+// Snapshots carry no T24 / NBC class or product filter, so with one
+// picked every Last Month cell is "—".
+// ========================================
+function crCompareMode() {
+    if (crMode !== "current") return "actual";
+    return document.getElementById("crCompare")?.value === "lastMonth" ? "lastMonth" : "actual";
+}
+
+function crLastMonthFilters() {
+    const names = [];
+    if (crPicks("crClass").length) names.push(t("creditreport.detail.loanClass"));
+    if (crPicks("crProduct").length || crPicks("crNbcProduct").length) names.push(t("creditreport.detail.productType"));
+    return names;
+}
+
+const crLastMonth = CRLastMonth.controller({
+    endpoint: "/api/creditreport/byproduct/history",
+    token: crToken,
+    active: () => crCompareMode() === "lastMonth",
+    data: () => crData,
+    keyOf: it => it.product,
+    blockedBy: crLastMonthFilters,
+    render: () => crRenderSection(),
+    noteEl: "crLmNote",
+    fmtDate: v => crFmtDateDMY(v),
+    onError: () => notify(t("creditreport.lastMonth.loadFailed"), "error")
+});
+
+document.getElementById("crCompare").addEventListener("change", () => {
+    crRenderSection();
+    crLastMonth.ensure();
+    crSyncStateToUrl();
+});
+
+// ========================================
 // URL STATE
 // Mirrors section/dates into the address bar via history.replaceState
 // (no new history entries) — same mechanism as RepDetailbyCO.js, minus
@@ -750,6 +793,8 @@ function crReadStateFromUrl() {
     crRestorePicks("crNbcClass", p.getAll("nbcClass"));
 
     crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
+
+    if (p.get("compare") === "lastMonth") document.getElementById("crCompare").value = "lastMonth";
 }
 
 function crSyncStateToUrl() {
@@ -760,6 +805,7 @@ function crSyncStateToUrl() {
     crAddPicks(p, "t24Product", "crProduct");
     crAddPicks(p, "nbcClass", "crNbcClass");
     crAddPicks(p, "nbcProduct", "crNbcProduct");
+    if (document.getElementById("crCompare").value !== "actual") p.set("compare", document.getElementById("crCompare").value);
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
 }
 
@@ -817,6 +863,7 @@ async function crRunReport() {
         document.getElementById("crSearchWrap").style.display = "flex";
         document.getElementById("crTableScroll").style.display = "block";
         crRenderSection();
+        crLastMonth.ensure();
     } catch (e) {
         console.error(e);
         crHideLoading();

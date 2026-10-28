@@ -33,6 +33,7 @@ href="../../assets/css/creditreport/RepDetailbyProduct.css">
 <link rel="stylesheet" href="../../assets/css/creditreport/growth-dashboard.css">
 <link rel="stylesheet" href="../../assets/css/creditreport/cr-icons.css">
 <link rel="stylesheet" href="../../assets/css/creditreport/cr-export.css">
+<link rel="stylesheet" href="../../assets/css/creditreport/cr-last-month.css">
 
 <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
 
@@ -166,6 +167,16 @@ No Internet Connection
 </select>
 </div>
 
+<!-- Comparison: the report's own figures only, or each figure next to
+     last month's. Current mode only. -->
+<div class="cr-select-row" id="crCompareRow">
+<label for="crCompare" class="cr-select-label" data-i18n="creditreport.plan.compareLabel">Comparison</label>
+<select id="crCompare" class="cr-select">
+<option value="actual" data-i18n="creditreport.plan.compareActual">Actual Only</option>
+<option value="lastMonth" data-i18n="creditreport.plan.compareLastMonth">Last Month</option>
+</select>
+</div>
+
 <div class="cr-select-row" id="crClassRow" style="display:none;">
 <label for="crClass" class="cr-select-label" data-i18n="creditreport.detail.loanClass">Loan Class</label>
 <select id="crClass" class="cr-select">
@@ -274,6 +285,9 @@ data-i18n-placeholder="creditreport.byProduct.searchPlaceholder">
 </table>
 </div>
 
+<!-- Comparison "Last Month": which saved day it is (cr-last-month.js). -->
+<div class="cr-lm-note" id="crLmNote" style="display:none"></div>
+
 <div class="cr-empty" id="crEmptyMsg" style="display:none"></div>
 
 </div>
@@ -320,6 +334,7 @@ data-i18n-placeholder="creditreport.byProduct.searchPlaceholder">
 <script src="../../assets/js/creditreport/cr-multi.js"></script>
 <script src="../../assets/js/arrears-export.js"></script>
 <script src="../../assets/js/creditreport/cr-export.js"></script>
+<script src="../../assets/js/creditreport/cr-last-month.js"></script>
 <script src="../../assets/js/creditreport/RepDetailbyProduct.js"></script>
 <script src="../../assets/js/creditreport/RepDetailbyProduct-loader.js"></script>
 
