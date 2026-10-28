@@ -21,8 +21,6 @@ const crToken =
     localStorage.getItem("token") ||
     sessionStorage.getItem("token");
 
-const CR_PAR_ALERT = 0.04; // PAR % at or above this renders red
-
 let crData = null; // last successful /byproduct response
 
 // ========================================
@@ -168,10 +166,6 @@ function crFmtNum(n) {
     n = Number(n) || 0;
     return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
-function crFmtPct(n) {
-    n = Number(n) || 0;
-    return (n * 100).toFixed(2) + "%";
-}
 function crGetByPath(obj, path) {
     return path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj);
 }
@@ -180,16 +174,20 @@ function crFieldClass(f) {
     if (f.money) return "cr-col-money";
     return "cr-col-num";
 }
+// Value bars (Actual Only): the largest product figure per Value column,
+// and the product rows that get a bar (not the Total).
+let crBarMax = null;
+let crBarItems = new Set();
+
 function crFmtField(item, field) {
     if (field.lm) return CRLastMonth.cell(item, field);
     const v = crGetByPath(item, field.key);
     const cls = crFieldClass(field);
-    if (field.pct) {
-        const n = Number(v) || 0;
-        const alert = n >= CR_PAR_ALERT ? " cr-par-high" : "";
-        return `<td class="${cls}${alert}">${crFmtPct(n)}</td>`;
-    }
-    return `<td class="${cls}">${crFmtNum(v)}</td>`;
+    // PAR % as a coloured pill (cr-table.js: green < 3%, amber < 5%, red).
+    if (field.pct) return `<td class="${cls}">${CRTable.parPill(v)}</td>`;
+    // A product's Value with a bar: its size against the largest product's.
+    const max = crBarMax && crBarItems.has(item) ? crBarMax[field.key] : 0;
+    return `<td class="${cls}">${crFmtNum(v)}${max ? CRTable.bar(v, max) : ""}</td>`;
 }
 
 // ========================================
@@ -250,7 +248,7 @@ function crBuildThead(section) {
       <tr class="cr-sub-row">${subCells}</tr>`;
 }
 
-function crBuildRow(item, section, isTotal) {
+function crBuildRow(item, section, isTotal, idx) {
     const cells = section.groups.map(g =>
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
@@ -259,7 +257,8 @@ function crBuildRow(item, section, isTotal) {
     // Total row (drills into the "All Product" aggregate).
     const productKey = isTotal ? "All Product" : item.product;
     const productLabel = isTotal ? t("common.total") : item.product;
-    const nameCell = `<button type="button" class="cr-product-link" data-product="${crEscapeHtml(productKey)}">${crEscapeHtml(productLabel)}</button>`;
+    const rank = !isTotal && crCompareMode() === "actual" ? `<span class="cr-rank">${idx + 1}</span>` : "";
+    const nameCell = `${rank}<button type="button" class="cr-product-link" data-product="${crEscapeHtml(productKey)}">${crEscapeHtml(productLabel)}</button>`;
     // data-name backs crApplySearchFilter()'s client-side name search —
     // lowercased once here rather than re-lowercasing on every keystroke.
     const nameAttr = isTotal ? "" : ` data-name="${crEscapeHtml((item.product || "").toLowerCase())}"`;
@@ -357,10 +356,17 @@ function crRenderSection() {
     const section = crActiveSection();
 
     const displayItems = crApplySort(crData.items);
+    crBarItems = new Set(crData.items);
+    crBarMax = crCompareMode() === "actual" ? {} : null;
+    if (crBarMax) {
+        section.groups.forEach(g => g.fields.forEach(f => {
+            if (f.money && /\.value$/.test(f.key)) crBarMax[f.key] = Math.max(0, ...crData.items.map(it => Number(crGetByPath(it, f.key)) || 0));
+        }));
+    }
 
     document.getElementById("crThead").innerHTML = crBuildThead(section);
     document.getElementById("crTbody").innerHTML =
-        displayItems.map(it => crBuildRow(it, section, false)).join("") +
+        displayItems.map((it, i) => crBuildRow(it, section, false, i)).join("") +
         crBuildRow(crData.total, section, true);
 
     // Re-render (switching "Showing") rebuilds every row from scratch,
@@ -368,6 +374,8 @@ function crRenderSection() {
     // being silently dropped.
     crApplySearchFilter();
     requestAnimationFrame(crSetHeaderOffsets);
+    CRTable.edgeHint(document.getElementById("crTableScroll"));
+    crRenderTableHead();
 }
 
 // ========================================
@@ -464,6 +472,8 @@ function crRenderHistory() {
     document.getElementById("crTableScroll").style.display = "block";
     document.getElementById("crEmptyMsg").style.display = "none";
     requestAnimationFrame(crSetHeaderOffsets);
+    CRTable.edgeHint(document.getElementById("crTableScroll"));
+    crRenderTableHead();
 }
 
 async function crFetchHistory() {
@@ -692,6 +702,7 @@ function crShowEmpty(msg) {
     el.style.display = "block";
     document.getElementById("crSearchWrap").style.display = "none";
     document.getElementById("crTableScroll").style.display = "none";
+    document.getElementById("crTblHead").hidden = true;
 }
 
 // ========================================
@@ -764,6 +775,7 @@ const crLastMonth = CRLastMonth.controller({
     sectionFilters: crLastMonthSectionFilters,
     render: () => crRenderSection(),
     noteEl: "crLmNote",
+    compact: true,
     fmtDate: v => crFmtDateDMY(v),
     onError: () => notify(t("creditreport.lastMonth.loadFailed"), "error")
 });
@@ -773,6 +785,63 @@ document.getElementById("crCompare").addEventListener("change", () => {
     crLastMonth.ensure();
     crSyncStateToUrl();
 });
+
+// ========================================
+// TABLE TITLE + SCREENSHOT — over the table: the report's name, the
+// section(s) shown, the comparison and its dates, and a Screenshot
+// button (only once a section is picked, not All Sections) that copies
+// the whole table card as an image to paste into Telegram (cr-shot.js).
+// ========================================
+function crTableHeadMeta() {
+    const chip = text => `<span class="cr-tbl-chip">${crEscapeHtml(text)}</span>`;
+    const span = text => `<span>${crEscapeHtml(text)}</span>`;
+    if (crMode === "history") {
+        const from = document.getElementById("crHistFromDate").value, to = document.getElementById("crHistToDate").value;
+        return chip(t("creditreport.detail.dailyHistory")) + (from && to ? span(`${crFmtDateDMY(from)} → ${crFmtDateDMY(to)}`) : "");
+    }
+    const sel = document.getElementById("crCompare");
+    const compareText = [...sel.options].find(o => o.value === sel.value)?.textContent.trim() || "";
+    const d = crData || {};
+    const parts = [chip(compareText)];
+    if (crCompareMode() === "lastMonth") {
+        const last = crLastMonth.lastLabel();
+        if (last) parts.push(span(`${last} → ${CRLastMonth.shortDate(d.toDate)}`));
+    } else {
+        parts.push(span(t("creditreport.tblhead.asOf", { date: document.getElementById("crOsGridMerge").textContent.trim() })));
+    }
+    const keys = crSectionKeys();
+    const has = k => !keys.length || keys.includes(k);
+    if (has("disburse")) parts.push(span(t("creditreport.tblhead.disb", { from: crFmtDateDMY(d.fromDate), to: crFmtDateDMY(d.toDate) })));
+    if (has("writeOff")) parts.push(span(t("creditreport.tblhead.wo", { from: crFmtDateDMY(d.woFromDate), to: crFmtDateDMY(d.woToDate) })));
+    if (has("parT24")) parts.push(span(`T24 ${document.getElementById("crArrearsPenalty").textContent.trim()}`));
+    return parts.join("");
+}
+
+function crRenderTableHead() {
+    const keys = crSectionKeys();
+    const sel = document.getElementById("crSection");
+    const optText = v => [...sel.options].find(o => o.value === v)?.textContent.trim() || v;
+    document.getElementById("crTblSub").textContent = keys.length ? keys.map(optText).join(" · ") : optText("all");
+    document.getElementById("crTblMeta").innerHTML = crTableHeadMeta();
+    document.getElementById("crTblHead").hidden = false;
+    document.getElementById("btnCrShot").hidden = !keys.length;
+}
+
+document.getElementById("btnCrShot").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    try {
+        const name = `MonitoringByProduct_${(crData && crData.toDate) || ""}.png`;
+        const how = await CRShot.capture(document.getElementById("crTableCard"), name);
+        if (how !== "cancelled") notify(t(`creditreport.shot.${how}`), "success");
+    } catch (err) {
+        console.error("screenshot failed:", err);
+        notify(t("creditreport.shot.failed"), "error");
+    } finally {
+        btn.disabled = false;
+    }
+});
+
 
 // ========================================
 // URL STATE
@@ -951,7 +1020,8 @@ document.getElementById("crTbody").addEventListener("click", (e) => {
 // MESSAGE HELPER
 // ========================================
 function notify(message, type = "info") {
-    if (typeof showToast === "function") showToast(message, type);
+    if (typeof CMToast !== "undefined" && CMToast.show) CMToast.show({ type, title: message, message: "", duration: 3500 });
+    else if (typeof showToast === "function") showToast(message, type);
     else alert(message);
 }
 
