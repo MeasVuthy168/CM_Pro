@@ -993,9 +993,10 @@ function crPopulateFilters(data) {
 // COMPARISON — Actual Only (the report as it was) or Last Month: each
 // figure next to last month's (the last saved Daily History day of
 // last month, see cr-last-month.js) and the change. Current mode only.
-// Snapshots carry no T24 / NBC class or product filter nor Branch /
-// Officer (both change each location's figures), so with one picked
-// every Last Month cell is "—"; with District / Commune picked the saved
+// A T24 Loan Class pick compares with last month's same classes; a
+// Product Type pick blanks only its own section. Branch / Officer aren't
+// saved and change each location's figures, so with one picked every
+// Last Month cell is "—"; with District / Commune picked the saved
 // Total (every location) isn't the total on screen. "Other Address"'s
 // own breakdown rows are not compared.
 // ========================================
@@ -1004,13 +1005,17 @@ function crCompareMode() {
     return document.getElementById("crCompare")?.value === "lastMonth" ? "lastMonth" : "actual";
 }
 
+// Branch / Officer change every location's figures and aren't saved.
 function crLastMonthFilters() {
     const names = [];
-    if (crPicks("crClass").length) names.push(t("creditreport.detail.loanClass"));
-    if (crPicks("crProduct").length || crPicks("crNbcProduct").length) names.push(t("creditreport.detail.productType"));
     if (crPicks("crBranch").length) names.push(t("creditreport.detail.branch"));
     if (crPicks("crOfficer").length) names.push(t("creditreport.detail.officer"));
     return names;
+}
+
+// The T24 / NBC filters only change their own section (cr-last-month.js).
+function crLastMonthSectionFilters() {
+    return { t24Class: crPicks("crClass"), t24Product: crPicks("crProduct"), nbcProduct: crPicks("crNbcProduct") };
 }
 
 const crLastMonth = CRLastMonth.controller({
@@ -1021,6 +1026,7 @@ const crLastMonth = CRLastMonth.controller({
     keyOf: it => it.location,
     totalBlocked: () => crPicks("crDistrict").length > 0 || crPicks("crCommune").length > 0,
     blockedBy: crLastMonthFilters,
+    sectionFilters: crLastMonthSectionFilters,
     render: () => crRenderSection(),
     noteEl: "crLmNote",
     fmtDate: v => crFmtDateDMY(v),

@@ -741,19 +741,17 @@ function crUpdateClassVisibility() {
 // COMPARISON — Actual Only (the report as it was) or Last Month: each
 // figure next to last month's (the last saved Daily History day of
 // last month, see cr-last-month.js) and the change. Current mode only.
-// Snapshots carry no T24 / NBC class or product filter, so with one
-// picked every Last Month cell is "—".
+// A T24 Loan Class pick compares with last month's same classes; a
+// Product Type pick blanks only its own section (cr-last-month.js).
 // ========================================
 function crCompareMode() {
     if (crMode !== "current") return "actual";
     return document.getElementById("crCompare")?.value === "lastMonth" ? "lastMonth" : "actual";
 }
 
-function crLastMonthFilters() {
-    const names = [];
-    if (crPicks("crClass").length) names.push(t("creditreport.detail.loanClass"));
-    if (crPicks("crProduct").length || crPicks("crNbcProduct").length) names.push(t("creditreport.detail.productType"));
-    return names;
+// The T24 / NBC filters only change their own section (cr-last-month.js).
+function crLastMonthSectionFilters() {
+    return { t24Class: crPicks("crClass"), t24Product: crPicks("crProduct"), nbcProduct: crPicks("crNbcProduct") };
 }
 
 const crLastMonth = CRLastMonth.controller({
@@ -762,7 +760,8 @@ const crLastMonth = CRLastMonth.controller({
     active: () => crCompareMode() === "lastMonth",
     data: () => crData,
     keyOf: it => it.product,
-    blockedBy: crLastMonthFilters,
+    blockedBy: () => [],
+    sectionFilters: crLastMonthSectionFilters,
     render: () => crRenderSection(),
     noteEl: "crLmNote",
     fmtDate: v => crFmtDateDMY(v),
