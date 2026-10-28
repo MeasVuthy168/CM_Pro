@@ -1,11 +1,15 @@
 /* Comparison "Last Month" (cr-last-month.js) — shared by the 4 Daily
-   Monitoring reports. Its columns are tinted blue, apart from the
-   Plan vs Actual gold. */
-.table-card th.cr-lm-col{ background:#16365C; color:#CFE3FF; }
-.table-card td.cr-lm-col{ background:#EEF5FF; }
-.table-card tr:nth-child(even) td.cr-lm-col{ background:#E3EEFC; }
-[data-theme="dark"] .table-card td.cr-lm-col{ background:#13213A; }
-[data-theme="dark"] .table-card tr:nth-child(even) td.cr-lm-col{ background:#172843; }
+   Monitoring reports. Each group is three blocks, as in the Excel
+   report: last month | now (highlighted) | (+/-). */
+.table-card th.cr-lm-cur{ background:#4A3C00; color:#FFE680; }
+.table-card td.cr-lm-cur{ background:#FFF3D6; }
+.table-card tr:nth-child(even) td.cr-lm-cur{ background:#FDEBC2; }
+[data-theme="dark"] .table-card td.cr-lm-cur{ background:#2A2610; }
+[data-theme="dark"] .table-card tr:nth-child(even) td.cr-lm-cur{ background:#302B12; }
+/* A thicker line between the blocks. */
+.table-card .cr-lm-cur + .cr-lm-diff,
+.table-card .cr-lm-value + .cr-lm-cur,
+.table-card .cr-lm-diff + .cr-lm-value{ border-left:2px solid var(--cr-text-muted, #8a93a6) !important; }
 .table-card td.cr-lm-good{ color:#0A7A35; font-weight:800; }
 .table-card td.cr-lm-bad{ color:var(--cr-danger, #C0392B); font-weight:800; }
 .cr-total-row td.cr-lm-good{ color:#0A7A35 !important; }

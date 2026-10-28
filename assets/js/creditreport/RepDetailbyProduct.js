@@ -236,10 +236,10 @@ function crBuildThead(section) {
         return crSortState.dir === 1 ? " cr-sort-asc" : " cr-sort-desc";
     };
     const groupCells = section.groups.map(g =>
-        `<th colspan="${g.fields.length}">${g.label}</th>`
+        `<th colspan="${g.fields.length}"${g.lm ? ` class="cr-lm-${g.lm}"` : ""}>${g.label}</th>`
     ).join("");
     const subCells = section.groups.map(g =>
-        g.fields.map(f => `<th class="${crFieldClass(f)}${f.lm ? " cr-lm-col" : ""}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
+        g.fields.map(f => `<th class="${crFieldClass(f)}${f.lm ? ` cr-lm-${f.lm}` : ""}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
     ).join("");
 
     return `
@@ -319,7 +319,7 @@ function crT24ClassGroup(prefix, label) {
 
 // Several sections picked: each one's groups side by side (crCombinedSection).
 function crActiveSection() {
-    if (crCompareMode() === "lastMonth") return CRLastMonth.expand(crCombinedSection(crSectionFor));
+    if (crCompareMode() === "lastMonth") return crLastMonth.expand(crCombinedSection(crSectionFor));
     return crCombinedSection(crSectionFor);
 }
 
