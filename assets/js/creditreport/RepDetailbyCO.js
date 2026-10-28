@@ -1151,15 +1151,14 @@ function crUpdateHistRunButtonState() {
 // COMPARISON "LAST MONTH" — each figure next to last month's (the last
 // saved Daily History day of last month, see cr-last-month.js) and the
 // change. Officers are matched by name + branch, as Daily History does.
-// Snapshots carry no T24 / NBC class or product filter, so with one
-// picked every Last Month cell is "—"; with Branch / Officer Type
+// A T24 Loan Class pick compares with last month's same classes; a
+// Product Type pick blanks only its own section; with Branch / Officer Type
 // picked the saved Total (every officer) isn't the total on screen.
 // ========================================
-function crLastMonthFilters() {
-    const names = [];
-    if (crPicks("crClass").length) names.push(t("creditreport.detail.loanClass"));
-    if (crPicks("crProduct").length || crPicks("crNbcProduct").length) names.push(t("creditreport.detail.productType"));
-    return names;
+
+// The T24 / NBC filters only change their own section (cr-last-month.js).
+function crLastMonthSectionFilters() {
+    return { t24Class: crPicks("crClass"), t24Product: crPicks("crProduct"), nbcProduct: crPicks("crNbcProduct") };
 }
 
 const crLastMonth = CRLastMonth.controller({
@@ -1168,7 +1167,8 @@ const crLastMonth = CRLastMonth.controller({
     active: () => crCompareMode() === "lastMonth",
     data: () => crData,
     keyOf: it => `${it.name}|${it.branch}`,
-    blockedBy: crLastMonthFilters,
+    blockedBy: () => [],
+    sectionFilters: crLastMonthSectionFilters,
     totalBlocked: () => crPicks("crBranch").length > 0 || crPicks("crTeam").length > 0,
     render: () => crRenderSection(),
     noteEl: "crLmNote",

@@ -130,7 +130,7 @@ window.CRLastMonth = (() => {
 
     // The note under the table: which day "Last Month" is, and why some
     // figures show "—".
-    function renderNote(el, { info, error, blocked, totalBlocked, filters, fmtDate }) {
+    function renderNote(el, { info, error, blocked, totalBlocked, filters, productSections, t24Class, fmtDate }) {
         if (!el) return;
         el.style.display = "";
         const lines = [];
@@ -139,6 +139,8 @@ window.CRLastMonth = (() => {
         else if (!info.date) lines.push(t("creditreport.lastMonth.noSnapshot", { date: fmtDate(info.cutoff) }));
         else lines.push(t("creditreport.lastMonth.noteDate", { date: fmtDate(info.date) }), t("creditreport.lastMonth.noteFlows"));
         if (blocked) lines.push(t("creditreport.lastMonth.noteFilters", { filters }));
+        if (productSections) lines.push(t("creditreport.lastMonth.noteProduct", { sections: productSections }));
+        if (t24Class) lines.push(t("creditreport.lastMonth.noteClass"));
         else if (totalBlocked) lines.push(t("creditreport.lastMonth.noteTotal"));
         const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
         el.innerHTML = lines.map(l => `<span>${esc(l)}</span>`).join("");
@@ -148,33 +150,101 @@ window.CRLastMonth = (() => {
         if (el) el.style.display = "none";
     }
 
+    // ---- Section filters ----
+    // The T24 Loan Class / Product Type and NBC Product Type filters only
+    // change their own section (T24, NBC Overdue) — the other sections
+    // still compare as they are. Snapshots keep T24 per Loan Class
+    // (parT24ByClass), so a Loan Class pick is compared with last month's
+    // same classes added up; Product Type isn't saved, so those columns
+    // show "—".
+    const T24_BASE = {
+        Normal: ["normal"], "Special Mention": ["specialMention"], "Sub Standard": ["subStandard"],
+        Doubtful: ["doubtful"], Loss: ["loss"],
+        Normal_to_SpecialMention: ["normal", "specialMention"],
+        SubStandard_to_Loss: ["subStandard", "doubtful", "loss"]
+    };
+    const T24_KEYS = ["parT24", "parT24Area", "parT24ByClass", "parT24AreaByClass"];
+    const NBC_KEYS = ["nbcOverdue", "nbcOverdueArea"];
+
+    // The picked classes' buckets added up (any of them, like the server's
+    // filter); null when a bucket is missing from the snapshot.
+    function sumClasses(byClass, picks) {
+        if (!byClass) return null;
+        const keys = [...new Set(picks.flatMap(p => T24_BASE[p] || []))];
+        if (!keys.length || keys.some(k => !byClass[k])) return null;
+        const out = { loan: 0, value: 0, parPct: 0 };
+        for (const k of keys) {
+            out.loan += Number(byClass[k].loan) || 0;
+            out.value += Number(byClass[k].value) || 0;
+            out.parPct += Number(byClass[k].parPct) || 0;
+        }
+        return out;
+    }
+
+    // A saved row narrowed like the live one: f = { t24Class, t24Product,
+    // nbcProduct } (picked values). Works on a copy, breakdown rows too.
+    function scopeSaved(prev, f) {
+        if (!prev || typeof prev !== "object") return prev;
+        const out = { ...prev };
+        if (f.t24Product.length) {
+            T24_KEYS.forEach(k => delete out[k]);
+        } else if (f.t24Class.length) {
+            for (const [flat, byClass] of [["parT24", "parT24ByClass"], ["parT24Area", "parT24AreaByClass"]]) {
+                if (!(flat in out)) continue;
+                const sum = sumClasses(out[byClass], f.t24Class);
+                if (sum) out[flat] = { ...out[flat], ...sum };
+                else delete out[flat];
+            }
+        }
+        if (f.nbcProduct.length) NBC_KEYS.forEach(k => delete out[k]);
+        if (out.breakdown) {
+            out.breakdown = Object.fromEntries(Object.entries(out.breakdown).map(([k, v]) => [k, scopeSaved(v, f)]));
+        }
+        return out;
+    }
+
     // One report's Last Month state. opts:
     //   endpoint  its Daily History URL ("/api/creditreport/…/history")
     //   token     the JWT
     //   active()  true while Comparison = Last Month (Current mode)
     //   data()    the loaded report: { toDate, items, total }
     //   keyOf(it) a row's match key, the same for live and saved rows
-    //   blockedBy()  names of picked filters the snapshot lacks ([] = none)
+    //   sectionFilters()  { t24Class, t24Product, nbcProduct } picked
+    //   blockedBy()  names of picked filters that change every figure and
+    //             the snapshot lacks ([] = none) — all Last Month is "—"
     //   totalBlocked() true when the rows on screen are a subset (the
     //             saved total then isn't theirs)
     //   render()  re-draws the table; noteEl the note's element id
     function controller(opts) {
         let info = null, error = false;
+        const filters = () => {
+            const f = (opts.sectionFilters && opts.sectionFilters()) || {};
+            return { t24Class: f.t24Class || [], t24Product: f.t24Product || [], nbcProduct: f.nbcProduct || [] };
+        };
         const byKey = () => new Map(((info && info.day && info.day.items) || []).map(it => [opts.keyOf(it), it]));
 
-        // The saved row for a live row (null = show "—"); "total" for the Total row.
+        // The saved row for a live row, narrowed like it (null = show "—");
+        // "total" for the Total row.
         function itemFor(key) {
             if (!info || !info.day || opts.blockedBy().length) return null;
-            if (key === "total") return opts.totalBlocked && opts.totalBlocked() ? null : info.day.total || null;
-            return byKey().get(key) || null;
+            const raw = key === "total"
+                ? (opts.totalBlocked && opts.totalBlocked() ? null : info.day.total)
+                : byKey().get(key);
+            return raw ? scopeSaved(raw, filters()) : null;
         }
 
         function note() {
             const el = document.getElementById(opts.noteEl);
             if (!opts.active()) return hideNote(el);
             const blocked = opts.blockedBy();
+            const f = filters();
+            const sections = [];
+            if (f.t24Product.length) sections.push(t("creditreport.detail.sectionT24"));
+            if (f.nbcProduct.length) sections.push(t("creditreport.detail.sectionNbcOverdue"));
             renderNote(el, {
                 info, error, blocked: blocked.length > 0, filters: blocked.join(" / "),
+                productSections: blocked.length ? "" : sections.join(" / "),
+                t24Class: !blocked.length && !f.t24Product.length && f.t24Class.length > 0,
                 totalBlocked: !!(opts.totalBlocked && opts.totalBlocked()), fmtDate: opts.fmtDate
             });
         }
@@ -186,9 +256,7 @@ window.CRLastMonth = (() => {
             try {
                 info = await load({ endpoint: opts.endpoint, token: opts.token, toDate: data.toDate });
                 error = false;
-                const map = byKey();
-                const blocked = opts.blockedBy().length > 0;
-                (data.items || []).forEach(it => attach(it, blocked || !info.day ? null : map.get(opts.keyOf(it)) || null));
+                (data.items || []).forEach(it => attach(it, itemFor(opts.keyOf(it))));
                 attach(data.total, itemFor("total"));
                 opts.render();
             } catch (e) {
@@ -208,5 +276,5 @@ window.CRLastMonth = (() => {
         return { ensure, note, itemFor, expand: expandSection };
     }
 
-    return { cutoff, shortDate, load, attach, diffTree, expand, cell, renderNote, hideNote, controller };
+    return { cutoff, shortDate, load, attach, diffTree, expand, cell, renderNote, hideNote, scopeSaved, controller };
 })();
