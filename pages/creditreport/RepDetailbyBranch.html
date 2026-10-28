@@ -35,6 +35,7 @@ href="../../assets/css/creditreport/RepDetailbyBranch.css">
 <link rel="stylesheet" href="../../assets/css/creditreport/growth-dashboard.css">
 <link rel="stylesheet" href="../../assets/css/creditreport/cr-icons.css">
 <link rel="stylesheet" href="../../assets/css/creditreport/cr-export.css">
+<link rel="stylesheet" href="../../assets/css/creditreport/cr-last-month.css">
 
 <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
 
@@ -206,6 +207,7 @@ No Internet Connection
 <select id="crCompare" class="cr-section-select">
 <option value="actual" data-i18n="creditreport.plan.compareActual">Actual Only</option>
 <option value="plan" data-i18n="creditreport.plan.comparePlan">Plan vs Actual</option>
+<option value="lastMonth" data-i18n="creditreport.plan.compareLastMonth">Last Month</option>
 </select>
 </div>
 
@@ -317,6 +319,9 @@ No Internet Connection
      plan, which days the actual covers, and a link to set the plan. -->
 <div class="cr-table-note cr-plan-note" id="crPlanNote" style="display:none"></div>
 
+<!-- Comparison "Last Month": which saved day it is (cr-last-month.js). -->
+<div class="cr-lm-note" id="crLmNote" style="display:none"></div>
+
 </div>
 
 </div>
@@ -373,6 +378,7 @@ No Internet Connection
 <script src="../../assets/js/creditreport/cr-multi.js"></script>
 <script src="../../assets/js/arrears-export.js"></script>
 <script src="../../assets/js/creditreport/cr-export.js"></script>
+<script src="../../assets/js/creditreport/cr-last-month.js"></script>
 <script src="../../assets/js/creditreport/RepDetailbyBranch.js"></script>
 
 <!-- PAGE LOADER (component loader, offline, notification badge) -->

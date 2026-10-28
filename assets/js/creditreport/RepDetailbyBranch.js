@@ -198,7 +198,7 @@ function crSections() {
 function crCompareMode() {
     if (crMode !== "current") return "actual";
     const v = document.getElementById("crCompare")?.value;
-    return v === "plan" ? "plan" : "actual";
+    return v === "plan" || v === "lastMonth" ? v : "actual";
 }
 
 // Plan columns of one metric: plan, then % (or ± for a
@@ -285,7 +285,7 @@ function crFmtPlanField(item, field) {
 // Fetch Plan vs Actual (once per report load) and hang each branch's
 // metrics on its row as item.planVs, the Total's on the Total row.
 async function crEnsurePlan() {
-    if (!crSummaryData || crCompareMode() === "actual") return crRenderPlanNote();
+    if (!crSummaryData || crCompareMode() !== "plan") return crRenderPlanNote();
     if (crPlanData) return crRenderPlanNote();
     if (!crPlanLoading) {
         crPlanLoading = (async () => {
@@ -314,7 +314,7 @@ async function crEnsurePlan() {
 function crRenderPlanNote() {
     const el = document.getElementById("crPlanNote");
     if (!el) return;
-    const show = crCompareMode() !== "actual";
+    const show = crCompareMode() === "plan";
     el.style.display = show ? "" : "none";
     if (!show) return;
     if (!crPlanData) {
@@ -342,6 +342,32 @@ function crRenderPlanNote() {
 }
 
 // ========================================
+// COMPARISON "LAST MONTH" — each figure next to last month's (the last
+// saved Daily History day of last month, see cr-last-month.js) and the
+// change. Snapshots carry no T24 / NBC class or product filter, so with
+// one picked every Last Month cell is "—".
+// ========================================
+function crLastMonthFilters() {
+    const names = [];
+    if (crPicks("crClass").length) names.push(t("creditreport.detail.loanClass"));
+    if (crPicks("crProduct").length || crPicks("crNbcProduct").length) names.push(t("creditreport.detail.productType"));
+    return names;
+}
+
+const crLastMonth = CRLastMonth.controller({
+    endpoint: "/api/creditreport/summary/history",
+    token: crToken,
+    active: () => crCompareMode() === "lastMonth",
+    data: () => crSummaryData,
+    keyOf: it => it.branch,
+    blockedBy: crLastMonthFilters,
+    render: () => crRenderSummary(),
+    noteEl: "crLmNote",
+    fmtDate: v => crFmtDateDMY(v),
+    onError: () => notify(t("creditreport.lastMonth.loadFailed"), "error")
+});
+
+// ========================================
 // URL STATE
 // Mirrors the current section/dates into the address bar via
 // history.replaceState (no new history entries added, so this doesn't
@@ -364,7 +390,7 @@ function crReadStateFromUrl() {
     crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
 
     const compare = p.get("compare");
-    if (compare === "plan") document.getElementById("crCompare").value = compare;
+    if (compare === "plan" || compare === "lastMonth") document.getElementById("crCompare").value = compare;
 }
 
 function crSyncStateToUrl() {
@@ -465,6 +491,7 @@ function crGetByPath(obj, path) {
 }
 function crFmtField(item, field) {
     if (field.pv) return crFmtPlanField(item, field);
+    if (field.lm) return CRLastMonth.cell(item, field);
     const v = crGetByPath(item, field.key);
     const cls = crFieldClass(field);
     if (field.pct) {
@@ -547,7 +574,7 @@ function crBuildThead(section) {
     ).join("");
 
     const subCells = section.groups.map(g =>
-        g.fields.map(f => `<th class="${crFieldClass(f)}${f.planCol ? " cr-plan-col" : ""}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
+        g.fields.map(f => `<th class="${crFieldClass(f)}${f.planCol ? " cr-plan-col" : ""}${f.lm ? " cr-lm-col" : ""}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
     ).join("");
 
     const allExpanded = crIsAllExpanded();
@@ -603,6 +630,12 @@ function crBuildRow(item, section, isTotal) {
         } else {
             const group = crDetailedData.groups.find(g => g.branch === item.branch);
             if (group) [co, fsro, digital] = group.rows;
+        }
+        if (co && crCompareMode() === "lastMonth") {
+            const bd = (crLastMonth.itemFor(isTotal ? "total" : branchKey) || {}).breakdown || {};
+            CRLastMonth.attach(co, bd.co);
+            CRLastMonth.attach(fsro, bd.fsro);
+            CRLastMonth.attach(digital, bd.digital);
         }
         if (co) {
             html +=
@@ -665,6 +698,7 @@ function crT24ClassGroup(prefix, label) {
 // Several sections picked: each one's groups side by side (crCombinedSection).
 function crActiveSection() {
     if (crCompareMode() === "actual") return crCombinedSection(crSectionFor);
+    if (crCompareMode() === "lastMonth") return CRLastMonth.expand(crCombinedSection(crSectionFor));
     // All Sections: each section's own groups, so the plan columns land
     // beside the figures they belong to.
     return crCombinedSection(k => k === "all"
@@ -989,6 +1023,7 @@ function crSetMode(mode) {
         crShowEmpty("Pick a Showing section, then click \"View History\".");
     }
     crEnsurePlan();
+    crLastMonth.note();
 }
 
 // ========================================
@@ -1113,6 +1148,7 @@ document.getElementById("crTbody").addEventListener("click", (e) => {
 
 document.getElementById("crCompare").addEventListener("change", () => {
     crEnsurePlan();
+    crLastMonth.ensure();
     crRenderSummary();
     crSyncStateToUrl();
 });
@@ -1319,6 +1355,7 @@ async function crRunReport() {
         document.getElementById("crTableScroll").style.display = "block";
         crRenderSummary();
         crEnsurePlan();
+        crLastMonth.ensure();
     } catch (e) {
         console.error(e);
         crHideLoading();
