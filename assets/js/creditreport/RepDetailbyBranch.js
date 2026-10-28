@@ -26,8 +26,6 @@ let crDetailedData = null; // { groups, grand } from /api/creditreport/detailed 
 // inline under their Total-only row ("All Branch" for the grand Total
 // row at the bottom). Several can be open at once (e.g. via Expand All).
 let crExpandedBranches = new Set();
-// PAR % at or above this is rendered red in every PAR column.
-const CR_PAR_ALERT = 0.04;
 
 let crLoanReclass = null;  // { value, count } — rendered in the note under the T24 columns
 // Plan vs Actual (/api/creditreport/plan-vs-actual), fetched the first
@@ -363,6 +361,7 @@ const crLastMonth = CRLastMonth.controller({
     sectionFilters: crLastMonthSectionFilters,
     render: () => crRenderSummary(),
     noteEl: "crLmNote",
+    compact: true,
     fmtDate: v => crFmtDateDMY(v),
     onError: () => notify(t("creditreport.lastMonth.loadFailed"), "error")
 });
@@ -489,20 +488,23 @@ function crFmtPct(n) {
 function crGetByPath(obj, path) {
     return path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj);
 }
+// Value bars (Actual Only): the largest branch figure per Value column,
+// and the branch rows that get a bar (not Total or CO / FSRO / Digital).
+let crBarMax = null;
+let crBarItems = new Set();
+
 function crFmtField(item, field) {
     if (field.pv) return crFmtPlanField(item, field);
     if (field.lm) return CRLastMonth.cell(item, field);
     const v = crGetByPath(item, field.key);
     const cls = crFieldClass(field);
-    if (field.pct) {
-        const n = Number(v) || 0;
-        // Anything at or above 4% is flagged red across every PAR column.
-        const parCls = n >= CR_PAR_ALERT ? " cr-par-high" : "";
-        return `<td class="${cls}${parCls}">${crFmtPct(n)}</td>`;
-    }
+    // PAR % as a coloured pill (cr-table.js: green < 5%, amber < 10%, red).
+    if (field.pct) return `<td class="${cls}">${CRTable.parPill(v)}</td>`;
     // optional: a figure older snapshots don't have — "—", not 0.
     if (field.optional && (v === undefined || v === null)) return `<td class="${cls}">—</td>`;
-    return `<td class="${cls}">${crFmtNum(v)}</td>`;
+    // A branch's Value with a bar: its size against the largest branch's.
+    const max = crBarMax && crBarItems.has(item) ? crBarMax[field.key] : 0;
+    return `<td class="${cls}">${crFmtNum(v)}${max ? CRTable.bar(v, max) : ""}</td>`;
 }
 
 // ========================================
@@ -606,7 +608,7 @@ function crBuildSummaryBreakdownRow(item, section, team) {
       </tr>`;
 }
 
-function crBuildRow(item, section, isTotal) {
+function crBuildRow(item, section, isTotal, rank) {
     const cells = section.groups.map(g =>
         g.fields.map(f => crFmtField(item, f)).join("")
     ).join("");
@@ -615,7 +617,7 @@ function crBuildRow(item, section, isTotal) {
     const isExpanded = crExpandedBranches.has(branchKey);
     const branchCell = `
         <button type="button" class="cr-row-expand-btn${isExpanded ? " open" : ""}" data-branch="${crEscapeHtml(branchKey)}" aria-expanded="${isExpanded}" aria-label="${t("creditreport.byBranch.toggleBreakdownAria")}">▾</button>
-        <button type="button" class="cr-branch-link" data-branch="${crEscapeHtml(branchKey)}">${crEscapeHtml(branchLabel)}</button>`;
+        ${rank ? `<span class="cr-rank">${rank}</span>` : ""}<button type="button" class="cr-branch-link" data-branch="${crEscapeHtml(branchKey)}">${crEscapeHtml(branchLabel)}</button>`;
 
     let html = `
       <tr${isTotal ? ' class="cr-total-row"' : ""}>
@@ -749,16 +751,24 @@ function crRenderSummary() {
     }
 
     const displayItems = crApplySort(crSummaryData.items);
+    crBarItems = new Set(crSummaryData.items);
+    crBarMax = crCompareMode() === "actual" ? {} : null;
+    if (crBarMax) {
+        section.groups.forEach(g => g.fields.forEach(f => {
+            if (f.money && /\.value$/.test(f.key)) crBarMax[f.key] = Math.max(0, ...crSummaryData.items.map(it => Number(crGetByPath(it, f.key)) || 0));
+        }));
+    }
 
     document.getElementById("crThead").innerHTML = crBuildThead(section);
     document.getElementById("crTbody").innerHTML =
-        displayItems.map(it => crBuildRow(it, section, false)).join("") +
+        displayItems.map((it, i) => crBuildRow(it, section, false, crCompareMode() === "actual" ? i + 1 : 0)).join("") +
         crBuildRow(crSummaryData.total, section, true);
 
     // The note sits under the T24 section only when it's the one shown.
     const keys = crSectionKeys();
     crRenderReclassNote(keys.length === 1 ? keys[0] : "all");
     requestAnimationFrame(crSetHeaderOffsets);
+    CRTable.edgeHint(document.getElementById("crTableScroll"));
 }
 
 // ========================================
@@ -933,6 +943,7 @@ function crRenderHistory() {
     document.getElementById("crTableScroll").style.display = "block";
     document.getElementById("crEmptyMsg").style.display = "none";
     requestAnimationFrame(crSetHeaderOffsets);
+    CRTable.edgeHint(document.getElementById("crTableScroll"));
     crUpdateChartButtonVisibility();
 }
 

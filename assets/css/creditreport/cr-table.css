@@ -1,0 +1,74 @@
+/* =====================================================
+   Daily Monitoring table — design ក (Actual) / គ (Last Month), see
+   cr-table.js. Uses the page's own --cr-* tokens.
+   ===================================================== */
+.table-card table{ font-variant-numeric:tabular-nums; }
+
+/* Header: navy with gold text and a gold line under it. */
+.table-card thead th,
+.table-card thead th.cr-branch-col,
+[data-theme="dark"] .table-card thead th,
+[data-theme="dark"] .table-card thead th.cr-branch-col{
+    background:#1A2747;
+    color:var(--cr-gold-light);
+    border:0;
+    border-bottom:1px solid #2f4670;
+}
+.table-card thead tr.cr-sub-row th,
+.table-card thead tr:last-child th[rowspan]{ border-bottom:2px solid var(--cr-gold-light); }
+.table-card thead th.cr-lm-cur{ background:#4A3C00; color:#FFE680; }
+
+/* Rows: lines between rows only, a light zebra. */
+.table-card td{ border:0; border-bottom:1px solid var(--cr-border); }
+.table-card td.cr-branch-col{ white-space:nowrap; }
+.cr-rank{
+    display:inline-block;
+    min-width:16px;
+    margin-right:4px;
+    color:var(--cr-text-muted);
+    font-weight:600;
+    font-size:10.5px;
+}
+
+/* PAR % pill. */
+.cr-pill{
+    display:inline-block;
+    min-width:54px;
+    text-align:center;
+    padding:2px 7px;
+    border-radius:999px;
+    font-weight:800;
+    font-size:11px;
+}
+.cr-pill-ok{ background:rgba(27,175,122,.14); color:#0A7A35; }
+.cr-pill-warn{ background:rgba(242,181,68,.18); color:#9A6200; }
+.cr-pill-bad{ background:rgba(192,57,43,.13); color:var(--cr-danger); }
+[data-theme="dark"] .cr-pill-ok{ color:#5BD38A; }
+[data-theme="dark"] .cr-pill-warn{ color:#F2B544; }
+
+/* Value bar. */
+.cr-bar{ height:3px; border-radius:2px; background:var(--cr-border); margin-top:4px; overflow:hidden; }
+.cr-bar i{ display:block; height:100%; background:var(--cr-gold); }
+
+/* Total: pinned at the bottom while scrolling, gold line on top. */
+.table-card tbody tr.cr-total-row td{
+    position:sticky;
+    bottom:0;
+    z-index:2;
+    background:var(--cr-total-bg);
+    border-top:2px solid var(--cr-gold-light);
+    border-bottom:0;
+}
+.table-card tbody tr.cr-total-row td.cr-branch-col{ z-index:4; }
+
+/* Last Month (+/-) arrows. */
+.cr-arrow{ font-size:9px; margin-right:1px; }
+
+/* A soft edge on the right while more columns are off-screen. */
+.table-scroll.cr-more-right{
+    -webkit-mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    mask-image:linear-gradient(to right, #000 calc(100% - 28px), transparent);
+}
+@media (max-width:480px){
+    .table-card td, .table-card th{ padding-left:8px; padding-right:8px; }
+}

@@ -86,7 +86,9 @@ window.CRLastMonth = (() => {
     // last month (its date) | now (the OS date) | (+/-), each with the
     // group's own columns. dates: { last, now } (date keys; last may be
     // unknown while loading).
+    // dates.compact: design គ — amounts as K / M, (+/-) with ▲ / ▼.
     function expand(section, dates = {}) {
+        const c = dates.compact ? { compact: true } : {};
         // One group: just the date, as in the Excel report; several: "group · date".
         const head = (label, tail) => (section.groups.length > 1 ? `${label} · ${tail}` : tail);
         const lastLabel = dates.last ? shortDate(dates.last) : t("creditreport.lastMonth.col");
@@ -94,11 +96,11 @@ window.CRLastMonth = (() => {
             ...section,
             groups: section.groups.flatMap(g => [
                 { ...g, lm: "value", label: head(g.label, lastLabel),
-                    fields: g.fields.map(f => ({ ...f, key: `lastMonth.${f.key}`, lm: "value" })) },
+                    fields: g.fields.map(f => ({ ...f, ...c, key: `lastMonth.${f.key}`, lm: "value" })) },
                 { ...g, lm: "cur", label: head(g.label, dates.now ? shortDate(dates.now) : t("creditreport.lastMonth.now")),
-                    fields: g.fields.map(f => ({ ...f, lm: "cur" })) },
+                    fields: g.fields.map(f => ({ ...f, ...c, lm: "cur" })) },
                 { ...g, lm: "diff", label: head(g.label, "(+/-)"),
-                    fields: g.fields.map(f => ({ ...f, key: `lastMonthDiff.${f.key}`, lm: "diff", risk: RISK.test(f.key) })) }
+                    fields: g.fields.map(f => ({ ...f, ...c, key: `lastMonthDiff.${f.key}`, lm: "diff", risk: RISK.test(f.key) })) }
             ])
         };
     }
@@ -116,6 +118,7 @@ window.CRLastMonth = (() => {
             v = Number(v) || 0;
         }
         if (typeof v !== "number" || !Number.isFinite(v)) return `<td class="${cls(field)} cr-lm-none">—</td>`;
+        if (field.compact) return compactCell(field, v);
         if (field.lm !== "diff") {
             if (field.pct) return `<td class="${cls(field)}${v >= PAR_ALERT ? " cr-par-high" : ""}">${(v * 100).toFixed(2)}%</td>`;
             return `<td class="${cls(field)}">${fmtNum(v)}</td>`;
@@ -126,6 +129,21 @@ window.CRLastMonth = (() => {
         const good = field.risk ? shown < 0 : shown > 0;
         const text = field.pct ? shown.toFixed(2) + "%" : fmtNum(shown);
         return `<td class="${cls(field)} ${good ? "cr-lm-good" : "cr-lm-bad"}">${shown > 0 ? "+" : ""}${text}</td>`;
+    }
+
+    // Design គ: an amount as K / M (the exact figure in data-x, for the
+    // export), (+/-) as ▲ / ▼ in green or red; a % in points.
+    function compactCell(field, v) {
+        const money = field.money && window.CRTable;
+        const text = n => (field.pct ? (n * 100).toFixed(2) + (field.lm === "diff" ? "" : "%") : money ? CRTable.compact(n) : fmtNum(n));
+        const x = field.pct ? `${(v * 100).toFixed(2)}%` : money ? CRTable.exact(v) : null;
+        const dx = x !== null && money ? ` data-x="${x}"` : "";
+        if (field.lm !== "diff") return `<td class="${cls(field)}"${dx}>${text(v)}</td>`;
+        const shown = field.pct ? Math.round(v * 10000) / 100 : Math.round(v);
+        if (!shown) return `<td class="${cls(field)}"${dx}>0</td>`;
+        const good = field.risk ? shown < 0 : shown > 0;
+        const ex = ` data-x="${x !== null ? x : fmtNum(v)}"`;
+        return `<td class="${cls(field)} ${good ? "cr-lm-good" : "cr-lm-bad"}"${ex}><span class="cr-arrow">${shown > 0 ? "▲" : "▼"}</span>${text(Math.abs(v))}</td>`;
     }
 
     // The note under the table: which day "Last Month" is, and why some
@@ -270,7 +288,7 @@ window.CRLastMonth = (() => {
         // The report's section as last month | now | (+/-) blocks.
         function expandSection(section) {
             const data = opts.data();
-            return expand(section, { last: info && info.date, now: data && data.toDate });
+            return expand(section, { last: info && info.date, now: data && data.toDate, compact: !!opts.compact });
         }
 
         return { ensure, note, itemFor, expand: expandSection };

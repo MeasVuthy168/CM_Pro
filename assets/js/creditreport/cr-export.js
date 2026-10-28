@@ -45,7 +45,7 @@
     // out of a copy of a cell; name links keep their text.
     function bareCopy(cell) {
         const c = cell.cloneNode(true);
-        c.querySelectorAll(".cr-ico, svg, .cr-row-expand-btn").forEach(n => n.remove());
+        c.querySelectorAll(".cr-ico, svg, .cr-row-expand-btn, .cr-rank, .cr-bar").forEach(n => n.remove());
         c.querySelectorAll("button").forEach(btn => { if (!btn.textContent.trim()) btn.remove(); });
         return c;
     }
@@ -53,6 +53,8 @@
     // A cell's text, line by line (the History date cell carries a
     // "T24: …" line under the date).
     function cellText(td) {
+        // A shortened figure (3.44M, ▲0.56M) carries the exact one.
+        if (td.dataset && td.dataset.x !== undefined) return td.dataset.x;
         const c = bareCopy(td);
         const parts = c.children.length && [...c.children].every(n => /^(DIV|P)$/.test(n.tagName))
             ? [...c.children].map(n => n.textContent)
