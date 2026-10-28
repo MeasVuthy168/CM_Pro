@@ -498,7 +498,7 @@ function crFmtField(item, field) {
     if (field.lm) return CRLastMonth.cell(item, field);
     const v = crGetByPath(item, field.key);
     const cls = crFieldClass(field);
-    // PAR % as a coloured pill (cr-table.js: green < 5%, amber < 10%, red).
+    // PAR % as a coloured pill (cr-table.js: green < 3%, amber < 5%, red).
     if (field.pct) return `<td class="${cls}">${CRTable.parPill(v)}</td>`;
     // optional: a figure older snapshots don't have — "—", not 0.
     if (field.optional && (v === undefined || v === null)) return `<td class="${cls}">—</td>`;

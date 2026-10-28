@@ -8,10 +8,10 @@
 // ========================================
 
 window.CRTable = (() => {
-    // PAR %: green under 5%, amber under 10%, red from 10%.
+    // PAR %: green under 3%, amber under 5%, red from 5%.
     function parPill(v) {
         const n = Number(v) || 0;
-        const cls = n < 0.05 ? "ok" : n < 0.10 ? "warn" : "bad";
+        const cls = n < 0.03 ? "ok" : n < 0.05 ? "warn" : "bad";
         return `<span class="cr-pill cr-pill-${cls}">${(n * 100).toFixed(2)}%</span>`;
     }
 
