@@ -107,6 +107,18 @@ No Internet Connection
       <input type="search" id="outAreaSearch" placeholder="ឈ្មោះ / LD-CIF / សាខា..." data-i18n-placeholder="arrears.outAreaSearchPlaceholder" autocomplete="off" aria-label="ស្វែងរក" data-i18n-aria-label="common.search">
     </div>
 
+    <!-- Any LD-CIF typed by hand — also ones not in Daily Arrears yet,
+         or already with an officer (outarea.js) -->
+    <button type="button" class="oa-manual-btn" id="btnOaManual"><span class="ui-ico ui-ico-plus" aria-hidden="true"></span> <span data-i18n="arrears.oaManualBtn">បញ្ចូល LD-CIF ដោយដៃ</span></button>
+    <div class="oa-manual-panel" id="oaManualPanel" hidden>
+      <label for="oaManualLdCif" data-i18n="arrears.oaManualLabel">LD-CIF</label>
+      <div class="oa-manual-row">
+        <input type="text" id="oaManualLdCif" placeholder="LD2229300007-2492329" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <button type="button" id="btnOaManualNext" data-i18n="arrears.oaManualNext">បន្ទាប់</button>
+      </div>
+      <div class="oa-manual-err" id="oaManualErr" hidden></div>
+    </div>
+
     <!-- Branch quick filter (counts per branch for the current tab) -->
     <div class="oa-branch-filter" id="outAreaBranchFilter" role="group"></div>
 
