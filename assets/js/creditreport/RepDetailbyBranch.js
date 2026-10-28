@@ -296,7 +296,9 @@ function crFmtPlanField(item, field) {
     if (field.pv === "ach") {
         if (v === null || v === undefined) return dash("cr-col-pct cr-plan-col");
         const pct = Math.round(v * 100);
-        const cls = v >= 1 ? "cr-pv-good" : v >= 0.8 ? "cr-pv-warn" : "cr-pv-bad";
+        // Loan Disburse is red below 70% of plan; other figures below 80%.
+        const redBelow = /^planVs\.disb/.test(field.key) ? 0.7 : 0.8;
+        const cls = v >= 1 ? "cr-pv-good" : v >= redBelow ? "cr-pv-warn" : "cr-pv-bad";
         return `<td class="cr-col-pct cr-plan-col cr-ach ${cls}" data-x="${pct}%">${pct}%<div class="cr-ach-bar"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></div></td>`;
     }
     // ± against a ceiling (NBC Overdue % / NPL %): ▲ above the plan (red), ▼ under it (green).
@@ -402,6 +404,68 @@ const crLastMonth = CRLastMonth.controller({
     compact: true,
     fmtDate: v => crFmtDateDMY(v),
     onError: () => notify(t("creditreport.lastMonth.loadFailed"), "error")
+});
+
+// ========================================
+// TABLE TITLE + SCREENSHOT — over the table: the report's name, the
+// section(s) shown, the comparison and its dates, and a Screenshot
+// button (only once a section is picked, not All Sections) that copies
+// the whole table card as an image to paste into Telegram (cr-shot.js).
+// ========================================
+function crTableHeadMeta() {
+    const chip = text => `<span class="cr-tbl-chip">${crEscapeHtml(text)}</span>`;
+    const span = text => `<span>${crEscapeHtml(text)}</span>`;
+    if (crMode === "history") {
+        const from = document.getElementById("crHistFromDate").value, to = document.getElementById("crHistToDate").value;
+        return chip(t("creditreport.detail.dailyHistory")) + (from && to ? span(`${crFmtDateDMY(from)} → ${crFmtDateDMY(to)}`) : "");
+    }
+    const mode = crCompareMode();
+    const compareText = [...document.getElementById("crCompare").options].find(o => o.value === document.getElementById("crCompare").value)?.textContent.trim() || "";
+    const d = crSummaryData || {};
+    const parts = [chip(compareText)];
+    if (mode === "lastMonth") {
+        const last = crLastMonth.lastLabel();
+        if (last) parts.push(span(`${last} → ${CRLastMonth.shortDate(d.toDate)}`));
+    } else if (mode === "plan" && crPlanData) {
+        const [y, m] = String(crPlanData.month || "").split("-");
+        parts.push(span(t("creditreport.tblhead.planMonth", { month: `${m}-${y}` })), span(`${crFmtDateDMY(crPlanData.fromDate)} → ${crFmtDateDMY(crPlanData.toDate)}`));
+    } else {
+        parts.push(span(t("creditreport.tblhead.asOf", { date: document.getElementById("crOsGridMerge").textContent.trim() })));
+    }
+    const keys = crSectionKeys();
+    const has = k => !keys.length || keys.includes(k);
+    if (mode !== "plan") {
+        if (has("disburse") || has("los")) parts.push(span(t("creditreport.tblhead.disb", { from: crFmtDateDMY(d.fromDate), to: crFmtDateDMY(d.toDate) })));
+        if (has("writeOff")) parts.push(span(t("creditreport.tblhead.wo", { from: crFmtDateDMY(d.woFromDate), to: crFmtDateDMY(d.woToDate) })));
+    }
+    if (has("parT24")) parts.push(span(`T24 ${document.getElementById("crArrearsPenalty").textContent.trim()}`));
+    return parts.join("");
+}
+
+function crRenderTableHead() {
+    const head = document.getElementById("crTblHead");
+    const keys = crSectionKeys();
+    const sel = document.getElementById("crSection");
+    const optText = v => [...sel.options].find(o => o.value === v)?.textContent.trim() || v;
+    document.getElementById("crTblSub").textContent = keys.length ? keys.map(optText).join(" · ") : optText("all");
+    document.getElementById("crTblMeta").innerHTML = crTableHeadMeta();
+    head.hidden = false;
+    document.getElementById("btnCrShot").hidden = !keys.length;
+}
+
+document.getElementById("btnCrShot").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    try {
+        const name = `MonitoringByBranch_${(crSummaryData && crSummaryData.toDate) || ""}.png`;
+        const how = await CRShot.capture(document.getElementById("crTableCard"), name);
+        if (how !== "cancelled") notify(t(`creditreport.shot.${how}`), "success");
+    } catch (err) {
+        console.error("screenshot failed:", err);
+        notify(t("creditreport.shot.failed"), "error");
+    } finally {
+        btn.disabled = false;
+    }
 });
 
 // ========================================
@@ -815,6 +879,7 @@ function crRenderSummary() {
     crRenderReclassNote(keys.length === 1 ? keys[0] : "all");
     requestAnimationFrame(crSetHeaderOffsets);
     CRTable.edgeHint(document.getElementById("crTableScroll"));
+    crRenderTableHead();
 }
 
 // ========================================
@@ -991,6 +1056,7 @@ function crRenderHistory() {
     requestAnimationFrame(crSetHeaderOffsets);
     CRTable.edgeHint(document.getElementById("crTableScroll"));
     crUpdateChartButtonVisibility();
+    crRenderTableHead();
 }
 
 async function crFetchHistory() {
@@ -1296,6 +1362,7 @@ function crShowEmpty(msg) {
     empty.style.display = "block";
     document.getElementById("crTableScroll").style.display = "none";
     document.getElementById("crReclassNote").style.display = "none";
+    document.getElementById("crTblHead").hidden = true;
 }
 
 // Builds the ?t24Class=...&t24Product=... query string — the report's
@@ -1423,11 +1490,9 @@ async function crRunReport() {
 // MESSAGE HELPER
 // ========================================
 function notify(message, type = "info") {
-    if (typeof showToast === "function") {
-        showToast(message, type);
-    } else {
-        alert(message);
-    }
+    if (typeof CMToast !== "undefined" && CMToast.show) CMToast.show({ type, title: message, message: "", duration: 3500 });
+    else if (typeof showToast === "function") showToast(message, type);
+    else alert(message);
 }
 
 // ========================================

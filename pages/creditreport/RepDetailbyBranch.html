@@ -289,7 +289,18 @@ No Internet Connection
 <!-- TABLE -->
 <!-- ========================= -->
 
-<div class="table-card">
+<div class="table-card" id="crTableCard">
+
+<!-- Title over the table: report, section, comparison and its dates
+     (crRenderTableHead), and the Screenshot button (cr-shot.js). -->
+<div class="cr-tbl-head" id="crTblHead" hidden>
+<div class="cr-tbl-titles">
+<div class="cr-tbl-title" data-i18n="creditreport.hub.byBranch">Daily Monitoring by Branch</div>
+<div class="cr-tbl-sub" id="crTblSub"></div>
+<div class="cr-tbl-meta" id="crTblMeta"></div>
+</div>
+<button type="button" id="btnCrShot" class="cr-shot-btn" hidden><span class="cr-ico cr-ico-camera" aria-hidden="true"></span><span data-i18n="creditreport.shot.button">Screenshot</span></button>
+</div>
 
 <!-- Skeleton loading state (real card placeholders, not plain text) -->
 <div id="crSkeleton" class="cr-skeleton">
@@ -380,6 +391,7 @@ No Internet Connection
 <script src="../../assets/js/arrears-export.js"></script>
 <script src="../../assets/js/creditreport/cr-export.js"></script>
 <script src="../../assets/js/creditreport/cr-table.js"></script>
+<script src="../../assets/js/creditreport/cr-shot.js"></script>
 <script src="../../assets/js/creditreport/cr-last-month.js"></script>
 <script src="../../assets/js/creditreport/RepDetailbyBranch.js"></script>
 

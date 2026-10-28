@@ -291,7 +291,10 @@ window.CRLastMonth = (() => {
             return expand(section, { last: info && info.date, now: data && data.toDate, compact: !!opts.compact });
         }
 
-        return { ensure, note, itemFor, expand: expandSection };
+        // Last month's saved date as the table shows it ("30-Sep-26"), or "".
+        const lastLabel = () => (opts.active() && info && info.date ? shortDate(info.date) : "");
+
+        return { ensure, note, itemFor, expand: expandSection, lastLabel };
     }
 
     return { cutoff, shortDate, load, attach, diffTree, expand, cell, renderNote, hideNote, scopeSaved, controller };
