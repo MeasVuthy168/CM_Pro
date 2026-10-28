@@ -72,3 +72,19 @@
 @media (max-width:480px){
     .table-card td, .table-card th{ padding-left:8px; padding-right:8px; }
 }
+
+/* ---------- Plan vs Actual ---------- */
+/* A line before each figure's block (actual · plan · % / ±). */
+.table-card .cr-grp-start{ border-left:2px solid var(--cr-border); }
+.table-card thead th.cr-grp-start{ border-left:2px solid #2f4670; }
+/* Plan: a light tint, muted figures — the actual stays the eye-catcher. */
+.table-card thead th.cr-plan-col{ background:#2B2A14; color:#E8D98A; }
+.table-card td.cr-plan-col,
+.table-card tr:nth-child(even) td.cr-plan-col{ background:rgba(212,175,55,.07); }
+[data-theme="dark"] .table-card td.cr-plan-col,
+[data-theme="dark"] .table-card tr:nth-child(even) td.cr-plan-col{ background:rgba(255,215,0,.05); }
+.table-card td.cr-plan-val{ color:var(--cr-text-muted); }
+.table-card tbody tr.cr-total-row td.cr-plan-col{ background:var(--cr-total-bg); }
+/* % of plan with a progress bar. */
+.cr-ach-bar{ height:3px; border-radius:2px; background:var(--cr-border); margin-top:4px; overflow:hidden; min-width:44px; }
+.cr-ach-bar i{ display:block; height:100%; background:currentColor; }
