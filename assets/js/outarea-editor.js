@@ -248,7 +248,11 @@
                     // genuinely found nothing — never as a side effect of a failed
                     // request. A failed check falls back to the same honest "not
                     // currently in arrears, status unknown" state instead.
-                    const isPaidOff = !liveRow && !osMatch && !lookupFailed;
+                    // Typed in by hand ahead of time: not in arrears or OS
+                    // YET is expected, so it's "pre-entered", never "Paid off"
+                    // (which the quick select would offer to delete).
+                    const preEntered = !!item.manual && !liveRow && !osMatch && !lookupFailed;
+                    const isPaidOff = !liveRow && !osMatch && !lookupFailed && !item.manual;
 
                     const row = liveRow || (osMatch
                         ? {
@@ -263,7 +267,7 @@
                         }
                         : {
                             concate: item.ldCif,
-                            customer: lookupFailed ? "(មិនអាចត្រួតពិនិត្យបាន)" : "Paid off (បានទូទាត់)",
+                            customer: lookupFailed ? "(មិនអាចត្រួតពិនិត្យបាន)" : preEntered ? t("arrears.oaPreEntered") : "Paid off (បានទូទាត់)",
                             location: "",
                             accountLoan: "",
                             branch: item.newBranch,
@@ -278,6 +282,7 @@
                         uploadedBy: item.uploadedBy,
                         updatedAt: item.updatedAt,
                         isPaidOff,
+                        manual: !!item.manual,
                         row
                     };
                 });
@@ -403,7 +408,7 @@
                     ${showCheckbox ? `
                     <label class="oa-item-check" data-stop><input type="checkbox" class="outarea-row-checkbox" data-ldcif="${escapeHtml(entry.ldCif)}" ${outAreaSelectedForDelete.has(entry.ldCif) ? "checked" : ""}></label>` : ""}
                     <div class="oa-item-main">
-                        <div class="oa-item-name">${escapeHtml(entry.customer)}${entry.isPaidOff ? ` <span class="oa-paidoff-chip">Paid off</span>` : ""}</div>
+                        <div class="oa-item-name">${escapeHtml(entry.customer)}${entry.isPaidOff ? ` <span class="oa-paidoff-chip">Paid off</span>` : ""}${entry.manual ? ` <span class="oa-manual-chip">${escapeHtml(t("arrears.oaManualChip"))}</span>` : ""}</div>
                         <div class="oa-item-sub">${escapeHtml(formatLdCif(entry.ldCif))}</div>
                         ${detail}
                     </div>
@@ -598,6 +603,7 @@
                     </div>
                 </div>`;
             document.getElementById("outAreaInfo").innerHTML =
+                (row.manualNote ? `<div class="oa-manual-note">${escapeHtml(row.manualNote)}</div>` : "") +
                 infoRow("pin", "អាសយដ្ឋាន", row.location) +
                 infoRow("idcard", "គណនីកម្ចី", row.accountLoan) +
                 infoRow("map", "សាខាបច្ចុប្បន្ន", row.branch + (row.branchCode ? ` (${row.branchCode})` : "")) +
@@ -851,7 +857,9 @@
                         ldCif: outAreaSelectedRow.concate,
                         newBranch,
                         newCoResponse,
-                        uploadedBy
+                        uploadedBy,
+                        // Typed in by hand (Add manually), not picked from the list.
+                        manual: !!outAreaSelectedRow.manual
                     })
                 });
                 const data = await res.json();

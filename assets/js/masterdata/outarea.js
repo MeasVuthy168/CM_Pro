@@ -115,6 +115,77 @@ async function oaLoad() {
     }
 }
 
+// ---------- Add an LD-CIF by hand ----------
+// Any loan, not only the NoCoRespone list: one already with an officer
+// (saving moves it), or one not in Daily Arrears yet (the saved move is
+// applied by the Excel sync once it appears). Opens the same reassign
+// screen as a list pick; the save is flagged manual.
+const oaManual = {
+    btn: document.getElementById("btnOaManual"),
+    panel: document.getElementById("oaManualPanel"),
+    input: document.getElementById("oaManualLdCif"),
+    next: document.getElementById("btnOaManualNext"),
+    err: document.getElementById("oaManualErr")
+};
+
+function oaManualError(msg) {
+    oaManual.err.textContent = msg || "";
+    oaManual.err.hidden = !msg;
+}
+
+oaManual.btn?.addEventListener("click", () => {
+    oaManual.panel.hidden = !oaManual.panel.hidden;
+    oaManualError("");
+    if (!oaManual.panel.hidden) oaManual.input.focus();
+});
+
+async function oaManualGet(path, init) {
+    const res = await fetch(`${API.BASE_URL}${path}`, {
+        ...init,
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${API.getToken()}` }
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.message || "Lookup failed.");
+    return data;
+}
+
+async function oaManualOpen() {
+    const ldCif = oaManual.input.value.replace(/\s+/g, "").toUpperCase();
+    if (!/^LD\d{6,}-\d+$/.test(ldCif)) return oaManualError(t("arrears.oaManualBad"));
+    oaManualError("");
+    oaManual.next.disabled = true;
+    try {
+        let row;
+        const loan = await oaManualGet(`/api/arreast24byco/loan?ldCif=${encodeURIComponent(ldCif)}`);
+        if (loan.found) {
+            row = { ...loan.row };
+            const co = row.coResponse || "";
+            if (co && !/nocorespone/i.test(co)) {
+                row.manualNote = t("arrears.oaManualHasOfficer").replace("{co}", co);
+            }
+        } else {
+            const os = await oaManualGet("/api/grid/lookup-batch", { method: "POST", body: JSON.stringify({ ldCifs: [ldCif] }) });
+            const m = (os.items || {})[ldCif];
+            row = m
+                ? { concate: ldCif, customer: m.name || "-", location: m.address || "", branch: m.branch || "", branchCode: m.branchCode || "", coId: m.coOwner || "", coResponse: m.coOwner || "" }
+                : { concate: ldCif, customer: t("arrears.oaPreEntered"), location: "", branch: "", coId: "", coResponse: "" };
+            row.manualNote = t(m ? "arrears.oaManualNotInArrears" : "arrears.oaManualNotFound");
+        }
+        row.manual = true;
+        oaManual.panel.hidden = true;
+        oaManual.input.value = "";
+        OutAreaEditor.select(row);
+    } catch (e) {
+        console.error("[outArea page] manual lookup failed:", e);
+        oaManualError(t("arrears.oaManualFailed"));
+    } finally {
+        oaManual.next.disabled = false;
+    }
+}
+
+oaManual.next?.addEventListener("click", oaManualOpen);
+oaManual.input?.addEventListener("keydown", e => { if (e.key === "Enter") oaManualOpen(); });
+
 oaLoad();
 oaLoadInfo();
 
