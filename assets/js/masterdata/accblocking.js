@@ -455,7 +455,9 @@ function abFileStamp() {
 
 // Excel laid out like the PDF: the underlined title, blue headers, all
 // nine columns, rows tinted by action, amounts as numbers (#,##0.00),
-// A4 landscape with the header repeated on every printed page.
+// A4 landscape with the header repeated on every printed page. Every
+// cell in Krasar, the app's own font (as in the Daily Arrears export).
+const AB_XL_FONT = "Krasar";
 const AB_XL_FILL = { block: "FFFFC7CE", unblock: "FFC6EFCE", update: "FFFFEB9C", updunblock: "FFDDEBF7" };
 
 async function abExportExcel() {
@@ -466,7 +468,8 @@ async function abExportExcel() {
     const ws = wb.addWorksheet(`AccBlock_${abData.date.replace(/-/g, "")}`.slice(0, 31), {
         pageSetup: { paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0,
             margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 }, printTitlesRow: "2:2" },
-        views: [{ state: "frozen", ySplit: 2 }]
+        views: [{ state: "frozen", ySplit: 2 }],
+        headerFooter: { oddFooter: `&L&"${AB_XL_FONT}"&8AccBlock_${abData.date.replace(/-/g, "")}&R&"${AB_XL_FONT}"&8&P / &N` }
     });
     ws.columns = [5, 11, 18, 26, 14, 14, 14, 15, 30].map(width => ({ width }));
     const thin = { style: "thin", color: { argb: "FF999999" } };
@@ -475,13 +478,13 @@ async function abExportExcel() {
     ws.mergeCells(1, 1, 1, headers.length);
     const t1 = ws.getCell(1, 1);
     t1.value = title;
-    t1.font = { bold: true, size: 14, underline: true };
+    t1.font = { name: AB_XL_FONT, bold: true, size: 14, underline: true };
     t1.alignment = { horizontal: "center", vertical: "middle" };
     ws.getRow(1).height = 26;
 
     const head = ws.addRow(headers);
     head.eachCell(c => {
-        c.font = { bold: true };
+        c.font = { name: AB_XL_FONT, size: 11, bold: true };
         c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF9BC2E6" } };
         c.border = border;
         c.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
@@ -493,6 +496,7 @@ async function abExportExcel() {
         const fill = { type: "pattern", pattern: "solid", fgColor: { argb: AB_XL_FILL[AB_CLASS[abData.rows[i].action]] || AB_XL_FILL.block } };
         for (let c = 1; c <= headers.length; c++) {
             const cell = row.getCell(c);
+            cell.font = { name: AB_XL_FONT, size: 11 };
             cell.fill = fill;
             cell.border = border;
             cell.alignment = { vertical: "middle", wrapText: c === 4 || c === 9 };
