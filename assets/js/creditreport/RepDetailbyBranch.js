@@ -261,6 +261,33 @@ function crCompareSection(sectionKey, section) {
     return { groups };
 }
 
+// Plan vs Actual laid out like Last Month: each group as three blocks,
+// Plan | Actual (highlighted) | % (or ± for a ceiling), every block with
+// the group's own figures as its columns. A group's fields come from
+// crCompareSection as runs of [actual, plan, % / ±].
+function crPlanBlocks(section) {
+    const many = section.groups.length > 1;
+    const head = (label, tail) => (many ? `${label} · ${tail}` : tail);
+    const yearPlan = t("creditreport.plan.yearPlan");
+    const groups = section.groups.flatMap(g => {
+        const runs = [];
+        g.fields.forEach(f => { if (!f.planCol || !runs.length) runs.push([f]); else runs[runs.length - 1].push(f); });
+        const name = run => run[0].label;
+        const plans = runs.map(r => ({ ...r[1], label: r[1].label === yearPlan ? yearPlan : name(r) }));
+        const actuals = runs.map(r => ({ ...r[0], pvCur: true }));
+        const ratios = runs.map(r => ({ ...r[2], label: name(r) }));
+        const kinds = new Set(ratios.map(f => f.pv));
+        const ratioHead = kinds.size > 1 ? "% / ±" : kinds.has("diff") ? "±" : "%";
+        const first = fields => fields.map((f, i) => (i ? f : { ...f, grpStart: true }));
+        return [
+            { ...g, pvBlock: "plan", label: head(g.label, t("creditreport.plan.plan")), fields: first(plans) },
+            { ...g, pvBlock: "cur", label: head(g.label, t("creditreport.plan.actual")), fields: first(actuals) },
+            { ...g, pvBlock: "ratio", label: head(g.label, ratioHead), fields: first(ratios) }
+        ];
+    });
+    return { ...section, groups };
+}
+
 // One Plan vs Actual cell; "—" where there is no plan / no actual.
 function crFmtPlanField(item, field) {
     const v = crGetByPath(item, field.key);
@@ -507,7 +534,8 @@ let crBarItems = new Set();
 // Plan vs Actual: a line before each figure's block of columns.
 function crFmtField(item, field) {
     const html = crFmtFieldCell(item, field);
-    return field.grpStart ? html.replace('<td class="', '<td class="cr-grp-start ') : html;
+    const extra = (field.grpStart ? "cr-grp-start " : "") + (field.pvCur ? "cr-pv-cur " : "");
+    return extra ? html.replace('<td class="', `<td class="${extra}`) : html;
 }
 
 function crFmtFieldCell(item, field) {
@@ -589,11 +617,11 @@ function crBuildThead(section) {
         return crSortState.dir === 1 ? " cr-sort-asc" : " cr-sort-desc";
     };
     const groupCells = section.groups.map(g =>
-        `<th colspan="${g.fields.length}"${g.lm ? ` class="cr-lm-${g.lm}"` : g.pvGroup ? ` class="cr-grp-start"` : ""}>${g.label}</th>`
+        `<th colspan="${g.fields.length}"${g.lm ? ` class="cr-lm-${g.lm}"` : g.pvBlock ? ` class="cr-grp-start cr-pv-${g.pvBlock}"` : ""}>${g.label}</th>`
     ).join("");
 
     const subCells = section.groups.map(g =>
-        g.fields.map(f => `<th class="${crFieldClass(f)}${f.planCol ? " cr-plan-col" : ""}${f.grpStart ? " cr-grp-start" : ""}${f.lm ? ` cr-lm-${f.lm}` : ""}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
+        g.fields.map(f => `<th class="${crFieldClass(f)}${f.planCol ? " cr-plan-col" : ""}${f.grpStart ? " cr-grp-start" : ""}${f.pvCur ? " cr-pv-cur" : ""}${f.lm ? ` cr-lm-${f.lm}` : ""}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
     ).join("");
 
     const allExpanded = crIsAllExpanded();
@@ -723,12 +751,7 @@ function crActiveSection() {
     const section = crCombinedSection(k => k === "all"
         ? { groups: ["outstanding", "khr", "small", "disburse", "los", "parT24", "nbcOverdue", "writeOff"].flatMap(sk => crCompareSection(sk, crSections()[sk]).groups) }
         : crCompareSection(k, crSectionFor(k)));
-    // Each figure (its actual, plan and % / ±) as one block.
-    section.groups = section.groups.map(g => ({
-        ...g, pvGroup: true,
-        fields: g.fields.map((f, i) => ({ ...f, grpStart: i === 0 || (!f.planCol && !!g.fields[i - 1].planCol) }))
-    }));
-    return section;
+    return crPlanBlocks(section);
 }
 
 function crSectionFor(sectionKey) {
