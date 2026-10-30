@@ -13,6 +13,10 @@
 //
 // Snapshots are saved without the Loan Class / Product Type filters,
 // so a report with such a filter picked shows "—" (see block below).
+//
+// Balance Loan at Risk (T24) is compared with last month's Balance Loan
+// at Risk (NBC Overdue): the NBC figures are the month-end ones (EOD /
+// EOM), the saved T24 ones only what T24 showed when the day was saved.
 // ========================================
 
 window.CRLastMonth = (() => {
@@ -148,7 +152,7 @@ window.CRLastMonth = (() => {
 
     // The note under the table: which day "Last Month" is, and why some
     // figures show "—".
-    function renderNote(el, { info, error, blocked, totalBlocked, filters, productSections, t24Class, fmtDate }) {
+    function renderNote(el, { showsT24, info, error, blocked, totalBlocked, filters, productSections, t24Class, fmtDate }) {
         if (!el) return;
         el.style.display = "";
         const lines = [];
@@ -156,6 +160,7 @@ window.CRLastMonth = (() => {
         else if (!info) lines.push(t("creditreport.plan.loading"));
         else if (!info.date) lines.push(t("creditreport.lastMonth.noSnapshot", { date: fmtDate(info.cutoff) }));
         else lines.push(t("creditreport.lastMonth.noteDate", { date: fmtDate(info.date) }), t("creditreport.lastMonth.noteFlows"));
+        if (showsT24) lines.push(t("creditreport.lastMonth.noteT24"));
         if (blocked) lines.push(t("creditreport.lastMonth.noteFilters", { filters }));
         if (productSections) lines.push(t("creditreport.lastMonth.noteProduct", { sections: productSections }));
         if (t24Class) lines.push(t("creditreport.lastMonth.noteClass"));
@@ -199,11 +204,48 @@ window.CRLastMonth = (() => {
         return out;
     }
 
+    // Last month's T24 = its NBC Overdue: the total (an officer's own
+    // total on the Officer report) and each class, Normal = Minor
+    // Default, as { loan, value, parPct } like T24. null without NBC.
+    function t24FromNbc(nbc, totalKey) {
+        if (!nbc || !nbc[totalKey]) return null;
+        const cv = (...cs) => cs.reduce((o, c) => ({
+            loan: o.loan + (Number(c && c.count) || 0),
+            value: o.value + (Number(c && c.value) || 0),
+            parPct: o.parPct + (Number(c && c.parPct) || 0)
+        }), { loan: 0, value: 0, parPct: 0 });
+        return {
+            flat: cv(nbc[totalKey]),
+            byClass: {
+                normal: cv(nbc.minor), specialMention: cv(nbc.specialMention), subStandard: cv(nbc.subStandard),
+                doubtful: cv(nbc.doubtful), loss: cv(nbc.loss),
+                normalToSpecialMention: cv(nbc.minor, nbc.specialMention),
+                subStandardToLoss: cv(nbc.subStandard, nbc.doubtful, nbc.loss)
+            }
+        };
+    }
+
+    function t24LastMonth(out) {
+        for (const [flat, byClass, nbcKey] of [["parT24", "parT24ByClass", "nbcOverdue"], ["parT24Area", "parT24AreaByClass", "nbcOverdueArea"]]) {
+            if (!(flat in out)) continue;
+            const nbc = out[nbcKey];
+            const t = t24FromNbc(nbc, nbcKey === "nbcOverdue" && nbc && nbc.totalOwn ? "totalOwn" : "total");
+            if (t) {
+                out[flat] = { ...out[flat], ...t.flat };
+                out[byClass] = t.byClass;
+            } else {
+                delete out[flat];
+                delete out[byClass];
+            }
+        }
+    }
+
     // A saved row narrowed like the live one: f = { t24Class, t24Product,
     // nbcProduct } (picked values). Works on a copy, breakdown rows too.
     function scopeSaved(prev, f) {
         if (!prev || typeof prev !== "object") return prev;
         const out = { ...prev };
+        t24LastMonth(out);
         if (f.t24Product.length) {
             T24_KEYS.forEach(k => delete out[k]);
         } else if (f.t24Class.length) {
@@ -259,7 +301,10 @@ window.CRLastMonth = (() => {
             const sections = [];
             if (f.t24Product.length) sections.push(t("creditreport.detail.sectionT24"));
             if (f.nbcProduct.length) sections.push(t("creditreport.detail.sectionNbcOverdue"));
+            // T24 on screen: All Sections, or a T24 section picked.
+            const keys = typeof crSectionKeys === "function" ? crSectionKeys() : [];
             renderNote(el, {
+                showsT24: !keys.length || keys.some(k => /^parT24/.test(k)),
                 info, error, blocked: blocked.length > 0, filters: blocked.join(" / "),
                 productSections: blocked.length ? "" : sections.join(" / "),
                 t24Class: !blocked.length && !f.t24Product.length && f.t24Class.length > 0,
