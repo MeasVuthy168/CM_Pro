@@ -5,15 +5,20 @@
 // here, only arranged and worded):
 //   1 Summary            /overview (KPIs vs the comparison day) + plain
 //                         sentences built from the same figures
-//   2 Credit progress    /overview KPIs; /risk by officer (one branch) or
-//                         by branch (all)
+//   2 Credit progress    /overview KPIs; /risk by officer (always) and by
+//                         branch (All Branches view only); branch-
+//                         productivity-summary for the CO/FSRO/Digital
+//                         team split (with WO balance)
 //   3 Causes of PAR      /causes (confirmed causes only; unclassified shown)
 //   4 Solutions          /actions summary; /causes largest loans with the
 //                         officer's own cause and solution text
 //   5 Forecast           /forecast (Best / Base / Stress, confidence) and
 //                         /customers/prediction (only when validated)
-//   6 Customers to watch /customers (largest PAR)
-//   7 Decisions          a table typed in during the meeting (printed, not
+//   6 Customers to watch /customers (largest PAR, PAR concentration and
+//                         movement since the comparison day)
+//   7 Top risk            /risk rows, re-ranked by NPL $ growth and PAR pts
+//     contributors        growth, per branch / officer / product
+//   8 Decisions          a table typed in during the meeting (printed, not
 //                         saved) and signature lines
 // Admin and user only (ci-filters.js gate + the server).
 // ========================================
@@ -86,7 +91,8 @@ async function mrLoad() {
         // 3 at a time keeps one queued without flooding it.
         const jobs = [
             () => mrGet("overview", base),
-            () => mrGet("risk", { ...base, dim: branch ? "officer" : "branch" }),
+            () => mrGet("risk", { ...base, dim: "officer" }),
+            () => mrGet("risk", { compare, dim: "branch" }),
             () => mrGet("risk", { ...base, dim: "product" }),
             () => mrGet("causes", { branch, limit: 10 }),
             () => mrGet("actions", { branch, view: "all", limit: 10 }),
@@ -94,18 +100,19 @@ async function mrLoad() {
             () => mrGet("customers/prediction", { branch, unit: "loan", top: 20 }),
             () => mrGet("customers", { branch, compare, top: 10, sort: "par" }),
             () => CIPlan.branch(branch ? [branch] : []),
-            () => (branch ? CIPlan.officers() : CIPlan.branchRows()),
+            () => CIPlan.officers(),
+            () => CIPlan.branchRows(),
             () => mrTeamSplit(branch)
         ];
         const out = await mrPool(jobs, 3, (n, total) => {
             if (mine === mrSeq && typeof showAppLoading === "function") showAppLoading(t("creditreport.mr.loadingN", { n, total }), { progress: true, key: "mr" });
         });
-        const [ov, team, prod, causes, actions, fc, pred, cust, plan, teamPlan, teamSplit] = out;
+        const [ov, team, branchRisk, prod, causes, actions, fc, pred, cust, plan, teamPlan, branchPlan, teamSplit] = out;
         if (mine !== mrSeq) return;
         if (!ov) { CI.toast(t("creditreport.pi.loadFailed"), "error"); return; }
         mrFillBranches(ov);
         const g = fc && fc.groups ? (branch ? fc.groups.find(x => x.key === branch) : fc.groups[0]) : null;
-        mrRender({ branch, compare, ov, team, prod, causes, actions, fc, g, pred, cust, plan, teamPlan, teamSplit });
+        mrRender({ branch, compare, ov, team, branchRisk, prod, causes, actions, fc, g, pred, cust, plan, teamPlan, branchPlan, teamSplit });
     } finally {
         if (mine === mrSeq && typeof hideAppLoading === "function") hideAppLoading();
     }
@@ -165,6 +172,7 @@ function mrRender(d) {
     mrRenderActions(d);
     mrRenderForecast(d);
     mrRenderCustomers(d);
+    mrRenderRiskContrib(d);
     mrRenderDecisions();
     document.getElementById("mrFoot").textContent = t("creditreport.mr.foot");
 }
@@ -228,6 +236,7 @@ function mrRenderProgress(d) {
         : "";
     mrRenderTeamSplit(d);
     mrRenderTeam(d);
+    mrRenderBranchDim(d);
     mrRenderDim("mrProduct", d.prod, 12);
     mrRenderDaily(d);
     mrChartPlan(d);
@@ -239,21 +248,57 @@ function mrRenderProgress(d) {
     ].filter(Boolean).join(" ");
 }
 
-// Officers of the branch (or every branch): Actual · last month · plan.
+// Officers — of the branch when one is picked, every officer company-wide
+// otherwise (with the branch shown under each name): Actual · last month ·
+// plan. Always "by officer" now; the branch-level view lives in its own
+// block (mrRenderBranchDim), shown only when no branch is picked.
 function mrRenderTeam(d) {
     mrChartTeam(d);
-    const byOfficer = !!d.branch;
-    document.getElementById("mrTeamTitle").textContent = t(byOfficer ? "creditreport.mr.byOfficer" : "creditreport.mr.byBranch");
+    const showBranch = !d.branch;
     const rows = d.team && d.team.rows ? d.team.rows.slice().sort((a, b) => b.os - a.os).slice(0, 25) : [];
     const plans = new Map(((d.teamPlan && d.teamPlan.rows) || []).map(r => [String(r.id), r.metrics]));
     const F = CIPlan.fmt;
     const ach = (m, c) => CIPlan.achCell(CIPlan.METRICS.find(x => x.key === m), c);
     const pct = v => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(2)}%`);
     document.getElementById("mrTeam").innerHTML = rows.length ? `<thead>
-        <tr><th rowspan="2">${CI.esc(t(byOfficer ? "creditreport.mr.officer" : "creditreport.pi.branch"))}</th><th colspan="4" class="mr-grp">${CI.esc(t("creditreport.mr.k.os"))}</th><th colspan="3" class="mr-grp">${CI.esc(t("creditreport.mr.k.disb"))}</th><th colspan="3" class="mr-grp">PAR %</th><th colspan="2" class="mr-grp">NPL %</th></tr>
+        <tr><th rowspan="2">${CI.esc(t("creditreport.mr.officer"))}</th><th colspan="4" class="mr-grp">${CI.esc(t("creditreport.mr.k.os"))}</th><th colspan="3" class="mr-grp">${CI.esc(t("creditreport.mr.k.disb"))}</th><th colspan="3" class="mr-grp">PAR %</th><th colspan="2" class="mr-grp">NPL %</th></tr>
         <tr>${[["plan.actual"], ["plan.lastMonth"], ["plan.plan"], ["plan.ach"], ["plan.actual"], ["plan.plan"], ["plan.ach"], ["plan.actual"], ["plan.lastMonth"], ["plan.plan"], ["plan.actual"], ["plan.plan"]].map(([k]) => `<th class="num">${CI.esc(t(`creditreport.${k}`))}</th>`).join("")}</tr></thead><tbody>
         ${rows.map(r => {
             const pm = plans.get(String(r.key)) || {};
+            const os = pm.osAmount || { actual: r.os, plan: null };
+            const db = pm.disbAmount || { actual: r.disb, plan: null };
+            const par = pm.nbcOverduePct || {};
+            const npl = pm.nplPct || {};
+            return `<tr><td>${CI.esc(r.name || r.key)}${showBranch && r.branch ? `<div class="mr-sub">${CI.esc(r.branch)}</div>` : ""}</td>
+                <td class="num">${F("amount", r.os)}</td><td class="num">${r.prev ? F("amount", r.prev.os) : "—"}</td><td class="num">${F("amount", os.plan)}</td><td class="num ci-plan-ach">${ach("osAmount", { ...os, actual: r.os })}</td>
+                <td class="num">${F("amount", r.disb)}</td><td class="num">${F("amount", db.plan)}</td><td class="num ci-plan-ach">${ach("disbAmount", { ...db, actual: r.disb })}</td>
+                <td class="num">${pct(r.parPct)}</td><td class="num">${r.prev ? pct(r.prev.parPct) : "—"}</td><td class="num">${F("pct", par.plan)}</td>
+                <td class="num">${pct(r.nplPct)}</td><td class="num">${F("pct", npl.plan)}</td></tr>`;
+        }).join("")}</tbody>` : `<tbody><tr><td>${CI.esc(t("creditreport.pi.nothing"))}</td></tr></tbody>`;
+}
+
+// Every branch, side by side — shown only in the All Branches view (one
+// branch already has its own progress in 2.1, so a one-row table here
+// would be redundant).
+function mrRenderBranchDim(d) {
+    const block = document.getElementById("mrBranchDimBlock");
+    if (d.branch) {
+        block.hidden = true;
+        mrChart("mrChBranchDim", null);
+        return;
+    }
+    block.hidden = false;
+    mrChartBranchDim(d);
+    const rows = d.branchRisk && d.branchRisk.rows ? d.branchRisk.rows.slice().sort((a, b) => b.os - a.os).slice(0, 25) : [];
+    const plans = new Map(((d.branchPlan && d.branchPlan.rows) || []).map(r => [String(r.id), r.metrics]));
+    const F = CIPlan.fmt;
+    const ach = (m, c) => CIPlan.achCell(CIPlan.METRICS.find(x => x.key === m), c);
+    const pct = v => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(2)}%`);
+    document.getElementById("mrBranchDim").innerHTML = rows.length ? `<thead>
+        <tr><th rowspan="2">${CI.esc(t("creditreport.pi.branch"))}</th><th colspan="4" class="mr-grp">${CI.esc(t("creditreport.mr.k.os"))}</th><th colspan="3" class="mr-grp">${CI.esc(t("creditreport.mr.k.disb"))}</th><th colspan="3" class="mr-grp">PAR %</th><th colspan="2" class="mr-grp">NPL %</th></tr>
+        <tr>${[["plan.actual"], ["plan.lastMonth"], ["plan.plan"], ["plan.ach"], ["plan.actual"], ["plan.plan"], ["plan.ach"], ["plan.actual"], ["plan.lastMonth"], ["plan.plan"], ["plan.actual"], ["plan.plan"]].map(([k]) => `<th class="num">${CI.esc(t(`creditreport.${k}`))}</th>`).join("")}</tr></thead><tbody>
+        ${rows.map(r => {
+            const pm = plans.get(String(r.name || r.key)) || {};
             const os = pm.osAmount || { actual: r.os, plan: null };
             const db = pm.disbAmount || { actual: r.disb, plan: null };
             const par = pm.nbcOverduePct || {};
@@ -280,14 +325,16 @@ function mrRenderTeamSplit(d) {
         ["total", t("creditreport.risk.total")]
     ];
     const pct = v => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(2)}%`);
-    box.innerHTML = `<thead><tr><th>${CI.esc(t("creditreport.mr.byTeam"))}</th><th class="num">${CI.esc(t("creditreport.mr.k.os"))}</th><th class="num">${CI.esc(t("creditreport.mr.k.disb"))}</th><th class="num">PAR %</th><th class="num">NPL %</th></tr></thead><tbody>
+    box.innerHTML = `<thead><tr><th>${CI.esc(t("creditreport.mr.byTeam"))}</th><th class="num">${CI.esc(t("creditreport.mr.k.os"))}</th><th class="num">${CI.esc(t("creditreport.mr.k.disb"))}</th><th class="num">PAR %</th><th class="num">NPL %</th><th class="num">${CI.esc(t("creditreport.detail.woBalanceWO"))}</th></tr></thead><tbody>
         ${buckets.map(([key, label]) => {
             const b = s[key] || {};
             const os = (b.loanOutstanding || {}).value;
             const disb = (b.loanDisburse || {}).value;
             const par = (b.parT24 || {}).parPct;
             const npl = (b.nbcOverdue && b.nbcOverdue.nonPerformingLoan || {}).parPct;
-            return `<tr${key === "total" ? ' class="mr-total"' : ""}><td>${CI.esc(label)}</td><td class="num">${CI.money(os)}</td><td class="num">${CI.money(disb)}</td><td class="num">${pct(par)}</td><td class="num">${pct(npl)}</td></tr>`;
+            const wo = (b.writeOff || {}).balanceWO || {};
+            const woCell = wo.prn === undefined ? "—" : `${CI.money(wo.prn)}${wo.cif ? `<div class="mr-sub">${CI.num(wo.cif)} ${CI.esc(t("creditreport.detail.colCifHash"))}</div>` : ""}`;
+            return `<tr${key === "total" ? ' class="mr-total"' : ""}><td>${CI.esc(label)}</td><td class="num">${CI.money(os)}</td><td class="num">${CI.money(disb)}</td><td class="num">${pct(par)}</td><td class="num">${pct(npl)}</td><td class="num">${woCell}</td></tr>`;
         }).join("")}</tbody>`;
 }
 
@@ -346,9 +393,68 @@ function mrRenderForecast(d) {
 }
 
 function mrRenderCustomers(d) {
-    const rows = d.cust && d.cust.rows ? d.cust.rows : [];
+    const c = d.cust;
+    const rows = c && c.rows ? c.rows : [];
     document.getElementById("mrCustomers").innerHTML = rows.length ? `<thead><tr><th>#</th><th>${CI.esc(t("creditreport.mr.customer"))}</th><th>${CI.esc(t("creditreport.mr.officer"))}</th><th class="num">PAR</th><th class="num">${CI.esc(t("creditreport.crk.colDpd"))}</th><th>${CI.esc(t("creditreport.mr.class"))}</th><th>${CI.esc(t("creditreport.mr.status"))}</th></tr></thead><tbody>
         ${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${CI.esc(r.name || "—")}<div class="mr-sub">${CI.esc(r.cif || "")}${r.loans > 1 ? ` · ${CI.esc(t("creditreport.crk.loansN", { n: r.loans }))}` : ""}</div></td><td>${CI.esc((r.officers || []).map(o => o.name).join(", "))}</td><td class="num">${CI.money(r.par)}</td><td class="num">${CI.num(r.day)}</td><td>${CI.esc(CI.clsName(r.cls))}</td><td>${r.status ? CI.esc(t(`creditreport.crk.st.${r.status}`)) : "—"}</td></tr>`).join("")}</tbody>` : "";
+    mrRenderCustConc(c);
+}
+
+// PAR concentration (top-N share, half-of-PAR count) and customer
+// movement since the comparison day — both already in the /customers
+// response fetched for the table above, just not shown until now.
+function mrRenderCustConc(c) {
+    const box = document.getElementById("mrCustConc");
+    const note = document.getElementById("mrCustConcNote");
+    if (!c || !c.concentration) { box.innerHTML = ""; note.textContent = ""; return; }
+    const k = c.concentration;
+    const tile = (label, value, sub) => `<div class="mr-tile"><div class="mr-tile-l">${CI.esc(label)}</div><div class="mr-tile-v">${value}</div>${sub ? `<div class="mr-tile-s">${sub}</div>` : ""}</div>`;
+    const tops = (k.tops || []).slice(0, 3);
+    const mv = c.movement && c.movement.customers;
+    box.innerHTML = [
+        ...tops.map(x => tile(t("creditreport.crk.topN", { n: x.top }), mrPct(x.share, 1), CI.esc(t("creditreport.crk.topMeta", { n: CI.num(x.customers), par: CI.money(x.par) })))),
+        mv ? tile(t("creditreport.crk.st.new"), CI.num(mv.new.count), CI.money(mv.new.par)) : "",
+        mv ? tile(t("creditreport.crk.st.deteriorating"), CI.num(mv.deteriorating.count), CI.money(mv.deteriorating.par)) : "",
+        mv ? tile(t("creditreport.crk.st.improved"), CI.num(mv.improved.count), CI.money(mv.improved.par)) : ""
+    ].join("");
+    note.textContent = k.total ? t("creditreport.crk.half", { n: CI.num(k.halfOfPar), total: CI.num((c.counts || {}).customers) }) : "";
+}
+
+// Top contributors to the PAR / NPL increase, per branch, officer and
+// product — reuses the same /risk rows already fetched for 2.4/2.5/2.6
+// (nplChange: $ NPL grew since the comparison day; parChange: points PAR
+// % grew). Branches are company-wide even inside a one-branch report, so
+// that block is hidden there (it would be off-topic); officer and
+// product rows are already scoped to the branch when one is picked.
+function mrRiskContribRows(data, limit = 5) {
+    const rows = (data && data.rows) || [];
+    return rows
+        .filter(r => (r.nplChange !== null && r.nplChange !== undefined && r.nplChange > 0) || (r.parChange !== null && r.parChange !== undefined && r.parChange > 0))
+        .sort((a, b) => (b.nplChange || 0) - (a.nplChange || 0) || (b.parChange || 0) - (a.parChange || 0))
+        .slice(0, limit);
+}
+
+function mrRenderRiskTable(id, data, withBranch) {
+    const rows = mrRiskContribRows(data);
+    const pct = v => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(2)}%`);
+    document.getElementById(id).innerHTML = rows.length ? `<thead><tr>
+        <th>${CI.esc(t("creditreport.risk.colName"))}</th><th class="num">${CI.esc(t("creditreport.mr.k.os"))}</th>
+        <th class="num">PAR %</th><th class="num">${CI.esc(t("creditreport.growth.parChange"))}</th>
+        <th class="num">NPL %</th><th class="num">${CI.esc(t("creditreport.mr.nplIncrease"))}</th>
+        </tr></thead><tbody>
+        ${rows.map(r => `<tr><td>${CI.esc(r.name || r.key || "—")}${withBranch && r.branch ? `<div class="mr-sub">${CI.esc(r.branch)}</div>` : ""}</td>
+            <td class="num">${CI.money(r.os)}</td>
+            <td class="num">${pct(r.parPct)}</td><td class="num">${mrPts(r.parChange)}</td>
+            <td class="num">${pct(r.nplPct)}</td><td class="num">${r.nplChange > 0 ? `+${CI.money(r.nplChange)}` : "—"}</td>
+            </tr>`).join("")}</tbody>` : `<tbody><tr><td>${CI.esc(t("creditreport.pi.nothing"))}</td></tr></tbody>`;
+}
+
+function mrRenderRiskContrib(d) {
+    const block = document.getElementById("mrRiskBranchBlock");
+    block.hidden = !!d.branch;
+    if (!d.branch) mrRenderRiskTable("mrRiskBranch", d.branchRisk, false);
+    mrRenderRiskTable("mrRiskOfficer", d.team, !d.branch);
+    mrRenderRiskTable("mrRiskProduct", d.prod, false);
 }
 
 function mrRenderDecisions() {
@@ -514,6 +620,27 @@ function mrChartTeam(d) {
     const fig = document.getElementById("mrChTeam").closest(".mr-chart");
     if (fig) fig.style.height = `${Math.max(180, rows.length * 26 + 60)}px`;
     mrChart("mrChTeam", {
+        data: {
+            labels: rows.map(r => r.name || r.key),
+            datasets: [
+                { type: "bar", label: t("creditreport.plan.actual"), data: rows.map(r => +(r.parPct * 100).toFixed(2)), backgroundColor: rows.map((r, i) => (plan[i] !== null && r.parPct * 100 > plan[i] ? MR_C.bad : MR_C.navy)), borderRadius: 3 },
+                ...(plan.some(v => v !== null) ? [{ type: "line", label: t("creditreport.plan.plan"), data: plan, borderColor: MR_C.gold, backgroundColor: MR_C.gold, showLine: false, pointStyle: "line", pointRadius: 9, pointBorderWidth: 3 }] : [])
+            ]
+        },
+        options: { indexAxis: "y", scales: { x: mrAxis(v => `${v}%`, { beginAtZero: true }), y: mrX() } }
+    });
+}
+
+// Every branch's PAR % against its plan ceiling — the branch counterpart
+// of mrChartTeam, shown only in the All Branches view.
+function mrChartBranchDim(d) {
+    const rows = d.branchRisk && d.branchRisk.rows ? d.branchRisk.rows.slice().sort((a, b) => b.os - a.os).slice(0, 15) : [];
+    if (!rows.length) return mrChart("mrChBranchDim", null);
+    const plans = new Map(((d.branchPlan && d.branchPlan.rows) || []).map(r => [String(r.id), r.metrics]));
+    const plan = rows.map(r => { const c = (plans.get(String(r.name || r.key)) || {}).nbcOverduePct; return c && c.plan !== null && c.plan !== undefined ? c.plan : null; });
+    const fig = document.getElementById("mrChBranchDim").closest(".mr-chart");
+    if (fig) fig.style.height = `${Math.max(180, rows.length * 26 + 60)}px`;
+    mrChart("mrChBranchDim", {
         data: {
             labels: rows.map(r => r.name || r.key),
             datasets: [
