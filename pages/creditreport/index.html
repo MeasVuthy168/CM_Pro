@@ -130,54 +130,37 @@ No Internet Connection
 </a>
 </div>
 
-<!-- Credit Portfolio — the management landing (Portfolio Intelligence),
-     below the 4 Daily Monitoring reports it is built from. -->
-<div class="cr-hub-section-title" data-i18n="creditreport.hub.sectionPortfolio">ផលប័ត្រឥណទាន</div>
-<div class="cr-hub-grid">
-<a class="cr-hub-tile cr-hub-link cr-tone-gold" href="PortfolioIntelligence.html">
-<div class="cr-hub-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/><circle cx="20" cy="7" r="1.2" fill="currentColor"/></svg></div>
-<div class="cr-hub-tile-title" data-i18n="creditreport.hub.piTitle">ទិដ្ឋភាពទូទៅផលប័ត្រ</div>
-<div class="cr-hub-card-sub" data-i18n="creditreport.hub.piSub">តួលេខសំខាន់ៗ និន្នាការ ការប្រៀបធៀប និងការជូនដំណឹងសម្រាប់ថ្នាក់គ្រប់គ្រង</div>
+<!-- Credit Portfolio Intelligence: admin and user only (shown by
+     creditreport-hub.js); 4 groups + the meeting report instead of 9
+     tiles (owner, 31/10/2026). -->
+<div class="cr-hub-section-title" id="crHubPortfolioTitle" style="display:none" data-i18n="creditreport.hub.sectionPortfolio">ផលប័ត្រឥណទាន</div>
+<div class="cr-hub-grid cr-hub-ci" id="crHubPortfolio" style="display:none">
+<a class="cr-hub-tile cr-hub-link cr-tone-gold cr-hub-ci-meeting" href="MeetingReport.html">
+<div class="cr-hub-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div>
+<div class="cr-hub-ci-text">
+<div class="cr-hub-tile-title" data-i18n="creditreport.hub.meeting">របាយការណ៍ប្រជុំសាខា</div>
+<div class="cr-hub-card-sub" data-i18n="creditreport.hub.meetingSub">វឌ្ឍនភាពឥណទាន មូលហេតុ ដំណោះស្រាយ និងការព្យាករណ៍ — រួចសម្រាប់បោះពុម្ព</div>
+</div>
 </a>
-<a class="cr-hub-tile cr-hub-link cr-tone-navy" href="NplIntelligence.html">
-<div class="cr-hub-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M8 11h6"/></svg></div>
-<div class="cr-hub-tile-title" data-i18n="creditreport.hub.nplIntel">ការគ្រប់គ្រង NPL</div>
-<div class="cr-hub-card-sub" data-i18n="creditreport.hub.nplSub">ចលនា NPL តាមគណនី មូលហេតុ និងការប្រមូលមកវិញ</div>
+<a class="cr-hub-tile cr-hub-link cr-tone-navy" href="PortfolioIntelligence.html">
+<div class="cr-hub-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/></svg></div>
+<div class="cr-hub-tile-title" data-i18n="creditreport.hub.gOverview">ទិដ្ឋភាពទូទៅ</div>
+<div class="cr-hub-card-sub" data-i18n="creditreport.hub.gOverviewSub">តួលេខសំខាន់ៗ និន្នាការ និងការជូនដំណឹង</div>
 </a>
-<a class="cr-hub-tile cr-hub-link cr-tone-violet" href="RiskIntelligence.html?view=contributors">
-<div class="cr-hub-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
-<div class="cr-hub-tile-title" data-i18n="creditreport.hub.riskTitle">វិភាគហានិភ័យ</div>
-<div class="cr-hub-card-sub" data-i18n="creditreport.hub.riskSub">អ្នករួមចំណែកហានិភ័យ គុណភាពផលប័ត្រ កំណើន និងហានិភ័យ</div>
-</a>
-<a class="cr-hub-tile cr-hub-link cr-tone-teal" href="EarlyWarning.html">
+<a class="cr-hub-tile cr-hub-link cr-tone-violet" href="NplIntelligence.html">
 <div class="cr-hub-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20Z"/><path d="M12 10v4M12 17h.01"/></svg></div>
-<div class="cr-hub-tile-title" data-i18n="creditreport.hub.earlyWarning">ការព្រមានជាមុន</div>
-<div class="cr-hub-card-sub" data-i18n="creditreport.hub.warningSub">ឥណទានដែលអាចធ្លាក់ថ្នាក់ តាមច្បាប់ច្បាស់លាស់</div>
+<div class="cr-hub-tile-title" data-i18n="creditreport.hub.gRisk">ហានិភ័យ</div>
+<div class="cr-hub-card-sub" data-i18n="creditreport.hub.gRiskSub">NPL · វិភាគហានិភ័យ · ការព្រមាន · អតិថិជន</div>
 </a>
-<a class="cr-hub-tile cr-hub-link cr-tone-gold" href="CustomerRisk.html">
-<div class="cr-hub-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M17 4v8M14 9l3 3 3-3"/></svg></div>
-<div class="cr-hub-tile-title" data-i18n="creditreport.hub.customerRisk">ហានិភ័យអតិថិជន</div>
-<div class="cr-hub-card-sub" data-i18n="creditreport.hub.customerRiskSub">អតិថិជនដែលកាន់ PAR ច្រើនជាងគេ ការប្រមូលផ្តុំ និងការប្រែប្រួល</div>
-</a>
-<a class="cr-hub-tile cr-hub-link cr-tone-violet" href="RootCause.html">
-<div class="cr-hub-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/><path d="M9.5 17.5h5"/></svg></div>
-<div class="cr-hub-tile-title" data-i18n="creditreport.hub.rootCause">មូលហេតុ PAR</div>
-<div class="cr-hub-card-sub" data-i18n="creditreport.hub.rootCauseSub">PAR តាមមូលហេតុដែលមន្ត្រីបញ្ជាក់ និងគណនីមិនទាន់ចាត់ថ្នាក់</div>
-</a>
-<a class="cr-hub-tile cr-hub-link cr-tone-teal" href="RecoveryActions.html">
+<a class="cr-hub-tile cr-hub-link cr-tone-teal" href="RootCause.html">
 <div class="cr-hub-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M8 2v4M16 2v4M8 11l2.5 2.5L16 8"/></svg></div>
-<div class="cr-hub-tile-title" data-i18n="creditreport.hub.recoveryActions">សកម្មភាពប្រមូលបំណុល</div>
-<div class="cr-hub-card-sub" data-i18n="creditreport.hub.recoveryActionsSub">អ្នកទទួលខុសត្រូវ ការតាមដាន ការសន្យាបង់ និងប្រវត្តិ</div>
+<div class="cr-hub-tile-title" data-i18n="creditreport.hub.gAction">មូលហេតុ &amp; សកម្មភាព</div>
+<div class="cr-hub-card-sub" data-i18n="creditreport.hub.gActionSub">មូលហេតុ PAR · ការតាមដានប្រមូលបំណុល</div>
 </a>
-<a class="cr-hub-tile cr-hub-link cr-tone-navy" href="ParForecast.html">
+<a class="cr-hub-tile cr-hub-link cr-tone-gold" href="ParForecast.html">
 <div class="cr-hub-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M4 16l4-5 4 3 3-4"/><path d="M15 10l5-4" stroke-dasharray="2 2.5"/></svg></div>
-<div class="cr-hub-tile-title" data-i18n="creditreport.hub.parForecast">ទស្សន៍ទាយ PAR</div>
-<div class="cr-hub-card-sub" data-i18n="creditreport.hub.parForecastSub">PAR ខែខាងមុខ (ល្អ / មូលដ្ឋាន / ធ្ងន់) ជាមួយការសាកល្បងភាពត្រឹមត្រូវ</div>
-</a>
-<a class="cr-hub-tile cr-hub-link cr-tone-violet" href="CustomerPrediction.html">
-<div class="cr-hub-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6"/><path d="M14 20l3-5 2 2 3-5" /></svg></div>
-<div class="cr-hub-tile-title" data-i18n="creditreport.hub.customerPrediction">ទស្សន៍ទាយហានិភ័យអតិថិជន</div>
-<div class="cr-hub-card-sub" data-i18n="creditreport.hub.customerPredictionSub">ប្រូបាប៊ីលីតេគណនីរំកិលទៅក្រុមថ្ងៃយឺតបន្ទាប់ ផ្ទៀងផ្ទាត់ជាមួយលទ្ធផលពិត</div>
+<div class="cr-hub-tile-title" data-i18n="creditreport.hub.gForecast">ព្យាករណ៍</div>
+<div class="cr-hub-card-sub" data-i18n="creditreport.hub.gForecastSub">PAR ខែខាងមុខ · អតិថិជនទំនងរំកិល</div>
 </a>
 </div>
 

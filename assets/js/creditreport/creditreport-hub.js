@@ -128,6 +128,13 @@ function crHubRenderT24Results(results) {
     document.getElementById("crHubSnapshotResults").style.display = "block";
 }
 
+// Credit Portfolio Intelligence is for admin and user only (owner,
+// 31/10/2026); the server refuses every other role too.
+if (["admin", "user"].includes(String(crHubLoggedInUser.role || "").trim().toLowerCase())) {
+    document.getElementById("crHubPortfolioTitle").style.display = "";
+    document.getElementById("crHubPortfolio").style.display = "";
+}
+
 if (crHubIsAdmin) {
     document.getElementById("crHubAdminToolbar").style.display = "";
 

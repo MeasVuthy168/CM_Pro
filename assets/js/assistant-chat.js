@@ -751,6 +751,9 @@
     }
 
     async function answerExplain(intent) {
+        // Credit Portfolio Intelligence is for admin and user only (owner,
+        // 31/10/2026); the server refuses other roles, so say so plainly.
+        if (!["admin", "user"].includes(userRole())) return { html: `<p>${esc(t("assistant.ciNoAccess"))}</p>`, chips: true };
         const kind = scopeKind();
         let topic = intent.topic;
         // A Credit Officer has nobody to be compared with: "which branch /

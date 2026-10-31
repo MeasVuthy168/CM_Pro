@@ -20,6 +20,7 @@ const pfMonth = m => { const [y, mo] = String(m || "").split("-"); return y ? `$
 const pfToken = () => localStorage.getItem("token") || sessionStorage.getItem("token");
 
 async function pfLoad() {
+    if (!CI.allowed()) return;
     const q = new URLSearchParams({ dim: pfDim, horizon: document.getElementById("pfHorizon").value });
     const cutoff = document.getElementById("pfCutoff").value;
     const g = document.getElementById("pfGrowth").value;

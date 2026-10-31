@@ -950,3 +950,53 @@ a.ci-ews-card:active{ background:var(--pi-track); }
     font-weight:700;
 }
 .ci-plan-link[hidden]{ display:none; }
+
+/* ===== Section navigation (ci-filters.js mountNav): the 5 groups on top,
+   the current group's pages under them ===== */
+.ci-gnav{ display:flex; flex-direction:column; gap:8px; margin:0 auto 12px; }
+.ci-gnav-groups{
+    display:grid;
+    grid-template-columns:repeat(5, minmax(0, 1fr));
+    gap:4px;
+    padding:4px;
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:14px;
+    box-shadow:var(--cr-shadow);
+}
+.ci-gnav-group{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    min-height:38px;
+    padding:6px 4px;
+    border-radius:10px;
+    color:var(--cr-text-muted);
+    font-size:12.5px;
+    font-weight:700;
+    line-height:1.25;
+    text-decoration:none;
+}
+.ci-gnav-group.is-active{ background:var(--pi-navy); color:var(--cr-card-bg); }
+[data-theme="dark"] .ci-gnav-group.is-active,
+[data-theme="darkgray"] .ci-gnav-group.is-active{ background:var(--cr-gold); color:#0e1b3c; }
+.ci-gnav-pages{ display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; }
+.ci-gnav-pages::-webkit-scrollbar{ display:none; }
+.ci-gnav-page{
+    flex:0 0 auto;
+    padding:6px 12px;
+    border-radius:999px;
+    border:1px solid var(--cr-border);
+    color:var(--cr-text);
+    font-size:12.5px;
+    text-decoration:none;
+    white-space:nowrap;
+}
+.ci-gnav-page.is-active{ border-color:var(--cr-gold); background:rgba(212,175,55,.14); font-weight:700; }
+@media (max-width:420px){ .ci-gnav-group{ font-size:11.5px; } }
+
+/* ===== Not for this role (ci-filters.js gate) ===== */
+.ci-is-denied > :not(.ci-denied){ display:none !important; }
+.ci-denied{ text-align:center; padding:28px 18px; display:flex; flex-direction:column; align-items:center; gap:8px; }
+.ci-denied-icon{ font-size:34px; }
