@@ -391,3 +391,16 @@
     .cr-hub-fit .cr-hub-admin-buttons .cr-hub-refresh-btn{ padding:9px 8px; }
     .cr-hub-fit .cr-hub-snapshot-card{ padding:10px; }
 }
+
+/* ===== Hub: Credit Portfolio Intelligence (4 groups + meeting report) =====
+   The meeting report spans the row, icon beside its text. */
+.cr-hub-ci .cr-hub-ci-meeting{
+    grid-column:1 / -1;
+    flex-direction:row;
+    align-items:center;
+    gap:12px;
+    border-color:rgba(212,175,55,.55);
+    background:linear-gradient(135deg, rgba(212,175,55,.12), transparent 60%), var(--cr-card-bg);
+}
+.cr-hub-ci .cr-hub-ci-meeting .cr-hub-icon{ margin-bottom:0; }
+.cr-hub-ci-text{ min-width:0; }

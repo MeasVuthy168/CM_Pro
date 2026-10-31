@@ -1,0 +1,263 @@
+// ========================================
+// Credit Portfolio Intelligence — Branch Meeting Report
+// One printable report for the meeting with branch management, put
+// together from the section's own endpoints (nothing is recalculated
+// here, only arranged and worded):
+//   1 Summary            /overview (KPIs vs the comparison day) + plain
+//                         sentences built from the same figures
+//   2 Credit progress    /overview KPIs; /risk by officer (one branch) or
+//                         by branch (all)
+//   3 Causes of PAR      /causes (confirmed causes only; unclassified shown)
+//   4 Solutions          /actions summary; /causes largest loans with the
+//                         officer's own cause and solution text
+//   5 Forecast           /forecast (Best / Base / Stress, confidence) and
+//                         /customers/prediction (only when validated)
+//   6 Customers to watch /customers (largest PAR)
+//   7 Decisions          a table typed in during the meeting (printed, not
+//                         saved) and signature lines
+// Admin and user only (ci-filters.js gate + the server).
+// ========================================
+
+const t = CI.t;
+const mrToken = () => localStorage.getItem("token") || sessionStorage.getItem("token");
+let mrSeq = 0;
+let mrBranches = null;
+
+// Parallel GETs (CI.get keeps only the newest call, so it can't be used
+// for several at once).
+async function mrGet(path, params) {
+    const q = new URLSearchParams();
+    Object.entries(params || {}).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== "") q.set(k, v); });
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/credit-intelligence/${path}?${q}`, { headers: { Authorization: `Bearer ${mrToken()}` } });
+        const data = await res.json();
+        return data && data.ok ? data : null;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+const mrPct = (v, d = 2) => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(d)}%`);
+const mrPts = v => (v === null || v === undefined ? "—" : `${v > 0 ? "+" : ""}${(v * 100).toFixed(2)} ${t("creditreport.pi.pts")}`);
+const mrMonth = m => { const [y, mo] = String(m || "").split("-"); return y ? `${mo}/${y}` : "—"; };
+const mrUser = () => {
+    try {
+        const u = JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}");
+        return u.fullName || u.name || u.username || "";
+    } catch (e) {
+        return "";
+    }
+};
+
+// A change cell: arrow coloured by whether the move is good.
+function mrChange(diff, better, fmt) {
+    if (diff === null || diff === undefined || !isFinite(diff)) return `<span class="mr-flat">—</span>`;
+    if (Math.abs(diff) < 1e-9) return `<span class="mr-flat">0</span>`;
+    const good = better === "down" ? diff < 0 : diff > 0;
+    return `<span class="${good ? "mr-good" : "mr-bad"}">${diff > 0 ? "▲" : "▼"} ${fmt(Math.abs(diff))}</span>`;
+}
+
+async function mrLoad() {
+    if (!CI.allowed()) return;
+    const mine = ++mrSeq;
+    const branch = document.getElementById("mrBranch").value;
+    const compare = document.getElementById("mrCompare").value;
+    const base = { branch, compare };
+    if (typeof showAppLoading === "function") showAppLoading(t("creditreport.pi.loading"), { progress: true, key: "mr" });
+    try {
+        const [ov, team, causes, actions, fc, pred, cust] = await Promise.all([
+            mrGet("overview", base),
+            mrGet("risk", { ...base, dim: branch ? "officer" : "branch" }),
+            mrGet("causes", { branch, limit: 10 }),
+            mrGet("actions", { branch, view: "all", limit: 10 }),
+            mrGet("forecast", { dim: branch ? "branch" : "portfolio", horizon: 3 }),
+            mrGet("customers/prediction", { branch, unit: "loan", top: 20 }),
+            mrGet("customers", { branch, compare, top: 10, sort: "par" })
+        ]);
+        if (mine !== mrSeq) return;
+        if (!ov) { CI.toast(t("creditreport.pi.loadFailed"), "error"); return; }
+        mrFillBranches(ov);
+        const g = fc && fc.groups ? (branch ? fc.groups.find(x => x.key === branch) : fc.groups[0]) : null;
+        mrRender({ branch, ov, team, causes, actions, fc, g, pred, cust });
+    } finally {
+        if (mine === mrSeq && typeof hideAppLoading === "function") hideAppLoading();
+    }
+}
+
+function mrFillBranches(ov) {
+    if (mrBranches) return;
+    mrBranches = (ov.options && ov.options.branches) || [];
+    const sel = document.getElementById("mrBranch");
+    const keep = sel.value;
+    sel.innerHTML = `<option value="">${CI.esc(t("creditreport.mr.allBranches"))}</option>` + mrBranches.map(b => `<option value="${CI.esc(b)}">${CI.esc(b)}</option>`).join("");
+    sel.value = keep;
+}
+
+function mrRender(d) {
+    document.getElementById("mrReport").hidden = false;
+    const k = d.ov.kpis;
+    const cmp = d.ov.comparison || {};
+    const branchName = d.branch || t("creditreport.mr.allBranches");
+    document.getElementById("mrMeta").innerHTML = [
+        [t("creditreport.pi.branch"), branchName],
+        [t("creditreport.mr.dataAsOf"), d.ov.asOf ? d.ov.asOf.osText : "—"],
+        [t("creditreport.mr.compare"), cmp.available ? CI.dmy(cmp.date) : t("creditreport.mr.noCompare")],
+        [t("creditreport.mr.preparedOn"), CI.dmy(new Date().toISOString().slice(0, 10))]
+    ].map(([a, b]) => `<div><span>${CI.esc(a)}</span><b>${CI.esc(b)}</b></div>`).join("");
+
+    // 1. Summary tiles + sentences
+    const tile = (label, value, change, sub) => `<div class="mr-tile"><div class="mr-tile-l">${CI.esc(label)}</div><div class="mr-tile-v">${value}</div><div class="mr-tile-c">${change}</div>${sub ? `<div class="mr-tile-s">${sub}</div>` : ""}</div>`;
+    document.getElementById("mrTiles").innerHTML = [
+        tile(t("creditreport.mr.k.os"), CI.money(k.outstanding.cur), mrChange(k.outstanding.diff, "up", CI.money)),
+        tile(t("creditreport.mr.k.disb"), CI.money(k.disbursement.cur), mrChange(k.disbursement.diff, "up", CI.money)),
+        tile("PAR %", mrPct(k.parPct.cur), mrChange(k.parPct.diff, "down", v => `${(v * 100).toFixed(2)} ${t("creditreport.pi.pts")}`), CI.esc(CI.money(k.parPct.value))),
+        tile("NPL %", mrPct(k.nplPct.cur), mrChange(k.nplPct.diff, "down", v => `${(v * 100).toFixed(2)} ${t("creditreport.pi.pts")}`), CI.esc(CI.money(k.nplValue.cur)))
+    ].join("");
+    document.getElementById("mrPoints").innerHTML = mrPointsOf(d).map(p => `<li class="mr-pt-${p.tone}">${CI.esc(p.text)}</li>`).join("");
+
+    // 2. Progress table
+    const row = (label, cur, prev, diff, better, fmt) => `<tr><td>${CI.esc(label)}</td><td class="num">${fmt(cur)}</td><td class="num">${prev === null || prev === undefined ? "—" : fmt(prev)}</td><td class="num">${mrChange(diff, better, better === "pts" ? null : fmt)}</td></tr>`;
+    const ptsFmt = v => `${(v * 100).toFixed(2)} ${t("creditreport.pi.pts")}`;
+    document.getElementById("mrProgress").innerHTML = `<thead><tr><th>${CI.esc(t("creditreport.mr.indicator"))}</th><th class="num">${CI.esc(t("creditreport.mr.now"))}</th><th class="num">${CI.esc(t("creditreport.mr.before"))}</th><th class="num">${CI.esc(t("creditreport.mr.change"))}</th></tr></thead><tbody>
+        ${row(t("creditreport.mr.k.os"), k.outstanding.cur, k.outstanding.prev, k.outstanding.diff, "up", CI.money)}
+        ${row(t("creditreport.mr.k.loans"), k.outstanding.loans, null, null, "up", CI.num)}
+        ${row(t("creditreport.mr.k.disb"), k.disbursement.cur, k.disbursement.prev, k.disbursement.diff, "up", CI.money)}
+        <tr><td>PAR</td><td class="num">${CI.money(k.parPct.value)} (${mrPct(k.parPct.cur)})</td><td class="num">${mrPct(k.parPct.prev)}</td><td class="num">${mrChange(k.parPct.diff, "down", ptsFmt)}</td></tr>
+        ${row(t("creditreport.mr.k.npl"), k.nplValue.cur, k.nplValue.prev, k.nplValue.diff, "down", CI.money)}
+        <tr><td>NPL %</td><td class="num">${mrPct(k.nplPct.cur)}</td><td class="num">${mrPct(k.nplPct.prev)}</td><td class="num">${mrChange(k.nplPct.diff, "down", ptsFmt)}</td></tr>
+        ${row(t("creditreport.mr.k.nplAcc"), k.nplAccounts.cur, k.nplAccounts.prev, k.nplAccounts.diff, "down", CI.num)}
+        </tbody>`;
+    mrRenderTeam(d);
+    mrRenderCauses(d);
+    mrRenderActions(d);
+    mrRenderForecast(d);
+    mrRenderCustomers(d);
+    mrRenderDecisions();
+    document.getElementById("mrFoot").textContent = t("creditreport.mr.foot");
+}
+
+// Plain sentences from the figures (no new numbers).
+function mrPointsOf(d) {
+    const k = d.ov.kpis;
+    const out = [];
+    const pts = v => `${(Math.abs(v) * 100).toFixed(2)} ${t("creditreport.pi.pts")}`;
+    if (k.parPct.diff !== null && k.parPct.diff !== undefined) {
+        out.push({ tone: k.parPct.diff > 0 ? "bad" : "good", text: t(k.parPct.diff > 0 ? "creditreport.mr.p.parUp" : "creditreport.mr.p.parDown", { pct: mrPct(k.parPct.cur), pts: pts(k.parPct.diff) }) });
+    }
+    if (k.nplPct.diff !== null && k.nplPct.diff !== undefined) {
+        out.push({ tone: k.nplPct.diff > 0 ? "bad" : "good", text: t(k.nplPct.diff > 0 ? "creditreport.mr.p.nplUp" : "creditreport.mr.p.nplDown", { pct: mrPct(k.nplPct.cur), pts: pts(k.nplPct.diff), n: CI.num(k.nplAccounts.cur) }) });
+    }
+    if (k.outstanding.pct !== null && k.outstanding.pct !== undefined) {
+        out.push({ tone: k.outstanding.diff >= 0 ? "good" : "bad", text: t("creditreport.mr.p.os", { os: CI.money(k.outstanding.cur), pct: CI.signedPct(k.outstanding.pct) }) });
+    }
+    const top = mrTopCause(d.causes);
+    if (top) out.push({ tone: "info", text: t("creditreport.mr.p.cause", { cause: t(`creditreport.rc.c.${top.key}`), share: mrPct(top.share, 0) }) });
+    if (d.causes && d.causes.classified && d.causes.classified.pct !== null && d.causes.classified.pct < 0.8) {
+        out.push({ tone: "warn", text: t("creditreport.mr.p.unclassified", { pct: mrPct(1 - d.causes.classified.pct, 0) }) });
+    }
+    const s = d.actions && d.actions.summary;
+    if (s && (s.noAction.loans || s.followUpOverdue.loans || s.ptpBroken.loans)) {
+        out.push({ tone: "warn", text: t("creditreport.mr.p.actions", { none: CI.num(s.noAction.loans), late: CI.num(s.followUpOverdue.loans), broken: CI.num(s.ptpBroken.loans) }) });
+    }
+    if (d.g && d.g.available) {
+        const b = d.g.forecast.base[d.g.forecast.base.length - 1];
+        out.push({ tone: "info", text: t("creditreport.mr.p.forecast", { month: mrMonth(b.month), pct: mrPct(b.parPct), conf: t(`creditreport.pf.conf.${d.g.confidence.level}`) }) });
+    }
+    if (d.pred && d.pred.display && d.pred.summary.expectedRoll !== null) {
+        out.push({ tone: "warn", text: t("creditreport.mr.p.roll", { amt: CI.money(d.pred.summary.expectedRoll), days: d.pred.model.horizon }) });
+    }
+    return out;
+}
+
+function mrTopCause(c) {
+    if (!c || !c.byCause || !c.total) return null;
+    const list = Object.entries(c.byCause).filter(([key]) => key !== "unclassified").map(([key, v]) => ({ key, ...v, share: v.par / c.total }));
+    list.sort((a, b) => b.par - a.par);
+    return list[0] && list[0].par > 0 ? list[0] : null;
+}
+
+function mrRenderTeam(d) {
+    const byOfficer = !!d.branch;
+    document.getElementById("mrTeamTitle").textContent = t(byOfficer ? "creditreport.mr.byOfficer" : "creditreport.mr.byBranch");
+    const rows = d.team && d.team.rows ? d.team.rows.slice().sort((a, b) => b.par - a.par).slice(0, 15) : [];
+    document.getElementById("mrTeam").innerHTML = rows.length ? `<thead><tr><th>${CI.esc(t(byOfficer ? "creditreport.mr.officer" : "creditreport.pi.branch"))}</th><th class="num">${CI.esc(t("creditreport.mr.k.os"))}</th><th class="num">PAR</th><th class="num">PAR %</th><th class="num">${CI.esc(t("creditreport.mr.parChange"))}</th><th class="num">NPL %</th><th class="num">${CI.esc(t("creditreport.mr.newNpl"))}</th></tr></thead><tbody>
+        ${rows.map(r => `<tr><td>${CI.esc(r.name || r.key)}</td><td class="num">${CI.money(r.os)}</td><td class="num">${CI.money(r.par)}</td><td class="num">${mrPct(r.parPct)}</td><td class="num">${mrChange(r.parChange, "down", v => `${(v * 100).toFixed(2)}`)}</td><td class="num">${mrPct(r.nplPct)}</td><td class="num">${r.newNpl ? `${CI.num(r.newNpl.count)} · ${CI.money(r.newNpl.value)}` : "—"}</td></tr>`).join("")}</tbody>` : `<tbody><tr><td>${CI.esc(t("creditreport.pi.nothing"))}</td></tr></tbody>`;
+}
+
+function mrRenderCauses(d) {
+    const c = d.causes;
+    const box = document.getElementById("mrCauses");
+    if (!c) { box.innerHTML = ""; document.getElementById("mrCauseNote").textContent = t("creditreport.pi.loadFailed"); return; }
+    document.getElementById("mrCauseNote").textContent = t("creditreport.mr.causeNote", { pct: mrPct(c.classified.pct, 0), par: CI.money(c.total), n: CI.num(c.loans) });
+    const list = Object.entries(c.byCause).map(([key, v]) => ({ key, ...v })).filter(x => x.loans > 0).sort((a, b) => (a.key === "unclassified") - (b.key === "unclassified") || b.par - a.par);
+    box.innerHTML = `<thead><tr><th>${CI.esc(t("creditreport.mr.cause"))}</th><th class="num">${CI.esc(t("creditreport.cp.loans"))}</th><th class="num">PAR</th><th class="num">${CI.esc(t("creditreport.mr.share"))}</th></tr></thead><tbody>
+        ${list.map(x => `<tr${x.key === "unclassified" ? ' class="mr-muted"' : ""}><td>${CI.esc(t(x.key === "unclassified" ? "creditreport.rc.unclassified" : `creditreport.rc.c.${x.key}`))}</td><td class="num">${CI.num(x.loans)}</td><td class="num">${CI.money(x.par)}</td><td class="num"><span class="mr-bar"><span style="width:${c.total ? Math.round((x.par / c.total) * 100) : 0}%"></span></span>${mrPct(c.total ? x.par / c.total : null, 0)}</td></tr>`).join("")}</tbody>`;
+}
+
+function mrRenderActions(d) {
+    const s = d.actions && d.actions.summary;
+    const tile = (label, v, tone) => `<div class="mr-tile mr-tile-${tone}"><div class="mr-tile-l">${CI.esc(label)}</div><div class="mr-tile-v">${CI.num(v.loans)}</div><div class="mr-tile-s">${CI.money(v.par ?? v.amount ?? 0)}</div></div>`;
+    document.getElementById("mrActions").innerHTML = s ? [
+        tile(t("creditreport.mr.a.noAction"), s.noAction, "bad"),
+        tile(t("creditreport.mr.a.followLate"), s.followUpOverdue, "warn"),
+        tile(t("creditreport.mr.a.ptpBroken"), s.ptpBroken, "bad"),
+        tile(t("creditreport.mr.a.escalated"), s.escalated, "info"),
+        tile(t("creditreport.mr.a.reportedPaid"), s.reportedPaid, "good")
+    ].join("") : "";
+    const acc = d.causes && d.causes.accounts ? d.causes.accounts.slice(0, 10) : [];
+    document.getElementById("mrSolutions").innerHTML = acc.length ? `<thead><tr><th>${CI.esc(t("creditreport.mr.customer"))}</th><th>${CI.esc(t("creditreport.mr.officer"))}</th><th class="num">PAR</th><th class="num">${CI.esc(t("creditreport.crk.colDpd"))}</th><th>${CI.esc(t("creditreport.mr.cause"))}</th><th>${CI.esc(t("creditreport.mr.solution"))}</th></tr></thead><tbody>
+        ${acc.map(a => `<tr><td>${CI.esc(a.name || a.cif)}<div class="mr-sub">${CI.esc(a.ld)}</div></td><td>${CI.esc(a.officerName || a.officerId)}</td><td class="num">${CI.money(a.par)}</td><td class="num">${CI.num(a.day)}</td><td>${a.category ? `<b>${CI.esc(t(`creditreport.rc.c.${a.category}`))}</b>` : ""}${a.reasonCause ? `<div class="mr-sub">${CI.esc(a.reasonCause)}</div>` : a.category ? "" : `<span class="mr-flat">${CI.esc(t("creditreport.mr.noReason"))}</span>`}</td><td>${a.reasonSolution ? CI.esc(a.reasonSolution) : `<span class="mr-flat">—</span>`}</td></tr>`).join("")}</tbody>` : "";
+}
+
+function mrRenderForecast(d) {
+    const g = d.g;
+    const note = document.getElementById("mrFcNote");
+    const tb = document.getElementById("mrForecast");
+    if (!g || !g.available) {
+        note.textContent = t("creditreport.mr.noForecast");
+        tb.innerHTML = "";
+    } else {
+        const last = g.history[g.history.length - 1];
+        note.textContent = t("creditreport.mr.fcNote", { conf: t(`creditreport.pf.conf.${g.confidence.level}`), now: mrPct(last.parPct), month: mrMonth(last.month) });
+        tb.innerHTML = `<thead><tr><th>${CI.esc(t("creditreport.mr.month"))}</th><th class="num">${CI.esc(t("creditreport.pf.best"))}</th><th class="num">${CI.esc(t("creditreport.pf.base"))}</th><th class="num">${CI.esc(t("creditreport.pf.stress"))}</th><th class="num">${CI.esc(t("creditreport.pf.parBase"))}</th></tr></thead><tbody>
+            ${g.forecast.base.map((b, i) => `<tr><td>${CI.esc(mrMonth(b.month))}</td><td class="num">${mrPct(g.forecast.best[i].parPct)}</td><td class="num"><b>${mrPct(b.parPct)}</b></td><td class="num">${mrPct(g.forecast.stress[i].parPct)}</td><td class="num">${CI.money(b.par)}</td></tr>`).join("")}</tbody>`;
+    }
+    const p = d.pred;
+    document.getElementById("mrPredNote").textContent = !p ? "" : p.display
+        ? t("creditreport.mr.predOk", { amt: CI.money(p.summary.expectedRoll), par: CI.money(p.summary.par), days: p.model.horizon, n: CI.num((p.summary.bands.find(b => b.key === "high") || {}).loans || 0) })
+        : t("creditreport.mr.predHidden");
+}
+
+function mrRenderCustomers(d) {
+    const rows = d.cust && d.cust.rows ? d.cust.rows : [];
+    document.getElementById("mrCustomers").innerHTML = rows.length ? `<thead><tr><th>#</th><th>${CI.esc(t("creditreport.mr.customer"))}</th><th>${CI.esc(t("creditreport.mr.officer"))}</th><th class="num">PAR</th><th class="num">${CI.esc(t("creditreport.crk.colDpd"))}</th><th>${CI.esc(t("creditreport.mr.class"))}</th><th>${CI.esc(t("creditreport.mr.status"))}</th></tr></thead><tbody>
+        ${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${CI.esc(r.name || "—")}<div class="mr-sub">${CI.esc(r.cif || "")}${r.loans > 1 ? ` · ${CI.esc(t("creditreport.crk.loansN", { n: r.loans }))}` : ""}</div></td><td>${CI.esc((r.officers || []).map(o => o.name).join(", "))}</td><td class="num">${CI.money(r.par)}</td><td class="num">${CI.num(r.day)}</td><td>${CI.esc(CI.clsName(r.cls))}</td><td>${r.status ? CI.esc(t(`creditreport.crk.st.${r.status}`)) : "—"}</td></tr>`).join("")}</tbody>` : "";
+}
+
+function mrRenderDecisions() {
+    const tb = document.getElementById("mrDecisions");
+    if (!tb.dataset.ready) {
+        const cell = () => `<td contenteditable="true"></td>`;
+        tb.innerHTML = `<thead><tr><th>#</th><th>${CI.esc(t("creditreport.mr.d.issue"))}</th><th>${CI.esc(t("creditreport.mr.d.action"))}</th><th>${CI.esc(t("creditreport.mr.d.owner"))}</th><th>${CI.esc(t("creditreport.mr.d.due"))}</th></tr></thead><tbody>
+            ${[1, 2, 3, 4, 5].map(i => `<tr><td>${i}</td>${cell()}${cell()}${cell()}${cell()}</tr>`).join("")}</tbody>`;
+        tb.dataset.ready = "1";
+    }
+    const who = mrUser();
+    document.getElementById("mrSign").innerHTML = [
+        [t("creditreport.mr.sign.prepared"), who],
+        [t("creditreport.mr.sign.branch"), ""],
+        [t("creditreport.mr.sign.approved"), ""]
+    ].map(([a, b]) => `<div class="mr-sign-box"><div class="mr-sign-line"></div><div>${CI.esc(a)}</div><div class="mr-sub">${CI.esc(b)}</div></div>`).join("");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (!CI.allowed()) return;
+    const p = new URLSearchParams(location.search);
+    const sel = document.getElementById("mrBranch");
+    if (p.get("branch")) sel.innerHTML = `<option value="${CI.esc(p.get("branch"))}">${CI.esc(p.get("branch"))}</option>`;
+    sel.addEventListener("change", mrLoad);
+    document.getElementById("mrCompare").addEventListener("change", mrLoad);
+    document.getElementById("mrPrint").addEventListener("click", () => window.print());
+    mrLoad();
+});

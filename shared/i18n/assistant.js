@@ -45,6 +45,7 @@ CMI18n.register({
   "assistant.group.data": { km: "តួលេខឥណទាន", en: "Credit figures" },
   "assistant.group.open": { km: "បើក និងជំនួយ", en: "Open & help" },
   "assistant.group.explain": { km: "ពន្យល់តួលេខ (ហេតុអ្វី?)", en: "Explain the figures (why?)" },
+  "assistant.ciNoAccess": { km: "ការពន្យល់ផលប័ត្រឥណទាន (ហានិភ័យ NPL ការព្រមាន …) មានសម្រាប់តែ admin និង user ប៉ុណ្ណោះ។", en: "Credit portfolio explanations (risk, NPL, warnings …) are for the admin and user roles only." },
   "assistant.explainFailed": { km: "មិនអាចទាញទិន្នន័យសម្រាប់ពន្យល់បានទេ។ សូមព្យាយាមម្តងទៀត។", en: "Couldn't load the figures to explain. Please try again." },
   "assistant.explainAsOf": { km: "ទិន្នន័យ {date}", en: "Data {date}" },
   "assistant.explainOpen": { km: "បើកទំព័រ", en: "Open the page" },

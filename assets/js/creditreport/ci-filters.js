@@ -438,42 +438,82 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
         if (el) el.textContent = t(key);
     }
 
-    // ---------- module switcher ----------
-    const MODULES = [
-        { key: "overview", href: "PortfolioIntelligence.html", label: "creditreport.ci.navOverview" },
-        { key: "npl", href: "NplIntelligence.html", label: "creditreport.ci.navNpl" },
-        { key: "contributors", href: "RiskIntelligence.html?view=contributors", label: "creditreport.ci.navContributors" },
-        { key: "quality", href: "RiskIntelligence.html?view=quality", label: "creditreport.ci.navQuality" },
-        { key: "growth", href: "RiskIntelligence.html?view=growth", label: "creditreport.ci.navGrowth" },
-        { key: "warning", href: "EarlyWarning.html", label: "creditreport.ci.navWarning" },
-        { key: "customers", href: "CustomerRisk.html", label: "creditreport.ci.navCustomers" },
-        { key: "causes", href: "RootCause.html", label: "creditreport.ci.navCauses" },
-        { key: "actions", href: "RecoveryActions.html", label: "creditreport.ci.navActions" },
-        { key: "forecast", href: "ParForecast.html", label: "creditreport.ci.navForecast" },
-        { key: "prediction", href: "CustomerPrediction.html", label: "creditreport.ci.navPrediction" }
+    // ---------- section navigation ----------
+    // The section is 4 groups (+ the meeting report) instead of 9 tiles;
+    // every page shows the groups on top and its own group's pages below
+    // them (owner, 31/10/2026).
+    const GROUPS = [
+        { key: "overview", label: "creditreport.ci.g.overview", pages: [
+            { key: "overview", href: "PortfolioIntelligence.html", label: "creditreport.ci.navOverview" }] },
+        { key: "risk", label: "creditreport.ci.g.risk", pages: [
+            { key: "npl", href: "NplIntelligence.html", label: "creditreport.ci.navNpl" },
+            { key: "risk", href: "RiskIntelligence.html", label: "creditreport.ci.navRisk" },
+            { key: "warning", href: "EarlyWarning.html", label: "creditreport.ci.navWarning" },
+            { key: "customers", href: "CustomerRisk.html", label: "creditreport.ci.navCustomers" }] },
+        { key: "action", label: "creditreport.ci.g.action", pages: [
+            { key: "causes", href: "RootCause.html", label: "creditreport.ci.navCauses" },
+            { key: "actions", href: "RecoveryActions.html", label: "creditreport.ci.navActions" }] },
+        { key: "forecast", label: "creditreport.ci.g.forecast", pages: [
+            { key: "forecast", href: "ParForecast.html", label: "creditreport.ci.navForecast" },
+            { key: "prediction", href: "CustomerPrediction.html", label: "creditreport.ci.navPrediction" }] },
+        { key: "meeting", label: "creditreport.ci.g.meeting", pages: [
+            { key: "meeting", href: "MeetingReport.html", label: "creditreport.ci.g.meeting" }] }
     ];
-    let navCurrent = null;
+    const pageFile = () => (location.pathname.split("/").pop() || "").toLowerCase();
 
-    function mountNav(current) {
-        navCurrent = current;
-        const box = document.getElementById("ciNav");
-        if (!box) return;
-        box.className = "ci-nav";
-        box.setAttribute("aria-label", t("creditreport.ci.modules"));
-        box.innerHTML = MODULES.map(m =>
-            `<a class="ci-nav-link${m.key === current ? " is-active" : ""}" data-key="${m.key}" data-base="${m.href}"${m.key === current ? ' aria-current="page"' : ""}>${esc(t(m.label))}</a>`
-        ).join("");
+    function mountNav() {
+        const file = pageFile();
+        const group = GROUPS.find(g => g.pages.some(p => p.href.toLowerCase() === file));
+        const host = document.querySelector(".pi-page");
+        if (!group || !host || document.getElementById("ciNav")) return;
+        const page = group.pages.find(p => p.href.toLowerCase() === file);
+        const nav = document.createElement("nav");
+        nav.id = "ciNav";
+        nav.className = "ci-gnav";
+        nav.setAttribute("aria-label", t("creditreport.ci.modules"));
+        const link = (p, cls, on) => `<a class="${cls}${on ? " is-active" : ""}" data-base="${p.href}"${on ? ' aria-current="page"' : ""}>${esc(t(p.label))}</a>`;
+        nav.innerHTML = `<div class="ci-gnav-groups">${GROUPS.map(g => link({ href: g.pages[0].href, label: g.label }, "ci-gnav-group", g === group)).join("")}</div>` +
+            (group.pages.length > 1 ? `<div class="ci-gnav-pages">${group.pages.map(p => link(p, "ci-gnav-page", p === page)).join("")}</div>` : "");
+        host.insertBefore(nav, host.firstChild);
         updateNav();
-        const active = box.querySelector(".is-active");
+        const active = nav.querySelector(".ci-gnav-group.is-active");
         if (active && active.scrollIntoView) active.scrollIntoView({ block: "nearest", inline: "center" });
     }
 
     function updateNav() {
         const q = query().toString();
-        document.querySelectorAll("#ciNav .ci-nav-link").forEach(a => {
+        document.querySelectorAll("#ciNav [data-base]").forEach(a => {
             const base = a.dataset.base;
             a.href = q ? `${base}${base.includes("?") ? "&" : "?"}${q}` : base;
         });
+    }
+
+    // ---------- who may use the section ----------
+    // admin and user only (owner, 31/10/2026). The server refuses every
+    // other role (403); this only replaces the page with a clear notice.
+    function role() {
+        try {
+            const u = JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}");
+            return String(u.role || "").trim().toLowerCase();
+        } catch (e) {
+            return "";
+        }
+    }
+    const allowed = () => ["admin", "user"].includes(role());
+    function gate() {
+        if (allowed()) return true;
+        const host = document.querySelector(".pi-page");
+        if (host && !host.querySelector(".ci-denied")) {
+            // The page's own elements stay (hidden), so its script runs
+            // without errors; CI.get() fetches nothing.
+            host.classList.add("ci-is-denied");
+            const box = document.createElement("section");
+            box.className = "pi-card ci-denied";
+            box.setAttribute("role", "alert");
+            box.innerHTML = `<div class="ci-denied-icon" aria-hidden="true">🔒</div><h2 class="pi-card-title">${esc(t("creditreport.ci.deniedTitle"))}</h2><p class="pi-note">${esc(t("creditreport.ci.deniedText"))}</p><a class="pi-btn-ghost" href="index.html">${esc(t("creditreport.ci.backHub"))}</a>`;
+            host.insertBefore(box, host.firstChild);
+        }
+        return false;
     }
 
     // ---------- data-as-of: the header card's date rows ----------
@@ -506,6 +546,7 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
     // ---------- fetch ----------
     let seq = 0;
     async function get(path, extra) {
+        if (!allowed()) return null;
         const mine = ++seq;
         const q = query();
         Object.entries(extra || {}).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== "") q.set(k, v); });
@@ -585,6 +626,14 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
     window.CI = {
         t, esc, num, money, pct, signedPct, pts, dmy, short,
         mountFilters, setPeriodLabel, setFilter, query, infoBtn, tip, explain, clsName, fillOptions, renderAsOf, mountNav, get, toast, chartColors,
-        scope: () => scope
+        allowed, scope: () => scope
     };
+
+    // Every page of the section: the role gate first, then the navigation.
+    // Pages read CI.allowed() before they load anything.
+    function boot() {
+        if (gate()) mountNav();
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true });
+    else boot();
 })();

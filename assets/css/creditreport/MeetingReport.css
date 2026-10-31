@@ -1,0 +1,97 @@
+/* Branch Meeting Report (MeetingReport.js) — on top of
+   PortfolioIntelligence.css. Reads like a document on screen and prints
+   on A4 (Print / Save PDF). */
+.mr-controls .mr-ctl-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px 12px; align-items:end; margin-top:10px; }
+.mr-controls .pi-field{ display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--cr-text-muted); }
+.mr-print{
+    min-height:40px; border:0; border-radius:12px; cursor:pointer;
+    background:linear-gradient(135deg,#D4AF37,#FFD700); color:#0e1b3c;
+    font-family:'KRASAR',sans-serif; font-weight:800; font-size:13.5px;
+}
+
+.mr-report{
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-radius:16px;
+    box-shadow:var(--cr-shadow);
+    padding:22px 20px;
+    color:var(--cr-text);
+    margin-bottom:16px;
+}
+.mr-head{ border-bottom:3px solid var(--cr-gold); padding-bottom:12px; margin-bottom:14px; }
+.mr-head-brand{ font-size:12px; font-weight:800; letter-spacing:.08em; color:var(--cr-gold); text-transform:uppercase; }
+.mr-head-title{ font-size:19px; line-height:1.4; margin:4px 0 10px; color:var(--cr-text); }
+.mr-head-meta{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:6px 14px; font-size:12.5px; }
+.mr-head-meta span{ display:block; color:var(--cr-text-muted); font-size:11.5px; }
+
+.mr-sec{ margin-top:18px; break-inside:auto; }
+.mr-h{ display:flex; align-items:center; gap:8px; font-size:15.5px; margin:0 0 10px; color:var(--cr-text); }
+.mr-n{
+    flex:0 0 26px; height:26px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;
+    background:var(--pi-navy); color:#fff; font-size:13px; font-weight:800;
+}
+[data-theme="dark"] .mr-n, [data-theme="darkgray"] .mr-n{ background:var(--cr-gold); color:#0e1b3c; }
+.mr-h3{ font-size:13.5px; margin:14px 0 6px; color:var(--cr-text); }
+.mr-note{ font-size:12.5px; color:var(--cr-text-muted); margin:0 0 8px; line-height:1.6; }
+.mr-sub{ font-size:11px; color:var(--cr-text-muted); }
+.mr-muted td{ color:var(--cr-text-muted); }
+
+.mr-tiles{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+.mr-tiles-sm{ grid-template-columns:repeat(5,minmax(0,1fr)); }
+@media (max-width:640px){ .mr-tiles{ grid-template-columns:repeat(2,minmax(0,1fr)); } .mr-tiles-sm{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media (max-width:420px){ .mr-tiles-sm{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.mr-tile{ border:1px solid var(--cr-border); border-top:3px solid var(--pi-track); border-radius:12px; padding:9px 10px; min-width:0; }
+.mr-tile-l{ font-size:11.5px; color:var(--cr-text-muted); }
+.mr-tile-v{ font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; margin:2px 0; }
+.mr-tile-c, .mr-tile-s{ font-size:11.5px; }
+.mr-tile-s{ color:var(--cr-text-muted); }
+.mr-tile-bad{ border-top-color:var(--pi-bad); }
+.mr-tile-warn{ border-top-color:var(--pi-warn); }
+.mr-tile-good{ border-top-color:var(--pi-good); }
+.mr-tile-info{ border-top-color:var(--cr-gold); }
+
+.mr-points{ margin:12px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:6px; font-size:13px; line-height:1.55; }
+.mr-points li{ padding:7px 10px 7px 12px; border-left:3px solid var(--cr-gold); background:rgba(212,175,55,.07); border-radius:0 8px 8px 0; }
+.mr-points .mr-pt-bad{ border-left-color:var(--pi-bad); background:var(--pi-bad-bg); }
+.mr-points .mr-pt-good{ border-left-color:var(--pi-good); background:rgba(21,128,61,.08); }
+.mr-points .mr-pt-warn{ border-left-color:var(--pi-warn); background:var(--pi-warn-bg, rgba(194,65,12,.10)); }
+
+.mr-table-wrap{ overflow-x:auto; }
+.mr-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+.mr-table th{ text-align:left; font-size:11.5px; color:var(--cr-text-muted); font-weight:700; padding:7px 8px; border-bottom:2px solid var(--cr-border); white-space:nowrap; }
+.mr-table td{ padding:7px 8px; border-bottom:1px solid var(--cr-border); vertical-align:top; }
+.mr-table .num{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.mr-good{ color:var(--pi-good); font-weight:700; }
+.mr-bad{ color:var(--pi-bad); font-weight:700; }
+.mr-flat{ color:var(--cr-text-muted); }
+.mr-bar{ display:inline-block; width:54px; height:6px; border-radius:3px; background:var(--pi-track); margin-right:6px; vertical-align:middle; overflow:hidden; }
+.mr-bar span{ display:block; height:100%; background:var(--cr-gold); }
+
+.mr-edit td[contenteditable]{ min-width:80px; height:32px; background:rgba(212,175,55,.05); outline:none; }
+.mr-edit td[contenteditable]:focus{ background:rgba(212,175,55,.14); }
+.mr-sign{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:34px; font-size:12px; text-align:center; }
+.mr-sign-line{ border-top:1px solid var(--cr-text-muted); margin-bottom:6px; height:40px; }
+.mr-foot{ margin-top:18px; padding-top:10px; border-top:1px solid var(--cr-border); font-size:11px; color:var(--cr-text-muted); line-height:1.5; }
+
+/* ===== Print / Save PDF: the report only, light, A4 ===== */
+@media print{
+    @page{ size:A4; margin:12mm 11mm; }
+    /* the app's scroll containers would clip the report to one page */
+    html, body{ background:#fff !important; height:auto !important; min-height:0 !important; overflow:visible !important; }
+    body *{ max-height:none !important; }
+    body > *{ position:static !important; overflow:visible !important; height:auto !important; transform:none !important; }
+    #topbar-container, #bottomnav-container, #offlineBanner, #ciNav, .no-print, .cm-pt-progress{ display:none !important; }
+    .page-container, .page-container.pi-page{ padding:0 !important; margin:0 !important; max-width:none !important; height:auto !important; overflow:visible !important; }
+    .mr-report{
+        --cr-text:#111827; --cr-text-muted:#4b5563; --cr-border:#d1d5db; --cr-card-bg:#fff; --pi-track:#e5e7eb;
+        border:0; box-shadow:none; padding:0; background:#fff; color:#111827;
+    }
+    .mr-n{ background:#1A2E57 !important; color:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .mr-points li, .mr-tile, .mr-bar span{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .mr-h, .mr-h3{ break-after:avoid; }
+    .mr-tiles, .mr-sign{ break-inside:avoid; }
+    .mr-table tr{ break-inside:avoid; }
+    .mr-decisions{ break-before:auto; }
+    .mr-edit td[contenteditable]{ background:#fff; }
+    .mr-table-wrap{ overflow:visible; }
+}
