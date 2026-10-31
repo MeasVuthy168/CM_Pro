@@ -124,3 +124,26 @@
     .mr-chart{ height:190px; }
     .mr-charts-1 .mr-chart{ height:210px; }
 }
+
+.mr-actions{ display:flex; gap:8px; align-items:stretch; }
+.mr-actions .mr-print{ flex:1; }
+.mr-print2{ flex:0 0 auto; }
+
+/* ===== Export PDF (MeetingReport.js mrExportPdf): the report laid out
+   light and A4-wide while it is drawn, whatever the phone's width/theme ===== */
+body.mr-pdf-mode .page-container{ overflow:visible !important; }
+body.mr-pdf-mode #mrReport{
+    --cr-text:#111827; --cr-text-muted:#4b5563; --cr-border:#d1d5db; --cr-card-bg:#fff; --pi-track:#e5e7eb;
+    --pi-bad-bg:rgba(220,38,38,.08); --pi-warn-bg:rgba(234,88,12,.08);
+    width:1000px !important; max-width:none !important;
+    background:#fff; color:#111827; border:0; box-shadow:none; border-radius:0; padding:8px 4px;
+}
+body.mr-pdf-mode #mrReport .no-print{ display:none !important; }
+body.mr-pdf-mode #mrReport .mr-n{ background:#1A2E57; color:#fff; }
+body.mr-pdf-mode #mrReport .mr-tiles{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+body.mr-pdf-mode #mrReport .mr-tiles-sm{ grid-template-columns:repeat(5,minmax(0,1fr)); }
+body.mr-pdf-mode #mrReport .mr-charts{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+body.mr-pdf-mode #mrReport .mr-charts-1{ grid-template-columns:minmax(0,1fr); }
+body.mr-pdf-mode #mrReport .mr-table-wrap{ overflow:visible; }
+body.mr-pdf-mode #mrReport .mr-edit td[contenteditable]{ background:#fff; }
+body.mr-pdf-mode #mrReport .mr-sign{ grid-template-columns:repeat(3,1fr); }

@@ -332,6 +332,7 @@ document.addEventListener("DOMContentLoaded", () => {
     sel.addEventListener("change", mrLoad);
     document.getElementById("mrCompare").addEventListener("change", mrLoad);
     document.getElementById("mrPrint").addEventListener("click", () => window.print());
+    document.getElementById("mrPdf").addEventListener("click", mrExportPdf);
     mrLoad();
 });
 
@@ -508,3 +509,124 @@ function mrChartForecast(g) {
 // Charts follow the page width; redraw them at the paper's width to print.
 window.addEventListener("beforeprint", () => mrCharts.forEach(c => c.resize()));
 window.addEventListener("afterprint", () => mrCharts.forEach(c => c.resize()));
+
+// ---------- Export PDF ----------
+// window.print() does nothing in the iPhone home-screen app, so the
+// report is made into a PDF file here: laid out light and A4-wide, drawn
+// with html2canvas (the browser shapes the Khmer), cut into A4 pages
+// between rows / charts (never through one), then shared (phones: Save
+// to Files, Telegram, …) or downloaded. html2canvas and jsPDF load on
+// first use — the same libraries Spot Check uses.
+const MR_PDF_LIBS = [
+    "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+];
+const mrScripts = {};
+function mrLoadScript(url) {
+    if (!mrScripts[url]) {
+        mrScripts[url] = new Promise((resolve, reject) => {
+            const el = document.createElement("script");
+            el.src = url;
+            el.onload = resolve;
+            el.onerror = () => { delete mrScripts[url]; reject(new Error(`Could not load ${url}`)); };
+            document.head.appendChild(el);
+        });
+    }
+    return mrScripts[url];
+}
+const mrFrame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+function mrFileName() {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, "0");
+    const b = (document.getElementById("mrBranch").value || "AllBranches").replace(/[^\w-]+/g, "");
+    return `MeetingReport_${b}_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}.pdf`;
+}
+
+async function mrSaveFile(blob, name) {
+    const file = typeof File === "function" ? new File([blob], name, { type: "application/pdf" }) : null;
+    const touch = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    if (touch && file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+            await navigator.share({ files: [file], title: name });
+            return;
+        } catch (e) {
+            if (e && e.name === "AbortError") return;   // the user closed the share sheet
+        }
+    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+async function mrExportPdf() {
+    const el = document.getElementById("mrReport");
+    if (!el || el.hidden) return;
+    if (typeof showAppLoading === "function") showAppLoading(t("creditreport.mr.making"), { progress: true, key: "mr-pdf" });
+    const progress = f => window.setAppLoadingProgress && window.setAppLoadingProgress(f * 100, t("creditreport.mr.making"));
+    document.activeElement && document.activeElement.blur && document.activeElement.blur();
+    try {
+        await Promise.all(MR_PDF_LIBS.map(mrLoadScript));
+        try { await document.fonts.load("12px KRASAR"); } catch (e) { /* the fallback font draws it */ }
+        progress(0.15);
+        // Light, A4-wide layout; charts redrawn at that width.
+        document.body.classList.add("mr-pdf-mode");
+        mrCharts.forEach(c => c.resize());
+        await mrFrame();
+        progress(0.3);
+        const SCALE = 2;
+        const canvas = await window.html2canvas(el, { scale: SCALE, backgroundColor: "#ffffff", useCORS: true, windowWidth: 1100 });
+        progress(0.7);
+        const top = el.getBoundingClientRect().top;
+        // A page may end after a block or row, or just above a heading (so
+        // a heading never sits alone at the foot of a page).
+        const ys = (sel, edge) => [...el.querySelectorAll(sel)].map(n => (n.getBoundingClientRect()[edge] - top) * SCALE);
+        const cuts = ys(".mr-head, .mr-tiles, .mr-points li, .mr-fig, .mr-charts, tbody tr, .mr-sign, .mr-foot", "bottom")
+            .concat(ys(".mr-sec, .mr-h3", "top"))
+            .filter(y => y > 0)
+            .sort((a, b) => a - b);
+
+        const pageW = 210, pageH = 297, margin = 10, footH = 6;
+        const usableW = pageW - margin * 2, usableH = pageH - margin * 2 - footH;
+        const pxPerMm = canvas.width / usableW;
+        const pageHPx = usableH * pxPerMm;
+        const pages = [];
+        let from = 0;
+        while (from < canvas.height - 2) {
+            let to = from + pageHPx;
+            if (to >= canvas.height) { pages.push([from, canvas.height]); break; }
+            const fit = cuts.filter(c => c > from + pageHPx * 0.3 && c <= to);
+            to = fit.length ? fit[fit.length - 1] : to;
+            pages.push([from, to]);
+            from = to;
+        }
+        const pdf = new window.jspdf.jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+        pages.forEach(([a, b], k) => {
+            if (k > 0) pdf.addPage();
+            const page = document.createElement("canvas");
+            page.width = canvas.width;
+            page.height = Math.ceil(b - a);
+            const ctx = page.getContext("2d");
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, page.width, page.height);
+            ctx.drawImage(canvas, 0, a, canvas.width, b - a, 0, 0, canvas.width, b - a);
+            pdf.addImage(page.toDataURL("image/jpeg", 0.92), "JPEG", margin, margin, usableW, page.height / pxPerMm);
+            pdf.setFontSize(8);
+            pdf.setTextColor(110);
+            pdf.text(`CM Pro · ${k + 1} / ${pages.length}`, pageW - margin, pageH - margin + 1, { align: "right" });
+            progress(0.7 + 0.25 * ((k + 1) / pages.length));
+        });
+        await mrSaveFile(pdf.output("blob"), mrFileName());
+    } catch (err) {
+        console.error("[meeting report pdf] failed:", err);
+        CI.toast(t("creditreport.mr.pdfFailed"), "error");
+    } finally {
+        document.body.classList.remove("mr-pdf-mode");
+        mrCharts.forEach(c => c.resize());
+        if (typeof hideAppLoading === "function") hideAppLoading();
+    }
+}

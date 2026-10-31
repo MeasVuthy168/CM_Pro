@@ -1430,5 +1430,17 @@ CMI18n.register({
   "creditreport.mr.daily": { km: "ប្រវត្តិប្រចាំថ្ងៃ", en: "Daily history" },
   "creditreport.mr.dailyNote": { km: "ថ្ងៃដែលបានរក្សាទុកទាំងអស់ក្នុងប្រវត្តិប្រចាំថ្ងៃ ({n} ថ្ងៃ ពី {first} ដល់ {last}) — ថ្មីបំផុតនៅខាងលើ។", en: "Every saved day of the Daily History ({n} days, {first} to {last}) — newest first." },
   "creditreport.mr.dailyNone": { km: "មិនទាន់មានប្រវត្តិប្រចាំថ្ងៃសម្រាប់ជម្រើសនេះទេ។", en: "No Daily History saved for this choice yet." },
-  "creditreport.mr.date": { km: "ថ្ងៃ", en: "Date" }
+  "creditreport.mr.date": { km: "ថ្ងៃ", en: "Date" },
+  "creditreport.mr.exportPdf": { km: "ទាញយក PDF", en: "Export PDF" },
+  "creditreport.mr.printOnly": { km: "បោះពុម្ព", en: "Print" },
+  "creditreport.mr.making": { km: "កំពុងបង្កើតឯកសារ PDF…", en: "Making the PDF…" },
+  "creditreport.mr.pdfFailed": { km: "មិនអាចបង្កើត PDF បានទេ — សូមពិនិត្យអ៊ីនធឺណិត ហើយសាកម្តងទៀត។", en: "Couldn't make the PDF — check the internet connection and try again." },
+  "creditreport.cp.sum.short": { km: "មិនទាន់អាចទស្សន៍ទាយបានទេ — ប្រវត្តិគណនីនៅខ្លីពេក", en: "No predictions yet — the account history is still too short" },
+  "creditreport.cp.sum.shortSub": { km: "ប្រវត្តិគណនីយឺតចាប់ផ្តើមរក្សាទុកពី {first}។ ការទស្សន៍ទាយត្រូវការប្រវត្តិយ៉ាងតិច {days} ថ្ងៃ (និន្នាការ ៣០ ថ្ងៃ + លទ្ធផល ៣០ ថ្ងៃ) ហើយត្រូវឆ្លងការផ្ទៀងផ្ទាត់ — ប្រហែលចាប់ពី {ready}។", en: "Overdue account history has been saved since {first}. A prediction needs at least {days} days of it (30-day trend + 30-day outcome) and must pass validation — from about {ready}." },
+  "creditreport.cp.hintCustomer": { km: "តាមអតិថិជន៖ មួយជួរ = អតិថិជនម្នាក់ (CIF) រួមគ្រប់ឥណទានរបស់គាត់ — ប្រើដើម្បីដឹងថាត្រូវតាមដានអតិថិជនណាមុន។", en: "By customer: one row per customer (CIF), all their loans together — to know which customers to follow up first." },
+  "creditreport.cp.hintLoan": { km: "តាមគណនីឥណទាន៖ មួយជួរ = ឥណទានមួយ (LD) — អតិថិជនដែលមានឥណទានច្រើន បង្ហាញម្តងមួយឥណទាន ដើម្បីដឹងថាឥណទានណាជិតរំកិល។", en: "By loan account: one row per loan (LD) — a customer with several loans shows each one, to see exactly which loan is about to roll." },
+  "creditreport.cp.lastHidden": { km: "{n} ជួរនៅ 180+ ថ្ងៃ មិនបង្ហាញទេ (រំកិលបន្តមិនបាន)។", en: "{n} rows at 180+ days are not listed (they can't roll further)." },
+  "creditreport.cp.lastShown": { km: "{n} ជួរនៅ 180+ ថ្ងៃ ត្រូវបានបង្ហាញ។", en: "{n} rows at 180+ days are listed." },
+  "creditreport.cp.lastShow": { km: "បង្ហាញ", en: "Show them" },
+  "creditreport.cp.lastHide": { km: "លាក់", en: "Hide them" }
 });
