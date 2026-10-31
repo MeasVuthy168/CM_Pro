@@ -65,34 +65,20 @@ function ppCategories() {
         { bucket: "fsro", label: t("creditreport.byCO.fsro") },
         { bucket: "digital", label: t("creditreport.byBranch.teamDigital") }
     ];
+    const loan = k => ({ k, label: t("creditreport.productivity.colLoan") });
+    const value = k => ({ k, label: t("creditreport.detail.colValue"), money: true, main: true });
+    const par = k => ({ k, label: t("creditreport.productivity.colPar"), pct: true });
+    // fields: the section's figures per CO / FSRO / Digital / Total row
+    // (main = the one compared with last month row by row); risk = a
+    // rise is bad news. No Monthly Plan by product.
     return [
     {
         key: "outstanding",
         icon: '<span class="cr-ico cr-ico-barchart" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionOutstanding"),
         chart: false,
-        statGroups: [
-            { label: t("common.total"), total: true, fields: [
-                { key: "total.loanOutstanding.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "total.loanOutstanding.client", label: t("creditreport.productivity.colClient") },
-                { key: "total.loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
-            ] },
-            { label: t("creditreport.byBranch.teamCo"), fields: [
-                { key: "co.loanOutstanding.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "co.loanOutstanding.client", label: t("creditreport.productivity.colClient") },
-                { key: "co.loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
-            ] },
-            { label: t("creditreport.byCO.fsro"), fields: [
-                { key: "fsro.loanOutstanding.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "fsro.loanOutstanding.client", label: t("creditreport.productivity.colClient") },
-                { key: "fsro.loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
-            ] },
-            { label: t("creditreport.byBranch.teamDigital"), fields: [
-                { key: "digital.loanOutstanding.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "digital.loanOutstanding.client", label: t("creditreport.productivity.colClient") },
-                { key: "digital.loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
-            ] }
-        ],
+        fields: [loan("loanOutstanding.loan"), { k: "loanOutstanding.client", label: t("creditreport.productivity.colClient") }, value("loanOutstanding.value")],
+        plan: null,
         clientLists: clientLists()
     },
     {
@@ -100,24 +86,8 @@ function ppCategories() {
         icon: '<span class="cr-ico cr-ico-money" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionDisburse"),
         chart: true,
-        statGroups: [
-            { label: t("common.total"), total: true, fields: [
-                { key: "total.loanDisburse.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "total.loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
-            ] },
-            { label: t("creditreport.byBranch.teamCo"), fields: [
-                { key: "co.loanDisburse.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "co.loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
-            ] },
-            { label: t("creditreport.byCO.fsro"), fields: [
-                { key: "fsro.loanDisburse.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "fsro.loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
-            ] },
-            { label: t("creditreport.byBranch.teamDigital"), fields: [
-                { key: "digital.loanDisburse.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "digital.loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
-            ] }
-        ],
+        fields: [loan("loanDisburse.loan"), value("loanDisburse.value")],
+        plan: null,
         clientLists: clientLists()
     },
     {
@@ -125,28 +95,9 @@ function ppCategories() {
         icon: '<span class="cr-ico cr-ico-trend-up" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionT24"),
         chart: false,
-        statGroups: [
-            { label: t("common.total"), total: true, fields: [
-                { key: "total.parT24.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "total.parT24.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "total.parT24.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] },
-            { label: t("creditreport.byBranch.teamCo"), fields: [
-                { key: "co.parT24.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "co.parT24.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "co.parT24.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] },
-            { label: t("creditreport.byCO.fsro"), fields: [
-                { key: "fsro.parT24.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "fsro.parT24.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "fsro.parT24.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] },
-            { label: t("creditreport.byBranch.teamDigital"), fields: [
-                { key: "digital.parT24.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "digital.parT24.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "digital.parT24.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] }
-        ],
+        risk: true,
+        fields: [loan("parT24.loan"), value("parT24.value"), par("parT24.parPct")],
+        plan: null,
         clientLists: clientLists()
     },
     {
@@ -154,60 +105,26 @@ function ppCategories() {
         icon: '<span class="cr-ico cr-ico-warning" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionNbcOverdue"),
         chart: false,
-        statGroups: [
-            { label: t("common.total"), total: true, fields: [
-                { key: "total.nbcOverdue.total.count", label: t("creditreport.productivity.colLoan") },
-                { key: "total.nbcOverdue.total.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "total.nbcOverdue.total.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] },
-            { label: t("creditreport.byBranch.teamCo"), fields: [
-                { key: "co.nbcOverdue.total.count", label: t("creditreport.productivity.colLoan") },
-                { key: "co.nbcOverdue.total.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "co.nbcOverdue.total.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] },
-            { label: t("creditreport.byCO.fsro"), fields: [
-                { key: "fsro.nbcOverdue.total.count", label: t("creditreport.productivity.colLoan") },
-                { key: "fsro.nbcOverdue.total.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "fsro.nbcOverdue.total.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] },
-            { label: t("creditreport.byBranch.teamDigital"), fields: [
-                { key: "digital.nbcOverdue.total.count", label: t("creditreport.productivity.colLoan") },
-                { key: "digital.nbcOverdue.total.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "digital.nbcOverdue.total.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] }
-        ],
+        risk: true,
+        fields: [loan("nbcOverdue.total.count"), value("nbcOverdue.total.value"), par("nbcOverdue.total.parPct")],
+        plan: null,
         clientLists: clientLists()
     },
     // Shows Balance WO (the outstanding written-off balance, # cif/Int/Prn)
     // rather than the WO period figures, per explicit request 2026-10-01 —
-    // same change made to Location Performance/Branch/Officer Productivity.
+    // same change made to Location/Product Performance/Officer Productivity.
     {
         key: "writeOff",
         icon: '<span class="cr-ico cr-ico-writeoff" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionWriteOff"),
         chart: false,
-        statGroups: [
-            { label: t("common.total"), total: true, fields: [
-                { key: "total.writeOff.balanceWO.cif", label: t("creditreport.detail.colCifHash") },
-                { key: "total.writeOff.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
-                { key: "total.writeOff.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
-            ] },
-            { label: t("creditreport.byBranch.teamCo"), fields: [
-                { key: "co.writeOff.balanceWO.cif", label: t("creditreport.detail.colCifHash") },
-                { key: "co.writeOff.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
-                { key: "co.writeOff.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
-            ] },
-            { label: t("creditreport.byCO.fsro"), fields: [
-                { key: "fsro.writeOff.balanceWO.cif", label: t("creditreport.detail.colCifHash") },
-                { key: "fsro.writeOff.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
-                { key: "fsro.writeOff.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
-            ] },
-            { label: t("creditreport.byBranch.teamDigital"), fields: [
-                { key: "digital.writeOff.balanceWO.cif", label: t("creditreport.detail.colCifHash") },
-                { key: "digital.writeOff.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
-                { key: "digital.writeOff.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
-            ] }
+        risk: true,
+        fields: [
+            { k: "writeOff.balanceWO.cif", label: t("creditreport.detail.colCifHash") },
+            { k: "writeOff.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
+            { k: "writeOff.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true, main: true }
         ],
+        plan: null,
         clientLists: clientLists()
     }
     ];
@@ -234,10 +151,6 @@ function ppGet(obj, path) {
 function ppFmtNum(n) {
     n = Number(n) || 0;
     return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
-}
-function ppFmtPct(n) {
-    n = Number(n) || 0;
-    return (n * 100).toFixed(2) + "%";
 }
 function ppFmtDateDMY(s) {
     if (!s) return "-";
@@ -323,28 +236,58 @@ function ppRenderHeader() {
     document.getElementById("ppHeaderCard").style.display = "flex";
 }
 
-function ppStatFieldHtml(f, data) {
-    const v = ppGet(data, f.key);
-    const text = f.pct ? ppFmtPct(v) : ppFmtNum(v);
-    return `<span>${ppEscapeHtml(f.label)}: <b>${text}</b></span>`;
-}
-function ppStatGroupHtml(g, data) {
-    return `
-      <div class="op-card-stats">
-        <span class="op-card-stats-group-label">${ppEscapeHtml(g.label)}:</span>
-        ${g.fields.map(f => ppStatFieldHtml(f, data)).join("")}
-      </div>`;
-}
-// The Total row always shows; CO/FSRO/Digital only reveal once the card
-// is expanded (see .bp-card-stats-buckets in BranchProductivity.css,
-// reused here as-is).
-function ppCardStatsHtml(cat, data) {
-    const totalHtml = cat.statGroups.filter(g => g.total).map(g => ppStatGroupHtml(g, data)).join("");
-    const bucketHtml = cat.statGroups.filter(g => !g.total).map(g => ppStatGroupHtml(g, data)).join("");
-    return `${totalHtml}<div class="bp-card-stats-buckets">${bucketHtml}</div>`;
+// ========================================
+// COMPARISON — Actual Only | Last Month (cr-perf.js; there is no
+// Monthly Plan by product). Last Month = the product's last saved Daily
+// History day of last month (CRLastMonth, T24 from its NBC Overdue).
+// The saved day keeps only the product's total, not its CO / FSRO /
+// Digital split, so only the Total row has last month's figures.
+// ========================================
+const PP_BUCKETS = ["co", "fsro", "digital", "total"];
+
+function ppBucketLabel(b) {
+    return b === "co" ? t("creditreport.byBranch.teamCo")
+        : b === "fsro" ? t("creditreport.byCO.fsro")
+            : b === "digital" ? t("creditreport.byBranch.teamDigital")
+                : t("common.total");
 }
 
-function ppCardMarkup(cat, data) {
+const ppCompare = CRPerf.controller({
+    ids: { compare: "ppCompare", note: "ppCompareNote", strip: "ppStrip", cards: "ppCards" },
+    cats: () => ppCategories(),
+    rows: (cat, last) => PP_BUCKETS.map(b => ({
+        label: ppBucketLabel(b),
+        data: ppState.data[b],
+        last: b === "total" ? last : null,
+        total: b === "total",
+        head: b === "total"
+    })),
+    current: () => ppState.data.total,
+    strip: [
+        { label: t("creditreport.perf.kpiOutstanding"), k: "loanOutstanding.value", money: true,
+            sub: cur => `${ppEscapeHtml(t("creditreport.productivity.colLoan"))} ${ppFmtNum(ppGet(cur, "loanOutstanding.loan"))}` },
+        { label: t("creditreport.perf.kpiNbc"), k: "nbcOverdue.total.parPct", pct: true, risk: true,
+            sub: cur => CRPerf.fmt(ppGet(cur, "nbcOverdue.total.value"), { money: true }, true) },
+        { label: t("creditreport.perf.kpiDisburse"), k: "loanDisburse.value", money: true,
+            sub: cur => `${ppEscapeHtml(t("creditreport.productivity.colLoan"))} ${ppFmtNum(ppGet(cur, "loanDisburse.loan"))}` }
+    ],
+    toDate: () => ppState.data.toDate || ppState.meta.toDate,
+    loadLastMonth: async () => {
+        const all = String(ppState.product || "") === "All Product";
+        const info = await CRLastMonth.load({
+            endpoint: "/api/creditreport/byproduct/history",
+            token: ppToken,
+            toDate: ppState.data.toDate || ppState.meta.toDate,
+            query: all ? {} : { product: ppState.product }
+        });
+        const day = info && info.day;
+        const raw = !day ? null : all ? day.total : (day.items || []).find(it => it.product === ppState.product);
+        return { info, row: raw ? CRLastMonth.scopeSaved(raw, { t24Class: [], t24Product: [], nbcProduct: [] }) : null };
+    },
+    lastMonthNote: t("creditreport.perf.lmTotalOnly")
+});
+
+function ppCardMarkup(cat) {
     const listTabsHtml = cat.clientLists.map((cl, i) =>
         `<button type="button" class="op-mode-tab${i === 0 ? " active" : ""}" data-mode="list:${cl.bucket}"><span class="cr-ico cr-ico-users" aria-hidden="true"></span> ${t("creditreport.productivity.listOfClient")} ${ppEscapeHtml(cl.label)}</button>`
     ).join("");
@@ -359,10 +302,11 @@ function ppCardMarkup(cat, data) {
           <div class="op-card-icon">${cat.icon}</div>
           <div class="op-card-title">
             <div class="op-card-label">${ppEscapeHtml(cat.label)}</div>
-            ${ppCardStatsHtml(cat, data)}
+            ${CRPerf.headSlot}
           </div>
           <div class="op-card-caret">▾</div>
         </button>
+        ${CRPerf.bodySlot}
         <div class="op-card-panel">
           <div class="op-mode-tabs">
             ${listTabsHtml}
@@ -375,33 +319,10 @@ function ppCardMarkup(cat, data) {
 
 function ppRenderCards() {
     const wrap = document.getElementById("ppCards");
-    wrap.innerHTML = ppCategories().map(cat => ppCardMarkup(cat, ppState.data)).join("");
+    wrap.innerHTML = ppCategories().map(cat => ppCardMarkup(cat)).join("");
     wrap.style.display = "flex";
-    ppFitStatsToWidth();
+    ppCompare.start();
 }
-
-// ========================================
-// FIT STATS ROWS TO SCREEN WIDTH
-// Same rationale as Branch Productivity's own bpFitStatsToWidth().
-// ========================================
-function ppFitStatsToWidth() {
-    const rows = document.querySelectorAll("#ppCards .op-card-stats");
-    rows.forEach(row => {
-        row.style.fontSize = "";
-        let size = parseFloat(getComputedStyle(row).fontSize);
-        const minSize = 7;
-        while (row.scrollWidth > row.clientWidth + 0.5 && size > minSize) {
-            size -= 0.5;
-            row.style.fontSize = `${size}px`;
-        }
-    });
-}
-
-let ppFitResizeTimer;
-window.addEventListener("resize", () => {
-    clearTimeout(ppFitResizeTimer);
-    ppFitResizeTimer = setTimeout(ppFitStatsToWidth, 150);
-});
 
 // ========================================
 // ACCORDION + MODE SWITCHING
@@ -416,10 +337,6 @@ document.getElementById("ppCards").addEventListener("click", (e) => {
         });
         card.classList.toggle("open", willOpen);
         head.setAttribute("aria-expanded", willOpen ? "true" : "false");
-        // CO/FSRO/Digital rows are hidden until expanded, so they were
-        // skipped by the last width-fit pass — measure them now that
-        // they're visible.
-        ppFitStatsToWidth();
         if (willOpen) {
             const activeTab = card.querySelector(".op-mode-tab.active");
             ppEnsureModeLoaded(card, activeTab ? activeTab.dataset.mode : "list");

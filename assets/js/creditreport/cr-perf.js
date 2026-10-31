@@ -146,6 +146,7 @@ window.CRPerf = (() => {
     //   loadPlan()  -> { data, metrics } (Plan vs Actual response, this
     //              page's metrics) — omit when the page has no plan
     //   planNote   the plan's scope, as a sentence
+    //   lastMonthNote  anything more to say about last month, as a sentence
     function controller(o) {
         const st = { mode: "actual", lm: { state: "" }, plan: { state: "" } };
         const modes = [
@@ -267,7 +268,7 @@ window.CRPerf = (() => {
                 if (st.lm.state !== "done") return t("common.loading");
                 const info = st.lm.info;
                 if (!info || !info.date || !st.lm.row) return t("creditreport.lastMonth.noSnapshot", { date: fmtDate(info && info.cutoff) });
-                return t("creditreport.perf.lmNote", { date: fmtDate(info.date) });
+                return [t("creditreport.perf.lmNote", { date: fmtDate(info.date) }), o.lastMonthNote || ""].join(" ").trim();
             }
             if (st.mode === "plan") {
                 if (st.plan.state === "error") return t("creditreport.plan.loadFailed");
