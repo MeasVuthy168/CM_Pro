@@ -14,6 +14,7 @@
 const t = CI.t;
 let cpData = null;
 let cpUnit = "customer";
+let cpAll = false;      // also list loans at 180+ days (they can't roll)
 let cpCal = null;
 
 const cpPct = (v, d = 0) => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(d)}%`);
@@ -25,7 +26,8 @@ function cpParams() {
         unit: cpUnit,
         sort: document.getElementById("cpSort").value,
         top: document.getElementById("cpTop").value,
-        q: document.getElementById("cpSearch").value.trim()
+        q: document.getElementById("cpSearch").value.trim(),
+        all: cpAll ? "1" : ""
     };
 }
 
@@ -62,9 +64,13 @@ function cpRenderSummary(d) {
     box.hidden = false;
     const s = d.summary;
     if (!d.display) {
+        // Not enough saved history yet: say when it will be, plainly.
+        const short = d.model.history && d.model.history.lookbackDay === null;
         box.innerHTML = `
-            <div class="ci-sum-head"><span aria-hidden="true">⚠</span> ${CI.esc(t("creditreport.cp.sum.hidden"))}</div>
-            <div class="ci-sum-sub">${CI.esc(cpReasons(d.gate))}</div>
+            <div class="ci-sum-head"><span aria-hidden="true">⏳</span> ${CI.esc(t(short ? "creditreport.cp.sum.short" : "creditreport.cp.sum.hidden"))}</div>
+            <div class="ci-sum-sub">${CI.esc(short
+                ? t("creditreport.cp.sum.shortSub", { first: CI.dmy(d.model.history.firstSaved), days: d.model.lookback + d.model.horizon, ready: CI.dmy(d.readyFrom) })
+                : cpReasons(d.gate))}</div>
             <div class="ci-sum-parts"><span class="ci-sum-part">${CI.esc(t("creditreport.cp.sum.hiddenSub"))}</span></div>`;
         return;
     }
@@ -108,7 +114,9 @@ function cpCard(r, i) {
     const where = isLoan
         ? `${CI.esc(r.officerName || r.officerId || "")} · ${CI.esc(r.branch || "")}`
         : `${CI.esc((r.officers || []).join(", "))} · ${CI.esc((r.branches || []).join(", "))}`;
-    const why = r.p === null && r.reason ? `<div class="cp-hidden">${CI.esc(t(`creditreport.cp.why.${r.reason}`))}</div>` : "";
+    // Page-wide reasons (short history, not validated) are said once at the
+    // top; a card only says what is particular to it.
+    const why = r.p === null && r.reason === "last_bucket" ? `<div class="cp-hidden">${CI.esc(t("creditreport.cp.why.last_bucket"))}</div>` : "";
     const seg = isLoan && r.bucket ? `<span>${CI.esc(t("creditreport.cp.bucket"))} <b>${CI.esc(r.bucket)}</b></span>${r.trend ? `<span>${CI.esc(t(`creditreport.cp.trend.${r.trend}`))}</span>` : ""}` : "";
     return `<div class="ci-card crk-card">
         <div class="ci-card-top">
@@ -118,7 +126,7 @@ function cpCard(r, i) {
         </div>
         <div class="ci-sub">${who}</div>
         ${cpProb(r.p)}${why}
-        <div class="ci-card-row"><span>${CI.esc(t("creditreport.cp.colExpected"))}</span><span class="ci-card-amt">${r.expected === null || r.expected === undefined ? "—" : CI.money(r.expected)}</span></div>
+        ${r.expected === null || r.expected === undefined ? "" : `<div class="ci-card-row"><span>${CI.esc(t("creditreport.cp.colExpected"))}</span><span class="ci-card-amt">${CI.money(r.expected)}</span></div>`}
         <div class="crk-facts">
             <span>${CI.esc(t("creditreport.crk.colPar"))} <b>${CI.money(r.par)}</b></span>
             <span>${CI.esc(t("creditreport.crk.colDpd"))} <b>${CI.num(r.day)}</b></span>
@@ -138,6 +146,10 @@ function cpRenderList(d) {
     document.getElementById("cpCount").textContent = t(cpUnit === "loan" ? "creditreport.crk.countLoans" : "creditreport.crk.countCustomers",
         { shown: CI.num(d.rows.length), n: CI.num(d.listedCount) }) + (d.q ? ` · ${t("creditreport.crk.searchFor", { q: d.q })}` : "")
         + (cpUnit === "customer" && d.display ? ` · ${t("creditreport.cp.customerNote")}` : "");
+    document.getElementById("cpUnitHint").textContent = t(cpUnit === "loan" ? "creditreport.cp.hintLoan" : "creditreport.cp.hintCustomer");
+    const last = document.getElementById("cpLast");
+    last.hidden = !d.lastBucketRows;
+    last.innerHTML = d.lastBucketRows ? `${CI.esc(t(d.withLast ? "creditreport.cp.lastShown" : "creditreport.cp.lastHidden", { n: CI.num(d.lastBucketRows) }))} <button type="button" class="cp-link" id="cpLastToggle">${CI.esc(t(d.withLast ? "creditreport.cp.lastHide" : "creditreport.cp.lastShow"))}</button>` : "";
     document.getElementById("cpList").innerHTML = d.rows.length ? d.rows.map(cpCard).join("") : `<p class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</p>`;
 }
 
@@ -281,6 +293,11 @@ document.addEventListener("DOMContentLoaded", () => {
         typing = setTimeout(cpLoad, 400);
     });
     document.getElementById("cpExport").addEventListener("click", cpExport);
+    document.getElementById("cpLast").addEventListener("click", e => {
+        if (!e.target.closest("#cpLastToggle")) return;
+        cpAll = !cpAll;
+        cpLoad();
+    });
     if (cpIsAdmin()) {
         const box = document.getElementById("cpAdmin");
         box.hidden = false;

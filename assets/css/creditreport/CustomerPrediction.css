@@ -22,3 +22,6 @@
 .cp-controls .pi-field{ display:flex; flex-direction:column; gap:3px; font-size:12px; }
 .pi-table .num{ text-align:right; font-variant-numeric:tabular-nums; }
 .cp-seg-bar{ display:inline-block; height:6px; border-radius:3px; background:var(--pi-warn); vertical-align:middle; margin-right:6px; }
+.cp-unit-hint{ margin:6px 0 2px; }
+.cp-last{ margin:2px 0 8px; }
+.cp-link{ border:0; background:none; padding:0; color:var(--cr-gold); font-family:'KRASAR',sans-serif; font-weight:700; text-decoration:underline; cursor:pointer; }
