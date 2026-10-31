@@ -119,10 +119,15 @@ No Internet Connection
 <h3 class="mr-h3"><span class="mr-n2">2.3</span> <span data-i18n="creditreport.mr.byTeam">By team (CO / FSRO / Digital)</span></h3>
 <figure class="mr-fig"><figcaption data-i18n="creditreport.mr.ch.teamSplit">PAR % and NPL % by team</figcaption><div class="mr-chart"><canvas id="mrChTeamSplit" role="img"></canvas></div></figure>
 <div class="mr-table-wrap"><table class="mr-table" id="mrTeamSplit"></table></div>
-<h3 class="mr-h3"><span class="mr-n2">2.4</span> <span id="mrTeamTitle"></span></h3>
+<h3 class="mr-h3"><span class="mr-n2">2.4</span> <span data-i18n="creditreport.mr.byOfficer">By credit officer (largest PAR)</span></h3>
 <figure class="mr-fig"><figcaption data-i18n="creditreport.mr.ch.team">PAR % against the plan ceiling</figcaption><div class="mr-chart"><canvas id="mrChTeam" role="img"></canvas></div></figure>
 <div class="mr-table-wrap"><table class="mr-table mr-wide" id="mrTeam"></table></div>
-<h3 class="mr-h3"><span class="mr-n2">2.5</span> <span data-i18n="creditreport.mr.byProduct">By product</span></h3>
+<div id="mrBranchDimBlock">
+<h3 class="mr-h3"><span class="mr-n2">2.5</span> <span data-i18n="creditreport.mr.byBranch">By branch</span></h3>
+<figure class="mr-fig"><figcaption data-i18n="creditreport.mr.ch.branchDim">PAR % against the plan ceiling</figcaption><div class="mr-chart"><canvas id="mrChBranchDim" role="img"></canvas></div></figure>
+<div class="mr-table-wrap"><table class="mr-table mr-wide" id="mrBranchDim"></table></div>
+</div>
+<h3 class="mr-h3"><span class="mr-n2">2.6</span> <span data-i18n="creditreport.mr.byProduct">By product</span></h3>
 <div class="mr-table-wrap"><table class="mr-table" id="mrProduct"></table></div>
 <p class="mr-note" id="mrLmNote"></p>
 </section>
@@ -151,11 +156,27 @@ No Internet Connection
 
 <section class="mr-sec" aria-labelledby="mrS6">
 <h2 class="mr-h" id="mrS6"><span class="mr-n">6</span><span data-i18n="creditreport.mr.s6">Customers to watch</span></h2>
+<p class="mr-note" data-i18n="creditreport.mr.concNote">Risk concentration: how much of the PAR sits with the largest customers.</p>
+<div class="mr-tiles mr-tiles-sm" id="mrCustConc"></div>
+<p class="mr-note" id="mrCustConcNote"></p>
 <div class="mr-table-wrap"><table class="mr-table" id="mrCustomers"></table></div>
 </section>
 
-<section class="mr-sec mr-decisions" aria-labelledby="mrS7">
-<h2 class="mr-h" id="mrS7"><span class="mr-n">7</span><span data-i18n="creditreport.mr.s7">Meeting decisions and follow-up</span></h2>
+<section class="mr-sec" aria-labelledby="mrS7">
+<h2 class="mr-h" id="mrS7"><span class="mr-n">7</span><span data-i18n="creditreport.mr.s7">Top risk contributors</span></h2>
+<p class="mr-note" data-i18n="creditreport.mr.riskContribNote">Ranked by how much NPL grew in dollar terms and how many points PAR % rose since the comparison day. Rows with no increase are not shown.</p>
+<div id="mrRiskBranchBlock">
+<h3 class="mr-h3"><span class="mr-n2">7.1</span> <span data-i18n="creditreport.risk.dim.branch">Branches</span></h3>
+<div class="mr-table-wrap"><table class="mr-table mr-wide" id="mrRiskBranch"></table></div>
+</div>
+<h3 class="mr-h3"><span class="mr-n2">7.2</span> <span data-i18n="creditreport.risk.dim.officer">Officers</span></h3>
+<div class="mr-table-wrap"><table class="mr-table mr-wide" id="mrRiskOfficer"></table></div>
+<h3 class="mr-h3"><span class="mr-n2">7.3</span> <span data-i18n="creditreport.risk.dim.product">Products</span></h3>
+<div class="mr-table-wrap"><table class="mr-table mr-wide" id="mrRiskProduct"></table></div>
+</section>
+
+<section class="mr-sec mr-decisions" aria-labelledby="mrS8">
+<h2 class="mr-h" id="mrS8"><span class="mr-n">8</span><span data-i18n="creditreport.mr.s8">Meeting decisions and follow-up</span></h2>
 <p class="mr-note no-print" data-i18n="creditreport.mr.decisionsHint">Type in the table during the meeting; it prints with the report (not saved).</p>
 <div class="mr-table-wrap"><table class="mr-table mr-edit" id="mrDecisions"></table></div>
 <div class="mr-sign" id="mrSign"></div>
