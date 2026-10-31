@@ -1,0 +1,15 @@
+/* PAR Forecast (ParForecast.js) — on top of PortfolioIntelligence.css. */
+.pf-controls{ display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:8px 12px; margin:10px 0 4px; }
+.pf-controls .pi-field{ display:flex; flex-direction:column; gap:3px; font-size:12px; }
+.pf-chart{ position:relative; height:280px; }
+.pf-groups{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; }
+.pf-group{ text-align:left; font-family:'KRASAR',sans-serif; color:var(--cr-text); cursor:pointer; display:flex; flex-direction:column; gap:4px; }
+.pf-group.is-active{ outline:2px solid var(--cr-gold); }
+.pf-conf{ font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px; }
+.pf-conf-high{ background:rgba(21,128,61,.12); color:var(--pi-good); }
+.pf-conf-medium{ background:var(--pi-warn-bg, rgba(194,65,12,.10)); color:var(--pi-warn); }
+.pf-conf-low, .pf-conf-none{ background:var(--pi-bad-bg); color:var(--pi-bad); }
+.pf-assume{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:6px 16px; font-size:12.5px; }
+.pf-assume p{ margin:0; }
+.pf-assume .pf-method{ grid-column:1 / -1; color:var(--cr-text-muted); line-height:1.6; }
+.pi-table .num{ text-align:right; font-variant-numeric:tabular-nums; }
