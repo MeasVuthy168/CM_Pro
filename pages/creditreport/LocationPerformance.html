@@ -34,6 +34,8 @@ href="../../assets/css/creditreport/OfficerProductivity.css">
 <link
 rel="stylesheet"
 href="../../assets/css/creditreport/BranchProductivity.css">
+<link rel="stylesheet" href="../../assets/css/creditreport/cr-table.css">
+<link rel="stylesheet" href="../../assets/css/creditreport/cr-perf.css">
 
 <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
 
@@ -84,6 +86,9 @@ No Internet Connection
      location-only additions needed. -->
 <!-- ========================= -->
 
+<!-- The header and the Comparison switch (Actual Only | Last Month)
+     stay pinned at the top while the page scrolls (cp-sticky). -->
+<div class="cp-sticky">
 <div class="op-header-card" id="lpHeaderCard" style="display:none">
 <div class="op-avatar" id="lpAvatar">?</div>
 <div class="op-header-text">
@@ -91,6 +96,12 @@ No Internet Connection
 <div class="op-officer-meta" id="lpLocationMeta"></div>
 </div>
 </div>
+<div class="cp-compare" id="lpCompare" style="display:none"></div>
+</div>
+<!-- What the comparison compares with, and the 3 figures at the top
+     (cr-perf.js, filled by lpCompare). -->
+<div class="cp-note" id="lpCompareNote"></div>
+<div id="lpStrip" style="display:none"></div>
 
 <!-- Skeleton while the location's summary is being resolved -->
 <div class="op-page-skel" id="lpPageSkel">
@@ -130,6 +141,9 @@ No Internet Connection
 
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
+<script src="../../assets/js/creditreport/cr-table.js"></script>
+<script src="../../assets/js/creditreport/cr-last-month.js"></script>
+<script src="../../assets/js/creditreport/cr-perf.js"></script>
 <script src="../../assets/js/creditreport/LocationPerformance.js"></script>
 <script src="../../assets/js/creditreport/LocationPerformance-loader.js"></script>
 
