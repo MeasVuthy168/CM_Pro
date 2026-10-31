@@ -460,7 +460,8 @@ function bpRenderCompare() {
         { key: "actual", label: t("creditreport.plan.compareActual") },
         { key: "lastMonth", label: t("creditreport.plan.compareLastMonth") },
         { key: "plan", label: t("creditreport.plan.plan") }
-    ], bpCompare.mode) + `<div class="cp-note">${bpEscapeHtml(bpCompareNote())}</div>`;
+    ], bpCompare.mode);
+    document.getElementById("bpCompareNote").textContent = bpCompareNote();
     box.style.display = "";
     const strip = document.getElementById("bpStrip");
     strip.innerHTML = bpStripHtml();

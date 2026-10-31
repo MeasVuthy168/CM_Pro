@@ -86,6 +86,9 @@ No Internet Connection
      BranchProductivity.css for the small branch-only additions. -->
 <!-- ========================= -->
 
+<!-- The header and the Comparison switch stay pinned at the top while
+     the page scrolls (cp-sticky). -->
+<div class="cp-sticky">
 <div class="op-header-card" id="bpHeaderCard" style="display:none">
 <div class="op-avatar" id="bpAvatar">?</div>
 <div class="op-header-text">
@@ -94,9 +97,12 @@ No Internet Connection
 </div>
 </div>
 
-<!-- Comparison switch (Actual Only | Last Month | Plan) and the 3
-     figures at the top — filled by bpRenderCompare(). -->
+<!-- Comparison switch (Actual Only | Last Month | Plan), what it
+     compares with, and the 3 figures at the top — filled by
+     bpRenderCompare(). -->
 <div class="cp-compare" id="bpCompare" style="display:none"></div>
+</div>
+<div class="cp-note" id="bpCompareNote"></div>
 <div id="bpStrip" style="display:none"></div>
 <!-- Skeleton while the branch's summary is being resolved -->
 <div class="op-page-skel" id="bpPageSkel">

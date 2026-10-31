@@ -27,7 +27,23 @@
 }
 .cp-seg-btn.on{ background:var(--cr-navy); color:#fff; }
 [data-theme="dark"] .cp-seg-btn.on{ background:var(--cr-gold-light); color:#0E1B3C; }
-.cp-note{ font-size:11px; color:var(--cr-text-muted); margin:7px 4px 0; line-height:1.6; }
+/* Header + switch pinned under the top bar (the header card's own
+   sticky moves to this wrapper); the page background behind them hides
+   what scrolls underneath. */
+.cp-sticky{
+    position:sticky;
+    top:78px;
+    z-index:5;
+    background:var(--cr-page-bg);
+    padding-bottom:2px;
+    margin-bottom:8px;
+}
+@media(max-width:480px){
+    .cp-sticky{ top:72px; }
+}
+.cp-sticky .op-header-card{ position:static; margin-bottom:8px; }
+.cp-sticky .cp-compare{ margin-bottom:0; }
+.cp-note{ font-size:11px; color:var(--cr-text-muted); margin:0 6px 10px; line-height:1.6; }
 .cp-note:empty{ display:none; }
 
 .cp-strip{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:10px; }
