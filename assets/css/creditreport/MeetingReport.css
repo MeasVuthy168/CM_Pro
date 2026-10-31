@@ -107,3 +107,20 @@
     .mr-table{ font-size:10.5px; }
     .ci-plan-bar span, .mr-bar span{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 }
+
+/* Charts (Chart.js): two side by side, one per row on phones and paper */
+.mr-charts{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:12px 0; }
+.mr-charts-1{ grid-template-columns:minmax(0,1fr); }
+@media (max-width:720px){ .mr-charts{ grid-template-columns:minmax(0,1fr); } }
+.mr-fig{ margin:0; border:1px solid var(--cr-border); border-radius:12px; padding:10px 10px 6px; min-width:0; }
+.mr-fig[hidden]{ display:none; }
+.mr-fig figcaption{ font-size:12px; font-weight:700; color:var(--cr-text); margin-bottom:6px; }
+.mr-chart{ position:relative; height:220px; }
+.mr-sec > .mr-fig{ margin:8px 0 10px; }
+@media print{
+    .mr-charts{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .mr-charts-1{ grid-template-columns:minmax(0,1fr); }
+    .mr-fig{ break-inside:avoid; border-color:#d1d5db; }
+    .mr-chart{ height:190px; }
+    .mr-charts-1 .mr-chart{ height:210px; }
+}

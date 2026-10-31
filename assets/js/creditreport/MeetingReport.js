@@ -72,7 +72,6 @@ async function mrLoad() {
             () => mrGet("overview", base),
             () => mrGet("risk", { ...base, dim: branch ? "officer" : "branch" }),
             () => mrGet("risk", { ...base, dim: "product" }),
-            () => mrGet("risk", { ...base, dim: "location" }),
             () => mrGet("causes", { branch, limit: 10 }),
             () => mrGet("actions", { branch, view: "all", limit: 10 }),
             () => mrGet("forecast", { dim: branch ? "branch" : "portfolio", horizon: 3 }),
@@ -84,12 +83,12 @@ async function mrLoad() {
         const out = await mrPool(jobs, 3, (n, total) => {
             if (mine === mrSeq && typeof showAppLoading === "function") showAppLoading(t("creditreport.mr.loadingN", { n, total }), { progress: true, key: "mr" });
         });
-        const [ov, team, prod, loc, causes, actions, fc, pred, cust, plan, teamPlan] = out;
+        const [ov, team, prod, causes, actions, fc, pred, cust, plan, teamPlan] = out;
         if (mine !== mrSeq) return;
         if (!ov) { CI.toast(t("creditreport.pi.loadFailed"), "error"); return; }
         mrFillBranches(ov);
         const g = fc && fc.groups ? (branch ? fc.groups.find(x => x.key === branch) : fc.groups[0]) : null;
-        mrRender({ branch, compare, ov, team, prod, loc, causes, actions, fc, g, pred, cust, plan, teamPlan });
+        mrRender({ branch, compare, ov, team, prod, causes, actions, fc, g, pred, cust, plan, teamPlan });
     } finally {
         if (mine === mrSeq && typeof hideAppLoading === "function") hideAppLoading();
     }
@@ -212,8 +211,10 @@ function mrRenderProgress(d) {
         : "";
     mrRenderTeam(d);
     mrRenderDim("mrProduct", d.prod, 12);
-    mrRenderDim("mrLocation", d.loc, 12);
-    const blocked = [d.prod, d.loc].some(x => x && x.rows && x.rows.length && x.rows.every(r => !r.prev));
+    mrRenderDaily(d);
+    mrChartPlan(d);
+    mrChartMonthly(d);
+    const blocked = [d.prod].some(x => x && x.rows && x.rows.length && x.rows.every(r => !r.prev));
     document.getElementById("mrLmNote").textContent = [
         d.branch && blocked ? t("creditreport.mr.lmAllOnly") : "",
         t("creditreport.mr.planDims")
@@ -222,6 +223,7 @@ function mrRenderProgress(d) {
 
 // Officers of the branch (or every branch): Actual · last month · plan.
 function mrRenderTeam(d) {
+    mrChartTeam(d);
     const byOfficer = !!d.branch;
     document.getElementById("mrTeamTitle").textContent = t(byOfficer ? "creditreport.mr.byOfficer" : "creditreport.mr.byBranch");
     const rows = d.team && d.team.rows ? d.team.rows.slice().sort((a, b) => b.os - a.os).slice(0, 25) : [];
@@ -256,6 +258,7 @@ function mrRenderDim(id, data, top) {
 
 function mrRenderCauses(d) {
     const c = d.causes;
+    mrChartCauses(c);
     const box = document.getElementById("mrCauses");
     if (!c) { box.innerHTML = ""; document.getElementById("mrCauseNote").textContent = t("creditreport.pi.loadFailed"); return; }
     document.getElementById("mrCauseNote").textContent = t("creditreport.mr.causeNote", { pct: mrPct(c.classified.pct, 0), par: CI.money(c.total), n: CI.num(c.loans) });
@@ -281,6 +284,7 @@ function mrRenderActions(d) {
 
 function mrRenderForecast(d) {
     const g = d.g;
+    mrChartForecast(g);
     const note = document.getElementById("mrFcNote");
     const tb = document.getElementById("mrForecast");
     if (!g || !g.available) {
@@ -330,3 +334,177 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("mrPrint").addEventListener("click", () => window.print());
     mrLoad();
 });
+
+// ---------- charts (Chart.js) ----------
+// Fixed colours that read on screen in both themes and on white paper.
+const MR_C = { navy: "#2456A8", gold: "#C8961E", good: "#16A34A", bad: "#DC2626", grey: "#94A3B8", text: "#6B7280", grid: "rgba(127,127,127,.18)" };
+const mrCharts = new Map();
+function mrChart(id, config) {
+    if (mrCharts.has(id)) { mrCharts.get(id).destroy(); mrCharts.delete(id); }
+    const el = document.getElementById(id);
+    if (!el || typeof Chart === "undefined") return;
+    const fig = el.closest(".mr-fig");
+    if (!config) { if (fig) fig.hidden = true; return; }
+    if (fig) fig.hidden = false;
+    const base = {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: { legend: { labels: { color: MR_C.text, boxWidth: 12, font: { family: "KRASAR", size: 11 } } } },
+        scales: {}
+    };
+    config.options = Object.assign(base, config.options || {});
+    config.options.plugins = Object.assign(base.plugins, (config.options || {}).plugins || {});
+    mrCharts.set(id, new Chart(el, config));
+}
+const mrAxis = (fmt, extra = {}) => ({ ticks: { color: MR_C.text, font: { size: 10 }, callback: fmt }, grid: { color: MR_C.grid }, ...extra });
+const mrX = () => ({ ticks: { color: MR_C.text, font: { size: 10 }, maxRotation: 0, autoSkip: true }, grid: { display: false } });
+const mrShort = v => { const n = Math.abs(v); return n >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : n >= 1e3 ? `$${Math.round(v / 1e3)}K` : `$${v}`; };
+const mrDM = k => { const [, m, d] = String(k).split("-"); return `${d}/${m}`; };
+
+// Achieved % of each planned figure (100% = on plan; PAR / NPL: plan ÷ actual, so above 100% = under the ceiling).
+function mrChartPlan(d) {
+    const p = d.plan && d.plan.metrics;
+    if (!p) return mrChart("mrChPlan", null);
+    const keys = [["osAmount", "creditreport.plan.m.osAmount"], ["osCount", "creditreport.plan.m.osCount"], ["disbAmount", "creditreport.plan.m.disbAmount"], ["nbcOverduePct", "PAR %"], ["nplPct", "NPL %"]];
+    const rows = keys.map(([k, label]) => {
+        const c = p[k] || {};
+        if (!c.plan || c.actual === null || c.actual === undefined) return null;
+        const pctKind = k === "nbcOverduePct" || k === "nplPct";
+        const target = k === "disbAmount" && c.expected ? c.expected : c.plan;
+        const v = pctKind ? (c.actual ? c.plan / c.actual : null) : c.actual / target;
+        return v === null ? null : { label: label.startsWith("creditreport.") ? t(label) : label, v: Math.round(v * 100) };
+    }).filter(Boolean);
+    if (!rows.length) return mrChart("mrChPlan", null);
+    mrChart("mrChPlan", {
+        type: "bar",
+        data: { labels: rows.map(r => r.label), datasets: [{ data: rows.map(r => r.v), backgroundColor: rows.map(r => (r.v >= 100 ? MR_C.good : r.v >= 90 ? MR_C.gold : MR_C.bad)), borderRadius: 4 }] },
+        options: {
+            indexAxis: "y",
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: x => `${x.raw}%` } } },
+            scales: { x: mrAxis(v => `${v}%`, { suggestedMin: 0, suggestedMax: 110 }), y: mrX() }
+        }
+    });
+}
+
+function mrChartMonthly(d) {
+    const pts = (d.ov.trend && d.ov.trend.monthly) || [];
+    if (pts.length < 2) return mrChart("mrChMonthly", null);
+    mrChart("mrChMonthly", {
+        data: {
+            labels: pts.map(p => { const [y, m] = p.date.split("-"); return `${m}/${y.slice(2)}`; }),
+            datasets: [
+                { type: "bar", label: t("creditreport.mr.k.os"), data: pts.map(p => p.os), backgroundColor: "rgba(36,86,168,.35)", yAxisID: "y", order: 2 },
+                { type: "line", label: "PAR %", data: pts.map(p => +(p.parPct * 100).toFixed(2)), borderColor: MR_C.bad, backgroundColor: MR_C.bad, pointRadius: 2, tension: 0.25, yAxisID: "y1", order: 1 },
+                { type: "line", label: "NPL %", data: pts.map(p => +(p.nplPct * 100).toFixed(2)), borderColor: MR_C.gold, backgroundColor: MR_C.gold, pointRadius: 2, tension: 0.25, yAxisID: "y1", order: 1 }
+            ]
+        },
+        options: { scales: { x: mrX(), y: mrAxis(mrShort, { position: "left" }), y1: mrAxis(v => `${v}%`, { position: "right", grid: { display: false } }) } }
+    });
+}
+
+// Every saved day of the Daily History (the last 45 kept), newest first in the table.
+function mrRenderDaily(d) {
+    const pts = (d.ov.trend && d.ov.trend.daily) || [];
+    const note = document.getElementById("mrDailyNote");
+    const tb = document.getElementById("mrDaily");
+    if (!pts.length) {
+        note.textContent = t("creditreport.mr.dailyNone");
+        tb.innerHTML = "";
+        mrChart("mrChDailyOs", null);
+        mrChart("mrChDailyRisk", null);
+        return;
+    }
+    note.textContent = t("creditreport.mr.dailyNote", { n: pts.length, first: CI.dmy(pts[0].date), last: CI.dmy(pts[pts.length - 1].date) });
+    const labels = pts.map(p => mrDM(p.date));
+    mrChart("mrChDailyOs", {
+        data: {
+            labels,
+            datasets: [
+                { type: "line", label: t("creditreport.mr.k.os"), data: pts.map(p => p.os), borderColor: MR_C.navy, backgroundColor: MR_C.navy, pointRadius: 1.5, tension: 0.2, yAxisID: "y" },
+                { type: "bar", label: t("creditreport.mr.k.disb"), data: pts.map(p => p.disb), backgroundColor: "rgba(200,150,30,.45)", yAxisID: "y1" }
+            ]
+        },
+        options: { scales: { x: mrX(), y: mrAxis(mrShort), y1: mrAxis(mrShort, { position: "right", grid: { display: false } }) } }
+    });
+    mrChart("mrChDailyRisk", {
+        type: "line",
+        data: {
+            labels,
+            datasets: [
+                { label: "PAR %", data: pts.map(p => +(p.parPct * 100).toFixed(2)), borderColor: MR_C.bad, backgroundColor: MR_C.bad, pointRadius: 1.5, tension: 0.2 },
+                { label: "NPL %", data: pts.map(p => +(p.nplPct * 100).toFixed(2)), borderColor: MR_C.gold, backgroundColor: MR_C.gold, pointRadius: 1.5, tension: 0.2 }
+            ]
+        },
+        options: { scales: { x: mrX(), y: mrAxis(v => `${v}%`) } }
+    });
+    const rows = pts.slice().reverse();
+    const delta = (cur, prev, fmt, better) => (prev === undefined ? "" : ` ${mrChange(cur - prev, better, fmt)}`);
+    tb.innerHTML = `<thead><tr><th>${CI.esc(t("creditreport.mr.date"))}</th><th class="num">${CI.esc(t("creditreport.mr.k.os"))}</th><th class="num">${CI.esc(t("creditreport.mr.k.disb"))}</th><th class="num">PAR %</th><th class="num">NPL</th><th class="num">NPL %</th></tr></thead><tbody>
+        ${rows.map((p, i) => {
+            const prev = rows[i + 1];
+            return `<tr><td>${CI.esc(CI.dmy(p.date))}</td><td class="num">${CI.money(p.os)}${prev ? delta(p.os, prev.os, mrShort, "up") : ""}</td><td class="num">${CI.money(p.disb)}</td><td class="num">${mrPct(p.parPct)}${prev ? delta(p.parPct, prev.parPct, v => (v * 100).toFixed(2), "down") : ""}</td><td class="num">${CI.money(p.nplValue)}</td><td class="num">${mrPct(p.nplPct)}</td></tr>`;
+        }).join("")}</tbody>`;
+}
+
+function mrChartTeam(d) {
+    const rows = d.team && d.team.rows ? d.team.rows.slice().sort((a, b) => b.os - a.os).slice(0, 15) : [];
+    if (!rows.length) return mrChart("mrChTeam", null);
+    const plans = new Map(((d.teamPlan && d.teamPlan.rows) || []).map(r => [String(r.id), r.metrics]));
+    const plan = rows.map(r => { const c = (plans.get(String(r.key)) || {}).nbcOverduePct; return c && c.plan !== null && c.plan !== undefined ? c.plan : null; });
+    const fig = document.getElementById("mrChTeam").closest(".mr-chart");
+    if (fig) fig.style.height = `${Math.max(180, rows.length * 26 + 60)}px`;
+    mrChart("mrChTeam", {
+        data: {
+            labels: rows.map(r => r.name || r.key),
+            datasets: [
+                { type: "bar", label: t("creditreport.plan.actual"), data: rows.map(r => +(r.parPct * 100).toFixed(2)), backgroundColor: rows.map((r, i) => (plan[i] !== null && r.parPct * 100 > plan[i] ? MR_C.bad : MR_C.navy)), borderRadius: 3 },
+                ...(plan.some(v => v !== null) ? [{ type: "line", label: t("creditreport.plan.plan"), data: plan, borderColor: MR_C.gold, backgroundColor: MR_C.gold, showLine: false, pointStyle: "line", pointRadius: 9, pointBorderWidth: 3 }] : [])
+            ]
+        },
+        options: { indexAxis: "y", scales: { x: mrAxis(v => `${v}%`, { beginAtZero: true }), y: mrX() } }
+    });
+}
+
+function mrChartCauses(c) {
+    if (!c || !c.byCause || !c.total) return mrChart("mrChCauses", null);
+    const list = Object.entries(c.byCause).map(([key, v]) => ({ key, ...v })).filter(x => x.par > 0).sort((a, b) => (a.key === "unclassified") - (b.key === "unclassified") || b.par - a.par);
+    if (!list.length) return mrChart("mrChCauses", null);
+    const palette = ["#2456A8", "#C8961E", "#DC2626", "#16A34A", "#7C3AED", "#0D9488", "#EA580C", "#64748B"];
+    mrChart("mrChCauses", {
+        type: "doughnut",
+        data: {
+            labels: list.map(x => t(x.key === "unclassified" ? "creditreport.rc.unclassified" : `creditreport.rc.c.${x.key}`)),
+            datasets: [{ data: list.map(x => x.par), backgroundColor: list.map((x, i) => (x.key === "unclassified" ? MR_C.grey : palette[i % palette.length])), borderWidth: 0 }]
+        },
+        options: {
+            cutout: "58%",
+            plugins: { legend: { position: "right", labels: { color: MR_C.text, boxWidth: 10, font: { family: "KRASAR", size: 11 } } }, tooltip: { callbacks: { label: x => `${x.label}: ${CI.money(x.raw)} (${Math.round((x.raw / c.total) * 100)}%)` } } }
+        }
+    });
+}
+
+function mrChartForecast(g) {
+    if (!g || !g.available) return mrChart("mrChForecast", null);
+    const hist = g.history.slice(-12);
+    const fc = g.forecast;
+    const labels = hist.map(p => mrMonth(p.month)).concat(fc.base.map(p => mrMonth(p.month)));
+    const pad = n => Array(n).fill(null);
+    const v = p => (p.parPct === null || p.parPct === undefined ? null : +(p.parPct * 100).toFixed(2));
+    const join = arr => pad(hist.length - 1).concat([v(hist[hist.length - 1])], arr.map(v));
+    mrChart("mrChForecast", {
+        type: "line",
+        data: {
+            labels,
+            datasets: [
+                { label: t("creditreport.pf.actual"), data: hist.map(v).concat(pad(fc.base.length)), borderColor: MR_C.navy, backgroundColor: MR_C.navy, pointRadius: 2, tension: 0.2 },
+                { label: t("creditreport.pf.base"), data: join(fc.base), borderColor: MR_C.gold, borderDash: [6, 4], pointRadius: 2, tension: 0.2 },
+                { label: t("creditreport.pf.best"), data: join(fc.best), borderColor: MR_C.good, borderDash: [2, 4], pointRadius: 0, tension: 0.2 },
+                { label: t("creditreport.pf.stress"), data: join(fc.stress), borderColor: MR_C.bad, borderDash: [2, 4], pointRadius: 0, tension: 0.2 }
+            ]
+        },
+        options: { spanGaps: false, scales: { x: mrX(), y: mrAxis(v2 => `${v2}%`) } }
+    });
+}
+
+// Charts follow the page width; redraw them at the paper's width to print.
+window.addEventListener("beforeprint", () => mrCharts.forEach(c => c.resize()));
+window.addEventListener("afterprint", () => mrCharts.forEach(c => c.resize()));

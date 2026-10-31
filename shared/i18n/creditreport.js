@@ -1418,6 +1418,17 @@ CMI18n.register({
   "creditreport.mr.byProduct": { km: "តាមផលិតផល", en: "By product" },
   "creditreport.mr.byLocation": { km: "តាមទីតាំង (ស្រុក)", en: "By location (district)" },
   "creditreport.mr.name": { km: "ឈ្មោះ", en: "Name" },
-  "creditreport.mr.lmAllOnly": { km: "ផលិតផល និងទីតាំង៖ ខែមុនមានតែសរុបគ្រប់សាខា ដូច្នេះមិនបង្ហាញសម្រាប់សាខាមួយទេ។", en: "Product and location: last month is saved for all branches together only, so it isn't shown for one branch." },
-  "creditreport.mr.planDims": { km: "ផែនការមានសម្រាប់សាខា និងមន្ត្រីប៉ុណ្ណោះ (ផលិតផល និងទីតាំង គ្មានផែនការ)។", en: "Plans exist for branches and officers only (none for product or location)." }
+  "creditreport.mr.lmAllOnly": { km: "ផលិតផល៖ ខែមុនមានតែសរុបគ្រប់សាខា ដូច្នេះមិនបង្ហាញសម្រាប់សាខាមួយទេ។", en: "Product: last month is saved for all branches together only, so it isn't shown for one branch." },
+  "creditreport.mr.planDims": { km: "ផែនការមានសម្រាប់សាខា និងមន្ត្រីប៉ុណ្ណោះ (ផលិតផល គ្មានផែនការ)។", en: "Plans exist for branches and officers only (none for products)." },
+  "creditreport.mr.ch.plan": { km: "% សម្រេចបានធៀបនឹងផែនការ (PAR/NPL៖ ផែនការ ÷ ជាក់ស្តែង)", en: "Achieved against plan (PAR/NPL: plan ÷ actual)" },
+  "creditreport.mr.ch.monthly": { km: "ចុងខែ ១២ ខែចុងក្រោយ៖ សមតុល្យ និង PAR %", en: "Last 12 month-ends: outstanding and PAR %" },
+  "creditreport.mr.ch.dailyOs": { km: "សមតុល្យ និងការបញ្ចេញ — ថ្ងៃនីមួយៗដែលបានរក្សាទុក", en: "Outstanding and disbursement — each saved day" },
+  "creditreport.mr.ch.dailyRisk": { km: "PAR % និង NPL % — ថ្ងៃនីមួយៗដែលបានរក្សាទុក", en: "PAR % and NPL % — each saved day" },
+  "creditreport.mr.ch.team": { km: "PAR % ធៀបនឹងកម្រិតផែនការ (ក្រហម = លើសផែនការ)", en: "PAR % against the plan ceiling (red = above plan)" },
+  "creditreport.mr.ch.causes": { km: "PAR តាមមូលហេតុដែលបានបញ្ជាក់", en: "PAR by confirmed cause" },
+  "creditreport.mr.ch.forecast": { km: "PAR %៖ ប្រវត្តិ និង ៣ ខែខាងមុខ (ល្អ / មូលដ្ឋាន / ធ្ងន់)", en: "PAR %: history and the next 3 months (Best / Base / Stress)" },
+  "creditreport.mr.daily": { km: "ប្រវត្តិប្រចាំថ្ងៃ", en: "Daily history" },
+  "creditreport.mr.dailyNote": { km: "ថ្ងៃដែលបានរក្សាទុកទាំងអស់ក្នុងប្រវត្តិប្រចាំថ្ងៃ ({n} ថ្ងៃ ពី {first} ដល់ {last}) — ថ្មីបំផុតនៅខាងលើ។", en: "Every saved day of the Daily History ({n} days, {first} to {last}) — newest first." },
+  "creditreport.mr.dailyNone": { km: "មិនទាន់មានប្រវត្តិប្រចាំថ្ងៃសម្រាប់ជម្រើសនេះទេ។", en: "No Daily History saved for this choice yet." },
+  "creditreport.mr.date": { km: "ថ្ងៃ", en: "Date" }
 });
