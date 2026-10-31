@@ -34,6 +34,8 @@ href="../../assets/css/creditreport/OfficerProductivity.css">
 <link
 rel="stylesheet"
 href="../../assets/css/creditreport/BranchProductivity.css">
+<link rel="stylesheet" href="../../assets/css/creditreport/cr-table.css">
+<link rel="stylesheet" href="../../assets/css/creditreport/cr-perf.css">
 
 <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
 
@@ -92,6 +94,10 @@ No Internet Connection
 </div>
 </div>
 
+<!-- Comparison switch (Actual Only | Last Month | Plan) and the 3
+     figures at the top — filled by bpRenderCompare(). -->
+<div class="cp-compare" id="bpCompare" style="display:none"></div>
+<div id="bpStrip" style="display:none"></div>
 <!-- Skeleton while the branch's summary is being resolved -->
 <div class="op-page-skel" id="bpPageSkel">
 <div class="op-skel-card"></div>
@@ -130,6 +136,9 @@ No Internet Connection
 
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
+<script src="../../assets/js/creditreport/cr-table.js"></script>
+<script src="../../assets/js/creditreport/cr-last-month.js"></script>
+<script src="../../assets/js/creditreport/cr-perf.js"></script>
 <script src="../../assets/js/creditreport/BranchProductivity.js"></script>
 <script src="../../assets/js/creditreport/BranchProductivity-loader.js"></script>
 

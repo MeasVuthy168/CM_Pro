@@ -43,13 +43,14 @@ window.CRLastMonth = (() => {
     }
 
     // The last saved day on or before last month's end: { date, day } or
-    // null when none was saved in the 2 months before it.
-    function load({ endpoint, token, toDate }) {
+    // null when none was saved in the 2 months before it. query: extra
+    // parameters for the history endpoint (e.g. { branch }).
+    function load({ endpoint, token, toDate, query }) {
         const to = cutoff(toDate);
         if (!to) return Promise.resolve(null);
-        const key = `${endpoint}|${to}`;
+        const params = new URLSearchParams({ ...(query || {}), dateFrom: daysBefore(to, 62), dateTo: to, latest: "1" });
+        const key = `${endpoint}|${params}`;
         if (!cache.has(key)) {
-            const params = new URLSearchParams({ dateFrom: daysBefore(to, 62), dateTo: to, latest: "1" });
             cache.set(key, (async () => {
                 const res = await fetch(`${API.BASE_URL}${endpoint}?${params}`, { headers: { Authorization: `Bearer ${token}` } });
                 const data = await res.json();

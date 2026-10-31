@@ -58,33 +58,24 @@ function bpCategories() {
         { bucket: "fsro", label: t("creditreport.byCO.fsro") },
         { bucket: "digital", label: t("creditreport.byBranch.teamDigitalLoan") }
     ];
+    const loan = k => ({ k, label: t("creditreport.productivity.colLoan") });
+    const value = k => ({ k, label: t("creditreport.detail.colValue"), money: true, main: true });
+    const par = k => ({ k, label: t("creditreport.productivity.colPar"), pct: true });
+    // fields: the section's figures per CO / FSRO / Digital / Total row
+    // (main = the one compared with last month row by row); risk = a
+    // rise is bad news; plan: the Monthly Plan metrics it is measured
+    // against (head = the one with the bar), none for T24.
     return [
     {
         key: "outstanding",
         icon: '<span class="cr-ico cr-ico-barchart" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionOutstanding"),
         chart: false,
-        statGroups: [
-            { label: t("common.total"), total: true, fields: [
-                { key: "total.loanOutstanding.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "total.loanOutstanding.client", label: t("creditreport.productivity.colClient") },
-                { key: "total.loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
-            ] },
-            { label: t("creditreport.byBranch.teamCo"), fields: [
-                { key: "co.loanOutstanding.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "co.loanOutstanding.client", label: t("creditreport.productivity.colClient") },
-                { key: "co.loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
-            ] },
-            { label: t("creditreport.byCO.fsro"), fields: [
-                { key: "fsro.loanOutstanding.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "fsro.loanOutstanding.client", label: t("creditreport.productivity.colClient") },
-                { key: "fsro.loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
-            ] },
-            { label: t("creditreport.byBranch.teamDigital"), fields: [
-                { key: "digital.loanOutstanding.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "digital.loanOutstanding.client", label: t("creditreport.productivity.colClient") },
-                { key: "digital.loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
-            ] }
+        fields: [loan("loanOutstanding.loan"), { k: "loanOutstanding.client", label: t("creditreport.productivity.colClient") }, value("loanOutstanding.value")],
+        plan: [
+            { key: "osCount", label: t("creditreport.plan.loans") },
+            { key: "osClients", label: t("creditreport.plan.clients") },
+            { key: "osAmount", label: t("creditreport.plan.osAmount"), money: true, head: true }
         ],
         clientLists: clientLists()
     },
@@ -93,23 +84,10 @@ function bpCategories() {
         icon: '<span class="cr-ico cr-ico-money" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionDisburse"),
         chart: true,
-        statGroups: [
-            { label: t("common.total"), total: true, fields: [
-                { key: "total.loanDisburse.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "total.loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
-            ] },
-            { label: t("creditreport.byBranch.teamCo"), fields: [
-                { key: "co.loanDisburse.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "co.loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
-            ] },
-            { label: t("creditreport.byCO.fsro"), fields: [
-                { key: "fsro.loanDisburse.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "fsro.loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
-            ] },
-            { label: t("creditreport.byBranch.teamDigital"), fields: [
-                { key: "digital.loanDisburse.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "digital.loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
-            ] }
+        fields: [loan("loanDisburse.loan"), value("loanDisburse.value")],
+        plan: [
+            { key: "disbCount", label: t("creditreport.plan.loans"), disb: true },
+            { key: "disbAmount", label: t("creditreport.plan.amount"), money: true, disb: true, head: true }
         ],
         clientLists: clientLists()
     },
@@ -118,28 +96,9 @@ function bpCategories() {
         icon: '<span class="cr-ico cr-ico-trend-up" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionT24"),
         chart: false,
-        statGroups: [
-            { label: t("common.total"), total: true, fields: [
-                { key: "total.parT24.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "total.parT24.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "total.parT24.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] },
-            { label: t("creditreport.byBranch.teamCo"), fields: [
-                { key: "co.parT24.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "co.parT24.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "co.parT24.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] },
-            { label: t("creditreport.byCO.fsro"), fields: [
-                { key: "fsro.parT24.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "fsro.parT24.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "fsro.parT24.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] },
-            { label: t("creditreport.byBranch.teamDigital"), fields: [
-                { key: "digital.parT24.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "digital.parT24.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "digital.parT24.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] }
-        ],
+        risk: true,
+        fields: [loan("parT24.loan"), value("parT24.value"), par("parT24.parPct")],
+        plan: null,
         clientLists: clientLists()
     },
     {
@@ -147,59 +106,31 @@ function bpCategories() {
         icon: '<span class="cr-ico cr-ico-warning" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionNbcOverdue"),
         chart: false,
-        statGroups: [
-            { label: t("common.total"), total: true, fields: [
-                { key: "total.nbcOverdue.total.count", label: t("creditreport.productivity.colLoan") },
-                { key: "total.nbcOverdue.total.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "total.nbcOverdue.total.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] },
-            { label: t("creditreport.byBranch.teamCo"), fields: [
-                { key: "co.nbcOverdue.total.count", label: t("creditreport.productivity.colLoan") },
-                { key: "co.nbcOverdue.total.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "co.nbcOverdue.total.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] },
-            { label: t("creditreport.byCO.fsro"), fields: [
-                { key: "fsro.nbcOverdue.total.count", label: t("creditreport.productivity.colLoan") },
-                { key: "fsro.nbcOverdue.total.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "fsro.nbcOverdue.total.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] },
-            { label: t("creditreport.byBranch.teamDigital"), fields: [
-                { key: "digital.nbcOverdue.total.count", label: t("creditreport.productivity.colLoan") },
-                { key: "digital.nbcOverdue.total.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "digital.nbcOverdue.total.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] }
+        risk: true,
+        fields: [loan("nbcOverdue.total.count"), value("nbcOverdue.total.value"), par("nbcOverdue.total.parPct")],
+        plan: [
+            { key: "nbcOverduePct", label: t("creditreport.plan.nbcPct"), pctPts: true, lowerBetter: true, head: true },
+            { key: "nplPct", label: t("creditreport.plan.nplPct"), pctPts: true, lowerBetter: true }
         ],
         clientLists: clientLists()
     },
     // Shows Balance WO (the outstanding written-off balance, # cif/Int/Prn)
     // rather than the WO period figures, per explicit request 2026-10-01 —
     // same change made to Location/Product Performance/Officer Productivity.
+    // Its plan is WO Collected, a yearly plan (the year to date).
     {
         key: "writeOff",
         icon: '<span class="cr-ico cr-ico-writeoff" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionWriteOff"),
         chart: false,
-        statGroups: [
-            { label: t("common.total"), total: true, fields: [
-                { key: "total.writeOff.balanceWO.cif", label: t("creditreport.detail.colCifHash") },
-                { key: "total.writeOff.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
-                { key: "total.writeOff.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
-            ] },
-            { label: t("creditreport.byBranch.teamCo"), fields: [
-                { key: "co.writeOff.balanceWO.cif", label: t("creditreport.detail.colCifHash") },
-                { key: "co.writeOff.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
-                { key: "co.writeOff.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
-            ] },
-            { label: t("creditreport.byCO.fsro"), fields: [
-                { key: "fsro.writeOff.balanceWO.cif", label: t("creditreport.detail.colCifHash") },
-                { key: "fsro.writeOff.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
-                { key: "fsro.writeOff.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
-            ] },
-            { label: t("creditreport.byBranch.teamDigital"), fields: [
-                { key: "digital.writeOff.balanceWO.cif", label: t("creditreport.detail.colCifHash") },
-                { key: "digital.writeOff.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
-                { key: "digital.writeOff.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
-            ] }
+        risk: true,
+        fields: [
+            { k: "writeOff.balanceWO.cif", label: t("creditreport.detail.colCifHash") },
+            { k: "writeOff.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
+            { k: "writeOff.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true, main: true }
+        ],
+        plan: [
+            { key: "woCollected", label: `${t("creditreport.perf.woCollected")} (${t("creditreport.plan.yearPlan")})`, money: true, head: true }
         ],
         clientLists: clientLists()
     }
@@ -227,10 +158,6 @@ function bpGet(obj, path) {
 function bpFmtNum(n) {
     n = Number(n) || 0;
     return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
-}
-function bpFmtPct(n) {
-    n = Number(n) || 0;
-    return (n * 100).toFixed(2) + "%";
 }
 function bpFmtDateDMY(s) {
     if (!s) return "-";
@@ -316,27 +243,253 @@ function bpRenderHeader() {
     document.getElementById("bpHeaderCard").style.display = "flex";
 }
 
-function bpStatFieldHtml(f, data) {
-    const v = bpGet(data, f.key);
-    const text = f.pct ? bpFmtPct(v) : bpFmtNum(v);
-    return `<span>${bpEscapeHtml(f.label)}: <b>${text}</b></span>`;
-}
-function bpStatGroupHtml(g, data) {
-    return `
-      <div class="op-card-stats">
-        <span class="op-card-stats-group-label">${bpEscapeHtml(g.label)}:</span>
-        ${g.fields.map(f => bpStatFieldHtml(f, data)).join("")}
-      </div>`;
-}
-// The Total row always shows; CO/FSRO/Digital only reveal once the card
-// is expanded (see .bp-card-stats-buckets in BranchProductivity.css).
-function bpCardStatsHtml(cat, data) {
-    const totalHtml = cat.statGroups.filter(g => g.total).map(g => bpStatGroupHtml(g, data)).join("");
-    const bucketHtml = cat.statGroups.filter(g => !g.total).map(g => bpStatGroupHtml(g, data)).join("");
-    return `${totalHtml}<div class="bp-card-stats-buckets">${bucketHtml}</div>`;
+// ========================================
+// COMPARISON — Actual Only | Last Month | Plan (cr-perf.js builds the
+// pieces). Last Month = the branch's last saved Daily History day of
+// last month (CRLastMonth, T24 from its NBC Overdue); Plan = the
+// branch's Monthly Plan from Plan vs Actual (whole branch, not split
+// into CO / FSRO / Digital).
+// ========================================
+const BP_BUCKETS = ["co", "fsro", "digital", "total"];
+const bpCompare = { mode: "actual", lm: null, lmState: "", plan: null, planData: null, planState: "" };
+
+function bpBucketLabel(b) {
+    return b === "co" ? t("creditreport.byBranch.teamCo")
+        : b === "fsro" ? t("creditreport.byCO.fsro")
+            : b === "digital" ? t("creditreport.byBranch.teamDigital")
+                : t("common.total");
 }
 
-function bpCardMarkup(cat, data) {
+function bpIsAllBranch() {
+    return String(bpState.branch || "").toLowerCase() === "all branch";
+}
+
+// Last month's row for a bucket (null = not saved).
+function bpLastRow(bucket) {
+    const lm = bpCompare.lm;
+    if (!lm) return null;
+    return bucket === "total" ? lm : (lm.breakdown && lm.breakdown[bucket]) || null;
+}
+
+function bpRows() {
+    return BP_BUCKETS.map(b => ({ label: bpBucketLabel(b), data: bpState.data[b], last: bpLastRow(b), total: b === "total" }));
+}
+
+async function bpLoadLastMonth() {
+    if (bpCompare.lmState) return;
+    bpCompare.lmState = "loading";
+    try {
+        const info = await CRLastMonth.load({
+            endpoint: "/api/creditreport/summary/history",
+            token: bpToken,
+            toDate: bpState.data.toDate || bpState.meta.toDate,
+            query: bpIsAllBranch() ? { totalOnly: "1" } : { branch: bpState.branch }
+        });
+        const day = info && info.day;
+        const raw = day ? (bpIsAllBranch() ? day.total : (day.items || [])[0]) : null;
+        bpCompare.lm = raw ? CRLastMonth.scopeSaved(raw, { t24Class: [], t24Product: [], nbcProduct: [] }) : null;
+        bpCompare.lmInfo = info;
+        bpCompare.lmState = "done";
+    } catch (e) {
+        console.error("last month failed:", e);
+        bpCompare.lmState = "error";
+    }
+    bpRenderCompare();
+}
+
+async function bpLoadPlan() {
+    if (bpCompare.planState) return;
+    bpCompare.planState = "loading";
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/creditreport/plan-vs-actual`, { headers: { Authorization: `Bearer ${bpToken}` } });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.message || `HTTP ${res.status}`);
+        bpCompare.planData = data;
+        const row = bpIsAllBranch() ? data.total : (data.rows || []).find(r => r.branch === bpState.branch);
+        bpCompare.plan = row ? row.metrics : null;
+        bpCompare.planState = "done";
+    } catch (e) {
+        console.error("plan failed:", e);
+        bpCompare.planState = "error";
+    }
+    bpRenderCompare();
+}
+
+// A plan metric: { plan, actual, ach } or null when not planned.
+function bpPlanMetric(key) {
+    const m = bpCompare.plan && bpCompare.plan[key];
+    return m && m.plan !== null && m.plan !== undefined ? m : null;
+}
+
+function bpMainField(cat) {
+    return cat.fields.find(f => f.main);
+}
+
+// The big figure (+ chip) in a card's head.
+function bpHeadFigsHtml(cat) {
+    const total = bpState.data.total;
+    const main = { ...bpMainField(cat), risk: cat.risk };
+    const parField = cat.fields.find(f => f.pct);
+    const pill = parField ? CRTable.parPill(bpGet(total, parField.k)) : "";
+    const big = `<span class="cp-big">${CRPerf.fmt(bpGet(total, main.k), main, true)}</span>`;
+    const mode = bpCompare.mode;
+    if (mode === "lastMonth" && bpCompare.lm) {
+        const d = CRPerf.delta(bpGet(total, main.k), bpGet(bpCompare.lm, main.k), main, { withPct: true });
+        return big + pill + CRPerf.chip(d.html, d.cls);
+    }
+    if (mode === "plan" && bpCompare.planState === "done") {
+        const head = cat.plan && cat.plan.find(p => p.head);
+        const m = head && bpPlanMetric(head.key);
+        if (!head) return big + pill + CRPerf.chip(bpEscapeHtml(t("creditreport.perf.noPlanSection")), "muted");
+        if (!m) return big + pill;
+        if (head.lowerBetter) {
+            // The PAR % shown (the page's own figure) against the ceiling.
+            const d = Math.round(((Number(bpGet(total, parField.k)) || 0) * 100 - m.plan) * 100) / 100;
+            return `${big}${pill}<span class="cp-of">${bpEscapeHtml(t("creditreport.plan.planMax"))} ${Number(m.plan).toFixed(2)}%</span>${CRPerf.chip(`<span class="cp-arrow">${d > 0 ? "▲" : "▼"}</span>${Math.abs(d).toFixed(2)}`, d <= 0 ? "good" : "bad")}`;
+        }
+        const cls = CRPerf.achCls(m.ach, head.disb);
+        return `<span class="cp-big">${CRPerf.fmt(m.actual, head, true)}</span><span class="cp-of">/ ${CRPerf.fmt(m.plan, head, true)}</span>${CRPerf.chip(m.ach === null ? "" : `${Math.round(m.ach * 100)}%`, cls)}`;
+    }
+    return big + pill;
+}
+
+function bpLoadingHtml() {
+    return `<div class="cp-empty">${bpEscapeHtml(t("common.loading"))}</div>`;
+}
+
+// The table under a card's head.
+function bpBodyHtml(cat) {
+    const rows = bpRows();
+    const actual = () => CRPerf.actualTable(rows, cat.fields);
+    const mode = bpCompare.mode;
+    if (mode === "lastMonth") {
+        if (bpCompare.lmState !== "done" && bpCompare.lmState !== "error") return bpLoadingHtml();
+        if (!bpCompare.lm) return actual();
+        const main = { ...bpMainField(cat), risk: cat.risk };
+        const lastLabel = CRLastMonth.shortDate(bpCompare.lmInfo.date);
+        const nowLabel = CRLastMonth.shortDate(bpState.data.toDate);
+        const others = cat.fields.filter(f => !f.main).map(f => ({ ...f, risk: cat.risk }));
+        return CRPerf.lastMonthTable(rows, main, { lastLabel, nowLabel })
+            + (others.length ? `<div class="cp-foot">${CRPerf.lastMonthFoot(rows[rows.length - 1], others)}</div>` : "");
+    }
+    if (mode === "plan") {
+        if (bpCompare.planState !== "done" && bpCompare.planState !== "error") return bpLoadingHtml();
+        if (!cat.plan) return `<div class="cp-empty">${bpEscapeHtml(t("creditreport.perf.noPlanSection"))}</div>${actual()}`;
+        const metrics = cat.plan.map(p => ({ ...p, m: bpPlanMetric(p.key) })).filter(p => p.m);
+        // No plan at all: the note at the top says so once.
+        if (!metrics.length) return bpCompare.plan ? `<div class="cp-empty">${bpEscapeHtml(t("creditreport.plan.noPlan"))}</div>${actual()}` : actual();
+        const head = metrics.find(p => p.head && !p.lowerBetter);
+        const bar = head && head.m.ach !== null
+            ? `<div class="cp-ach cp-${CRPerf.achCls(head.m.ach, head.disb)}">${CRPerf.bar(head.m.ach, CRPerf.achCls(head.m.ach, head.disb))}<span>${Math.round(head.m.ach * 100)}%</span></div>`
+            : "";
+        return bar + CRPerf.planTable(metrics);
+    }
+    return actual();
+}
+
+// The 3 figures at the top: Outstanding, NBC Overdue PAR, Disburse.
+function bpStripHtml() {
+    const total = bpState.data.total;
+    const mode = bpCompare.mode;
+    const lm = mode === "lastMonth" ? bpCompare.lm : null;
+    const pl = mode === "plan" && bpCompare.planState === "done";
+    const os = { k: "loanOutstanding.value", money: true };
+    const nbc = { k: "nbcOverdue.total.parPct", pct: true, risk: true };
+    const disb = { k: "loanDisburse.value", money: true };
+    const cur = f => bpGet(total, f.k);
+    const deltaChip = f => { const d = CRPerf.delta(cur(f), bpGet(lm, f.k), f, { withPct: true }); return CRPerf.chip(d.html, d.cls); };
+
+    const osM = pl && bpPlanMetric("osAmount");
+    const nbcM = pl && bpPlanMetric("nbcOverduePct");
+    const disbM = pl && bpPlanMetric("disbAmount");
+    const kpis = [
+        {
+            label: t("creditreport.perf.kpiOutstanding"),
+            value: CRPerf.fmt(cur(os), os, true),
+            sub: lm ? deltaChip(os)
+                : osM ? CRPerf.chip(`${Math.round(osM.ach * 100)}% · ${CRPerf.fmt(osM.plan, os, true)}`, CRPerf.achCls(osM.ach))
+                    : `${bpEscapeHtml(t("creditreport.productivity.colLoan"))} ${bpFmtNum(bpGet(total, "loanOutstanding.loan"))}`
+        },
+        {
+            label: t("creditreport.perf.kpiNbc"),
+            value: CRTable.parPill(cur(nbc)),
+            sub: lm ? deltaChip(nbc)
+                : nbcM ? CRPerf.chip(`${bpEscapeHtml(t("creditreport.plan.planMax"))} ${Number(nbcM.plan).toFixed(2)}%`, (Number(cur(nbc)) || 0) * 100 <= nbcM.plan ? "good" : "bad")
+                    : CRPerf.fmt(bpGet(total, "nbcOverdue.total.value"), os, true)
+        },
+        {
+            label: t("creditreport.perf.kpiDisburse"),
+            value: CRPerf.fmt(cur(disb), disb, true),
+            ring: disbM ? CRPerf.ring(disbM.ach, CRPerf.achCls(disbM.ach, true)) : "",
+            sub: lm ? deltaChip(disb)
+                : disbM ? `<span class="cp-muted">${CRPerf.fmt(disbM.actual, disb, true)} / ${CRPerf.fmt(disbM.plan, disb, true)}</span>`
+                    : `${bpEscapeHtml(t("creditreport.productivity.colLoan"))} ${bpFmtNum(bpGet(total, "loanDisburse.loan"))}`
+        }
+    ];
+    return CRPerf.strip(kpis);
+}
+
+// The line under the switch: what is compared with what.
+function bpCompareNote() {
+    const mode = bpCompare.mode;
+    if (mode === "lastMonth") {
+        if (bpCompare.lmState === "error") return t("creditreport.lastMonth.loadFailed");
+        if (bpCompare.lmState !== "done") return t("common.loading");
+        const info = bpCompare.lmInfo;
+        if (!info || !info.date || !bpCompare.lm) return t("creditreport.lastMonth.noSnapshot", { date: bpFmtDateDMY(info && info.cutoff) });
+        return t("creditreport.perf.lmNote", { date: bpFmtDateDMY(info.date) });
+    }
+    if (mode === "plan") {
+        if (bpCompare.planState === "error") return t("creditreport.plan.loadFailed");
+        if (bpCompare.planState !== "done") return t("creditreport.plan.loading");
+        const d = bpCompare.planData;
+        if (!bpCompare.plan || !d.hasPlan) return t("creditreport.plan.noPlan");
+        const [y, m] = String(d.month || "").split("-");
+        return [
+            t("creditreport.plan.noteMonth", { month: `${m}-${y}`, from: bpFmtDateDMY(d.fromDate), to: bpFmtDateDMY(d.toDate), done: d.daysDone, days: d.daysInMonth }),
+            t("creditreport.perf.planWhole"),
+            t("creditreport.perf.planRules")
+        ].join(" ");
+    }
+    return "";
+}
+
+function bpRenderCompare() {
+    const box = document.getElementById("bpCompare");
+    box.innerHTML = CRPerf.switcher([
+        { key: "actual", label: t("creditreport.plan.compareActual") },
+        { key: "lastMonth", label: t("creditreport.plan.compareLastMonth") },
+        { key: "plan", label: t("creditreport.plan.plan") }
+    ], bpCompare.mode) + `<div class="cp-note">${bpEscapeHtml(bpCompareNote())}</div>`;
+    box.style.display = "";
+    const strip = document.getElementById("bpStrip");
+    strip.innerHTML = bpStripHtml();
+    strip.style.display = "";
+    const cats = bpCategories();
+    document.querySelectorAll("#bpCards .op-card").forEach(card => {
+        const cat = cats.find(c => c.key === card.dataset.key);
+        if (!cat) return;
+        card.querySelector(".cp-head-figs").innerHTML = bpHeadFigsHtml(cat);
+        card.querySelector(".cp-body").innerHTML = bpBodyHtml(cat);
+    });
+}
+
+function bpSetCompare(mode) {
+    bpCompare.mode = ["lastMonth", "plan"].includes(mode) ? mode : "actual";
+    const params = new URLSearchParams(location.search);
+    if (bpCompare.mode === "actual") params.delete("compare"); else params.set("compare", bpCompare.mode);
+    history.replaceState(history.state, "", `${location.pathname}?${params}`);
+    if (bpCompare.mode === "lastMonth") bpLoadLastMonth();
+    if (bpCompare.mode === "plan") bpLoadPlan();
+    bpRenderCompare();
+}
+
+document.getElementById("bpCompare").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-compare]");
+    if (btn) bpSetCompare(btn.dataset.compare);
+});
+
+function bpCardMarkup(cat) {
     const listTabsHtml = cat.clientLists.map((cl, i) =>
         `<button type="button" class="op-mode-tab${i === 0 ? " active" : ""}" data-mode="list:${cl.bucket}"><span class="cr-ico cr-ico-users" aria-hidden="true"></span> ${t("creditreport.productivity.listOfClient")} ${bpEscapeHtml(cl.label)}</button>`
     ).join("");
@@ -345,16 +498,19 @@ function bpCardMarkup(cat, data) {
         ? `<button type="button" class="op-mode-tab" data-mode="chart"><span class="cr-ico cr-ico-trend-up" aria-hidden="true"></span> ${t("creditreport.detail.chart")}</button>`
         : "";
 
+    // The head opens the client lists; the figures (cp-head-figs,
+    // cp-body) are filled by bpRenderCompare().
     return `
       <div class="op-card" data-key="${cat.key}">
         <button type="button" class="op-card-head" aria-expanded="false">
           <div class="op-card-icon">${cat.icon}</div>
           <div class="op-card-title">
             <div class="op-card-label">${bpEscapeHtml(cat.label)}</div>
-            ${bpCardStatsHtml(cat, data)}
+            <div class="cp-head-figs"></div>
           </div>
           <div class="op-card-caret">▾</div>
         </button>
+        <div class="cp-body"></div>
         <div class="op-card-panel">
           <div class="op-mode-tabs">
             ${listTabsHtml}
@@ -367,41 +523,10 @@ function bpCardMarkup(cat, data) {
 
 function bpRenderCards() {
     const wrap = document.getElementById("bpCards");
-    wrap.innerHTML = bpCategories().map(cat => bpCardMarkup(cat, bpState.data)).join("");
+    wrap.innerHTML = bpCategories().map(cat => bpCardMarkup(cat)).join("");
     wrap.style.display = "flex";
-    bpFitStatsToWidth();
+    bpSetCompare(new URLSearchParams(location.search).get("compare"));
 }
-
-// ========================================
-// FIT STATS ROWS TO SCREEN WIDTH
-// Each CO/FSRO/Digital Loan line must always fit within the card —
-// no wrapping (fixed by CSS), and no horizontal scroll either.
-// Content length varies (long values, wide numbers), so a fixed
-// font-size can't guarantee that on its own — this measures each row
-// after render and shrinks its own font-size in small steps until it
-// stops overflowing (or hits a legibility floor). Resets to the CSS
-// default before each measurement so a resize (e.g. rotating the
-// phone, or a wider screen) can recover full size again instead of
-// staying shrunk from a previous, narrower measurement.
-// ========================================
-function bpFitStatsToWidth() {
-    const rows = document.querySelectorAll("#bpCards .op-card-stats");
-    rows.forEach(row => {
-        row.style.fontSize = "";
-        let size = parseFloat(getComputedStyle(row).fontSize);
-        const minSize = 7;
-        while (row.scrollWidth > row.clientWidth + 0.5 && size > minSize) {
-            size -= 0.5;
-            row.style.fontSize = `${size}px`;
-        }
-    });
-}
-
-let bpFitResizeTimer;
-window.addEventListener("resize", () => {
-    clearTimeout(bpFitResizeTimer);
-    bpFitResizeTimer = setTimeout(bpFitStatsToWidth, 150);
-});
 
 // ========================================
 // ACCORDION + MODE SWITCHING
@@ -416,10 +541,6 @@ document.getElementById("bpCards").addEventListener("click", (e) => {
         });
         card.classList.toggle("open", willOpen);
         head.setAttribute("aria-expanded", willOpen ? "true" : "false");
-        // CO/FSRO/Digital rows are hidden until expanded, so they were
-        // skipped by the last width-fit pass — measure them now that
-        // they're visible.
-        bpFitStatsToWidth();
         if (willOpen) {
             const activeTab = card.querySelector(".op-mode-tab.active");
             bpEnsureModeLoaded(card, activeTab ? activeTab.dataset.mode : "list");
