@@ -68,10 +68,36 @@
     };
 
     // ---------- column helpers (ArrExport's col shape) ----------
-    const textCol = (label, get) => ({ label, type: "text", value: get });
-    const intCol = (label, get) => ({ label, type: "int", numFmt: "#,##0", value: r => { const v = get(r); return v === null || v === undefined ? null : Number(v); } });
-    const moneyCol = (label, get) => ({ label, type: "num", numFmt: "#,##0", value: r => { const v = get(r); return v === null || v === undefined || v === "" ? null : Number(v); } });
-    const pctCol = (label, get) => ({ label, type: "num", numFmt: "0.00%", value: r => { const v = get(r); return v === null || v === undefined ? null : Number(v); } });
+    // Every getter runs through a safe wrapper: a getter that throws
+    // (an unexpectedly-shaped real row — the mocked data this was
+    // tested against can't cover every production edge case) or
+    // returns something ExcelJS can't write (an object/array instead
+    // of a primitive, NaN) blanks that one cell instead of failing the
+    // whole workbook. A single bad cell is a small loss; a whole
+    // failed export over one bad row is not.
+    function safeNum(get) {
+        return r => {
+            let v;
+            try { v = get(r); } catch (e) { return null; }
+            if (v === null || v === undefined || v === "") return null;
+            if (v instanceof Date) return null;
+            const n = Number(v);
+            return Number.isFinite(n) ? n : null;
+        };
+    }
+    function safeText(get) {
+        return r => {
+            let v;
+            try { v = get(r); } catch (e) { return ""; }
+            if (v === null || v === undefined) return "";
+            if (typeof v === "object") { try { return JSON.stringify(v); } catch (e) { return String(v); } }
+            return String(v);
+        };
+    }
+    const textCol = (label, get) => ({ label, type: "text", value: safeText(get) });
+    const intCol = (label, get) => ({ label, type: "int", numFmt: "#,##0", value: safeNum(get) });
+    const moneyCol = (label, get) => ({ label, type: "num", numFmt: "#,##0", value: safeNum(get) });
+    const pctCol = (label, get) => ({ label, type: "num", numFmt: "0.00%", value: safeNum(get) });
 
     // A Daily-Monitoring-style field: {key, label, money|pct|optional}
     // against an item object (crSections()'s own field shape, reused
@@ -223,8 +249,8 @@
 
     async function sheetDailyMonitoring(path, name, title, identityKey, groups, otherLabel) {
         const d = await get(path, {});
-        if (!d || !d.items) return null;
-        const items = d.total ? [...d.items, { ...d.total, [identityKey]: t("common.total") }] : d.items;
+        if (!d || !Array.isArray(d.items)) return null;
+        const items = d.total && typeof d.total === "object" ? [...d.items, { ...d.total, [identityKey]: t("common.total") }] : d.items;
         const { cols, groups: colGroups } = groupedCols(
             t("creditreport.detail.branch"),
             r => r[identityKey] || (otherLabel || "—"),
@@ -239,7 +265,7 @@
     // ========================================
     async function sheetCustomerRisk() {
         const d = await get("/api/credit-intelligence/customers", { unit: "customer", sort: "par", top: ALL });
-        if (!d || !d.rows) return null;
+        if (!d || !Array.isArray(d.rows)) return null;
         const cols = [
             textCol("CIF", r => r.cif || ""),
             textCol(t("creditreport.npl.colCustomer"), r => r.name || ""),
@@ -263,7 +289,7 @@
     // ========================================
     async function sheetEarlyWarning() {
         const d = await get("/api/credit-intelligence/early-warning", {});
-        if (!d || !d.rows) return null;
+        if (!d || !Array.isArray(d.rows)) return null;
         const cols = [
             textCol(t("creditreport.npl.colLoan"), r => r.ld),
             textCol(t("creditreport.npl.colCustomer"), r => r.name),
@@ -285,7 +311,7 @@
     // ========================================
     async function sheetCustomerPrediction() {
         const d = await get("/api/credit-intelligence/customers/prediction", { unit: "customer", sort: "par", top: ALL, all: "1" });
-        if (!d || !d.rows) return null;
+        if (!d || !Array.isArray(d.rows)) return null;
         const cols = [
             textCol("CIF", r => r.cif || ""),
             textCol(t("creditreport.npl.colCustomer"), r => r.name),
@@ -306,7 +332,7 @@
     // ========================================
     async function sheetRootCause() {
         const d = await get("/api/credit-intelligence/causes", { dim: "branch", cause: "", limit: ALL });
-        if (!d || !d.accounts) return null;
+        if (!d || !Array.isArray(d.accounts)) return null;
         const cols = [
             textCol(t("creditreport.npl.colLoan"), r => r.ld),
             textCol("CIF", r => r.cif || ""),
@@ -330,7 +356,7 @@
     // ========================================
     async function sheetRecoveryActions() {
         const d = await get("/api/credit-intelligence/actions", { view: "all", limit: ALL });
-        if (!d || !d.rows) return null;
+        if (!d || !Array.isArray(d.rows)) return null;
         const cols = [
             textCol(t("creditreport.npl.colLoan"), r => r.ld),
             textCol(t("creditreport.npl.colCustomer"), r => r.name),
@@ -395,7 +421,7 @@
     }
     async function sheetsNplMovement() {
         const d = await get("/api/credit-intelligence/npl", {});
-        if (!d || !d.accounts) return [];
+        if (!d || !Array.isArray(d.accounts)) return [];
         return NPL_TABS.map(([tab, label]) => ({
             name: `NPL_${tab}`.slice(0, 31),
             title: `${t("creditreport.hub.gRisk")} — NPL ${label}`,
@@ -415,7 +441,7 @@
     ];
     async function sheetRecovery(dim, label) {
         const d = await get("/api/credit-intelligence/recovery", { dim });
-        if (!d || !d.byDim) return null;
+        if (!d || !Array.isArray(d.byDim)) return null;
         const cols = [
             textCol(label, r => r.name || r.key),
             ...(dim === "officer" ? [textCol(t("creditreport.pi.branch"), r => r.branch)] : []),
@@ -439,7 +465,7 @@
     const RISK_DIMS = [["branch", "Branch"], ["officer", "Officer"], ["product", "Product"], ["location", "District"]];
     async function sheetRisk(dim, label) {
         const d = await get("/api/credit-intelligence/risk", { dim });
-        if (!d || !d.rows) return null;
+        if (!d || !Array.isArray(d.rows)) return null;
         const cols = [
             textCol(t("creditreport.risk.colName"), r => r.name || r.key),
             ...(dim === "officer" ? [textCol(t("creditreport.pi.branch"), r => r.branch)] : []),
@@ -512,7 +538,7 @@
         const rows = [];
         for (const [dim, label] of [["portfolio", "Portfolio"], ["branch", "Branch"], ["product", "Product"]]) {
             const d = await get("/api/credit-intelligence/forecast", { dim, horizon: 3 });
-            if (!d || !d.groups) continue;
+            if (!d || !Array.isArray(d.groups)) continue;
             d.groups.forEach(g => {
                 if (!g.available) return;
                 (g.history || []).forEach(h => rows.push({ dim: label, group: g.label || g.key, month: h.month, kind: "History", parPct: h.parPct, par: h.par, os: h.os }));
@@ -586,14 +612,44 @@
         return `CreditReport_All_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}.xlsx`;
     }
 
+    // The message the user actually sees on a failure — on a phone
+    // there's no console to check, so the real error (CDN blocked,
+    // a backend 500, …) rides along in the toast itself rather than
+    // only going to console.error.
+    function failToast(reason, e) {
+        const detail = e && e.message ? ` (${reason}: ${e.message})` : reason ? ` (${reason})` : "";
+        toast(`${t("creditreport.export.failed")}${detail}`, "error");
+    }
+
     async function exportAll() {
-        if (typeof window.ArrExport === "undefined") { toast(t("creditreport.export.failed"), "error"); return; }
+        if (typeof window.ArrExport === "undefined") { failToast("ArrExport"); return; }
         if (typeof showAppLoading === "function") showAppLoading(t("creditreport.hub.exportAllRunning"), { progress: true, key: "cr:export-all" });
+
+        // Two phases, reported separately: gathering every report's own
+        // data (each sheet builder already swallows its own fetch
+        // errors — see runPool — so this only catches something truly
+        // unexpected), then handing it all to ArrExport/ExcelJS to
+        // actually write the file (loaded from a CDN the first time
+        // it's used — a network/CDN block shows up here, the same way
+        // it would on any of the 4 Daily Monitoring reports' own Excel
+        // export).
+        let sheets;
         try {
-            const sheets = await runPool(SHEET_JOBS, 3, (done, total) => {
+            sheets = await runPool(SHEET_JOBS, 3, (done, total) => {
                 window.setAppLoadingProgress && window.setAppLoadingProgress((done / total) * 70, t("creditreport.hub.exportAllRunning"));
             });
-            if (!sheets.length) { toast(t("creditreport.export.failed"), "error"); return; }
+        } catch (e) {
+            console.error("[export all] gathering report data failed:", e);
+            failToast("data", e);
+            if (typeof hideAppLoading === "function") hideAppLoading();
+            return;
+        }
+        if (!sheets.length) {
+            failToast("no data");
+            if (typeof hideAppLoading === "function") hideAppLoading();
+            return;
+        }
+        try {
             window.setAppLoadingProgress && window.setAppLoadingProgress(75, t("creditreport.export.creatingExcel"));
             await window.ArrExport.excel({
                 filename: fileName(),
@@ -603,8 +659,8 @@
             });
             toast(t("creditreport.hub.exportAllDone", { n: sheets.length }), "success");
         } catch (e) {
-            console.error("[export all] failed:", e);
-            toast(t("creditreport.export.failed"), "error");
+            console.error("[export all] workbook build failed:", e);
+            failToast("xlsx", e);
         } finally {
             if (typeof hideAppLoading === "function") hideAppLoading();
         }
