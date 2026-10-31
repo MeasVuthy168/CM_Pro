@@ -446,7 +446,8 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
         { key: "quality", href: "RiskIntelligence.html?view=quality", label: "creditreport.ci.navQuality" },
         { key: "growth", href: "RiskIntelligence.html?view=growth", label: "creditreport.ci.navGrowth" },
         { key: "warning", href: "EarlyWarning.html", label: "creditreport.ci.navWarning" },
-        { key: "customers", href: "CustomerRisk.html", label: "creditreport.ci.navCustomers" }
+        { key: "customers", href: "CustomerRisk.html", label: "creditreport.ci.navCustomers" },
+        { key: "causes", href: "RootCause.html", label: "creditreport.ci.navCauses" }
     ];
     let navCurrent = null;
 
