@@ -242,13 +242,15 @@
 .page-container > .cr-hub-admin-toolbar,
 .page-container > .cr-hub-section-title,
 .page-container > .cr-hub-list,
-.page-container > .cr-hub-grid{
+.page-container > .cr-hub-grid,
+.page-container > .cr-hub-export-row{
     max-width:760px;
     margin-left:auto;
     margin-right:auto;
     padding-left:16px;
     padding-right:16px;
 }
+.cr-hub-export-row{ margin-bottom:12px; }
 .cr-hub-section-title{
     margin-top:6px;
     margin-bottom:8px;
