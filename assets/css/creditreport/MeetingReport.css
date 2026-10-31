@@ -95,3 +95,32 @@
     .mr-edit td[contenteditable]{ background:#fff; }
     .mr-table-wrap{ overflow:visible; }
 }
+
+/* 2.1–2.4: the 4 Daily Monitoring reports */
+.mr-n2{ display:inline-block; min-width:30px; font-size:12px; color:var(--cr-gold); font-weight:800; }
+.mr-table th.mr-grp{ text-align:center; border-bottom:1px solid var(--cr-border); color:var(--cr-text); }
+.mr-wide{ font-size:11.5px; }
+.mr-wide td, .mr-wide th{ padding:6px 6px; }
+.mr-wide .ci-plan-bar{ width:36px; }
+@media print{
+    .mr-wide{ font-size:9.5px; }
+    .mr-table{ font-size:10.5px; }
+    .ci-plan-bar span, .mr-bar span{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+}
+
+/* Charts (Chart.js): two side by side, one per row on phones and paper */
+.mr-charts{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:12px 0; }
+.mr-charts-1{ grid-template-columns:minmax(0,1fr); }
+@media (max-width:720px){ .mr-charts{ grid-template-columns:minmax(0,1fr); } }
+.mr-fig{ margin:0; border:1px solid var(--cr-border); border-radius:12px; padding:10px 10px 6px; min-width:0; }
+.mr-fig[hidden]{ display:none; }
+.mr-fig figcaption{ font-size:12px; font-weight:700; color:var(--cr-text); margin-bottom:6px; }
+.mr-chart{ position:relative; height:220px; }
+.mr-sec > .mr-fig{ margin:8px 0 10px; }
+@media print{
+    .mr-charts{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .mr-charts-1{ grid-template-columns:minmax(0,1fr); }
+    .mr-fig{ break-inside:avoid; border-color:#d1d5db; }
+    .mr-chart{ height:190px; }
+    .mr-charts-1 .mr-chart{ height:210px; }
+}

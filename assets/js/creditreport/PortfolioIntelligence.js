@@ -47,9 +47,40 @@ function piRender() {
     piRenderSummary(d);
     piRenderAlerts(d);
     piRenderKpis(d);
+    piRenderPlan(d);
     piRenderTrend(d);
     piRenderComp();
     piRenderTop();
+}
+
+// Plan: the branch Monthly Plan (same as the Daily Report by Branch) for
+// the branches picked, or the Total. Officer / product plans don't add up
+// to a branch, so with those filters the card says so instead.
+async function piRenderPlan(d) {
+    const card = document.getElementById("piPlanCard");
+    const note = document.getElementById("piPlanNote");
+    const box = document.getElementById("piPlan");
+    const q = CI.query();
+    card.hidden = false;
+    if (q.getAll("officer").length || q.getAll("product").length) {
+        note.textContent = t("creditreport.plan.branchOnly");
+        box.innerHTML = "";
+        return;
+    }
+    const p = await CIPlan.branch(q.getAll("branch"));
+    if (piData !== d) return;
+    if (!p || !p.metrics) { note.textContent = t("creditreport.plan.none"); box.innerHTML = ""; return; }
+    note.textContent = p.hasPlan
+        ? t("creditreport.plan.note", { month: p.month.split("-").reverse().join("/"), to: piDMY(p.toDate), done: p.daysDone, days: p.daysInMonth })
+        : t("creditreport.plan.notSet", { month: p.month.split("-").reverse().join("/") });
+    const k = d.kpis || {};
+    const lm = d.comparison && d.comparison.available ? {
+        osAmount: k.outstanding && k.outstanding.prev,
+        disbAmount: k.disbursement && k.disbursement.prev,
+        nbcOverduePct: k.parPct && k.parPct.prev !== null && k.parPct.prev !== undefined ? k.parPct.prev * 100 : null,
+        nplPct: k.nplPct && k.nplPct.prev !== null && k.nplPct.prev !== undefined ? k.nplPct.prev * 100 : null
+    } : null;
+    box.innerHTML = CIPlan.table(p, { lastMonth: lm, lmLabel: d.comparison && d.comparison.mode === "month" ? "creditreport.plan.lastMonth" : "creditreport.mr.before" });
 }
 
 function piAlertText(a) {
