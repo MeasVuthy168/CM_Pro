@@ -133,6 +133,23 @@ function crHubRenderT24Results(results) {
 if (["admin", "user"].includes(String(crHubLoggedInUser.role || "").trim().toLowerCase())) {
     document.getElementById("crHubPortfolioTitle").style.display = "";
     document.getElementById("crHubPortfolio").style.display = "";
+    document.getElementById("crHubExportRow").style.display = "";
+
+    document.getElementById("btnCrExportAll").addEventListener("click", async () => {
+        const btn = document.getElementById("btnCrExportAll");
+        const label = document.getElementById("crHubExportBtnLabel");
+        if (typeof window.crExportAll !== "function") return;
+        btn.disabled = true;
+        label.removeAttribute("data-i18n");
+        label.textContent = t("creditreport.hub.running");
+        try {
+            await window.crExportAll();
+        } finally {
+            btn.disabled = false;
+            label.setAttribute("data-i18n", "creditreport.hub.exportAll");
+            label.textContent = t("creditreport.hub.exportAll");
+        }
+    });
 }
 
 if (crHubIsAdmin) {

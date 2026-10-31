@@ -67,6 +67,7 @@ No Internet Connection
 <script src="/CM_Pro/shared/loading.js"></script>
 <script src="/CM_Pro/assets/js/global-splash.js"></script>
 <script src="/CM_Pro/assets/js/toast.js"></script>
+<script src="/CM_Pro/assets/js/arrears-export.js"></script>
 
 <div id="topbar-container"></div>
 
@@ -134,6 +135,12 @@ No Internet Connection
      creditreport-hub.js); 4 groups + the meeting report instead of 9
      tiles (owner, 31/10/2026). -->
 <div class="cr-hub-section-title" id="crHubPortfolioTitle" style="display:none" data-i18n="creditreport.hub.sectionPortfolio">ផលប័ត្រឥណទាន</div>
+<div class="cr-hub-export-row" id="crHubExportRow" style="display:none">
+<button type="button" id="btnCrExportAll" class="cr-hub-snapshot-btn">
+<span class="cr-hub-snapshot-btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/></svg></span>
+<span id="crHubExportBtnLabel" data-i18n="creditreport.hub.exportAll">Export All (Excel)</span>
+</button>
+</div>
 <div class="cr-hub-grid cr-hub-ci" id="crHubPortfolio" style="display:none">
 <a class="cr-hub-tile cr-hub-link cr-tone-gold cr-hub-ci-meeting" href="MeetingReport.html">
 <div class="cr-hub-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div>
@@ -171,6 +178,8 @@ No Internet Connection
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
 
 <script src="../../assets/js/creditreport/creditreport-loader.js"></script>
+
+<script src="../../assets/js/creditreport/cr-export-all.js"></script>
 
 <script src="../../assets/js/creditreport/creditreport-hub.js"></script>
 

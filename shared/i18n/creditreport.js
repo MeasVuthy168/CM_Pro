@@ -49,6 +49,13 @@ CMI18n.register({
   "creditreport.hub.t24RefreshedNone": { km: "មិនទាន់មានទិន្នន័យរក្សាទុកទេ", en: "No saved day yet" },
   "creditreport.hub.confirmRefreshAllT24": { km: "តើអ្នកបាន Upload ទិន្នន័យ NBC Loan Outstanding Grid Merge ចុងក្រោយបំផុតហើយឫនៅ?", en: "Have you uploaded the latest NBC Loan Outstanding Grid Merge data yet?" },
 
+  // "Export All" — one workbook, every report as its own sheet (see
+  // cr-export-all.js); admin and user only, same gate as Credit
+  // Portfolio Intelligence.
+  "creditreport.hub.exportAll": { km: "នាំចេញទាំងអស់ (Excel)", en: "Export All (Excel)" },
+  "creditreport.hub.exportAllRunning": { km: "កំពុងប្រមូលរបាយការណ៍ទាំងអស់...", en: "Gathering every report..." },
+  "creditreport.hub.exportAllDone": { km: "បានបង្កើតឯកសារ Excel ជាមួយ {n} សន្លឹក។", en: "Excel file created with {n} sheets." },
+
   // Shared across report pages — a generic loading overlay message
   // (crShowLoading("Loading Report Data...") convention).
   "creditreport.loadingReportData": { km: "កំពុងផ្ទុកទិន្នន័យរបាយការណ៍...", en: "Loading Report Data..." },
