@@ -833,6 +833,7 @@ CMI18n.register({
   "creditreport.crk.conflict": { km: "ទិន្នន័យមិនស៊ីគ្នា", en: "Data conflict" },
   "creditreport.crk.conflictTip": { km: "លេខឥណទាននេះមាននៅលើ NBC Overdue ជាមួយ CIF សាខា ឬមន្ត្រីខុសគ្នា — ផ្នែកនីមួយៗរក្សាតាមជួររបស់វា", en: "This loan number is on NBC Overdue with a different CIF, branch or officer — each version is kept with its own rows" },
   "creditreport.crk.qualityNote": { km: "⚠ ឥណទាន {n} ({par}) មាននៅលើ NBC Overdue ជាមួយ CIF សាខា ឬមន្ត្រីខុសគ្នា។ មិនបានបញ្ចូលគ្នាទេ — ផ្នែកនីមួយៗរាប់តាមជួររបស់វា (ដូចរបាយការណ៍) ហើយឥណទានរាប់តែម្តង។ សូមពិនិត្យទិន្នន័យដើម។", en: "⚠ {n} loans ({par}) are on NBC Overdue with a different CIF, branch or officer. They are not merged — each version counts under its own rows (as in the reports) and the loan counts once. Please check the source data." },
+  "creditreport.crk.osDuplicates": { km: "ឥណទាន {n} មានជួរ NBC OS ស្ទួនដូចគ្នាបេះបិទ — រាប់សមតុល្យតែម្តង ({dropped} មិនបានបូក)។", en: "{n} loans have identical duplicate NBC OS rows — their outstanding is counted once ({dropped} not added)." },
   "creditreport.crk.hDate": { km: "ថ្ងៃ", en: "Date" },
   "creditreport.crk.hClass": { km: "ថ្នាក់", en: "Class" },
   "creditreport.ci.navWarning": { km: "ការព្រមានជាមុន", en: "Early Warning" },

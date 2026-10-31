@@ -175,7 +175,8 @@ function crkRenderList() {
     document.getElementById("crkDefs").textContent = [
         t("creditreport.crk.defs"),
         rec ? t(rec.diff ? "creditreport.crk.reconDiff" : "creditreport.crk.reconOk", { report: CI.money(rec.reportPar), diff: CI.money(rec.diff) }) : t("creditreport.crk.reconOff"),
-        d.totals.osMissing ? t("creditreport.crk.osMissing", { n: CI.num(d.totals.osMissing) }) : ""
+        d.totals.osMissing ? t("creditreport.crk.osMissing", { n: CI.num(d.totals.osMissing) }) : "",
+        d.dataQuality && d.dataQuality.osDuplicateLoans ? t("creditreport.crk.osDuplicates", { n: CI.num(d.dataQuality.osDuplicateLoans), dropped: CI.money(d.dataQuality.osDuplicateDropped) }) : ""
     ].filter(Boolean).join(" ");
 }
 
