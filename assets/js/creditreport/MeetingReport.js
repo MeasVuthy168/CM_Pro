@@ -38,6 +38,22 @@ async function mrGet(path, params) {
     }
 }
 
+// CO / FSRO / Digital Loan breakdown — the same endpoint Branch
+// Productivity uses (cm-backend's computeBranchProductivity()).
+// branch="" asks for every branch combined ("All Branch" is the
+// server's own magic value for that, same as tapping the Total row on
+// Branch Productivity).
+async function mrTeamSplit(branch) {
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/creditreport/branch-productivity-summary?branch=${encodeURIComponent(branch || "All Branch")}`, { headers: { Authorization: `Bearer ${mrToken()}` } });
+        const data = await res.json();
+        return data && data.ok ? data : null;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
 const mrPct = (v, d = 2) => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(d)}%`);
 const mrPts = v => (v === null || v === undefined ? "—" : `${v > 0 ? "+" : ""}${(v * 100).toFixed(2)} ${t("creditreport.pi.pts")}`);
 const mrMonth = m => { const [y, mo] = String(m || "").split("-"); return y ? `${mo}/${y}` : "—"; };
@@ -78,17 +94,18 @@ async function mrLoad() {
             () => mrGet("customers/prediction", { branch, unit: "loan", top: 20 }),
             () => mrGet("customers", { branch, compare, top: 10, sort: "par" }),
             () => CIPlan.branch(branch ? [branch] : []),
-            () => (branch ? CIPlan.officers() : CIPlan.branchRows())
+            () => (branch ? CIPlan.officers() : CIPlan.branchRows()),
+            () => mrTeamSplit(branch)
         ];
         const out = await mrPool(jobs, 3, (n, total) => {
             if (mine === mrSeq && typeof showAppLoading === "function") showAppLoading(t("creditreport.mr.loadingN", { n, total }), { progress: true, key: "mr" });
         });
-        const [ov, team, prod, causes, actions, fc, pred, cust, plan, teamPlan] = out;
+        const [ov, team, prod, causes, actions, fc, pred, cust, plan, teamPlan, teamSplit] = out;
         if (mine !== mrSeq) return;
         if (!ov) { CI.toast(t("creditreport.pi.loadFailed"), "error"); return; }
         mrFillBranches(ov);
         const g = fc && fc.groups ? (branch ? fc.groups.find(x => x.key === branch) : fc.groups[0]) : null;
-        mrRender({ branch, compare, ov, team, prod, causes, actions, fc, g, pred, cust, plan, teamPlan });
+        mrRender({ branch, compare, ov, team, prod, causes, actions, fc, g, pred, cust, plan, teamPlan, teamSplit });
     } finally {
         if (mine === mrSeq && typeof hideAppLoading === "function") hideAppLoading();
     }
@@ -209,6 +226,7 @@ function mrRenderProgress(d) {
     document.getElementById("mrProgress").innerHTML = p && p.metrics
         ? CIPlan.table(p, { lastMonth: lm, lmLabel: d.compare === "month" ? "creditreport.plan.lastMonth" : "creditreport.mr.before", keys: ["osAmount", "osCount", "osClients", "disbAmount", "disbCount", "nbcOverduePct", "nplPct", "woCollected"] })
         : "";
+    mrRenderTeamSplit(d);
     mrRenderTeam(d);
     mrRenderDim("mrProduct", d.prod, 12);
     mrRenderDaily(d);
@@ -246,6 +264,31 @@ function mrRenderTeam(d) {
                 <td class="num">${pct(r.parPct)}</td><td class="num">${r.prev ? pct(r.prev.parPct) : "—"}</td><td class="num">${F("pct", par.plan)}</td>
                 <td class="num">${pct(r.nplPct)}</td><td class="num">${F("pct", npl.plan)}</td></tr>`;
         }).join("")}</tbody>` : `<tbody><tr><td>${CI.esc(t("creditreport.pi.nothing"))}</td></tr></tbody>`;
+}
+
+// CO / FSRO / Digital Loan — one branch (or every branch combined when
+// none is picked), from branch-productivity-summary.
+function mrRenderTeamSplit(d) {
+    const s = d.teamSplit;
+    mrChartTeamSplit(s);
+    const box = document.getElementById("mrTeamSplit");
+    if (!s) { box.innerHTML = `<tbody><tr><td>${CI.esc(t("creditreport.pi.nothing"))}</td></tr></tbody>`; return; }
+    const buckets = [
+        ["co", t("creditreport.byBranch.teamCo")],
+        ["fsro", t("creditreport.byCO.fsro")],
+        ["digital", t("creditreport.byBranch.teamDigital")],
+        ["total", t("creditreport.risk.total")]
+    ];
+    const pct = v => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(2)}%`);
+    box.innerHTML = `<thead><tr><th>${CI.esc(t("creditreport.mr.byTeam"))}</th><th class="num">${CI.esc(t("creditreport.mr.k.os"))}</th><th class="num">${CI.esc(t("creditreport.mr.k.disb"))}</th><th class="num">PAR %</th><th class="num">NPL %</th></tr></thead><tbody>
+        ${buckets.map(([key, label]) => {
+            const b = s[key] || {};
+            const os = (b.loanOutstanding || {}).value;
+            const disb = (b.loanDisburse || {}).value;
+            const par = (b.parT24 || {}).parPct;
+            const npl = (b.nbcOverdue && b.nbcOverdue.nonPerformingLoan || {}).parPct;
+            return `<tr${key === "total" ? ' class="mr-total"' : ""}><td>${CI.esc(label)}</td><td class="num">${CI.money(os)}</td><td class="num">${CI.money(disb)}</td><td class="num">${pct(par)}</td><td class="num">${pct(npl)}</td></tr>`;
+        }).join("")}</tbody>`;
 }
 
 // Product / location: now and last month (no plan for these reports).
@@ -403,13 +446,13 @@ function mrChartMonthly(d) {
 }
 
 // Every saved day of the Daily History (the last 45 kept), newest first in the table.
+// Daily history as trend charts only (no day-by-day list — owner's
+// ask: the detail belongs in section 2.2's two charts, not a long table).
 function mrRenderDaily(d) {
     const pts = (d.ov.trend && d.ov.trend.daily) || [];
     const note = document.getElementById("mrDailyNote");
-    const tb = document.getElementById("mrDaily");
     if (!pts.length) {
         note.textContent = t("creditreport.mr.dailyNone");
-        tb.innerHTML = "";
         mrChart("mrChDailyOs", null);
         mrChart("mrChDailyRisk", null);
         return;
@@ -437,13 +480,30 @@ function mrRenderDaily(d) {
         },
         options: { scales: { x: mrX(), y: mrAxis(v => `${v}%`) } }
     });
-    const rows = pts.slice().reverse();
-    const delta = (cur, prev, fmt, better) => (prev === undefined ? "" : ` ${mrChange(cur - prev, better, fmt)}`);
-    tb.innerHTML = `<thead><tr><th>${CI.esc(t("creditreport.mr.date"))}</th><th class="num">${CI.esc(t("creditreport.mr.k.os"))}</th><th class="num">${CI.esc(t("creditreport.mr.k.disb"))}</th><th class="num">PAR %</th><th class="num">NPL</th><th class="num">NPL %</th></tr></thead><tbody>
-        ${rows.map((p, i) => {
-            const prev = rows[i + 1];
-            return `<tr><td>${CI.esc(CI.dmy(p.date))}</td><td class="num">${CI.money(p.os)}${prev ? delta(p.os, prev.os, mrShort, "up") : ""}</td><td class="num">${CI.money(p.disb)}</td><td class="num">${mrPct(p.parPct)}${prev ? delta(p.parPct, prev.parPct, v => (v * 100).toFixed(2), "down") : ""}</td><td class="num">${CI.money(p.nplValue)}</td><td class="num">${mrPct(p.nplPct)}</td></tr>`;
-        }).join("")}</tbody>`;
+}
+
+// CO / FSRO / Digital Loan: PAR % and NPL % side by side.
+function mrChartTeamSplit(s) {
+    if (!s) return mrChart("mrChTeamSplit", null);
+    const buckets = [
+        ["co", t("creditreport.byBranch.teamCo")],
+        ["fsro", t("creditreport.byCO.fsro")],
+        ["digital", t("creditreport.byBranch.teamDigital")]
+    ];
+    const par = buckets.map(([key]) => { const v = (s[key] && s[key].parT24 || {}).parPct; return v === null || v === undefined ? null : +(v * 100).toFixed(2); });
+    const npl = buckets.map(([key]) => { const v = (s[key] && s[key].nbcOverdue && s[key].nbcOverdue.nonPerformingLoan || {}).parPct; return v === null || v === undefined ? null : +(v * 100).toFixed(2); });
+    if (par.every(v => v === null) && npl.every(v => v === null)) return mrChart("mrChTeamSplit", null);
+    mrChart("mrChTeamSplit", {
+        type: "bar",
+        data: {
+            labels: buckets.map(([, label]) => label),
+            datasets: [
+                { label: "PAR %", data: par, backgroundColor: MR_C.bad, borderRadius: 3 },
+                { label: "NPL %", data: npl, backgroundColor: MR_C.gold, borderRadius: 3 }
+            ]
+        },
+        options: { scales: { x: mrX(), y: mrAxis(v => `${v}%`, { beginAtZero: true }) } }
+    });
 }
 
 function mrChartTeam(d) {

@@ -1037,3 +1037,15 @@ a.ci-ews-card:active{ background:var(--pi-track); }
 .ci-plan-warn-bg{ background:var(--pi-warn); }
 .ci-plan-bad-bg{ background:var(--pi-bad); }
 .ci-plan-na{ color:var(--cr-text-muted); }
+
+/* ===== Branch Meeting Report card ===== */
+.pi-mr-features{ margin:0 0 14px; padding:0; list-style:none; display:flex; flex-direction:column; gap:7px; font-size:12.5px; line-height:1.55; color:var(--cr-text); }
+.pi-mr-features li{ padding-left:14px; border-left:3px solid var(--pi-track); }
+.pi-mr-features b{ color:var(--cr-text); }
+.pi-mr-open{
+    display:inline-flex; align-items:center; gap:4px;
+    min-height:40px; padding:0 18px; border-radius:12px;
+    background:linear-gradient(135deg,#D4AF37,#FFD700); color:#0e1b3c;
+    font-weight:800; font-size:13.5px; text-decoration:none;
+}
+.pi-mr-open:active{ opacity:.85; }

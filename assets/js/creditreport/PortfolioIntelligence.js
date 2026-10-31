@@ -51,6 +51,16 @@ function piRender() {
     piRenderTrend(d);
     piRenderComp();
     piRenderTop();
+    piRenderMrLink();
+}
+
+// Carries the currently selected branch (if exactly one is picked) into
+// the Meeting Report, which is a single-branch report; several branches
+// or none picked opens it at "All branches".
+function piRenderMrLink() {
+    const branches = CI.query().getAll("branch").filter(Boolean);
+    const url = branches.length === 1 ? `MeetingReport.html?${new URLSearchParams({ branch: branches[0] })}` : "MeetingReport.html";
+    document.getElementById("piMrOpen").setAttribute("href", url);
 }
 
 // Plan: the branch Monthly Plan (same as the Daily Report by Branch) for
