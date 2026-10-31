@@ -1,0 +1,19 @@
+/* Recovery Actions (RecoveryActions.js) — on top of PortfolioIntelligence.css
+   and CustomerRisk.css. */
+.rc-list{ display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:10px; }
+.ra-card{ display:flex; flex-direction:column; gap:5px; }
+.ra-card.is-late{ border-left-color:var(--pi-bad); }
+.ra-flags{ display:flex; flex-wrap:wrap; gap:4px; }
+.ra-flag{ font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px; background:var(--pi-track); }
+.ra-flag.is-bad{ background:var(--pi-bad-bg); color:var(--pi-bad); }
+.ra-flag.is-warn{ background:var(--pi-warn-bg, rgba(194,65,12,.10)); color:var(--pi-warn); }
+.ra-flag.is-good{ background:rgba(21,128,61,.10); color:var(--pi-good); }
+.ra-latest{ font-size:12.5px; background:var(--pi-track); border-radius:10px; padding:8px 10px; display:flex; flex-direction:column; gap:2px; }
+.ra-actions{ display:flex; gap:6px; flex-wrap:wrap; }
+.ra-form{ display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:8px 12px; margin:10px 0; }
+.ra-form .pi-field{ display:flex; flex-direction:column; gap:3px; font-size:12px; }
+.ra-group{ grid-column:1 / -1; border:1px solid var(--cr-border); border-radius:10px; display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px 12px; padding:8px 10px; }
+.ra-group legend{ font-size:12px; font-weight:800; padding:0 4px; }
+.ra-save, .ra-form .pi-note{ grid-column:1 / -1; }
+.ra-entry{ border-top:1px dashed var(--cr-border); padding:6px 0; font-size:12.5px; display:flex; flex-direction:column; gap:2px; }
+.ra-text{ grid-column:1 / -1; width:100%; box-sizing:border-box; }
