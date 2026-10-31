@@ -1,0 +1,94 @@
+/* Customer Risk (CustomerRisk.js) — on top of PortfolioIntelligence.css:
+   the movement cards, the ranking cards and the customer dialog. */
+.crk-moves{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:8px;
+}
+@media(max-width:560px){ .crk-moves{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.crk-move{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:2px;
+    background:var(--cr-card-bg);
+    border:1px solid var(--cr-border);
+    border-top:3px solid var(--pi-track);
+    border-radius:14px;
+    padding:10px 12px;
+    font-family:'KRASAR',sans-serif;
+    color:var(--cr-text);
+    cursor:pointer;
+    text-align:left;
+}
+.crk-move strong{ font-size:20px; color:var(--pi-navy); font-variant-numeric:tabular-nums; }
+.crk-move-name{ font-size:12.5px; font-weight:700; }
+.crk-move-new, .crk-move-deteriorating{ border-top-color:var(--pi-bad); }
+.crk-move-improved{ border-top-color:var(--pi-good); }
+.crk-move.is-active{ outline:2px solid var(--cr-gold); outline-offset:1px; }
+
+.crk-tools{ flex-wrap:wrap; }
+.crk-pick{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--cr-text-muted); }
+
+.crk-list{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:10px; }
+.crk-card{
+    width:100%;
+    text-align:left;
+    font-family:'KRASAR',sans-serif;
+    color:var(--cr-text);
+    cursor:pointer;
+}
+.crk-rank{
+    flex:0 0 auto;
+    min-width:24px;
+    height:24px;
+    border-radius:8px;
+    background:var(--pi-track);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:800;
+    font-size:12px;
+}
+.crk-card .ci-card-top{ justify-content:flex-start; }
+.crk-card .ci-card-name{ flex:1; min-width:0; }
+.crk-share{ height:5px; border-radius:3px; background:var(--pi-track); overflow:hidden; margin-top:4px; }
+.crk-share span{ display:block; height:100%; background:var(--cr-gold); border-radius:3px; }
+.crk-facts{ display:flex; flex-wrap:wrap; gap:4px 12px; font-size:12px; color:var(--cr-text-muted); margin-top:4px; align-items:center; }
+.crk-facts b{ color:var(--cr-text); }
+.crk-change{ font-size:11.5px; font-weight:800; margin-left:4px; }
+.crk-change.is-up{ color:var(--pi-bad); }
+.crk-change.is-down{ color:var(--pi-good); }
+.crk-st{ font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px; background:var(--pi-track); white-space:nowrap; }
+.crk-st-new, .crk-st-deteriorating{ background:var(--pi-bad-bg); color:var(--pi-bad); }
+.crk-st-improved{ background:rgba(21,128,61,.10); color:var(--pi-good); }
+
+.crk-dialog{
+    width:min(720px, calc(100vw - 24px));
+    max-height:calc(100vh - 48px);
+    border:1px solid var(--cr-border);
+    border-radius:16px;
+    padding:0;
+    background:var(--cr-card-bg);
+    color:var(--cr-text);
+    font-family:'KRASAR',sans-serif;
+}
+.crk-dialog::backdrop{ background:rgba(0,0,0,.45); }
+.crk-dlg-head{
+    position:sticky;
+    top:0;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:12px 14px;
+    background:var(--cr-card-bg);
+    border-bottom:1px solid var(--cr-border);
+}
+.crk-dlg-x{ border:none; background:var(--pi-track); color:var(--cr-text); border-radius:10px; width:34px; height:34px; cursor:pointer; font-size:15px; }
+.crk-dlg-body{ padding:12px 14px 16px; }
+.crk-dlg-sum{ display:flex; flex-wrap:wrap; gap:6px 14px; font-size:13px; align-items:center; margin-bottom:6px; }
+.crk-loan{ border:1px solid var(--cr-border); border-radius:12px; padding:10px 12px; margin-top:10px; display:flex; flex-direction:column; gap:4px; }
+.crk-loan .ci-card-top{ justify-content:flex-start; gap:8px; }
+.crk-reason{ font-size:12.5px; background:var(--pi-track); border-radius:10px; padding:8px 10px; }
+.crk-hist{ font-size:12px; }
