@@ -92,3 +92,5 @@
 .crk-loan .ci-card-top{ justify-content:flex-start; gap:8px; }
 .crk-reason{ font-size:12.5px; background:var(--pi-track); border-radius:10px; padding:8px 10px; }
 .crk-hist{ font-size:12px; }
+.crk-st-conflict{ background:var(--pi-warn-bg, rgba(194,65,12,.10)); color:var(--pi-warn); }
+.crk-quality{ color:var(--pi-warn); font-weight:700; }

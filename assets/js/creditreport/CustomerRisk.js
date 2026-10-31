@@ -22,7 +22,9 @@ function crkParams() {
         unit: crkUnit,
         sort: document.getElementById("crkSort").value,
         top: document.getElementById("crkTop").value,
-        status: crkStatus
+        status: crkStatus,
+        // Searched on the server: any customer in scope, not only the top N.
+        q: document.getElementById("crkSearch").value.trim()
     };
 }
 
@@ -114,11 +116,7 @@ function crkStatusChip(s) {
 }
 
 function crkVisible() {
-    const q = document.getElementById("crkSearch").value.trim().toLowerCase();
-    const rows = crkData.rows || [];
-    if (!q) return rows;
-    return rows.filter(r => [r.name, r.cif, r.ld, ...(r.branches || [r.branch]), ...((r.officers || []).map(o => o.name)), r.officerName, ...(r.products || [r.product])]
-        .some(v => String(v || "").toLowerCase().includes(q)));
+    return crkData.rows || [];
 }
 
 function crkCard(r, i) {
@@ -137,6 +135,7 @@ function crkCard(r, i) {
         <div class="ci-card-top">
             <span class="crk-rank">${i + 1}</span>
             <span class="ci-card-name">${CI.esc(r.name || "—")}</span>
+            ${r.conflict ? `<span class="crk-st crk-st-conflict" title="${CI.esc(t("creditreport.crk.conflictTip"))}">⚠ ${CI.esc(t("creditreport.crk.conflict"))}</span>` : ""}
             ${crkStatusChip(r.status)}
         </div>
         <div class="ci-sub">${who}</div>
@@ -165,7 +164,12 @@ function crkRenderList() {
         CRK_STATUSES.map(s => `<button type="button" class="pi-chip${crkStatus === s ? " is-active" : ""}" data-status="${s}">${CI.esc(t(`creditreport.crk.st.${s}`))}</button>`).join("");
     const rows = crkVisible();
     document.getElementById("crkCount").textContent = t(crkUnit === "loan" ? "creditreport.crk.countLoans" : "creditreport.crk.countCustomers",
-        { shown: CI.num(rows.length), n: CI.num(d.listedCount) });
+        { shown: CI.num(rows.length), n: CI.num(d.listedCount) }) + (d.q ? ` · ${t("creditreport.crk.searchFor", { q: d.q })}` : "");
+    // Loans listed with different CIF / branch / officer on NBC Overdue.
+    const dq = d.dataQuality || {};
+    const warn = document.getElementById("crkQuality");
+    warn.hidden = !dq.conflictLoans;
+    warn.textContent = dq.conflictLoans ? t("creditreport.crk.qualityNote", { n: CI.num(dq.conflictLoans), par: CI.money(dq.conflictPar) }) : "";
     document.getElementById("crkList").innerHTML = rows.length ? rows.map(crkCard).join("") : `<p class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</p>`;
     const rec = d.totals.reconciliation;
     document.getElementById("crkDefs").textContent = [
@@ -267,7 +271,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let typing = null;
     document.getElementById("crkSearch").addEventListener("input", () => {
         clearTimeout(typing);
-        typing = setTimeout(() => crkData && crkRenderList(), 200);
+        typing = setTimeout(crkLoad, 400);
     });
     document.getElementById("crkList").addEventListener("click", e => {
         const b = e.target.closest(".crk-card");
