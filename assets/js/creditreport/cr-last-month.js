@@ -227,6 +227,14 @@ window.CRLastMonth = (() => {
     }
 
     function t24LastMonth(out) {
+        // The officer report's Area by team (CO / FSRO / Digital).
+        if (out.parT24AreaByTeam) {
+            const nbc = out.nbcOverdueAreaByTeam;
+            out.parT24AreaByTeam = nbc ? Object.fromEntries(Object.keys(out.parT24AreaByTeam).map(k => {
+                const t = t24FromNbc({ total: nbc[k] }, "total");
+                return [k, t ? t.flat : null];
+            })) : null;
+        }
         for (const [flat, byClass, nbcKey] of [["parT24", "parT24ByClass", "nbcOverdue"], ["parT24Area", "parT24AreaByClass", "nbcOverdueArea"]]) {
             if (!(flat in out)) continue;
             const nbc = out[nbcKey];

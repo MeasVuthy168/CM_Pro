@@ -180,6 +180,7 @@ CMI18n.register({
   "creditreport.perf.noPlanSection": { km: "គ្មានផែនការ", en: "No plan" },
   "creditreport.perf.lmNote": { km: "ធៀបនឹង Daily History ថ្ងៃ {date} · ការបញ្ចេញ និង Write Off ខែមុន = ពេញខែ · T24 ខែមុន = NBC Overdue ខែមុន (EOM)។", en: "Compared with the Daily History of {date} · last month's Disburse and Write Off = the whole month · last month's T24 = last month's NBC Overdue (EOM)." },
   "creditreport.perf.planRules": { km: "% = សម្រេច ÷ ផែនការ · NBC Overdue % និង NPL % ជាកម្រិតខ្ពស់បំផុត (▼ = ល្អ) · WO ប្រមូលបាន = ផែនការឆ្នាំ (គិតពីដើមឆ្នាំ)។", en: "% = actual ÷ plan · NBC Overdue % and NPL % are ceilings (▼ = good) · WO Collected = a year plan (year to date)." },
+  "creditreport.perf.planOwn": { km: "ផែនការមន្ត្រី (តាម CO ID) ធៀបនឹងតួលេខផ្ទាល់ខ្លួន (មិនមែនតំបន់)។", en: "The officer plan (by CO ID) is compared with the Own figures (not Area)." },
   "creditreport.perf.planWhole": { km: "ផែនការជាតួលេខសរុបសាខា (មិនបែងចែក CO / FSRO / Digital)។", en: "The plan is for the whole branch (not split into CO / FSRO / Digital)." },
   "creditreport.lastMonth.loadFailed": { km: "មិនអាចទាញយកទិន្នន័យខែមុនបានទេ", en: "Could not load last month's figures" },
   "creditreport.chartv.viewChart": { km: "ក្រាហ្វ", en: "Chart" },

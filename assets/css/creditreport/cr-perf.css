@@ -117,6 +117,8 @@
 .cp-table td:last-child, .cp-table th:last-child{ padding-right:14px; }
 .cp-table tr.cp-total td{ font-weight:800; }
 .cp-table tr.cp-total td:first-child{ color:var(--cr-text); }
+.cp-table tr.cp-sub td{ font-size:11px; color:var(--cr-text-muted); }
+.cp-table tr.cp-sub td:first-child{ padding-left:26px; }
 .cp-table .cp-now{ background:rgba(212,175,55,.10); }
 .cp-table td.cp-good, .cp-table td.cp-bad, .cp-table td.cp-warn{ font-weight:800; }
 .cp-foot{
