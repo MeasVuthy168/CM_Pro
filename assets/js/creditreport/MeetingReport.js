@@ -66,23 +66,49 @@ async function mrLoad() {
     const base = { branch, compare };
     if (typeof showAppLoading === "function") showAppLoading(t("creditreport.pi.loading"), { progress: true, key: "mr" });
     try {
-        const [ov, team, causes, actions, fc, pred, cust] = await Promise.all([
-            mrGet("overview", base),
-            mrGet("risk", { ...base, dim: branch ? "officer" : "branch" }),
-            mrGet("causes", { branch, limit: 10 }),
-            mrGet("actions", { branch, view: "all", limit: 10 }),
-            mrGet("forecast", { dim: branch ? "branch" : "portfolio", horizon: 3 }),
-            mrGet("customers/prediction", { branch, unit: "loan", top: 20 }),
-            mrGet("customers", { branch, compare, top: 10, sort: "par" })
-        ]);
+        // The server builds at most 2 section reads at once; asking for
+        // 3 at a time keeps one queued without flooding it.
+        const jobs = [
+            () => mrGet("overview", base),
+            () => mrGet("risk", { ...base, dim: branch ? "officer" : "branch" }),
+            () => mrGet("risk", { ...base, dim: "product" }),
+            () => mrGet("risk", { ...base, dim: "location" }),
+            () => mrGet("causes", { branch, limit: 10 }),
+            () => mrGet("actions", { branch, view: "all", limit: 10 }),
+            () => mrGet("forecast", { dim: branch ? "branch" : "portfolio", horizon: 3 }),
+            () => mrGet("customers/prediction", { branch, unit: "loan", top: 20 }),
+            () => mrGet("customers", { branch, compare, top: 10, sort: "par" }),
+            () => CIPlan.branch(branch ? [branch] : []),
+            () => (branch ? CIPlan.officers() : CIPlan.branchRows())
+        ];
+        const out = await mrPool(jobs, 3, (n, total) => {
+            if (mine === mrSeq && typeof showAppLoading === "function") showAppLoading(t("creditreport.mr.loadingN", { n, total }), { progress: true, key: "mr" });
+        });
+        const [ov, team, prod, loc, causes, actions, fc, pred, cust, plan, teamPlan] = out;
         if (mine !== mrSeq) return;
         if (!ov) { CI.toast(t("creditreport.pi.loadFailed"), "error"); return; }
         mrFillBranches(ov);
         const g = fc && fc.groups ? (branch ? fc.groups.find(x => x.key === branch) : fc.groups[0]) : null;
-        mrRender({ branch, ov, team, causes, actions, fc, g, pred, cust });
+        mrRender({ branch, compare, ov, team, prod, loc, causes, actions, fc, g, pred, cust, plan, teamPlan });
     } finally {
         if (mine === mrSeq && typeof hideAppLoading === "function") hideAppLoading();
     }
+}
+
+// Runs the jobs `size` at a time, in order; results keep the jobs' order.
+async function mrPool(jobs, size, onProgress) {
+    const out = new Array(jobs.length);
+    let next = 0, done = 0;
+    async function worker() {
+        while (next < jobs.length) {
+            const i = next++;
+            out[i] = await jobs[i]();
+            done++;
+            if (onProgress) onProgress(done, jobs.length);
+        }
+    }
+    await Promise.all(Array.from({ length: Math.min(size, jobs.length) }, worker));
+    return out;
 }
 
 function mrFillBranches(ov) {
@@ -116,18 +142,8 @@ function mrRender(d) {
     ].join("");
     document.getElementById("mrPoints").innerHTML = mrPointsOf(d).map(p => `<li class="mr-pt-${p.tone}">${CI.esc(p.text)}</li>`).join("");
 
-    // 2. Progress table
-    const row = (label, cur, prev, diff, better, fmt) => `<tr><td>${CI.esc(label)}</td><td class="num">${fmt(cur)}</td><td class="num">${prev === null || prev === undefined ? "—" : fmt(prev)}</td><td class="num">${mrChange(diff, better, better === "pts" ? null : fmt)}</td></tr>`;
-    const ptsFmt = v => `${(v * 100).toFixed(2)} ${t("creditreport.pi.pts")}`;
-    document.getElementById("mrProgress").innerHTML = `<thead><tr><th>${CI.esc(t("creditreport.mr.indicator"))}</th><th class="num">${CI.esc(t("creditreport.mr.now"))}</th><th class="num">${CI.esc(t("creditreport.mr.before"))}</th><th class="num">${CI.esc(t("creditreport.mr.change"))}</th></tr></thead><tbody>
-        ${row(t("creditreport.mr.k.os"), k.outstanding.cur, k.outstanding.prev, k.outstanding.diff, "up", CI.money)}
-        ${row(t("creditreport.mr.k.loans"), k.outstanding.loans, null, null, "up", CI.num)}
-        ${row(t("creditreport.mr.k.disb"), k.disbursement.cur, k.disbursement.prev, k.disbursement.diff, "up", CI.money)}
-        <tr><td>PAR</td><td class="num">${CI.money(k.parPct.value)} (${mrPct(k.parPct.cur)})</td><td class="num">${mrPct(k.parPct.prev)}</td><td class="num">${mrChange(k.parPct.diff, "down", ptsFmt)}</td></tr>
-        ${row(t("creditreport.mr.k.npl"), k.nplValue.cur, k.nplValue.prev, k.nplValue.diff, "down", CI.money)}
-        <tr><td>NPL %</td><td class="num">${mrPct(k.nplPct.cur)}</td><td class="num">${mrPct(k.nplPct.prev)}</td><td class="num">${mrChange(k.nplPct.diff, "down", ptsFmt)}</td></tr>
-        ${row(t("creditreport.mr.k.nplAcc"), k.nplAccounts.cur, k.nplAccounts.prev, k.nplAccounts.diff, "down", CI.num)}
-        </tbody>`;
+    // 2. The 4 Daily Monitoring reports: branch, officer (or branch), product, location
+    mrRenderProgress(d);
     mrRenderTeam(d);
     mrRenderCauses(d);
     mrRenderActions(d);
@@ -177,12 +193,65 @@ function mrTopCause(c) {
     return list[0] && list[0].par > 0 ? list[0] : null;
 }
 
+function mrRenderProgress(d) {
+    const k = d.ov.kpis;
+    const p = d.plan;
+    const month = p && p.month ? p.month.split("-").reverse().join("/") : "—";
+    document.getElementById("mrPlanNote").textContent = !p ? t("creditreport.plan.none")
+        : p.hasPlan ? t("creditreport.plan.note", { month, to: CI.dmy(p.toDate), done: p.daysDone, days: p.daysInMonth })
+        : t("creditreport.plan.notSet", { month });
+    document.getElementById("mrBranchTitle").textContent = d.branch ? `${t("creditreport.mr.byBranchOne")} — ${d.branch}` : t("creditreport.mr.byBranchAll");
+    const avail = d.ov.comparison && d.ov.comparison.available;
+    const lm = avail ? {
+        osAmount: k.outstanding.prev, disbAmount: k.disbursement.prev,
+        nbcOverduePct: k.parPct.prev === null || k.parPct.prev === undefined ? null : k.parPct.prev * 100,
+        nplPct: k.nplPct.prev === null || k.nplPct.prev === undefined ? null : k.nplPct.prev * 100
+    } : null;
+    document.getElementById("mrProgress").innerHTML = p && p.metrics
+        ? CIPlan.table(p, { lastMonth: lm, lmLabel: d.compare === "month" ? "creditreport.plan.lastMonth" : "creditreport.mr.before", keys: ["osAmount", "osCount", "osClients", "disbAmount", "disbCount", "nbcOverduePct", "nplPct", "woCollected"] })
+        : "";
+    mrRenderTeam(d);
+    mrRenderDim("mrProduct", d.prod, 12);
+    mrRenderDim("mrLocation", d.loc, 12);
+    const blocked = [d.prod, d.loc].some(x => x && x.rows && x.rows.length && x.rows.every(r => !r.prev));
+    document.getElementById("mrLmNote").textContent = [
+        d.branch && blocked ? t("creditreport.mr.lmAllOnly") : "",
+        t("creditreport.mr.planDims")
+    ].filter(Boolean).join(" ");
+}
+
+// Officers of the branch (or every branch): Actual · last month · plan.
 function mrRenderTeam(d) {
     const byOfficer = !!d.branch;
     document.getElementById("mrTeamTitle").textContent = t(byOfficer ? "creditreport.mr.byOfficer" : "creditreport.mr.byBranch");
-    const rows = d.team && d.team.rows ? d.team.rows.slice().sort((a, b) => b.par - a.par).slice(0, 15) : [];
-    document.getElementById("mrTeam").innerHTML = rows.length ? `<thead><tr><th>${CI.esc(t(byOfficer ? "creditreport.mr.officer" : "creditreport.pi.branch"))}</th><th class="num">${CI.esc(t("creditreport.mr.k.os"))}</th><th class="num">PAR</th><th class="num">PAR %</th><th class="num">${CI.esc(t("creditreport.mr.parChange"))}</th><th class="num">NPL %</th><th class="num">${CI.esc(t("creditreport.mr.newNpl"))}</th></tr></thead><tbody>
-        ${rows.map(r => `<tr><td>${CI.esc(r.name || r.key)}</td><td class="num">${CI.money(r.os)}</td><td class="num">${CI.money(r.par)}</td><td class="num">${mrPct(r.parPct)}</td><td class="num">${mrChange(r.parChange, "down", v => `${(v * 100).toFixed(2)}`)}</td><td class="num">${mrPct(r.nplPct)}</td><td class="num">${r.newNpl ? `${CI.num(r.newNpl.count)} · ${CI.money(r.newNpl.value)}` : "—"}</td></tr>`).join("")}</tbody>` : `<tbody><tr><td>${CI.esc(t("creditreport.pi.nothing"))}</td></tr></tbody>`;
+    const rows = d.team && d.team.rows ? d.team.rows.slice().sort((a, b) => b.os - a.os).slice(0, 25) : [];
+    const plans = new Map(((d.teamPlan && d.teamPlan.rows) || []).map(r => [String(r.id), r.metrics]));
+    const F = CIPlan.fmt;
+    const ach = (m, c) => CIPlan.achCell(CIPlan.METRICS.find(x => x.key === m), c);
+    const pct = v => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(2)}%`);
+    document.getElementById("mrTeam").innerHTML = rows.length ? `<thead>
+        <tr><th rowspan="2">${CI.esc(t(byOfficer ? "creditreport.mr.officer" : "creditreport.pi.branch"))}</th><th colspan="4" class="mr-grp">${CI.esc(t("creditreport.mr.k.os"))}</th><th colspan="3" class="mr-grp">${CI.esc(t("creditreport.mr.k.disb"))}</th><th colspan="3" class="mr-grp">PAR %</th><th colspan="2" class="mr-grp">NPL %</th></tr>
+        <tr>${[["plan.actual"], ["plan.lastMonth"], ["plan.plan"], ["plan.ach"], ["plan.actual"], ["plan.plan"], ["plan.ach"], ["plan.actual"], ["plan.lastMonth"], ["plan.plan"], ["plan.actual"], ["plan.plan"]].map(([k]) => `<th class="num">${CI.esc(t(`creditreport.${k}`))}</th>`).join("")}</tr></thead><tbody>
+        ${rows.map(r => {
+            const pm = plans.get(String(r.key)) || {};
+            const os = pm.osAmount || { actual: r.os, plan: null };
+            const db = pm.disbAmount || { actual: r.disb, plan: null };
+            const par = pm.nbcOverduePct || {};
+            const npl = pm.nplPct || {};
+            return `<tr><td>${CI.esc(r.name || r.key)}</td>
+                <td class="num">${F("amount", r.os)}</td><td class="num">${r.prev ? F("amount", r.prev.os) : "—"}</td><td class="num">${F("amount", os.plan)}</td><td class="num ci-plan-ach">${ach("osAmount", { ...os, actual: r.os })}</td>
+                <td class="num">${F("amount", r.disb)}</td><td class="num">${F("amount", db.plan)}</td><td class="num ci-plan-ach">${ach("disbAmount", { ...db, actual: r.disb })}</td>
+                <td class="num">${pct(r.parPct)}</td><td class="num">${r.prev ? pct(r.prev.parPct) : "—"}</td><td class="num">${F("pct", par.plan)}</td>
+                <td class="num">${pct(r.nplPct)}</td><td class="num">${F("pct", npl.plan)}</td></tr>`;
+        }).join("")}</tbody>` : `<tbody><tr><td>${CI.esc(t("creditreport.pi.nothing"))}</td></tr></tbody>`;
+}
+
+// Product / location: now and last month (no plan for these reports).
+function mrRenderDim(id, data, top) {
+    const rows = data && data.rows ? data.rows.slice().sort((a, b) => b.os - a.os).slice(0, top) : [];
+    const pct = v => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(2)}%`);
+    document.getElementById(id).innerHTML = rows.length ? `<thead><tr><th>${CI.esc(t("creditreport.mr.name"))}</th><th class="num">${CI.esc(t("creditreport.mr.k.os"))}</th><th class="num">${CI.esc(t("creditreport.plan.lastMonth"))}</th><th class="num">${CI.esc(t("creditreport.mr.k.disb"))}</th><th class="num">PAR %</th><th class="num">${CI.esc(t("creditreport.plan.lastMonth"))}</th><th class="num">NPL %</th></tr></thead><tbody>
+        ${rows.map(r => `<tr><td>${CI.esc(r.name || r.key || "—")}</td><td class="num">${CI.money(r.os)}</td><td class="num">${r.prev ? CI.money(r.prev.os) : "—"}</td><td class="num">${CI.money(r.disb)}</td><td class="num">${pct(r.parPct)}${r.prev ? ` ${mrChange(r.parChange, "down", v => (v * 100).toFixed(2))}` : ""}</td><td class="num">${r.prev ? pct(r.prev.parPct) : "—"}</td><td class="num">${pct(r.nplPct)}</td></tr>`).join("")}</tbody>` : `<tbody><tr><td>${CI.esc(t("creditreport.pi.nothing"))}</td></tr></tbody>`;
 }
 
 function mrRenderCauses(d) {

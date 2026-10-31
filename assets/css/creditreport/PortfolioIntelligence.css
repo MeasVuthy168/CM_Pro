@@ -775,29 +775,52 @@ a.pi-rank-row:active{ background:var(--pi-track); }
     cursor:pointer;
 }
 .ci-chip-x span{ color:var(--cr-text-muted); margin-left:2px; }
+/* Closed: two lines — the data day, then one button saying what the
+   figures are for (who · period · compared with). Open: the grouped
+   choices. Same on every width (31/10/2026). */
+.ci-data-line{ display:flex; flex-wrap:wrap; gap:4px 14px; font-size:12px; color:var(--cr-text-muted); }
+.ci-data-item{ display:inline-flex; align-items:center; gap:5px; }
+.ci-data-item[hidden]{ display:none; }
+.ci-data-item b{ color:var(--cr-navy); font-weight:800; }
+[data-theme="dark"] .ci-data-item b, [data-theme="darkgray"] .ci-data-item b{ color:var(--cr-gold-light); }
+.ci-data-item svg{ width:15px; height:15px; }
 .ci-filter-sum{
-    display:none;
+    display:flex;
     width:100%;
     align-items:center;
-    gap:6px;
+    gap:10px;
     margin-top:10px;
-    padding:9px 12px;
+    padding:10px 12px;
     border:1px solid var(--cr-border);
-    border-radius:10px;
+    border-radius:12px;
     background:var(--pi-track);
     color:var(--cr-text);
     font-family:'KRASAR',sans-serif;
-    font-size:13px;
+    font-size:13.5px;
     text-align:left;
     cursor:pointer;
 }
-.ci-filter-sum #ciFilterSumText{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.ci-filter-caret{ transition:transform .15s; }
+.ci-filter-ico{ font-size:18px; }
+.ci-filter-sum-txt{ flex:1; min-width:0; display:flex; flex-direction:column; line-height:1.35; }
+.ci-filter-sum-txt small{ font-size:11px; color:var(--cr-text-muted); }
+.ci-filter-sum #ciFilterSumText{ font-weight:700; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.ci-filter-edit{ flex:0 0 auto; font-size:12px; font-weight:700; color:var(--cr-gold); white-space:nowrap; }
+.ci-filter-caret{ display:inline-block; transition:transform .15s; }
 .ci-head.is-open .ci-filter-caret{ transform:rotate(180deg); }
-@media (max-width:719px){
-    .ci-filter-sum{ display:flex; }
-    .ci-head:not(.is-open) #ciFilterBody{ display:none; }
+.ci-head:not(.is-open) #ciFilterBody{ display:none; }
+.ci-filter-help{ margin:10px 0 2px; line-height:1.55; }
+.ci-fgroup{ font-size:12.5px; font-weight:800; color:var(--cr-text); margin:14px 0 6px; padding-top:10px; border-top:1px solid var(--cr-border); }
+.ci-fsec[hidden]{ display:none; }
+.ci-head .ci-selects{ margin-top:0; }
+.ci-fnote{ margin:2px 0 0; font-size:11.5px; }
+.ci-period-line{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12.5px; color:var(--cr-text-muted); margin-top:6px; }
+.ci-period-line .ci-period-btn{ color:var(--cr-text); font-weight:700; }
+.ci-done{
+    flex:0 0 auto; min-height:38px; padding:0 18px; border:0; border-radius:10px; cursor:pointer;
+    background:var(--pi-navy); color:#fff; font-family:'KRASAR',sans-serif; font-weight:800;
 }
+[data-theme="dark"] .ci-done, [data-theme="darkgray"] .ci-done{ background:var(--cr-gold); color:#0e1b3c; }
+.ci-head-foot{ justify-content:flex-end; gap:8px; }
 
 /* ===== NPL Management: summary, tab subtitles, ⓘ tips, table bars ===== */
 .ci-view-tabs button{ display:flex; flex-direction:column; align-items:center; gap:1px; padding-top:7px; padding-bottom:7px; }
@@ -1000,3 +1023,17 @@ a.ci-ews-card:active{ background:var(--pi-track); }
 .ci-is-denied > :not(.ci-denied){ display:none !important; }
 .ci-denied{ text-align:center; padding:28px 18px; display:flex; flex-direction:column; align-items:center; gap:8px; }
 .ci-denied-icon{ font-size:34px; }
+
+/* ===== Plan vs actual (ci-plan.js) ===== */
+.ci-plan-table td, .ci-plan-table th{ vertical-align:middle; }
+.ci-plan-sub{ font-size:11px; color:var(--cr-text-muted); font-weight:400; }
+.ci-plan-ach{ white-space:nowrap; }
+.ci-plan-bar{ display:inline-block; width:56px; height:6px; border-radius:3px; background:var(--pi-track); overflow:hidden; vertical-align:middle; margin-right:6px; }
+.ci-plan-bar span{ display:block; height:100%; border-radius:3px; }
+.ci-plan-ok{ color:var(--pi-good); font-weight:800; }
+.ci-plan-warn{ color:var(--pi-warn); font-weight:800; }
+.ci-plan-bad{ color:var(--pi-bad); font-weight:800; }
+.ci-plan-ok-bg{ background:var(--pi-good); }
+.ci-plan-warn-bg{ background:var(--pi-warn); }
+.ci-plan-bad-bg{ background:var(--pi-bad); }
+.ci-plan-na{ color:var(--cr-text-muted); }

@@ -45,6 +45,8 @@
 
     let onChange = () => {};
     let pending = {};
+    let compareShown = true;
+    let datesShown = true;
     let scope = null;
     let debounce = null;
     // Officer side, like the Daily Report: "own" (officer ID, default) or
@@ -126,8 +128,14 @@
         box.innerHTML = chips.map(c => `<button type="button" class="ci-chip-x" data-id="${esc(c.id)}" data-v="${esc(c.v)}" aria-label="${esc(t("creditreport.ci.removeFilter", { name: c.label }))}">${esc(c.label)} <span aria-hidden="true">✕</span></button>`).join("");
         const sum = document.getElementById("ciFilterSumText");
         if (sum) {
-            const per = shownPeriod ? t("creditreport.detail.dateRange", { from: dash(shownPeriod.fromDate), to: dash(shownPeriod.toDate) }) : "";
-            sum.textContent = [chips.length ? t("creditreport.ci.filtersN", { n: chips.length }) : t("creditreport.ci.filtersNone"), per].filter(Boolean).join(" · ");
+            // Who · period · compared with — in words, not a count.
+            const sc = scope && scope.type;
+            const who = chips.length ? chips.map(c => c.label).join(", ")
+                : sc === "branch" ? scope.branch : sc === "officer" ? t("creditreport.ci.myLoans") : t("creditreport.pi.allBranches");
+            const per = datesShown && shownPeriod ? t("creditreport.detail.dateRange", { from: dash(shownPeriod.fromDate), to: dash(shownPeriod.toDate) }) : "";
+            const cmpEl = document.getElementById("ciCompare");
+            const cmp = compareShown && cmpEl ? `${t("creditreport.ci.vs")} ${cmpEl.options[cmpEl.selectedIndex].textContent}` : "";
+            sum.textContent = [who, per, cmp].filter(Boolean).join(" · ");
         }
     }
     function removeChip(id, v) {
@@ -277,39 +285,21 @@
         const showCompare = opts.compare !== false;
         const box = document.getElementById("ciFilters");
         box.className = "pi-card ci-head";
+        // Two lines when closed (owner's ask, 31/10/2026): which day the
+        // data is from, and one button that says what the figures are for
+        // (who · period · compared with). Tapping it opens the choices,
+        // grouped and explained.
         box.innerHTML = `
-<div class="cr-info-block">
-<div class="cr-info-row"${showDates ? "" : " hidden"}>
-<span class="cr-info-label">${icon("money")}<span id="ciPeriodLabel">${esc(t(opts.periodLabel || "creditreport.detail.loanDisbFrom"))}</span></span>
-<button type="button" class="cr-info-value ci-period-btn" id="ciPeriodBtn" aria-expanded="false" aria-controls="ciPeriodEdit" title="${esc(t("creditreport.ci.changePeriod"))}"><span id="ciPeriodText">-</span><span class="ci-edit-ico" aria-hidden="true">✎</span></button>
+<div class="ci-data-line">
+<span class="ci-data-item" title="${esc(t("creditreport.detail.osGridMerge"))}">${icon("barchart")}<span>${esc(t("creditreport.ci.dataOs"))}</span><b id="ciInfoOs">-</b></span>
+<span class="ci-data-item" title="${esc(t("creditreport.detail.overdueGridMerge"))}">${icon("warning")}<span>${esc(t("creditreport.ci.dataOd"))}</span><b id="ciInfoOd">-</b></span>
+<span class="ci-data-item" id="ciStatusRow" hidden><span id="ciInfoStatus"></span></span>
 </div>
-<div class="ci-period-edit" id="ciPeriodEdit" hidden>
-<div class="cr-select-row"><label for="ciFrom" class="cr-select-label">${esc(t("creditreport.pi.fromDate"))}</label><input type="date" id="ciFrom" class="cr-select"></div>
-<div class="cr-select-row"><label for="ciTo" class="cr-select-label">${esc(t("creditreport.pi.toDate"))}</label><input type="date" id="ciTo" class="cr-select"></div>
-</div>
-<div class="ci-quick" id="ciQuick" role="group" aria-label="${esc(t("creditreport.ci.quickPeriod"))}"${showDates ? "" : " hidden"}>
-<button type="button" data-range="mtd">${esc(t("creditreport.ci.qMtd"))}</button>
-<button type="button" data-range="lastMonth">${esc(t("creditreport.ci.qLastMonth"))}</button>
-<button type="button" data-range="week">${esc(t("creditreport.ci.qWeek"))}</button>
-<button type="button" data-range="day">${esc(t("creditreport.ci.qDay"))}</button>
-<span class="ci-oneday" id="ciOneDay" hidden>⚠ ${esc(t("creditreport.ci.oneDay"))}</span>
-</div>
-<div class="cr-info-row">
-<span class="cr-info-label">${icon("barchart")}<span>${esc(t("creditreport.detail.osGridMerge"))}</span></span>
-<span class="cr-info-value" id="ciInfoOs">-</span>
-</div>
-<div class="cr-info-row">
-<span class="cr-info-label">${icon("warning")}<span>${esc(t("creditreport.detail.overdueGridMerge"))}</span></span>
-<span class="cr-info-value" id="ciInfoOd">-</span>
-</div>
-<div class="cr-info-row" id="ciStatusRow" hidden>
-<span class="cr-info-label">${icon("refresh")}<span>${esc(t("creditreport.ci.dataStatus"))}</span></span>
-<span class="cr-info-value" id="ciInfoStatus">-</span>
-</div>
-</div>
-<button type="button" class="ci-filter-sum" id="ciFilterSum" aria-expanded="false" aria-controls="ciFilterBody"><span aria-hidden="true">⚙</span> <span id="ciFilterSumText"></span> <span class="ci-filter-caret" aria-hidden="true">▾</span></button>
+<button type="button" class="ci-filter-sum" id="ciFilterSum" aria-expanded="false" aria-controls="ciFilterBody"><span class="ci-filter-ico" aria-hidden="true">⚙</span><span class="ci-filter-sum-txt"><small>${esc(t("creditreport.ci.showing"))}</small><span id="ciFilterSumText"></span></span><span class="ci-filter-edit">${esc(t("creditreport.ci.change"))} <span class="ci-filter-caret" aria-hidden="true">▾</span></span></button>
 <div class="ci-chips" id="ciChips" hidden></div>
 <div id="ciFilterBody">
+<p class="pi-note ci-filter-help">${esc(t("creditreport.ci.filterHelp"))}</p>
+<h3 class="ci-fgroup">${esc(t("creditreport.ci.gWho"))}</h3>
 <div class="ci-selects">
 ${opts.classes ? selectRow("ciClass", "creditreport.ci.nplClass", "creditreport.ci.allNplClasses") : ""}
 ${selectRow("ciBranch", "creditreport.pi.branch", "creditreport.pi.allBranches")}
@@ -320,7 +310,27 @@ ${opts.side ? `<div class="cr-select-row ci-side-row"><span class="cr-select-lab
 <button type="button" data-side="own">${esc(t("creditreport.ci.sideOwn"))}</button>
 </span></div>` : ""}
 ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts")}
-<div class="cr-select-row"${showCompare ? "" : " hidden"}><label for="ciCompare" class="cr-select-label">${esc(t("creditreport.pi.compare"))}</label>
+<p class="pi-note ci-fnote">${esc(t("creditreport.pi.focusNote"))}</p>
+</div>
+<div class="ci-fsec"${showDates ? "" : " hidden"}>
+<h3 class="ci-fgroup">${esc(t("creditreport.ci.gPeriod"))}</h3>
+<div class="ci-quick" id="ciQuick" role="group" aria-label="${esc(t("creditreport.ci.quickPeriod"))}">
+<button type="button" data-range="mtd">${esc(t("creditreport.ci.qMtd"))}</button>
+<button type="button" data-range="lastMonth">${esc(t("creditreport.ci.qLastMonth"))}</button>
+<button type="button" data-range="week">${esc(t("creditreport.ci.qWeek"))}</button>
+<button type="button" data-range="day">${esc(t("creditreport.ci.qDay"))}</button>
+<span class="ci-oneday" id="ciOneDay" hidden>⚠ ${esc(t("creditreport.ci.oneDay"))}</span>
+</div>
+<div class="ci-period-line"><span id="ciPeriodLabel">${esc(t(opts.periodLabel || "creditreport.detail.loanDisbFrom"))}</span>
+<button type="button" class="ci-period-btn" id="ciPeriodBtn" aria-expanded="false" aria-controls="ciPeriodEdit" title="${esc(t("creditreport.ci.changePeriod"))}"><span id="ciPeriodText">-</span><span class="ci-edit-ico" aria-hidden="true">✎</span></button></div>
+<div class="ci-period-edit" id="ciPeriodEdit" hidden>
+<div class="cr-select-row"><label for="ciFrom" class="cr-select-label">${esc(t("creditreport.pi.fromDate"))}</label><input type="date" id="ciFrom" class="cr-select"></div>
+<div class="cr-select-row"><label for="ciTo" class="cr-select-label">${esc(t("creditreport.pi.toDate"))}</label><input type="date" id="ciTo" class="cr-select"></div>
+</div>
+</div>
+<div class="ci-fsec"${showCompare ? "" : " hidden"}>
+<h3 class="ci-fgroup">${esc(t("creditreport.ci.gCompare"))}</h3>
+<div class="cr-select-row"><label for="ciCompare" class="cr-select-label">${esc(t("creditreport.pi.compare"))}</label>
 <select id="ciCompare" class="cr-select">
 <option value="month">${esc(t("creditreport.pi.compareMonth"))}</option>
 <option value="prev">${esc(t("creditreport.pi.comparePrev"))}</option>
@@ -331,10 +341,12 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
 <p class="pi-note ci-cmp-note" id="ciCmpNote" data-show-compare="${showCompare ? "1" : "0"}" hidden></p>
 </div>
 <div class="ci-head-foot">
-<p class="pi-note">${esc(t("creditreport.pi.focusNote"))}</p>
 <button type="button" class="pi-btn-ghost" id="ciReset">${esc(t("creditreport.pi.reset"))}</button>
+<button type="button" class="ci-done" id="ciDone">${esc(t("creditreport.ci.done"))}</button>
 </div>
 </div>`;
+        compareShown = showCompare;
+        datesShown = showDates;
 
         const p = initialParams();
         if (p.get("fromDate")) document.getElementById("ciFrom").value = p.get("fromDate");
@@ -395,12 +407,16 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
             periodBtn.setAttribute("aria-expanded", "false");
             changed();
         });
-        // Phones: filters fold into one summary line (open by tapping it).
+        // The choices fold into one summary line (open by tapping it).
         const sumBtn = document.getElementById("ciFilterSum");
-        sumBtn.addEventListener("click", () => {
-            const open = !box.classList.contains("is-open");
+        const setOpen = open => {
             box.classList.toggle("is-open", open);
             sumBtn.setAttribute("aria-expanded", String(open));
+        };
+        sumBtn.addEventListener("click", () => setOpen(!box.classList.contains("is-open")));
+        document.getElementById("ciDone").addEventListener("click", () => {
+            setOpen(false);
+            sumBtn.scrollIntoView({ block: "nearest" });
         });
         document.getElementById("ciChips").addEventListener("click", e => {
             const c = e.target.closest("[data-id]");
