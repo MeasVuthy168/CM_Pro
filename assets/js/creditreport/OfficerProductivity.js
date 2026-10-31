@@ -91,45 +91,27 @@ const t = (key, vars) => window.CMI18n ? CMI18n.t(key, vars) : key;
 // picks up the current language whenever a card is (re)rendered, rather
 // than being baked in once at page-load time.
 function opCategories() {
+    const loan = k => ({ k, label: t("creditreport.productivity.colLoan") });
+    const value = k => ({ k, label: t("creditreport.detail.colValue"), money: true, main: true });
+    const par = { k: "parPct", label: t("creditreport.productivity.colPar"), pct: true };
+    // own / area: where the Own and Area figures sit on the officer's
+    // row; byTeam: Area split by the matched rows' own team (CO /
+    // Digital), shown under Area. fields are read from each of those
+    // (main = the one compared with last month row by row); risk = a
+    // rise is bad news; plan: the officer plan's metrics, measured
+    // against Own (none for T24).
     return [
     {
         key: "outstanding",
         icon: '<span class="cr-ico cr-ico-barchart" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionOutstanding"),
         chart: false,
-        statGroups: [
-            {
-                label: t("creditreport.detail.own"),
-                fields: [
-                    { key: "loanOutstanding.loan", label: t("creditreport.productivity.colLoan") },
-                    { key: "loanOutstanding.client", label: t("creditreport.productivity.colClient") },
-                    { key: "loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
-                ]
-            },
-            {
-                isArea: true,
-                label: t("creditreport.detail.area"),
-                fields: [
-                    { key: "loanOutstandingArea.loan", label: t("creditreport.productivity.colLoan") },
-                    { key: "loanOutstandingArea.client", label: t("creditreport.productivity.colClient") },
-                    { key: "loanOutstandingArea.value", label: t("creditreport.detail.colValue"), money: true }
-                ]
-            }
-        ],
-        // Area, broken down by each matched row's own team/channel — merged
-        // into the "Area:" line itself as a tree, always visible (not
-        // gated by expand/collapse) — see opAreaTreeHtml() below.
-        areaTeamGroups: [
-            { label: t("creditreport.compare.dimOfficer"), fields: [
-                { key: "loanOutstandingAreaByTeam.co.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "loanOutstandingAreaByTeam.co.client", label: t("creditreport.productivity.colClient") },
-                { key: "loanOutstandingAreaByTeam.co.value", label: t("creditreport.detail.colValue"), money: true }
-            ] },
-            { label: t("creditreport.byBranch.teamDigital"), fields: [
-                { key: "loanOutstandingAreaByTeam.digital.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "loanOutstandingAreaByTeam.digital.client", label: t("creditreport.productivity.colClient") },
-                { key: "loanOutstandingAreaByTeam.digital.value", label: t("creditreport.detail.colValue"), money: true }
-            ] }
+        own: "loanOutstanding", area: "loanOutstandingArea", byTeam: "loanOutstandingAreaByTeam",
+        fields: [loan("loan"), { k: "client", label: t("creditreport.productivity.colClient") }, value("value")],
+        plan: [
+            { key: "osCount", label: t("creditreport.plan.loans") },
+            { key: "osClients", label: t("creditreport.plan.clients") },
+            { key: "osAmount", label: t("creditreport.plan.osAmount"), money: true, head: true }
         ],
         clientLists: [
             { section: "outstanding", label: t("creditreport.detail.own") },
@@ -141,32 +123,11 @@ function opCategories() {
         icon: '<span class="cr-ico cr-ico-money" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionDisburse"),
         chart: true,
-        statGroups: [
-            {
-                label: t("creditreport.detail.own"),
-                fields: [
-                    { key: "loanDisburse.loan", label: t("creditreport.productivity.colLoan") },
-                    { key: "loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
-                ]
-            },
-            {
-                isArea: true,
-                label: t("creditreport.detail.area"),
-                fields: [
-                    { key: "loanDisburseArea.loan", label: t("creditreport.productivity.colLoan") },
-                    { key: "loanDisburseArea.value", label: t("creditreport.detail.colValue"), money: true }
-                ]
-            }
-        ],
-        areaTeamGroups: [
-            { label: t("creditreport.compare.dimOfficer"), fields: [
-                { key: "loanDisburseAreaByTeam.co.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "loanDisburseAreaByTeam.co.value", label: t("creditreport.detail.colValue"), money: true }
-            ] },
-            { label: t("creditreport.byBranch.teamDigital"), fields: [
-                { key: "loanDisburseAreaByTeam.digital.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "loanDisburseAreaByTeam.digital.value", label: t("creditreport.detail.colValue"), money: true }
-            ] }
+        own: "loanDisburse", area: "loanDisburseArea", byTeam: "loanDisburseAreaByTeam",
+        fields: [loan("loan"), value("value")],
+        plan: [
+            { key: "disbCount", label: t("creditreport.plan.loans"), disb: true },
+            { key: "disbAmount", label: t("creditreport.plan.amount"), money: true, disb: true, head: true }
         ]
     },
     {
@@ -174,37 +135,10 @@ function opCategories() {
         icon: '<span class="cr-ico cr-ico-trend-up" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionT24"),
         chart: false,
-        statGroups: [
-            {
-                label: t("creditreport.detail.own"),
-                fields: [
-                    { key: "parT24.loan", label: t("creditreport.productivity.colLoan") },
-                    { key: "parT24.value", label: t("creditreport.detail.colValue"), money: true },
-                    { key: "parT24.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-                ]
-            },
-            {
-                isArea: true,
-                label: t("creditreport.detail.area"),
-                fields: [
-                    { key: "parT24Area.loan", label: t("creditreport.productivity.colLoan") },
-                    { key: "parT24Area.value", label: t("creditreport.detail.colValue"), money: true },
-                    { key: "parT24Area.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-                ]
-            }
-        ],
-        areaTeamGroups: [
-            { label: t("creditreport.compare.dimOfficer"), fields: [
-                { key: "parT24AreaByTeam.co.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "parT24AreaByTeam.co.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "parT24AreaByTeam.co.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] },
-            { label: t("creditreport.byBranch.teamDigital"), fields: [
-                { key: "parT24AreaByTeam.digital.loan", label: t("creditreport.productivity.colLoan") },
-                { key: "parT24AreaByTeam.digital.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "parT24AreaByTeam.digital.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] }
-        ],
+        risk: true,
+        own: "parT24", area: "parT24Area", byTeam: "parT24AreaByTeam",
+        fields: [loan("loan"), value("value"), par],
+        plan: null,
         clientLists: [
             { section: "parT24", label: t("creditreport.detail.own") },
             { section: "parT24Area", label: t("creditreport.detail.area") }
@@ -215,39 +149,12 @@ function opCategories() {
         icon: '<span class="cr-ico cr-ico-warning" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionNbcOverdue"),
         chart: false,
-        // Own/Area render as two stacked lines (see opCardMarkup) rather
-        // than one flat stats: [...] row — each side has its own
-        // Loan/Value/PAR, not just a single combined figure.
-        statGroups: [
-            {
-                label: t("creditreport.detail.own"),
-                fields: [
-                    { key: "nbcOverdue.totalOwn.count", label: t("creditreport.productivity.colLoan") },
-                    { key: "nbcOverdue.totalOwn.value", label: t("creditreport.detail.colValue"), money: true },
-                    { key: "nbcOverdue.totalOwn.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-                ]
-            },
-            {
-                isArea: true,
-                label: t("creditreport.detail.area"),
-                fields: [
-                    { key: "nbcOverdue.totalArea.count", label: t("creditreport.productivity.colLoan") },
-                    { key: "nbcOverdue.totalArea.value", label: t("creditreport.detail.colValue"), money: true },
-                    { key: "nbcOverdue.totalArea.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-                ]
-            }
-        ],
-        areaTeamGroups: [
-            { label: t("creditreport.compare.dimOfficer"), fields: [
-                { key: "nbcOverdueAreaByTeam.co.count", label: t("creditreport.productivity.colLoan") },
-                { key: "nbcOverdueAreaByTeam.co.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "nbcOverdueAreaByTeam.co.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] },
-            { label: t("creditreport.byBranch.teamDigital"), fields: [
-                { key: "nbcOverdueAreaByTeam.digital.count", label: t("creditreport.productivity.colLoan") },
-                { key: "nbcOverdueAreaByTeam.digital.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "nbcOverdueAreaByTeam.digital.parPct", label: t("creditreport.productivity.colPar"), pct: true }
-            ] }
+        risk: true,
+        own: "nbcOverdue.totalOwn", area: "nbcOverdue.totalArea", byTeam: "nbcOverdueAreaByTeam",
+        fields: [loan("count"), value("value"), par],
+        plan: [
+            { key: "nbcOverduePct", label: t("creditreport.plan.nbcPct"), pctPts: true, lowerBetter: true, head: true },
+            { key: "nplPct", label: t("creditreport.plan.nplPct"), pctPts: true, lowerBetter: true }
         ],
         // Two separate "List of Client" sub-tabs (Own/Area) instead of
         // one — each hits a different officer-clients `section` (see
@@ -261,42 +168,22 @@ function opCategories() {
     // "count" here, unlike balanceWO.cif elsewhere, since that's this
     // file's own field name for the same figure) rather than the WO period
     // figures, per explicit request 2026-10-01 — same change made to
-    // Location/Product Performance/Branch Productivity.
+    // Location/Product Performance/Branch Productivity. Its plan is WO
+    // Collected, a yearly plan (the year to date).
     {
         key: "writeOff",
         icon: '<span class="cr-ico cr-ico-writeoff" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionWriteOff"),
         chart: false,
-        statGroups: [
-            {
-                label: t("creditreport.detail.own"),
-                fields: [
-                    { key: "writeOffOwn.balanceWO.count", label: t("creditreport.detail.colCifHash") },
-                    { key: "writeOffOwn.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
-                    { key: "writeOffOwn.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
-                ]
-            },
-            {
-                isArea: true,
-                label: t("creditreport.detail.area"),
-                fields: [
-                    { key: "writeOffArea.balanceWO.count", label: t("creditreport.detail.colCifHash") },
-                    { key: "writeOffArea.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
-                    { key: "writeOffArea.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
-                ]
-            }
+        risk: true,
+        own: "writeOffOwn.balanceWO", area: "writeOffArea.balanceWO", byTeam: "writeOffAreaByTeam", byTeamSuffix: "balanceWO",
+        fields: [
+            { k: "count", label: t("creditreport.detail.colCifHash") },
+            { k: "int", label: t("creditreport.detail.colInt"), money: true },
+            { k: "prn", label: t("creditreport.detail.colPrn"), money: true, main: true }
         ],
-        areaTeamGroups: [
-            { label: t("creditreport.compare.dimOfficer"), fields: [
-                { key: "writeOffAreaByTeam.co.balanceWO.count", label: t("creditreport.detail.colCifHash") },
-                { key: "writeOffAreaByTeam.co.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
-                { key: "writeOffAreaByTeam.co.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
-            ] },
-            { label: t("creditreport.byBranch.teamDigital"), fields: [
-                { key: "writeOffAreaByTeam.digital.balanceWO.count", label: t("creditreport.detail.colCifHash") },
-                { key: "writeOffAreaByTeam.digital.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
-                { key: "writeOffAreaByTeam.digital.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true }
-            ] }
+        plan: [
+            { key: "woCollected", label: `${t("creditreport.perf.woCollected")} (${t("creditreport.plan.yearPlan")})`, money: true, head: true }
         ],
         clientLists: [
             { section: "writeOff", label: t("creditreport.detail.own") },
@@ -325,10 +212,6 @@ function opGet(obj, path) {
 function opFmtNum(n) {
     n = Number(n) || 0;
     return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
-}
-function opFmtPct(n) {
-    n = Number(n) || 0;
-    return (n * 100).toFixed(2) + "%";
 }
 function opFmtDateDMY(s) {
     if (!s) return "-";
@@ -439,61 +322,72 @@ function opRenderHeader() {
     document.getElementById("opHeaderCard").style.display = "flex";
 }
 
-// One flat stats: [...] row (parT24), or — for a category with statGroups
-// (Loan Outstanding, Loan Disburse, NBC Overdue, Write Off) — a stacked
-// line per group (Own/Area), each led by its own bold group label.
-function opStatFieldHtml(f, officer) {
-    const v = opGet(officer, f.key);
-    const text = f.pct ? opFmtPct(v) : opFmtNum(v);
-    return `<span>${opEscapeHtml(f.label)}: <b>${text}</b></span>`;
-}
-function opCardStatsHtml(cat, officer) {
-    if (cat.statGroups) {
-        return cat.statGroups.map(g => {
-            // Area gets its own values folded straight into the "Area:"
-            // line, with the FSRO/CO/Digital breakdown nested right below
-            // it as a tree — always visible, same as Own, not gated by
-            // expand/collapse. See opAreaTreeHtml().
-            if (g.isArea && cat.areaTeamGroups) {
-                return opAreaTreeHtml(g, cat, officer);
-            }
-            return `
-              <div class="op-card-stats">
-                <span class="op-card-stats-group-label">${opEscapeHtml(g.label)}:</span>
-                ${g.fields.map(f => opStatFieldHtml(f, officer)).join("")}
-              </div>`;
-        }).join("");
-    }
-    return `<div class="op-card-stats">${cat.stats.map(s => opStatFieldHtml(s, officer)).join("")}</div>`;
+// ========================================
+// COMPARISON — Actual Only | Last Month | Plan (cr-perf.js). Last Month
+// = the officer's last saved Daily History day of last month
+// (CRLastMonth, T24 from its NBC Overdue); Plan = the officer plan
+// (Plan vs Actual by Officer, keyed by CO ID), measured against Own.
+// ========================================
+const opStripZeros = id => String(id || "").replace(/^0+(?=\d)/, "");
+
+// A card's rows: Own, Area and Area's CO / Digital, each read from
+// where the card keeps it (on this officer's row, or last month's).
+function opCardRows(cat, last) {
+    const at = (row, path) => (row ? opGet(row, path) : null);
+    const team = b => `${cat.byTeam}.${b}${cat.byTeamSuffix ? `.${cat.byTeamSuffix}` : ""}`;
+    const officer = opState.officer;
+    return [
+        { label: t("creditreport.detail.own"), path: cat.own, total: true, head: true },
+        { label: t("creditreport.detail.area"), path: cat.area, total: true },
+        { label: t("creditreport.compare.dimOfficer"), path: team("co"), sub: true },
+        { label: t("creditreport.byBranch.teamDigital"), path: team("digital"), sub: true }
+    ].map(r => ({ ...r, data: at(officer, r.path), last: last ? at(last, r.path) : null }))
+        .filter(r => !r.sub || r.data);
 }
 
-// "Area:" — its own combined figures right on that line (same as before),
-// plus a FSRO/CO/Digital breakdown nested under it as a tree: each row
-// gets its own short connector tick, reading as children of "Area:" the
-// same way "Own:" and "Area:" read as siblings of each other.
-function opAreaTreeHtml(areaGroup, cat, officer) {
-    return `
-      <div class="op-card-team-breakdown">
-        <div class="op-card-stats op-card-team-breakdown-area">
-          <span class="op-card-stats-group-label">${opEscapeHtml(areaGroup.label)}:</span>
-          ${areaGroup.fields.map(f => opStatFieldHtml(f, officer)).join("")}
-        </div>
-        ${cat.areaTeamGroups.map(g => `
-          <div class="op-card-team-row-wrap">
-            <div class="op-card-stats op-card-team-row">
-              <span class="op-card-team-row-label">${opEscapeHtml(g.label)}:</span>
-              ${g.fields.map(f => opStatFieldHtml(f, officer)).join("")}
-            </div>
-          </div>`).join("")}
-      </div>`;
-}
+const opCompare = CRPerf.controller({
+    ids: { compare: "opCompare", note: "opCompareNote", strip: "opStrip", cards: "opCards" },
+    cats: () => opCategories(),
+    rows: opCardRows,
+    current: () => opState.officer,
+    strip: [
+        { label: t("creditreport.perf.kpiOutstanding"), k: "loanOutstanding.value", money: true, plan: "osAmount",
+            sub: cur => `${opEscapeHtml(t("creditreport.productivity.colLoan"))} ${opFmtNum(opGet(cur, "loanOutstanding.loan"))}` },
+        { label: t("creditreport.perf.kpiNbc"), k: "nbcOverdue.totalOwn.parPct", pct: true, risk: true, plan: "nbcOverduePct",
+            sub: cur => CRPerf.fmt(opGet(cur, "nbcOverdue.totalOwn.value"), { money: true }, true) },
+        { label: t("creditreport.perf.kpiDisburse"), k: "loanDisburse.value", money: true, plan: "disbAmount", ring: true,
+            sub: cur => `${opEscapeHtml(t("creditreport.productivity.colLoan"))} ${opFmtNum(opGet(cur, "loanDisburse.loan"))}` }
+    ],
+    toDate: () => opState.meta.toDate,
+    loadLastMonth: async () => {
+        const officer = opState.officer;
+        const info = await CRLastMonth.load({
+            endpoint: "/api/creditreport/byco/history",
+            token: opToken,
+            toDate: opState.meta.toDate,
+            query: { officerName: officer.name || "", officerBranch: officer.branch || "" }
+        });
+        const day = info && info.day;
+        const raw = day ? (day.items || []).find(it => it.name === officer.name) : null;
+        return { info, row: raw ? CRLastMonth.scopeSaved(raw, { t24Class: [], t24Product: [], nbcProduct: [] }) : null };
+    },
+    loadPlan: async () => {
+        const res = await fetch(`${API.BASE_URL}/api/creditreport/officer-plan-vs-actual`, { headers: { Authorization: `Bearer ${opToken}` } });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.message || `HTTP ${res.status}`);
+        const id = opStripZeros(opState.officer.id);
+        const row = id ? (data.rows || []).find(r => r.branch === id) : null;
+        return { data, metrics: row ? row.metrics : null };
+    },
+    planNote: t("creditreport.perf.planOwn")
+});
 
 // A category with clientLists (NBC Overdue, Write Off) gets one "List of
 // Client" tab per entry (Own/Area) instead of one — each tab's data-mode
 // is "list:<section>" so opEnsureModeLoaded knows which officer-clients
 // section to fetch. Everything else keeps the single plain "list" mode,
 // which resolves to the category's own key (unchanged behavior).
-function opCardMarkup(cat, officer) {
+function opCardMarkup(cat) {
     const listTabsHtml = cat.clientLists
         ? cat.clientLists.map((cl, i) =>
             `<button type="button" class="op-mode-tab${i === 0 ? " active" : ""}" data-mode="list:${cl.section}"><span class="cr-ico cr-ico-users" aria-hidden="true"></span> ${t("creditreport.productivity.listOfClient")} ${opEscapeHtml(cl.label)}</button>`
@@ -510,10 +404,11 @@ function opCardMarkup(cat, officer) {
           <div class="op-card-icon">${cat.icon}</div>
           <div class="op-card-title">
             <div class="op-card-label">${opEscapeHtml(cat.label)}</div>
-            ${opCardStatsHtml(cat, officer)}
+            ${CRPerf.headSlot}
           </div>
           <div class="op-card-caret">▾</div>
         </button>
+        ${CRPerf.bodySlot}
         <div class="op-card-panel">
           <div class="op-mode-tabs">
             ${listTabsHtml}
@@ -526,36 +421,12 @@ function opCardMarkup(cat, officer) {
 
 function opRenderCards() {
     const wrap = document.getElementById("opCards");
-    wrap.innerHTML = opCategories().map(cat => opCardMarkup(cat, opState.officer)).join("");
+    wrap.innerHTML = opCategories().map(cat => opCardMarkup(cat)).join("");
     wrap.style.display = "flex";
-    opFitStatsToWidth();
+    // Another officer: last month and the plan are fetched for them.
+    opCompare.reset();
+    opCompare.start();
 }
-
-// ========================================
-// FIT STATS ROWS TO SCREEN WIDTH
-// Same fix as BranchProductivity.js's bpFitStatsToWidth() — these two
-// pages share the .op-card-stats markup/CSS, so they need the same
-// per-row font-size shrink to guarantee no wrap and no horizontal
-// scroll regardless of content length.
-// ========================================
-function opFitStatsToWidth() {
-    const rows = document.querySelectorAll("#opCards .op-card-stats");
-    rows.forEach(row => {
-        row.style.fontSize = "";
-        let size = parseFloat(getComputedStyle(row).fontSize);
-        const minSize = 7;
-        while (row.scrollWidth > row.clientWidth + 0.5 && size > minSize) {
-            size -= 0.5;
-            row.style.fontSize = `${size}px`;
-        }
-    });
-}
-
-let opFitResizeTimer;
-window.addEventListener("resize", () => {
-    clearTimeout(opFitResizeTimer);
-    opFitResizeTimer = setTimeout(opFitStatsToWidth, 150);
-});
 
 // ========================================
 // ACCORDION + MODE SWITCHING

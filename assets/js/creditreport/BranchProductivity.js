@@ -244,14 +244,13 @@ function bpRenderHeader() {
 }
 
 // ========================================
-// COMPARISON — Actual Only | Last Month | Plan (cr-perf.js builds the
-// pieces). Last Month = the branch's last saved Daily History day of
-// last month (CRLastMonth, T24 from its NBC Overdue); Plan = the
-// branch's Monthly Plan from Plan vs Actual (whole branch, not split
-// into CO / FSRO / Digital).
+// COMPARISON — Actual Only | Last Month | Plan (cr-perf.js). Last Month
+// = the branch's last saved Daily History day of last month
+// (CRLastMonth, T24 from its NBC Overdue); Plan = the branch's Monthly
+// Plan from Plan vs Actual (whole branch, not split into CO / FSRO /
+// Digital).
 // ========================================
 const BP_BUCKETS = ["co", "fsro", "digital", "total"];
-const bpCompare = { mode: "actual", lm: null, lmState: "", plan: null, planData: null, planState: "" };
 
 function bpBucketLabel(b) {
     return b === "co" ? t("creditreport.byBranch.teamCo")
@@ -264,21 +263,28 @@ function bpIsAllBranch() {
     return String(bpState.branch || "").toLowerCase() === "all branch";
 }
 
-// Last month's row for a bucket (null = not saved).
-function bpLastRow(bucket) {
-    const lm = bpCompare.lm;
-    if (!lm) return null;
-    return bucket === "total" ? lm : (lm.breakdown && lm.breakdown[bucket]) || null;
-}
-
-function bpRows() {
-    return BP_BUCKETS.map(b => ({ label: bpBucketLabel(b), data: bpState.data[b], last: bpLastRow(b), total: b === "total" }));
-}
-
-async function bpLoadLastMonth() {
-    if (bpCompare.lmState) return;
-    bpCompare.lmState = "loading";
-    try {
+const bpCompare = CRPerf.controller({
+    ids: { compare: "bpCompare", note: "bpCompareNote", strip: "bpStrip", cards: "bpCards" },
+    cats: () => bpCategories(),
+    // CO / FSRO / Digital / Total, last month's from the saved row's breakdown.
+    rows: (cat, last) => BP_BUCKETS.map(b => ({
+        label: bpBucketLabel(b),
+        data: bpState.data[b],
+        last: !last ? null : b === "total" ? last : (last.breakdown && last.breakdown[b]) || null,
+        total: b === "total",
+        head: b === "total"
+    })),
+    current: () => bpState.data.total,
+    strip: [
+        { label: t("creditreport.perf.kpiOutstanding"), k: "loanOutstanding.value", money: true, plan: "osAmount",
+            sub: cur => `${bpEscapeHtml(t("creditreport.productivity.colLoan"))} ${bpFmtNum(bpGet(cur, "loanOutstanding.loan"))}` },
+        { label: t("creditreport.perf.kpiNbc"), k: "nbcOverdue.total.parPct", pct: true, risk: true, plan: "nbcOverduePct",
+            sub: cur => CRPerf.fmt(bpGet(cur, "nbcOverdue.total.value"), { money: true }, true) },
+        { label: t("creditreport.perf.kpiDisburse"), k: "loanDisburse.value", money: true, plan: "disbAmount", ring: true,
+            sub: cur => `${bpEscapeHtml(t("creditreport.productivity.colLoan"))} ${bpFmtNum(bpGet(cur, "loanDisburse.loan"))}` }
+    ],
+    toDate: () => bpState.data.toDate || bpState.meta.toDate,
+    loadLastMonth: async () => {
         const info = await CRLastMonth.load({
             endpoint: "/api/creditreport/summary/history",
             token: bpToken,
@@ -287,207 +293,16 @@ async function bpLoadLastMonth() {
         });
         const day = info && info.day;
         const raw = day ? (bpIsAllBranch() ? day.total : (day.items || [])[0]) : null;
-        bpCompare.lm = raw ? CRLastMonth.scopeSaved(raw, { t24Class: [], t24Product: [], nbcProduct: [] }) : null;
-        bpCompare.lmInfo = info;
-        bpCompare.lmState = "done";
-    } catch (e) {
-        console.error("last month failed:", e);
-        bpCompare.lmState = "error";
-    }
-    bpRenderCompare();
-}
-
-async function bpLoadPlan() {
-    if (bpCompare.planState) return;
-    bpCompare.planState = "loading";
-    try {
+        return { info, row: raw ? CRLastMonth.scopeSaved(raw, { t24Class: [], t24Product: [], nbcProduct: [] }) : null };
+    },
+    loadPlan: async () => {
         const res = await fetch(`${API.BASE_URL}/api/creditreport/plan-vs-actual`, { headers: { Authorization: `Bearer ${bpToken}` } });
         const data = await res.json();
         if (!res.ok || !data.ok) throw new Error(data.message || `HTTP ${res.status}`);
-        bpCompare.planData = data;
         const row = bpIsAllBranch() ? data.total : (data.rows || []).find(r => r.branch === bpState.branch);
-        bpCompare.plan = row ? row.metrics : null;
-        bpCompare.planState = "done";
-    } catch (e) {
-        console.error("plan failed:", e);
-        bpCompare.planState = "error";
-    }
-    bpRenderCompare();
-}
-
-// A plan metric: { plan, actual, ach } or null when not planned.
-function bpPlanMetric(key) {
-    const m = bpCompare.plan && bpCompare.plan[key];
-    return m && m.plan !== null && m.plan !== undefined ? m : null;
-}
-
-function bpMainField(cat) {
-    return cat.fields.find(f => f.main);
-}
-
-// The big figure (+ chip) in a card's head.
-function bpHeadFigsHtml(cat) {
-    const total = bpState.data.total;
-    const main = { ...bpMainField(cat), risk: cat.risk };
-    const parField = cat.fields.find(f => f.pct);
-    const pill = parField ? CRTable.parPill(bpGet(total, parField.k)) : "";
-    const big = `<span class="cp-big">${CRPerf.fmt(bpGet(total, main.k), main, true)}</span>`;
-    const mode = bpCompare.mode;
-    if (mode === "lastMonth" && bpCompare.lm) {
-        const d = CRPerf.delta(bpGet(total, main.k), bpGet(bpCompare.lm, main.k), main, { withPct: true });
-        return big + pill + CRPerf.chip(d.html, d.cls);
-    }
-    if (mode === "plan" && bpCompare.planState === "done") {
-        const head = cat.plan && cat.plan.find(p => p.head);
-        const m = head && bpPlanMetric(head.key);
-        if (!head) return big + pill + CRPerf.chip(bpEscapeHtml(t("creditreport.perf.noPlanSection")), "muted");
-        if (!m) return big + pill;
-        if (head.lowerBetter) {
-            // The PAR % shown (the page's own figure) against the ceiling.
-            const d = Math.round(((Number(bpGet(total, parField.k)) || 0) * 100 - m.plan) * 100) / 100;
-            return `${big}${pill}<span class="cp-of">${bpEscapeHtml(t("creditreport.plan.planMax"))} ${Number(m.plan).toFixed(2)}%</span>${CRPerf.chip(`<span class="cp-arrow">${d > 0 ? "▲" : "▼"}</span>${Math.abs(d).toFixed(2)}`, d <= 0 ? "good" : "bad")}`;
-        }
-        const cls = CRPerf.achCls(m.ach, head.disb);
-        return `<span class="cp-big">${CRPerf.fmt(m.actual, head, true)}</span><span class="cp-of">/ ${CRPerf.fmt(m.plan, head, true)}</span>${CRPerf.chip(m.ach === null ? "" : `${Math.round(m.ach * 100)}%`, cls)}`;
-    }
-    return big + pill;
-}
-
-function bpLoadingHtml() {
-    return `<div class="cp-empty">${bpEscapeHtml(t("common.loading"))}</div>`;
-}
-
-// The table under a card's head.
-function bpBodyHtml(cat) {
-    const rows = bpRows();
-    const actual = () => CRPerf.actualTable(rows, cat.fields);
-    const mode = bpCompare.mode;
-    if (mode === "lastMonth") {
-        if (bpCompare.lmState !== "done" && bpCompare.lmState !== "error") return bpLoadingHtml();
-        if (!bpCompare.lm) return actual();
-        const main = { ...bpMainField(cat), risk: cat.risk };
-        const lastLabel = CRLastMonth.shortDate(bpCompare.lmInfo.date);
-        const nowLabel = CRLastMonth.shortDate(bpState.data.toDate);
-        const others = cat.fields.filter(f => !f.main).map(f => ({ ...f, risk: cat.risk }));
-        return CRPerf.lastMonthTable(rows, main, { lastLabel, nowLabel })
-            + (others.length ? `<div class="cp-foot">${CRPerf.lastMonthFoot(rows[rows.length - 1], others)}</div>` : "");
-    }
-    if (mode === "plan") {
-        if (bpCompare.planState !== "done" && bpCompare.planState !== "error") return bpLoadingHtml();
-        if (!cat.plan) return `<div class="cp-empty">${bpEscapeHtml(t("creditreport.perf.noPlanSection"))}</div>${actual()}`;
-        const metrics = cat.plan.map(p => ({ ...p, m: bpPlanMetric(p.key) })).filter(p => p.m);
-        // No plan at all: the note at the top says so once.
-        if (!metrics.length) return bpCompare.plan ? `<div class="cp-empty">${bpEscapeHtml(t("creditreport.plan.noPlan"))}</div>${actual()}` : actual();
-        const head = metrics.find(p => p.head && !p.lowerBetter);
-        const bar = head && head.m.ach !== null
-            ? `<div class="cp-ach cp-${CRPerf.achCls(head.m.ach, head.disb)}">${CRPerf.bar(head.m.ach, CRPerf.achCls(head.m.ach, head.disb))}<span>${Math.round(head.m.ach * 100)}%</span></div>`
-            : "";
-        return bar + CRPerf.planTable(metrics);
-    }
-    return actual();
-}
-
-// The 3 figures at the top: Outstanding, NBC Overdue PAR, Disburse.
-function bpStripHtml() {
-    const total = bpState.data.total;
-    const mode = bpCompare.mode;
-    const lm = mode === "lastMonth" ? bpCompare.lm : null;
-    const pl = mode === "plan" && bpCompare.planState === "done";
-    const os = { k: "loanOutstanding.value", money: true };
-    const nbc = { k: "nbcOverdue.total.parPct", pct: true, risk: true };
-    const disb = { k: "loanDisburse.value", money: true };
-    const cur = f => bpGet(total, f.k);
-    const deltaChip = f => { const d = CRPerf.delta(cur(f), bpGet(lm, f.k), f, { withPct: true }); return CRPerf.chip(d.html, d.cls); };
-
-    const osM = pl && bpPlanMetric("osAmount");
-    const nbcM = pl && bpPlanMetric("nbcOverduePct");
-    const disbM = pl && bpPlanMetric("disbAmount");
-    const kpis = [
-        {
-            label: t("creditreport.perf.kpiOutstanding"),
-            value: CRPerf.fmt(cur(os), os, true),
-            sub: lm ? deltaChip(os)
-                : osM ? CRPerf.chip(`${Math.round(osM.ach * 100)}% · ${CRPerf.fmt(osM.plan, os, true)}`, CRPerf.achCls(osM.ach))
-                    : `${bpEscapeHtml(t("creditreport.productivity.colLoan"))} ${bpFmtNum(bpGet(total, "loanOutstanding.loan"))}`
-        },
-        {
-            label: t("creditreport.perf.kpiNbc"),
-            value: CRTable.parPill(cur(nbc)),
-            sub: lm ? deltaChip(nbc)
-                : nbcM ? CRPerf.chip(`${bpEscapeHtml(t("creditreport.plan.planMax"))} ${Number(nbcM.plan).toFixed(2)}%`, (Number(cur(nbc)) || 0) * 100 <= nbcM.plan ? "good" : "bad")
-                    : CRPerf.fmt(bpGet(total, "nbcOverdue.total.value"), os, true)
-        },
-        {
-            label: t("creditreport.perf.kpiDisburse"),
-            value: CRPerf.fmt(cur(disb), disb, true),
-            ring: disbM ? CRPerf.ring(disbM.ach, CRPerf.achCls(disbM.ach, true)) : "",
-            sub: lm ? deltaChip(disb)
-                : disbM ? `<span class="cp-muted">${CRPerf.fmt(disbM.actual, disb, true)} / ${CRPerf.fmt(disbM.plan, disb, true)}</span>`
-                    : `${bpEscapeHtml(t("creditreport.productivity.colLoan"))} ${bpFmtNum(bpGet(total, "loanDisburse.loan"))}`
-        }
-    ];
-    return CRPerf.strip(kpis);
-}
-
-// The line under the switch: what is compared with what.
-function bpCompareNote() {
-    const mode = bpCompare.mode;
-    if (mode === "lastMonth") {
-        if (bpCompare.lmState === "error") return t("creditreport.lastMonth.loadFailed");
-        if (bpCompare.lmState !== "done") return t("common.loading");
-        const info = bpCompare.lmInfo;
-        if (!info || !info.date || !bpCompare.lm) return t("creditreport.lastMonth.noSnapshot", { date: bpFmtDateDMY(info && info.cutoff) });
-        return t("creditreport.perf.lmNote", { date: bpFmtDateDMY(info.date) });
-    }
-    if (mode === "plan") {
-        if (bpCompare.planState === "error") return t("creditreport.plan.loadFailed");
-        if (bpCompare.planState !== "done") return t("creditreport.plan.loading");
-        const d = bpCompare.planData;
-        if (!bpCompare.plan || !d.hasPlan) return t("creditreport.plan.noPlan");
-        const [y, m] = String(d.month || "").split("-");
-        return [
-            t("creditreport.plan.noteMonth", { month: `${m}-${y}`, from: bpFmtDateDMY(d.fromDate), to: bpFmtDateDMY(d.toDate), done: d.daysDone, days: d.daysInMonth }),
-            t("creditreport.perf.planWhole"),
-            t("creditreport.perf.planRules")
-        ].join(" ");
-    }
-    return "";
-}
-
-function bpRenderCompare() {
-    const box = document.getElementById("bpCompare");
-    box.innerHTML = CRPerf.switcher([
-        { key: "actual", label: t("creditreport.plan.compareActual") },
-        { key: "lastMonth", label: t("creditreport.plan.compareLastMonth") },
-        { key: "plan", label: t("creditreport.plan.plan") }
-    ], bpCompare.mode);
-    document.getElementById("bpCompareNote").textContent = bpCompareNote();
-    box.style.display = "";
-    const strip = document.getElementById("bpStrip");
-    strip.innerHTML = bpStripHtml();
-    strip.style.display = "";
-    const cats = bpCategories();
-    document.querySelectorAll("#bpCards .op-card").forEach(card => {
-        const cat = cats.find(c => c.key === card.dataset.key);
-        if (!cat) return;
-        card.querySelector(".cp-head-figs").innerHTML = bpHeadFigsHtml(cat);
-        card.querySelector(".cp-body").innerHTML = bpBodyHtml(cat);
-    });
-}
-
-function bpSetCompare(mode) {
-    bpCompare.mode = ["lastMonth", "plan"].includes(mode) ? mode : "actual";
-    const params = new URLSearchParams(location.search);
-    if (bpCompare.mode === "actual") params.delete("compare"); else params.set("compare", bpCompare.mode);
-    history.replaceState(history.state, "", `${location.pathname}?${params}`);
-    if (bpCompare.mode === "lastMonth") bpLoadLastMonth();
-    if (bpCompare.mode === "plan") bpLoadPlan();
-    bpRenderCompare();
-}
-
-document.getElementById("bpCompare").addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-compare]");
-    if (btn) bpSetCompare(btn.dataset.compare);
+        return { data, metrics: row ? row.metrics : null };
+    },
+    planNote: t("creditreport.perf.planWhole")
 });
 
 function bpCardMarkup(cat) {
@@ -499,19 +314,19 @@ function bpCardMarkup(cat) {
         ? `<button type="button" class="op-mode-tab" data-mode="chart"><span class="cr-ico cr-ico-trend-up" aria-hidden="true"></span> ${t("creditreport.detail.chart")}</button>`
         : "";
 
-    // The head opens the client lists; the figures (cp-head-figs,
-    // cp-body) are filled by bpRenderCompare().
+    // The head opens the client lists; the figures (head slot, body
+    // slot) are filled by the Comparison controller.
     return `
       <div class="op-card" data-key="${cat.key}">
         <button type="button" class="op-card-head" aria-expanded="false">
           <div class="op-card-icon">${cat.icon}</div>
           <div class="op-card-title">
             <div class="op-card-label">${bpEscapeHtml(cat.label)}</div>
-            <div class="cp-head-figs"></div>
+            ${CRPerf.headSlot}
           </div>
           <div class="op-card-caret">▾</div>
         </button>
-        <div class="cp-body"></div>
+        ${CRPerf.bodySlot}
         <div class="op-card-panel">
           <div class="op-mode-tabs">
             ${listTabsHtml}
@@ -526,7 +341,7 @@ function bpRenderCards() {
     const wrap = document.getElementById("bpCards");
     wrap.innerHTML = bpCategories().map(cat => bpCardMarkup(cat)).join("");
     wrap.style.display = "flex";
-    bpSetCompare(new URLSearchParams(location.search).get("compare"));
+    bpCompare.start();
 }
 
 // ========================================

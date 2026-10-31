@@ -30,6 +30,8 @@ href="../../assets/css/main.css">
 rel="stylesheet"
 href="../../assets/css/creditreport/OfficerProductivity.css">
 <link rel="stylesheet" href="../../assets/css/creditreport/cr-icons.css">
+<link rel="stylesheet" href="../../assets/css/creditreport/cr-table.css">
+<link rel="stylesheet" href="../../assets/css/creditreport/cr-perf.css">
 
 <link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
 
@@ -77,12 +79,17 @@ No Internet Connection
 <!-- OFFICER HEADER -->
 <!-- ========================= -->
 
+<!-- The header and the Comparison switch (Actual Only | Last Month |
+     Plan) stay pinned at the top while the page scrolls (cp-sticky). -->
+<div class="cp-sticky">
 <div class="op-header-card" id="opHeaderCard" style="display:none">
 <div class="op-avatar" id="opAvatar">?</div>
 <div class="op-header-text">
 <div class="op-officer-name" id="opOfficerName">-</div>
 <div class="op-officer-meta" id="opOfficerMeta"></div>
 </div>
+</div>
+<div class="cp-compare" id="opCompare" style="display:none"></div>
 </div>
 
 <!-- ========================= -->
@@ -104,6 +111,11 @@ autocomplete="off"
 data-i18n-placeholder="creditreport.byCO.searchPlaceholder">
 <div class="op-search-dropdown" id="opSearchDropdown" hidden></div>
 </div>
+
+<!-- What the comparison compares with, and the 3 figures at the top
+     (cr-perf.js, filled by opCompare). -->
+<div class="cp-note" id="opCompareNote"></div>
+<div id="opStrip" style="display:none"></div>
 
 <!-- Skeleton while the officer's summary is being resolved -->
 <div class="op-page-skel" id="opPageSkel">
@@ -147,6 +159,9 @@ data-i18n-placeholder="creditreport.byCO.searchPlaceholder">
 
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
+<script src="../../assets/js/creditreport/cr-table.js"></script>
+<script src="../../assets/js/creditreport/cr-last-month.js"></script>
+<script src="../../assets/js/creditreport/cr-perf.js"></script>
 <script src="../../assets/js/creditreport/OfficerProductivity.js"></script>
 <script src="../../assets/js/creditreport/OfficerProductivity-loader.js"></script>
 
