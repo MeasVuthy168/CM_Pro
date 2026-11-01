@@ -7,7 +7,8 @@
 // (ArrExport.excel, see arrears-export.js) rather than reinventing a
 // workbook writer; "limit"/"top"/"cause" params that narrow a report's
 // own default view are all overridden here for full detail, per each
-// page's own JS (ewsExport/cpExport/rcExport/crkExport/nplExport…).
+// page's own JS (cpExport/rcExport/crkExport/nplExport…). Early
+// Warning is left out (owner request — its own export is already big).
 //
 // Admin and user only (owner, 31/10/2026) — same gate as Credit
 // Portfolio Intelligence (crHubIsAdmin / crHubAllowed in
@@ -247,17 +248,83 @@
         ];
     }
 
-    async function sheetDailyMonitoring(path, name, title, identityKey, groups, otherLabel) {
+    // The last saved Daily History day on or before last month's end
+    // (cr-last-month.js's own CRLastMonth.load(), shared with the 4
+    // Daily Monitoring reports' own "Comparison: Last Month" — same
+    // cutoff rule, same cache), unfiltered (every branch/officer/
+    // product/location at once, matching the live sheet). `day.items`
+    // / `day.total` are the same shape as the live {items,total}.
+    async function lastMonthDay(historyPath, toDate) {
+        if (!toDate || typeof window.CRLastMonth === "undefined") return null;
+        try {
+            const info = await CRLastMonth.load({ endpoint: historyPath, token: token(), toDate });
+            return info && info.day ? info : null;
+        } catch (e) {
+            console.error(`[export all] last month ${historyPath} failed:`, e);
+            return null;
+        }
+    }
+
+    // One Daily Monitoring report: the live sheet plus, where a saved
+    // day exists, a sibling "_LM" sheet of last month's same figures —
+    // same column layout both times, reused as-is.
+    async function sheetDailyMonitoring(path, historyPath, name, title, identityKey, groups, otherLabel) {
         const d = await get(path, {});
-        if (!d || !Array.isArray(d.items)) return null;
-        const items = d.total && typeof d.total === "object" ? [...d.items, { ...d.total, [identityKey]: t("common.total") }] : d.items;
+        if (!d || !Array.isArray(d.items)) return [];
+        const toTotalRow = (items, total) => (total && typeof total === "object" ? [...items, { ...total, [identityKey]: t("common.total") }] : items);
         const { cols, groups: colGroups } = groupedCols(
             t("creditreport.detail.branch"),
             r => r[identityKey] || (otherLabel || "—"),
             groups
         );
-        return { name, title, info: [exportedInfo()], cols, groups: colGroups, rows: items, freezeCols: 1 };
+        const sheets = [{ name, title, info: [exportedInfo()], cols, groups: colGroups, rows: toTotalRow(d.items, d.total), freezeCols: 1 }];
+
+        const info = await lastMonthDay(historyPath, d.toDate);
+        if (info && Array.isArray(info.day.items)) {
+            sheets.push({
+                name: `${name}_LM`.slice(0, 31),
+                title: `${title} — ${t("creditreport.lastMonth.col")} (${info.date})`,
+                info: [exportedInfo()],
+                cols, groups: colGroups, rows: toTotalRow(info.day.items, info.day.total), freezeCols: 1
+            });
+        }
+        return sheets;
     }
+
+    // ========================================
+    // Plan vs Actual — GET /api/creditreport/plan-vs-actual (branch) and
+    // /officer-plan-vs-actual (officer), the same 8 metrics as the
+    // Daily Monitoring reports' own "Comparison: Plan" (ci-plan.js's
+    // METRICS). Branch and officer only — Product and Location have no
+    // Monthly Plan (see MeetingReport's own note, "Plans exist for
+    // branches and officers only"). Officer-plan-vs-actual's rows name
+    // their "branch" field the officer id, not a branch (ci-plan.js's
+    // own quirk) — the identity column is labelled accordingly.
+    // ========================================
+    const PLAN_METRICS = [
+        ["osAmount", t("creditreport.plan.m.osAmount"), "money"], ["osCount", t("creditreport.plan.m.osCount"), "int"], ["osClients", t("creditreport.plan.m.osClients"), "int"],
+        ["disbAmount", t("creditreport.plan.m.disbAmount"), "money"], ["disbCount", t("creditreport.plan.m.disbCount"), "int"],
+        ["nbcOverduePct", t("creditreport.plan.m.parPct"), "pct"], ["nplPct", t("creditreport.plan.m.nplPct"), "pct"], ["woCollected", t("creditreport.plan.m.woCollected"), "money"]
+    ];
+    function planCols(identityLabel) {
+        const cols = [textCol(identityLabel, r => r.branch || "—")];
+        PLAN_METRICS.forEach(([key, label, kind]) => {
+            const colFn = kind === "pct" ? pctCol : kind === "money" ? moneyCol : intCol;
+            cols.push(colFn(`${label} — ${t("creditreport.plan.actual")}`, r => ((r.metrics || {})[key] || {}).actual));
+            cols.push(colFn(`${label} — ${t("creditreport.plan.plan")}`, r => ((r.metrics || {})[key] || {}).plan));
+        });
+        return cols;
+    }
+    async function sheetPlan(path, name, title, identityLabel) {
+        const d = await get(path, {});
+        if (!d || !Array.isArray(d.rows)) return null;
+        const rows = d.total && typeof d.total === "object" ? [...d.rows, { ...d.total, branch: t("common.total") }] : d.rows;
+        const info = [exportedInfo()];
+        if (d.month) info.unshift(t("creditreport.plan.noteMonth", { month: d.month.split("-").reverse().join("-"), from: d.fromDate, to: d.toDate, done: d.daysDone, days: d.daysInMonth }));
+        return { name: name.slice(0, 31), title, info, cols: planCols(identityLabel), rows, freezeCols: 1 };
+    }
+    const sheetPlanBranch = () => sheetPlan("/api/creditreport/plan-vs-actual", "DailyMonitoring_Branch_Plan", `${t("creditreport.hub.tileBranch")} — ${t("creditreport.plan.title")}`, t("creditreport.detail.branch"));
+    const sheetPlanOfficer = () => sheetPlan("/api/creditreport/officer-plan-vs-actual", "DailyMonitoring_Officer_Plan", `${t("creditreport.hub.tileOfficer")} — ${t("creditreport.plan.title")}`, t("creditreport.mr.officer"));
 
     // ========================================
     // 5: Customer Risk — GET /api/credit-intelligence/customers
@@ -282,28 +349,6 @@
             textCol(t("creditreport.pi.branch"), r => (r.branches || []).join(", "))
         ];
         return { name: "CustomerRisk", title: `${t("creditreport.hub.gRisk")} — ${t("creditreport.crk.title")}`, info: [exportedInfo()], cols, rows: d.rows, freezeCols: 1 };
-    }
-
-    // ========================================
-    // 6: Early Warning — GET /api/credit-intelligence/early-warning
-    // ========================================
-    async function sheetEarlyWarning() {
-        const d = await get("/api/credit-intelligence/early-warning", {});
-        if (!d || !Array.isArray(d.rows)) return null;
-        const cols = [
-            textCol(t("creditreport.npl.colLoan"), r => r.ld),
-            textCol(t("creditreport.npl.colCustomer"), r => r.name),
-            textCol(t("creditreport.pi.officer"), r => r.officerName || r.officerId),
-            textCol(t("creditreport.pi.branch"), r => r.branch),
-            textCol(t("creditreport.npl.colLocation"), r => r.district || r.address),
-            moneyCol(t("creditreport.crk.colOs"), r => r.bal),
-            intCol(t("creditreport.crk.colDpd"), r => r.day),
-            textCol("Warnings", r => (r.warnings || []).map(w => `${t(`creditreport.ews.r.${w.rule}`)} (+${w.points})`).join("; ")),
-            intCol(t("creditreport.ews.score"), r => r.score),
-            textCol("Level", r => t(`creditreport.ews.level.${r.level}`)),
-            textCol("Follow-up", r => r.followUp || "")
-        ];
-        return { name: "EarlyWarning", title: t("creditreport.hub.gRisk") + " — Early Warning", info: [exportedInfo()], cols, rows: d.rows, freezeCols: 1 };
     }
 
     // ========================================
@@ -568,12 +613,13 @@
     // would be unkind to the backend), one progress bar, one workbook.
     // ========================================
     const SHEET_JOBS = [
-        () => sheetDailyMonitoring("/api/creditreport/summary", "DailyMonitoring_Branch", t("creditreport.hub.tileBranch"), "branch", branchGroups()),
-        () => sheetDailyMonitoring("/api/creditreport/byco", "DailyMonitoring_Officer", t("creditreport.hub.tileOfficer"), "name", officerGroups()),
-        () => sheetDailyMonitoring("/api/creditreport/byproduct", "DailyMonitoring_Product", t("creditreport.hub.tileProduct"), "product", productLikeGroups()),
-        () => sheetDailyMonitoring("/api/creditreport/bylocation", "DailyMonitoring_Location", t("creditreport.hub.tileLocation"), "location", productLikeGroups(), t("creditreport.pi.otherAddress")),
+        () => sheetDailyMonitoring("/api/creditreport/summary", "/api/creditreport/summary/history", "DailyMonitoring_Branch", t("creditreport.hub.tileBranch"), "branch", branchGroups()),
+        () => sheetDailyMonitoring("/api/creditreport/byco", "/api/creditreport/byco/history", "DailyMonitoring_Officer", t("creditreport.hub.tileOfficer"), "name", officerGroups()),
+        () => sheetDailyMonitoring("/api/creditreport/byproduct", "/api/creditreport/byproduct/history", "DailyMonitoring_Product", t("creditreport.hub.tileProduct"), "product", productLikeGroups()),
+        () => sheetDailyMonitoring("/api/creditreport/bylocation", "/api/creditreport/bylocation/history", "DailyMonitoring_Location", t("creditreport.hub.tileLocation"), "location", productLikeGroups(), t("creditreport.pi.otherAddress")),
+        sheetPlanBranch,
+        sheetPlanOfficer,
         sheetCustomerRisk,
-        sheetEarlyWarning,
         sheetCustomerPrediction,
         sheetRootCause,
         sheetRecoveryActions,
