@@ -454,7 +454,15 @@
                     groups.forEach(g => {
                         const span = widths.slice(c, c + g.span).reduce((a, b) => a + b, 0);
                         if (g.label) {
-                            text(g.label, x + pad, top + groupH / 2, span - pad * 2, groupH - 2, headStyle);
+                            // A flat (non-nested) group's own tone — a lane
+                            // readTable() already merged into one group, no
+                            // `.groups` of its own — tints this top box the
+                            // same olive/grey a nested lane's box gets, same
+                            // TONES; a section's own box (hasLanes true)
+                            // never carries a tone of its own.
+                            const gStyle = (!hasLanes && g.tone) ? laneStyle(g.tone) : headStyle;
+                            if (!hasLanes && g.tone) fillRect(x, top, span, groupH, gStyle.bg);
+                            text(g.label, x + pad, top + groupH / 2, span - pad * 2, groupH - 2, gStyle);
                             if (hasLanes) {
                                 if (Array.isArray(g.groups) && g.groups.length) {
                                     let cx = x, sc = c;
