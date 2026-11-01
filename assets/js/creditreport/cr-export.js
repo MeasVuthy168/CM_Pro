@@ -42,7 +42,35 @@
     const t = (key, vars) => (window.CMI18n ? CMI18n.t(key, vars) : key);
     const closeMenu = () => document.getElementById("crMenuDropdown")?.classList.remove("show");
     const TOTAL = { fill: "#FFF4C2", bold: true };
-    const ALERT = { color: "#C0392B", bold: true };
+    // The on-screen table's own conditional text colours (cr-table.css,
+    // RepDetailby*.css, cr-last-month.css) — PAR-high alerts, the
+    // Achieved/(+/-) green-amber-red, and a PAR% pill — so the PDF
+    // (readTable()) reads the same colour the page already shows,
+    // instead of plain black text. Checked in this order since a cell
+    // only ever carries one of these.
+    const CELL_COLOR = [
+        ["cr-par-high", "#C0392B"],
+        ["cr-pv-bad", "#b3261e"], ["cr-lm-bad", "#b3261e"], ["cr-pill-bad", "#b3261e"],
+        ["cr-pv-warn", "#B26A00"], ["cr-pill-warn", "#9A6200"],
+        ["cr-pv-good", "#0A7A35"], ["cr-lm-good", "#0A7A35"], ["cr-pill-ok", "#0A7A35"]
+    ];
+    function cellColor(td) {
+        for (const [cls, color] of CELL_COLOR) {
+            if (td.classList.contains(cls) || td.querySelector(`.${cls}`)) return color;
+        }
+        return null;
+    }
+    // A lane header's own tint (cr-table.css / cr-last-month.css):
+    // olive for Actual / Last-Month "now" (cr-pv-cur / cr-lm-cur), grey
+    // for Last Month's own value (cr-lm-value) — same TONES excel()/
+    // pdf() already colour a fresh-fetch sheet's lanes with
+    // (arrears-export.js).
+    function toneOf(th) {
+        if (!th) return undefined;
+        if (th.classList.contains("cr-pv-cur") || th.classList.contains("cr-lm-cur")) return "cur";
+        if (th.classList.contains("cr-lm-value")) return "past";
+        return undefined;
+    }
 
     function notify(message, type) {
         if (window.CMToast?.show) CMToast.show({ type, title: message, message: "", duration: 3000 });
@@ -106,6 +134,9 @@
         // Last Month lane, e.g. "Outstanding" over "Plan" — see
         // crBuildThead), collapsed into one row here as "Section · Lane",
         // same shape Excel/PDF/Print have always taken from this file.
+        // Its own tone (toneOf, the lane `<th>` closest to the leaf row)
+        // carries the same olive/grey a fresh-fetch sheet's lane header
+        // gets, into ArrExport.pdf()'s own (non-nested) group header.
         const groups = [];
         let prevChain = null;
         last.forEach((leaf, c) => {
@@ -116,7 +147,7 @@
             }
             const same = prevChain && prevChain.length === chain.length && prevChain.every((x, i) => x === chain[i]);
             if (same && groups.length) groups[groups.length - 1].span++;
-            else groups.push({ th: chain[0] || null, label: chain.map(label).join(" · "), span: 1 });
+            else groups.push({ th: chain[0] || null, label: chain.map(label).join(" · "), span: 1, tone: toneOf(chain[chain.length - 1]) });
             prevChain = chain;
         });
 
@@ -124,7 +155,7 @@
         const rows = trs.map(tr => ({
             texts: [...tr.cells].map(cellText),
             total: tr.classList.contains("cr-total-row"),
-            alert: [...tr.cells].map(td => td.classList.contains("cr-par-high"))
+            colors: [...tr.cells].map(cellColor)
         }));
 
         const cols = last.map((th, j) => {
@@ -145,11 +176,11 @@
                     return s;
                 },
                 text: row => row.texts[j],
-                style: row => (row.total ? TOTAL : row.alert[j] ? ALERT : null)
+                style: row => (row.total ? TOTAL : row.colors[j] ? { color: row.colors[j], bold: true } : null)
             };
         });
 
-        return { cols, rows, groups: groups.map(({ label, span }) => ({ label, span })) };
+        return { cols, rows, groups: groups.map(({ label, span, tone }) => ({ label, span, tone })) };
     }
 
     // PDF and Print pages hold this many columns (besides the repeated
