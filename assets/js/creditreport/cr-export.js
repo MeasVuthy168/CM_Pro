@@ -9,9 +9,13 @@
 //          the page's own Comparison dropdown happens to be showing.
 //          Real numbers (#,##0 and 0.00%), a frozen header + first
 //          column, filters on the header, A4 landscape print setup.
-//   PDF    the same fresh data as Excel, same 3-row section/lane/field
-//          header and lane colours, vector text, the header repeated
-//          on every page, page numbers.
+//   PDF    the table as it stands on screen right now (same source as
+//          Print, below) — whichever Comparison mode, Showing section
+//          and other filters are active, with every section block (or
+//          the one currently showing) its own page — vector text, the
+//          header repeated on every page, page numbers. Owner request
+//          01/11/2026: PDF used to always fetch the same full data as
+//          Excel, ignoring the page's own filters; Excel still does.
 //   Print  the table as it stands on screen right now (both header
 //          rows, every column, the Total row, the high-PAR colour) —
 //          whichever mode, Showing and filters are active — as a page
@@ -154,17 +158,34 @@
     // repeated on each band. Excel keeps the whole table on one sheet.
     const BAND_COLS = 16;
 
-    function bandsOf(m) {
+    // A group's own section name: its whole label (cr-export-all.js's
+    // fresh-fetch groups, one per section, never have a "·"), or the
+    // part before " · " in readTable()'s own flattened "Section · Lane"
+    // chain label — so consecutive Plan / Last Month / Actual / … lanes
+    // of the same on-screen section still count as that one section.
+    const sectionNameOf = label => {
+        const i = label.indexOf(" · ");
+        return i === -1 ? label : label.slice(0, i);
+    };
+
+    // perSection: one band per section — every group that shares a
+    // section name packed together, however many columns that holds —
+    // instead of packing bands up to BAND_COLS. The Daily Monitoring
+    // PDF's own "Export PDF" (each section block its own page, owner
+    // request) rather than Print's default packing.
+    function bandsOf(m, { perSection } = {}) {
         let lead = 0, gi = 0;
         while (gi < m.groups.length && !m.groups[gi].label) lead += m.groups[gi++].span;
         const leadCols = m.cols.slice(0, lead), leadGroups = m.groups.slice(0, gi);
         const bands = [];
-        let cur = null, c = lead;
+        let cur = null, c = lead, curSection = null;
         for (; gi < m.groups.length; gi++) {
             const g = m.groups[gi];
-            if (!cur || cur.n + g.span > BAND_COLS) {
-                cur = { cols: leadCols.slice(), groups: leadGroups.slice(), n: 0 };
+            const section = perSection ? sectionNameOf(g.label) : null;
+            if (!cur || (perSection ? section !== curSection : cur.n + g.span > BAND_COLS)) {
+                cur = { cols: leadCols.slice(), groups: leadGroups.slice(), n: 0, label: section };
                 bands.push(cur);
+                curSection = section;
             }
             cur.cols.push(...m.cols.slice(c, c + g.span));
             cur.groups.push(g);
@@ -172,7 +193,7 @@
             c += g.span;
         }
         if (bands.length < 2) return [{ cols: m.cols, groups: m.groups, part: "" }];
-        return bands.map((b, k) => ({ cols: b.cols, groups: b.groups, part: ` (${k + 1}/${bands.length})` }));
+        return bands.map((b, k) => ({ cols: b.cols, groups: b.groups, part: b.label ? ` — ${b.label}` : ` (${k + 1}/${bands.length})` }));
     }
 
     const visible = el => !!el && el.getClientRects().length > 0;
@@ -239,13 +260,13 @@
         return `${name}_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
     }
 
-    // "Export Excel"/"Export PDF" on these 4 pages give the SAME
-    // section/lane/field, colour-coded report "Export All" gives this
-    // page — Plan + Last Month + Achieved + (+/-), merged — straight
-    // from cr-export-all.js's own per-report sheet builder
-    // (window.crExportDailyMonitoring), not whatever the page's own
-    // Comparison dropdown happens to be showing right now. Only Print
-    // and Fullscreen still read the live on-screen table (readTable()).
+    // "Export Excel" on these 4 pages gives the SAME section/lane/field,
+    // colour-coded report "Export All" gives this page — Plan + Last
+    // Month + Achieved + (+/-), merged — straight from cr-export-all.js's
+    // own per-report sheet builder (window.crExportDailyMonitoring), not
+    // whatever the page's own Comparison dropdown happens to be showing
+    // right now. "Export PDF", Print and Fullscreen all read the live
+    // on-screen table instead (readTable()).
     const DAILY_MONITORING_SHEET = {
         MonitoringByBranch: "branch",
         MonitoringByOfficer: "officer",
@@ -282,6 +303,31 @@
         }
     }
 
+    // Same loading-overlay / error-toast shape as runDailyMonitoring()
+    // above, but the "model" is the live on-screen table (readTable()),
+    // like Print — whatever Comparison mode, Showing section and other
+    // filters are active right now, not a fresh unfiltered fetch.
+    // beforeExport (crClearSearchForExport) runs first, same as Print,
+    // so a leftover search-box filter never silently narrows the file.
+    async function runFromTable(message, opts, build) {
+        closeMenu();
+        opts.beforeExport && opts.beforeExport();
+        const m = readTable();
+        if (!m || !m.rows.length) {
+            notify(t("creditreport.detail.nothingToExport"), "warning");
+            return;
+        }
+        if (typeof showAppLoading === "function") showAppLoading(message, { progress: true, key: "cr:export" });
+        try {
+            await build(m, f => window.setAppLoadingProgress?.(f * 100, t("creditreport.export.wait")));
+        } catch (err) {
+            console.error("[export] failed:", err);
+            notify(t("creditreport.export.failed"), "error");
+        } finally {
+            if (typeof hideAppLoading === "function") hideAppLoading();
+        }
+    }
+
     function exportExcel(opts) {
         const dmKey = DAILY_MONITORING_SHEET[opts.name];
         return runDailyMonitoring(t("creditreport.export.creatingExcel"), dmKey, (sheet, onProgress) => window.ArrExport.excel({
@@ -293,20 +339,19 @@
     }
 
     function exportPdf(opts) {
-        const dmKey = DAILY_MONITORING_SHEET[opts.name];
-        return runDailyMonitoring(t("creditreport.export.creatingPdf"), dmKey, (sheet, onProgress) => {
-            // bandsOf() only needs each top-level group's own `.span` to
-            // slice columns into page bands — it carries each group
-            // (lanes and all) through untouched, so ArrExport.pdf() gets
-            // the same nested section/lane structure Excel does, same
-            // 3-row header.
+        return runFromTable(t("creditreport.export.creatingPdf"), opts, (m, onProgress) => {
+            // bandsOf(m, { perSection: true }) packs every lane of the
+            // same on-screen section into one band — one page per
+            // section block (or the single one Showing has narrowed to),
+            // owner request — instead of Print's own BAND_COLS packing.
+            const name = title();
             return window.ArrExport.pdf({
                 filename: `${fileBase(opts.name)}.pdf`,
-                title: sheet.title,
-                info: sheet.info,
+                title: name,
+                info: infoLines(),
                 footer: footer(),
-                parts: bandsOf({ cols: sheet.cols, groups: sheet.groups, rows: sheet.rows }).map(b => ({ cols: b.cols, groups: b.groups, title: sheet.title + b.part })),
-                rows: sheet.rows,
+                parts: bandsOf(m, { perSection: true }).map(b => ({ cols: b.cols, groups: b.groups, title: name + b.part })),
+                rows: m.rows,
                 onProgress
             });
         });
