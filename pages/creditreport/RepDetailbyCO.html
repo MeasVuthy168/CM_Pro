@@ -253,6 +253,20 @@ No Internet Connection
 </select>
 </div>
 
+<!-- Disburse-related sections only (Loan Disburse / KHR / ≤$50,000 /
+     LOS, each Area or Own — see crUpdateClassVisibility()): which
+     officer rows show, by their own branch being the "Stop Disburse"
+     pseudo-branch or not (same figure as Portfolio Intelligence's
+     stopDisburseExcluded) — a local display pick, no refetch. -->
+<div class="cr-select-row" id="crOfficerStatusRow" style="display:none;">
+<label for="crOfficerStatus" class="cr-select-label" data-i18n="creditreport.byCO.officerStatus">Officer Status</label>
+<select id="crOfficerStatus" class="cr-select">
+<option value="" data-i18n="creditreport.detail.all">All</option>
+<option value="active" data-i18n="creditreport.byCO.officerStatusActive">Active Officer</option>
+<option value="stop" data-i18n="creditreport.byCO.officerStatusStop">Stop Disburse</option>
+</select>
+</div>
+
 <button id="btnCrHistRun" class="cr-run-btn" disabled style="display:none" data-i18n="creditreport.detail.viewHistory">View History</button>
 
 <button type="button" id="btnCrHistChart" class="cr-run-btn cr-chart-btn" style="display:none"><span class="cr-ico cr-ico-barchart" aria-hidden="true"></span> <span data-i18n="creditreport.detail.chart">Chart</span></button>
@@ -307,7 +321,7 @@ No Internet Connection
 </div>
 
 <!-- Filters the already-loaded table rows client-side by name — see
-     crApplySearchFilter() in RepDetailbyCO.js. Shown/hidden alongside
+     crApplyRowFilters() in RepDetailbyCO.js. Shown/hidden alongside
      #crTableScroll below. -->
 <div class="cr-search-wrap" id="crSearchWrap" style="display:none">
 <span class="cr-search-icon cr-ico cr-ico-search" aria-hidden="true"></span>
