@@ -51,10 +51,12 @@ window.CRTable = (() => {
     // Laid out like Last Month: each group as three blocks, Plan | Actual
     // (highlighted) | % (or ± for a ceiling), every block with the
     // group's own figures as its columns. A group's fields come as runs
-    // of [actual, plan, % / ±] (each report's crCompareSection).
+    // of [actual, plan, % / ±] (each report's crCompareSection). Each
+    // block keeps its own section's label on `sectionLabel` (crBuildThead
+    // groups consecutive blocks by it into its own header row, same as
+    // the Excel export's section/lane/field header), while `label` is
+    // just the lane name — Plan / Actual / % (or ± for a ceiling).
     function planBlocks(section) {
-        const many = section.groups.length > 1;
-        const head = (label, tail) => (many ? `${label} · ${tail}` : tail);
         const yearPlan = t("creditreport.plan.yearPlan");
         const groups = section.groups.flatMap(g => {
             const runs = [];
@@ -67,9 +69,9 @@ window.CRTable = (() => {
             const ratioHead = kinds.size > 1 ? "% / ±" : kinds.has("diff") ? "±" : "%";
             const first = fields => fields.map((f, i) => (i ? f : { ...f, grpStart: true }));
             return [
-                { ...g, pvBlock: "plan", label: head(g.label, t("creditreport.plan.plan")), fields: first(plans) },
-                { ...g, pvBlock: "cur", label: head(g.label, t("creditreport.plan.actual")), fields: first(actuals) },
-                { ...g, pvBlock: "ratio", label: head(g.label, ratioHead), fields: first(ratios) }
+                { ...g, pvBlock: "plan", sectionLabel: g.label, label: t("creditreport.plan.plan"), fields: first(plans) },
+                { ...g, pvBlock: "cur", sectionLabel: g.label, label: t("creditreport.plan.actual"), fields: first(actuals) },
+                { ...g, pvBlock: "ratio", sectionLabel: g.label, label: ratioHead, fields: first(ratios) }
             ];
         });
         return { ...section, groups };
@@ -113,5 +115,28 @@ window.CRTable = (() => {
         return extra ? html.replace('<td class="', `<td class="${extra}`) : html;
     }
 
-    return { parPill, bar, compact, exact, edgeHint, planBlocks, planCell, blockClasses };
+    // ---- Section-name header row (Plan vs Actual / Last Month) ----
+    // Shared by every Daily Monitoring report's own crBuildThead /
+    // crBuildHistoryThead: when the active section's groups carry a
+    // sectionLabel (planBlocks / CRLastMonth.expand), a 3rd header row
+    // names the section each run of lane blocks belongs to — e.g.
+    // "Outstanding" over "Plan" / "Actual" / "%", same shape as the
+    // Excel export's section/lane/field header. No sectionLabel anywhere
+    // (plain Actual-only view) keeps today's plain 2-row header.
+    function headRowCount(section) {
+        return section.groups.some(g => g.sectionLabel) ? 3 : 2;
+    }
+    function sectionLabelRow(section) {
+        if (!section.groups.some(g => g.sectionLabel)) return "";
+        const runs = [];
+        section.groups.forEach(g => {
+            const label = g.sectionLabel || g.label;
+            const last = runs[runs.length - 1];
+            if (last && last.label === label) last.span += g.fields.length;
+            else runs.push({ label, span: g.fields.length });
+        });
+        return runs.map(r => `<th colspan="${r.span}" class="cr-section-head">${r.label}</th>`).join("");
+    }
+
+    return { parPill, bar, compact, exact, edgeHint, planBlocks, planCell, blockClasses, headRowCount, sectionLabelRow };
 })();

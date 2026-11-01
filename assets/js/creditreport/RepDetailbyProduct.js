@@ -240,9 +240,13 @@ function crBuildThead(section) {
         g.fields.map(f => `<th class="${crFieldClass(f)}${f.lm ? ` cr-lm-${f.lm}` : ""}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
     ).join("");
 
+    const rows = CRTable.headRowCount(section);
+    const sectionRow = CRTable.sectionLabelRow(section);
+    const nameCell = `<th rowspan="${rows}" class="cr-name-col${sortCls("_name")}" data-sort-key="_name" data-sort-type="text">${t("creditreport.compare.dimProduct")}</th>`;
     return `
+      ${sectionRow ? `<tr class="cr-section-row">${nameCell}${sectionRow}</tr>` : ""}
       <tr class="cr-group-row">
-        <th rowspan="2" class="cr-name-col${sortCls("_name")}" data-sort-key="_name" data-sort-type="text">${t("creditreport.compare.dimProduct")}</th>
+        ${sectionRow ? "" : nameCell}
         ${groupCells}
       </tr>
       <tr class="cr-sub-row">${subCells}</tr>`;
@@ -393,10 +397,15 @@ function crBuildHistoryThead(section) {
     const subCells = section.groups.map(g =>
         g.fields.map(f => `<th class="${crFieldClass(f)}">${f.label}</th>`).join("")
     ).join("");
+    const rows = CRTable.headRowCount(section);
+    const sectionRow = CRTable.sectionLabelRow(section);
+    const leadCells = `
+        <th rowspan="${rows}" class="cr-name-col">Product</th>
+        <th rowspan="${rows}" class="cr-date-col">Date</th>`;
     return `
+      ${sectionRow ? `<tr class="cr-section-row">${leadCells}${sectionRow}</tr>` : ""}
       <tr class="cr-group-row">
-        <th rowspan="2" class="cr-name-col">Product</th>
-        <th rowspan="2" class="cr-date-col">Date</th>
+        ${sectionRow ? "" : leadCells}
         ${groupCells}
       </tr>
       <tr class="cr-sub-row">${subCells}</tr>`;

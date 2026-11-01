@@ -274,11 +274,16 @@ function crBuildThead(section) {
         g.fields.map(f => `<th class="${crFieldClass(f)}${f.lm ? ` cr-lm-${f.lm}` : ""}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
     ).join("");
 
+    const rows = CRTable.headRowCount(section);
+    const sectionRow = CRTable.sectionLabelRow(section);
+    const leadCells = `
+        <th rowspan="${rows}" class="cr-name-col${sortCls("_name")}" data-sort-key="_name" data-sort-type="text">${t("creditreport.compare.dimLocation")}</th>
+        <th rowspan="${rows}" class="cr-col-num${sortCls("families")}" data-sort-key="families" data-sort-type="number">${t("creditreport.byLocation.colFamily")}</th>
+        <th rowspan="${rows}" class="cr-col-pct${sortCls("segmentationPct")}" data-sort-key="segmentationPct" data-sort-type="number">${t("creditreport.byLocation.colSegmentationPct")}</th>`;
     return `
+      ${sectionRow ? `<tr class="cr-section-row">${leadCells}${sectionRow}</tr>` : ""}
       <tr class="cr-group-row">
-        <th rowspan="2" class="cr-name-col${sortCls("_name")}" data-sort-key="_name" data-sort-type="text">${t("creditreport.compare.dimLocation")}</th>
-        <th rowspan="2" class="cr-col-num${sortCls("families")}" data-sort-key="families" data-sort-type="number">${t("creditreport.byLocation.colFamily")}</th>
-        <th rowspan="2" class="cr-col-pct${sortCls("segmentationPct")}" data-sort-key="segmentationPct" data-sort-type="number">${t("creditreport.byLocation.colSegmentationPct")}</th>
+        ${sectionRow ? "" : leadCells}
         ${groupCells}
       </tr>
       <tr class="cr-sub-row">${subCells}</tr>`;
@@ -476,12 +481,17 @@ function crBuildHistoryThead(section) {
     const subCells = section.groups.map(g =>
         g.fields.map(f => `<th class="${crFieldClass(f)}">${f.label}</th>`).join("")
     ).join("");
+    const rows = CRTable.headRowCount(section);
+    const sectionRow = CRTable.sectionLabelRow(section);
+    const leadCells = `
+        <th rowspan="${rows}" class="cr-name-col">Location</th>
+        <th rowspan="${rows}" class="cr-date-col">Date</th>
+        <th rowspan="${rows}" class="cr-col-num"># Family</th>
+        <th rowspan="${rows}" class="cr-col-pct">Segmentation%</th>`;
     return `
+      ${sectionRow ? `<tr class="cr-section-row">${leadCells}${sectionRow}</tr>` : ""}
       <tr class="cr-group-row">
-        <th rowspan="2" class="cr-name-col">Location</th>
-        <th rowspan="2" class="cr-date-col">Date</th>
-        <th rowspan="2" class="cr-col-num"># Family</th>
-        <th rowspan="2" class="cr-col-pct">Segmentation%</th>
+        ${sectionRow ? "" : leadCells}
         ${groupCells}
       </tr>
       <tr class="cr-sub-row">${subCells}</tr>`;
