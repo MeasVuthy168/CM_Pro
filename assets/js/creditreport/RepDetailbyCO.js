@@ -1377,8 +1377,17 @@ async function crRunReport() {
             t("creditreport.detail.dateRange", { from: crFmtDateDMY(data.fromDate), to: crFmtDateDMY(data.toDate) });
         document.getElementById("crWoPeriod").textContent =
             t("creditreport.detail.dateRange", { from: crFmtDateDMY(data.woFromDate), to: crFmtDateDMY(data.woToDate) });
-        document.getElementById("crOfficerCount").textContent =
-            `${(data.items || []).length}`;
+        // Active (not Stop Disburse) officers in this Branch filter,
+        // split by their own real position — same source and matching
+        // crTeamMatches() uses for the Team filter, so this headline
+        // count and picking "Credit Officer"/"FSRO" always agree.
+        const activePositions = (data.items || [])
+            .filter(it => String(it.branch || "").trim().toLowerCase() !== "stop disburse")
+            .map(it => crOfficerPositions.get(String(it.id)) || "");
+        document.getElementById("crOfficerCount").textContent = t("creditreport.byCO.officersCountSplit", {
+            co: activePositions.filter(p => p === "credit officer").length,
+            fsro: activePositions.filter(p => p === "financial service relation officer").length
+        });
 
         if (!data.items || !data.items.length) {
             crShowEmpty(t("creditreport.byCO.noOfficersMatch"));
