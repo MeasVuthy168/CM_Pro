@@ -101,10 +101,28 @@
             return String(v);
         };
     }
+    // Same wrapper as safeNum/safeText, for a column's `style` getter: a
+    // thrown error (or no style to give) just means no colour, never a
+    // failed cell.
+    function safeStyle(get) {
+        return r => { try { return get(r) || null; } catch (e) { return null; } };
+    }
     const textCol = (label, get) => ({ label, type: "text", value: safeText(get) });
     const intCol = (label, get) => ({ label, type: "int", numFmt: "#,##0", value: safeNum(get) });
     const moneyCol = (label, get) => ({ label, type: "num", numFmt: "#,##0", value: safeNum(get) });
     const pctCol = (label, get) => ({ label, type: "num", numFmt: "0.00%", value: safeNum(get) });
+
+    // Same fields CRLastMonth.cell() (cr-last-month.js) treats as "risk"
+    // figures, where a (+/-) going DOWN is the good direction — kept as
+    // its own copy here since cr-last-month.js doesn't export it and
+    // this file builds plain Excel columns, not live table cells.
+    const RISK = /^(parT24|parT24Area|parT24ByClass|parT24AreaByClass|nbcOverdue|nbcOverdueArea|writeOff\.(balanceWO|wo)\.|writeOffOwn\.(balanceWO|wo)\.|writeOffArea\.(balanceWO|wo)\.)/;
+    // Same green/amber/red the on-screen table uses for Achieved % / the
+    // (+/-) columns (cr-table.js's planCell, cr-last-month.js's cell).
+    const GOOD = "#0A7A35", WARN = "#B26A00", BAD = "#C0392B";
+    // The Total row's own fill, same convention cr-export.js's own
+    // single-page Excel export already uses for it.
+    const TOTAL_FILL = "#FFF4C2";
 
     // A Daily-Monitoring-style field: {key, label, money|pct, planKey?,
     // ceiling?} against an item object (crSections()'s own field shape,
@@ -121,12 +139,13 @@
     }
 
     // One section's fields, "like in app" (the on-screen report's own
-    // Plan-vs-Actual table: a lane per comparison, that lane's own
-    // fields underneath it — crBuildThead()/crPlanFields() laid out the
-    // same way, just always-on rather than a mode to switch between).
-    // Lane order: Plan, Actual, Achieved (or ± for a ceiling figure —
-    // PAR %/NPL %, where the plan is a maximum), Last Month — Plan and
-    // Achieved only for the fields in this section that have a
+    // Plan-vs-Actual and Last Month tables: a lane per comparison, that
+    // lane's own fields underneath it — crBuildThead()/crPlanFields()/
+    // CRLastMonth.expand() laid out the same way, just always-on rather
+    // than a mode to switch between). Lane order: Plan, Last Month
+    // (its own value), Actual, Achieved (or ± for a ceiling figure —
+    // PAR %/NPL %, where the plan is a maximum), (+/-) vs Last Month —
+    // Plan and Achieved only for the fields in this section that have a
     // planKey (not every field does; Product/Location sections have
     // none). Comparison data rides on the row itself (`row.lastMonth`,
     // `row.planVs`), attached once per sheet in sheetDailyMonitoring()
@@ -137,6 +156,7 @@
         const planFields = fields.filter(f => f.planKey);
         const anyCeiling = planFields.some(f => f.ceiling);
 
+        // ---- Plan ----
         if (planFields.length) {
             const planCols = planFields.map(f => {
                 const kindCol = f.ceiling ? pctCol : (f.money ? moneyCol : intCol);
@@ -146,35 +166,70 @@
             lanes.push({ label: t(anyCeiling ? "creditreport.plan.planMax" : "creditreport.plan.plan"), span: planCols.length });
         }
 
-        // Actual is the figure that matters most on this sheet — tinted
-        // gold in its header and data cells, same highlight the on-screen
-        // table gives its own Actual / Last-Month "now" lane (cr-pv-cur /
-        // cr-lm-cur in cr-table.css), so it stands out from Plan /
-        // Achieved / Last Month at a glance.
-        const actualCols = fields.map(f => ({ ...fieldCol(f), highlight: true }));
-        cols.push(...actualCols);
-        lanes.push({ label: t("creditreport.plan.actual"), span: actualCols.length, highlight: true });
+        // ---- Last Month (its own value) — a light-blue tint, same as
+        // the on-screen table's own cr-lm-value, so it reads as "the
+        // other" comparison next to Actual's gold. ----
+        const lmCols = fields.map(f => {
+            const kindCol = f.pct ? pctCol : f.money ? moneyCol : intCol;
+            return { ...kindCol(f.label, r => getPath(r.lastMonth, f.key)), tone: "past" };
+        });
+        cols.push(...lmCols);
+        lanes.push({ label: t("creditreport.lastMonth.col"), span: lmCols.length, tone: "past" });
 
+        // ---- Actual — the figure that matters most on this sheet,
+        // tinted gold in its header and data cells, same highlight the
+        // on-screen table gives its own Actual / Last-Month "now" lane
+        // (cr-pv-cur / cr-lm-cur in cr-table.css). ----
+        const actualCols = fields.map(f => ({ ...fieldCol(f), tone: "cur" }));
+        cols.push(...actualCols);
+        lanes.push({ label: t("creditreport.plan.actual"), span: actualCols.length, tone: "cur" });
+
+        // ---- Achieved (vs Plan) — green / amber / red, same
+        // thresholds as the on-screen table's own planCell(). ----
         if (planFields.length) {
-            const achCols = planFields.map(f => f.ceiling
-                ? pctCol(f.label, r => {
-                    const p = ((r.planVs || {})[f.planKey] || {}).plan, a = getPath(r, f.key);
-                    return (p === null || p === undefined || a === null || a === undefined) ? null : a - p;
-                })
-                : pctCol(f.label, r => {
-                    const m = (r.planVs || {})[f.planKey] || {};
-                    return (m.plan && m.actual !== null && m.actual !== undefined) ? m.actual / m.plan : null;
-                }));
+            const achCols = planFields.map(f => {
+                const raw = f.ceiling
+                    ? r => {
+                        const p = ((r.planVs || {})[f.planKey] || {}).plan, a = getPath(r, f.key);
+                        return (p === null || p === undefined || a === null || a === undefined) ? null : a - p;
+                    }
+                    : r => {
+                        const m = (r.planVs || {})[f.planKey] || {};
+                        return (m.plan && m.actual !== null && m.actual !== undefined) ? m.actual / m.plan : null;
+                    };
+                const style = f.ceiling
+                    ? safeStyle(r => { const v = raw(r); return v === null ? null : { color: v < 0 ? GOOD : BAD }; })
+                    : safeStyle(r => {
+                        const v = raw(r);
+                        if (v === null) return null;
+                        const redBelow = String(f.planKey).startsWith("disb") ? 0.7 : 0.8;
+                        return { color: v >= 1 ? GOOD : v >= redBelow ? WARN : BAD };
+                    });
+                return { ...pctCol(f.label, raw), style };
+            });
             cols.push(...achCols);
             lanes.push({ label: anyCeiling ? "±" : t("creditreport.plan.ach"), span: achCols.length });
         }
 
-        const lmCols = fields.map(f => {
+        // ---- (+/-) vs Last Month — green when it moved the good way,
+        // red the other, same risk-aware direction as the on-screen
+        // table's own CRLastMonth.cell(). ----
+        const diffCols = fields.map(f => {
+            const raw = r => {
+                const a = getPath(r, f.key), lm = getPath(r.lastMonth, f.key);
+                return (a === null || a === undefined || lm === null || lm === undefined) ? null : a - lm;
+            };
             const kindCol = f.pct ? pctCol : f.money ? moneyCol : intCol;
-            return kindCol(f.label, r => getPath(r.lastMonth, f.key));
+            const style = safeStyle(r => {
+                const v = raw(r);
+                if (!v) return null;
+                const good = RISK.test(f.key) ? v < 0 : v > 0;
+                return { color: good ? GOOD : BAD };
+            });
+            return { ...kindCol(f.label, raw), style };
         });
-        cols.push(...lmCols);
-        lanes.push({ label: t("creditreport.lastMonth.col"), span: lmCols.length });
+        cols.push(...diffCols);
+        lanes.push({ label: "(+/-)", span: diffCols.length });
 
         return { cols, lanes };
     }
@@ -182,8 +237,12 @@
     // Identity column + groups of fields -> {cols, groups} for
     // ArrExport (a leading, ungrouped identity column, then each
     // section under its own spanning header, each with its own lane
-    // row — Plan/Actual/Achieved/Last Month — underneath).
-    function groupedCols(identityLabel, identityGet, groups) {
+    // row — Plan/Last Month/Actual/Achieved/(+/-) — underneath).
+    // isTotal(row), where given, gold-fills and bolds the Total row
+    // across every column, same convention cr-export.js's single-page
+    // export already uses — a column's own conditional colour (Achieved
+    // / (+/-)) still shows through on top of it.
+    function groupedCols(identityLabel, identityGet, groups, isTotal) {
         const cols = [textCol(identityLabel, identityGet)];
         const colGroups = [{ span: 1 }];
         groups.forEach(g => {
@@ -191,7 +250,15 @@
             cols.push(...gcols);
             colGroups.push({ label: g.label, span: gcols.length, groups: lanes });
         });
-        return { cols, groups: colGroups };
+        const withTotal = isTotal ? cols.map(c => ({
+            ...c,
+            style: (row, i) => {
+                const own = c.style ? c.style(row, i) : null;
+                let total; try { total = isTotal(row); } catch (e) { total = false; }
+                return total ? { fill: TOTAL_FILL, bold: true, color: own && own.color } : own;
+            }
+        })) : cols;
+        return { cols: withTotal, groups: colGroups };
     }
 
     // planKey set only on the "total" (PAR %) and "nonPerformingLoan"
@@ -370,7 +437,8 @@
         const { cols, groups: colGroups } = groupedCols(
             t("creditreport.detail.branch"),
             r => r[identityKey] || (otherLabel || "—"),
-            groups
+            groups,
+            r => r[identityKey] === totalLabel
         );
         const info = [
             d.toDate ? t("creditreport.tblhead.asOf", { date: dmy(d.toDate) }) : "",
