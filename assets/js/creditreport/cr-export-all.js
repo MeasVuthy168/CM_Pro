@@ -9,6 +9,12 @@
 // own default view are all overridden here for full detail, per each
 // page's own JS (cpExport/rcExport/crkExport/nplExport…). Early
 // Warning is left out (owner request — its own export is already big).
+// The 4 Daily Monitoring sheets (Branch/Officer/Product/Location) are
+// titled and dated like the report itself and carry last month (and,
+// for Branch/Officer, the Monthly Plan) merged into every section as
+// extra columns, "like in app" (owner request 01/11/2026) — Arrear T24
+// is left out of them, a live-only figure that doesn't belong in a
+// downloaded file.
 //
 // Admin and user only (owner, 31/10/2026) — same gate as Credit
 // Portfolio Intelligence (crHubIsAdmin / crHubAllowed in
@@ -100,9 +106,13 @@
     const moneyCol = (label, get) => ({ label, type: "num", numFmt: "#,##0", value: safeNum(get) });
     const pctCol = (label, get) => ({ label, type: "num", numFmt: "0.00%", value: safeNum(get) });
 
-    // A Daily-Monitoring-style field: {key, label, money|pct|optional}
-    // against an item object (crSections()'s own field shape, reused
-    // as-is from each report page rather than redefined).
+    // A Daily-Monitoring-style field: {key, label, money|pct, planKey?,
+    // ceiling?} against an item object (crSections()'s own field shape,
+    // reused as-is from each report page rather than redefined).
+    // planKey, where set, names the matching Monthly Plan metric
+    // (ci-plan.js's own METRICS keys); ceiling marks a figure whose
+    // plan is a maximum (PAR %/NPL %), compared as actual-minus-plan
+    // rather than an achieved %.
     function fieldCol(f) {
         const get = r => getPath(r, f.key);
         if (f.pct) return pctCol(f.label, get);
@@ -110,24 +120,61 @@
         return intCol(f.label, get);
     }
 
+    // One field, "like in app": Actual, then Last Month right beside it
+    // (every field — the saved day has the same shape as the live one),
+    // then — only for fields with a planKey — Plan and Achieved (or,
+    // for a ceiling figure, Plan and the ± against it). Comparison data
+    // rides on the row itself (`row.lastMonth`, `row.planVs`), attached
+    // once per sheet in sheetDailyMonitoring() below, not refetched per
+    // field.
+    function comparisonFieldCols(f) {
+        const kindCol = f.pct ? pctCol : f.money ? moneyCol : intCol;
+        const cols = [
+            fieldCol(f),
+            kindCol(`${f.label} (${t("creditreport.lastMonth.col")})`, r => getPath(r.lastMonth, f.key))
+        ];
+        if (f.planKey) {
+            const plan = r => ((r.planVs || {})[f.planKey] || {}).plan;
+            if (f.ceiling) {
+                cols.push(pctCol(`${f.label} (${t("creditreport.plan.planMax")})`, plan));
+                cols.push(pctCol(`${f.label} (±)`, r => {
+                    const p = plan(r), a = getPath(r, f.key);
+                    return (p === null || p === undefined || a === null || a === undefined) ? null : a - p;
+                }));
+            } else {
+                cols.push(kindCol(`${f.label} (${t("creditreport.plan.plan")})`, plan));
+                cols.push(pctCol(`${f.label} (${t("creditreport.plan.ach")})`, r => {
+                    const m = (r.planVs || {})[f.planKey] || {};
+                    return (m.plan && m.actual !== null && m.actual !== undefined) ? m.actual / m.plan : null;
+                }));
+            }
+        }
+        return cols;
+    }
+
     // Identity column + groups of fields -> {cols, groups} for
     // ArrExport (a leading, ungrouped identity column, then each
-    // group's fields under its own spanning header).
+    // group's fields — each expanded into its comparison columns —
+    // under its own spanning header).
     function groupedCols(identityLabel, identityGet, groups) {
         const cols = [textCol(identityLabel, identityGet)];
         const colGroups = [{ span: 1 }];
         groups.forEach(g => {
-            g.fields.forEach(f => cols.push(fieldCol(f)));
-            colGroups.push({ label: g.label, span: g.fields.length });
+            let span = 0;
+            g.fields.forEach(f => { const fcols = comparisonFieldCols(f); cols.push(...fcols); span += fcols.length; });
+            colGroups.push({ label: g.label, span });
         });
         return { cols, groups: colGroups };
     }
 
-    function crGroupPct(prefix, label) {
+    // planKey set only on the "total" (PAR %) and "nonPerformingLoan"
+    // (NPL %) rows, and only when `withPlan` (Branch and Officer's Own
+    // figures; Product, Location and Officer's Area have no plan).
+    function crGroupPct(prefix, label, planKey) {
         return { label, fields: [
             { key: `${prefix}.count`, label: "#" },
             { key: `${prefix}.value`, label: t("creditreport.detail.colValue") },
-            { key: `${prefix}.parPct`, label: t("creditreport.detail.colParPct"), pct: true }
+            { key: `${prefix}.parPct`, label: t("creditreport.detail.colParPct"), pct: true, planKey, ceiling: true }
         ] };
     }
 
@@ -136,9 +183,13 @@
     // the same /api/creditreport/{summary,byco,byproduct,bylocation}
     // endpoints and column layout as RepDetailby{Branch,CO,Product,
     // Location}.js's own crSections(), fetched directly instead of read
-    // off that page's on-screen table.
+    // off that page's on-screen table. Arrear T24 ("Balance Loan at
+    // Risk") is left out — owner: it only ever reflects whatever the
+    // live T24 feed showed, never a true historical or planned figure,
+    // so it doesn't belong in a downloaded file.
     // ========================================
-    function nbcOverdueGroups(prefix, totalKey) {
+    function nbcOverdueGroups(prefix, totalKey, withPlan) {
+        const pk = key => (withPlan ? key : undefined);
         return [
             crGroupPct(`${prefix}.minor`, t("creditreport.detail.classMinorDefault")),
             crGroupPct(`${prefix}.specialMention`, t("creditreport.detail.classSpecialMention")),
@@ -146,8 +197,8 @@
             crGroupPct(`${prefix}.doubtful`, t("creditreport.detail.classDoubtful")),
             crGroupPct(`${prefix}.loss`, t("creditreport.detail.classLoss")),
             crGroupPct(`${prefix}.majorDefault`, t("creditreport.detail.classMajorDefault")),
-            crGroupPct(`${prefix}.nonPerformingLoan`, t("creditreport.detail.classNonPerformingLoan")),
-            crGroupPct(`${prefix}.${totalKey}`, t("creditreport.detail.classTotalNbcOverdue"))
+            crGroupPct(`${prefix}.nonPerformingLoan`, t("creditreport.detail.classNonPerformingLoan"), pk("nplPct")),
+            crGroupPct(`${prefix}.${totalKey}`, t("creditreport.detail.classTotalNbcOverdue"), pk("nbcOverduePct"))
         ];
     }
     function writeOffGroups(prefix) {
@@ -171,23 +222,18 @@
     function branchGroups() {
         return [
             { label: t("creditreport.detail.sectionOutstanding"), fields: [
-                { key: "loanOutstanding.loan", label: t("creditreport.detail.colLoanHash") },
-                { key: "loanOutstanding.client", label: t("creditreport.detail.colClient") },
-                { key: "loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
+                { key: "loanOutstanding.loan", label: t("creditreport.detail.colLoanHash"), planKey: "osCount" },
+                { key: "loanOutstanding.client", label: t("creditreport.detail.colClient"), planKey: "osClients" },
+                { key: "loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true, planKey: "osAmount" }
             ] },
             { label: t("creditreport.detail.sectionKhr"), fields: [{ key: "osMix.khr", label: t("creditreport.detail.colValue"), money: true }] },
             { label: t("creditreport.detail.sectionSmall"), fields: [{ key: "osMix.small", label: t("creditreport.detail.colValue"), money: true }] },
             { label: t("creditreport.detail.sectionDisburse"), fields: [
-                { key: "loanDisburse.loan", label: t("creditreport.detail.colLoanHash") },
-                { key: "loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
+                { key: "loanDisburse.loan", label: t("creditreport.detail.colLoanHash"), planKey: "disbCount" },
+                { key: "loanDisburse.value", label: t("creditreport.detail.colValue"), money: true, planKey: "disbAmount" }
             ] },
             { label: t("creditreport.detail.sectionLos"), fields: [{ key: "loanLos.loan", label: t("creditreport.detail.colLoanHash") }] },
-            { label: t("creditreport.detail.sectionT24"), fields: [
-                { key: "parT24.loan", label: t("creditreport.detail.colLoanHash") },
-                { key: "parT24.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "parT24.parPct", label: t("creditreport.detail.colParPct"), pct: true }
-            ] },
-            ...nbcOverdueGroups("nbcOverdue", "total"),
+            ...nbcOverdueGroups("nbcOverdue", "total", true),
             ...writeOffGroups("writeOff")
         ];
     }
@@ -202,12 +248,7 @@
                 { key: "loanDisburse.loan", label: t("creditreport.detail.colLoanHash") },
                 { key: "loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
             ] },
-            { label: t("creditreport.detail.sectionT24"), fields: [
-                { key: "parT24.loan", label: t("creditreport.detail.colLoanHash") },
-                { key: "parT24.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "parT24.parPct", label: t("creditreport.detail.colParPct"), pct: true }
-            ] },
-            ...nbcOverdueGroups("nbcOverdue", "total"),
+            ...nbcOverdueGroups("nbcOverdue", "total", false),
             ...writeOffGroups("writeOff")
         ];
     }
@@ -219,30 +260,20 @@
                 { key: "loanOutstandingArea.value", label: t("creditreport.detail.colValue"), money: true }
             ] },
             { label: t("creditreport.detail.sectionOutstanding") + " — Own", fields: [
-                { key: "loanOutstanding.loan", label: t("creditreport.detail.colLoanHash") },
-                { key: "loanOutstanding.client", label: t("creditreport.detail.colClient") },
-                { key: "loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true }
+                { key: "loanOutstanding.loan", label: t("creditreport.detail.colLoanHash"), planKey: "osCount" },
+                { key: "loanOutstanding.client", label: t("creditreport.detail.colClient"), planKey: "osClients" },
+                { key: "loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true, planKey: "osAmount" }
             ] },
             { label: t("creditreport.detail.sectionDisburse") + " — Area", fields: [
                 { key: "loanDisburseArea.loan", label: t("creditreport.detail.colLoanHash") },
                 { key: "loanDisburseArea.value", label: t("creditreport.detail.colValue"), money: true }
             ] },
             { label: t("creditreport.detail.sectionDisburse") + " — Own", fields: [
-                { key: "loanDisburse.loan", label: t("creditreport.detail.colLoanHash") },
-                { key: "loanDisburse.value", label: t("creditreport.detail.colValue"), money: true }
+                { key: "loanDisburse.loan", label: t("creditreport.detail.colLoanHash"), planKey: "disbCount" },
+                { key: "loanDisburse.value", label: t("creditreport.detail.colValue"), money: true, planKey: "disbAmount" }
             ] },
-            { label: t("creditreport.detail.sectionT24") + " — Area", fields: [
-                { key: "parT24Area.loan", label: t("creditreport.detail.colLoanHash") },
-                { key: "parT24Area.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "parT24Area.parPct", label: t("creditreport.detail.colParPct"), pct: true }
-            ] },
-            { label: t("creditreport.detail.sectionT24") + " — Own", fields: [
-                { key: "parT24.loan", label: t("creditreport.detail.colLoanHash") },
-                { key: "parT24.value", label: t("creditreport.detail.colValue"), money: true },
-                { key: "parT24.parPct", label: t("creditreport.detail.colParPct"), pct: true }
-            ] },
-            ...nbcOverdueGroups("nbcOverdueArea", "total"),
-            ...nbcOverdueGroups("nbcOverdue", "totalOwn"),
+            ...nbcOverdueGroups("nbcOverdueArea", "total", false),
+            ...nbcOverdueGroups("nbcOverdue", "totalOwn", true),
             ...writeOffGroups("writeOffArea"),
             ...writeOffGroups("writeOffOwn")
         ];
@@ -265,66 +296,63 @@
         }
     }
 
-    // One Daily Monitoring report: the live sheet plus, where a saved
-    // day exists, a sibling "_LM" sheet of last month's same figures —
-    // same column layout both times, reused as-is.
-    async function sheetDailyMonitoring(path, historyPath, name, title, identityKey, groups, otherLabel) {
+    const dmy = iso => { const [y, m, d] = String(iso || "").split("-"); return y && m && d ? `${d}-${m}-${y}` : ""; };
+
+    // One Daily Monitoring report, "like in app": a single sheet,
+    // titled and dated the way the report's own page is, with last
+    // month (and, for Branch/Officer, the Monthly Plan) merged into
+    // every section as extra columns rather than separate sheets —
+    // owner request 01/11/2026.
+    //   planPath        /plan-vs-actual or /officer-plan-vs-actual, or
+    //                    null for Product/Location (no plan exists)
+    //   planMatchField   the live row's own field to match the plan
+    //                    response's rows by — "branch" for Branch,
+    //                    "id" for Officer (officer-plan-vs-actual's own
+    //                    rows name their match field "branch" too, but
+    //                    it holds the officer id there — ci-plan.js's
+    //                    quirk, not this file's)
+    async function sheetDailyMonitoring(opts) {
+        const { path, historyPath, planPath, planMatchField, name, title, identityKey, groups, otherLabel } = opts;
         const d = await get(path, {});
         if (!d || !Array.isArray(d.items)) return [];
-        const toTotalRow = (items, total) => (total && typeof total === "object" ? [...items, { ...total, [identityKey]: t("common.total") }] : items);
+        const totalLabel = t("common.total");
+        const toRows = (items, total) => (total && typeof total === "object" ? [...items, { ...total, [identityKey]: totalLabel }] : items);
+        let rows = toRows(d.items, d.total);
+
+        const lm = await lastMonthDay(historyPath, d.toDate);
+        if (lm && lm.day) {
+            const lmByKey = new Map(toRows(lm.day.items || [], lm.day.total).map(r => [String(r[identityKey]), r]));
+            rows = rows.map(r => ({ ...r, lastMonth: lmByKey.get(String(r[identityKey])) || null }));
+        }
+
+        let planInfo = null;
+        if (planPath) {
+            const pd = await get(planPath, {});
+            if (pd && Array.isArray(pd.rows)) {
+                planInfo = pd;
+                const byMatch = new Map(pd.rows.filter(r => r && r.branch !== undefined).map(r => [String(r.branch), r.metrics]));
+                const totalMetrics = pd.total && pd.total.metrics ? pd.total.metrics : null;
+                rows = rows.map(r => {
+                    if (r[identityKey] === totalLabel) return { ...r, planVs: totalMetrics };
+                    const key = r[planMatchField];
+                    return { ...r, planVs: key !== undefined ? byMatch.get(String(key)) || null : null };
+                });
+            }
+        }
+
         const { cols, groups: colGroups } = groupedCols(
             t("creditreport.detail.branch"),
             r => r[identityKey] || (otherLabel || "—"),
             groups
         );
-        const sheets = [{ name, title, info: [exportedInfo()], cols, groups: colGroups, rows: toTotalRow(d.items, d.total), freezeCols: 1 }];
-
-        const info = await lastMonthDay(historyPath, d.toDate);
-        if (info && Array.isArray(info.day.items)) {
-            sheets.push({
-                name: `${name}_LM`.slice(0, 31),
-                title: `${title} — ${t("creditreport.lastMonth.col")} (${info.date})`,
-                info: [exportedInfo()],
-                cols, groups: colGroups, rows: toTotalRow(info.day.items, info.day.total), freezeCols: 1
-            });
-        }
-        return sheets;
+        const info = [
+            d.toDate ? t("creditreport.tblhead.asOf", { date: dmy(d.toDate) }) : "",
+            lm && lm.date ? `${t("creditreport.lastMonth.col")}: ${dmy(lm.date)}` : "",
+            planInfo && planInfo.month ? t("creditreport.plan.noteMonth", { month: planInfo.month.split("-").reverse().join("-"), from: dmy(planInfo.fromDate), to: dmy(planInfo.toDate), done: planInfo.daysDone, days: planInfo.daysInMonth }) : "",
+            exportedInfo()
+        ].filter(Boolean);
+        return [{ name, title, info, cols, groups: colGroups, rows, freezeCols: 1 }];
     }
-
-    // ========================================
-    // Plan vs Actual — GET /api/creditreport/plan-vs-actual (branch) and
-    // /officer-plan-vs-actual (officer), the same 8 metrics as the
-    // Daily Monitoring reports' own "Comparison: Plan" (ci-plan.js's
-    // METRICS). Branch and officer only — Product and Location have no
-    // Monthly Plan (see MeetingReport's own note, "Plans exist for
-    // branches and officers only"). Officer-plan-vs-actual's rows name
-    // their "branch" field the officer id, not a branch (ci-plan.js's
-    // own quirk) — the identity column is labelled accordingly.
-    // ========================================
-    const PLAN_METRICS = [
-        ["osAmount", t("creditreport.plan.m.osAmount"), "money"], ["osCount", t("creditreport.plan.m.osCount"), "int"], ["osClients", t("creditreport.plan.m.osClients"), "int"],
-        ["disbAmount", t("creditreport.plan.m.disbAmount"), "money"], ["disbCount", t("creditreport.plan.m.disbCount"), "int"],
-        ["nbcOverduePct", t("creditreport.plan.m.parPct"), "pct"], ["nplPct", t("creditreport.plan.m.nplPct"), "pct"], ["woCollected", t("creditreport.plan.m.woCollected"), "money"]
-    ];
-    function planCols(identityLabel) {
-        const cols = [textCol(identityLabel, r => r.branch || "—")];
-        PLAN_METRICS.forEach(([key, label, kind]) => {
-            const colFn = kind === "pct" ? pctCol : kind === "money" ? moneyCol : intCol;
-            cols.push(colFn(`${label} — ${t("creditreport.plan.actual")}`, r => ((r.metrics || {})[key] || {}).actual));
-            cols.push(colFn(`${label} — ${t("creditreport.plan.plan")}`, r => ((r.metrics || {})[key] || {}).plan));
-        });
-        return cols;
-    }
-    async function sheetPlan(path, name, title, identityLabel) {
-        const d = await get(path, {});
-        if (!d || !Array.isArray(d.rows)) return null;
-        const rows = d.total && typeof d.total === "object" ? [...d.rows, { ...d.total, branch: t("common.total") }] : d.rows;
-        const info = [exportedInfo()];
-        if (d.month) info.unshift(t("creditreport.plan.noteMonth", { month: d.month.split("-").reverse().join("-"), from: d.fromDate, to: d.toDate, done: d.daysDone, days: d.daysInMonth }));
-        return { name: name.slice(0, 31), title, info, cols: planCols(identityLabel), rows, freezeCols: 1 };
-    }
-    const sheetPlanBranch = () => sheetPlan("/api/creditreport/plan-vs-actual", "DailyMonitoring_Branch_Plan", `${t("creditreport.hub.tileBranch")} — ${t("creditreport.plan.title")}`, t("creditreport.detail.branch"));
-    const sheetPlanOfficer = () => sheetPlan("/api/creditreport/officer-plan-vs-actual", "DailyMonitoring_Officer_Plan", `${t("creditreport.hub.tileOfficer")} — ${t("creditreport.plan.title")}`, t("creditreport.mr.officer"));
 
     // ========================================
     // 5: Customer Risk — GET /api/credit-intelligence/customers
@@ -612,13 +640,28 @@
     // in total; firing them all at once the way Snapshot All does its 4
     // would be unkind to the backend), one progress bar, one workbook.
     // ========================================
+    const dmTitle = tile => `${t("creditreport.hub.sectionDaily")} — ${t(tile)}`;
     const SHEET_JOBS = [
-        () => sheetDailyMonitoring("/api/creditreport/summary", "/api/creditreport/summary/history", "DailyMonitoring_Branch", t("creditreport.hub.tileBranch"), "branch", branchGroups()),
-        () => sheetDailyMonitoring("/api/creditreport/byco", "/api/creditreport/byco/history", "DailyMonitoring_Officer", t("creditreport.hub.tileOfficer"), "name", officerGroups()),
-        () => sheetDailyMonitoring("/api/creditreport/byproduct", "/api/creditreport/byproduct/history", "DailyMonitoring_Product", t("creditreport.hub.tileProduct"), "product", productLikeGroups()),
-        () => sheetDailyMonitoring("/api/creditreport/bylocation", "/api/creditreport/bylocation/history", "DailyMonitoring_Location", t("creditreport.hub.tileLocation"), "location", productLikeGroups(), t("creditreport.pi.otherAddress")),
-        sheetPlanBranch,
-        sheetPlanOfficer,
+        () => sheetDailyMonitoring({
+            path: "/api/creditreport/summary", historyPath: "/api/creditreport/summary/history",
+            planPath: "/api/creditreport/plan-vs-actual", planMatchField: "branch",
+            name: "DailyMonitoring_Branch", title: dmTitle("creditreport.hub.tileBranch"), identityKey: "branch", groups: branchGroups()
+        }),
+        () => sheetDailyMonitoring({
+            path: "/api/creditreport/byco", historyPath: "/api/creditreport/byco/history",
+            planPath: "/api/creditreport/officer-plan-vs-actual", planMatchField: "id",
+            name: "DailyMonitoring_Officer", title: dmTitle("creditreport.hub.tileOfficer"), identityKey: "name", groups: officerGroups()
+        }),
+        () => sheetDailyMonitoring({
+            path: "/api/creditreport/byproduct", historyPath: "/api/creditreport/byproduct/history",
+            planPath: null, planMatchField: null,
+            name: "DailyMonitoring_Product", title: dmTitle("creditreport.hub.tileProduct"), identityKey: "product", groups: productLikeGroups()
+        }),
+        () => sheetDailyMonitoring({
+            path: "/api/creditreport/bylocation", historyPath: "/api/creditreport/bylocation/history",
+            planPath: null, planMatchField: null,
+            name: "DailyMonitoring_Location", title: dmTitle("creditreport.hub.tileLocation"), identityKey: "location", groups: productLikeGroups(), otherLabel: t("creditreport.pi.otherAddress")
+        }),
         sheetCustomerRisk,
         sheetCustomerPrediction,
         sheetRootCause,
