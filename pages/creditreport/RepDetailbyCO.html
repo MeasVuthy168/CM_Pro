@@ -163,12 +163,19 @@ No Internet Connection
 </select>
 </div>
 
+<!-- Matched client-side against each officer's own real position (List
+     Officer, /api/creditofficer/list — see crLoadOfficerPositions() in
+     RepDetailbyCO.js), not the CreditOfficer sheet's own crude Team
+     column (held an officer's own name for anyone who wasn't FSRO, so
+     "Credit Officer" wrongly caught every other position too — owner
+     request 01/11/2026). Stop Disburse stays branch-based, unchanged. -->
 <div class="cr-select-row" id="crTeamRow">
 <label for="crTeam" class="cr-select-label" data-i18n="creditreport.byCO.team">Team</label>
 <select id="crTeam" class="cr-select">
 <option value="All Team" data-ms-all data-i18n="creditreport.byCO.allTeam">All Team</option>
 <option value="Credit Officer" data-i18n="creditreport.byCO.creditOfficer">Credit Officer</option>
 <option value="FSRO" data-i18n="creditreport.byCO.fsro">FSRO</option>
+<option value="Stop Disburse" data-i18n="creditreport.byCO.stopDisburse">Stop Disburse</option>
 </select>
 </div>
 
@@ -250,20 +257,6 @@ No Internet Connection
 <option value="" data-i18n="creditreport.detail.all">All</option>
 <option value="Digital Products" data-i18n="creditreport.detail.digitalProducts">Digital Products</option>
 <option value="Non-Digital Products" data-i18n="creditreport.detail.nonDigitalProducts">Non-Digital Products</option>
-</select>
-</div>
-
-<!-- Disburse-related sections only (Loan Disburse / KHR / ≤$50,000 /
-     LOS, each Area or Own — see crUpdateClassVisibility()): which
-     officer rows show, by their own branch being the "Stop Disburse"
-     pseudo-branch or not (same figure as Portfolio Intelligence's
-     stopDisburseExcluded) — a local display pick, no refetch. -->
-<div class="cr-select-row" id="crOfficerStatusRow" style="display:none;">
-<label for="crOfficerStatus" class="cr-select-label" data-i18n="creditreport.byCO.officerStatus">Officer Status</label>
-<select id="crOfficerStatus" class="cr-select">
-<option value="" data-i18n="creditreport.detail.all">All</option>
-<option value="active" data-i18n="creditreport.byCO.officerStatusActive">Active Officer</option>
-<option value="stop" data-i18n="creditreport.byCO.officerStatusStop">Stop Disburse</option>
 </select>
 </div>
 
