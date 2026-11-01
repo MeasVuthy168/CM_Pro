@@ -639,7 +639,7 @@ function crBuildThead(section) {
         </th>`;
 
     return `
-      ${sectionRow ? `<tr class="cr-section-row">${branchCell}${sectionRow}</tr>` : ""}
+      ${sectionRow ? `<tr class="cr-thead-section">${branchCell}${sectionRow}</tr>` : ""}
       <tr class="cr-group-row">
         ${sectionRow ? "" : branchCell}
         ${groupCells}
@@ -860,7 +860,7 @@ function crBuildHistoryThead(section) {
         <th rowspan="${rows}" class="cr-branch-col">${t("creditreport.detail.branch")}</th>
         <th rowspan="${rows}" class="cr-date-col">${t("creditreport.byBranch.colDate")}</th>`;
     return `
-      ${sectionRow ? `<tr class="cr-section-row">${leadCells}${sectionRow}</tr>` : ""}
+      ${sectionRow ? `<tr class="cr-thead-section">${leadCells}${sectionRow}</tr>` : ""}
       <tr class="cr-group-row">
         ${sectionRow ? "" : leadCells}
         ${groupCells}
@@ -1270,10 +1270,16 @@ document.getElementById("crNbcProduct").addEventListener("change", crRunReport);
 // the real rendered height instead of guessing a fixed px value.
 // ========================================
 function crSetHeaderOffsets() {
+    const sectionRow = document.querySelector("#crTable thead tr.cr-thead-section");
     const groupRow = document.querySelector("#crTable thead tr.cr-group-row");
     const subRow = document.querySelector("#crTable thead tr.cr-sub-row");
     if (!groupRow || !subRow) return;
-    const h = groupRow.getBoundingClientRect().height;
+    // With a section-name row (Plan vs Actual / Last Month), it sits at
+    // the default top:0 and pushes the other two down by its own
+    // height; without one, group-row keeps that default top:0 itself.
+    const sectionH = sectionRow ? sectionRow.getBoundingClientRect().height : 0;
+    groupRow.querySelectorAll("th").forEach(th => { th.style.top = sectionH + "px"; });
+    const h = sectionH + groupRow.getBoundingClientRect().height;
     subRow.querySelectorAll("th").forEach(th => { th.style.top = h + "px"; });
 }
 window.addEventListener("resize", crSetHeaderOffsets);
