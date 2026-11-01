@@ -132,11 +132,14 @@
         // One group per column: every header cell above the leaf row
         // (there can be two now — a section name over a Plan/Actual or
         // Last Month lane, e.g. "Outstanding" over "Plan" — see
-        // crBuildThead), collapsed into one row here as "Section · Lane",
-        // same shape Excel/PDF/Print have always taken from this file.
-        // Its own tone (toneOf, the lane `<th>` closest to the leaf row)
-        // carries the same olive/grey a fresh-fetch sheet's lane header
-        // gets, into ArrExport.pdf()'s own (non-nested) group header.
+        // crBuildThead). `groups` collapses the chain into one row as
+        // "Section · Lane" — Print's own shape, unchanged. `groupsNested`
+        // (below) keeps section and lane apart instead — a true 3-row
+        // section/lane/field header, same shape cr-export-all.js's own
+        // fresh-fetch sheets give excel()/pdf(), for ArrExport.pdf() to
+        // draw exactly like the on-screen table and Excel, lane tone
+        // (toneOf) and all — instead of 3 flat boxes all repeating the
+        // section's own name.
         const groups = [];
         let prevChain = null;
         last.forEach((leaf, c) => {
@@ -146,9 +149,31 @@
                 if (cell && cell !== leaf && chain[chain.length - 1] !== cell) chain.push(cell);
             }
             const same = prevChain && prevChain.length === chain.length && prevChain.every((x, i) => x === chain[i]);
+            const sectionTh = chain.length > 1 ? chain[0] : null;
+            const laneTh = chain[chain.length - 1] || null;
             if (same && groups.length) groups[groups.length - 1].span++;
-            else groups.push({ th: chain[0] || null, label: chain.map(label).join(" · "), span: 1, tone: toneOf(chain[chain.length - 1]) });
+            else groups.push({
+                th: chain[0] || null,
+                label: chain.map(label).join(" · "),
+                section: sectionTh ? label(sectionTh) : (laneTh ? label(laneTh) : ""),
+                lane: sectionTh ? label(laneTh) : null,
+                span: 1,
+                tone: toneOf(laneTh)
+            });
             prevChain = chain;
+        });
+
+        const groupsNested = [];
+        groups.forEach(g => {
+            const prev = groupsNested[groupsNested.length - 1];
+            if (g.lane !== null && prev && prev.groups && prev.label === g.section) {
+                prev.span += g.span;
+                prev.groups.push({ label: g.lane, span: g.span, tone: g.tone });
+            } else if (g.lane !== null) {
+                groupsNested.push({ label: g.section, span: g.span, groups: [{ label: g.lane, span: g.span, tone: g.tone }] });
+            } else {
+                groupsNested.push({ label: g.section, span: g.span });
+            }
         });
 
         const trs = [...tbody.rows].filter(tr => tr.style.display !== "none" && !tr.hidden && tr.cells.length === last.length);
@@ -180,7 +205,11 @@
             };
         });
 
-        return { cols, rows, groups: groups.map(({ label, span, tone }) => ({ label, span, tone })) };
+        return {
+            cols, rows,
+            groups: groups.map(({ label, span, tone }) => ({ label, span, tone })),
+            groupsNested
+        };
     }
 
     // PDF and Print pages hold this many columns (besides the repeated
@@ -371,17 +400,24 @@
 
     function exportPdf(opts) {
         return runFromTable(t("creditreport.export.creatingPdf"), opts, (m, onProgress) => {
-            // bandsOf(m, { perSection: true }) packs every lane of the
-            // same on-screen section into one band — one page per
-            // section block (or the single one Showing has narrowed to),
-            // owner request — instead of Print's own BAND_COLS packing.
+            // groupsNested (not readTable()'s own flat, Print-only
+            // `groups`) keeps section and lane apart — the same true
+            // 3-row section/lane/field header, lane tone and all,
+            // excel()/the on-screen table already give this data, so
+            // ArrExport.pdf() draws it identically instead of 3 flat
+            // boxes each repeating the section's own name. bandsOf(...,
+            // { perSection: true }) packs every lane of the same section
+            // into one band — one page per section block (or the single
+            // one Showing has narrowed to), owner request — instead of
+            // Print's own BAND_COLS packing.
             const name = title();
+            const nested = { cols: m.cols, groups: m.groupsNested };
             return window.ArrExport.pdf({
                 filename: `${fileBase(opts.name)}.pdf`,
                 title: name,
                 info: infoLines(),
                 footer: footer(),
-                parts: bandsOf(m, { perSection: true }).map(b => ({ cols: b.cols, groups: b.groups, title: name + b.part })),
+                parts: bandsOf(nested, { perSection: true }).map(b => ({ cols: b.cols, groups: b.groups, title: name + b.part })),
                 rows: m.rows,
                 onProgress
             });
