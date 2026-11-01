@@ -393,6 +393,12 @@ CMI18n.register({
   "creditreport.byCO.sectionWriteOffOwn": { km: "ឥណទានលុបចេញពីបញ្ជី_ផ្ទាល់​ខ្លួន​", en: "Write Off_Own" },
   "creditreport.byCO.selectThenViewHistory": { km: "សូមស្វែងរក ហើយជ្រើសរើសមន្ត្រី រួចចុច \"{viewHistory}\"។", en: "Search and select an officer, then click \"{viewHistory}\"." },
   "creditreport.byCO.noOfficersMatch": { km: "មិនមានមន្ត្រីដែលត្រូវនឹងតម្រងទាំងនេះទេ។", en: "No officers match these filters." },
+  // Disburse-related sections only (Showing): an officer whose own
+  // branch is the "Stop Disburse" pseudo-branch (same figure as Portfolio
+  // Intelligence's stopDisburseExcluded) vs every other, active officer.
+  "creditreport.byCO.officerStatus": { km: "ស្ថានភាពមន្ត្រី", en: "Officer Status" },
+  "creditreport.byCO.officerStatusActive": { km: "មន្ត្រីសកម្ម", en: "Active Officer" },
+  "creditreport.byCO.officerStatusStop": { km: "ឈប់ផ្តល់ឥណទាន", en: "Stop Disburse" },
 
   // ==================================================================
   // DAILY MONITORING BY BRANCH
