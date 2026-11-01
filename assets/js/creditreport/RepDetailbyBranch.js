@@ -630,13 +630,18 @@ function crBuildThead(section) {
     ).join("");
 
     const allExpanded = crIsAllExpanded();
-
-    return `
-      <tr class="cr-group-row">
-        <th rowspan="2" class="cr-branch-col${sortCls("_name")}" data-sort-key="_name" data-sort-type="text">
+    const rows = CRTable.headRowCount(section);
+    const sectionRow = CRTable.sectionLabelRow(section);
+    const branchCell = `
+        <th rowspan="${rows}" class="cr-branch-col${sortCls("_name")}" data-sort-key="_name" data-sort-type="text">
           <button type="button" id="crExpandAllBtn" class="cr-row-expand-btn cr-expand-all-btn${allExpanded ? " open" : ""}" aria-expanded="${allExpanded}" aria-label="${t("creditreport.byBranch.expandAllAria")}">▾</button>
           ${t("creditreport.detail.branch")}
-        </th>
+        </th>`;
+
+    return `
+      ${sectionRow ? `<tr class="cr-section-row">${branchCell}${sectionRow}</tr>` : ""}
+      <tr class="cr-group-row">
+        ${sectionRow ? "" : branchCell}
         ${groupCells}
       </tr>
       <tr class="cr-sub-row">
@@ -849,10 +854,15 @@ function crBuildHistoryThead(section) {
     const subCells = section.groups.map(g =>
         g.fields.map(f => `<th class="${crFieldClass(f)}">${f.label}</th>`).join("")
     ).join("");
+    const rows = CRTable.headRowCount(section);
+    const sectionRow = CRTable.sectionLabelRow(section);
+    const leadCells = `
+        <th rowspan="${rows}" class="cr-branch-col">${t("creditreport.detail.branch")}</th>
+        <th rowspan="${rows}" class="cr-date-col">${t("creditreport.byBranch.colDate")}</th>`;
     return `
+      ${sectionRow ? `<tr class="cr-section-row">${leadCells}${sectionRow}</tr>` : ""}
       <tr class="cr-group-row">
-        <th rowspan="2" class="cr-branch-col">${t("creditreport.detail.branch")}</th>
-        <th rowspan="2" class="cr-date-col">${t("creditreport.byBranch.colDate")}</th>
+        ${sectionRow ? "" : leadCells}
         ${groupCells}
       </tr>
       <tr class="cr-sub-row">

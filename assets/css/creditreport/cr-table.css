@@ -101,6 +101,10 @@
 .table-card tbody tr.cr-total-row td.cr-pv-cur{ background:var(--cr-total-bg); }
 .table-card thead th.cr-pv-ratio{ background:#1A2747; }
 
+/* ---------- Section name row (above Plan/Actual or Last Month lanes) ---------- */
+.table-card thead tr.cr-section-row th{ border-bottom:1px solid #2f4670; }
+.table-card thead th.cr-section-head{ font-weight:800; letter-spacing:.02em; text-align:center; }
+
 /* ---------- Title above the table (report · section · comparison · date) ---------- */
 .cr-tbl-head{
     display:flex;

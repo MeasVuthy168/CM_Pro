@@ -86,16 +86,27 @@
             }
         });
         if (!grid.length) return null;
-        const last = grid[grid.length - 1];
+        const leafRow = grid.length - 1;
+        const last = grid[leafRow];
         const label = th => (th ? bareCopy(th).textContent.replace(/\s+/g, " ").trim() : "");
 
+        // One group per column: every header cell above the leaf row
+        // (there can be two now — a section name over a Plan/Actual or
+        // Last Month lane, e.g. "Outstanding" over "Plan" — see
+        // crBuildThead), collapsed into one row here as "Section · Lane",
+        // same shape Excel/PDF/Print have always taken from this file.
         const groups = [];
+        let prevChain = null;
         last.forEach((leaf, c) => {
-            const top = grid[0][c];
-            const g = grid.length > 1 && top !== leaf ? top : null;
-            const prev = groups[groups.length - 1];
-            if (g && prev && prev.th === g) prev.span++;
-            else groups.push({ th: g, label: label(g), span: 1 });
+            const chain = [];
+            for (let r = 0; r < leafRow; r++) {
+                const cell = grid[r][c];
+                if (cell && cell !== leaf && chain[chain.length - 1] !== cell) chain.push(cell);
+            }
+            const same = prevChain && prevChain.length === chain.length && prevChain.every((x, i) => x === chain[i]);
+            if (same && groups.length) groups[groups.length - 1].span++;
+            else groups.push({ th: chain[0] || null, label: chain.map(label).join(" · "), span: 1 });
+            prevChain = chain;
         });
 
         const trs = [...tbody.rows].filter(tr => tr.style.display !== "none" && !tr.hidden && tr.cells.length === last.length);

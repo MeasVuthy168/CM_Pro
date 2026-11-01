@@ -92,19 +92,21 @@ window.CRLastMonth = (() => {
     // group's own columns. dates: { last, now } (date keys; last may be
     // unknown while loading).
     // dates.compact: design គ — amounts as K / M, (+/-) with ▲ / ▼.
+    // Each block keeps its own group's label on `sectionLabel` (crBuildThead
+    // groups consecutive blocks by it into its own header row, same as the
+    // Excel export's section/lane/field header) — `label` is just the lane
+    // name (the date, or "(+/-)").
     function expand(section, dates = {}) {
         const c = dates.compact ? { compact: true } : {};
-        // One group: just the date, as in the Excel report; several: "group · date".
-        const head = (label, tail) => (section.groups.length > 1 ? `${label} · ${tail}` : tail);
         const lastLabel = dates.last ? shortDate(dates.last) : t("creditreport.lastMonth.col");
         return {
             ...section,
             groups: section.groups.flatMap(g => [
-                { ...g, lm: "value", label: head(g.label, lastLabel),
+                { ...g, lm: "value", sectionLabel: g.label, label: lastLabel,
                     fields: g.fields.map(f => ({ ...f, ...c, key: `lastMonth.${f.key}`, lm: "value" })) },
-                { ...g, lm: "cur", label: head(g.label, dates.now ? shortDate(dates.now) : t("creditreport.lastMonth.now")),
+                { ...g, lm: "cur", sectionLabel: g.label, label: dates.now ? shortDate(dates.now) : t("creditreport.lastMonth.now"),
                     fields: g.fields.map(f => ({ ...f, ...c, lm: "cur" })) },
-                { ...g, lm: "diff", label: head(g.label, "(+/-)"),
+                { ...g, lm: "diff", sectionLabel: g.label, label: "(+/-)",
                     fields: g.fields.map(f => ({ ...f, ...c, key: `lastMonthDiff.${f.key}`, lm: "diff", risk: RISK.test(f.key) })) }
             ])
         };
