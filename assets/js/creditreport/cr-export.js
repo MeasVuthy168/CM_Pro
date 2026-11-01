@@ -2,18 +2,24 @@
 // Credit Report daily reports — Export Excel / PDF, Print, Fullscreen
 // (Daily Monitoring by Officer / Branch / Product / Location)
 //
-// Same engine and look as Daily Arrears (arrears-export.js). The table
-// on screen is read as it stands — both header rows, every column (not
-// only the ones scrolled into view), the Total row, the high-PAR
-// colour — so every page, mode (Current / Daily History) and Showing
-// pick exports without page-specific code:
-//   Excel  real numbers (#,##0 and 0.00%), a frozen header + first
-//          column, filters on the header, A4 landscape print setup
-//   PDF    vector text, the header repeated on every page, page numbers
-//   Print  the same report as a page of its own (title, data dates,
-//          filters in use, the table shrunk to the paper's width)
-// Each file starts with the report's title, its data dates and the
-// filters in use, and ends with who exported it and when.
+//   Excel  the same section/lane/field, colour-coded report "Export
+//          All" (cr-export-all.js) gives this page — Plan + Last Month
+//          + Achieved + (+/-), merged, every row — straight from a
+//          fresh fetch (window.crExportDailyMonitoring), not whatever
+//          the page's own Comparison dropdown happens to be showing.
+//          Real numbers (#,##0 and 0.00%), a frozen header + first
+//          column, filters on the header, A4 landscape print setup.
+//   PDF    the same fresh data as Excel, vector text, the header
+//          repeated on every page, page numbers; its 2-row header
+//          collapses Excel's 3 (section/lane/field) into one combined
+//          "Section · Lane" row — the PDF engine has no 3-row header
+//          of its own yet.
+//   Print  the table as it stands on screen right now (both header
+//          rows, every column, the Total row, the high-PAR colour) —
+//          whichever mode, Showing and filters are active — as a page
+//          of its own (title, data dates, filters in use, shrunk to
+//          the paper's width). Same engine as Daily Arrears
+//          (arrears-export.js).
 //
 // Fullscreen (replaces the old Landscape view, as on Daily Arrears):
 // only the table — the topbar, the filters and the bottom bar are
@@ -22,9 +28,12 @@
 // exit comes back.
 //
 //   CRExport.wire({ name, beforeExport })
-//     name          file name start, e.g. "MonitoringByOfficer"
-//     beforeExport  runs before Excel / PDF / Print (e.g. clear the
-//                   officer search box, so the file has every row)
+//     name          file name start, e.g. "MonitoringByOfficer" — also
+//                   which Daily Monitoring sheet Excel/PDF fetch
+//                   (DAILY_MONITORING_SHEET below)
+//     beforeExport  runs before Print (e.g. clear the officer search
+//                   box, so the printed page has every row) — Excel/PDF
+//                   fetch their own data fresh, so they don't need it
 // ========================================
 
 (function () {
@@ -229,22 +238,44 @@
     function fileBase(name) {
         const d = new Date();
         const pad = n => String(n).padStart(2, "0");
-        const hist = document.getElementById("crModeHistoryBtn")?.classList.contains("active") ? "_History" : "";
-        return `${name}${hist}_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+        return `${name}_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
     }
 
-    // Loading overlay with a % while the file is built.
-    async function run(message, opts, build) {
+    // "Export Excel"/"Export PDF" on these 4 pages give the SAME
+    // section/lane/field, colour-coded report "Export All" gives this
+    // page — Plan + Last Month + Achieved + (+/-), merged — straight
+    // from cr-export-all.js's own per-report sheet builder
+    // (window.crExportDailyMonitoring), not whatever the page's own
+    // Comparison dropdown happens to be showing right now. Only Print
+    // and Fullscreen still read the live on-screen table (readTable()).
+    const DAILY_MONITORING_SHEET = {
+        MonitoringByBranch: "branch",
+        MonitoringByOfficer: "officer",
+        MonitoringByProduct: "product",
+        MonitoringByLocation: "location"
+    };
+
+    // Same loading-overlay / error-toast shape as run() above, but the
+    // "model" is a freshly-fetched sheet (cr-export-all.js), not the
+    // live DOM table — there's nothing on screen to clear or to find
+    // Print's own filter/date info in.
+    async function runDailyMonitoring(message, dmKey, build) {
         closeMenu();
-        opts.beforeExport && opts.beforeExport();
-        const model = readTable();
-        if (!model || !model.rows.length) {
-            notify(t("creditreport.detail.nothingToExport"), "warning");
+        if (typeof window.crExportDailyMonitoring === "undefined" || typeof window.crExportDailyMonitoring[dmKey] !== "function") {
+            notify(t("creditreport.export.failed"), "error");
             return;
         }
         if (typeof showAppLoading === "function") showAppLoading(message, { progress: true, key: "cr:export" });
         try {
-            await build(model, f => window.setAppLoadingProgress?.(f * 100, t("creditreport.export.wait")));
+            // sheetDailyMonitoring() (cr-export-all.js) returns an array
+            // (it may be empty on a failed fetch) — the same shape its
+            // own SHEET_JOBS entries all have, for runPool() to flatten.
+            const [sheet] = await window.crExportDailyMonitoring[dmKey]();
+            if (!sheet || !sheet.rows || !sheet.rows.length) {
+                notify(t("creditreport.detail.nothingToExport"), "warning");
+                return;
+            }
+            await build(sheet, f => window.setAppLoadingProgress?.(f * 100, t("creditreport.export.wait")));
         } catch (err) {
             console.error("[export] failed:", err);
             notify(t("creditreport.export.failed"), "error");
@@ -253,25 +284,43 @@
         }
     }
 
+    // A sheet's own nested groups (section → lane) collapsed to one
+    // flat "Section · Lane" row, the shape bandsOf()/ArrExport.pdf()
+    // already take — PDF, unlike Excel, has no 3-row header of its own
+    // yet (arrears-export.js's own comment: lanes are "Excel only").
+    function flattenGroups(groups) {
+        const flat = [];
+        (groups || []).forEach(g => {
+            if (Array.isArray(g.groups) && g.groups.length) {
+                g.groups.forEach(lane => flat.push({ label: g.label ? `${g.label} · ${lane.label}` : lane.label, span: lane.span }));
+            } else {
+                flat.push({ label: g.label, span: g.span });
+            }
+        });
+        return flat;
+    }
+
     function exportExcel(opts) {
-        return run(t("creditreport.export.creatingExcel"), opts, (m, onProgress) => window.ArrExport.excel({
+        const dmKey = DAILY_MONITORING_SHEET[opts.name];
+        return runDailyMonitoring(t("creditreport.export.creatingExcel"), dmKey, (sheet, onProgress) => window.ArrExport.excel({
             filename: `${fileBase(opts.name)}.xlsx`,
             onProgress,
             freezeCols: 1,
-            sheets: [{ name: opts.name.slice(0, 31), title: title(), info: [...infoLines(), footer()], cols: m.cols, groups: m.groups, rows: m.rows }]
+            sheets: [sheet]
         }));
     }
 
     function exportPdf(opts) {
-        return run(t("creditreport.export.creatingPdf"), opts, (m, onProgress) => {
-            const name = title();
+        const dmKey = DAILY_MONITORING_SHEET[opts.name];
+        return runDailyMonitoring(t("creditreport.export.creatingPdf"), dmKey, (sheet, onProgress) => {
+            const flatGroups = flattenGroups(sheet.groups);
             return window.ArrExport.pdf({
                 filename: `${fileBase(opts.name)}.pdf`,
-                title: name,
-                info: infoLines(),
+                title: sheet.title,
+                info: sheet.info,
                 footer: footer(),
-                parts: bandsOf(m).map(b => ({ cols: b.cols, groups: b.groups, title: name + b.part })),
-                rows: m.rows,
+                parts: bandsOf({ cols: sheet.cols, groups: flatGroups, rows: sheet.rows }).map(b => ({ cols: b.cols, groups: b.groups, title: sheet.title + b.part })),
+                rows: sheet.rows,
                 onProgress
             });
         });

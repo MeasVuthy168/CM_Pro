@@ -234,10 +234,10 @@ function crBuildThead(section) {
         return crSortState.dir === 1 ? " cr-sort-asc" : " cr-sort-desc";
     };
     const groupCells = section.groups.map(g =>
-        `<th colspan="${g.fields.length}"${g.lm ? ` class="cr-lm-${g.lm}"` : ""}>${g.label}</th>`
+        `<th colspan="${g.fields.length}" class="${g.fields[0] && g.fields[0].secStart ? "cr-sec-start " : ""}${g.lm ? `cr-lm-${g.lm}` : ""}">${g.label}</th>`
     ).join("");
     const subCells = section.groups.map(g =>
-        g.fields.map(f => `<th class="${crFieldClass(f)}${f.lm ? ` cr-lm-${f.lm}` : ""}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
+        g.fields.map(f => `<th class="${crFieldClass(f)}${f.secStart ? " cr-sec-start" : ""}${f.lm ? ` cr-lm-${f.lm}` : ""}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
     ).join("");
 
     const rows = CRTable.headRowCount(section);
@@ -322,8 +322,8 @@ function crT24ClassGroup(prefix, label) {
 
 // Several sections picked: each one's groups side by side (crCombinedSection).
 function crActiveSection() {
-    if (crCompareMode() === "lastMonth") return crLastMonth.expand(crCombinedSection(crSectionFor));
-    return crCombinedSection(crSectionFor);
+    if (crCompareMode() === "lastMonth") return CRTable.tagSectionStarts(crLastMonth.expand(crCombinedSection(crSectionFor)));
+    return CRTable.tagSectionStarts(crCombinedSection(crSectionFor));
 }
 
 function crSectionFor(sectionKey) {
@@ -392,10 +392,10 @@ function crRenderSection() {
 // ========================================
 function crBuildHistoryThead(section) {
     const groupCells = section.groups.map(g =>
-        `<th colspan="${g.fields.length}">${g.label}</th>`
+        `<th colspan="${g.fields.length}"${g.fields[0] && g.fields[0].secStart ? ' class="cr-sec-start"' : ""}>${g.label}</th>`
     ).join("");
     const subCells = section.groups.map(g =>
-        g.fields.map(f => `<th class="${crFieldClass(f)}">${f.label}</th>`).join("")
+        g.fields.map(f => `<th class="${crFieldClass(f)}${f.secStart ? " cr-sec-start" : ""}">${f.label}</th>`).join("")
     ).join("");
     const rows = CRTable.headRowCount(section);
     const sectionRow = CRTable.sectionLabelRow(section);

@@ -622,11 +622,11 @@ function crBuildThead(section) {
         return crSortState.dir === 1 ? " cr-sort-asc" : " cr-sort-desc";
     };
     const groupCells = section.groups.map(g =>
-        `<th colspan="${g.fields.length}"${g.lm ? ` class="cr-lm-${g.lm}"` : g.pvBlock ? ` class="cr-grp-start cr-pv-${g.pvBlock}"` : ""}>${g.label}</th>`
+        `<th colspan="${g.fields.length}" class="${g.fields[0] && g.fields[0].secStart ? "cr-sec-start " : ""}${g.lm ? `cr-lm-${g.lm}` : g.pvBlock ? `cr-grp-start cr-pv-${g.pvBlock}` : ""}">${g.label}</th>`
     ).join("");
 
     const subCells = section.groups.map(g =>
-        g.fields.map(f => `<th class="${crFieldClass(f)}${f.planCol ? " cr-plan-col" : ""}${f.grpStart ? " cr-grp-start" : ""}${f.pvCur ? " cr-pv-cur" : ""}${f.lm ? ` cr-lm-${f.lm}` : ""}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
+        g.fields.map(f => `<th class="${crFieldClass(f)}${f.secStart ? " cr-sec-start" : ""}${f.planCol ? " cr-plan-col" : ""}${f.grpStart ? " cr-grp-start" : ""}${f.pvCur ? " cr-pv-cur" : ""}${f.lm ? ` cr-lm-${f.lm}` : ""}${sortCls(f.key)}" data-sort-key="${f.key}" data-sort-type="number">${f.label}</th>`).join("")
     ).join("");
 
     const allExpanded = crIsAllExpanded();
@@ -754,14 +754,14 @@ function crT24ClassGroup(prefix, label) {
 
 // Several sections picked: each one's groups side by side (crCombinedSection).
 function crActiveSection() {
-    if (crCompareMode() === "actual") return crCombinedSection(crSectionFor);
-    if (crCompareMode() === "lastMonth") return crLastMonth.expand(crCombinedSection(crSectionFor));
+    if (crCompareMode() === "actual") return CRTable.tagSectionStarts(crCombinedSection(crSectionFor));
+    if (crCompareMode() === "lastMonth") return CRTable.tagSectionStarts(crLastMonth.expand(crCombinedSection(crSectionFor)));
     // All Sections: each section's own groups, so the plan columns land
     // beside the figures they belong to.
     const section = crCombinedSection(k => k === "all"
         ? { groups: ["outstanding", "khr", "small", "disburse", "los", "parT24", "nbcOverdue", "writeOff"].flatMap(sk => crCompareSection(sk, crSections()[sk]).groups) }
         : crCompareSection(k, crSectionFor(k)));
-    return CRTable.planBlocks(section);
+    return CRTable.tagSectionStarts(CRTable.planBlocks(section));
 }
 
 function crSectionFor(sectionKey) {
@@ -849,10 +849,10 @@ function crHistoryRowKey(branchKey, dateKey) {
 
 function crBuildHistoryThead(section) {
     const groupCells = section.groups.map(g =>
-        `<th colspan="${g.fields.length}">${g.label}</th>`
+        `<th colspan="${g.fields.length}"${g.fields[0] && g.fields[0].secStart ? ' class="cr-sec-start"' : ""}>${g.label}</th>`
     ).join("");
     const subCells = section.groups.map(g =>
-        g.fields.map(f => `<th class="${crFieldClass(f)}">${f.label}</th>`).join("")
+        g.fields.map(f => `<th class="${crFieldClass(f)}${f.secStart ? " cr-sec-start" : ""}">${f.label}</th>`).join("")
     ).join("");
     const rows = CRTable.headRowCount(section);
     const sectionRow = CRTable.sectionLabelRow(section);

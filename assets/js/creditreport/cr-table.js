@@ -109,10 +109,31 @@ window.CRTable = (() => {
         return `<td class="${cls}">${field.pv === "pct" ? Number(v).toFixed(2) + "%" : fmtNum(v)}</td>`;
     }
 
-    // A cell's td with its block classes (first of a block, the Actual block).
+    // A cell's td with its block classes (first of a block, the Actual
+    // block, the first column of a whole new section).
     function blockClasses(html, field) {
-        const extra = (field.grpStart ? "cr-grp-start " : "") + (field.pvCur ? "cr-pv-cur " : "");
+        const extra = (field.secStart ? "cr-sec-start " : "") + (field.grpStart ? "cr-grp-start " : "") + (field.pvCur ? "cr-pv-cur " : "");
         return extra ? html.replace('<td class="', `<td class="${extra}`) : html;
+    }
+
+    // ---- Section-block border ----
+    // Tags the first field of every section (by sectionLabel when the
+    // groups are lane-expanded — Plan vs Actual / Last Month — else by
+    // the group's own label, one group per section) with `secStart`, so
+    // blockClasses() above gives its <td> (and crBuildThead's own <th>s,
+    // which check the same flag directly) a stronger left border than
+    // the lighter one every lane already gets — boxing each section's
+    // columns apart from its neighbour at a glance, in every compare
+    // mode. Mutates the fields in place (freshly built per render, so
+    // safe) and returns `section` for chaining.
+    function tagSectionStarts(section) {
+        let prevId = null;
+        section.groups.forEach(g => {
+            const id = g.sectionLabel || g.label;
+            if (id !== prevId && g.fields.length) g.fields[0].secStart = true;
+            prevId = id;
+        });
+        return section;
     }
 
     // ---- Section-name header row (Plan vs Actual / Last Month) ----
@@ -138,5 +159,5 @@ window.CRTable = (() => {
         return runs.map(r => `<th colspan="${r.span}" class="cr-section-head">${r.label}</th>`).join("");
     }
 
-    return { parPill, bar, compact, exact, edgeHint, planBlocks, planCell, blockClasses, headRowCount, sectionLabelRow };
+    return { parPill, bar, compact, exact, edgeHint, planBlocks, planCell, blockClasses, headRowCount, sectionLabelRow, tagSectionStarts };
 })();
