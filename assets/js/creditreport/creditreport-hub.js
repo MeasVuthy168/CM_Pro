@@ -128,16 +128,15 @@ function crHubRenderT24Results(results) {
     document.getElementById("crHubSnapshotResults").style.display = "block";
 }
 
-// Credit Portfolio Intelligence is for admin and user only (owner,
-// 31/10/2026); the server refuses every other role too.
-if (["admin", "user"].includes(String(crHubLoggedInUser.role || "").trim().toLowerCase())) {
-    document.getElementById("crHubPortfolioTitle").style.display = "";
-    document.getElementById("crHubPortfolio").style.display = "";
-    document.getElementById("crHubExportRow").style.display = "";
-
-    document.getElementById("btnCrExportAll").addEventListener("click", async () => {
-        const btn = document.getElementById("btnCrExportAll");
-        const label = document.getElementById("crHubExportBtnLabel");
+// One "Export All" click handler shared by both buttons: the one in
+// the admin toolbar (same row as Snapshot All / Refresh All T24, owner
+// request 31/10/2026) and the standalone one under Credit Portfolio
+// Intelligence for the "user" role, who never sees the admin toolbar.
+function crHubWireExportButton(btnId, labelId) {
+    const btn = document.getElementById(btnId);
+    const label = document.getElementById(labelId);
+    if (!btn || !label) return;
+    btn.addEventListener("click", async () => {
         if (typeof window.crExportAll !== "function") return;
         btn.disabled = true;
         label.removeAttribute("data-i18n");
@@ -152,8 +151,22 @@ if (["admin", "user"].includes(String(crHubLoggedInUser.role || "").trim().toLow
     });
 }
 
+// Credit Portfolio Intelligence is for admin and user only (owner,
+// 31/10/2026); the server refuses every other role too. The standalone
+// Export All row only shows for "user" — admins already have it in the
+// admin toolbar below, same row as Snapshot All.
+if (["admin", "user"].includes(String(crHubLoggedInUser.role || "").trim().toLowerCase())) {
+    document.getElementById("crHubPortfolioTitle").style.display = "";
+    document.getElementById("crHubPortfolio").style.display = "";
+    if (!crHubIsAdmin) {
+        document.getElementById("crHubExportRow").style.display = "";
+        crHubWireExportButton("btnCrExportAll", "crHubExportBtnLabel");
+    }
+}
+
 if (crHubIsAdmin) {
     document.getElementById("crHubAdminToolbar").style.display = "";
+    crHubWireExportButton("btnCrExportAllAdmin", "crHubExportBtnLabelAdmin");
 
     document.getElementById("btnCrSnapshotResultsClose").addEventListener("click", () => {
         document.getElementById("crHubSnapshotResults").style.display = "none";

@@ -95,6 +95,14 @@ No Internet Connection
 <span class="cr-hub-snapshot-btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19.8 11A8 8 0 0 0 5.6 6.4"/><path d="M5 3.5V8h4.5"/><path d="M4.2 13a8 8 0 0 0 14.2 4.6"/><path d="M19 20.5V16h-4.5"/></svg></span>
 <span id="crHubRefreshBtnLabel" data-i18n="creditreport.hub.refreshAllT24">Refresh All T24</span>
 </button>
+<!-- Export All (Excel) — same row as Snapshot All / Refresh All T24
+     (owner request, 31/10/2026). Admin sees it here; the "user" role,
+     who never sees this admin-only toolbar, still gets it in its own
+     row under Credit Portfolio Intelligence (crHubExportRow below). -->
+<button type="button" id="btnCrExportAllAdmin" class="cr-hub-snapshot-btn">
+<span class="cr-hub-snapshot-btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/></svg></span>
+<span id="crHubExportBtnLabelAdmin" data-i18n="creditreport.hub.exportAll">Export All (Excel)</span>
+</button>
 </div>
 <div class="cr-hub-snapshot-results" id="crHubSnapshotResults">
 <div class="cr-hub-snapshot-results-head">

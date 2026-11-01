@@ -324,15 +324,17 @@
 /* admin tools: two buttons side by side */
 .cr-hub-admin-buttons{
     display:grid;
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:1fr 1fr 1fr;
     gap:8px;
 }
 .cr-hub-admin-buttons .cr-hub-snapshot-btn,
 .cr-hub-admin-buttons .cr-hub-refresh-btn{
     margin:0;
-    padding:11px 8px;
-    font-size:13px;
-    gap:6px;
+    padding:11px 6px;
+    font-size:12px;
+    line-height:1.25;
+    gap:5px;
+    text-align:center;
 }
 .cr-hub-admin-buttons .cr-hub-snapshot-btn-icon svg{ width:18px; height:18px; }
 .cr-hub-snapshot-card{ padding:12px; }
@@ -390,7 +392,8 @@
         overflow:hidden;
     }
     .cr-hub-fit .cr-hub-admin-buttons .cr-hub-snapshot-btn,
-    .cr-hub-fit .cr-hub-admin-buttons .cr-hub-refresh-btn{ padding:9px 8px; }
+    .cr-hub-fit .cr-hub-admin-buttons .cr-hub-refresh-btn{ padding:9px 5px; font-size:11px; }
+    .cr-hub-fit .cr-hub-admin-buttons .cr-hub-snapshot-btn-icon svg{ width:15px; height:15px; }
     .cr-hub-fit .cr-hub-snapshot-card{ padding:10px; }
 }
 
