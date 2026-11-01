@@ -368,6 +368,10 @@ CMI18n.register({
   // ==================================================================
   "creditreport.byCO.printTitle": { km: "របាយការណ៍ត្រួតពិនិត្យប្រចាំថ្ងៃតាមភ្នាក់ងារ", en: "Daily Monitoring Report by Officer" },
   "creditreport.byCO.officersCount": { km: "ភ្នាក់ងារលក់", en: "Officers" },
+  // Active (not Stop Disburse) officers in the current Branch filter,
+  // split by their own real position (List Officer) — see
+  // crLoadOfficerPositions() in RepDetailbyCO.js.
+  "creditreport.byCO.officersCountSplit": { km: "មន្ត្រីឥណទាន {co} នាក់ | FSRO {fsro} នាក់", en: "CO {co} | FSRO {fsro}" },
   "creditreport.byCO.searchPlaceholder": { km: "ស្វែងរកមន្ត្រី...", en: "Search officer..." },
   "creditreport.byCO.clearOfficerSearch": { km: "សម្អាតការស្វែងរកមន្ត្រី", en: "Clear officer search" },
   "creditreport.byCO.allBranch": { km: "គ្រប់សាខាទាំងអស់", en: "All Branch" },
