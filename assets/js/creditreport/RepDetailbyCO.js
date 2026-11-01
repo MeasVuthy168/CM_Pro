@@ -21,6 +21,24 @@ let crData = null; // last successful /byco response
 let crPlanData = null;
 let crPlanLoading = null;
 
+// Each officer's real position (List Officer, admin-managed — the
+// CreditOfficer sheet's own Team column isn't one: it holds the
+// officer's own name for anyone who isn't FSRO, not a position, so the
+// Team filter (crTeam) matches against this instead — see
+// crApplyRowFilters(). Refetched with every report load (crRunReport()),
+// same as everything else here; cheap, and keeps picks (e.g. a newly
+// reassigned officer) current.
+let crOfficerPositions = new Map(); // officerId -> lowercased position
+async function crLoadOfficerPositions() {
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/creditofficer/list`, { headers: { Authorization: `Bearer ${crToken}` } });
+        const data = await res.json();
+        if (data.ok) crOfficerPositions = new Map((data.items || []).map(it => [String(it.officerId), String(it.position || "").trim().toLowerCase()]));
+    } catch (e) {
+        console.error("[officer] failed to load officer positions:", e);
+    }
+}
+
 // ========================================
 // DAILY HISTORY — "current" (today's live report, unchanged default
 // behaviour) vs "history" (a Date column added to this same table, one
@@ -417,11 +435,14 @@ function crBuildRow(item, section, isTotal, idx) {
     const nameCell = isTotal
         ? t("common.total")
         : `${crCompareMode() === "actual" ? `<span class="cr-rank">${idx + 1}</span>` : ""}<button type="button" class="cr-officer-link" data-idx="${idx}">${crEscapeHtml(item.name)}</button>`;
-    // data-name backs crApplySearchFilter()'s client-side name search —
-    // lowercased once here rather than re-lowercasing on every keystroke.
+    // data-name/data-position/data-branch back crApplyRowFilters()'s
+    // client-side name search and Team pick — all lowercased once here
+    // rather than on every keystroke/pick.
     const nameAttr = isTotal ? "" : ` data-name="${crEscapeHtml((item.name || "").toLowerCase())}"`;
+    const positionAttr = isTotal ? "" : ` data-position="${crEscapeHtml(crOfficerPositions.get(String(item.id)) || "")}"`;
+    const branchAttr = isTotal ? "" : ` data-branch="${crEscapeHtml((item.branch || "").trim().toLowerCase())}"`;
     return `
-      <tr${isTotal ? ' class="cr-total-row"' : ""}${nameAttr}>
+      <tr${isTotal ? ' class="cr-total-row"' : ""}${nameAttr}${positionAttr}${branchAttr}>
         <td class="cr-name-col">${nameCell}</td>
         ${cells}
       </tr>`;
@@ -560,7 +581,7 @@ async function crEnsurePlan() {
     if (!crPlanLoading) {
         const q = new URLSearchParams();
         crAddPicks(q, "branch", "crBranch");
-        crAddPicks(q, "team", "crTeam");
+        // Team is NOT sent — same reason as crBuildQuery() above.
         crPlanLoading = (async () => {
             const res = await fetch(`${API.BASE_URL}/api/creditreport/officer-plan-vs-actual?${q.toString()}`, { headers: { Authorization: `Bearer ${crToken}` } });
             const data = await res.json();
@@ -681,10 +702,10 @@ function crRenderSection() {
         crDisplayItems.map((it, idx) => crBuildRow(it, section, false, idx)).join("") +
         crBuildRow(crData.total, section, true);
 
-    // Re-render (switching "Showing", or a fresh branch/team fetch)
-    // rebuilds every row from scratch, so whatever the user already
-    // typed needs re-applying rather than being silently dropped.
-    crApplySearchFilter();
+    // Re-render (switching "Showing", or a fresh branch fetch) rebuilds
+    // every row from scratch, so whatever the user already typed/picked
+    // needs re-applying rather than being silently dropped.
+    crApplyRowFilters();
     requestAnimationFrame(crSetHeaderOffsets);
     CRTable.edgeHint(document.getElementById("crTableScroll"));
     crRenderTableHead();
@@ -881,35 +902,48 @@ function crSetMode(mode) {
 }
 
 // ========================================
-// OFFICER SEARCH
-// Client-side name filter over the already-loaded table (crData.items)
-// — no refetch, unlike Branch/Team/date filters. The Total row (no
-// data-name attribute) always stays visible regardless of the query.
+// OFFICER SEARCH / TEAM
+// Two client-side filters over the already-loaded table (crData.items)
+// — no refetch (Team used to be a full refetch; it's now matched
+// against each officer's own real position, crOfficerPositions, which
+// the backend's own Team bucketing doesn't know about — see
+// crLoadOfficerPositions()). Combined so neither overrides the other's
+// hidden rows. The Total row (no data-name attribute) always stays
+// visible regardless of either.
 // ========================================
-function crApplySearchFilter() {
+function crTeamMatches(pick, tr) {
+    if (pick === "Stop Disburse") return tr.dataset.branch === "stop disburse";
+    if (pick === "FSRO") return tr.dataset.position === "financial service relation officer";
+    if (pick === "Credit Officer") return tr.dataset.position === "credit officer";
+    return false;
+}
+function crApplyRowFilters() {
     const input = document.getElementById("crSearchInput");
     const clearBtn = document.getElementById("crSearchClear");
     const q = (input?.value || "").trim().toLowerCase();
     if (clearBtn) clearBtn.hidden = !q;
 
+    const teams = crPicks("crTeam");
     document.querySelectorAll("#crTbody tr").forEach(tr => {
         if (!tr.dataset.name) return; // Total row — always shown
-        tr.style.display = (!q || tr.dataset.name.includes(q)) ? "" : "none";
+        const matchesSearch = !q || tr.dataset.name.includes(q);
+        const matchesTeam = !teams.length || teams.some(pick => crTeamMatches(pick, tr));
+        tr.style.display = (matchesSearch && matchesTeam) ? "" : "none";
     });
 }
 
-document.getElementById("crSearchInput")?.addEventListener("input", crApplySearchFilter);
+document.getElementById("crSearchInput")?.addEventListener("input", crApplyRowFilters);
 document.getElementById("crSearchInput")?.addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
     e.target.value = "";
-    crApplySearchFilter();
+    crApplyRowFilters();
     e.target.blur();
 });
 document.getElementById("crSearchClear")?.addEventListener("click", () => {
     const input = document.getElementById("crSearchInput");
     if (!input) return;
     input.value = "";
-    crApplySearchFilter();
+    crApplyRowFilters();
     input.focus();
 });
 
@@ -1013,7 +1047,9 @@ function crBuildQuery() {
 
     if (crPendingBranches) crPendingBranches.forEach(b => p.append("branch", b));
     else crAddPicks(p, "branch", "crBranch");
-    crAddPicks(p, "team", "crTeam");
+    // Team is NOT sent — crFilterOfficers()'s own Team bucketing is the
+    // crude CreditOfficer-sheet fallback this page no longer uses (see
+    // crApplyRowFilters()); every officer comes back, narrowed client-side.
 
     // "total" (Total T24 Overdue) is the class filter's All — never sent.
     crAddPicks(p, "t24Class", "crClass");
@@ -1313,9 +1349,12 @@ async function crRunReport() {
     // Branch / type changed: the plan rows are fetched again.
     crPlanData = null;
     try {
-        const res = await fetch(`${API.BASE_URL}/api/creditreport/byco${crBuildQuery()}`, {
-            headers: { Authorization: `Bearer ${crToken}` }
-        });
+        const [res] = await Promise.all([
+            fetch(`${API.BASE_URL}/api/creditreport/byco${crBuildQuery()}`, {
+                headers: { Authorization: `Bearer ${crToken}` }
+            }),
+            crLoadOfficerPositions()
+        ]);
         const data = await res.json();
         crHideLoading();
 
@@ -1380,7 +1419,12 @@ document.getElementById("crCompare").addEventListener("change", () => {
     crRenderSection();
     crSyncStateToUrl();
 });
-document.getElementById("crTeam").addEventListener("change", crRunReport);
+// Team only hides/shows already-rendered rows (crApplyRowFilters()),
+// same as the name search — no re-render, no refetch.
+document.getElementById("crTeam").addEventListener("change", () => {
+    crApplyRowFilters();
+    crSyncStateToUrl();
+});
 // In History mode, the T24 Loan Class filter is a local display pick
 // among the already-fetched parT24ByClass/parT24AreaByClass buckets (see
 // crActiveSection()) — no refetch, same as crNbcClass below. In Current
@@ -1437,11 +1481,14 @@ function notify(message, type = "info") {
 // user happened to be typing in the search box — an official report
 // export silently missing rows because a search was still active would
 // be a much worse surprise than the search box just getting cleared.
+// Team is left alone: unlike a forgotten search, it's a deliberate pick
+// (like Comparison/Showing), so PDF/Print keep reflecting it, same as
+// every other on-screen filter.
 function crClearSearchForExport() {
     const input = document.getElementById("crSearchInput");
     if (input && input.value) {
         input.value = "";
-        crApplySearchFilter();
+        crApplyRowFilters();
     }
 }
 

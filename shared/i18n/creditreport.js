@@ -375,6 +375,7 @@ CMI18n.register({
   "creditreport.byCO.allTeam": { km: "គ្រប់ក្រុមទាំងអស់", en: "All Team" },
   "creditreport.byCO.creditOfficer": { km: "មន្ត្រីឥណទាន", en: "Credit Officer" },
   "creditreport.byCO.fsro": { km: "FSRO", en: "FSRO" },
+  "creditreport.byCO.stopDisburse": { km: "ឈប់ផ្តល់ឥណទាន", en: "Stop Disburse" },
   "creditreport.byCO.sectionOutstandingArea": { km: "សមតុល្យ​ឥណទាន_តំបន់", en: "Loan Outstanding_Area" },
   "creditreport.byCO.sectionOutstandingOwn": { km: "សមតុល្យ​ឥណទាន_ផ្ទាល់​ខ្លួន​", en: "Loan Outstanding_Own" },
   "creditreport.byCO.sectionDisburseArea": { km: "ការបញ្ចេញឥណទាន_តំបន់", en: "Loan Disburse_Area" },
