@@ -3,31 +3,31 @@
 // Both take the same column list, so the two files match each other
 // and the table on screen:
 //
-//   cols: [{ label, type, align, value(row, i), text(row, i), style(row, i), maxPx, numFmt, highlight }]
+//   cols: [{ label, type, align, value(row, i), text(row, i), style(row, i), maxPx, numFmt, tone }]
 //     type      "text" | "num" (#,##0.00) | "int" (0) | "date" (dd/mm/yyyy)
 //     value     the cell's value for Excel (number / Date / string)
 //     text      what's written in the PDF (and how long the Excel column is);
 //               "\n" splits it over lines
 //     style     { fill, color, bold } — the table's colours (Class, Promise…)
 //     numFmt    Excel number format instead of the type's own ("0.00%"…)
-//     highlight Excel only: a light gold tint (style.fill still wins) —
-//               the lane that matters most (Actual / Last Month "now"),
-//               same olive the on-screen table gives that same column.
+//     tone      Excel only: "cur" | "past" (style.fill still wins) — a
+//               named lane colour (TONES, same ones the on-screen table
+//               gives that column: olive for Actual / Last Month "now",
+//               grey+light-blue for Last Month's own value).
 //
 //   groups (optional): [{ label, span, groups? }] — a second header row
 //     above the columns (Credit Report's "Loan Outstanding" over #
 //     Loan / Value…); a group with no label keeps its column's own
 //     label over every header row. Excel only: a group can carry its
-//     own `groups: [{ label, span, highlight? }]` (lanes) for a 3rd row
+//     own `groups: [{ label, span, tone? }]` (lanes) for a 3rd row
 //     between — e.g. "Loan Outstanding" over "Plan" / "Actual" /
 //     "Achieved", each over that section's own # Loan / # Client /
 //     Value; a group with no lanes of its own still gets one, its label
 //     just spans down through the lane row. One sheet's groups are
 //     either all flat or some have lanes — no lanes anywhere keeps
 //     today's plain 2-row header, exactly as before. A lane's own
-//     `highlight: true` gives it the same olive tint as a highlighted
-//     column (its header AND its columns below, when those also set
-//     `highlight`).
+//     `tone` gives it that named colour (its header AND its columns
+//     below, when those also set the same `tone`).
 //
 //   ArrExport.excel({ filename, sheets: [{ name, title, info, cols, groups, rows, freezeCols }], freezeCols, onProgress })
 //   ArrExport.pdf({ filename, title, info, cols, groups, rows, footer, onProgress })
@@ -49,15 +49,16 @@
     const INK = "#1C2333";
     const GRID = "#C9D1DD";
     const ZEBRA = "#F3F6FA";
-    // The "Actual" / Last-Month "now" lane — the figure that matters
-    // most — same olive highlight as the on-screen table's own
-    // cr-pv-cur / cr-lm-cur (cr-table.css), so it stands out in a lane
-    // header (CUR_FILL/CUR_TEXT) or in a data cell (CUR_TINT/CUR_TINT_Z,
-    // alternating for zebra rows) at a glance.
-    const CUR_FILL = "#4A3C00";
-    const CUR_TEXT = "#FFE680";
-    const CUR_TINT = "#FFF3D6";
-    const CUR_TINT_Z = "#FDEBC2";
+    // Lane colour tones — "cur" (Actual / Last-Month "now") and "past"
+    // (Last Month's own value) each get their own fill in a lane header
+    // and a light tint on their data cells, same as the on-screen
+    // table's own cr-pv-cur / cr-lm-cur / cr-lm-value (cr-table.css,
+    // cr-last-month.css). A lane or column with no `tone` keeps the
+    // plain navy header / zebra-only data cells, exactly as before.
+    const TONES = {
+        cur: { fill: "#4A3C00", text: "#FFE680", tint: "#FFF3D6", tintZ: "#FDEBC2" },
+        past: { fill: "#404040", text: "#FFD700", tint: "#DAEEF3", tintZ: "#C6E5EE" }
+    };
     const EXCELJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js";
 
     const scripts = {};
@@ -140,10 +141,11 @@
                 c.font = { name: FONT, size: 10, color: { argb: "FF5B6475" } };
             });
 
-            const headCell = (c, value, tint) => {
+            const headCell = (c, value, tone) => {
+                const t = tone && TONES[tone];
                 c.value = value;
-                c.font = { name: FONT, size: 10, bold: true, color: { argb: argb(tint ? CUR_TEXT : GOLD) } };
-                c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: argb(tint ? CUR_FILL : NAVY) } };
+                c.font = { name: FONT, size: 10, bold: true, color: { argb: argb(t ? t.text : GOLD) } };
+                c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: argb(t ? t.fill : NAVY) } };
                 c.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
                 c.border = borders;
             };
@@ -168,8 +170,8 @@
                             if (Array.isArray(g.groups) && g.groups.length) {
                                 let sc = c;
                                 g.groups.forEach(sg => {
-                                    for (let j = sc; j < sc + sg.span; j++) headCell(ws.getCell(headLane, j), null, sg.highlight);
-                                    headCell(ws.getCell(headLane, sc), sg.label, sg.highlight);
+                                    for (let j = sc; j < sc + sg.span; j++) headCell(ws.getCell(headLane, j), null, sg.tone);
+                                    headCell(ws.getCell(headLane, sc), sg.label, sg.tone);
                                     if (sg.span > 1) ws.mergeCells(headLane, sc, headLane, sc + sg.span - 1);
                                     sc += sg.span;
                                 });
@@ -200,8 +202,9 @@
                     if (v === undefined || v === "") v = null;
                     c.value = v;
                     const st = (col.style && col.style(row, i)) || {};
+                    const tone = col.tone && TONES[col.tone];
                     c.font = { name: FONT, size: 10, bold: !!st.bold, color: { argb: argb(st.color || INK) } };
-                    const fill = st.fill || (col.highlight ? (zebra ? CUR_TINT_Z : CUR_TINT) : (zebra ? ZEBRA : null));
+                    const fill = st.fill || (tone ? (zebra ? tone.tintZ : tone.tint) : (zebra ? ZEBRA : null));
                     if (fill) c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: argb(fill) } };
                     if (typeof v === "number" || v instanceof Date) c.numFmt = col.numFmt || NUM_FMT[col.type] || "General";
                     else c.numFmt = "@";

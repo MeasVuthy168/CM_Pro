@@ -6,6 +6,13 @@
 .table-card tr:nth-child(even) td.cr-lm-cur{ background:#FDEBC2; }
 [data-theme="dark"] .table-card td.cr-lm-cur{ background:#2A2610; }
 [data-theme="dark"] .table-card tr:nth-child(even) td.cr-lm-cur{ background:#302B12; }
+/* Last month's own value — a grey header and a light-blue tint, same
+   as the Export All workbook gives this same lane. */
+.table-card th.cr-lm-value{ background:#404040; }
+.table-card td.cr-lm-value{ background:#DAEEF3; }
+.table-card tr:nth-child(even) td.cr-lm-value{ background:#C6E5EE; }
+[data-theme="dark"] .table-card td.cr-lm-value{ background:#16303A; }
+[data-theme="dark"] .table-card tr:nth-child(even) td.cr-lm-value{ background:#1A3842; }
 /* A thicker line between the blocks. */
 .table-card .cr-lm-cur + .cr-lm-diff,
 .table-card .cr-lm-value + .cr-lm-cur,
