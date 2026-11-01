@@ -10,24 +10,26 @@
 //               "\n" splits it over lines
 //     style     { fill, color, bold } — the table's colours (Class, Promise…)
 //     numFmt    Excel number format instead of the type's own ("0.00%"…)
-//     tone      Excel only: "cur" | "past" (style.fill still wins) — a
-//               named lane colour (TONES, same ones the on-screen table
-//               gives that column: olive for Actual / Last Month "now",
-//               grey+light-blue for Last Month's own value).
+//     tone      a named lane colour (TONES: "cur" | "past", style.fill
+//               still wins) — same ones the on-screen table gives that
+//               column: olive for Actual / Last Month "now", grey +
+//               light-blue for Last Month's own value. Excel tints the
+//               cell's fill; PDF tints its lane header only (data cells
+//               keep the plain zebra/style background).
 //
 //   groups (optional): [{ label, span, groups? }] — a second header row
 //     above the columns (Credit Report's "Loan Outstanding" over #
 //     Loan / Value…); a group with no label keeps its column's own
-//     label over every header row. Excel only: a group can carry its
-//     own `groups: [{ label, span, tone? }]` (lanes) for a 3rd row
-//     between — e.g. "Loan Outstanding" over "Plan" / "Actual" /
-//     "Achieved", each over that section's own # Loan / # Client /
-//     Value; a group with no lanes of its own still gets one, its label
-//     just spans down through the lane row. One sheet's groups are
-//     either all flat or some have lanes — no lanes anywhere keeps
-//     today's plain 2-row header, exactly as before. A lane's own
-//     `tone` gives it that named colour (its header AND its columns
-//     below, when those also set the same `tone`).
+//     label over every header row. A group can carry its own
+//     `groups: [{ label, span, tone? }]` (lanes) for a 3rd row between —
+//     e.g. "Loan Outstanding" over "Plan" / "Actual" / "Achieved", each
+//     over that section's own # Loan / # Client / Value; a group with
+//     no lanes of its own still gets one, its label just spans down
+//     through the lane row. One sheet's groups are either all flat or
+//     some have lanes — no lanes anywhere keeps today's plain 2-row
+//     header, exactly as before. Excel and PDF both draw all 3 rows the
+//     same way (PDF also tints a lane's header by its own `tone`,
+//     same as Excel).
 //
 //   ArrExport.excel({ filename, sheets: [{ name, title, info, cols, groups, rows, freezeCols }], freezeCols, onProgress })
 //   ArrExport.pdf({ filename, title, info, cols, groups, rows, footer, onProgress })
@@ -347,6 +349,10 @@
         for (let pi = 0; pi < parts.length; pi++) {
             const cols = parts[pi].cols;
             const groups = (parts[pi].groups || []).some(g => g.label) ? parts[pi].groups : null;
+            // A group may carry its own `groups` (lanes) — same 3-row
+            // section/lane/field header excel() draws; see arrears-export.js's
+            // own header comment.
+            const hasLanes = !!(groups && groups.some(g => Array.isArray(g.groups) && g.groups.length));
             const title = parts[pi].title || docTitle;
             // Cell texts once (a cell may hold several lines: amounts in two
             // currencies); natural column widths at BASE_PX.
@@ -388,6 +394,7 @@
             const heights = texts.map(cells => rowH + (Math.max(...cells.map(c => c.length)) - 1) * lineH);
             const headH = Math.round(px * 2.4);
             const groupH = groups ? headH : 0;
+            const laneH = hasLanes ? headH : 0;
             const titlePx = Math.round(px * 1.45);
             const infoPx = Math.round(px * 0.95);
             const infoLines = info || [];
@@ -398,7 +405,7 @@
             // Rows per page, by their heights: [start, end) for each page.
             const pageRanges = [];
             for (let i = 0; i < rows.length || !pageRanges.length;) {
-                const room = PAGE_H - MARGIN - footH - (pageRanges.length ? topNext : topFirst) - groupH - headH;
+                const room = PAGE_H - MARGIN - footH - (pageRanges.length ? topNext : topFirst) - groupH - laneH - headH;
                 let used = 0, end = i;
                 while (end < rows.length && (end === i || used + heights[end] <= room)) used += heights[end++];
                 pageRanges.push([i, end]);
@@ -429,9 +436,18 @@
 
                 // Header row(s): with groups, each group's label over its
                 // columns; a column with no group keeps its label over both.
-                fillRect(MARGIN, top, usable, groupH + headH, NAVY);
+                // A group with its own `.groups` (lanes) gets a 2nd label
+                // row under it — section → lane → field, same 3-row header
+                // excel() draws for the same data; a lane's own `tone`
+                // (TONES, shared with excel()) tints just that lane row.
+                fillRect(MARGIN, top, usable, groupH + laneH + headH, NAVY);
                 const headStyle = { px, bold: true, color: GOLD, bg: NAVY, align: "center" };
-                const groupLines = [];   // [x1, x2] under each labelled group
+                const laneStyle = tone => {
+                    const t = tone && TONES[tone];
+                    return { px, bold: true, color: t ? t.text : GOLD, bg: t ? t.fill : NAVY, align: "center" };
+                };
+                const groupLines = [];   // [x1, x2] under each labelled section
+                const laneLines = [];    // [x1, x2] under each labelled lane
                 let x = MARGIN;
                 if (groups) {
                     let c = 0;
@@ -439,14 +455,40 @@
                         const span = widths.slice(c, c + g.span).reduce((a, b) => a + b, 0);
                         if (g.label) {
                             text(g.label, x + pad, top + groupH / 2, span - pad * 2, groupH - 2, headStyle);
-                            let cx = x;
-                            for (let j = c; j < c + g.span; j++) {
-                                text(cols[j].label, cx + pad, top + groupH + headH / 2, widths[j] - pad * 2, headH - 2, headStyle);
-                                cx += widths[j];
+                            if (hasLanes) {
+                                if (Array.isArray(g.groups) && g.groups.length) {
+                                    let cx = x, sc = c;
+                                    g.groups.forEach(sg => {
+                                        const sgSpan = widths.slice(sc, sc + sg.span).reduce((a, b) => a + b, 0);
+                                        const sStyle = laneStyle(sg.tone);
+                                        if (sg.tone) fillRect(cx, top + groupH, sgSpan, laneH, sStyle.bg);
+                                        text(sg.label, cx + pad, top + groupH + laneH / 2, sgSpan - pad * 2, laneH - 2, sStyle);
+                                        let fx = cx;
+                                        for (let j = sc; j < sc + sg.span; j++) {
+                                            text(cols[j].label, fx + pad, top + groupH + laneH + headH / 2, widths[j] - pad * 2, headH - 2, headStyle);
+                                            fx += widths[j];
+                                        }
+                                        laneLines.push([cx, cx + sgSpan]);
+                                        cx += sgSpan;
+                                        sc += sg.span;
+                                    });
+                                } else {
+                                    let cx = x;
+                                    for (let j = c; j < c + g.span; j++) {
+                                        text(cols[j].label, cx + pad, top + groupH + laneH + headH / 2, widths[j] - pad * 2, headH - 2, headStyle);
+                                        cx += widths[j];
+                                    }
+                                }
+                            } else {
+                                let cx = x;
+                                for (let j = c; j < c + g.span; j++) {
+                                    text(cols[j].label, cx + pad, top + groupH + headH / 2, widths[j] - pad * 2, headH - 2, headStyle);
+                                    cx += widths[j];
+                                }
                             }
                             groupLines.push([x, x + span]);
                         } else {
-                            text(cols[c].label, x + pad, top + (groupH + headH) / 2, span - pad * 2, headH - 2, headStyle);
+                            text(cols[c].label, x + pad, top + (groupH + laneH + headH) / 2, span - pad * 2, headH - 2, headStyle);
                         }
                         x += span;
                         c += g.span;
@@ -458,7 +500,7 @@
                     });
                 }
                 const headTop = top;
-                top += groupH + headH;
+                top += groupH + laneH + headH;
 
                 // Rows: backgrounds, then text (lines centred in the row).
                 const rowTops = [top];
@@ -489,12 +531,16 @@
                 doc.setLineWidth(0.15);
                 rowTops.forEach(t => doc.line(mm(MARGIN), mm(t), mm(MARGIN + usable), mm(t)));
                 groupLines.forEach(([x1, x2]) => doc.line(mm(x1), mm(headTop + groupH), mm(x2), mm(headTop + groupH)));
-                // Column lines run through the header, except where a group
-                // label spans them (there they start under it).
+                if (hasLanes) laneLines.forEach(([x1, x2]) => doc.line(mm(x1), mm(headTop + groupH + laneH), mm(x2), mm(headTop + groupH + laneH)));
+                // Column lines run through the header, except where a
+                // section label spans them (there they start under it) —
+                // or, under a lane of their own, under that instead.
                 const inGroup = xv => groupLines.some(([x1, x2]) => xv > x1 + 0.5 && xv < x2 - 0.5);
+                const inLane = xv => laneLines.some(([x1, x2]) => xv > x1 + 0.5 && xv < x2 - 0.5);
                 x = MARGIN;
                 for (let j = 0; j <= cols.length; j++) {
-                    doc.line(mm(x), mm(inGroup(x) ? headTop + groupH : headTop), mm(x), mm(bottom));
+                    const lineTop = inLane(x) ? headTop + groupH + laneH : inGroup(x) ? headTop + groupH : headTop;
+                    doc.line(mm(x), mm(lineTop), mm(x), mm(bottom));
                     x += widths[j] || 0;
                 }
 

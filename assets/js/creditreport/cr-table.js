@@ -156,7 +156,11 @@ window.CRTable = (() => {
             if (last && last.label === label) last.span += g.fields.length;
             else runs.push({ label, span: g.fields.length });
         });
-        return runs.map(r => `<th colspan="${r.span}" class="cr-section-head">${r.label}</th>`).join("");
+        // Every run here already is a section boundary by definition
+        // (consecutive same-label groups merge into one run) — cr-sec-start
+        // carries the same gold border tagSectionStarts() gives the lane
+        // and field rows below it, down through the whole column.
+        return runs.map(r => `<th colspan="${r.span}" class="cr-section-head cr-sec-start">${r.label}</th>`).join("");
     }
 
     return { parPill, bar, compact, exact, edgeHint, planBlocks, planCell, blockClasses, headRowCount, sectionLabelRow, tagSectionStarts };
