@@ -120,49 +120,71 @@
         return intCol(f.label, get);
     }
 
-    // One field, "like in app": Actual, then Last Month right beside it
-    // (every field — the saved day has the same shape as the live one),
-    // then — only for fields with a planKey — Plan and Achieved (or,
-    // for a ceiling figure, Plan and the ± against it). Comparison data
-    // rides on the row itself (`row.lastMonth`, `row.planVs`), attached
-    // once per sheet in sheetDailyMonitoring() below, not refetched per
-    // field.
-    function comparisonFieldCols(f) {
-        const kindCol = f.pct ? pctCol : f.money ? moneyCol : intCol;
-        const cols = [
-            fieldCol(f),
-            kindCol(`${f.label} (${t("creditreport.lastMonth.col")})`, r => getPath(r.lastMonth, f.key))
-        ];
-        if (f.planKey) {
-            const plan = r => ((r.planVs || {})[f.planKey] || {}).plan;
-            if (f.ceiling) {
-                cols.push(pctCol(`${f.label} (${t("creditreport.plan.planMax")})`, plan));
-                cols.push(pctCol(`${f.label} (±)`, r => {
-                    const p = plan(r), a = getPath(r, f.key);
+    // One section's fields, "like in app" (the on-screen report's own
+    // Plan-vs-Actual table: a lane per comparison, that lane's own
+    // fields underneath it — crBuildThead()/crPlanFields() laid out the
+    // same way, just always-on rather than a mode to switch between).
+    // Lane order: Plan, Actual, Achieved (or ± for a ceiling figure —
+    // PAR %/NPL %, where the plan is a maximum), Last Month — Plan and
+    // Achieved only for the fields in this section that have a
+    // planKey (not every field does; Product/Location sections have
+    // none). Comparison data rides on the row itself (`row.lastMonth`,
+    // `row.planVs`), attached once per sheet in sheetDailyMonitoring()
+    // below, not refetched per field.
+    function sectionCols(fields) {
+        const cols = [];
+        const lanes = [];
+        const planFields = fields.filter(f => f.planKey);
+        const anyCeiling = planFields.some(f => f.ceiling);
+
+        if (planFields.length) {
+            const planCols = planFields.map(f => {
+                const kindCol = f.ceiling ? pctCol : (f.money ? moneyCol : intCol);
+                return kindCol(f.label, r => ((r.planVs || {})[f.planKey] || {}).plan);
+            });
+            cols.push(...planCols);
+            lanes.push({ label: t(anyCeiling ? "creditreport.plan.planMax" : "creditreport.plan.plan"), span: planCols.length });
+        }
+
+        const actualCols = fields.map(f => fieldCol(f));
+        cols.push(...actualCols);
+        lanes.push({ label: t("creditreport.plan.actual"), span: actualCols.length });
+
+        if (planFields.length) {
+            const achCols = planFields.map(f => f.ceiling
+                ? pctCol(f.label, r => {
+                    const p = ((r.planVs || {})[f.planKey] || {}).plan, a = getPath(r, f.key);
                     return (p === null || p === undefined || a === null || a === undefined) ? null : a - p;
-                }));
-            } else {
-                cols.push(kindCol(`${f.label} (${t("creditreport.plan.plan")})`, plan));
-                cols.push(pctCol(`${f.label} (${t("creditreport.plan.ach")})`, r => {
+                })
+                : pctCol(f.label, r => {
                     const m = (r.planVs || {})[f.planKey] || {};
                     return (m.plan && m.actual !== null && m.actual !== undefined) ? m.actual / m.plan : null;
                 }));
-            }
+            cols.push(...achCols);
+            lanes.push({ label: anyCeiling ? "±" : t("creditreport.plan.ach"), span: achCols.length });
         }
-        return cols;
+
+        const lmCols = fields.map(f => {
+            const kindCol = f.pct ? pctCol : f.money ? moneyCol : intCol;
+            return kindCol(f.label, r => getPath(r.lastMonth, f.key));
+        });
+        cols.push(...lmCols);
+        lanes.push({ label: t("creditreport.lastMonth.col"), span: lmCols.length });
+
+        return { cols, lanes };
     }
 
     // Identity column + groups of fields -> {cols, groups} for
     // ArrExport (a leading, ungrouped identity column, then each
-    // group's fields — each expanded into its comparison columns —
-    // under its own spanning header).
+    // section under its own spanning header, each with its own lane
+    // row — Plan/Actual/Achieved/Last Month — underneath).
     function groupedCols(identityLabel, identityGet, groups) {
         const cols = [textCol(identityLabel, identityGet)];
         const colGroups = [{ span: 1 }];
         groups.forEach(g => {
-            let span = 0;
-            g.fields.forEach(f => { const fcols = comparisonFieldCols(f); cols.push(...fcols); span += fcols.length; });
-            colGroups.push({ label: g.label, span });
+            const { cols: gcols, lanes } = sectionCols(g.fields);
+            cols.push(...gcols);
+            colGroups.push({ label: g.label, span: gcols.length, groups: lanes });
         });
         return { cols, groups: colGroups };
     }

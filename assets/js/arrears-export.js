@@ -11,9 +11,17 @@
 //     style  { fill, color, bold } — the table's colours (Class, Promise…)
 //     numFmt Excel number format instead of the type's own ("0.00%"…)
 //
-//   groups (optional): [{ label, span }] — a second header row above the
-//     columns (Credit Report's "Loan Outstanding" over # Loan / Value…);
-//     a group with no label keeps its column's own label over both rows.
+//   groups (optional): [{ label, span, groups? }] — a second header row
+//     above the columns (Credit Report's "Loan Outstanding" over #
+//     Loan / Value…); a group with no label keeps its column's own
+//     label over every header row. Excel only: a group can carry its
+//     own `groups: [{ label, span }]` (lanes) for a 3rd row between —
+//     e.g. "Loan Outstanding" over "Plan" / "Actual" / "Achieved",
+//     each over that section's own # Loan / # Client / Value; a group
+//     with no lanes of its own still gets one, its label just spans
+//     down through the lane row. One sheet's groups are either all
+//     flat or some have lanes — no lanes anywhere keeps today's plain
+//     2-row header, exactly as before.
 //
 //   ArrExport.excel({ filename, sheets: [{ name, title, info, cols, groups, rows, freezeCols }], freezeCols, onProgress })
 //   ArrExport.pdf({ filename, title, info, cols, groups, rows, footer, onProgress })
@@ -82,8 +90,16 @@
             const { cols, rows } = sheet;
             const n = cols.length;
             const groups = (sheet.groups || []).some(g => g.label) ? sheet.groups : null;
-            const headRow = 2 + (sheet.info || []).length + 1 + (groups ? 1 : 0);   // title, info…, blank, [groups]
-            const headTop = groups ? headRow - 1 : headRow;
+            // A group may carry its own `groups` (lanes) — e.g. a section
+            // ("Outstanding") split into Plan / Actual / Achieved, each
+            // with that section's own fields beneath it: a 3rd header
+            // row. Only sheets that use this get the extra row; every
+            // other sheet (every group flat, no `.groups` of its own)
+            // renders exactly as before.
+            const hasLanes = !!(groups && groups.some(g => Array.isArray(g.groups) && g.groups.length));
+            const headRow = 2 + (sheet.info || []).length + 1 + (groups ? 1 : 0) + (hasLanes ? 1 : 0);   // title, info…, blank, [groups], [lanes]
+            const headLane = hasLanes ? headRow - 1 : null;
+            const headTop = groups ? (hasLanes ? headRow - 2 : headRow - 1) : headRow;
             const ws = wb.addWorksheet(sheet.name, {
                 views: [{ state: "frozen", xSplit: sheet.freezeCols ?? freezeCols, ySplit: headRow }],
                 pageSetup: {
@@ -121,13 +137,31 @@
             head.height = 24;
             if (groups) {
                 // Group label across its columns; a column with no group
-                // keeps its own label, over both header rows.
+                // keeps its own label, over every header row. A group
+                // with its own `.groups` (lanes) gets a 2nd label row
+                // under it, each lane spanning only its own columns; a
+                // group with none has its one label merged down through
+                // the lane row too, so it still lines up with the ones
+                // that do.
                 let c = 1;
                 groups.forEach(g => {
                     for (let j = c; j < c + g.span; j++) headCell(ws.getCell(headTop, j), null);
                     if (g.label) {
                         headCell(ws.getCell(headTop, c), g.label);
                         if (g.span > 1) ws.mergeCells(headTop, c, headTop, c + g.span - 1);
+                        if (hasLanes) {
+                            if (Array.isArray(g.groups) && g.groups.length) {
+                                let sc = c;
+                                g.groups.forEach(sg => {
+                                    for (let j = sc; j < sc + sg.span; j++) headCell(ws.getCell(headLane, j), null);
+                                    headCell(ws.getCell(headLane, sc), sg.label);
+                                    if (sg.span > 1) ws.mergeCells(headLane, sc, headLane, sc + sg.span - 1);
+                                    sc += sg.span;
+                                });
+                            } else {
+                                ws.mergeCells(headTop, c, headLane, c + g.span - 1);
+                            }
+                        }
                     } else {
                         headCell(ws.getCell(headTop, c), cols[c - 1].label);
                         ws.mergeCells(headTop, c, headRow, c);
@@ -135,6 +169,7 @@
                     c += g.span;
                 });
                 ws.getRow(headTop).height = 22;
+                if (hasLanes) ws.getRow(headLane).height = 22;
             }
 
             // Column widths from the longest text (Excel units ≈ characters).
