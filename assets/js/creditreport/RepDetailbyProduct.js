@@ -244,7 +244,7 @@ function crBuildThead(section) {
     const sectionRow = CRTable.sectionLabelRow(section);
     const nameCell = `<th rowspan="${rows}" class="cr-name-col${sortCls("_name")}" data-sort-key="_name" data-sort-type="text">${t("creditreport.compare.dimProduct")}</th>`;
     return `
-      ${sectionRow ? `<tr class="cr-section-row">${nameCell}${sectionRow}</tr>` : ""}
+      ${sectionRow ? `<tr class="cr-thead-section">${nameCell}${sectionRow}</tr>` : ""}
       <tr class="cr-group-row">
         ${sectionRow ? "" : nameCell}
         ${groupCells}
@@ -403,7 +403,7 @@ function crBuildHistoryThead(section) {
         <th rowspan="${rows}" class="cr-name-col">Product</th>
         <th rowspan="${rows}" class="cr-date-col">Date</th>`;
     return `
-      ${sectionRow ? `<tr class="cr-section-row">${leadCells}${sectionRow}</tr>` : ""}
+      ${sectionRow ? `<tr class="cr-thead-section">${leadCells}${sectionRow}</tr>` : ""}
       <tr class="cr-group-row">
         ${sectionRow ? "" : leadCells}
         ${groupCells}
@@ -675,10 +675,13 @@ document.getElementById("crSearchClear")?.addEventListener("click", () => {
 // Sub-header row sticks under the group row; the group row's height
 // varies with text wrapping, so it's measured rather than hardcoded.
 function crSetHeaderOffsets() {
+    const sectionRow = document.querySelector("#crTable thead tr.cr-thead-section");
     const groupRow = document.querySelector("#crTable thead tr.cr-group-row");
     const subRow = document.querySelector("#crTable thead tr.cr-sub-row");
     if (!groupRow || !subRow) return;
-    const h = groupRow.getBoundingClientRect().height;
+    const sectionH = sectionRow ? sectionRow.getBoundingClientRect().height : 0;
+    groupRow.querySelectorAll("th").forEach(th => { th.style.top = sectionH + "px"; });
+    const h = sectionH + groupRow.getBoundingClientRect().height;
     subRow.querySelectorAll("th").forEach(th => { th.style.top = h + "px"; });
 }
 window.addEventListener("resize", crSetHeaderOffsets);

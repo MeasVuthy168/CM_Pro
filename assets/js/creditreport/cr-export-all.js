@@ -146,9 +146,14 @@
             lanes.push({ label: t(anyCeiling ? "creditreport.plan.planMax" : "creditreport.plan.plan"), span: planCols.length });
         }
 
-        const actualCols = fields.map(f => fieldCol(f));
+        // Actual is the figure that matters most on this sheet — tinted
+        // gold in its header and data cells, same highlight the on-screen
+        // table gives its own Actual / Last-Month "now" lane (cr-pv-cur /
+        // cr-lm-cur in cr-table.css), so it stands out from Plan /
+        // Achieved / Last Month at a glance.
+        const actualCols = fields.map(f => ({ ...fieldCol(f), highlight: true }));
         cols.push(...actualCols);
-        lanes.push({ label: t("creditreport.plan.actual"), span: actualCols.length });
+        lanes.push({ label: t("creditreport.plan.actual"), span: actualCols.length, highlight: true });
 
         if (planFields.length) {
             const achCols = planFields.map(f => f.ceiling

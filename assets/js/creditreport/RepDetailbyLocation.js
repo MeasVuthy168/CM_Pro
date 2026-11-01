@@ -281,7 +281,7 @@ function crBuildThead(section) {
         <th rowspan="${rows}" class="cr-col-num${sortCls("families")}" data-sort-key="families" data-sort-type="number">${t("creditreport.byLocation.colFamily")}</th>
         <th rowspan="${rows}" class="cr-col-pct${sortCls("segmentationPct")}" data-sort-key="segmentationPct" data-sort-type="number">${t("creditreport.byLocation.colSegmentationPct")}</th>`;
     return `
-      ${sectionRow ? `<tr class="cr-section-row">${leadCells}${sectionRow}</tr>` : ""}
+      ${sectionRow ? `<tr class="cr-thead-section">${leadCells}${sectionRow}</tr>` : ""}
       <tr class="cr-group-row">
         ${sectionRow ? "" : leadCells}
         ${groupCells}
@@ -489,7 +489,7 @@ function crBuildHistoryThead(section) {
         <th rowspan="${rows}" class="cr-col-num"># Family</th>
         <th rowspan="${rows}" class="cr-col-pct">Segmentation%</th>`;
     return `
-      ${sectionRow ? `<tr class="cr-section-row">${leadCells}${sectionRow}</tr>` : ""}
+      ${sectionRow ? `<tr class="cr-thead-section">${leadCells}${sectionRow}</tr>` : ""}
       <tr class="cr-group-row">
         ${sectionRow ? "" : leadCells}
         ${groupCells}
@@ -836,10 +836,13 @@ document.getElementById("crSearchClear")?.addEventListener("click", () => {
 // Sub-header row sticks under the group row; the group row's height
 // varies with text wrapping, so it's measured rather than hardcoded.
 function crSetHeaderOffsets() {
+    const sectionRow = document.querySelector("#crTable thead tr.cr-thead-section");
     const groupRow = document.querySelector("#crTable thead tr.cr-group-row");
     const subRow = document.querySelector("#crTable thead tr.cr-sub-row");
     if (!groupRow || !subRow) return;
-    const h = groupRow.getBoundingClientRect().height;
+    const sectionH = sectionRow ? sectionRow.getBoundingClientRect().height : 0;
+    groupRow.querySelectorAll("th").forEach(th => { th.style.top = sectionH + "px"; });
+    const h = sectionH + groupRow.getBoundingClientRect().height;
     subRow.querySelectorAll("th").forEach(th => { th.style.top = h + "px"; });
 }
 window.addEventListener("resize", crSetHeaderOffsets);
