@@ -154,7 +154,11 @@
     // repeated on each band. Excel keeps the whole table on one sheet.
     const BAND_COLS = 16;
 
-    function bandsOf(m) {
+    // perSection: one band per top-level group (section), however many
+    // columns it holds, instead of packing bands up to BAND_COLS — the
+    // Daily Monitoring PDF's own "Export PDF" (each section block its
+    // own page, owner request) rather than Print's default packing.
+    function bandsOf(m, { perSection } = {}) {
         let lead = 0, gi = 0;
         while (gi < m.groups.length && !m.groups[gi].label) lead += m.groups[gi++].span;
         const leadCols = m.cols.slice(0, lead), leadGroups = m.groups.slice(0, gi);
@@ -162,8 +166,8 @@
         let cur = null, c = lead;
         for (; gi < m.groups.length; gi++) {
             const g = m.groups[gi];
-            if (!cur || cur.n + g.span > BAND_COLS) {
-                cur = { cols: leadCols.slice(), groups: leadGroups.slice(), n: 0 };
+            if (!cur || perSection || cur.n + g.span > BAND_COLS) {
+                cur = { cols: leadCols.slice(), groups: leadGroups.slice(), n: 0, label: perSection ? g.label : null };
                 bands.push(cur);
             }
             cur.cols.push(...m.cols.slice(c, c + g.span));
@@ -172,7 +176,7 @@
             c += g.span;
         }
         if (bands.length < 2) return [{ cols: m.cols, groups: m.groups, part: "" }];
-        return bands.map((b, k) => ({ cols: b.cols, groups: b.groups, part: ` (${k + 1}/${bands.length})` }));
+        return bands.map((b, k) => ({ cols: b.cols, groups: b.groups, part: b.label ? ` — ${b.label}` : ` (${k + 1}/${bands.length})` }));
     }
 
     const visible = el => !!el && el.getClientRects().length > 0;
@@ -295,17 +299,19 @@
     function exportPdf(opts) {
         const dmKey = DAILY_MONITORING_SHEET[opts.name];
         return runDailyMonitoring(t("creditreport.export.creatingPdf"), dmKey, (sheet, onProgress) => {
-            // bandsOf() only needs each top-level group's own `.span` to
-            // slice columns into page bands — it carries each group
-            // (lanes and all) through untouched, so ArrExport.pdf() gets
-            // the same nested section/lane structure Excel does, same
-            // 3-row header.
+            // bandsOf(..., { perSection: true }) only needs each
+            // top-level group's own `.span` to slice columns into page
+            // bands — it carries each group (lanes and all) through
+            // untouched, so ArrExport.pdf() gets the same nested
+            // section/lane structure Excel does, same 3-row header. One
+            // band per section (rather than packed up to BAND_COLS)
+            // means every page is one section block — owner request.
             return window.ArrExport.pdf({
                 filename: `${fileBase(opts.name)}.pdf`,
                 title: sheet.title,
                 info: sheet.info,
                 footer: footer(),
-                parts: bandsOf({ cols: sheet.cols, groups: sheet.groups, rows: sheet.rows }).map(b => ({ cols: b.cols, groups: b.groups, title: sheet.title + b.part })),
+                parts: bandsOf({ cols: sheet.cols, groups: sheet.groups, rows: sheet.rows }, { perSection: true }).map(b => ({ cols: b.cols, groups: b.groups, title: sheet.title + b.part })),
                 rows: sheet.rows,
                 onProgress
             });
