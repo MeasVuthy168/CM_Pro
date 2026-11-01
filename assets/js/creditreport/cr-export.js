@@ -9,11 +9,9 @@
 //          the page's own Comparison dropdown happens to be showing.
 //          Real numbers (#,##0 and 0.00%), a frozen header + first
 //          column, filters on the header, A4 landscape print setup.
-//   PDF    the same fresh data as Excel, vector text, the header
-//          repeated on every page, page numbers; its 2-row header
-//          collapses Excel's 3 (section/lane/field) into one combined
-//          "Section · Lane" row — the PDF engine has no 3-row header
-//          of its own yet.
+//   PDF    the same fresh data as Excel, same 3-row section/lane/field
+//          header and lane colours, vector text, the header repeated
+//          on every page, page numbers.
 //   Print  the table as it stands on screen right now (both header
 //          rows, every column, the Total row, the high-PAR colour) —
 //          whichever mode, Showing and filters are active — as a page
@@ -284,22 +282,6 @@
         }
     }
 
-    // A sheet's own nested groups (section → lane) collapsed to one
-    // flat "Section · Lane" row, the shape bandsOf()/ArrExport.pdf()
-    // already take — PDF, unlike Excel, has no 3-row header of its own
-    // yet (arrears-export.js's own comment: lanes are "Excel only").
-    function flattenGroups(groups) {
-        const flat = [];
-        (groups || []).forEach(g => {
-            if (Array.isArray(g.groups) && g.groups.length) {
-                g.groups.forEach(lane => flat.push({ label: g.label ? `${g.label} · ${lane.label}` : lane.label, span: lane.span }));
-            } else {
-                flat.push({ label: g.label, span: g.span });
-            }
-        });
-        return flat;
-    }
-
     function exportExcel(opts) {
         const dmKey = DAILY_MONITORING_SHEET[opts.name];
         return runDailyMonitoring(t("creditreport.export.creatingExcel"), dmKey, (sheet, onProgress) => window.ArrExport.excel({
@@ -313,13 +295,17 @@
     function exportPdf(opts) {
         const dmKey = DAILY_MONITORING_SHEET[opts.name];
         return runDailyMonitoring(t("creditreport.export.creatingPdf"), dmKey, (sheet, onProgress) => {
-            const flatGroups = flattenGroups(sheet.groups);
+            // bandsOf() only needs each top-level group's own `.span` to
+            // slice columns into page bands — it carries each group
+            // (lanes and all) through untouched, so ArrExport.pdf() gets
+            // the same nested section/lane structure Excel does, same
+            // 3-row header.
             return window.ArrExport.pdf({
                 filename: `${fileBase(opts.name)}.pdf`,
                 title: sheet.title,
                 info: sheet.info,
                 footer: footer(),
-                parts: bandsOf({ cols: sheet.cols, groups: flatGroups, rows: sheet.rows }).map(b => ({ cols: b.cols, groups: b.groups, title: sheet.title + b.part })),
+                parts: bandsOf({ cols: sheet.cols, groups: sheet.groups, rows: sheet.rows }).map(b => ({ cols: b.cols, groups: b.groups, title: sheet.title + b.part })),
                 rows: sheet.rows,
                 onProgress
             });
