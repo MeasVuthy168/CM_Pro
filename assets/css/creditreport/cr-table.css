@@ -77,6 +77,14 @@
     .table-card td, .table-card th{ padding-left:8px; padding-right:8px; }
 }
 
+/* ---------- Section block border ---------- */
+/* A stronger line where a whole new section starts (Outstanding →
+   Disburse → …), on top of the lighter one every lane/block already
+   gets below — so a section reads as one boxed-off group of columns,
+   in every compare mode. */
+.table-card .cr-sec-start,
+.table-card thead th.cr-sec-start{ border-left:3px solid var(--cr-gold, #D4AF37) !important; }
+
 /* ---------- Plan vs Actual ---------- */
 /* Plan | Actual | % / ± blocks, like Last Month: a line before each
    block, the Actual block highlighted. */

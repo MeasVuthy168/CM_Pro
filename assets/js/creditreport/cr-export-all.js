@@ -66,14 +66,6 @@
     // for on-screen paging; the export wants everything.
     const ALL = 100000;
 
-    const exportedInfo = () => {
-        let user = "";
-        try { user = JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}").username || ""; } catch (e) { /* no user line */ }
-        const d = new Date();
-        const pad = n => String(n).padStart(2, "0");
-        return `${t("creditreport.export.exported")} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}${user ? " · " + user : ""}`;
-    };
-
     // ---------- column helpers (ArrExport's col shape) ----------
     // Every getter runs through a safe wrapper: a getter that throws
     // (an unexpectedly-shaped real row — the mocked data this was
@@ -107,10 +99,17 @@
     function safeStyle(get) {
         return r => { try { return get(r) || null; } catch (e) { return null; } };
     }
+    // Excel reads `value` and applies `numFmt` itself; the PDF export
+    // (ArrExport.pdf(), via cellText()) has no cell format of its own —
+    // it prints `text` verbatim, falling back to the raw `value` when a
+    // column has none — so these also give it the same formatted text
+    // Excel would show (thousands separators, 2-decimal %).
+    const fmtInt = n => (Number(n) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+    const fmtPct = n => (Number(n) * 100).toFixed(2) + "%";
     const textCol = (label, get) => ({ label, type: "text", value: safeText(get) });
-    const intCol = (label, get) => ({ label, type: "int", numFmt: "#,##0", value: safeNum(get) });
-    const moneyCol = (label, get) => ({ label, type: "num", numFmt: "#,##0", value: safeNum(get) });
-    const pctCol = (label, get) => ({ label, type: "num", numFmt: "0.00%", value: safeNum(get) });
+    const intCol = (label, get) => { const v = safeNum(get); return { label, type: "int", numFmt: "#,##0", value: v, text: r => { const n = v(r); return n === null ? "" : fmtInt(n); } }; };
+    const moneyCol = (label, get) => { const v = safeNum(get); return { label, type: "num", numFmt: "#,##0", value: v, text: r => { const n = v(r); return n === null ? "" : fmtInt(n); } }; };
+    const pctCol = (label, get) => { const v = safeNum(get); return { label, type: "num", numFmt: "0.00%", value: v, text: r => { const n = v(r); return n === null ? "" : fmtPct(n); } }; };
 
     // Same fields CRLastMonth.cell() (cr-last-month.js) treats as "risk"
     // figures, where a (+/-) going DOWN is the good direction — kept as
@@ -443,8 +442,7 @@
         const info = [
             d.toDate ? t("creditreport.tblhead.asOf", { date: dmy(d.toDate) }) : "",
             lm && lm.date ? `${t("creditreport.lastMonth.col")}: ${dmy(lm.date)}` : "",
-            planInfo && planInfo.month ? t("creditreport.plan.noteMonth", { month: planInfo.month.split("-").reverse().join("-"), from: dmy(planInfo.fromDate), to: dmy(planInfo.toDate), done: planInfo.daysDone, days: planInfo.daysInMonth }) : "",
-            exportedInfo()
+            planInfo && planInfo.month ? t("creditreport.plan.noteMonth", { month: planInfo.month.split("-").reverse().join("-"), from: dmy(planInfo.fromDate), to: dmy(planInfo.toDate), done: planInfo.daysDone, days: planInfo.daysInMonth }) : ""
         ].filter(Boolean);
         return [{ name, title, info, cols, groups: colGroups, rows, freezeCols: 1 }];
     }
@@ -471,7 +469,7 @@
             textCol(t("creditreport.pi.officer"), r => (r.officers || []).map(o => o.name).join(", ")),
             textCol(t("creditreport.pi.branch"), r => (r.branches || []).join(", "))
         ];
-        return { name: "CustomerRisk", title: `${t("creditreport.hub.gRisk")} — ${t("creditreport.crk.title")}`, info: [exportedInfo()], cols, rows: d.rows, freezeCols: 1 };
+        return { name: "CustomerRisk", title: `${t("creditreport.hub.gRisk")} — ${t("creditreport.crk.title")}`, info: [], cols, rows: d.rows, freezeCols: 1 };
     }
 
     // ========================================
@@ -491,7 +489,7 @@
             pctCol("Probability", r => r.p),
             moneyCol("Expected rolling", r => r.expected)
         ];
-        return { name: "CustomerPrediction", title: t("creditreport.hub.gForecast") + " — Customer Prediction", info: [exportedInfo()], cols, rows: d.rows, freezeCols: 1 };
+        return { name: "CustomerPrediction", title: t("creditreport.hub.gForecast") + " — Customer Prediction", info: [], cols, rows: d.rows, freezeCols: 1 };
     }
 
     // ========================================
@@ -516,7 +514,7 @@
             textCol(t("creditreport.rc.byCol"), r => r.classifiedBy || ""),
             textCol(t("creditreport.rc.atCol"), r => r.classifiedAt || "")
         ];
-        return { name: "RootCause", title: t("creditreport.hub.gAction") + " — Root Cause", info: [exportedInfo()], cols, rows: d.accounts, freezeCols: 1 };
+        return { name: "RootCause", title: t("creditreport.hub.gAction") + " — Root Cause", info: [], cols, rows: d.accounts, freezeCols: 1 };
     }
 
     // ========================================
@@ -551,7 +549,7 @@
             textCol("By", r => (r.latest || {}).by || ""),
             textCol("At", r => (r.latest || {}).at || "")
         ];
-        return { name: "RecoveryActions", title: t("creditreport.hub.gAction") + " — Recovery Actions", info: [exportedInfo()], cols, rows: d.rows, freezeCols: 1 };
+        return { name: "RecoveryActions", title: t("creditreport.hub.gAction") + " — Recovery Actions", info: [], cols, rows: d.rows, freezeCols: 1 };
     }
 
     // ========================================
@@ -593,7 +591,7 @@
         return NPL_TABS.map(([tab, label]) => ({
             name: `NPL_${tab}`.slice(0, 31),
             title: `${t("creditreport.hub.gRisk")} — NPL ${label}`,
-            info: [exportedInfo()],
+            info: [],
             cols: nplCols(),
             rows: nplRowsOfTab(d.accounts, tab),
             freezeCols: 1
@@ -623,7 +621,7 @@
             moneyCol("Net", r => r.net),
             ...(dim === "branch" ? [moneyCol("Target", r => r.target)] : [])
         ];
-        return { name: `Recovery_${dim}`.slice(0, 31), title: `${t("creditreport.hub.gAction")} — Recovery by ${label}`, info: [exportedInfo()], cols, rows: d.byDim, freezeCols: 1 };
+        return { name: `Recovery_${dim}`.slice(0, 31), title: `${t("creditreport.hub.gAction")} — Recovery by ${label}`, info: [], cols, rows: d.byDim, freezeCols: 1 };
     }
 
     // ========================================
@@ -646,7 +644,7 @@
             moneyCol(t("creditreport.risk.colNewNpl"), r => r.newNpl ? r.newNpl.value : null),
             pctCol(t("creditreport.risk.contribution"), r => r.contribution)
         ];
-        return { name: `RiskContrib_${dim}`.slice(0, 31), title: `${t("creditreport.hub.gRisk")} — Top Risk Contributors (${label})`, info: [exportedInfo()], cols, rows: d.rows, freezeCols: 1 };
+        return { name: `RiskContrib_${dim}`.slice(0, 31), title: `${t("creditreport.hub.gRisk")} — Top Risk Contributors (${label})`, info: [], cols, rows: d.rows, freezeCols: 1 };
     }
 
     // ========================================
@@ -673,7 +671,7 @@
             moneyCol(t("creditreport.detail.woBalanceWO"), r => (r.writeOff && r.writeOff.balanceWO || {}).prn),
             intCol(t("creditreport.detail.colCifHash"), r => (r.writeOff && r.writeOff.balanceWO || {}).cif)
         ];
-        return { name: "MeetingReport_Team", title: `${t("creditreport.hub.meeting")} — CO / FSRO / Digital`, info: [exportedInfo()], cols, rows: buckets, freezeCols: 1 };
+        return { name: "MeetingReport_Team", title: `${t("creditreport.hub.meeting")} — CO / FSRO / Digital`, info: [], cols, rows: buckets, freezeCols: 1 };
     }
 
     // ========================================
@@ -694,7 +692,7 @@
             pctCol(t("creditreport.pi.kNplPct"), r => r.nplPct),
             pctCol(t("creditreport.pi.kParPct"), r => r.parPct)
         ];
-        return { name: "Portfolio_Composition", title: `${t("creditreport.hub.gOverview")} — Composition`, info: [exportedInfo()], cols, rows, freezeCols: 1 };
+        return { name: "Portfolio_Composition", title: `${t("creditreport.hub.gOverview")} — Composition`, info: [], cols, rows, freezeCols: 1 };
     }
 
     // ========================================
@@ -727,7 +725,7 @@
             pctCol("PAR % (best)", r => r.best),
             pctCol("PAR % (stress)", r => r.stress)
         ];
-        return { name: "ParForecast", title: `${t("creditreport.hub.gForecast")}`, info: [exportedInfo()], cols, rows, freezeCols: 1 };
+        return { name: "ParForecast", title: `${t("creditreport.hub.gForecast")}`, info: [], cols, rows, freezeCols: 1 };
     }
 
     // ========================================
@@ -736,27 +734,40 @@
     // would be unkind to the backend), one progress bar, one workbook.
     // ========================================
     const dmTitle = tile => `${t("creditreport.hub.sectionDaily")} — ${t(tile)}`;
+    // Named individually (not just inline in SHEET_JOBS below) so each
+    // one can also be called on its own — the 4 Daily Monitoring pages'
+    // own "Export Excel"/"Export PDF" buttons (cr-export.js) reuse these
+    // exact builders via window.crExportDailyMonitoring, so a single-page
+    // export is the same section/lane/field, colour-coded report as
+    // Export All gives that page, not just whatever the on-screen
+    // Comparison dropdown happens to be showing.
+    const sheetDmBranch = () => sheetDailyMonitoring({
+        path: "/api/creditreport/summary", historyPath: "/api/creditreport/summary/history",
+        planPath: "/api/creditreport/plan-vs-actual", planMatchField: "branch",
+        name: "DailyMonitoring_Branch", title: dmTitle("creditreport.hub.tileBranch"), identityKey: "branch", groups: branchGroups()
+    });
+    const sheetDmOfficer = () => sheetDailyMonitoring({
+        path: "/api/creditreport/byco", historyPath: "/api/creditreport/byco/history",
+        planPath: "/api/creditreport/officer-plan-vs-actual", planMatchField: "id",
+        name: "DailyMonitoring_Officer", title: dmTitle("creditreport.hub.tileOfficer"), identityKey: "name", groups: officerGroups()
+    });
+    const sheetDmProduct = () => sheetDailyMonitoring({
+        path: "/api/creditreport/byproduct", historyPath: "/api/creditreport/byproduct/history",
+        planPath: null, planMatchField: null,
+        name: "DailyMonitoring_Product", title: dmTitle("creditreport.hub.tileProduct"), identityKey: "product", groups: productLikeGroups()
+    });
+    const sheetDmLocation = () => sheetDailyMonitoring({
+        path: "/api/creditreport/bylocation", historyPath: "/api/creditreport/bylocation/history",
+        planPath: null, planMatchField: null,
+        name: "DailyMonitoring_Location", title: dmTitle("creditreport.hub.tileLocation"), identityKey: "location", groups: productLikeGroups(), otherLabel: t("creditreport.pi.otherAddress")
+    });
+    window.crExportDailyMonitoring = { branch: sheetDmBranch, officer: sheetDmOfficer, product: sheetDmProduct, location: sheetDmLocation };
+
     const SHEET_JOBS = [
-        () => sheetDailyMonitoring({
-            path: "/api/creditreport/summary", historyPath: "/api/creditreport/summary/history",
-            planPath: "/api/creditreport/plan-vs-actual", planMatchField: "branch",
-            name: "DailyMonitoring_Branch", title: dmTitle("creditreport.hub.tileBranch"), identityKey: "branch", groups: branchGroups()
-        }),
-        () => sheetDailyMonitoring({
-            path: "/api/creditreport/byco", historyPath: "/api/creditreport/byco/history",
-            planPath: "/api/creditreport/officer-plan-vs-actual", planMatchField: "id",
-            name: "DailyMonitoring_Officer", title: dmTitle("creditreport.hub.tileOfficer"), identityKey: "name", groups: officerGroups()
-        }),
-        () => sheetDailyMonitoring({
-            path: "/api/creditreport/byproduct", historyPath: "/api/creditreport/byproduct/history",
-            planPath: null, planMatchField: null,
-            name: "DailyMonitoring_Product", title: dmTitle("creditreport.hub.tileProduct"), identityKey: "product", groups: productLikeGroups()
-        }),
-        () => sheetDailyMonitoring({
-            path: "/api/creditreport/bylocation", historyPath: "/api/creditreport/bylocation/history",
-            planPath: null, planMatchField: null,
-            name: "DailyMonitoring_Location", title: dmTitle("creditreport.hub.tileLocation"), identityKey: "location", groups: productLikeGroups(), otherLabel: t("creditreport.pi.otherAddress")
-        }),
+        sheetDmBranch,
+        sheetDmOfficer,
+        sheetDmProduct,
+        sheetDmLocation,
         sheetCustomerRisk,
         sheetCustomerPrediction,
         sheetRootCause,
