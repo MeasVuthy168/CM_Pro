@@ -417,13 +417,11 @@ function crBuildRow(item, section, isTotal, idx) {
     const nameCell = isTotal
         ? t("common.total")
         : `${crCompareMode() === "actual" ? `<span class="cr-rank">${idx + 1}</span>` : ""}<button type="button" class="cr-officer-link" data-idx="${idx}">${crEscapeHtml(item.name)}</button>`;
-    // data-name/data-branch back crApplyRowFilters()'s client-side name
-    // search and Officer Status pick — both lowercased once here rather
-    // than on every keystroke/pick.
+    // data-name backs crApplySearchFilter()'s client-side name search —
+    // lowercased once here rather than re-lowercasing on every keystroke.
     const nameAttr = isTotal ? "" : ` data-name="${crEscapeHtml((item.name || "").toLowerCase())}"`;
-    const branchAttr = isTotal ? "" : ` data-branch="${crEscapeHtml((item.branch || "").toLowerCase())}"`;
     return `
-      <tr${isTotal ? ' class="cr-total-row"' : ""}${nameAttr}${branchAttr}>
+      <tr${isTotal ? ' class="cr-total-row"' : ""}${nameAttr}>
         <td class="cr-name-col">${nameCell}</td>
         ${cells}
       </tr>`;
@@ -440,11 +438,6 @@ const CR_NBC_CLASS_INDEX = {
     minor: 0, specialMention: 1, subStandard: 2, doubtful: 3,
     loss: 4, majorDefault: 5, nonPerformingLoan: 6, total: 7
 };
-
-// Loan Disburse / KHR / ≤$50,000 / LOS, each Area or Own — the
-// sections Officer Status (crOfficerStatusRow, crApplyRowFilters())
-// means something for. Shared with crUpdateClassVisibility().
-const CR_DISBURSE_SECTIONS = ["disburse", "disburseArea", "khr", "khrArea", "small", "smallArea", "los", "losArea"];
 
 // Maps the T24 Loan Class filter's values to their matching bucket key
 // within parT24ByClass/parT24AreaByClass (added to the backend so Daily
@@ -690,8 +683,8 @@ function crRenderSection() {
 
     // Re-render (switching "Showing", or a fresh branch/team fetch)
     // rebuilds every row from scratch, so whatever the user already
-    // typed/picked needs re-applying rather than being silently dropped.
-    crApplyRowFilters();
+    // typed needs re-applying rather than being silently dropped.
+    crApplySearchFilter();
     requestAnimationFrame(crSetHeaderOffsets);
     CRTable.edgeHint(document.getElementById("crTableScroll"));
     crRenderTableHead();
@@ -888,49 +881,35 @@ function crSetMode(mode) {
 }
 
 // ========================================
-// OFFICER SEARCH / OFFICER STATUS
-// Two client-side filters over the already-loaded table (crData.items)
-// — no refetch, unlike Branch/Team/date filters — combined so neither
-// silently overrides the other's hidden rows. The Total row (no
-// data-name attribute) always stays visible regardless of either.
-// Officer Status only applies on the sections it's shown for
-// (CR_DISBURSE_SECTIONS, crUpdateClassVisibility()) — elsewhere a
-// stale pick never silently hides rows. STOP_DISBURSE matches
-// lib/credit-intelligence/overview.js's own STOP_DISBURSE on the
-// backend: an officer's own `branch` is this pseudo-branch, not a
-// separate flag.
+// OFFICER SEARCH
+// Client-side name filter over the already-loaded table (crData.items)
+// — no refetch, unlike Branch/Team/date filters. The Total row (no
+// data-name attribute) always stays visible regardless of the query.
 // ========================================
-const CR_STOP_DISBURSE = "stop disburse";
-function crApplyRowFilters() {
+function crApplySearchFilter() {
     const input = document.getElementById("crSearchInput");
     const clearBtn = document.getElementById("crSearchClear");
     const q = (input?.value || "").trim().toLowerCase();
     if (clearBtn) clearBtn.hidden = !q;
 
-    const isDisburse = crHasSection(...CR_DISBURSE_SECTIONS);
-    const status = isDisburse ? (document.getElementById("crOfficerStatus")?.value || "") : "";
-
     document.querySelectorAll("#crTbody tr").forEach(tr => {
         if (!tr.dataset.name) return; // Total row — always shown
-        const matchesSearch = !q || tr.dataset.name.includes(q);
-        const isStop = tr.dataset.branch === CR_STOP_DISBURSE;
-        const matchesStatus = !status || (status === "stop" ? isStop : !isStop);
-        tr.style.display = (matchesSearch && matchesStatus) ? "" : "none";
+        tr.style.display = (!q || tr.dataset.name.includes(q)) ? "" : "none";
     });
 }
 
-document.getElementById("crSearchInput")?.addEventListener("input", crApplyRowFilters);
+document.getElementById("crSearchInput")?.addEventListener("input", crApplySearchFilter);
 document.getElementById("crSearchInput")?.addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
     e.target.value = "";
-    crApplyRowFilters();
+    crApplySearchFilter();
     e.target.blur();
 });
 document.getElementById("crSearchClear")?.addEventListener("click", () => {
     const input = document.getElementById("crSearchInput");
     if (!input) return;
     input.value = "";
-    crApplyRowFilters();
+    crApplySearchFilter();
     input.focus();
 });
 
@@ -1051,20 +1030,18 @@ function crBuildQuery() {
 // Balance Loan at Risk (T24) sections, and the NBC Overdue Loan
 // Class/Product Type filters only for the NBC Overdue sections — hide
 // each pair otherwise so they can't be mistaken for applying to a
-// section they don't affect. Same for Officer Status and the
-// disburse-related sections (CR_DISBURSE_SECTIONS).
+// section they don't affect.
 function crUpdateClassVisibility() {
     const isT24 = crHasSection("parT24", "parT24Area");
     const isNbc = crHasSection("nbcOverdue", "nbcOverdueArea");
-    const isDisburse = crHasSection(...CR_DISBURSE_SECTIONS);
     // History rows are precomputed daily snapshots covering every
     // officer with every classification/product already in them — the
-    // Branch/Team scope and the T24/NBC/Officer Status local filters all
-    // need a server-side recompute this view doesn't do, so they're
-    // hidden in History mode. The T24/NBC Loan Class pickers stay: both
-    // are now a local display pick among the already-fetched
-    // classifications (parT24ByClass/parT24AreaByClass), same as in
-    // Current mode — see crActiveSection().
+    // Branch/Team scope and the T24/NBC Product Type filters all need a
+    // server-side recompute this view doesn't do, so they're hidden in
+    // History mode. The T24/NBC Loan Class pickers stay: both are now a
+    // local display pick among the already-fetched classifications
+    // (parT24ByClass/parT24AreaByClass), same as in Current mode — see
+    // crActiveSection().
     const isHistory = crMode === "history";
     document.getElementById("crBranchRow").style.display = isHistory ? "none" : "";
     document.getElementById("crTeamRow").style.display = isHistory ? "none" : "";
@@ -1072,7 +1049,6 @@ function crUpdateClassVisibility() {
     document.getElementById("crProductRow").style.display = (isT24 && !isHistory) ? "" : "none";
     document.getElementById("crNbcClassRow").style.display = isNbc ? "" : "none";
     document.getElementById("crNbcProductRow").style.display = (isNbc && !isHistory) ? "" : "none";
-    document.getElementById("crOfficerStatusRow").style.display = (isDisburse && !isHistory) ? "" : "none";
 }
 
 let crBranchesInitialised = false;
@@ -1428,9 +1404,6 @@ document.getElementById("crNbcClass").addEventListener("change", () => {
     crSyncStateToUrl();
 });
 document.getElementById("crNbcProduct").addEventListener("change", crRunReport);
-// Officer Status only hides/shows already-rendered rows (crApplyRowFilters()),
-// same as the name search — no re-render, no refetch.
-document.getElementById("crOfficerStatus").addEventListener("change", crApplyRowFilters);
 
 // Clicking a column header cycles it through ascending -> descending ->
 // default (unsorted, the order the server returned) -> ascending again.
@@ -1464,14 +1437,11 @@ function notify(message, type = "info") {
 // user happened to be typing in the search box — an official report
 // export silently missing rows because a search was still active would
 // be a much worse surprise than the search box just getting cleared.
-// Officer Status is left alone: unlike a forgotten search, it's a
-// deliberate pick (like Comparison/Showing), so PDF/Print keep
-// reflecting it, same as every other on-screen filter.
 function crClearSearchForExport() {
     const input = document.getElementById("crSearchInput");
     if (input && input.value) {
         input.value = "";
-        crApplyRowFilters();
+        crApplySearchFilter();
     }
 }
 
