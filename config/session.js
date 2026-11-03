@@ -105,11 +105,19 @@ function cmGetStoredUser() {
 function cmClearAuthAndRedirect(nextParam) {
 
     try {
+        // Read before clearing loggedInUser — the cached photo is keyed
+        // by username, and a shared device shouldn't keep showing a
+        // previous operator's face after they've signed out.
+        const username = cmGetStoredUser().username;
         localStorage.removeItem("token");
         localStorage.removeItem("loggedInUser");
         sessionStorage.clear();
         localStorage.removeItem(LOCK_ACTIVE_KEY);
         localStorage.removeItem(LAST_ACTIVITY_KEY);
+        if (username) {
+            localStorage.removeItem(`cm_user_photo_${username}`);
+            localStorage.removeItem(`cm_user_photo_at_${username}`);
+        }
         // remember_login is intentionally left alone — same as every
         // other logout path in this app, so the username stays
         // prefilled on the next login.

@@ -964,7 +964,11 @@
         if (!failed) answeredSinceOpen++;
         addMessage("bot", reply.html + (reply.chips ? chipsHtml() : ""));
         busy = false;
-        if (reply.go) setTimeout(() => { location.href = reply.go; }, 700);
+        // replace(), not href= — a customer search's ?q= can hold a CIF or
+        // phone number; this keeps it from ever becoming its own back/
+        // forward history entry (customers.js strips it from the address
+        // bar right away, but only after this navigation already commits).
+        if (reply.go) setTimeout(() => { location.replace(reply.go); }, 700);
     }
 
     function updateSend() {
