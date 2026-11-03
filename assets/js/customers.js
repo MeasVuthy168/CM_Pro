@@ -196,7 +196,9 @@ async function runCustomerSearch(){
 
         if(!response.ok){
 
-            throw new Error(`HTTP ${response.status}`);
+            const e=new Error(`HTTP ${response.status}`);
+            e.status=response.status;
+            throw e;
 
         }
 
@@ -217,6 +219,12 @@ async function runCustomerSearch(){
         console.error(err);
 
         lastResults=[];
+
+        // A rate limit (too many searches in a row) isn't a connection
+        // problem — say so, instead of the generic "check your internet"
+        // text, which is actively misleading here.
+        const textEl=stateError.querySelector(".cst-state-text");
+        if(textEl) textEl.textContent = err.status===429 ? t("customers.rateLimited") : t("customers.errorText");
 
         showState("error");
 

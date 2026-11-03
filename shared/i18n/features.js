@@ -260,6 +260,7 @@ CMI18n.register({
   "customers.errorText": { km: "សូមពិនិត្យការតភ្ជាប់អ៊ីនធឺណិត ហើយសាកល្បងម្តងទៀត", en: "Check your internet connection and try again" },
   "customers.enterKeyword": { km: "សូមបញ្ចូលពាក្យគន្លឹះ", en: "Please enter a keyword" },
   "customers.sessionExpired": { km: "សម័យប្រើប្រាស់បានផុតកំណត់។ សូមចូលម្តងទៀត", en: "Session expired. Please log in again." },
+  "customers.rateLimited": { km: "អ្នកបានស្វែងរកញឹកញាប់ពេក សូមរង់ចាំបន្តិច រួចសាកល្បងម្តងទៀត", en: "Too many searches in a row — please wait a bit and try again" },
   "customers.searching": { km: "កំពុងស្វែងរក...", en: "Searching customer data..." },
   "customers.copied": { km: "បានចម្លង CIF", en: "CIF copied" },
   "customers.copyCifAria": { km: "ចម្លង CIF", en: "Copy CIF" },
