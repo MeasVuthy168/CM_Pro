@@ -139,7 +139,7 @@ function abPaint(data) {
                 <span class="ab-badge">${abEsc(r.action)}</span>
             </div>
             <div class="ab-name">${abEsc(r.accountName || "-")}</div>
-            <div class="ab-acc">${abEsc(r.accountNo || "")}${r.currency ? ` · ${abEsc(r.currency)}` : ""}${r.accountManual ? ` <span class="ab-acc-tag">${abEsc(t("masterdata.ab.accountEdited"))}</span>` : ""}</div>
+            <div class="ab-acc">${abEsc(r.accountNoMasked || "")}${r.currency ? ` · ${abEsc(r.currency)}` : ""}${r.accountManual ? ` <span class="ab-acc-tag">${abEsc(t("masterdata.ab.accountEdited"))}</span>` : ""}</div>
             ${r.found === false ? `<div class="ab-warn">${abEsc(t("masterdata.ab.notInPayroll"))}</div>` : ""}
             <div class="ab-amounts">
                 <span><small>${abEsc(t("masterdata.ab.blockingAmount"))}</small><b>${abBlockingAmount(r)}</b>${r.fromAmountManual != null && r.action === "Block" ? ` <span class="ab-acc-tag">${abEsc(t("masterdata.ab.amountEdited"))}</span>` : ""}</span>
@@ -304,7 +304,7 @@ document.getElementById("abList").addEventListener("click", e => {
     if (!abEditRow) return;
     abEditAction = abEditRow.action;
     document.getElementById("abEditTitle").textContent = abEditRow.accountName || `CIF ${abEditRow.cif}`;
-    document.getElementById("abEditSub").textContent = [`CIF ${abEditRow.cif}`, abEditRow.accountNo].filter(Boolean).join(" · ");
+    document.getElementById("abEditSub").textContent = [`CIF ${abEditRow.cif}`, abEditRow.accountNoMasked].filter(Boolean).join(" · ");
     document.getElementById("abEditTo").value = abEditRow.action === "Update" && abEditRow.toAmount != null ? abEditRow.toAmount : "";
     abFillFromField(abEditRow);
     // No name from Acc Payroll: it can be typed (a found name always wins).
@@ -337,10 +337,12 @@ async function abFillAccounts(row) {
     const paint = items => {
         const accs = items.map(i => i.account);
         // A typed account that isn't one of the CIF's still shows as itself.
-        if (row.accountManual && row.accountNo && !accs.includes(row.accountNo)) items = [{ account: row.accountNo, name: row.accountName }, ...items];
+        if (row.accountManual && row.accountNo && !accs.includes(row.accountNo)) items = [{ account: row.accountNo, accountMasked: row.accountNoMasked, name: row.accountName }, ...items];
         sel.innerHTML = [
             `<option value="${AB_ACC_AUTO}">${abEsc(t("masterdata.ab.accountAuto"))}</option>`,
-            ...items.map(i => `<option value="${abEsc(i.account)}">${abEsc(i.account)}</option>`),
+            // The option's value is the real account (what gets submitted);
+            // only the visible label is masked.
+            ...items.map(i => `<option value="${abEsc(i.account)}">${abEsc(i.accountMasked || i.account)}</option>`),
             `<option value="${AB_ACC_MANUAL}">${abEsc(t("masterdata.ab.accountManual"))}</option>`
         ].join("");
         sel.value = row.accountManual && row.accountNo ? row.accountNo : AB_ACC_AUTO;
@@ -430,7 +432,7 @@ function abSheetHeaders() {
 }
 
 function abSheetRows() {
-    return (abData?.rows || []).map((r, i) => [i + 1, r.cif, r.accountNo, r.accountName,
+    return (abData?.rows || []).map((r, i) => [i + 1, r.cif, r.accountNoMasked, r.accountName,
         r.fromAmount ?? "", r.toAmount ?? "", r.reference || "", r.action, r.description || ""]);
 }
 
