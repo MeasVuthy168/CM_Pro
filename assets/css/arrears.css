@@ -4155,6 +4155,13 @@ button.arx-gps:active{ transform:translateY(2px); border-bottom-width:1px; box-s
 .arx-opts{ display:grid; gap:10px; }
 .arx-opt{ display:flex; align-items:center; gap:12px; width:100%; padding:14px; border-radius:16px; border:1px solid var(--arr-border); background:transparent; color:var(--arr-text); text-align:left; font:inherit; cursor:pointer; }
 .arx-opt:active{ transform:scale(.99); }
+/* Account Blocking stays visible but dimmed for non-admin; tapping it
+   explains itself instead of opening (see arrears-row-actions.js). */
+.arx-opt-blocked{ opacity:.55; }
+.arx-opt-blocked:active{ transform:none; }
+#arxPick .arx-opt-blocked[data-arx="block"]{ background:transparent; border-color:var(--arr-border); border-bottom-width:1px; box-shadow:none; }
+.arx-opt-blocked .arx-ico-block{ background:rgba(120,120,120,.12); color:var(--arr-text-muted); }
+.arx-opt-blocked .arx-chev{ background:var(--arr-text-muted) !important; }
 .arx-opt b{ display:block; font-size:15.5px; }
 .arx-opt small{ display:block; font-size:12.5px; color:var(--arr-text-muted); margin-top:2px; }
 .arx-ico{ flex:0 0 auto; width:44px; height:44px; border-radius:13px; display:grid; place-items:center; }
@@ -4188,7 +4195,8 @@ button.arx-gps:active{ transform:translateY(2px); border-bottom-width:1px; box-s
 [data-theme="dark"] .arx-selbtn-main{ background:#D4AF37; border-color:#D4AF37; color:#0E1B3C; }
 .arx-selbtn-block{ border-color:#f87171; color:#dc2626; }
 [data-theme="dark"] .arx-selbtn-block, [data-theme="darkgray"] .arx-selbtn-block{ color:#fca5a5; }
-.arx-selbar-acts:has(.arx-selbtn-block[hidden]){ grid-template-columns:1fr; }
+/* Non-admin: stays visible, dimmed; tap shows why instead of opening. */
+.arx-selbtn-block.arx-role-blocked{ border-color:var(--arr-border); color:var(--arr-text-muted); opacity:.6; }
 /* Room below the list so the last loans can scroll above the selection bar. */
 body.arx-selecting::after{ content:""; display:block; height:150px; }
 #tbodyArrears tr.arx-sel > td:first-child, tr.arr-cif-ld.arx-sel > td:first-child{ background:#D4AF37 !important; color:#0E1B3C !important; font-weight:800; }
@@ -4229,6 +4237,9 @@ a.arx-primary{ display:grid; place-items:center; text-decoration:none; }
 .arr-actions a.arr-blocking-btn{ text-decoration:none; }
 .arr-actions .arr-blocking-btn ~ .arr-work-btn{ margin-left:0; }
 .arr-actions .arr-blocking-btn .arx-btn-ico{ display:inline-flex; color:#FFD700; }
+/* Non-admin: stays visible, dimmed; tap shows why instead of navigating. */
+.arr-actions .arr-blocking-btn.arx-role-blocked{ opacity:.55; cursor:not-allowed; }
+.arr-actions .arr-blocking-btn.arx-role-blocked .arx-btn-ico{ color:var(--arr-text-muted); }
 
 /* Account Blocking · Work to complete · Refresh · Clear on one line:
    equal columns, icon above a short label (phones). */

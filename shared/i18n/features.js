@@ -151,6 +151,7 @@ CMI18n.register({
   "arrears.act.stay": { km: "នៅ Daily Arrears", en: "Stay on Daily Arrears" },
   "arrears.act.doneAddedN": { km: "CIF ថ្មី {n} · {action}", en: "{n} new CIF · {action}" },
   "arrears.act.blockingBtn": { km: "បង្ខាំងគណនី", en: "Account Blocking" },
+  "arrears.act.blockAdminOnly": { km: "មានតែ Admin ប៉ុណ្ណោះដែលអាចប្រើ Account Blocking បាន", en: "Only Admin can use Account Blocking" },
   "arrears.act.failed": { km: "មិនអាចរក្សាទុកបានទេ", en: "Couldn't save" },
   "arrears.oaLoadingEdited": { km: "កំពុងផ្ទុកបានកែសម្រួល...", en: "Loading edited records..." },
   "arrears.oaCheckingOs": { km: "កំពុងពិនិត្យ OS", en: "Checking OS" },

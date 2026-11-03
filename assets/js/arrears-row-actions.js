@@ -6,8 +6,9 @@
 //     (/api/accblocking/add, the same list as Master Data > Account Blocking).
 // Long press starts multi-select: the bar at the bottom opens Reason
 // Arrear for the picked loans (‹ › limited to them) or adds all their
-// CIFs to the blocking list. Account Blocking is admin-only; every
-// other role keeps the old tap -> Reason Arrear.
+// CIFs to the blocking list. Account Blocking is admin-only, but every
+// role sees it — it just stays dimmed and explains itself on tap
+// instead of opening, for anyone but admin.
 // Uses arrears.js globals: currentRows, openWorkFor, arrCardList,
 // tbodyArrears, arrCifTable.
 // ========================================
@@ -36,6 +37,8 @@
                 blockAllowed = !!data.canEdit;
                 setBlocked(data.rows);
                 if (sel) mark();
+                if (pickRow) paintBlockOpt();
+                paintTopBlockBtn();
             }
         })
         .catch(() => {});
@@ -132,7 +135,6 @@
 
     function tap(row, navRows) {
         if (sel) { toggle(currentRows.indexOf(row)); return; }
-        if (!canBlock()) { openWorkFor(row, navRows); return; }
         pickRow = row;
         pickNav = navRows || null;
         paintPick(row);
@@ -192,6 +194,14 @@
         const idsBox = document.getElementById("arxPickIds");
         idsBox.innerHTML = ids;
         idsBox.hidden = !ids;
+        paintBlockOpt();
+    }
+
+    // Account Blocking stays visible to every role but is dimmed and
+    // explains itself instead of opening for anyone who isn't admin.
+    function paintBlockOpt() {
+        const opt = document.querySelector('#arxPick .arx-opt[data-arx="block"]');
+        if (opt) opt.classList.toggle("arx-opt-blocked", !canBlock());
     }
 
     async function copyText(text) {
@@ -229,6 +239,7 @@
     document.getElementById("arxPick").addEventListener("click", e => {
         const opt = e.target.closest("[data-arx]");
         if (!opt || !pickRow) return;
+        if (opt.dataset.arx === "block" && !canBlock()) { toast(tr("arrears.act.blockAdminOnly"), "warning"); return; }
         closeSheet("arxPick");
         if (opt.dataset.arx === "reason") openWorkFor(pickRow, pickNav);
         else openBlock([pickRow]);
@@ -321,8 +332,9 @@
         document.getElementById("arxSelN").textContent = tr("arrears.act.selectedN", { n: rows.length });
         document.getElementById("arxSelReason").disabled = !rows.length;
         const blockBtn = document.getElementById("arxSelBlock");
-        blockBtn.hidden = !canBlock();
-        blockBtn.disabled = !rows.some(r => String(r.cif || "").trim());
+        blockBtn.hidden = false;
+        blockBtn.classList.toggle("arx-role-blocked", !canBlock());
+        blockBtn.disabled = canBlock() && !rows.some(r => String(r.cif || "").trim());
     }
 
     function toggle(idx) {
@@ -476,19 +488,33 @@
         openWorkFor(rows[0], rows);
     });
     document.getElementById("arxSelBlock").addEventListener("click", () => {
+        if (!canBlock()) { toast(tr("arrears.act.blockAdminOnly"), "warning"); return; }
         const rows = selectedRows();
         if (rows.length) openBlock(rows);
     });
 
     // ---------- Account Blocking button (left of Work to complete) ----------
+    // Shown to every role; dimmed and non-navigating for anyone who isn't
+    // admin, same as the pick sheet's and the multi-select bar's options.
     const workBtn = document.getElementById("btnNoReasonSummary");
-    if (workBtn && role() !== "viewer_staff") {
-        const link = document.createElement("a");
-        link.id = "btnArrBlocking";
-        link.className = "arr-work-btn arr-blocking-btn";
-        link.href = "/CM_Pro/pages/masterdata/accblocking.html";
-        link.innerHTML = `<span class="arx-btn-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></span> <span data-arx-t="arrears.act.blockingBtn">${esc(tr("arrears.act.blockingBtn"))}</span>`;
-        workBtn.before(link);
+    let topBlockBtn = null;
+    if (workBtn) {
+        topBlockBtn = document.createElement("a");
+        topBlockBtn.id = "btnArrBlocking";
+        topBlockBtn.className = "arr-work-btn arr-blocking-btn";
+        topBlockBtn.href = "/CM_Pro/pages/masterdata/accblocking.html";
+        topBlockBtn.innerHTML = `<span class="arx-btn-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></span> <span data-arx-t="arrears.act.blockingBtn">${esc(tr("arrears.act.blockingBtn"))}</span>`;
+        topBlockBtn.addEventListener("click", e => {
+            if (canBlock()) return;
+            e.preventDefault();
+            toast(tr("arrears.act.blockAdminOnly"), "warning");
+        });
+        workBtn.before(topBlockBtn);
+        paintTopBlockBtn();
+    }
+
+    function paintTopBlockBtn() {
+        if (topBlockBtn) topBlockBtn.classList.toggle("arx-role-blocked", !canBlock());
     }
 
     window.arrRowTap = tap;
