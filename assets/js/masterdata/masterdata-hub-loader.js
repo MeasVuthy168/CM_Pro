@@ -8,6 +8,8 @@
     if (role !== "admin" && role !== "user") document.getElementById("mdOutAreaCard")?.remove();
     // Monthly Plan: admin only (the backend's /api/admin/monthly-plan).
     if (role !== "admin") document.getElementById("mdPlanCard")?.remove();
+    // Account Blocking: admin only (the backend's /api/accblocking/*).
+    if (role !== "admin") document.getElementById("mdAccBlockingCard")?.remove();
 })();
 
 // =========================

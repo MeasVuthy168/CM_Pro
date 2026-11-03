@@ -6,8 +6,8 @@
 //     (/api/accblocking/add, the same list as Master Data > Account Blocking).
 // Long press starts multi-select: the bar at the bottom opens Reason
 // Arrear for the picked loans (‹ › limited to them) or adds all their
-// CIFs to the blocking list. Roles that can't build a blocking list
-// (Viewer, Viewer_Staff) keep the old tap -> Reason Arrear.
+// CIFs to the blocking list. Account Blocking is admin-only; every
+// other role keeps the old tap -> Reason Arrear.
 // Uses arrears.js globals: currentRows, openWorkFor, arrCardList,
 // tbodyArrears, arrCifTable.
 // ========================================
@@ -17,7 +17,7 @@
     const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
     const ACTIONS = ["Block", "Unblock", "Update", "Update&Unblock"];
     const ACT_CLASS = { "Block": "block", "Unblock": "unblock", "Update": "update", "Update&Unblock": "updunblock" };
-    const BLOCK_ROLES = ["admin", "user", "viewer_manager_a", "viewer_manager_b", "viewer_manager_c"];
+    const BLOCK_ROLES = ["admin"];
     const ROW_SEL = ".arr-card[data-index], .arr-group-ld[data-index], #tbodyArrears tr[data-index], tr.arr-cif-ld[data-index]";
 
     // The signed-in user sits in localStorage ("stay signed in") or
