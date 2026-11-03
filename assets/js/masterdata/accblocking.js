@@ -5,9 +5,17 @@
 // Update, Update&Unblock). The server looks up the account, name,
 // amounts and description the way the sheet's formulas do
 // (lib/acc-blocking.js); Generate Final List looks them up again and
-// sorts by action. Admin / User / Managers edit their own list; everyone else
-// can open the page and List Block, read-only.
+// sorts by action. Admin-only — the backend's /api/accblocking/* all
+// reject every other role, same as the save/delete rule for Edit
+// Out-of-Area Arrears (outarea.js).
 // ========================================
+
+(() => {
+    let role = "";
+    try { role = String(JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}").role || "").toLowerCase(); }
+    catch (e) {}
+    if (role !== "admin") location.replace("/CM_Pro/pages/masterdata/index.html");
+})();
 
 const t = (key, vars) => (window.CMI18n ? CMI18n.t(key, vars) : key);
 const abEsc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
