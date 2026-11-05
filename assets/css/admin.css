@@ -967,32 +967,21 @@
 }
 [data-theme="dark"] .adm-card-value { color: var(--adm-gold-300); }
 
-.adm-suspicious-card {
-  border-color: var(--adm-danger);
-  background-color: #FBE3E1;
-  margin-bottom: 16px;
-}
-[data-theme="dark"] .adm-suspicious-card {
-  background-color: #331512;
-}
-.adm-suspicious-card .adm-card-label {
-  color: var(--adm-danger);
-}
-.adm-suspicious-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+/* Activity Logs → Security Center link (failed logins / suspicious IPs
+   moved there; this only points the way). */
+.adm-security-link {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.adm-suspicious-list li {
-  font-size: 0.85rem;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  text-decoration: none;
   color: var(--adm-text);
+  transition: border-color 0.15s ease;
 }
-.adm-suspicious-list li strong {
-  color: var(--adm-danger);
-}
+.adm-security-link:hover { border-color: var(--adm-navy-700); }
+.adm-security-link > .adm-ico { font-size: 1.4rem; flex: 0 0 auto; }
+.adm-security-link-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; font-size: 0.85rem; color: var(--adm-text-muted); }
+.adm-security-link-text b { color: var(--adm-text); font-size: 0.92rem; }
 
 .adm-card-sub {
   font-size: 0.78rem;
@@ -1600,6 +1589,8 @@ input.sa-date {
 .um-meta { display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--adm-text-muted); }
 .um-meta .ui-ico, .um-meta .adm-ico { font-size: 13px; }
 .um-meta-warn { color: var(--adm-warn); }
+/* "Blocked in Security Center" badge: a link to where the block is lifted */
+.um-blocked { display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
 .um-card-actions { display: flex; justify-content: flex-end; gap: 6px; border-top: 1px dashed var(--adm-border); padding-top: 8px; }
 .um-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 28px; color: var(--adm-text-muted); }
 .um-empty .adm-ico { font-size: 28px; }

@@ -33,8 +33,6 @@
     kpiFailed: document.getElementById("alKpiFailed"),
     kpiUsers: document.getElementById("alKpiUsers"),
 
-    suspiciousCard: document.getElementById("alSuspiciousCard"),
-    suspiciousList: document.getElementById("alSuspiciousList"),
 
     btnExport: document.getElementById("alBtnExport"),
 
@@ -176,7 +174,6 @@
       renderTable();
       renderSummary();
       renderCharts(state.logs);
-      renderSuspiciousActivity();
       refreshActionOptions();
       el.btnLoadMore.hidden = !state.hasMore;
     } catch (e) {
@@ -374,60 +371,6 @@
     el.kpiSuccess.textContent = state.logs.filter((l) => l.result === "Success").length;
     el.kpiFailed.textContent = state.logs.filter((l) => l.result === "Failed").length;
     el.kpiUsers.textContent = new Set(state.logs.map((l) => l.username).filter(Boolean)).size;
-  }
-
-  // ---------- suspicious activity ----------
-  // Client-side heuristic over whatever's currently loaded (no new
-  // backend aggregation needed) — flags the two classic brute-force
-  // shapes: many failed logins piling up on one account (targeted
-  // guessing), and many failed logins from one IP spread across
-  // several different accounts (credential stuffing / scanning).
-  const SUSPICIOUS_FAILED_LOGIN_THRESHOLD = 5;
-
-  function renderSuspiciousActivity() {
-    const failedLogins = state.logs.filter((l) => l.action === "Login" && l.result === "Failed");
-
-    const byUsername = new Map(); // username -> { count, lastIp, lastAt }
-    const byIp = new Map(); // ip -> { count, usernames:Set, lastAt }
-
-    for (const l of failedLogins) {
-      const username = l.username || t("admin.activitylogs.unknownUsername");
-      const ip = l.ipAddress || t("admin.activitylogs.unknownIp");
-
-      const u = byUsername.get(username) || { count: 0, lastIp: "", lastAt: "" };
-      u.count++;
-      if (!u.lastAt || l.logAt > u.lastAt) { u.lastAt = l.logAt; u.lastIp = ip; }
-      byUsername.set(username, u);
-
-      const i = byIp.get(ip) || { count: 0, usernames: new Set(), lastAt: "" };
-      i.count++;
-      i.usernames.add(username);
-      if (!i.lastAt || l.logAt > i.lastAt) i.lastAt = l.logAt;
-      byIp.set(ip, i);
-    }
-
-    const items = [];
-
-    for (const [username, u] of byUsername) {
-      if (u.count < SUSPICIOUS_FAILED_LOGIN_THRESHOLD) continue;
-      items.push('<span class="adm-ico adm-ico-lock" aria-hidden="true"></span> ' + t("admin.activitylogs.suspiciousUserLine", {
-        username: escapeHtml(username), count: u.count, ip: escapeHtml(u.lastIp), timeAgo: timeAgo(u.lastAt)
-      }));
-    }
-
-    // Only surfaced when it spans multiple accounts — a single user
-    // failing repeatedly from one IP is already covered by the
-    // byUsername entry above, so this stays specific to the
-    // multi-account pattern the per-username view can't show.
-    for (const [ip, i] of byIp) {
-      if (i.count < SUSPICIOUS_FAILED_LOGIN_THRESHOLD || i.usernames.size < 2) continue;
-      items.push('<span class="adm-ico adm-ico-globe" aria-hidden="true"></span> ' + t("admin.activitylogs.suspiciousIpLine", {
-        ip: escapeHtml(ip), count: i.count, accounts: i.usernames.size, timeAgo: timeAgo(i.lastAt)
-      }));
-    }
-
-    el.suspiciousCard.hidden = items.length === 0;
-    el.suspiciousList.innerHTML = items.map((html) => `<li>${html}</li>`).join("");
   }
 
   function resultBadgeClass(result) {

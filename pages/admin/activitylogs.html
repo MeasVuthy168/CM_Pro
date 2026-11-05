@@ -116,13 +116,18 @@
       </div>
 
       <!-- ========================= -->
-      <!-- SUSPICIOUS ACTIVITY (hidden unless the currently-loaded
-           logs actually contain a repeated-failed-login pattern) -->
+      <!-- Failed logins / suspicious IPs live in the Security Center
+           (counted on the server over 24 h, with the threshold set
+           there and a Block action) — this card only points there. -->
       <!-- ========================= -->
-      <div class="adm-card adm-suspicious-card" id="alSuspiciousCard" hidden>
-        <div class="adm-card-label"><span class="adm-ico adm-ico-alert" aria-hidden="true"></span> <span data-i18n="admin.activitylogs.suspiciousActivity">Suspicious Activity — repeated failed logins in the loaded range</span></div>
-        <ul id="alSuspiciousList" class="adm-suspicious-list"></ul>
-      </div>
+      <a class="adm-card adm-security-link" href="/CM_Pro/pages/admin/security-center.html#sec-logins">
+        <span class="adm-ico adm-ico-shield-check" aria-hidden="true"></span>
+        <span class="adm-security-link-text">
+          <b data-i18n="admin.activitylogs.securityLinkTitle">Failed logins and suspicious IPs</b>
+          <span data-i18n="admin.activitylogs.securityLinkSub">Now in the Security Center — counted on the server over 24 hours, with a Block action.</span>
+        </span>
+        <span class="adm-tool-arrow" aria-hidden="true">→</span>
+      </a>
 
       <!-- ========================= -->
       <!-- SUMMARY STRIP -->
