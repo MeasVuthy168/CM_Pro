@@ -81,3 +81,4 @@
 .sec-lock-state b { font-size: 1rem; }
 .sec-lock-state .adm-btn { margin-left: auto; }
 .sec-live { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--adm-text-muted); }
+.sec-yours { min-width: 180px; margin-top: 4px; }
