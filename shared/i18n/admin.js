@@ -328,7 +328,6 @@ CMI18n.register({
   "admin.activitylogs.range7Days": { km: "7 ថ្ងៃ", en: "7 Days" },
   "admin.activitylogs.range30Days": { km: "30 ថ្ងៃ", en: "30 Days" },
   "admin.activitylogs.rangeAll": { km: "ទាំងអស់", en: "All" },
-  "admin.activitylogs.suspiciousActivity": { km: "សកម្មភាពគួរឲ្យសង្ស័យ — ការចូលបរាជ័យម្តងហើយម្តងទៀតក្នុងដែនកំណត់ដែលបានផ្ទុក", en: "Suspicious Activity — repeated failed logins in the loaded range" },
   "admin.activitylogs.kpiLogsLoaded": { km: "កំណត់ហេតុបានផ្ទុក", en: "Logs Loaded" },
   "admin.activitylogs.kpiSuccess": { km: "ជោគជ័យ", en: "Success" },
   "admin.activitylogs.kpiFailed": { km: "បរាជ័យ", en: "Failed" },
@@ -349,8 +348,6 @@ CMI18n.register({
   "admin.activitylogs.noDataForFilter": { km: "មិនមានទិន្នន័យសម្រាប់តម្រងបច្ចុប្បន្ន។", en: "No data for the current filter." },
   "admin.activitylogs.couldNotLoad": { km: "មិនអាចផ្ទុកកំណត់ហេតុសកម្មភាពបានទេ។", en: "Could not load activity logs." },
   "admin.activitylogs.unknownUser": { km: "មិនស្គាល់", en: "unknown" },
-  "admin.activitylogs.suspiciousUserLine": { km: "<strong>{username}</strong> — ការចូលបរាជ័យ {count} ដង (ចុងក្រោយពី {ip}, {timeAgo})", en: "<strong>{username}</strong> — {count} failed logins (most recent from {ip}, {timeAgo})" },
-  "admin.activitylogs.suspiciousIpLine": { km: "IP <strong>{ip}</strong> — ការចូលបរាជ័យ {count} ដងលើគណនី {accounts} (ចុងក្រោយ {timeAgo})", en: "IP <strong>{ip}</strong> — {count} failed logins across {accounts} accounts (most recent {timeAgo})" },
   "admin.activitylogs.unknownUsername": { km: "(មិនស្គាល់ឈ្មោះអ្នកប្រើប្រាស់)", en: "(unknown username)" },
   "admin.activitylogs.unknownIp": { km: "(មិនស្គាល់ IP)", en: "(unknown IP)" },
   "admin.activitylogs.detailTitle": { km: "ព័ត៌មានលម្អិតនៃកំណត់ហេតុ", en: "Log Detail" },
@@ -893,5 +890,11 @@ CMI18n.register({
   "admin.security.required": { km: "សូមបំពេញ៖ {field}", en: "Please fill in: {field}" },
   "admin.security.saved": { km: "បានរក្សាទុក និងកត់ត្រាក្នុងសវនកម្ម។", en: "Saved and recorded in the audit log." },
   "admin.security.unchanged": { km: "គ្មានអ្វីផ្លាស់ប្តូរទេ។", en: "Nothing changed." },
-  "admin.security.actionFailed": { km: "សកម្មភាពមិនបានសម្រេច។", en: "The action failed." }
+  "admin.security.actionFailed": { km: "សកម្មភាពមិនបានសម្រេច។", en: "The action failed." },
+  "admin.activitylogs.securityLinkTitle": { km: "ការចូលបរាជ័យ និង IP គួរឱ្យសង្ស័យ", en: "Failed logins and suspicious IPs" },
+  "admin.activitylogs.securityLinkSub": { km: "ឥឡូវនៅក្នុងមជ្ឈមណ្ឌលសុវត្ថិភាព — រាប់នៅលើ server ក្នុង ២៤ ម៉ោង ហើយអាចរារាំងបានភ្លាម។", en: "Now in the Security Center — counted on the server over 24 hours, with a Block action." },
+  "admin.users.blockedBadge": { km: "ត្រូវបានរារាំងក្នុងមជ្ឈមណ្ឌលសុវត្ថិភាព", en: "Blocked in Security Center" },
+  "admin.users.blockedTip": { km: "មិនអាចចូលប្រើបានទេ។ ហេតុផល៖ {reason} · រហូតដល់៖ {until}។ ចុចដើម្បីដកការរារាំង។", en: "Can't log in. Reason: {reason} · Until: {until}. Tap to lift it in the Security Center." },
+  "admin.users.blockedNoEnd": { km: "គ្មានកាលកំណត់", en: "no end" },
+  "admin.security.ip.staffNote": { km: "ដើម្បីបញ្ឈប់បុគ្គលិកជាអចិន្ត្រៃយ៍ សូមកំណត់គណនីជា Inactive ក្នុង", en: "To stop a staff member for good, set the account Inactive in" }
 });

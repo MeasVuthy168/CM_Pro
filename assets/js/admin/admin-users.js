@@ -27,7 +27,10 @@
     sort: "name",
     photoFile: null,     // staged File object for the currently open modal
     removePhoto: false,
-    photoObjectUrl: null
+    photoObjectUrl: null,
+    // username -> its active block rule in the Security Center (a block
+    // rule also stops a login, separately from Inactive here).
+    blocked: new Map()
   };
 
   const el = {
@@ -150,6 +153,31 @@
       ROLES.filter((r) => counts[r]).map((r) => chip(r, roleLabel(r), counts[r])).join("");
   }
 
+  // "Blocked in Security Center": a username block rule stops this login
+  // too, so the two never get out of step unseen. Links to where it is
+  // lifted.
+  function blockedBadge(u) {
+    const r = state.blocked.get(u.username);
+    if (!r) return "";
+    const until = r.expiresAt ? new Date(r.expiresAt).toLocaleString() : t("admin.users.blockedNoEnd");
+    const tip = t("admin.users.blockedTip", { reason: r.reason || "—", until });
+    return `<a class="adm-badge adm-badge-status-failed um-blocked" href="/CM_Pro/pages/admin/security-center.html#sec-ips" title="${escapeHtml(tip)}"><span class="adm-ico adm-ico-shield-check" aria-hidden="true"></span> ${escapeHtml(t("admin.users.blockedBadge"))}</a>`;
+  }
+
+  // Best effort: the list works the same if the Security Center can't
+  // be reached (no badge is shown then).
+  async function loadBlockedUsernames() {
+    try {
+      const res = await fetch(`${API_BASE}/api/security/block-rules`, { headers: authHeaders() });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data || !data.ok) return;
+      state.blocked = new Map((data.items || []).filter((r) => r.type === "username" && r.active).map((r) => [r.value, r]));
+      render();
+    } catch (e) {
+      console.warn("block rules unavailable:", e);
+    }
+  }
+
   function userCard(u) {
     const branchNote = u.role === "user" && !u.branch
       ? `<span class="um-meta um-meta-warn" title="${escapeHtml(t("admin.users.statNoAlertsHint"))}"><span class="adm-ico adm-ico-bell" aria-hidden="true"></span>${escapeHtml(t("admin.users.noBranchAlerts"))}</span>`
@@ -169,6 +197,7 @@
           ${u.phone ? `<span class="um-meta"><span class="ui-ico ui-ico-phone" aria-hidden="true"></span>${escapeHtml(u.phone)}</span>` : ""}
           <span class="um-meta"><span class="adm-ico adm-ico-refresh" aria-hidden="true"></span>${escapeHtml(lastLoginLabel(u.lastLoginAt))}</span>
           ${u.isActive ? "" : `<span class="adm-badge adm-badge-status-inactive">${escapeHtml(t("admin.users.statusInactive"))}</span>`}
+          ${blockedBadge(u)}
         </div>
         <div class="um-card-actions">
           <button type="button" class="adm-icon-btn" title="${escapeHtml(t("admin.users.edit"))}" data-action="edit"><span class="adm-ico adm-ico-edit" aria-hidden="true"></span></button>
@@ -215,6 +244,7 @@
 
       state.users = data.users || [];
       render();
+      loadBlockedUsernames();
     } catch (e) {
       console.error("loadUsers failed:", e);
       AdminUI.toast(t("admin.users.couldNotLoadList"), "error");

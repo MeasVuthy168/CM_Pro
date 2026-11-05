@@ -331,7 +331,9 @@
   async function addRule(type, value) {
     const v = await formDialog({
       title: t("admin.security.ip.add"),
-      intro: esc(t("admin.security.ip.addIntro")),
+      // A username block stops a login like Inactive does: point to User
+      // Management for stopping a staff member for good.
+      intro: `${esc(t("admin.security.ip.addIntro"))}<br><small>${esc(t("admin.security.ip.staffNote"))} <a href="/CM_Pro/pages/admin/users.html">${esc(t("admin.nav.users"))} →</a></small>`,
       fields: [
         { name: "type", label: t("admin.security.ip.type"), type: "select", options: (type ? [[type, type === "ip" ? "IP" : t("admin.security.col.user")]] : [["ip", "IP"], ["username", t("admin.security.col.user")]]) },
         { name: "value", label: t("admin.security.ip.value"), required: true, value: value || "", placeholder: "203.0.113.7" },
