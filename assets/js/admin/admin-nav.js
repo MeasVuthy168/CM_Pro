@@ -17,7 +17,8 @@ const CM_ADMIN_TOOLS = [
   { key: "smartalerts", label: "Smart Alerts",  labelKey: "admin.nav.smartAlerts",   icon: "alert", href: "/CM_Pro/pages/admin/smartalerts.html", status: "live" },
   { key: "wallpaper", label: "Wallpaper",        labelKey: "admin.nav.wallpaper",     icon: "image", href: "/CM_Pro/pages/admin/wallpaper.html",   status: "live" },
   { key: "versions",  label: "App Versions",     labelKey: "admin.nav.versions",     icon: "package", href: "/CM_Pro/pages/admin/appversions.html", status: "live" },
-  { key: "maintenance", label: "Storage Cleanup", labelKey: "admin.nav.maintenance", icon: "broom", href: "/CM_Pro/pages/admin/maintenance.html", status: "live" }
+  { key: "maintenance", label: "Storage Cleanup", labelKey: "admin.nav.maintenance", icon: "broom", href: "/CM_Pro/pages/admin/maintenance.html", status: "live" },
+  { key: "security", label: "Security Center", labelKey: "admin.nav.security", descKey: "admin.nav.securityDesc", icon: "shield-check", href: "/CM_Pro/pages/admin/security-center.html", status: "live" }
 ];
 
 // t(): small helper so this file's hardcoded UI strings go through the
@@ -62,6 +63,7 @@ function cmRenderToolCards(containerId, excludeKey) {
     return `<${tag} ${hrefAttr} class="adm-tool-card${isSoon ? " adm-tool-soon" : ""}">
       <div class="adm-tool-icon"><span class="adm-ico adm-ico-${tool.icon}" aria-hidden="true"></span></div>
       <div class="adm-tool-label" data-i18n="${tool.labelKey}">${t(tool.labelKey)}</div>
+      ${tool.descKey ? `<div class="adm-tool-desc" data-i18n="${tool.descKey}">${t(tool.descKey)}</div>` : ""}
       ${isSoon
         ? `<span class="adm-nav-badge" data-i18n="admin.nav.comingSoonBadge">${t("admin.nav.comingSoonBadge")}</span>`
         : '<span class="adm-tool-arrow">→</span>'}
