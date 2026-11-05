@@ -1,0 +1,83 @@
+/* =====================================================
+   admin-security.css — Security Center (pages/admin/security-center.html)
+   Only what the page adds on top of admin.css; colours come from the
+   --adm-* tokens so every theme (light / dark / gold / dark gray) works.
+   ===================================================== */
+
+/* jump links to the 9 sections (sticky under the header on phones) */
+.sec-jump { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 10px; margin-bottom: 6px; }
+.sec-jump::-webkit-scrollbar { display: none; }
+.sec-jump a {
+  flex: 0 0 auto; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--adm-border);
+  background: var(--adm-card-bg); color: var(--adm-text); font-size: 0.8rem; text-decoration: none; white-space: nowrap;
+}
+.sec-jump a:hover { border-color: var(--adm-navy-700); }
+
+.sec-section { margin-bottom: 16px; scroll-margin-top: 16px; }
+.sec-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.sec-head h2 { display: flex; align-items: center; gap: 8px; font-size: 1.02rem; margin: 0; color: var(--adm-text); }
+.sec-num {
+  display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 8px;
+  background: var(--adm-navy-900); color: #fff; font-size: 0.78rem; font-weight: 700;
+}
+[data-theme="dark"] .sec-num, [data-theme="darkgray"] .sec-num { background: var(--adm-gold-500); color: #0E1B3C; }
+.sec-head-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.sec-note { color: var(--adm-text-muted); font-size: 0.82rem; margin: 0 0 10px; line-height: 1.5; }
+
+/* states: loading / empty / error / permission denied */
+.sec-state { padding: 18px 12px; text-align: center; color: var(--adm-text-muted); font-size: 0.86rem; }
+.sec-state-error, .sec-state-denied { color: var(--adm-danger); }
+.sec-state .adm-btn { margin-top: 8px; }
+.sec-spin { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--adm-border); border-top-color: var(--adm-gold-500); border-radius: 50%; animation: sec-spin 0.8s linear infinite; vertical-align: -2px; margin-right: 6px; }
+@keyframes sec-spin { to { transform: rotate(360deg); } }
+
+/* overview tiles */
+.sec-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 760px) { .sec-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.sec-kpi { background: var(--adm-card-bg); border: 1px solid var(--adm-border); border-top: 3px solid var(--adm-navy-700); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.sec-kpi-l { font-size: 0.75rem; color: var(--adm-text-muted); }
+.sec-kpi-v { font-size: 1.45rem; font-weight: 700; color: var(--adm-text); font-variant-numeric: tabular-nums; }
+.sec-kpi.is-ok { border-top-color: var(--adm-ok); }
+.sec-kpi.is-warn { border-top-color: var(--adm-warn); }
+.sec-kpi.is-bad { border-top-color: var(--adm-danger); }
+
+/* tables: scroll sideways on phones */
+.sec-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.sec-table-wrap .adm-table { min-width: 560px; }
+.sec-table-wrap .adm-table td { vertical-align: top; }
+.sec-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; }
+.sec-msg { max-width: 320px; overflow-wrap: anywhere; color: var(--adm-text-muted); font-size: 0.8rem; }
+
+/* paging */
+.sec-pager { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 10px; font-size: 0.82rem; color: var(--adm-text-muted); }
+
+/* filters */
+.sec-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.sec-filters .adm-toolbar-select, .sec-filters .adm-search-input { width: auto; min-width: 140px; flex: 1 1 140px; }
+
+/* badges for severity / status / result */
+.sec-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; background: var(--adm-navy-100); color: var(--adm-text); }
+.sec-badge.is-ok { background: rgba(31, 157, 85, 0.12); color: var(--adm-ok); }
+.sec-badge.is-warn { background: rgba(201, 122, 0, 0.14); color: var(--adm-warn); }
+.sec-badge.is-bad { background: rgba(192, 57, 43, 0.12); color: var(--adm-danger); }
+
+/* forms in modals and the settings card */
+.sec-form { display: grid; gap: 10px; }
+.sec-form label { display: flex; flex-direction: column; gap: 4px; font-size: 0.82rem; color: var(--adm-text-muted); }
+.sec-form input, .sec-form select, .sec-form textarea {
+  font: inherit; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--adm-border);
+  background: var(--adm-bg); color: var(--adm-text);
+}
+.sec-form textarea { min-height: 70px; resize: vertical; }
+.sec-form .sec-check { flex-direction: row; align-items: center; gap: 8px; color: var(--adm-text); }
+.sec-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
+@media (max-width: 640px) { .sec-settings { grid-template-columns: 1fr; } }
+.sec-form-error { color: var(--adm-danger); font-size: 0.8rem; min-height: 1em; }
+
+/* emergency */
+.sec-emergency { border: 1px solid rgba(192, 57, 43, 0.45); }
+.sec-lock-state { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px; border-radius: 12px; background: var(--adm-navy-100); }
+.sec-lock-state.is-on { background: rgba(192, 57, 43, 0.12); }
+.sec-lock-state b { font-size: 1rem; }
+.sec-lock-state .adm-btn { margin-left: auto; }
+.sec-live { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--adm-text-muted); }
