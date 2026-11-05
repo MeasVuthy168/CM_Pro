@@ -64,6 +64,7 @@
       const err = new Error((data && data.message) || `HTTP ${res.status}`);
       err.kind = res.status >= 500 || !data ? "unavailable" : "error";
       err.serverMessage = data && data.message;
+      err.code = data && data.code;
       throw err;
     }
     return data;
@@ -145,6 +146,14 @@
   }
   const reasonField = () => ({ name: "reason", label: t("admin.security.reason"), type: "textarea", required: true, placeholder: t("admin.security.reasonHint") });
 
+  // A refusal in the user's language: the server's code when this page
+  // knows it, else the server's own message.
+  function refusal(e) {
+    const key = e && e.code ? `admin.security.err.${e.code}` : "";
+    const txt = key ? t(key) : key;
+    return key && txt !== key ? txt : (e && e.serverMessage) || t("admin.security.actionFailed");
+  }
+
   // Runs a change; a refusal from the server is shown as a toast.
   async function act(fn, okKey, after) {
     try {
@@ -153,7 +162,7 @@
       after.forEach(f => f());
     } catch (e) {
       if (e.kind === "unauthorized") return;
-      AdminUI.toast(e.kind === "denied" ? t("admin.security.denied") : (e.serverMessage || t("admin.security.actionFailed")), "error");
+      AdminUI.toast(e.kind === "denied" ? t("admin.security.denied") : refusal(e), "error");
     }
   }
 
@@ -316,8 +325,10 @@
       <h3 class="sec-note">${esc(t("admin.security.ip.threats"))}</h3>
       ${!overview ? `<div class="sec-state sec-state-error">${esc(t(ovErr && ovErr.kind === "denied" ? "admin.security.denied" : "admin.security.loadFailed"))}</div>`
         : ips.length ? `<div class="sec-table-wrap"><table class="adm-table"><thead><tr><th>IP</th><th>${esc(t("admin.security.col.failed"))}</th><th>${esc(t("admin.security.col.users"))}</th><th>${esc(t("admin.security.col.last"))}</th><th></th></tr></thead><tbody>
-        ${ips.map(r => `<tr><td class="sec-mono">${esc(r.ip || "—")}</td><td>${num(r.failed)}</td><td class="sec-msg">${esc((r.usernames || []).join(", "))}</td><td>${esc(when(r.last))}</td>
-          <td>${r.blocked ? badge(t("admin.security.ip.isBlocked"), "bad") : r.ip ? `<button type="button" class="adm-btn adm-btn-danger" data-block="${esc(r.ip)}">${esc(t("admin.security.ip.block"))}</button>` : ""}</td></tr>`).join("")}
+        ${ips.map(r => `<tr><td><span class="sec-mono">${esc(r.ip || "—")}</span>${r.yours ? `<div>${badge(t("admin.security.ip.yours"), "warn")}</div><div class="sec-msg sec-yours">${esc(t("admin.security.ip.yoursHint"))}</div>` : ""}</td><td>${num(r.failed)}</td><td class="sec-msg">${esc((r.usernames || []).join(", "))}</td><td>${esc(when(r.last))}</td>
+          <td>${r.blocked ? badge(t("admin.security.ip.isBlocked"), "bad")
+            : r.yours ? ""
+            : r.ip ? `<button type="button" class="adm-btn adm-btn-danger" data-block="${esc(r.ip)}">${esc(t("admin.security.ip.block"))}</button>` : ""}</td></tr>`).join("")}
         </tbody></table></div>` : `<div class="sec-state">${esc(t("admin.security.noThreats"))}</div>`}
       <h3 class="sec-note" style="margin-top:14px">${esc(t("admin.security.ip.rules"))}</h3>
       ${ruleRows.length ? `<div class="sec-table-wrap"><table class="adm-table"><thead><tr><th>${esc(t("admin.security.col.target"))}</th><th>${esc(t("admin.security.reason"))}</th><th>${esc(t("admin.security.col.by"))}</th><th>${esc(t("admin.security.col.until"))}</th><th></th></tr></thead><tbody>
@@ -341,7 +352,8 @@
         reasonField()
       ],
       confirmLabel: t("admin.security.ip.block"),
-      danger: true
+      danger: true,
+      validate: v => (v.type === "ip" && overview && overview.yourIp && v.value.toLowerCase() === overview.yourIp ? t("admin.security.err.own_ip") : null)
     }).then(x => x, () => null);
     if (!v) return;
     await act(() => api("/api/security/block-rules", { method: "POST", body: JSON.stringify({ ...v, hours: v.hours === "" ? null : Number(v.hours) }) }),

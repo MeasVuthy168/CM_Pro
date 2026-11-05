@@ -896,5 +896,19 @@ CMI18n.register({
   "admin.users.blockedBadge": { km: "ត្រូវបានរារាំងក្នុងមជ្ឈមណ្ឌលសុវត្ថិភាព", en: "Blocked in Security Center" },
   "admin.users.blockedTip": { km: "មិនអាចចូលប្រើបានទេ។ ហេតុផល៖ {reason} · រហូតដល់៖ {until}។ ចុចដើម្បីដកការរារាំង។", en: "Can't log in. Reason: {reason} · Until: {until}. Tap to lift it in the Security Center." },
   "admin.users.blockedNoEnd": { km: "គ្មានកាលកំណត់", en: "no end" },
-  "admin.security.ip.staffNote": { km: "ដើម្បីបញ្ឈប់បុគ្គលិកជាអចិន្ត្រៃយ៍ សូមកំណត់គណនីជា Inactive ក្នុង", en: "To stop a staff member for good, set the account Inactive in" }
+  "admin.security.ip.staffNote": { km: "ដើម្បីបញ្ឈប់បុគ្គលិកជាអចិន្ត្រៃយ៍ សូមកំណត់គណនីជា Inactive ក្នុង", en: "To stop a staff member for good, set the account Inactive in" },
+  "admin.security.ip.yours": { km: "IP របស់អ្នក", en: "Your IP" },
+  "admin.security.ip.yoursHint": { km: "ប្រើរួមគ្នាជាមួយបណ្តាញរបស់អ្នក (ឧ. ការិយាល័យ) — មិនអាចរារាំងបានទេ ព្រោះវានឹងរារាំងអ្នក និងអ្នកដទៃផង។ សូមរារាំងតាមឈ្មោះអ្នកប្រើវិញ។", en: "Shared with your network (e.g. the office) — it can't be blocked, as that would lock you and others out. Block the username instead." },
+  "admin.security.err.own_ip": { km: "មិនអាចរារាំង IP ដែលអ្នកកំពុងប្រើបានទេ — វាជា IP របស់អ្នក (ច្រើនតែជា IP រួមរបស់ការិយាល័យ) ហើយនឹងរារាំងអ្នកផង។ សូមរារាំងតាមឈ្មោះអ្នកប្រើវិញ។", en: "You can't block the IP you're using — it's yours (often the office's shared IP) and would lock you out too. Block the username instead." },
+  "admin.security.err.own_account": { km: "មិនអាចរារាំងគណនីរបស់អ្នកខ្លួនឯងបានទេ។", en: "You can't block your own account." },
+  "admin.security.err.reason_required": { km: "សូមបញ្ចូលហេតុផល (យ៉ាងតិច ៣ តួអក្សរ)។", en: "Enter a reason (at least 3 characters)." },
+  "admin.security.err.duplicate_rule": { km: "ច្បាប់រារាំងនេះមានរួចហើយ។", en: "That block rule already exists." },
+  "admin.security.err.bad_ip": { km: "សូមបញ្ចូលអាសយដ្ឋាន IP ឱ្យត្រឹមត្រូវ។", en: "Enter a valid IP address." },
+  "admin.security.err.bad_username": { km: "សូមបញ្ចូលឈ្មោះអ្នកប្រើឱ្យត្រឹមត្រូវ។", en: "Enter a valid username." },
+  "admin.security.err.bad_duration": { km: "រយៈពេលត្រូវនៅចន្លោះ ១ ម៉ោង ដល់ ១ ឆ្នាំ ឬទុកទទេ = គ្មានកាលកំណត់។", en: "Duration must be 1 hour to 1 year, or empty for no end." },
+  "admin.security.err.type_required": { km: "សូមជ្រើសប្រភេទ (IP ឬអ្នកប្រើ)។", en: "Choose a type (IP or username)." },
+  "admin.security.err.title_required": { km: "សូមបញ្ចូលចំណងជើង។", en: "Enter a title." },
+  "admin.security.err.severity_required": { km: "សូមជ្រើសកម្រិតធ្ងន់ធ្ងរ។", en: "Choose a severity." },
+  "admin.security.err.status_required": { km: "សូមជ្រើសស្ថានភាព។", en: "Choose a status." },
+  "admin.security.err.confirm_word": { km: "ពាក្យបញ្ជាក់មិនត្រឹមត្រូវទេ។", en: "The confirmation word doesn't match." }
 });
