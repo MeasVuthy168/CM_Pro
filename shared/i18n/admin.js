@@ -646,8 +646,8 @@ CMI18n.register({
   "admin.smartAlerts.subtitle": { km: "កំណត់កម្រិត Alert និងមើលជាមុននូវ Alert ថ្ងៃនេះ មុនផ្ញើពិតប្រាកដ។", en: "Set alert thresholds and preview today's alerts before they're sent." },
   "admin.mgmtAlerts.label": { km: "Alert ថ្នាក់គ្រប់គ្រង — Portfolio Intelligence", en: "Management Alerts — Portfolio Intelligence" },
   "admin.mgmtAlerts.explain": {
-    km: "បង្ហាញនៅខាងលើទំព័រ Portfolio Intelligence ពេលបើកទំព័រ — មិនផ្ញើជាការជូនដំណឹងទេ។ PAR នៅទីនេះ = NBC Overdue ÷ ឥណទានសរុប ចំណែក Smart Alert ប្រចាំថ្ងៃខាងលើប្រើ PAR (T24)។",
-    en: "Shown at the top of Portfolio Intelligence when the page is opened — not sent as notifications. PAR here is NBC Overdue ÷ Loan Outstanding; the daily Smart Alerts above use PAR (T24)."
+    km: "បង្ហាញនៅខាងលើទំព័រ Portfolio Intelligence ពេលបើកទំព័រ — មិនផ្ញើជាការជូនដំណឹងទេ។ PAR នៅទីនេះ = NBC Overdue ÷ ឥណទានសរុប ដូចគ្នានឹង Smart Alert ប្រចាំថ្ងៃខាងលើ។",
+    en: "Shown at the top of Portfolio Intelligence when the page is opened — not sent as notifications. PAR here is NBC Overdue ÷ Loan Outstanding; the same as the daily Smart Alerts above."
   },
   "admin.mgmtAlerts.nplRise": { km: "អត្រា NPL កើន", en: "NPL ratio rise" },
   "admin.mgmtAlerts.parRise": { km: "PAR (NBC Overdue) កើន", en: "PAR (NBC Overdue) rise" },
@@ -663,7 +663,7 @@ CMI18n.register({
   "admin.mgmtAlerts.saved": { km: "បានរក្សាទុកកម្រិត Alert ថ្នាក់គ្រប់គ្រង។", en: "Management alert rules saved." },
   "admin.smartAlerts.thresholdsLabel": { km: "កម្រិត Alert", en: "Alert Thresholds" },
   "admin.smartAlerts.thresholdsExplain": { km: "Alert ត្រូវបានពិនិត្យរៀងរាល់ល្ងាច ក្រោយ Snapshot ប្រចាំថ្ងៃ (ក្រោយម៉ោង 18:00) ហើយផ្ញើម្តងក្នុងមួយថ្ងៃ ទៅ Admin ប្រធានសាខា និង CO។", en: "Alerts are checked every evening after the Daily History snapshot (after 18:00) and sent once per day to Admin, branch managers and COs." },
-  "admin.smartAlerts.parRise": { km: "PAR (T24) កើន", en: "PAR (T24) rise" },
+  "admin.smartAlerts.parRise": { km: "PAR (NBC Overdue) កើន", en: "PAR (NBC Overdue) rise" },
   "admin.smartAlerts.parRiseHint": { km: "ធៀបនឹងថ្ងៃមុន", en: "vs the previous day" },
   "admin.smartAlerts.osDrop": { km: "OS ធ្លាក់", en: "OS drop" },
   "admin.smartAlerts.osDropHint": { km: "ក្នុងរយៈពេលខាងក្រោម", en: "within the window below" },

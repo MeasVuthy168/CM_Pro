@@ -324,7 +324,9 @@
 /* admin tools: two buttons side by side */
 .cr-hub-admin-buttons{
     display:grid;
-    grid-template-columns:1fr 1fr 1fr;
+    /* One equal column per shown button (hidden ones take none). */
+    grid-auto-flow:column;
+    grid-auto-columns:minmax(0, 1fr);
     gap:8px;
 }
 .cr-hub-admin-buttons .cr-hub-snapshot-btn,
