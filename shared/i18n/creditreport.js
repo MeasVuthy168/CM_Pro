@@ -1473,5 +1473,6 @@ CMI18n.register({
   "creditreport.cp.lastHidden": { km: "{n} ជួរនៅ 180+ ថ្ងៃ មិនបង្ហាញទេ (រំកិលបន្តមិនបាន)។", en: "{n} rows at 180+ days are not listed (they can't roll further)." },
   "creditreport.cp.lastShown": { km: "{n} ជួរនៅ 180+ ថ្ងៃ ត្រូវបានបង្ហាញ។", en: "{n} rows at 180+ days are listed." },
   "creditreport.cp.lastShow": { km: "បង្ហាញ", en: "Show them" },
-  "creditreport.cp.lastHide": { km: "លាក់", en: "Hide them" }
+  "creditreport.cp.lastHide": { km: "លាក់", en: "Hide them" },
+  "creditreport.detail.t24HistFromNbc": { km: "Balance Loan at Risk (T24)៖ ថ្ងៃមុនៗ បង្ហាញ NBC Overdue (EOD) របស់ថ្ងៃនោះ ព្រោះ T24 ជាទិន្នន័យផ្ទាល់ ហើយមានតែថ្ងៃនេះប៉ុណ្ណោះដែលបង្ហាញ T24 ផ្ទាល់។", en: "Balance Loan at Risk (T24): earlier days show that day's NBC Overdue (EOD), as T24 is a live figure; only today shows live T24." }
 });

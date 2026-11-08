@@ -353,5 +353,48 @@ window.CRLastMonth = (() => {
         return { ensure, note, itemFor, expand: expandSection, lastLabel };
     }
 
-    return { cutoff, shortDate, load, attach, diffTree, expand, cell, renderNote, hideNote, scopeSaved, controller };
+    // ---------- Daily History: T24 of past days = NBC Overdue ----------
+    // Owner's rule (08/11/2026): Balance Loan at Risk (T24) is a live
+    // figure, so only TODAY shows T24; every earlier day shows that day's
+    // NBC Overdue (EOD) in the T24 section — the same mapping as the Last
+    // Month comparison (t24LastMonth: flat, by class, officer Own / Area,
+    // Area by team, CO / FSRO / Digital). Display only: the saved day is
+    // not changed. Today = the Phnom Penh calendar day.
+    function phnomPenhToday() {
+        try {
+            return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Phnom_Penh", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+        } catch (e) {
+            const d = new Date(Date.now() + 7 * 3600 * 1000);
+            return d.toISOString().slice(0, 10);
+        }
+    }
+    function nbcAsT24(it) {
+        if (!it || typeof it !== "object") return it;
+        const out = { ...it };
+        t24LastMonth(out);
+        if (out.breakdown) out.breakdown = Object.fromEntries(Object.entries(out.breakdown).map(([k, v]) => [k, nbcAsT24(v)]));
+        return out;
+    }
+    // data: a history response { days: [{ date, items, total, combined?,
+    // otherAddressDetail?, t24AsOfText }] } — changed in place, returned.
+    function t24FromNbcHistory(data, today = phnomPenhToday()) {
+        if (!data || !Array.isArray(data.days)) return data;
+        data.days = data.days.map(day => {
+            if (!day || !(String(day.date) < today)) return day;   // today (or later): live T24 as saved
+            const out = { ...day, t24FromNbc: true, t24AsOfText: "" };
+            for (const k of ["items", "otherAddressDetail"]) if (Array.isArray(day[k])) out[k] = day[k].map(nbcAsT24);
+            for (const k of ["total", "combined"]) if (day[k]) out[k] = nbcAsT24(day[k]);
+            return out;
+        });
+        return data;
+    }
+    // The note under the table while Daily History shows the T24 section.
+    function t24HistNote(show) {
+        const el = document.getElementById("crT24HistNote");
+        if (!el) return;
+        el.style.display = show ? "" : "none";
+        if (show) el.textContent = t("creditreport.detail.t24HistFromNbc");
+    }
+
+    return { cutoff, shortDate, load, attach, diffTree, expand, cell, renderNote, hideNote, scopeSaved, controller, t24FromNbcHistory, t24HistNote, phnomPenhToday };
 })();

@@ -977,6 +977,7 @@ function crResolveHistoryItem(rawItem, team) {
 }
 
 function crRenderHistory() {
+    CRLastMonth.t24HistNote(!!crHistoryData && crSectionHasT24(crActiveSection()) && crHistoryData.days.some(d => d.t24FromNbc));
     if (!crHistoryData) return;
     const section = crActiveSection();
 
@@ -1038,7 +1039,8 @@ async function crFetchHistory() {
             crShowEmpty(data.message || t("creditreport.detail.failedLoadHistory"));
             return;
         }
-        crHistoryData = data;
+        // Past days' T24 = that day's NBC Overdue; today stays live T24.
+        crHistoryData = CRLastMonth.t24FromNbcHistory(data);
         crHistoryData.key = crHistoryKey(picks);
         crRenderHistory();
     } catch (e) {
@@ -1074,6 +1076,7 @@ function crUpdateHistRunButtonState() {
 
 function crSetMode(mode) {
     crMode = mode;
+    if (mode !== "history") CRLastMonth.t24HistNote(false);
     document.getElementById("crModeCurrentBtn").classList.toggle("active", mode === "current");
     document.getElementById("crModeHistoryBtn").classList.toggle("active", mode === "history");
     document.getElementById("crHistoryPanel").style.display = mode === "history" ? "block" : "none";
