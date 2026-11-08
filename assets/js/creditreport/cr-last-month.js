@@ -396,5 +396,41 @@ window.CRLastMonth = (() => {
         if (show) el.textContent = t("creditreport.detail.t24HistFromNbc");
     }
 
-    return { cutoff, shortDate, load, attach, diffTree, expand, cell, renderNote, hideNote, scopeSaved, controller, t24FromNbcHistory, t24HistNote, phnomPenhToday };
+    // Saved snapshots are keyed by the NBC date, which runs a day behind
+    // the calendar — so no saved day is ever "today". For the T24 view,
+    // add today as a live row (the plain live report, no filters — same
+    // shape as a snapshot), once the picked range reaches the latest NBC
+    // day. Shown only when every shown section is T24 (see liveDayShown).
+    let liveDate = null;
+    async function fetchLive(path, token) {
+        try {
+            const res = await fetch(`${API.BASE_URL}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+            const d = await res.json();
+            return d && d.ok ? d : null;
+        } catch (e) { return null; }
+    }
+    function addLiveToday(data, live, dateTo, today = phnomPenhToday()) {
+        liveDate = null;
+        if (!data || !Array.isArray(data.days) || !live || !live.toDate || !dateTo) return data;
+        if (data.days.some(d => String(d.date) >= today)) return data;
+        if (String(dateTo) < String(live.toDate).slice(0, 10)) return data;
+        data.days.push({
+            date: today, liveToday: true,
+            t24AsOfText: (live.meta && live.meta.arrearsPenaltyText) || "",
+            items: live.items || [], total: live.total || null,
+            otherAddressDetail: live.otherAddressDetail || []
+        });
+        liveDate = today;
+        return data;
+    }
+    function liveDayShown(day, section) {
+        if (!day || !day.liveToday) return true;
+        return !!section && section.groups.length > 0 && section.groups.every(g => g.key === "parT24");
+    }
+    function isLiveDate(dateKey) { return !!liveDate && dateKey === liveDate; }
+    // ↻ re-pulls live T24 into a saved day; past days now show NBC, so
+    // only a saved day dated today (if any) keeps it.
+    function canRefreshT24(dateKey) { return String(dateKey) >= phnomPenhToday() && !isLiveDate(dateKey); }
+
+    return { cutoff, shortDate, load, attach, diffTree, expand, cell, renderNote, hideNote, scopeSaved, controller, t24FromNbcHistory, t24HistNote, phnomPenhToday, fetchLive, addLiveToday, liveDayShown, isLiveDate, canRefreshT24 };
 })();

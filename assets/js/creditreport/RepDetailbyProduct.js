@@ -432,13 +432,13 @@ function crBuildHistoryRow(dateKey, item, section, isTotal, t24AsOfText) {
     // Admin-only — lets an admin remove a single day's saved snapshot
     // (e.g. one filed under an unexpected date — see crGridMergeDateKey's
     // own comment in the backend).
-    const delBtn = crIsAdmin
+    const delBtn = (crIsAdmin && !CRLastMonth.isLiveDate(dateKey))
         ? `<button type="button" class="cr-row-delete-btn" data-hist-del="${crEscapeHtml(dateKey)}" title="${t("creditreport.detail.deleteDaySnapshotTitle")}"><span class="cr-ico cr-ico-trash" aria-hidden="true"></span></button>`
         : "";
     // Admin-only — re-pulls currently-live T24 into this date's saved
     // snapshot (T24 is otherwise frozen once a date is first saved).
     // Harmless no-op on today's own row — shown uniformly on every row.
-    const refreshBtn = crIsAdmin
+    const refreshBtn = (crIsAdmin && CRLastMonth.canRefreshT24(dateKey))
         ? `<button type="button" class="cr-row-refresh-btn" data-hist-refresh="${crEscapeHtml(dateKey)}" title="${t("creditreport.detail.refreshT24Title")}"><span class="cr-ico cr-ico-refresh" aria-hidden="true"></span></button>`
         : "";
     return `
@@ -500,6 +500,8 @@ async function crFetchHistory() {
 
     crShowLoading();
     try {
+        // Today's live T24 row (see CRLastMonth.addLiveToday).
+        const liveP = CRLastMonth.fetchLive("/api/creditreport/byproduct", crToken);
         const url = `${API.BASE_URL}/api/creditreport/byproduct/history?${params.toString()}`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
         const data = await res.json();
@@ -510,7 +512,7 @@ async function crFetchHistory() {
             return;
         }
         // Past days' T24 = that day's NBC Overdue; today stays live T24.
-        crHistoryData = CRLastMonth.t24FromNbcHistory(data);
+        crHistoryData = CRLastMonth.addLiveToday(CRLastMonth.t24FromNbcHistory(data), await liveP, dateTo);
         crHistoryData.product = picks.length ? crHistProductPicker.key() : null;
         crRenderHistory();
     } catch (e) {
@@ -623,6 +625,7 @@ function crResolveSelectedProduct() {
     return crHistProducts()[0] || null;
 }
 function crHistItemForDay(day) {
+    if (!CRLastMonth.liveDayShown(day, crActiveSection())) return null;
     const picks = crHistProducts();
     if (picks.length > 1) return day.combined || null;
     return picks.length ? day.items.find(it => it.product === picks[0]) || null : null;

@@ -535,13 +535,13 @@ function crBuildHistoryRow(dateKey, item, section, opts = {}) {
     // own comment in the backend). Never on the "Other Address" detail
     // sub-rows — they share the same saved snapshot document as their
     // parent date's main row.
-    const delBtn = (crIsAdmin && !isDetail)
+    const delBtn = (crIsAdmin && !isDetail && !CRLastMonth.isLiveDate(dateKey))
         ? `<button type="button" class="cr-row-delete-btn" data-hist-del="${crEscapeHtml(dateKey)}" title="${t("creditreport.detail.deleteDaySnapshotTitle")}"><span class="cr-ico cr-ico-trash" aria-hidden="true"></span></button>`
         : "";
     // Admin-only — re-pulls currently-live T24 into this date's saved
     // snapshot (T24 is otherwise frozen once a date is first saved).
     // Same exclusion as delBtn: never on the "Other Address" detail rows.
-    const refreshBtn = (crIsAdmin && !isDetail)
+    const refreshBtn = (crIsAdmin && !isDetail && CRLastMonth.canRefreshT24(dateKey))
         ? `<button type="button" class="cr-row-refresh-btn" data-hist-refresh="${crEscapeHtml(dateKey)}" title="${t("creditreport.detail.refreshT24Title")}"><span class="cr-ico cr-ico-refresh" aria-hidden="true"></span></button>`
         : "";
 
@@ -618,6 +618,8 @@ async function crFetchHistory() {
 
     crShowLoading();
     try {
+        // Today's live T24 row (see CRLastMonth.addLiveToday).
+        const liveP = CRLastMonth.fetchLive("/api/creditreport/bylocation", crToken);
         const url = `${API.BASE_URL}/api/creditreport/bylocation/history?${params.toString()}`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
         const data = await res.json();
@@ -628,7 +630,7 @@ async function crFetchHistory() {
             return;
         }
         // Past days' T24 = that day's NBC Overdue; today stays live T24.
-        crHistoryData = CRLastMonth.t24FromNbcHistory(data);
+        crHistoryData = CRLastMonth.addLiveToday(CRLastMonth.t24FromNbcHistory(data), await liveP, dateTo);
         crHistoryData.location = picks.length ? crHistLocationPicker.key() : null;
         crRenderHistory();
     } catch (e) {
@@ -784,6 +786,7 @@ function crResolveSelectedLocation() {
     return crHistLocations()[0] || null;
 }
 function crHistItemForDay(day) {
+    if (!CRLastMonth.liveDayShown(day, crActiveSection())) return null;
     const picks = crHistLocations();
     if (picks.length > 1) return day.combined || null;
     return picks.length ? day.items.find(it => it.location === picks[0]) || null : null;

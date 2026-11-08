@@ -903,7 +903,7 @@ function crBuildHistoryRow(dateKey, item, section, isTotal, t24AsOfText) {
     // own comment in the backend). Only on this top-level row, never on
     // the CO/FSRO/Digital breakdown rows below it — they all share the
     // same saved snapshot document for this date.
-    const delBtn = crIsAdmin
+    const delBtn = (crIsAdmin && !CRLastMonth.isLiveDate(dateKey))
         ? `<button type="button" class="cr-row-delete-btn" data-hist-del="${crEscapeHtml(dateKey)}" title="${t("creditreport.detail.deleteDaySnapshotTitle")}"><span class="cr-ico cr-ico-trash" aria-hidden="true"></span></button>`
         : "";
     // Admin-only — re-pulls currently-live T24 into this date's saved
@@ -912,7 +912,7 @@ function crBuildHistoryRow(dateKey, item, section, isTotal, t24AsOfText) {
     // Harmless no-op on today's own row, which is never frozen to begin
     // with — shown on every row uniformly rather than special-casing
     // "is this today" on the client.
-    const refreshBtn = crIsAdmin
+    const refreshBtn = (crIsAdmin && CRLastMonth.canRefreshT24(dateKey))
         ? `<button type="button" class="cr-row-refresh-btn" data-hist-refresh="${crEscapeHtml(dateKey)}" title="${t("creditreport.detail.refreshT24Title")}"><span class="cr-ico cr-ico-refresh" aria-hidden="true"></span></button>`
         : "";
 
@@ -966,6 +966,7 @@ function crHistoryKey(picks) {
     return JSON.stringify(picks);
 }
 function crHistoryItemForDay(day, picks = crHistoryPicks()) {
+    if (!CRLastMonth.liveDayShown(day, crActiveSection())) return null;
     if (picks.branches.length > 1 || picks.teams.length > 1) return day.combined || null;
     const raw = picks.branches.length ? day.items.find(it => it.branch === picks.branches[0]) : day.total;
     return crResolveHistoryItem(raw, picks.teams[0] || "");
@@ -1030,6 +1031,8 @@ async function crFetchHistory() {
 
     crShowLoading();
     try {
+        // Today's live T24 row (see CRLastMonth.addLiveToday).
+        const liveP = CRLastMonth.fetchLive("/api/creditreport/summary", crToken);
         const url = `${API.BASE_URL}/api/creditreport/summary/history?${params.toString()}`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
         const data = await res.json();
@@ -1040,7 +1043,7 @@ async function crFetchHistory() {
             return;
         }
         // Past days' T24 = that day's NBC Overdue; today stays live T24.
-        crHistoryData = CRLastMonth.t24FromNbcHistory(data);
+        crHistoryData = CRLastMonth.addLiveToday(CRLastMonth.t24FromNbcHistory(data), await liveP, dateTo);
         crHistoryData.key = crHistoryKey(picks);
         crRenderHistory();
     } catch (e) {
