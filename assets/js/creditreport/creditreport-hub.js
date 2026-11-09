@@ -139,10 +139,15 @@ function crHubWireExportButton(btnId, labelId) {
     btn.addEventListener("click", async () => {
         if (typeof window.crExportAll !== "function") return;
         btn.disabled = true;
-        label.removeAttribute("data-i18n");
-        label.textContent = t("creditreport.hub.running");
         try {
-            await window.crExportAll();
+            // Asks "latest data or a saved date" first; the label only
+            // flips to running once that's confirmed.
+            await window.crExportAll({
+                onStart: () => {
+                    label.removeAttribute("data-i18n");
+                    label.textContent = t("creditreport.hub.running");
+                }
+            });
         } finally {
             btn.disabled = false;
             label.setAttribute("data-i18n", "creditreport.hub.exportAll");

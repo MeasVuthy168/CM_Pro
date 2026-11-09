@@ -53,6 +53,14 @@ CMI18n.register({
   // cr-export-all.js); admin and user only, same gate as Credit
   // Portfolio Intelligence.
   "creditreport.hub.exportAll": { km: "នាំចេញទាំងអស់ (Excel)", en: "Export All (Excel)" },
+  "creditreport.hub.exportLatest": { km: "ទិន្នន័យចុងក្រោយ", en: "Latest data" },
+  "creditreport.hub.exportLatestHint": { km: "គ្រប់ Sheet ទាំងអស់ ដូចសព្វដង។", en: "Every sheet, as before." },
+  "creditreport.hub.exportByDate": { km: "តាមថ្ងៃដែលបានរក្សាទុក", en: "A saved date" },
+  "creditreport.hub.exportByDateHint": { km: "តែ Daily Monitoring ៤ Sheet ពី Daily History ថ្ងៃនោះ (Balance Loan at Risk = NBC Overdue, គ្មាន Plan)។", en: "Only the 4 Daily Monitoring sheets, from that day's Daily History (Balance Loan at Risk = NBC Overdue, no Plan)." },
+  "creditreport.hub.exportGo": { km: "នាំចេញ", en: "Export" },
+  "creditreport.hub.exportPickDate": { km: "សូមជ្រើសថ្ងៃ។", en: "Please pick a date." },
+  "creditreport.hub.exportNoSnapshot": { km: "គ្មាន Snapshot Daily History សម្រាប់ថ្ងៃ {date} ទេ។", en: "No Daily History snapshot for {date}." },
+  "creditreport.hub.exportFromHistory": { km: "ពី Daily History (Snapshot) — Balance Loan at Risk (T24) = NBC Overdue ថ្ងៃនោះ", en: "From Daily History (snapshot) — Balance Loan at Risk (T24) = that day's NBC Overdue" },
   "creditreport.hub.exportAllRunning": { km: "កំពុងប្រមូលរបាយការណ៍ទាំងអស់...", en: "Gathering every report..." },
   "creditreport.hub.exportAllDone": { km: "បានបង្កើតឯកសារ Excel ជាមួយ {n} សន្លឹក។", en: "Excel file created with {n} sheets." },
 
