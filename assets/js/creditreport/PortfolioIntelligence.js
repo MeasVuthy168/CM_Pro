@@ -90,7 +90,8 @@ async function piRenderPlan(d) {
         nbcOverduePct: k.parPct && k.parPct.prev !== null && k.parPct.prev !== undefined ? k.parPct.prev * 100 : null,
         nplPct: k.nplPct && k.nplPct.prev !== null && k.nplPct.prev !== undefined ? k.nplPct.prev * 100 : null
     } : null;
-    box.innerHTML = CIPlan.table(p, { lastMonth: lm, lmLabel: d.comparison && d.comparison.mode === "month" ? "creditreport.plan.lastMonth" : "creditreport.mr.before" });
+    // The rows this page always showed (CIPlan now knows more metrics).
+    box.innerHTML = CIPlan.table(p, { lastMonth: lm, lmLabel: d.comparison && d.comparison.mode === "month" ? "creditreport.plan.lastMonth" : "creditreport.mr.before", keys: ["osAmount", "osCount", "osClients", "disbAmount", "disbCount", "nbcOverduePct", "nplPct", "woCollected"] });
 }
 
 function piAlertText(a) {

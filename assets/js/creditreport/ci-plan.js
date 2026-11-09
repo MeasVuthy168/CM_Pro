@@ -23,8 +23,13 @@
         { key: "osAmount", kind: "amount", label: "creditreport.plan.m.osAmount" },
         { key: "osCount", kind: "count", label: "creditreport.plan.m.osCount" },
         { key: "osClients", kind: "count", label: "creditreport.plan.m.osClients" },
+        // KHR loans / loans ≤ $50,000: outstanding (USD) of those loans.
+        { key: "osKhr", kind: "amount", label: "creditreport.plan.khr" },
+        { key: "osSmall", kind: "amount", label: "creditreport.plan.small" },
         { key: "disbAmount", kind: "amount", label: "creditreport.plan.m.disbAmount", toDate: true },
         { key: "disbCount", kind: "count", label: "creditreport.plan.m.disbCount", toDate: true },
+        // Loan Disburse by LOS: a yearly plan against the year to date.
+        { key: "losCount", kind: "count", label: "creditreport.plan.m.losCount", yearly: true },
         { key: "nbcOverduePct", kind: "pct", label: "creditreport.plan.m.parPct" },
         { key: "nplPct", kind: "pct", label: "creditreport.plan.m.nplPct" },
         { key: "woCollected", kind: "amount", label: "creditreport.plan.m.woCollected", yearly: true }
