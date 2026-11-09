@@ -415,7 +415,12 @@
         const lm = await lastMonthDay(historyPath, d.toDate);
         if (lm && lm.day) {
             const lmByKey = new Map(toRows(lm.day.items || [], lm.day.total).map(r => [String(r[identityKey]), r]));
-            rows = rows.map(r => ({ ...r, lastMonth: lmByKey.get(String(r[identityKey])) || null }));
+            // Saved rows read like the reports' own Last Month: T24 from NBC.
+            const noFilter = { t24Class: [], t24Product: [], nbcProduct: [] };
+            rows = rows.map(r => {
+                const saved = lmByKey.get(String(r[identityKey]));
+                return { ...r, lastMonth: saved ? CRLastMonth.scopeSaved(saved, noFilter) : null };
+            });
         }
 
         let planInfo = null;
