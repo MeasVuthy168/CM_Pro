@@ -1444,6 +1444,7 @@ CMI18n.register({
   "creditreport.plan.m.osClients": { km: "ចំនួនអតិថិជន", en: "Clients" },
   "creditreport.plan.m.disbAmount": { km: "ការបញ្ចេញឥណទាន (ទឹកប្រាក់)", en: "Disbursement (amount)" },
   "creditreport.plan.m.disbCount": { km: "ការបញ្ចេញឥណទាន (គណនី)", en: "Disbursement (loans)" },
+  "creditreport.plan.m.losCount": { km: "បញ្ចេញឥណទានតាម LOS (គណនី)", en: "Disbursed via LOS (loans)" },
   "creditreport.plan.m.parPct": { km: "PAR % (NBC Overdue) — ខ្ពស់បំផុត", en: "PAR % (NBC Overdue) — ceiling" },
   "creditreport.plan.m.nplPct": { km: "NPL % — ខ្ពស់បំផុត", en: "NPL % — ceiling" },
   "creditreport.plan.m.woCollected": { km: "ប្រមូល WO បាន", en: "WO collected" },
