@@ -130,7 +130,8 @@ async function mrLoad() {
             () => CIPlan.officers(asOf),
             () => CIPlan.branchRows(asOf),
             () => mrSavedTeamSplit(branch, asOf),
-            none, none
+            () => mrGet("recovery", { branch, dim: "branch", ytd: "1", toDate: asOf }),
+            () => mrGet("recovery", { branch, dim: "officer", ytd: "1", toDate: asOf })
         ] : [
             () => mrGet("overview", base),
             () => mrGet("risk", { ...base, dim: "officer" }),
@@ -145,10 +146,10 @@ async function mrLoad() {
             () => CIPlan.officers(),
             () => CIPlan.branchRows(),
             () => mrTeamSplit(branch),
-            // NPL Collected = NPL recovered this month (left NPL), against
-            // the branch plan's NPL Recovery target — Recovery Performance.
-            () => mrGet("recovery", { branch, dim: "branch" }),
-            () => mrGet("recovery", { branch, dim: "officer" })
+            // NPL Collected = NPL recovered (left NPL) year to date, against
+            // the NPL Recovery plan as a yearly target — like WO Collected.
+            () => mrGet("recovery", { branch, dim: "branch", ytd: "1" }),
+            () => mrGet("recovery", { branch, dim: "officer", ytd: "1" })
         ];
         const out = await mrPool(jobs, 3, (n, total) => {
             if (mine === mrSeq && typeof showAppLoading === "function") showAppLoading(t("creditreport.mr.loadingN", { n, total }), { progress: true, key: "mr" });
@@ -247,13 +248,25 @@ function mrNumberSections(saved) {
 // ---------- WO Collected / NPL Collected ----------
 // WO Collected: write-offs collected (interest + principal), year to date,
 // against the yearly plan (the branch plan's woCollected). NPL Collected:
-// NPL loans that left NPL this month (Recovery Performance's "recovered"),
-// against the branch plan's NPL Recovery target. NPL Collected comes from
-// the live NPL movement only — "—" for a saved day.
+// NPL loans that left NPL year to date (Recovery Performance's
+// "recovered", ?ytd=1), against the NPL Recovery plan taken as a yearly
+// target. A saved day closes on that day's saved NPL list.
 function mrNplCollected(d) {
-    const k = d.recB && d.recB.movement && d.recB.movement.available ? d.recB.kpis : null;
+    const mv = d.recB && d.recB.movement;
+    const k = mv && mv.available ? d.recB.kpis : null;
     if (!k) return null;
-    return { actual: k.recovered.value, loans: k.recovered.count, plan: k.target && k.target.value ? k.target.value : null };
+    return {
+        actual: k.recovered.value, loans: k.recovered.count, plan: k.target && k.target.value ? k.target.value : null,
+        // NPL history younger than the year: measured from its first day.
+        since: mv.openedLate ? mv.openingDate : null
+    };
+}
+// "Year to date · n loans left NPL", or "Since dd/mm/yyyy · …".
+function mrNplCollectedSub(npl) {
+    if (!npl) return t("creditreport.mr.nplNoHistory");
+    return npl.since
+        ? t("creditreport.mr.nplCollectedSince", { date: CI.dmy(npl.since), n: CI.num(npl.loans) })
+        : t("creditreport.mr.nplCollectedSub", { n: CI.num(npl.loans) });
 }
 function mrAchText(actual, plan) {
     return plan ? t("creditreport.mr.ofPlan", { pct: `${Math.round((actual / plan) * 100)}%` }) : t("creditreport.mr.noTarget");
@@ -270,7 +283,7 @@ function mrCollectedTiles(d, tile) {
         tile(t("creditreport.mr.k.nplCollected"),
             npl ? CI.money(npl.actual) : "—",
             npl ? `<span class="${tone(npl.actual, npl.plan)}">${CI.esc(mrAchText(npl.actual, npl.plan))}</span>` : "",
-            CI.esc(npl ? t("creditreport.mr.nplCollectedSub", { n: CI.num(npl.loans) }) : d.asOf ? t("creditreport.mr.latestOnly") : t("creditreport.mr.mtd")))
+            CI.esc(mrNplCollectedSub(npl)))
     ];
 }
 // Per row (officer / branch): WO Collected (actual, yearly plan) and NPL
@@ -289,7 +302,7 @@ function mrCollectedCells(wo, rec) {
 function mrNplCollectedRow(d, withLm) {
     const npl = mrNplCollected(d);
     const cell = npl ? { actual: npl.actual, plan: npl.plan, ach: npl.plan ? npl.actual / npl.plan : null } : null;
-    const sub = npl ? t("creditreport.mr.nplCollectedSub", { n: CI.num(npl.loans) }) : d.asOf ? t("creditreport.mr.latestOnly") : t("creditreport.mr.mtd");
+    const sub = mrNplCollectedSub(npl);
     return `<tr><td>${CI.esc(t("creditreport.mr.k.nplCollected"))}<div class="ci-plan-sub">${CI.esc(sub)}</div></td><td class="num"><b>${npl ? CI.money(npl.actual) : "—"}</b></td>${withLm ? `<td class="num">—</td>` : ""}<td class="num">${npl && npl.plan ? CI.money(npl.plan) : "—"}</td><td class="num ci-plan-ach">${CIPlan.achCell({ kind: "amount" }, cell)}</td></tr>`;
 }
 
