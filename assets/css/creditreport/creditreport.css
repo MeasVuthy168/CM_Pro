@@ -411,3 +411,47 @@
 }
 .cr-hub-ci .cr-hub-ci-meeting .cr-hub-icon{ margin-bottom:0; }
 .cr-hub-ci-text{ min-width:0; }
+
+/* Export All — latest data or a saved Daily History date */
+.cr-xd-backdrop{
+    position:fixed; inset:0; z-index:9000;
+    background:rgba(10,18,40,.45);
+    display:flex; align-items:flex-end; justify-content:center;
+    padding:16px;
+}
+@media (min-width:600px){ .cr-xd-backdrop{ align-items:center; } }
+.cr-xd{
+    width:100%; max-width:420px;
+    background:var(--cr-card-bg,#fff); color:var(--cr-text,#1a2238);
+    border-radius:18px; padding:18px 16px 14px;
+    box-shadow:0 12px 40px rgba(0,0,0,.25);
+    font-family:'KRASAR',sans-serif;
+}
+.cr-xd-title{ font-weight:700; font-size:16px; margin-bottom:12px; }
+.cr-xd-opt{
+    display:flex; gap:10px; align-items:flex-start;
+    border:1px solid var(--cr-border,#e3e7ef); border-radius:12px;
+    padding:10px 12px; margin-bottom:8px; cursor:pointer;
+}
+.cr-xd-opt:has(input:checked){ border-color:var(--cr-gold,#C9A227); box-shadow:0 0 0 1px var(--cr-gold,#C9A227) inset; }
+.cr-xd-opt input{ margin-top:4px; accent-color:var(--cr-navy,#13254d); }
+.cr-xd-opt span{ display:flex; flex-direction:column; gap:2px; }
+.cr-xd-opt small{ color:var(--cr-text-muted,#6b7385); font-size:12px; line-height:1.5; }
+.cr-xd-date{
+    width:100%; box-sizing:border-box; margin:2px 0 6px;
+    padding:10px 12px; border-radius:10px; font-size:15px;
+    border:1px solid var(--cr-border,#e3e7ef);
+    background:var(--cr-page-bg,#f5f7fb); color:inherit;
+}
+.cr-xd-date:disabled{ opacity:.5; }
+.cr-xd-err{ color:#d64545; font-size:13px; min-height:18px; }
+.cr-xd-actions{ display:flex; gap:8px; margin-top:6px; }
+.cr-xd-actions button{
+    flex:1; padding:12px; border-radius:12px; border:none; cursor:pointer;
+    font-family:'KRASAR',sans-serif; font-weight:700; font-size:14px;
+}
+.cr-xd-cancel{ background:var(--cr-page-bg,#eef1f6); color:var(--cr-text,#1a2238); }
+.cr-xd-ok{ background:linear-gradient(135deg,var(--cr-navy-dark,#0d1b3d),var(--cr-navy,#13254d)); color:#fff; }
+[data-theme="dark"] .cr-xd-ok{ background:linear-gradient(135deg,#D4AF37,#FFD700); color:#0d1b3d; }
+[data-theme="dark"] .cr-xd-date{ color-scheme:dark; }
+[data-theme="dark"] .cr-xd-opt input{ accent-color:#D4AF37; }

@@ -404,9 +404,27 @@
     //                    rows name their match field "branch" too, but
     //                    it holds the officer id there — ci-plan.js's
     //                    quirk, not this file's)
+    //   asOf             a saved Daily History date (YYYY-MM-DD) to build
+    //                    the sheet from instead of the live report — that
+    //                    day's own snapshot, T24 read from its NBC Overdue
+    //                    like Daily History shows it; no Monthly Plan (it
+    //                    only exists against the live figures).
     async function sheetDailyMonitoring(opts) {
-        const { path, historyPath, planPath, planMatchField, name, title, identityKey, groups, otherLabel } = opts;
-        const d = await get(path, {});
+        const { path, historyPath, planPath, planMatchField, name, title, identityKey, groups, otherLabel, asOf } = opts;
+        const noFilter = { t24Class: [], t24Product: [], nbcProduct: [] };
+        let d;
+        if (asOf) {
+            const h = await get(historyPath, { dateFrom: asOf, dateTo: asOf });
+            const day = h && Array.isArray(h.days) ? h.days.find(x => x && x.date === asOf) : null;
+            if (!day || !Array.isArray(day.items) || typeof window.CRLastMonth === "undefined") return [];
+            d = {
+                toDate: asOf,
+                items: day.items.map(r => CRLastMonth.scopeSaved(r, noFilter)),
+                total: day.total ? CRLastMonth.scopeSaved(day.total, noFilter) : null
+            };
+        } else {
+            d = await get(path, {});
+        }
         if (!d || !Array.isArray(d.items)) return [];
         const totalLabel = t("common.total");
         const toRows = (items, total) => (total && typeof total === "object" ? [...items, { ...total, [identityKey]: totalLabel }] : items);
@@ -416,7 +434,6 @@
         if (lm && lm.day) {
             const lmByKey = new Map(toRows(lm.day.items || [], lm.day.total).map(r => [String(r[identityKey]), r]));
             // Saved rows read like the reports' own Last Month: T24 from NBC.
-            const noFilter = { t24Class: [], t24Product: [], nbcProduct: [] };
             rows = rows.map(r => {
                 const saved = lmByKey.get(String(r[identityKey]));
                 return { ...r, lastMonth: saved ? CRLastMonth.scopeSaved(saved, noFilter) : null };
@@ -424,7 +441,7 @@
         }
 
         let planInfo = null;
-        if (planPath) {
+        if (planPath && !asOf) {
             const pd = await get(planPath, {});
             if (pd && Array.isArray(pd.rows)) {
                 planInfo = pd;
@@ -447,6 +464,7 @@
         const info = [
             d.toDate ? t("creditreport.tblhead.asOf", { date: dmy(d.toDate) }) : "",
             lm && lm.date ? `${t("creditreport.lastMonth.col")}: ${dmy(lm.date)}` : "",
+            asOf ? t("creditreport.hub.exportFromHistory") : "",
             planInfo && planInfo.month ? t("creditreport.plan.noteMonth", { month: planInfo.month.split("-").reverse().join("-"), from: dmy(planInfo.fromDate), to: dmy(planInfo.toDate), done: planInfo.daysDone, days: planInfo.daysInMonth }) : ""
         ].filter(Boolean);
         return [{ name, title, info, cols, groups: colGroups, rows, freezeCols: 1 }];
@@ -746,22 +764,26 @@
     // export is the same section/lane/field, colour-coded report as
     // Export All gives that page, not just whatever the on-screen
     // Comparison dropdown happens to be showing.
-    const sheetDmBranch = () => sheetDailyMonitoring({
+    const sheetDmBranch = asOf => sheetDailyMonitoring({
+        asOf,
         path: "/api/creditreport/summary", historyPath: "/api/creditreport/summary/history",
         planPath: "/api/creditreport/plan-vs-actual", planMatchField: "branch",
         name: "DailyMonitoring_Branch", title: dmTitle("creditreport.hub.tileBranch"), identityKey: "branch", groups: branchGroups()
     });
-    const sheetDmOfficer = () => sheetDailyMonitoring({
+    const sheetDmOfficer = asOf => sheetDailyMonitoring({
+        asOf,
         path: "/api/creditreport/byco", historyPath: "/api/creditreport/byco/history",
         planPath: "/api/creditreport/officer-plan-vs-actual", planMatchField: "id",
         name: "DailyMonitoring_Officer", title: dmTitle("creditreport.hub.tileOfficer"), identityKey: "name", groups: officerGroups()
     });
-    const sheetDmProduct = () => sheetDailyMonitoring({
+    const sheetDmProduct = asOf => sheetDailyMonitoring({
+        asOf,
         path: "/api/creditreport/byproduct", historyPath: "/api/creditreport/byproduct/history",
         planPath: null, planMatchField: null,
         name: "DailyMonitoring_Product", title: dmTitle("creditreport.hub.tileProduct"), identityKey: "product", groups: productLikeGroups()
     });
-    const sheetDmLocation = () => sheetDailyMonitoring({
+    const sheetDmLocation = asOf => sheetDailyMonitoring({
+        asOf,
         path: "/api/creditreport/bylocation", historyPath: "/api/creditreport/bylocation/history",
         planPath: null, planMatchField: null,
         name: "DailyMonitoring_Location", title: dmTitle("creditreport.hub.tileLocation"), identityKey: "location", groups: productLikeGroups(), otherLabel: t("creditreport.pi.otherAddress")
@@ -806,10 +828,63 @@
         return sheets;
     }
 
-    function fileName() {
+    function fileName(asOf) {
+        if (asOf) return `CreditReport_DailyMonitoring_${asOf.replace(/-/g, "")}.xlsx`;
         const d = new Date();
         const pad = n => String(n).padStart(2, "0");
         return `CreditReport_All_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}.xlsx`;
+    }
+
+    // Asks what to export: the latest data (every sheet, as before) or a
+    // saved Daily History date (the 4 Daily Monitoring sheets only — the
+    // other reports aren't saved per day). Resolves { asOf: null | date },
+    // or null when cancelled.
+    function askExportDate() {
+        return new Promise(resolve => {
+            const pad = n => String(n).padStart(2, "0");
+            const now = new Date(Date.now() + 7 * 3600 * 1000); // Phnom Penh
+            const max = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())}`;
+            const wrap = document.createElement("div");
+            wrap.className = "cr-xd-backdrop";
+            wrap.innerHTML = `
+              <div class="cr-xd" role="dialog" aria-modal="true" aria-labelledby="crXdTitle">
+                <div class="cr-xd-title" id="crXdTitle">${t("creditreport.hub.exportAll")}</div>
+                <label class="cr-xd-opt"><input type="radio" name="crXdMode" value="latest" checked>
+                  <span><b>${t("creditreport.hub.exportLatest")}</b><small>${t("creditreport.hub.exportLatestHint")}</small></span></label>
+                <label class="cr-xd-opt"><input type="radio" name="crXdMode" value="date">
+                  <span><b>${t("creditreport.hub.exportByDate")}</b><small>${t("creditreport.hub.exportByDateHint")}</small></span></label>
+                <input type="date" class="cr-xd-date" max="${max}" disabled aria-label="${t("creditreport.hub.exportByDate")}">
+                <div class="cr-xd-err" role="alert"></div>
+                <div class="cr-xd-actions">
+                  <button type="button" class="cr-xd-cancel">${t("common.cancel")}</button>
+                  <button type="button" class="cr-xd-ok">${t("creditreport.hub.exportGo")}</button>
+                </div>
+              </div>`;
+            document.body.appendChild(wrap);
+            const date = wrap.querySelector(".cr-xd-date");
+            const err = wrap.querySelector(".cr-xd-err");
+            const mode = () => wrap.querySelector("input[name=crXdMode]:checked").value;
+            wrap.querySelectorAll("input[name=crXdMode]").forEach(r => r.addEventListener("change", () => {
+                date.disabled = mode() !== "date";
+                err.textContent = "";
+                if (!date.disabled) date.focus();
+            }));
+            date.addEventListener("input", () => { err.textContent = ""; });
+            const close = v => { document.removeEventListener("keydown", onKey); wrap.remove(); resolve(v); };
+            const onKey = e => { if (e.key === "Escape") close(null); };
+            document.addEventListener("keydown", onKey);
+            wrap.addEventListener("click", e => { if (e.target === wrap) close(null); });
+            wrap.querySelector(".cr-xd-cancel").addEventListener("click", () => close(null));
+            wrap.querySelector(".cr-xd-ok").addEventListener("click", () => {
+                if (mode() === "latest") return close({ asOf: null });
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(date.value) || date.value > max) {
+                    err.textContent = t("creditreport.hub.exportPickDate");
+                    return;
+                }
+                close({ asOf: date.value });
+            });
+            wrap.querySelector(".cr-xd-ok").focus();
+        });
     }
 
     // The message the user actually sees on a failure — on a phone
@@ -821,8 +896,17 @@
         toast(`${t("creditreport.export.failed")}${detail}`, "error");
     }
 
-    async function exportAll() {
+    // onStart: called once the user has confirmed (not while the date
+    // dialog is open) — the hub flips its button to "running" then.
+    async function exportAll({ onStart } = {}) {
         if (typeof window.ArrExport === "undefined") { failToast("ArrExport"); return; }
+        const choice = await askExportDate();
+        if (!choice) return;
+        if (typeof onStart === "function") onStart();
+        const asOf = choice.asOf;
+        const jobs = asOf
+            ? [sheetDmBranch, sheetDmOfficer, sheetDmProduct, sheetDmLocation].map(f => () => f(asOf))
+            : SHEET_JOBS.map(f => () => f());
         if (typeof showAppLoading === "function") showAppLoading(t("creditreport.hub.exportAllRunning"), { progress: true, key: "cr:export-all" });
 
         // Two phases, reported separately: gathering every report's own
@@ -835,7 +919,7 @@
         // export).
         let sheets;
         try {
-            sheets = await runPool(SHEET_JOBS, 3, (done, total) => {
+            sheets = await runPool(jobs, 3, (done, total) => {
                 window.setAppLoadingProgress && window.setAppLoadingProgress((done / total) * 70, t("creditreport.hub.exportAllRunning"));
             });
         } catch (e) {
@@ -845,14 +929,15 @@
             return;
         }
         if (!sheets.length) {
-            failToast("no data");
+            if (asOf) toast(t("creditreport.hub.exportNoSnapshot", { date: dmy(asOf) }), "error");
+            else failToast("no data");
             if (typeof hideAppLoading === "function") hideAppLoading();
             return;
         }
         try {
             window.setAppLoadingProgress && window.setAppLoadingProgress(75, t("creditreport.export.creatingExcel"));
             await window.ArrExport.excel({
-                filename: fileName(),
+                filename: fileName(asOf),
                 freezeCols: 1,
                 sheets,
                 onProgress: f => window.setAppLoadingProgress && window.setAppLoadingProgress(75 + f * 25, t("creditreport.export.wait"))
