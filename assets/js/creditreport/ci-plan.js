@@ -70,8 +70,11 @@
     }
 
     // branches: [] / null = every branch the user may see (the Total).
-    async function branch(branches) {
-        const d = await get("/api/creditreport/plan-vs-actual");
+    // asOf (optional, YYYY-MM-DD): a saved Daily History day against the
+    // plan of its month (Branch Meeting Report of a past date).
+    const q = asOf => (asOf ? `?asOf=${encodeURIComponent(asOf)}` : "");
+    async function branch(branches, asOf) {
+        const d = await get(`/api/creditreport/plan-vs-actual${q(asOf)}`);
         if (!d) return null;
         const pick = (branches || []).filter(Boolean);
         let metrics;
@@ -84,14 +87,14 @@
     }
 
     // Every branch's own plan row (for a by-branch table).
-    async function branchRows() {
-        const d = await get("/api/creditreport/plan-vs-actual");
+    async function branchRows(asOf) {
+        const d = await get(`/api/creditreport/plan-vs-actual${q(asOf)}`);
         if (!d) return null;
         return { month: d.month, toDate: d.toDate, hasPlan: !!d.hasPlan, rows: (d.rows || []).map(r => ({ id: r.branch, metrics: combine([r]) })) };
     }
 
-    async function officers() {
-        const d = await get("/api/creditreport/officer-plan-vs-actual");
+    async function officers(asOf) {
+        const d = await get(`/api/creditreport/officer-plan-vs-actual${q(asOf)}`);
         if (!d) return null;
         return { month: d.month, toDate: d.toDate, hasPlan: !!d.hasPlan, rows: (d.rows || []).map(r => ({ id: String(r.branch), metrics: combine([r]) })) };
     }

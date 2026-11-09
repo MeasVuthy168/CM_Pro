@@ -124,7 +124,11 @@ async function mrLoad() {
             () => mrGet("risk", { ...base, dim: "officer" }),
             () => mrGet("risk", { compare, asOf, dim: "branch" }),
             () => mrGet("risk", { ...base, dim: "product" }),
-            none, none, none, none, none, none, none, none,
+            none, none, none, none, none,
+            // The plan of the saved day's month against that day's figures.
+            () => CIPlan.branch(branch ? [branch] : [], asOf),
+            () => CIPlan.officers(asOf),
+            () => CIPlan.branchRows(asOf),
             () => mrSavedTeamSplit(branch, asOf)
         ] : [
             () => mrGet("overview", base),
@@ -298,10 +302,11 @@ function mrRenderProgress(d) {
     const k = d.ov.kpis;
     const p = d.plan;
     const month = p && p.month ? p.month.split("-").reverse().join("/") : "—";
-    document.getElementById("mrPlanNote").textContent = d.asOf ? t("creditreport.mr.savedNoPlan")
-        : !p ? t("creditreport.plan.none")
+    const planNote = !p ? t("creditreport.plan.none")
         : p.hasPlan ? t("creditreport.plan.note", { month, to: CI.dmy(p.toDate), done: p.daysDone, days: p.daysInMonth })
         : t("creditreport.plan.notSet", { month });
+    // A saved day: say the figures are that day's Daily History (PAR = NBC).
+    document.getElementById("mrPlanNote").textContent = d.asOf ? `${t("creditreport.mr.savedNote")} ${planNote}` : planNote;
     document.getElementById("mrBranchTitle").textContent = d.branch ? `${t("creditreport.mr.byBranchOne")} — ${d.branch}` : t("creditreport.mr.byBranchAll");
     const avail = d.ov.comparison && d.ov.comparison.available;
     const lm = avail ? {
@@ -309,7 +314,7 @@ function mrRenderProgress(d) {
         nbcOverduePct: k.parPct.prev === null || k.parPct.prev === undefined ? null : k.parPct.prev * 100,
         nplPct: k.nplPct.prev === null || k.nplPct.prev === undefined ? null : k.nplPct.prev * 100
     } : null;
-    document.getElementById("mrProgress").innerHTML = d.asOf ? mrSavedProgress(d) : p && p.metrics
+    document.getElementById("mrProgress").innerHTML = d.asOf && !(p && p.metrics) ? mrSavedProgress(d) : p && p.metrics
         ? CIPlan.table(p, { lastMonth: lm, lmLabel: d.compare === "month" ? "creditreport.plan.lastMonth" : "creditreport.mr.before", keys: ["osAmount", "osCount", "osClients", "disbAmount", "disbCount", "nbcOverduePct", "nplPct", "woCollected"] })
         : "";
     mrRenderTeamSplit(d);
