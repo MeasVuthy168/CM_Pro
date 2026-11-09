@@ -148,3 +148,10 @@ body.mr-pdf-mode #mrReport .mr-charts-1{ grid-template-columns:minmax(0,1fr); }
 body.mr-pdf-mode #mrReport .mr-table-wrap{ overflow:visible; }
 body.mr-pdf-mode #mrReport .mr-edit td[contenteditable]{ background:#fff; }
 body.mr-pdf-mode #mrReport .mr-sign{ grid-template-columns:repeat(3,1fr); }
+
+/* Data date: latest (empty) or a saved Daily History day */
+.mr-asof{ display:flex; gap:6px; align-items:center; }
+.mr-asof input{ flex:1; min-width:0; }
+.mr-asof-clear{ white-space:nowrap; padding:8px 12px; }
+.mr-asof-hint{ display:block; margin-top:4px; font-size:11.5px; line-height:1.5; color:var(--cr-text-muted); }
+[data-theme="dark"] .mr-asof input{ color-scheme:dark; }

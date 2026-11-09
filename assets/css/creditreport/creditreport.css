@@ -250,7 +250,7 @@
     padding-left:16px;
     padding-right:16px;
 }
-.cr-hub-export-row{ margin-bottom:12px; }
+.cr-hub-export-row{ margin-bottom:12px; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:8px; }
 .cr-hub-section-title{
     margin-top:6px;
     margin-bottom:8px;
@@ -455,3 +455,7 @@
 [data-theme="dark"] .cr-xd-ok{ background:linear-gradient(135deg,#D4AF37,#FFD700); color:#0d1b3d; }
 [data-theme="dark"] .cr-xd-date{ color-scheme:dark; }
 [data-theme="dark"] .cr-xd-opt input{ accent-color:#D4AF37; }
+/* Branch Meeting Report button (beside Export All): gold, so it reads as
+   a report to open rather than a file to download. */
+.cr-hub-meeting-btn{ background:linear-gradient(135deg,#B8891A,#D4AF37); color:#1a2238; }
+[data-theme="dark"] .cr-hub-meeting-btn{ background:linear-gradient(135deg,#2a3a63,#1e2c4d); color:#FFD700; box-shadow:inset 0 0 0 1px rgba(212,175,55,.55); }
