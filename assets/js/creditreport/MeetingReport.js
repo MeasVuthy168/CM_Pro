@@ -129,7 +129,8 @@ async function mrLoad() {
             () => CIPlan.branch(branch ? [branch] : [], asOf),
             () => CIPlan.officers(asOf),
             () => CIPlan.branchRows(asOf),
-            () => mrSavedTeamSplit(branch, asOf)
+            () => mrSavedTeamSplit(branch, asOf),
+            none, none
         ] : [
             () => mrGet("overview", base),
             () => mrGet("risk", { ...base, dim: "officer" }),
@@ -143,17 +144,21 @@ async function mrLoad() {
             () => CIPlan.branch(branch ? [branch] : []),
             () => CIPlan.officers(),
             () => CIPlan.branchRows(),
-            () => mrTeamSplit(branch)
+            () => mrTeamSplit(branch),
+            // NPL Collected = NPL recovered this month (left NPL), against
+            // the branch plan's NPL Recovery target — Recovery Performance.
+            () => mrGet("recovery", { branch, dim: "branch" }),
+            () => mrGet("recovery", { branch, dim: "officer" })
         ];
         const out = await mrPool(jobs, 3, (n, total) => {
             if (mine === mrSeq && typeof showAppLoading === "function") showAppLoading(t("creditreport.mr.loadingN", { n, total }), { progress: true, key: "mr" });
         });
-        const [ov, team, branchRisk, prod, causes, actions, fc, pred, cust, plan, teamPlan, branchPlan, teamSplit] = out;
+        const [ov, team, branchRisk, prod, causes, actions, fc, pred, cust, plan, teamPlan, branchPlan, teamSplit, recB, recO] = out;
         if (mine !== mrSeq) return;
         if (!ov) { CI.toast(asOf ? t("creditreport.mr.noSnapshot", { date: CI.dmy(asOf) }) : t("creditreport.pi.loadFailed"), "error"); return; }
         mrFillBranches(ov);
         const g = fc && fc.groups ? (branch ? fc.groups.find(x => x.key === branch) : fc.groups[0]) : null;
-        mrRender({ branch, compare, asOf, ov, team, branchRisk, prod, causes, actions, fc, g, pred, cust, plan, teamPlan, branchPlan, teamSplit });
+        mrRender({ branch, compare, asOf, recB, recO, ov, team, branchRisk, prod, causes, actions, fc, g, pred, cust, plan, teamPlan, branchPlan, teamSplit });
     } finally {
         if (mine === mrSeq && typeof hideAppLoading === "function") hideAppLoading();
     }
@@ -202,7 +207,8 @@ function mrRender(d) {
         tile(t("creditreport.mr.k.os"), CI.money(k.outstanding.cur), mrChange(k.outstanding.diff, "up", CI.money)),
         tile(t("creditreport.mr.k.disb"), CI.money(k.disbursement.cur), mrChange(k.disbursement.diff, "up", CI.money)),
         tile("PAR %", mrPct(k.parPct.cur), mrChange(k.parPct.diff, "down", v => `${(v * 100).toFixed(2)} ${t("creditreport.pi.pts")}`), CI.esc(CI.money(k.parPct.value))),
-        tile("NPL %", mrPct(k.nplPct.cur), mrChange(k.nplPct.diff, "down", v => `${(v * 100).toFixed(2)} ${t("creditreport.pi.pts")}`), CI.esc(CI.money(k.nplValue.cur)))
+        tile("NPL %", mrPct(k.nplPct.cur), mrChange(k.nplPct.diff, "down", v => `${(v * 100).toFixed(2)} ${t("creditreport.pi.pts")}`), CI.esc(CI.money(k.nplValue.cur))),
+        ...mrCollectedTiles(d, tile)
     ].join("");
     document.getElementById("mrPoints").innerHTML = mrPointsOf(d).map(p => `<li class="mr-pt-${p.tone}">${CI.esc(p.text)}</li>`).join("");
 
@@ -236,6 +242,55 @@ function mrNumberSections(saved) {
             x.textContent = `${n}.${x.dataset.sub}`;
         });
     });
+}
+
+// ---------- WO Collected / NPL Collected ----------
+// WO Collected: write-offs collected (interest + principal), year to date,
+// against the yearly plan (the branch plan's woCollected). NPL Collected:
+// NPL loans that left NPL this month (Recovery Performance's "recovered"),
+// against the branch plan's NPL Recovery target. NPL Collected comes from
+// the live NPL movement only — "—" for a saved day.
+function mrNplCollected(d) {
+    const k = d.recB && d.recB.movement && d.recB.movement.available ? d.recB.kpis : null;
+    if (!k) return null;
+    return { actual: k.recovered.value, loans: k.recovered.count, plan: k.target && k.target.value ? k.target.value : null };
+}
+function mrAchText(actual, plan) {
+    return plan ? t("creditreport.mr.ofPlan", { pct: `${Math.round((actual / plan) * 100)}%` }) : t("creditreport.mr.noTarget");
+}
+function mrCollectedTiles(d, tile) {
+    const wo = d.plan && d.plan.metrics ? d.plan.metrics.woCollected : null;
+    const npl = mrNplCollected(d);
+    const tone = (a, p) => (!p ? "mr-flat" : a / p >= 1 ? "mr-good" : a / p >= 0.9 ? "mr-flat" : "mr-bad");
+    return [
+        tile(t("creditreport.mr.k.woCollected"),
+            wo && wo.actual !== null && wo.actual !== undefined ? CI.money(wo.actual) : "—",
+            wo && wo.actual !== null && wo.actual !== undefined ? `<span class="${tone(wo.actual, wo.plan)}">${CI.esc(mrAchText(wo.actual, wo.plan))}</span>` : "",
+            CI.esc(t("creditreport.mr.ytd"))),
+        tile(t("creditreport.mr.k.nplCollected"),
+            npl ? CI.money(npl.actual) : "—",
+            npl ? `<span class="${tone(npl.actual, npl.plan)}">${CI.esc(mrAchText(npl.actual, npl.plan))}</span>` : "",
+            CI.esc(npl ? t("creditreport.mr.nplCollectedSub", { n: CI.num(npl.loans) }) : d.asOf ? t("creditreport.mr.latestOnly") : t("creditreport.mr.mtd")))
+    ];
+}
+// Per row (officer / branch): WO Collected (actual, yearly plan) and NPL
+// Collected (recovered this month, the branch's target).
+function mrRecoveryByKey(rec) {
+    const rows = rec && rec.movement && rec.movement.available ? rec.byDim || [] : null;
+    return rows ? new Map(rows.map(r => [String(r.key), r])) : new Map();
+}
+function mrCollectedCells(wo, rec) {
+    const F = CIPlan.fmt;
+    const w = wo || {};
+    return `<td class="num">${F("amount", w.actual)}</td><td class="num">${F("amount", w.plan)}</td>` +
+        `<td class="num">${rec ? CI.money(rec.left.value) : "—"}</td><td class="num">${rec && rec.target ? CI.money(rec.target) : "—"}</td>`;
+}
+// The NPL Collected row of 2.1 (added to CIPlan.table's own rows).
+function mrNplCollectedRow(d, withLm) {
+    const npl = mrNplCollected(d);
+    const cell = npl ? { actual: npl.actual, plan: npl.plan, ach: npl.plan ? npl.actual / npl.plan : null } : null;
+    const sub = npl ? t("creditreport.mr.nplCollectedSub", { n: CI.num(npl.loans) }) : d.asOf ? t("creditreport.mr.latestOnly") : t("creditreport.mr.mtd");
+    return `<tr><td>${CI.esc(t("creditreport.mr.k.nplCollected"))}<div class="ci-plan-sub">${CI.esc(sub)}</div></td><td class="num"><b>${npl ? CI.money(npl.actual) : "—"}</b></td>${withLm ? `<td class="num">—</td>` : ""}<td class="num">${npl && npl.plan ? CI.money(npl.plan) : "—"}</td><td class="num ci-plan-ach">${CIPlan.achCell({ kind: "amount" }, cell)}</td></tr>`;
 }
 
 // 2.1 for a saved day: the day against the comparison day (no Monthly
@@ -316,6 +371,7 @@ function mrRenderProgress(d) {
     } : null;
     document.getElementById("mrProgress").innerHTML = d.asOf && !(p && p.metrics) ? mrSavedProgress(d) : p && p.metrics
         ? CIPlan.table(p, { lastMonth: lm, lmLabel: d.compare === "month" ? "creditreport.plan.lastMonth" : "creditreport.mr.before", keys: ["osAmount", "osCount", "osClients", "disbAmount", "disbCount", "nbcOverduePct", "nplPct", "woCollected"] })
+            .replace(/<\/tbody>$/, `${mrNplCollectedRow(d, !!lm)}</tbody>`)
         : "";
     mrRenderTeamSplit(d);
     mrRenderTeam(d);
@@ -340,12 +396,13 @@ function mrRenderTeam(d) {
     const showBranch = !d.branch;
     const rows = d.team && d.team.rows ? d.team.rows.slice().sort((a, b) => b.os - a.os).slice(0, 25) : [];
     const plans = new Map(((d.teamPlan && d.teamPlan.rows) || []).map(r => [String(r.id), r.metrics]));
+    const rec = mrRecoveryByKey(d.recO);
     const F = CIPlan.fmt;
     const ach = (m, c) => CIPlan.achCell(CIPlan.METRICS.find(x => x.key === m), c);
     const pct = v => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(2)}%`);
     document.getElementById("mrTeam").innerHTML = rows.length ? `<thead>
-        <tr><th rowspan="2">${CI.esc(t("creditreport.mr.officer"))}</th><th colspan="4" class="mr-grp">${CI.esc(t("creditreport.mr.k.os"))}</th><th colspan="3" class="mr-grp">${CI.esc(t("creditreport.mr.k.disb"))}</th><th colspan="3" class="mr-grp">PAR %</th><th colspan="2" class="mr-grp">NPL %</th></tr>
-        <tr>${[["plan.actual"], ["plan.lastMonth"], ["plan.plan"], ["plan.ach"], ["plan.actual"], ["plan.plan"], ["plan.ach"], ["plan.actual"], ["plan.lastMonth"], ["plan.plan"], ["plan.actual"], ["plan.plan"]].map(([k]) => `<th class="num">${CI.esc(t(`creditreport.${k}`))}</th>`).join("")}</tr></thead><tbody>
+        <tr><th rowspan="2">${CI.esc(t("creditreport.mr.officer"))}</th><th colspan="4" class="mr-grp">${CI.esc(t("creditreport.mr.k.os"))}</th><th colspan="3" class="mr-grp">${CI.esc(t("creditreport.mr.k.disb"))}</th><th colspan="3" class="mr-grp">PAR %</th><th colspan="2" class="mr-grp">NPL %</th><th colspan="2" class="mr-grp">${CI.esc(t("creditreport.mr.k.woCollected"))}</th><th colspan="2" class="mr-grp">${CI.esc(t("creditreport.mr.k.nplCollected"))}</th></tr>
+        <tr>${[["plan.actual"], ["plan.lastMonth"], ["plan.plan"], ["plan.ach"], ["plan.actual"], ["plan.plan"], ["plan.ach"], ["plan.actual"], ["plan.lastMonth"], ["plan.plan"], ["plan.actual"], ["plan.plan"], ["plan.actual"], ["plan.plan"], ["plan.actual"], ["mr.target"]].map(([k]) => `<th class="num">${CI.esc(t(`creditreport.${k}`))}</th>`).join("")}</tr></thead><tbody>
         ${rows.map(r => {
             const pm = plans.get(String(r.key)) || {};
             const os = pm.osAmount || { actual: r.os, plan: null };
@@ -356,7 +413,8 @@ function mrRenderTeam(d) {
                 <td class="num">${F("amount", r.os)}</td><td class="num">${r.prev ? F("amount", r.prev.os) : "—"}</td><td class="num">${F("amount", os.plan)}</td><td class="num ci-plan-ach">${ach("osAmount", { ...os, actual: r.os })}</td>
                 <td class="num">${F("amount", r.disb)}</td><td class="num">${F("amount", db.plan)}</td><td class="num ci-plan-ach">${ach("disbAmount", { ...db, actual: r.disb })}</td>
                 <td class="num">${pct(r.parPct)}</td><td class="num">${r.prev ? pct(r.prev.parPct) : "—"}</td><td class="num">${F("pct", par.plan)}</td>
-                <td class="num">${pct(r.nplPct)}</td><td class="num">${F("pct", npl.plan)}</td></tr>`;
+                <td class="num">${pct(r.nplPct)}</td><td class="num">${F("pct", npl.plan)}</td>
+                ${mrCollectedCells(pm.woCollected, rec.get(String(r.key)))}</tr>`;
         }).join("")}</tbody>` : `<tbody><tr><td>${CI.esc(t("creditreport.pi.nothing"))}</td></tr></tbody>`;
 }
 
@@ -374,12 +432,13 @@ function mrRenderBranchDim(d) {
     mrChartBranchDim(d);
     const rows = d.branchRisk && d.branchRisk.rows ? d.branchRisk.rows.slice().sort((a, b) => b.os - a.os).slice(0, 25) : [];
     const plans = new Map(((d.branchPlan && d.branchPlan.rows) || []).map(r => [String(r.id), r.metrics]));
+    const rec = mrRecoveryByKey(d.recB);
     const F = CIPlan.fmt;
     const ach = (m, c) => CIPlan.achCell(CIPlan.METRICS.find(x => x.key === m), c);
     const pct = v => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(2)}%`);
     document.getElementById("mrBranchDim").innerHTML = rows.length ? `<thead>
-        <tr><th rowspan="2">${CI.esc(t("creditreport.pi.branch"))}</th><th colspan="4" class="mr-grp">${CI.esc(t("creditreport.mr.k.os"))}</th><th colspan="3" class="mr-grp">${CI.esc(t("creditreport.mr.k.disb"))}</th><th colspan="3" class="mr-grp">PAR %</th><th colspan="2" class="mr-grp">NPL %</th></tr>
-        <tr>${[["plan.actual"], ["plan.lastMonth"], ["plan.plan"], ["plan.ach"], ["plan.actual"], ["plan.plan"], ["plan.ach"], ["plan.actual"], ["plan.lastMonth"], ["plan.plan"], ["plan.actual"], ["plan.plan"]].map(([k]) => `<th class="num">${CI.esc(t(`creditreport.${k}`))}</th>`).join("")}</tr></thead><tbody>
+        <tr><th rowspan="2">${CI.esc(t("creditreport.pi.branch"))}</th><th colspan="4" class="mr-grp">${CI.esc(t("creditreport.mr.k.os"))}</th><th colspan="3" class="mr-grp">${CI.esc(t("creditreport.mr.k.disb"))}</th><th colspan="3" class="mr-grp">PAR %</th><th colspan="2" class="mr-grp">NPL %</th><th colspan="2" class="mr-grp">${CI.esc(t("creditreport.mr.k.woCollected"))}</th><th colspan="2" class="mr-grp">${CI.esc(t("creditreport.mr.k.nplCollected"))}</th></tr>
+        <tr>${[["plan.actual"], ["plan.lastMonth"], ["plan.plan"], ["plan.ach"], ["plan.actual"], ["plan.plan"], ["plan.ach"], ["plan.actual"], ["plan.lastMonth"], ["plan.plan"], ["plan.actual"], ["plan.plan"], ["plan.actual"], ["plan.plan"], ["plan.actual"], ["mr.target"]].map(([k]) => `<th class="num">${CI.esc(t(`creditreport.${k}`))}</th>`).join("")}</tr></thead><tbody>
         ${rows.map(r => {
             const pm = plans.get(String(r.name || r.key)) || {};
             const os = pm.osAmount || { actual: r.os, plan: null };
@@ -390,7 +449,8 @@ function mrRenderBranchDim(d) {
                 <td class="num">${F("amount", r.os)}</td><td class="num">${r.prev ? F("amount", r.prev.os) : "—"}</td><td class="num">${F("amount", os.plan)}</td><td class="num ci-plan-ach">${ach("osAmount", { ...os, actual: r.os })}</td>
                 <td class="num">${F("amount", r.disb)}</td><td class="num">${F("amount", db.plan)}</td><td class="num ci-plan-ach">${ach("disbAmount", { ...db, actual: r.disb })}</td>
                 <td class="num">${pct(r.parPct)}</td><td class="num">${r.prev ? pct(r.prev.parPct) : "—"}</td><td class="num">${F("pct", par.plan)}</td>
-                <td class="num">${pct(r.nplPct)}</td><td class="num">${F("pct", npl.plan)}</td></tr>`;
+                <td class="num">${pct(r.nplPct)}</td><td class="num">${F("pct", npl.plan)}</td>
+                ${mrCollectedCells(pm.woCollected, rec.get(String(r.key)))}</tr>`;
         }).join("")}</tbody>` : `<tbody><tr><td>${CI.esc(t("creditreport.pi.nothing"))}</td></tr></tbody>`;
 }
 
