@@ -230,15 +230,17 @@ window.CRLastMonth = (() => {
 
     function t24LastMonth(out) {
         // The officer report's Area by team (CO / FSRO / Digital).
-        if (out.parT24AreaByTeam) {
+        // Snapshots saved from 09/11/2026 carry no T24 at all (backend
+        // lib/snapshot-t24.js), so map from NBC whenever NBC is there.
+        if (out.parT24AreaByTeam || out.nbcOverdueAreaByTeam) {
             const nbc = out.nbcOverdueAreaByTeam;
-            out.parT24AreaByTeam = nbc ? Object.fromEntries(Object.keys(out.parT24AreaByTeam).map(k => {
+            out.parT24AreaByTeam = nbc ? Object.fromEntries(Object.keys(out.parT24AreaByTeam || nbc).map(k => {
                 const t = t24FromNbc({ total: nbc[k] }, "total");
                 return [k, t ? t.flat : null];
             })) : null;
         }
         for (const [flat, byClass, nbcKey] of [["parT24", "parT24ByClass", "nbcOverdue"], ["parT24Area", "parT24AreaByClass", "nbcOverdueArea"]]) {
-            if (!(flat in out)) continue;
+            if (!(flat in out) && !(nbcKey in out)) continue;
             const nbc = out[nbcKey];
             const t = t24FromNbc(nbc, nbcKey === "nbcOverdue" && nbc && nbc.totalOwn ? "totalOwn" : "total");
             if (t) {
@@ -380,7 +382,9 @@ window.CRLastMonth = (() => {
     function t24FromNbcHistory(data, today = phnomPenhToday()) {
         if (!data || !Array.isArray(data.days)) return data;
         data.days = data.days.map(day => {
-            if (!day || !(String(day.date) < today)) return day;   // today (or later): live T24 as saved
+            // Every saved day (none carries T24 any more; older ones' saved
+            // T24 is ignored). Today's T24 is the live row (addLiveToday).
+            if (!day || day.liveToday) return day;
             const out = { ...day, t24FromNbc: true, t24AsOfText: "" };
             for (const k of ["items", "otherAddressDetail"]) if (Array.isArray(day[k])) out[k] = day[k].map(nbcAsT24);
             for (const k of ["total", "combined"]) if (day[k]) out[k] = nbcAsT24(day[k]);
@@ -430,7 +434,8 @@ window.CRLastMonth = (() => {
     function isLiveDate(dateKey) { return !!liveDate && dateKey === liveDate; }
     // ↻ re-pulls live T24 into a saved day; past days now show NBC, so
     // only a saved day dated today (if any) keeps it.
-    function canRefreshT24(dateKey) { return String(dateKey) >= phnomPenhToday() && !isLiveDate(dateKey); }
+    // T24 is no longer saved in snapshots — nothing to refresh.
+    function canRefreshT24() { return false; }
 
     return { cutoff, shortDate, load, attach, diffTree, expand, cell, renderNote, hideNote, scopeSaved, controller, t24FromNbcHistory, t24HistNote, phnomPenhToday, fetchLive, addLiveToday, liveDayShown, isLiveDate, canRefreshT24 };
 })();
