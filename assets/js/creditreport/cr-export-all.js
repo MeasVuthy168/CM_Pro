@@ -839,7 +839,9 @@
     // saved Daily History date (the 4 Daily Monitoring sheets only — the
     // other reports aren't saved per day). Resolves { asOf: null | date },
     // or null when cancelled.
-    function askExportDate() {
+    // opts (all optional): title, latestHint, dateHint, okLabel — the
+    // Branch Meeting Report button reuses this dialog with its own words.
+    function askExportDate(opts = {}) {
         return new Promise(resolve => {
             const pad = n => String(n).padStart(2, "0");
             const now = new Date(Date.now() + 7 * 3600 * 1000); // Phnom Penh
@@ -848,16 +850,16 @@
             wrap.className = "cr-xd-backdrop";
             wrap.innerHTML = `
               <div class="cr-xd" role="dialog" aria-modal="true" aria-labelledby="crXdTitle">
-                <div class="cr-xd-title" id="crXdTitle">${t("creditreport.hub.exportAll")}</div>
+                <div class="cr-xd-title" id="crXdTitle">${opts.title || t("creditreport.hub.exportAll")}</div>
                 <label class="cr-xd-opt"><input type="radio" name="crXdMode" value="latest" checked>
-                  <span><b>${t("creditreport.hub.exportLatest")}</b><small>${t("creditreport.hub.exportLatestHint")}</small></span></label>
+                  <span><b>${t("creditreport.hub.exportLatest")}</b><small>${opts.latestHint || t("creditreport.hub.exportLatestHint")}</small></span></label>
                 <label class="cr-xd-opt"><input type="radio" name="crXdMode" value="date">
-                  <span><b>${t("creditreport.hub.exportByDate")}</b><small>${t("creditreport.hub.exportByDateHint")}</small></span></label>
+                  <span><b>${t("creditreport.hub.exportByDate")}</b><small>${opts.dateHint || t("creditreport.hub.exportByDateHint")}</small></span></label>
                 <input type="date" class="cr-xd-date" max="${max}" disabled aria-label="${t("creditreport.hub.exportByDate")}">
                 <div class="cr-xd-err" role="alert"></div>
                 <div class="cr-xd-actions">
                   <button type="button" class="cr-xd-cancel">${t("common.cancel")}</button>
-                  <button type="button" class="cr-xd-ok">${t("creditreport.hub.exportGo")}</button>
+                  <button type="button" class="cr-xd-ok">${opts.okLabel || t("creditreport.hub.exportGo")}</button>
                 </div>
               </div>`;
             document.body.appendChild(wrap);
@@ -952,4 +954,5 @@
     }
 
     window.crExportAll = exportAll;
+    window.crAskReportDate = askExportDate;
 })();

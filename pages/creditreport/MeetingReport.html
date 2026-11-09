@@ -81,8 +81,11 @@ No Internet Connection
 <option value="month" data-i18n="creditreport.mr.cmpMonth">Previous month-end</option>
 <option value="prev" data-i18n="creditreport.mr.cmpPrev">Previous saved day</option>
 </select></label>
+<label class="pi-field"><span data-i18n="creditreport.mr.asOfLabel">Data date</span>
+<span class="mr-asof"><input type="date" id="mrAsOf" class="pi-top-pick" aria-describedby="mrAsOfHint"><button type="button" class="pi-btn-ghost mr-asof-clear" id="mrAsOfClear" data-i18n="creditreport.mr.latest">Latest</button></span>
+<small class="mr-asof-hint" id="mrAsOfHint" data-i18n="creditreport.mr.asOfHint">Empty = latest data. A past date: sections 1, 2 and 7 from that day's Daily History.</small></label>
 <div class="mr-actions">
-<button type="button" class="mr-print" id="mrPdf"><span aria-hidden="true">⬇</span> <span data-i18n="creditreport.mr.exportPdf">Export PDF</span></button>
+<button type="button" class="mr-print" id="mrWord"><span aria-hidden="true">⬇</span> <span data-i18n="creditreport.mr.exportWord">Export Word</span></button>
 <button type="button" class="pi-btn-ghost mr-print2" id="mrPrint"><span aria-hidden="true">🖨</span> <span data-i18n="creditreport.mr.printOnly">Print</span></button>
 </div>
 </div>

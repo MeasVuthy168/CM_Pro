@@ -156,6 +156,24 @@ function crHubWireExportButton(btnId, labelId) {
     });
 }
 
+// Branch Meeting Report (beside Export All, owner 09/11/2026): latest
+// data or a saved Daily History date, then the report page.
+function crHubWireMeetingButton(btnId) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.addEventListener("click", async () => {
+        if (typeof window.crAskReportDate !== "function") { location.href = "MeetingReport.html"; return; }
+        const choice = await window.crAskReportDate({
+            title: t("creditreport.hub.meeting"),
+            latestHint: t("creditreport.hub.meetingLatestHint"),
+            dateHint: t("creditreport.hub.meetingDateHint"),
+            okLabel: t("creditreport.hub.meetingOpen")
+        });
+        if (!choice) return;
+        location.href = choice.asOf ? `MeetingReport.html?date=${encodeURIComponent(choice.asOf)}` : "MeetingReport.html";
+    });
+}
+
 // Credit Portfolio Intelligence is for admin and user only (owner,
 // 31/10/2026); the server refuses every other role too. The standalone
 // Export All row only shows for "user" — admins already have it in the
@@ -166,12 +184,14 @@ if (["admin", "user"].includes(String(crHubLoggedInUser.role || "").trim().toLow
     if (!crHubIsAdmin) {
         document.getElementById("crHubExportRow").style.display = "";
         crHubWireExportButton("btnCrExportAll", "crHubExportBtnLabel");
+        crHubWireMeetingButton("btnCrMeeting");
     }
 }
 
 if (crHubIsAdmin) {
     document.getElementById("crHubAdminToolbar").style.display = "";
     crHubWireExportButton("btnCrExportAllAdmin", "crHubExportBtnLabelAdmin");
+    crHubWireMeetingButton("btnCrMeetingAdmin");
 
     document.getElementById("btnCrSnapshotResultsClose").addEventListener("click", () => {
         document.getElementById("crHubSnapshotResults").style.display = "none";

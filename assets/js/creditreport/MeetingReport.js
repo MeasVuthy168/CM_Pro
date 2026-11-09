@@ -79,17 +79,54 @@ function mrChange(diff, better, fmt) {
     return `<span class="${good ? "mr-good" : "mr-bad"}">${diff > 0 ? "▲" : "▼"} ${fmt(Math.abs(diff))}</span>`;
 }
 
+// The picked data date ("" = latest). A past date builds the report from
+// that day's Daily History snapshots (cm-backend ?asOf=): sections 1, 2
+// and 7 only — causes, follow-up, forecast and customers are live-only.
+function mrAsOf() {
+    const v = (document.getElementById("mrAsOf") || {}).value || "";
+    return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : "";
+}
+
+// 2.3 By team for a saved day: that day's own CO / FSRO / Digital rows
+// (branch Daily History), PAR = NBC Overdue like the rest of the report.
+async function mrSavedTeamSplit(branch, date) {
+    const q = new URLSearchParams({ dateFrom: date, dateTo: date });
+    if (branch) q.set("branch", branch); else q.set("totalOnly", "1");
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/creditreport/summary/history?${q}`, { headers: { Authorization: `Bearer ${mrToken()}` } });
+        const data = await res.json();
+        const day = data && data.ok && Array.isArray(data.days) ? data.days.find(x => x.date === date) : null;
+        const item = day ? (branch ? (day.items || [])[0] : day.total) : null;
+        if (!item) return null;
+        const nbc = x => (x ? { ...x, parT24: { parPct: ((x.nbcOverdue && x.nbcOverdue.total) || {}).parPct } } : null);
+        const bd = item.breakdown || {};
+        return { co: nbc(bd.co), fsro: nbc(bd.fsro), digital: nbc(bd.digital), total: nbc(item) };
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
 async function mrLoad() {
     if (!CI.allowed()) return;
     const mine = ++mrSeq;
     const branch = document.getElementById("mrBranch").value;
     const compare = document.getElementById("mrCompare").value;
-    const base = { branch, compare };
+    const asOf = mrAsOf();
+    const base = asOf ? { branch, compare, asOf } : { branch, compare };
     if (typeof showAppLoading === "function") showAppLoading(t("creditreport.pi.loading"), { progress: true, key: "mr" });
     try {
         // The server builds at most 2 section reads at once; asking for
         // 3 at a time keeps one queued without flooding it.
-        const jobs = [
+        const none = async () => null;
+        const jobs = asOf ? [
+            () => mrGet("overview", base),
+            () => mrGet("risk", { ...base, dim: "officer" }),
+            () => mrGet("risk", { compare, asOf, dim: "branch" }),
+            () => mrGet("risk", { ...base, dim: "product" }),
+            none, none, none, none, none, none, none, none,
+            () => mrSavedTeamSplit(branch, asOf)
+        ] : [
             () => mrGet("overview", base),
             () => mrGet("risk", { ...base, dim: "officer" }),
             () => mrGet("risk", { compare, dim: "branch" }),
@@ -109,10 +146,10 @@ async function mrLoad() {
         });
         const [ov, team, branchRisk, prod, causes, actions, fc, pred, cust, plan, teamPlan, branchPlan, teamSplit] = out;
         if (mine !== mrSeq) return;
-        if (!ov) { CI.toast(t("creditreport.pi.loadFailed"), "error"); return; }
+        if (!ov) { CI.toast(asOf ? t("creditreport.mr.noSnapshot", { date: CI.dmy(asOf) }) : t("creditreport.pi.loadFailed"), "error"); return; }
         mrFillBranches(ov);
         const g = fc && fc.groups ? (branch ? fc.groups.find(x => x.key === branch) : fc.groups[0]) : null;
-        mrRender({ branch, compare, ov, team, branchRisk, prod, causes, actions, fc, g, pred, cust, plan, teamPlan, branchPlan, teamSplit });
+        mrRender({ branch, compare, asOf, ov, team, branchRisk, prod, causes, actions, fc, g, pred, cust, plan, teamPlan, branchPlan, teamSplit });
     } finally {
         if (mine === mrSeq && typeof hideAppLoading === "function") hideAppLoading();
     }
@@ -150,7 +187,7 @@ function mrRender(d) {
     const branchName = d.branch || t("creditreport.mr.allBranches");
     document.getElementById("mrMeta").innerHTML = [
         [t("creditreport.pi.branch"), branchName],
-        [t("creditreport.mr.dataAsOf"), d.ov.asOf ? d.ov.asOf.osText : "—"],
+        [t("creditreport.mr.dataAsOf"), d.asOf ? `${CI.dmy(d.asOf)} (${t("creditreport.mr.fromHistory")})` : d.ov.asOf ? d.ov.asOf.osText : "—"],
         [t("creditreport.mr.compare"), cmp.available ? CI.dmy(cmp.date) : t("creditreport.mr.noCompare")],
         [t("creditreport.mr.preparedOn"), CI.dmy(new Date().toISOString().slice(0, 10))]
     ].map(([a, b]) => `<div><span>${CI.esc(a)}</span><b>${CI.esc(b)}</b></div>`).join("");
@@ -174,7 +211,47 @@ function mrRender(d) {
     mrRenderCustomers(d);
     mrRenderRiskContrib(d);
     mrRenderDecisions();
+    mrNumberSections(!!d.asOf);
     document.getElementById("mrFoot").textContent = t("creditreport.mr.foot");
+}
+
+// A saved day has no causes / follow-up / forecast / customers (they're
+// live-only): those sections are left out and the rest renumbered 1…n.
+function mrNumberSections(saved) {
+    const live = ["mrS3", "mrS4", "mrS5", "mrS6"];
+    let n = 0;
+    document.querySelectorAll("#mrReport .mr-sec").forEach(sec => {
+        const h = sec.querySelector("h2.mr-h");
+        if (h && live.includes(h.id)) sec.hidden = saved;
+        if (sec.hidden) return;
+        n++;
+        const num = sec.querySelector(".mr-n");
+        if (num) num.textContent = String(n);
+        sec.querySelectorAll(".mr-n2").forEach(x => {
+            if (!x.dataset.sub) x.dataset.sub = x.textContent.split(".")[1] || "";
+            x.textContent = `${n}.${x.dataset.sub}`;
+        });
+    });
+}
+
+// 2.1 for a saved day: the day against the comparison day (no Monthly
+// Plan — it only exists against the live figures).
+function mrSavedProgress(d) {
+    const k = d.ov.kpis;
+    const cmp = d.ov.comparison || {};
+    const money = v => (v === null || v === undefined ? "—" : CI.money(v));
+    const num = v => (v === null || v === undefined ? "—" : CI.num(v));
+    const rows = [
+        [t("creditreport.mr.k.os"), money(k.outstanding.cur), money(k.outstanding.prev), mrChange(k.outstanding.diff, "up", CI.money)],
+        [t("creditreport.plan.m.osCount"), num(k.outstanding.loans), "—", ""],
+        [t("creditreport.mr.k.disb"), money(k.disbursement.cur), money(k.disbursement.prev), mrChange(k.disbursement.diff, "up", CI.money)],
+        ["PAR %", mrPct(k.parPct.cur), mrPct(k.parPct.prev), mrChange(k.parPct.diff, "down", v => `${(v * 100).toFixed(2)} ${t("creditreport.pi.pts")}`)],
+        ["NPL %", mrPct(k.nplPct.cur), mrPct(k.nplPct.prev), mrChange(k.nplPct.diff, "down", v => `${(v * 100).toFixed(2)} ${t("creditreport.pi.pts")}`)],
+        [t("creditreport.mr.nplValue"), money(k.nplValue.cur), money(k.nplValue.prev), mrChange(k.nplValue.diff, "down", CI.money)],
+        [t("creditreport.mr.nplAccounts"), num(k.nplAccounts.cur), num(k.nplAccounts.prev), mrChange(k.nplAccounts.diff, "down", CI.num)]
+    ];
+    return `<thead><tr><th>${CI.esc(t("creditreport.mr.metric"))}</th><th class="num">${CI.esc(CI.dmy(d.asOf))}</th><th class="num">${CI.esc(cmp.available ? CI.dmy(cmp.date) : t("creditreport.mr.noCompare"))}</th><th class="num">${CI.esc(t("creditreport.mr.change"))}</th></tr></thead><tbody>
+        ${rows.map(([a, b, c, e]) => `<tr><td>${CI.esc(a)}</td><td class="num">${b}</td><td class="num">${c}</td><td class="num">${e}</td></tr>`).join("")}</tbody>`;
 }
 
 // Plain sentences from the figures (no new numbers).
@@ -221,7 +298,8 @@ function mrRenderProgress(d) {
     const k = d.ov.kpis;
     const p = d.plan;
     const month = p && p.month ? p.month.split("-").reverse().join("/") : "—";
-    document.getElementById("mrPlanNote").textContent = !p ? t("creditreport.plan.none")
+    document.getElementById("mrPlanNote").textContent = d.asOf ? t("creditreport.mr.savedNoPlan")
+        : !p ? t("creditreport.plan.none")
         : p.hasPlan ? t("creditreport.plan.note", { month, to: CI.dmy(p.toDate), done: p.daysDone, days: p.daysInMonth })
         : t("creditreport.plan.notSet", { month });
     document.getElementById("mrBranchTitle").textContent = d.branch ? `${t("creditreport.mr.byBranchOne")} — ${d.branch}` : t("creditreport.mr.byBranchAll");
@@ -231,7 +309,7 @@ function mrRenderProgress(d) {
         nbcOverduePct: k.parPct.prev === null || k.parPct.prev === undefined ? null : k.parPct.prev * 100,
         nplPct: k.nplPct.prev === null || k.nplPct.prev === undefined ? null : k.nplPct.prev * 100
     } : null;
-    document.getElementById("mrProgress").innerHTML = p && p.metrics
+    document.getElementById("mrProgress").innerHTML = d.asOf ? mrSavedProgress(d) : p && p.metrics
         ? CIPlan.table(p, { lastMonth: lm, lmLabel: d.compare === "month" ? "creditreport.plan.lastMonth" : "creditreport.mr.before", keys: ["osAmount", "osCount", "osClients", "disbAmount", "disbCount", "nbcOverduePct", "nplPct", "woCollected"] })
         : "";
     mrRenderTeamSplit(d);
@@ -480,8 +558,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (p.get("branch")) sel.innerHTML = `<option value="${CI.esc(p.get("branch"))}">${CI.esc(p.get("branch"))}</option>`;
     sel.addEventListener("change", mrLoad);
     document.getElementById("mrCompare").addEventListener("change", mrLoad);
+    const asOf = document.getElementById("mrAsOf");
+    asOf.max = CI.today ? CI.today() : new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(p.get("date") || "")) asOf.value = p.get("date");
+    asOf.addEventListener("change", mrLoad);
+    document.getElementById("mrAsOfClear").addEventListener("click", () => { if (asOf.value) { asOf.value = ""; mrLoad(); } });
     document.getElementById("mrPrint").addEventListener("click", () => window.print());
-    document.getElementById("mrPdf").addEventListener("click", mrExportPdf);
+    document.getElementById("mrWord").addEventListener("click", mrExportWord);
     mrLoad();
 });
 
@@ -697,17 +780,15 @@ function mrChartForecast(g) {
 window.addEventListener("beforeprint", () => mrCharts.forEach(c => c.resize()));
 window.addEventListener("afterprint", () => mrCharts.forEach(c => c.resize()));
 
-// ---------- Export PDF ----------
-// window.print() does nothing in the iPhone home-screen app, so the
-// report is made into a PDF file here: laid out light and A4-wide, drawn
-// with html2canvas (the browser shapes the Khmer), cut into A4 pages
-// between rows / charts (never through one), then shared (phones: Save
-// to Files, Telegram, …) or downloaded. html2canvas and jsPDF load on
-// first use — the same libraries Spot Check uses.
-const MR_PDF_LIBS = [
-    "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
-    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-];
+// ---------- Export Word (.docx) ----------
+// An editable Word file of the report as it is on screen: headings, the
+// summary tiles, notes, every table (merged header cells kept) and the
+// charts as pictures, A4 portrait. Built in the browser with the docx
+// library (loaded on first use, like Chart.js), then shared (phones:
+// Save to Files, Telegram, …) or downloaded. Khmer text uses the
+// "Khmer OS Siemreap" font for complex script; Word falls back to
+// another Khmer font when it isn't installed.
+const MR_DOCX_LIB = "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js";
 const mrScripts = {};
 function mrLoadScript(url) {
     if (!mrScripts[url]) {
@@ -723,15 +804,18 @@ function mrLoadScript(url) {
 }
 const mrFrame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-function mrFileName() {
+function mrFileName(ext) {
+    const asOf = mrAsOf();
     const d = new Date();
     const pad = n => String(n).padStart(2, "0");
+    const stamp = asOf ? asOf.replace(/-/g, "") : `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
     const b = (document.getElementById("mrBranch").value || "AllBranches").replace(/[^\w-]+/g, "");
-    return `MeetingReport_${b}_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}.pdf`;
+    return `MeetingReport_${b}_${stamp}.${ext}`;
 }
 
-async function mrSaveFile(blob, name) {
-    const file = typeof File === "function" ? new File([blob], name, { type: "application/pdf" }) : null;
+const MR_DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+async function mrSaveFile(blob, name, type) {
+    const file = typeof File === "function" ? new File([blob], name, { type }) : null;
     const touch = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
     if (touch && file && navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
@@ -750,67 +834,164 @@ async function mrSaveFile(blob, name) {
     setTimeout(() => URL.revokeObjectURL(a.href), 60000);
 }
 
-async function mrExportPdf() {
+// The report's DOM → docx blocks, in reading order.
+function mrDocxBlocks(D, el) {
+    const FONT = { ascii: "Calibri", hAnsi: "Calibri", cs: "Khmer OS Siemreap", eastAsia: "Khmer OS Siemreap" };
+    const NAVY = "1A2E57", MUTED = "6B7280";
+    const visible = n => !n.closest("[hidden]") && !n.closest(".no-print") && getComputedStyle(n).display !== "none";
+    const clean = s => String(s || "").replace(/ /g, " ").replace(/[ \t]+/g, " ").trim();
+    const run = (text, o = {}) => new D.TextRun({
+        text, font: FONT, size: o.size || 20, sizeComplexScript: o.size || 20,
+        bold: !!o.bold, boldComplexScript: !!o.bold, italics: !!o.italic, italicsComplexScript: !!o.italic,
+        color: o.color
+    });
+    // Line breaks inside a block become breaks inside one paragraph.
+    const runs = (text, o) => clean(text).split(/\s*\n\s*/).filter(Boolean)
+        .flatMap((l, i) => (i ? [new D.TextRun({ break: 1 }), run(l, o)] : [run(l, o)]));
+    const para = (text, o = {}) => new D.Paragraph({
+        children: runs(text, o), heading: o.heading, alignment: o.align, bullet: o.bullet ? { level: 0 } : undefined,
+        spacing: { before: o.before || 0, after: o.after === undefined ? 80 : o.after }
+    });
+    const border = { style: D.BorderStyle.SINGLE, size: 4, color: "C9CED8" };
+    const borders = { top: border, bottom: border, left: border, right: border };
+    const cellText = c => {
+        // A cell's own sub-lines (.mr-sub) go on their own lines.
+        const parts = [];
+        c.childNodes.forEach(ch => parts.push(ch.nodeType === 3 ? ch.textContent : (ch.classList && ch.classList.contains("mr-sub") ? `\n${ch.innerText}` : ch.innerText || ch.textContent)));
+        return parts.join("");
+    };
+    const table = tb => {
+        const rows = [...tb.rows].filter(r => r.cells.length);
+        if (!rows.length) return null;
+        return new D.Table({
+            width: { size: 100, type: D.WidthType.PERCENTAGE },
+            rows: rows.map(r => {
+                const head = r.parentElement.tagName === "THEAD";
+                const total = r.classList.contains("mr-total");
+                return new D.TableRow({
+                    tableHeader: head,
+                    children: [...r.cells].map(c => new D.TableCell({
+                        columnSpan: c.colSpan > 1 ? c.colSpan : undefined,
+                        rowSpan: c.rowSpan > 1 ? c.rowSpan : undefined,
+                        borders,
+                        shading: head ? { fill: "E8EDF6", type: D.ShadingType.CLEAR, color: "auto" } : total ? { fill: "F4F6FA", type: D.ShadingType.CLEAR, color: "auto" } : undefined,
+                        margins: { top: 40, bottom: 40, left: 80, right: 80 },
+                        children: [new D.Paragraph({
+                            alignment: c.classList.contains("num") ? D.AlignmentType.RIGHT : head ? D.AlignmentType.CENTER : D.AlignmentType.LEFT,
+                            children: runs(cellText(c) || " ", { size: 16, bold: head || total })
+                        })]
+                    }))
+                });
+            })
+        });
+    };
+    const image = canvas => {
+        const data = canvas.toDataURL("image/png");
+        const bin = atob(data.split(",")[1]);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const w = 600, h = Math.round(w * (canvas.height / canvas.width || 0.5));
+        return new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.ImageRun({ data: bytes, transformation: { width: w, height: h } })], spacing: { after: 120 } });
+    };
+    const out = [];
+    const sel = ".mr-head-brand, .mr-head-title, #mrMeta, h2.mr-h, h3.mr-h3, p.mr-note, .mr-tiles, ul.mr-points, table.mr-table, figure.mr-fig, .mr-sign, .mr-foot";
+    el.querySelectorAll(sel).forEach(n => {
+        if (!visible(n)) return;
+        if (n.matches(".mr-head-brand")) out.push(para(n.innerText, { size: 18, bold: true, color: NAVY, after: 40 }));
+        else if (n.matches(".mr-head-title")) out.push(para(n.innerText, { heading: D.HeadingLevel.TITLE, size: 32, bold: true, color: NAVY, after: 120 }));
+        else if (n.matches("#mrMeta")) {
+            n.querySelectorAll(":scope > div").forEach(m => {
+                const k = m.querySelector("span"), v = m.querySelector("b");
+                out.push(new D.Paragraph({ children: [run(`${clean(k && k.innerText)}: `, { color: MUTED }), run(clean(v && v.innerText), { bold: true })], spacing: { after: 20 } }));
+            });
+            out.push(para("", { after: 120 }));
+        } else if (n.matches("h2.mr-h")) out.push(para(n.innerText.replace(/\s*\n\s*/g, ". "), { heading: D.HeadingLevel.HEADING_1, size: 28, bold: true, color: NAVY, before: 240, after: 120 }));
+        else if (n.matches("h3.mr-h3")) out.push(para(n.innerText, { heading: D.HeadingLevel.HEADING_2, size: 23, bold: true, color: NAVY, before: 160, after: 80 }));
+        else if (n.matches("p.mr-note")) { if (clean(n.innerText)) out.push(para(n.innerText, { size: 17, italic: true, color: MUTED })); }
+        else if (n.matches(".mr-tiles")) {
+            const tiles = [...n.querySelectorAll(".mr-tile")];
+            if (!tiles.length) return;
+            const per = 4;
+            const rows = [];
+            for (let i = 0; i < tiles.length; i += per) rows.push(tiles.slice(i, i + per));
+            out.push(new D.Table({
+                width: { size: 100, type: D.WidthType.PERCENTAGE },
+                rows: rows.map(group => new D.TableRow({
+                    children: [...group, ...Array(per - group.length).fill(null)].map(tl => new D.TableCell({
+                        borders,
+                        margins: { top: 60, bottom: 60, left: 100, right: 100 },
+                        children: tl ? [
+                            para(tl.querySelector(".mr-tile-l") ? tl.querySelector(".mr-tile-l").innerText : "", { size: 16, color: MUTED, after: 20 }),
+                            para(tl.querySelector(".mr-tile-v") ? tl.querySelector(".mr-tile-v").innerText : "", { size: 26, bold: true, after: 20 }),
+                            ...[".mr-tile-c", ".mr-tile-s"].map(c => tl.querySelector(c)).filter(Boolean).map(x => para(x.innerText, { size: 16, after: 0 }))
+                        ] : [new D.Paragraph("")]
+                    }))
+                }))
+            }));
+            out.push(para("", { after: 80 }));
+        } else if (n.matches("ul.mr-points")) n.querySelectorAll("li").forEach(li => out.push(para(li.innerText, { bullet: true, size: 20 })));
+        else if (n.matches("table.mr-table")) { const tb = table(n); if (tb) { out.push(tb); out.push(para("", { after: 80 })); } }
+        else if (n.matches("figure.mr-fig")) {
+            const cv = n.querySelector("canvas");
+            const cap = n.querySelector("figcaption");
+            if (cap) out.push(para(cap.innerText, { size: 18, bold: true, after: 40 }));
+            if (cv && cv.width && cv.height) out.push(image(cv));
+        } else if (n.matches(".mr-sign")) {
+            const boxes = [...n.querySelectorAll(".mr-sign-box")];
+            if (!boxes.length) return;
+            const none = { style: D.BorderStyle.NONE, size: 0, color: "FFFFFF" };
+            out.push(para("", { after: 400 }));
+            out.push(new D.Table({
+                width: { size: 100, type: D.WidthType.PERCENTAGE },
+                rows: [new D.TableRow({
+                    children: boxes.map(b => new D.TableCell({
+                        borders: { top: { style: D.BorderStyle.SINGLE, size: 6, color: "6B7280" }, bottom: none, left: none, right: none },
+                        margins: { top: 60, left: 120, right: 120 },
+                        children: [...b.children].filter(x => !x.classList.contains("mr-sign-line")).map(x => para(x.innerText || " ", { size: 18, align: D.AlignmentType.CENTER, after: 20 }))
+                    }))
+                })]
+            }));
+        } else if (n.matches(".mr-foot")) { if (clean(n.innerText)) out.push(para(n.innerText, { size: 16, color: MUTED, before: 240 })); }
+    });
+    return out;
+}
+
+async function mrExportWord() {
     const el = document.getElementById("mrReport");
     if (!el || el.hidden) return;
-    if (typeof showAppLoading === "function") showAppLoading(t("creditreport.mr.making"), { progress: true, key: "mr-pdf" });
-    const progress = f => window.setAppLoadingProgress && window.setAppLoadingProgress(f * 100, t("creditreport.mr.making"));
+    if (typeof showAppLoading === "function") showAppLoading(t("creditreport.mr.makingWord"), { progress: true, key: "mr-word" });
+    const progress = f => window.setAppLoadingProgress && window.setAppLoadingProgress(f * 100, t("creditreport.mr.makingWord"));
     document.activeElement && document.activeElement.blur && document.activeElement.blur();
     try {
-        await Promise.all(MR_PDF_LIBS.map(mrLoadScript));
-        try { await document.fonts.load("12px KRASAR"); } catch (e) { /* the fallback font draws it */ }
-        progress(0.15);
-        // Light, A4-wide layout; charts redrawn at that width.
+        await mrLoadScript(MR_DOCX_LIB);
+        const D = window.docx;
+        if (!D || !D.Document) throw new Error("docx library missing");
+        progress(0.2);
+        // Light, A4-wide layout so the charts are drawn for paper.
         document.body.classList.add("mr-pdf-mode");
         mrCharts.forEach(c => c.resize());
         await mrFrame();
-        progress(0.3);
-        const SCALE = 2;
-        const canvas = await window.html2canvas(el, { scale: SCALE, backgroundColor: "#ffffff", useCORS: true, windowWidth: 1100 });
+        progress(0.4);
+        const children = mrDocxBlocks(D, el);
         progress(0.7);
-        const top = el.getBoundingClientRect().top;
-        // A page may end after a block or row, or just above a heading (so
-        // a heading never sits alone at the foot of a page).
-        const ys = (sel, edge) => [...el.querySelectorAll(sel)].map(n => (n.getBoundingClientRect()[edge] - top) * SCALE);
-        const cuts = ys(".mr-head, .mr-tiles, .mr-points li, .mr-fig, .mr-charts, tbody tr, .mr-sign, .mr-foot", "bottom")
-            .concat(ys(".mr-sec, .mr-h3", "top"))
-            .filter(y => y > 0)
-            .sort((a, b) => a - b);
-
-        const pageW = 210, pageH = 297, margin = 10, footH = 6;
-        const usableW = pageW - margin * 2, usableH = pageH - margin * 2 - footH;
-        const pxPerMm = canvas.width / usableW;
-        const pageHPx = usableH * pxPerMm;
-        const pages = [];
-        let from = 0;
-        while (from < canvas.height - 2) {
-            let to = from + pageHPx;
-            if (to >= canvas.height) { pages.push([from, canvas.height]); break; }
-            const fit = cuts.filter(c => c > from + pageHPx * 0.3 && c <= to);
-            to = fit.length ? fit[fit.length - 1] : to;
-            pages.push([from, to]);
-            from = to;
-        }
-        const pdf = new window.jspdf.jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
-        pages.forEach(([a, b], k) => {
-            if (k > 0) pdf.addPage();
-            const page = document.createElement("canvas");
-            page.width = canvas.width;
-            page.height = Math.ceil(b - a);
-            const ctx = page.getContext("2d");
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, 0, page.width, page.height);
-            ctx.drawImage(canvas, 0, a, canvas.width, b - a, 0, 0, canvas.width, b - a);
-            pdf.addImage(page.toDataURL("image/jpeg", 0.92), "JPEG", margin, margin, usableW, page.height / pxPerMm);
-            pdf.setFontSize(8);
-            pdf.setTextColor(110);
-            pdf.text(`CM Pro · ${k + 1} / ${pages.length}`, pageW - margin, pageH - margin + 1, { align: "right" });
-            progress(0.7 + 0.25 * ((k + 1) / pages.length));
+        const doc = new D.Document({
+            creator: "CM Pro",
+            title: t("creditreport.mr.docTitle"),
+            styles: { default: { document: { run: { font: { ascii: "Calibri", hAnsi: "Calibri", cs: "Khmer OS Siemreap", eastAsia: "Khmer OS Siemreap" }, size: 20 } } } },
+            sections: [{
+                properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 850, bottom: 850, left: 850, right: 850 } } },
+                footers: {
+                    default: new D.Footer({ children: [new D.Paragraph({ alignment: D.AlignmentType.RIGHT, children: [new D.TextRun({ children: ["CM Pro · ", D.PageNumber.CURRENT, " / ", D.PageNumber.TOTAL_PAGES], size: 16, color: "6B7280" })] })] })
+                },
+                children
+            }]
         });
-        await mrSaveFile(pdf.output("blob"), mrFileName());
+        const blob = await D.Packer.toBlob(doc);
+        progress(0.95);
+        await mrSaveFile(blob, mrFileName("docx"), MR_DOCX_MIME);
     } catch (err) {
-        console.error("[meeting report pdf] failed:", err);
-        CI.toast(t("creditreport.mr.pdfFailed"), "error");
+        console.error("[meeting report word] failed:", err);
+        CI.toast(t("creditreport.mr.wordFailed"), "error");
     } finally {
         document.body.classList.remove("mr-pdf-mode");
         mrCharts.forEach(c => c.resize());

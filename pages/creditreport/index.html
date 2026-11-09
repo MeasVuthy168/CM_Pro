@@ -107,6 +107,12 @@ No Internet Connection
 <span class="cr-hub-snapshot-btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/></svg></span>
 <span id="crHubExportBtnLabelAdmin" data-i18n="creditreport.hub.exportAll">Export All (Excel)</span>
 </button>
+<!-- Branch Meeting Report — beside Export All (owner, 09/11/2026); asks
+     for latest data or a saved Daily History date first. -->
+<button type="button" id="btnCrMeetingAdmin" class="cr-hub-snapshot-btn cr-hub-meeting-btn">
+<span class="cr-hub-snapshot-btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
+<span data-i18n="creditreport.hub.meeting">Branch Meeting Report</span>
+</button>
 </div>
 <div class="cr-hub-snapshot-results" id="crHubSnapshotResults">
 <div class="cr-hub-snapshot-results-head">
@@ -144,23 +150,20 @@ No Internet Connection
 </div>
 
 <!-- Credit Portfolio Intelligence: admin and user only (shown by
-     creditreport-hub.js); 4 groups + the meeting report instead of 9
-     tiles (owner, 31/10/2026). -->
+     creditreport-hub.js); 4 groups (owner, 31/10/2026). The meeting report
+     moved beside Export All (owner, 09/11/2026). -->
 <div class="cr-hub-section-title" id="crHubPortfolioTitle" style="display:none" data-i18n="creditreport.hub.sectionPortfolio">ផលប័ត្រឥណទាន</div>
 <div class="cr-hub-export-row" id="crHubExportRow" style="display:none">
 <button type="button" id="btnCrExportAll" class="cr-hub-snapshot-btn">
 <span class="cr-hub-snapshot-btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/></svg></span>
 <span id="crHubExportBtnLabel" data-i18n="creditreport.hub.exportAll">Export All (Excel)</span>
 </button>
+<button type="button" id="btnCrMeeting" class="cr-hub-snapshot-btn cr-hub-meeting-btn">
+<span class="cr-hub-snapshot-btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
+<span data-i18n="creditreport.hub.meeting">Branch Meeting Report</span>
+</button>
 </div>
 <div class="cr-hub-grid cr-hub-ci" id="crHubPortfolio" style="display:none">
-<a class="cr-hub-tile cr-hub-link cr-tone-gold cr-hub-ci-meeting" href="MeetingReport.html">
-<div class="cr-hub-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div>
-<div class="cr-hub-ci-text">
-<div class="cr-hub-tile-title" data-i18n="creditreport.hub.meeting">របាយការណ៍ប្រជុំសាខា</div>
-<div class="cr-hub-card-sub" data-i18n="creditreport.hub.meetingSub">វឌ្ឍនភាពឥណទាន មូលហេតុ ដំណោះស្រាយ និងការព្យាករណ៍ — រួចសម្រាប់បោះពុម្ព</div>
-</div>
-</a>
 <a class="cr-hub-tile cr-hub-link cr-tone-navy" href="PortfolioIntelligence.html">
 <div class="cr-hub-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/></svg></div>
 <div class="cr-hub-tile-title" data-i18n="creditreport.hub.gOverview">ទិដ្ឋភាពទូទៅ</div>
