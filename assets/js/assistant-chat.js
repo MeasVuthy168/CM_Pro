@@ -465,13 +465,17 @@
     function statCard(row, data, metrics, q) {
         const officer = row.id != null;
         const date = officer ? (data.officerDate || data.date) : data.date;
-        const prevDate = officer ? (data.officerPrevDate || data.prevDate) : data.prevDate;
         const link = reportLink(row, data);
         // A PAR (T24) card is dated by the T24 data's own "as of" time
         // stored with its snapshot (e.g. "27/10/2026 16:07") — the same
         // text the report shows as "Payment in Arrears with Penalty".
         const parOnly = metrics.length === 1 && metrics[0] === "par";
         const parAt = parOnly ? (officer ? data.officerParAt : data.parAt) : null;
+        // A live PAR "vs the previous day" is compared with the latest saved
+        // day (parPrevDate), not the day before it.
+        const prevDate = parOnly && (officer ? data.officerParPrevDate : data.parPrevDate)
+            ? (officer ? data.officerParPrevDate : data.parPrevDate)
+            : (officer ? (data.officerPrevDate || data.prevDate) : data.prevDate);
         const headDate = parAt || date || "";
         return `
             <div class="ac-card">
