@@ -26,6 +26,7 @@
     nbcOverduePct: "pct", nplPct: "pct", woCollected: "amount", woYtd: "amount", nplRecovery: "amount"
   };
   const APPROVABLE = ["PENDING", "FAILED"];
+  const READ = "ai.monthly_plan.read";
   const REJECTABLE = ["PENDING", "FAILED", "STALE"];
   let page = 1;
   let current = null;   // the preview shown in the detail panel
@@ -251,7 +252,7 @@
   async function loadClients() {
     const { status, body } = await api("/api/admin/ai-clients").catch(() => ({ status: 0, body: {} }));
     const tb = $("aidClientsBody");
-    if (status !== 200 || !body.ok) { tb.innerHTML = `<tr><td colspan="6" class="adm-table-empty">${esc(t("admin.ai.loadFailed"))}</td></tr>`; return; }
+    if (status !== 200 || !body.ok) { tb.innerHTML = `<tr><td colspan="7" class="adm-table-empty">${esc(t("admin.ai.loadFailed"))}</td></tr>`; return; }
     tb.innerHTML = (body.items || []).length ? body.items.map(c => `
       <tr>
         <td><b>${esc(c.name)}</b><div class="aid-sub"><code class="aid-code">${esc(c.clientId)}</code></div></td>
@@ -259,10 +260,12 @@
         <td>${c.active ? `<span class="aid-badge aid-badge-approved">${esc(t("admin.ai.active"))}</span>` : `<span class="aid-badge aid-badge-rejected">${esc(t("admin.ai.revoked"))}</span>`}</td>
         <td>${esc(fmtTime(c.createdAt))}<div class="aid-sub">${esc(c.createdBy || "")}</div></td>
         <td>${esc(fmtTime(c.lastUsedAt))}</td>
+        <td>${c.active ? `<label class="aid-switch"><input type="checkbox" data-read="${esc(c.clientId)}" ${(c.permissions || []).includes(READ) ? "checked" : ""}> <span>${esc(t("admin.ai.readAllowed"))}</span></label>`
+          : ((c.permissions || []).includes(READ) ? esc(t("admin.ai.readAllowed")) : "—")}</td>
         <td class="aid-row-btns">${c.active ? `
           <button type="button" class="adm-btn" data-rotate="${esc(c.clientId)}">${esc(t("admin.ai.rotate"))}</button>
           <button type="button" class="adm-btn adm-btn-danger" data-revoke="${esc(c.clientId)}">${esc(t("admin.ai.revoke"))}</button>` : esc(c.revokedBy ? `${t("admin.ai.revokedBy")} ${c.revokedBy}` : "")}</td>
-      </tr>`).join("") : `<tr><td colspan="6" class="adm-table-empty">${esc(t("admin.ai.noClients"))}</td></tr>`;
+      </tr>`).join("") : `<tr><td colspan="7" class="adm-table-empty">${esc(t("admin.ai.noClients"))}</td></tr>`;
   }
 
   // Shown once; the page keeps no copy.
@@ -298,6 +301,17 @@
     await loadClients();
     showKey(body.key);
   }
+  // Read permission: the key may read the stored plan (never write).
+  async function setRead(id, on, box) {
+    if (on) {
+      const ok = await AdminUI.confirm({ title: t("admin.ai.readTitle"), message: esc(t("admin.ai.readMsg")), confirmLabel: t("admin.ai.readAllowed") });
+      if (!ok) { box.checked = false; return; }
+    }
+    box.disabled = true;
+    const { status } = await api(`/api/admin/ai-clients/${encodeURIComponent(id)}/permissions`, { method: "POST", body: JSON.stringify({ read: on }) }).catch(() => ({ status: 0 }));
+    toast(t(status === 200 ? (on ? "admin.ai.readOnToast" : "admin.ai.readOffToast") : "admin.ai.loadFailed"), status === 200 ? "success" : "error");
+    await loadClients();
+  }
   async function revoke(id) {
     const reason = await AdminUI.prompt({ title: t("admin.ai.revokeTitle"), message: esc(t("admin.ai.revokeMsg")), label: t("admin.ai.reason"), confirmLabel: t("admin.ai.revoke") });
     if (!reason) return;
@@ -324,6 +338,10 @@
       const r = e.target.closest("[data-rotate]"), v = e.target.closest("[data-revoke]");
       if (r) rotate(r.dataset.rotate);
       if (v) revoke(v.dataset.revoke);
+    });
+    $("aidClientsBody").addEventListener("change", e => {
+      const box = e.target.closest("[data-read]");
+      if (box) setRead(box.dataset.read, box.checked, box);
     });
     const deep = new URLSearchParams(location.search).get("preview");
     loadList();

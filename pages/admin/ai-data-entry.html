@@ -118,7 +118,7 @@
           <h2 id="aidClientsTitle" data-i18n="admin.ai.clientsTitle">AI clients</h2>
           <button type="button" class="adm-btn adm-btn-primary" id="aidNewClient"><span class="adm-ico adm-ico-key" aria-hidden="true"></span> <span data-i18n="admin.ai.newClient">New AI key</span></button>
         </div>
-        <p class="aid-note" data-i18n="admin.ai.clientsNote">A key can only submit previews — it can never approve or save. It is shown once when created; only its fingerprint is stored.</p>
+        <p class="aid-note" data-i18n="admin.ai.clientsNote">A key can submit previews (and read the plan, if allowed) — it can never change, approve or save. It is shown once when created; only its fingerprint (hash) is stored.</p>
         <table class="adm-table aid-table">
           <thead><tr>
             <th data-i18n="admin.ai.cName">Name</th>
@@ -126,6 +126,7 @@
             <th data-i18n="admin.ai.fStatus">Status</th>
             <th data-i18n="admin.ai.cCreated">Created</th>
             <th data-i18n="admin.ai.cLastUsed">Last used</th>
+            <th data-i18n="admin.ai.cRead">Read plans</th>
             <th></th>
           </tr></thead>
           <tbody id="aidClientsBody"></tbody>
