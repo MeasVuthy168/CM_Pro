@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>CM_Pro Admin — AI Data Entry</title>
+
+<meta name="theme-color" content="#0E1B3C">
+
+<!-- theme flash-prevention -->
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
+  );
+</script>
+
+<script src="/CM_Pro/config/api.js"></script>
+<script src="/CM_Pro/shared/touch-polish.js"></script>
+
+<!-- auth guard: redirects away if not a logged-in admin -->
+<script src="/CM_Pro/assets/js/admin/admin-loader.js"></script>
+
+<!-- app lock (PIN / fingerprint after inactivity or relaunch) -->
+<script src="/CM_Pro/config/session.js"></script>
+
+<link rel="stylesheet" href="/CM_Pro/assets/css/base.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/admin.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/admin-ai-data-entry.css">
+
+<link rel="expect" href="#cm-pt-parsed" blocking="render">
+<link rel="preload" href="/CM_Pro/assets/fonts/Krasar-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<script src="/CM_Pro/shared/page-transition.js"></script>
+<script src="/CM_Pro/shared/sw-register.js"></script>
+</head>
+<body data-adm-page="ai-data-entry">
+
+<div class="adm-page">
+  <div class="adm-shell">
+
+    <aside class="adm-sidebar">
+      <div class="adm-sidebar-brand" data-i18n="admin.common.brand">CM_Pro Admin</div>
+      <nav id="admSidebar"></nav>
+    </aside>
+
+    <main class="adm-main">
+
+      <div class="adm-header">
+        <div class="adm-title-block">
+          <h1 data-i18n="admin.ai.title">AI Data Entry</h1>
+          <p data-i18n="admin.ai.subtitle">Monthly Plans proposed by an AI client. Nothing is saved until you approve.</p>
+        </div>
+        <div class="adm-header-right">
+          <span class="adm-user-chip" id="admUserLabel" data-i18n="admin.common.adminFallback">Admin</span>
+          <div class="adm-topbar-actions" id="admTopbarActions"></div>
+        </div>
+      </div>
+
+      <!-- A. Summary -->
+      <div class="adm-kpi-grid aid-kpis" id="aidKpis">
+        <button type="button" class="adm-card aid-kpi aid-kpi-pending" data-status="PENDING"><div class="adm-card-label" data-i18n="admin.ai.st.PENDING">Pending</div><div class="adm-card-value" id="aidKpiPENDING">—</div></button>
+        <button type="button" class="adm-card aid-kpi aid-kpi-approved" data-status="APPROVED"><div class="adm-card-label" data-i18n="admin.ai.st.APPROVED">Approved</div><div class="adm-card-value" id="aidKpiAPPROVED">—</div></button>
+        <button type="button" class="adm-card aid-kpi aid-kpi-rejected" data-status="REJECTED"><div class="adm-card-label" data-i18n="admin.ai.st.REJECTED">Rejected</div><div class="adm-card-value" id="aidKpiREJECTED">—</div></button>
+        <button type="button" class="adm-card aid-kpi aid-kpi-expired" data-status="EXPIRED"><div class="adm-card-label" data-i18n="admin.ai.st.EXPIRED">Expired</div><div class="adm-card-value" id="aidKpiEXPIRED">—</div></button>
+      </div>
+      <p class="aid-kpi-note" id="aidKpiNote"></p>
+
+      <!-- B. Preview list -->
+      <section class="adm-table-card aid-list" aria-labelledby="aidListTitle">
+        <div class="aid-list-head">
+          <h2 id="aidListTitle" data-i18n="admin.ai.listTitle">Previews</h2>
+          <div class="aid-filters">
+            <label class="aid-field"><span data-i18n="admin.ai.fStatus">Status</span>
+              <select id="aidFStatus">
+                <option value="" data-i18n="admin.ai.all">All</option>
+                <option value="PENDING" data-i18n="admin.ai.st.PENDING">Pending</option>
+                <option value="APPROVED" data-i18n="admin.ai.st.APPROVED">Approved</option>
+                <option value="REJECTED" data-i18n="admin.ai.st.REJECTED">Rejected</option>
+                <option value="EXPIRED" data-i18n="admin.ai.st.EXPIRED">Expired</option>
+                <option value="STALE" data-i18n="admin.ai.st.STALE">Stale</option>
+                <option value="FAILED" data-i18n="admin.ai.st.FAILED">Failed</option>
+              </select></label>
+            <label class="aid-field"><span data-i18n="admin.ai.fMonth">Month</span><input type="month" id="aidFMonth"></label>
+            <label class="aid-field"><span data-i18n="admin.ai.fDim">Dimension</span>
+              <select id="aidFDim">
+                <option value="" data-i18n="admin.ai.all">All</option>
+                <option value="branch" data-i18n="admin.ai.dim.branch">Branch</option>
+                <option value="officer" data-i18n="admin.ai.dim.officer">Officer</option>
+              </select></label>
+            <button type="button" class="adm-btn" id="aidRefresh"><span class="adm-ico adm-ico-refresh" aria-hidden="true"></span> <span data-i18n="admin.ai.refresh">Refresh</span></button>
+          </div>
+        </div>
+        <table class="adm-table aid-table">
+          <thead><tr>
+            <th data-i18n="admin.ai.cPreview">Preview</th>
+            <th data-i18n="admin.ai.cSubmitted">Submitted</th>
+            <th data-i18n="admin.ai.cClient">Client</th>
+            <th data-i18n="admin.ai.fMonth">Month</th>
+            <th data-i18n="admin.ai.fDim">Dimension</th>
+            <th class="num" data-i18n="admin.ai.cRows">Rows</th>
+            <th data-i18n="admin.ai.fStatus">Status</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="aidListBody"></tbody>
+        </table>
+        <div class="aid-pager" id="aidPager"></div>
+      </section>
+
+      <!-- C + D. Preview detail and approval -->
+      <section class="adm-table-card aid-detail" id="aidDetail" hidden aria-live="polite"></section>
+
+      <!-- AI clients (keys) -->
+      <section class="adm-table-card aid-clients" aria-labelledby="aidClientsTitle">
+        <div class="aid-list-head">
+          <h2 id="aidClientsTitle" data-i18n="admin.ai.clientsTitle">AI clients</h2>
+          <button type="button" class="adm-btn adm-btn-primary" id="aidNewClient"><span class="adm-ico adm-ico-key" aria-hidden="true"></span> <span data-i18n="admin.ai.newClient">New AI key</span></button>
+        </div>
+        <p class="aid-note" data-i18n="admin.ai.clientsNote">A key can only submit previews — it can never approve or save. It is shown once when created; only its fingerprint is stored.</p>
+        <table class="adm-table aid-table">
+          <thead><tr>
+            <th data-i18n="admin.ai.cName">Name</th>
+            <th data-i18n="admin.ai.cKey">Key</th>
+            <th data-i18n="admin.ai.fStatus">Status</th>
+            <th data-i18n="admin.ai.cCreated">Created</th>
+            <th data-i18n="admin.ai.cLastUsed">Last used</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="aidClientsBody"></tbody>
+        </table>
+      </section>
+
+    </main>
+
+  </div>
+</div>
+
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/admin.js"></script>
+
+<script src="/CM_Pro/shared/logout.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-ui.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-nav.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-ai-data-entry.js"></script>
+
+</body>
+</html>
