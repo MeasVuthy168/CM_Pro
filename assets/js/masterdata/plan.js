@@ -229,11 +229,21 @@ function mpGroups() {
 
 // Options plus any planned key the reports no longer list (kept visible
 // so its plan isn't silently lost on the next save).
+// Officers moved to "Stop Disburse" run no portfolio of their own, so
+// they get no plan (same rule as Smart Alerts). One that already has a
+// plan this month stays listed, so that plan can still be seen / cleared.
+function mpStopped(o) {
+    return mp.dim === "officer" && String(o.branch || "").trim().toLowerCase() === "stop disburse";
+}
+function mpHasPlan(key) {
+    return Object.values(mp.values[key] || {}).some(v => String(v ?? "").trim() !== "");
+}
+
 function mpAllRows() {
     const known = new Set(mp.options.map(o => o.key));
     const extra = Object.keys(mp.values).filter(k => !known.has(k))
         .map(k => ({ key: k, label: k, missing: true }));
-    return mp.options.concat(extra);
+    return mp.options.filter(o => !mpStopped(o) || mpHasPlan(o.key)).concat(extra);
 }
 
 function mpVisibleRows() {
@@ -361,7 +371,7 @@ function mpPaintFilters() {
     if (mp.dim !== "officer") return;
     const sel = document.getElementById("mpBranchFilter");
     const keep = sel.value;
-    const branches = [...new Set(mp.options.map(o => o.branch).filter(Boolean))].sort();
+    const branches = [...new Set(mpAllRows().map(o => o.branch).filter(Boolean))].sort();
     sel.innerHTML = `<option value="">${mpEsc(t("masterdata.plan.allBranches"))}</option>` +
         branches.map(b => `<option value="${mpEsc(b)}">${mpEsc(b)}</option>`).join("");
     if (branches.includes(keep)) sel.value = keep;
