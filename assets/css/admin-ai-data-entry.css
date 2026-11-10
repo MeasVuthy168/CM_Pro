@@ -84,3 +84,8 @@
   .aid-list .aid-table td, .aid-list .aid-table th, .aid-clients .aid-table td, .aid-clients .aid-table th { white-space: nowrap; }
   .aid-code { word-break: normal; }
 }
+
+/* Read-plans permission switch (AI clients table). */
+.aid-switch { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; font-size: 0.82rem; }
+.aid-switch input { width: 16px; height: 16px; accent-color: var(--adm-gold-500); cursor: pointer; }
+.aid-switch input:disabled { cursor: wait; }
