@@ -1,0 +1,81 @@
+/* Admin → AI Data Entry (admin-ai-data-entry.js) */
+.aid-kpis .aid-kpi { text-align: left; cursor: pointer; font: inherit; color: inherit; border-top: 3px solid var(--adm-border); }
+.aid-kpi-pending { border-top-color: var(--adm-warn) !important; }
+.aid-kpi-approved { border-top-color: var(--adm-ok) !important; }
+.aid-kpi-rejected { border-top-color: var(--adm-danger) !important; }
+.aid-kpi-expired { border-top-color: var(--adm-text-muted) !important; }
+.aid-kpi-note { margin: -10px 0 16px; font-size: 0.8rem; color: var(--adm-text-muted); min-height: 1em; }
+.aid-list, .aid-detail, .aid-clients { margin-bottom: 18px; }
+.aid-list-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; justify-content: space-between; margin-bottom: 10px; }
+.aid-list-head h2 { margin: 0; }
+.aid-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.aid-field { display: flex; flex-direction: column; gap: 3px; font-size: 0.75rem; color: var(--adm-text-muted); }
+.aid-field select, .aid-field input { min-height: 36px; padding: 6px 8px; border-radius: 10px; border: 1px solid var(--adm-border); background: var(--adm-card-bg); color: var(--adm-text); font: inherit; }
+[data-theme="dark"] .aid-field input { color-scheme: dark; }
+.aid-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.aid-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.78rem; word-break: break-all; }
+.aid-sub { font-size: 0.75rem; color: var(--adm-text-muted); margin-top: 2px; }
+.aid-note { font-size: 0.8rem; color: var(--adm-text-muted); margin: 0 0 10px; }
+.aid-row-active td { background: var(--adm-navy-100); }
+.aid-pager { display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-top: 10px; font-size: 0.85rem; }
+.aid-row-btns { white-space: nowrap; }
+.aid-row-btns .adm-btn + .adm-btn { margin-left: 6px; }
+
+.aid-badge, .aid-act { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; background: var(--adm-navy-100); color: var(--adm-text); }
+.aid-badge-pending, .aid-badge-committing { background: #FFF1D6; color: #8A5A00; }
+.aid-badge-approved { background: #E5F7EC; color: var(--adm-ok); }
+.aid-badge-rejected, .aid-badge-failed { background: #FBE3E1; color: var(--adm-danger); }
+.aid-badge-stale { background: #FDEBD3; color: #9A4B00; }
+.aid-badge-expired { color: var(--adm-text-muted); }
+.aid-act-new { background: #E3F1FC; color: #1A5C8C; }
+.aid-act-update { background: #FFF1D6; color: #8A5A00; }
+.aid-act-unchanged { color: var(--adm-text-muted); }
+.aid-act-conflict { background: #F1E7FB; color: #6B3FA0; }
+.aid-act-invalid { background: #FBE3E1; color: var(--adm-danger); }
+[data-theme="dark"] .aid-badge-pending, [data-theme="dark"] .aid-act-update { background: rgba(201,122,0,.22); color: #FFC56B; }
+[data-theme="dark"] .aid-badge-approved { background: rgba(31,157,85,.2); color: #6FE3A0; }
+[data-theme="dark"] .aid-badge-rejected, [data-theme="dark"] .aid-badge-failed, [data-theme="dark"] .aid-act-invalid { background: rgba(192,57,43,.22); color: #FF9B91; }
+[data-theme="dark"] .aid-act-new { background: rgba(26,92,140,.3); color: #8CC8F5; }
+[data-theme="dark"] .aid-act-conflict { background: rgba(107,63,160,.3); color: #C9A6F2; }
+[data-theme="dark"] .aid-badge-stale { background: rgba(154,75,0,.3); color: #FFB678; }
+
+.aid-detail-head { display: flex; gap: 10px; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.aid-detail-head h2 { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.aid-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.aid-sum-item { border: 1px solid var(--adm-border); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; background: var(--adm-card-bg); }
+.aid-sum-item b { font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+.aid-sum-item span { font-size: 0.75rem; }
+.aid-banner { border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; font-size: 0.85rem; }
+.aid-banner ul { margin: 6px 0 0; padding-left: 18px; }
+.aid-banner-bad { background: #FBE3E1; color: #7A1F15; }
+.aid-banner-warn { background: #FFF1D6; color: #6B4500; }
+[data-theme="dark"] .aid-banner-bad { background: rgba(192,57,43,.2); color: #FFB3AB; }
+[data-theme="dark"] .aid-banner-warn { background: rgba(201,122,0,.2); color: #FFD08A; }
+.aid-table-wrap { overflow-x: auto; }
+.aid-rec-table td { vertical-align: top; }
+.aid-rec-first td { border-top: 2px solid var(--adm-border); }
+.aid-rec-invalid td:first-child { box-shadow: inset 3px 0 0 var(--adm-danger); }
+.aid-rec-conflict td:first-child { box-shadow: inset 3px 0 0 #6B3FA0; }
+.aid-up { color: var(--adm-ok); }
+.aid-down { color: var(--adm-danger); }
+.aid-errs { margin-top: 4px; font-size: 0.75rem; }
+.aid-err { color: var(--adm-danger); }
+.aid-warn { color: var(--adm-warn); }
+.aid-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; margin-top: 14px; }
+.aid-actions .adm-btn[disabled] { opacity: .5; cursor: not-allowed; }
+.aid-audit { margin-top: 12px; font-size: 0.8rem; color: var(--adm-text-muted); }
+.aid-audit summary { cursor: pointer; }
+.aid-confirm ul { margin: 6px 0 10px; padding-left: 18px; }
+.aid-key { border: 1px dashed var(--adm-gold-500); border-radius: 10px; padding: 10px; background: var(--adm-navy-100); }
+.aid-key code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem; word-break: break-all; user-select: all; }
+
+@media (max-width: 640px) {
+  .aid-filters { width: 100%; }
+  .aid-field { flex: 1 1 45%; }
+  .aid-detail-head { flex-direction: column; }
+  .aid-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .aid-kpis .aid-kpi { padding: 12px 14px; }
+  .aid-list .aid-table, .aid-clients .aid-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .aid-list .aid-table td, .aid-list .aid-table th, .aid-clients .aid-table td, .aid-clients .aid-table th { white-space: nowrap; }
+  .aid-code { word-break: normal; }
+}
