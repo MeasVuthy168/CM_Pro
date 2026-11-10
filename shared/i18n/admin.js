@@ -784,6 +784,7 @@ CMI18n.register({
   "admin.ai.m.woCollected": { km: "WO ប្រមូលបាន $ (ផែនការឆ្នាំ)", en: "WO Collected $ (yearly)" },
   "admin.ai.m.nplRecovery": { km: "NPL Recovery $", en: "NPL Recovery $" },
   "admin.ai.err.unknown_key": { km: "សាខា ឬ ID មន្ត្រីមិនស្គាល់", en: "Unknown branch / officer ID" },
+  "admin.ai.err.inactive_officer": { km: "មន្ត្រីក្នុង Stop Disburse — មិនទទួលផែនការ", en: "Officer in Stop Disburse — takes no plan" },
   "admin.ai.err.duplicate_key": { km: "ជួរស្ទួន", en: "Duplicate row" },
   "admin.ai.err.invalid_key": { km: "គ្មានឈ្មោះសាខា / ID", en: "Missing branch / ID" },
   "admin.ai.err.invalid_row": { km: "ជួរមិនត្រឹមត្រូវ", en: "Invalid row" },
