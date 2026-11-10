@@ -180,7 +180,8 @@ async function mpFetch(month, dim, withOptions) {
 
 async function mpLoad() {
     mp.loading = true;
-    mpState(t("masterdata.plan.loading"));
+    mpState("");
+    mpSkeleton(true);
     document.getElementById("mpTable").innerHTML = "";
     try {
         const [data, branch] = await Promise.all([
@@ -204,15 +205,28 @@ async function mpLoad() {
         }) : t("masterdata.plan.notSetYet");
         document.getElementById("mpUpdated").textContent = by;
         mpState("");
+        mpSkeleton(false);
         mpPaintFilters();
         mpRender();
     } catch (e) {
         console.error("monthly plan load failed:", e);
+        mpSkeleton(false);
+        document.getElementById("mpTitle").textContent = "";
+        document.getElementById("mpUpdated").textContent = "";
         mpState(t("masterdata.plan.loadFailed"));
     } finally {
         mp.loading = false;
         mpPaintSaveBar();
     }
+}
+
+// Loading: shimmering placeholder rows, like the Daily Monitoring reports.
+function mpSkeleton(on) {
+    document.getElementById("mpSkeleton").hidden = !on;
+    document.querySelector(".mp-table-wrap").hidden = on;
+    const title = document.getElementById("mpTitle");
+    if (on) title.innerHTML = '<span class="mp-skel mp-skel-title"></span>';
+    if (on) document.getElementById("mpUpdated").innerHTML = '<span class="mp-skel mp-skel-sub"></span>';
 }
 
 function mpState(text) {
@@ -321,7 +335,7 @@ function mpRender() {
     let head = `<thead><tr><th class="mp-name" ${two ? 'rowspan="2"' : ""}>${mpEsc(nameHead)}</th>`;
     head += groups.map(g => g.metrics.length > 1
         ? `<th class="mp-grp" colspan="${g.metrics.length}"><span>${mpEsc(t(g.label))}</span></th>`
-        : `<th ${two ? 'rowspan="2"' : ""}>${mpEsc(t(g.label))}</th>`).join("");
+        : `<th class="mp-wrap" ${two ? 'rowspan="2"' : ""}>${mpEsc(t(g.label))}</th>`).join("");
     head += "</tr>";
     if (two) {
         head += "<tr>" + groups.filter(g => g.metrics.length > 1)
@@ -360,7 +374,13 @@ function mpRender() {
     }).join("");
     const foot = rows.length ? `<tfoot><tr><td class="mp-name"><b>${mpEsc(t("masterdata.plan.total"))}</b></td>${totals}</tr></tfoot>` : "";
 
-    document.getElementById("mpTable").innerHTML = head + `<tbody>${body}</tbody>` + foot;
+    const table = document.getElementById("mpTable");
+    table.innerHTML = head + `<tbody>${body}</tbody>` + foot;
+    // Wrapped headings make the first header row taller: the second row
+    // sticks right under it.
+    const r1 = table.querySelector("thead tr");
+    const top = r1 ? r1.getBoundingClientRect().height : 0;
+    table.querySelectorAll("thead tr:nth-child(2) th").forEach(th => { th.style.top = `${top}px`; });
     document.getElementById("mpTitle").textContent = `${nameHead} · ${t("masterdata.plan.heroTitle")} ${mpMonthText(mp.month)}`;
     if (!rows.length) mpState(t("masterdata.plan.noRows"));
     document.getElementById("mpNoteDim").textContent = t(`masterdata.plan.note_${mp.dim}`);
