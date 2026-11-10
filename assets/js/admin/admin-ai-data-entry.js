@@ -23,7 +23,7 @@
   const METRIC_KIND = {
     osCount: "count", osClients: "count", osKhr: "amount", osSmall: "amount", osAmount: "amount",
     disbCount: "count", disbAmount: "amount", losCount: "count",
-    nbcOverduePct: "pct", nplPct: "pct", woCollected: "amount", nplRecovery: "amount"
+    nbcOverduePct: "pct", nplPct: "pct", woCollected: "amount", woYtd: "amount", nplRecovery: "amount"
   };
   const APPROVABLE = ["PENDING", "FAILED"];
   const REJECTABLE = ["PENDING", "FAILED", "STALE"];

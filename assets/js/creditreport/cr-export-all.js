@@ -642,7 +642,7 @@
             intCol("Reduction (count)", r => (r.reduction || {}).count),
             moneyCol("New NPL", r => (r.newNpl || {}).value),
             moneyCol("Net", r => r.net),
-            ...(dim === "branch" ? [moneyCol("Target", r => r.target)] : [])
+            ...(dim === "branch" || dim === "officer" ? [moneyCol("Target", r => r.target)] : [])
         ];
         return { name: `Recovery_${dim}`.slice(0, 31), title: `${t("creditreport.hub.gAction")} — Recovery by ${label}`, info: [], cols, rows: d.byDim, freezeCols: 1 };
     }

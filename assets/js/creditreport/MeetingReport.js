@@ -383,7 +383,7 @@ function mrRenderProgress(d) {
         nplPct: k.nplPct.prev === null || k.nplPct.prev === undefined ? null : k.nplPct.prev * 100
     } : null;
     document.getElementById("mrProgress").innerHTML = d.asOf && !(p && p.metrics) ? mrSavedProgress(d) : p && p.metrics
-        ? CIPlan.table(p, { lastMonth: lm, lmLabel: d.compare === "month" ? "creditreport.plan.lastMonth" : "creditreport.mr.before", keys: ["osAmount", "osCount", "osClients", "osKhr", "osSmall", "disbAmount", "disbCount", "losCount", "nbcOverduePct", "nplPct", "woCollected"] })
+        ? CIPlan.table(p, { lastMonth: lm, lmLabel: d.compare === "month" ? "creditreport.plan.lastMonth" : "creditreport.mr.before", keys: ["osAmount", "osCount", "osClients", "osKhr", "osSmall", "disbAmount", "disbCount", "losCount", "nbcOverduePct", "nplPct", "woCollected", "woYtd"] })
             .replace(/<\/tbody>$/, `${mrNplCollectedRow(d, !!lm)}</tbody>`)
         : "";
     mrRenderTeamSplit(d);

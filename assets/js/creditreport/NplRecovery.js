@@ -124,7 +124,9 @@ function recRenderTable(d) {
         b.classList.toggle("is-active", on);
         b.setAttribute("aria-selected", on ? "true" : "false");
     });
-    const showTarget = recDim === "branch";
+    // Branch targets; officers' from the officer Monthly Plan (Own side —
+    // the server sends none for the Area side).
+    const showTarget = recDim === "branch" || (recDim === "officer" && (d.byDim || []).some(r => r.target));
     // Rate bars are toned against the whole portfolio's rate (the page's
     // own figure), target bars against 100%.
     const avg = d.kpis.recoveryRate;
