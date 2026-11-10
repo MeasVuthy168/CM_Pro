@@ -65,7 +65,12 @@
 .aid-actions .adm-btn[disabled] { opacity: .5; cursor: not-allowed; }
 .aid-audit { margin-top: 12px; font-size: 0.8rem; color: var(--adm-text-muted); }
 .aid-audit summary { cursor: pointer; }
+/* The confirm text is a block, so it can't stay inside the dialog's <p>:
+   give it the dialog's own text color and size (readable in dark mode). */
+.aid-confirm { color: var(--adm-text); font-size: 0.88rem; line-height: 1.5; margin: 0 0 16px; }
 .aid-confirm ul { margin: 6px 0 10px; padding-left: 18px; }
+.aid-confirm .aid-note { color: var(--adm-text-muted); }
+.aid-key code { color: var(--adm-text); }
 .aid-key { border: 1px dashed var(--adm-gold-500); border-radius: 10px; padding: 10px; background: var(--adm-navy-100); }
 .aid-key code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem; word-break: break-all; user-select: all; }
 

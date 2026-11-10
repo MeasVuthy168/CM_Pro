@@ -919,7 +919,7 @@
 }
 .adm-modal-close:hover { background-color: var(--adm-navy-100); }
 
-.adm-modal-body { padding: 18px; }
+.adm-modal-body { padding: 18px; color: var(--adm-text); }
 
 .adm-modal-message {
   font-size: 0.88rem;
