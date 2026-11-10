@@ -1,0 +1,18 @@
+/* Admin — WO YTD Check (pages/admin/wo-check.html) */
+.wo-card { margin-bottom: 16px; }
+.wo-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.wo-field { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; color: var(--adm-text-muted); }
+.wo-field input { height: 36px; width: 110px; border: 1px solid var(--adm-border); border-radius: 10px; padding: 0 10px; background: var(--adm-card-bg); color: var(--adm-text); font: inherit; }
+.wo-note { margin: 10px 0; font-size: 0.8rem; color: var(--adm-text-muted); }
+.wo-err { color: var(--adm-danger); }
+.wo-kpis { margin: 12px 0; }
+.wo-sub { font-size: 0.74rem; color: var(--adm-text-muted); margin-top: 2px; }
+.wo-h2 { font-size: 0.95rem; margin: 14px 0 8px; color: var(--adm-text); }
+.wo-scroll { overflow-x: auto; }
+.wo-table { width: 100%; }
+.wo-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wo-table code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; }
+.wo-table .wo-total td { font-weight: 700; border-top: 2px solid var(--adm-gold-500); }
+.wo-reason { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; background: rgba(229, 72, 77, .12); color: var(--adm-danger); white-space: nowrap; }
+/* Row tables scroll sideways rather than wrapping dates / names. */
+.wo-scroll .wo-table th, .wo-scroll .wo-table td { white-space: nowrap; }
