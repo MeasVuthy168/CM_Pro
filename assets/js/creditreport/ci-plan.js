@@ -32,7 +32,10 @@
         { key: "losCount", kind: "count", label: "creditreport.plan.m.losCount", yearly: true },
         { key: "nbcOverduePct", kind: "pct", label: "creditreport.plan.m.parPct" },
         { key: "nplPct", kind: "pct", label: "creditreport.plan.m.nplPct" },
-        { key: "woCollected", kind: "amount", label: "creditreport.plan.m.woCollected", yearly: true }
+        { key: "woCollected", kind: "amount", label: "creditreport.plan.m.woCollected", yearly: true },
+        // WO YTD $ (branch plan): write-offs' principal from 1 January — a
+        // yearly ceiling, at or under the plan is good.
+        { key: "woYtd", kind: "amount", label: "creditreport.plan.m.woYtd", yearly: true, lowerBetter: true }
     ];
 
     const cache = new Map();
@@ -118,7 +121,9 @@
         }
         const target = m.toDate && c.expected ? c.actual / c.expected : c.ach;
         const pct = Math.round((c.ach || 0) * 100);
-        const tone = target >= 1 ? "ok" : target >= 0.9 ? "warn" : "bad";
+        // An amount ceiling (WO YTD): within the plan is good, up to 10% over amber.
+        const tone = m.lowerBetter ? (target <= 1 ? "ok" : target <= 1.1 ? "warn" : "bad")
+            : target >= 1 ? "ok" : target >= 0.9 ? "warn" : "bad";
         return `<span class="ci-plan-bar"><span class="ci-plan-${tone}-bg" style="width:${Math.min(100, pct)}%"></span></span><span class="ci-plan-${tone}">${pct}%</span>`;
     }
 

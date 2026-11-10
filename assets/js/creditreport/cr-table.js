@@ -87,7 +87,9 @@ window.CRTable = (() => {
             const pct = Math.round(v * 100);
             // Loan Disburse is red below 70% of plan; other figures below 80%.
             const redBelow = /^planVs\.disb/.test(field.key) ? 0.7 : 0.8;
-            const cls = v >= 1 ? "cr-pv-good" : v >= redBelow ? "cr-pv-warn" : "cr-pv-bad";
+            // A ceiling (WO YTD $): within the plan is good, up to 10% over amber.
+            const cls = field.lowerBetter ? (v <= 1 ? "cr-pv-good" : v <= 1.1 ? "cr-pv-warn" : "cr-pv-bad")
+                : v >= 1 ? "cr-pv-good" : v >= redBelow ? "cr-pv-warn" : "cr-pv-bad";
             return `<td class="cr-col-pct cr-plan-col cr-ach ${cls}" data-x="${pct}%">${pct}%<div class="cr-ach-bar"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></div></td>`;
         }
         // ± against a ceiling (NBC Overdue % / NPL %): ▲ above the plan (red), ▼ under it (green).

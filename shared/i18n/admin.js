@@ -782,6 +782,7 @@ CMI18n.register({
   "admin.ai.m.nbcOverduePct": { km: "NBC Overdue ≤ %", en: "NBC Overdue ≤ %" },
   "admin.ai.m.nplPct": { km: "NPL ≤ %", en: "NPL ≤ %" },
   "admin.ai.m.woCollected": { km: "WO ប្រមូលបាន $ (ផែនការឆ្នាំ)", en: "WO Collected $ (yearly)" },
+  "admin.ai.m.woYtd": { km: "WO YTD $ (ផែនការឆ្នាំ · ខ្ពស់បំផុត)", en: "WO YTD $ (yearly · ceiling)" },
   "admin.ai.m.nplRecovery": { km: "NPL Recovery $", en: "NPL Recovery $" },
   "admin.ai.err.unknown_key": { km: "សាខា ឬ ID មន្ត្រីមិនស្គាល់", en: "Unknown branch / officer ID" },
   "admin.ai.err.inactive_officer": { km: "មន្ត្រីក្នុង Stop Disburse — មិនទទួលផែនការ", en: "Officer in Stop Disburse — takes no plan" },

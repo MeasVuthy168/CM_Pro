@@ -188,7 +188,8 @@ function crSections() {
 // report's period (1st of the month to the OS date), without the
 // class / product filters. NBC Overdue % and NPL % are ceilings,
 // shown as points above (+) or below (−) the plan. LOS and WO Collected
-// are yearly plans, compared with the year to date.
+// are yearly plans, compared with the year to date; WO YTD $ too, as a
+// ceiling (at or under the plan is good).
 // KHR loans and loans ≤ $50,000: outstanding of the KHR loans / of the
 // loans disbursed at $50,000 or less.
 // Current mode only; never part of the daily snapshot.
@@ -202,7 +203,7 @@ function crCompareMode() {
 // Plan columns of one metric: plan, then % (or ± for a
 // ceiling). withActual adds the actual first (from planVs, for figures
 // the report table doesn't already show for the same period / filters).
-function crPlanFields(metric, { money = false, ceiling = false, withActual = false, actualLabel, planLabel } = {}) {
+function crPlanFields(metric, { money = false, ceiling = false, withActual = false, lowerBetter = false, actualLabel, planLabel } = {}) {
     const base = `planVs.${metric}`;
     const kind = ceiling ? "pct" : money ? "money" : "num";
     const f = [];
@@ -210,7 +211,7 @@ function crPlanFields(metric, { money = false, ceiling = false, withActual = fal
     f.push({ key: `${base}.plan`, label: planLabel || t(ceiling ? "creditreport.plan.planMax" : "creditreport.plan.plan"), pv: kind, planCol: true });
     f.push(ceiling
         ? { key: base, label: "±", pv: "diff", planCol: true }
-        : { key: `${base}.ach`, label: "%", pv: "ach", planCol: true });
+        : { key: `${base}.ach`, label: "%", pv: "ach", planCol: true, lowerBetter });
     return f;
 }
 
@@ -253,6 +254,9 @@ function crCompareSection(sectionKey, section) {
                 ...g,
                 fields: crPlanFields(metric, { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct") })
             });
+        } else if (first.startsWith("writeOff.wo.")) {
+            // WO YTD $: a yearly ceiling — the year's write-offs (principal) vs that plan.
+            groups.push({ ...g, fields: crPlanFields("woYtd", { money: true, withActual: true, lowerBetter: true, actualLabel: t("creditreport.plan.thisYear"), planLabel: t("creditreport.plan.yearPlan") }) });
         } else if (first.startsWith("writeOff.woCollected.")) {
             groups.push({ ...g, fields: crPlanFields("woCollected", { money: true, withActual: true, actualLabel: t("creditreport.plan.thisYear"), planLabel: t("creditreport.plan.yearPlan") }) });
         }

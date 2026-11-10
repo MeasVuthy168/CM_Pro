@@ -42,6 +42,7 @@ const MP_GROUPS = [
     { label: "masterdata.plan.grpLos", metrics: [["losCount"]] },
     { label: "masterdata.plan.colNbc", metrics: [["nbcOverduePct"]] },
     { label: "masterdata.plan.colNpl", metrics: [["nplPct"]] },
+    { label: "masterdata.plan.colWoYtd", metrics: [["woYtd"]] },
     { label: "masterdata.plan.colWo", metrics: [["woCollected"]] },
     { label: "masterdata.plan.colRecovery", metrics: [["nplRecovery"]] }
 ];
