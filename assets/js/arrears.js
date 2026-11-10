@@ -1022,6 +1022,7 @@ function buildRowElement(row, index) {
         <td>${escapeHtml(row.ministry)}</td>
         <td class="${promiseCss}">${escapeHtml(row.promiseStatus)}</td>
         <td>${escapeHtml(row.coId)}</td>
+        <td>${escapeHtml(row.coResponse)}</td>
         <td>${escapeHtml(row.cifCoborrower)}</td>
         <td class="${followupCss}">${escapeHtml(row.ajReason)}</td>
         <td class="${followupCss}">${escapeHtml(row.akSolution)}</td>
@@ -1048,7 +1049,7 @@ const ldVirtual = new ArrVirtualList({
         const tr = document.createElement("tr");
         tr.className = "arr-vspace";
         tr.setAttribute("aria-hidden", "true");
-        tr.innerHTML = `<td colspan="27"></td>`;
+        tr.innerHTML = `<td colspan="28"></td>`;
         return tr;
     },
     build: i => {
@@ -1144,7 +1145,7 @@ function renderTableView(rows) {
     if (!rows.length) {
         tbodyArrears.innerHTML = `
             <tr class="row-empty">
-                <td colspan="27">No data found</td>
+                <td colspan="28">No data found</td>
             </tr>
         `;
         updateRenderedNote(); // else the last result's count stays
@@ -1814,6 +1815,7 @@ function buildGroupTbody(g, no) {
             <td>${shared("ministry")}</td>
             <td class="${promiseCss}">${escapeHtml(g.promise || "")}</td>
             <td>${escapeHtml(g.coId || "")}</td>
+            <td>${shared("coResponse")}</td>
             <td>${shared("cifCoborrower")}</td>
             ${reasonCells}
             <td>${escapeHtml(latest.user || "")}</td>
@@ -1853,6 +1855,7 @@ function buildGroupTbody(g, no) {
                 <td>${escapeHtml(row.ministry)}</td>
                 <td class="${pCss}">${escapeHtml(row.promiseStatus)}</td>
                 <td>${escapeHtml(row.coId)}</td>
+                <td>${escapeHtml(row.coResponse)}</td>
                 <td>${escapeHtml(row.cifCoborrower)}</td>
                 <td class="${followupCss}">${escapeHtml(row.ajReason)}</td>
                 <td class="${followupCss}">${escapeHtml(row.akSolution)}</td>
@@ -2151,7 +2154,7 @@ function updateRowInTable(row) {
     if (!tr) return false;
 
     const cells = tr.children;
-    if (cells.length < 27) return false; // sanity check — fall back to full render if structure looks unexpected
+    if (cells.length < 28) return false; // sanity check — fall back to full render if structure looks unexpected
 
     const promiseCss = promiseCellCssClass(row.promiseStatus);
     const followupCss = promiseCss || "cell-followup-default";
@@ -2160,18 +2163,18 @@ function updateRowInTable(row) {
     cells[19].textContent = row.promiseStatus; // Promise Status
     cells[19].className = promiseCss;
 
-    cells[22].textContent = row.ajReason;      // មុខរបរ
-    cells[22].className = followupCss + pendingCss;
-
-    cells[23].textContent = row.akSolution;    // មូលហេតុ/ដំណោះស្រាយ
+    cells[23].textContent = row.ajReason;      // មុខរបរ
     cells[23].className = followupCss + pendingCss;
 
-    cells[24].textContent = formatRowDateDMY(row.alFollowup); // ថ្ងៃសន្យាសង
+    cells[24].textContent = row.akSolution;    // មូលហេតុ/ដំណោះស្រាយ
     cells[24].className = followupCss + pendingCss;
 
-    cells[25].textContent = row.user;          // User
+    cells[25].textContent = formatRowDateDMY(row.alFollowup); // ថ្ងៃសន្យាសង
+    cells[25].className = followupCss + pendingCss;
 
-    cells[26].textContent = formatRowDateTime12h(row.dateBackup); // DateBackUpReasonArrear
+    cells[26].textContent = row.user;          // User
+
+    cells[27].textContent = formatRowDateTime12h(row.dateBackup); // DateBackUpReasonArrear
 
     return true;
 }
@@ -2423,7 +2426,7 @@ async function refreshArrears() {
     } catch (err) {
         console.error(err);
         notify(err.message || "Failed to load arrears data.", "error");
-        tbodyArrears.innerHTML = `<tr class="row-empty"><td colspan="27">Failed to load data</td></tr>`;
+        tbodyArrears.innerHTML = `<tr class="row-empty"><td colspan="28">Failed to load data</td></tr>`;
         arrCardList.innerHTML = `<div class="arr-card-empty">Failed to load data</div>`;
         if (typeof hideAppLoading === "function") hideAppLoading();
         return;
@@ -2593,6 +2596,7 @@ function ldExportCols(rows) {
         // ---- the PDF stops here ----
         { label: "Promise Status", ...text("promiseStatus"), style: r => exportPromiseStyle(r.promiseStatus) },
         { label: "CO_ID", ...text("coId") },
+        { label: "CO_Response", ...text("coResponse") },
         { label: "CIF_អ្នករួមខ្ចី", ...text("cifCoborrower") },
         { label: "មុខរបរ", ...text("ajReason"), style: followup, maxChars: 40 },
         { label: "មូលហេតុ/ដំណោះស្រាយ", ...text("akSolution"), style: followup, maxChars: 60 },
@@ -2643,6 +2647,7 @@ function cifExportCols() {
         // ---- the PDF stops here ----
         { label: "Promise Status", type: "text", value: g => g.promise || null, style: g => exportPromiseStyle(g.promise) },
         { label: "CO_ID", type: "text", value: g => g.coId || null },
+        { label: "CO_Response", ...shared("coResponse") },
         { label: "CIF_អ្នករួមខ្ចី", ...shared("cifCoborrower") },
         {
             label: "មុខរបរ", type: "text", maxChars: 40, style: followup,
@@ -3711,6 +3716,12 @@ try {
         hiddenColumns = new Set(Array.from(hiddenColumns).map(n => (n >= 14 ? n + 1 : n)));
         saveHiddenColumns(hiddenColumns);
         localStorage.setItem("arrears_hidden_columns_v2", "1");
+    }
+    // CO_Response went in as column 22 (after CO_ID): same, once.
+    if (!localStorage.getItem("arrears_hidden_columns_v3")) {
+        hiddenColumns = new Set(Array.from(hiddenColumns).map(n => (n >= 22 ? n + 1 : n)));
+        saveHiddenColumns(hiddenColumns);
+        localStorage.setItem("arrears_hidden_columns_v3", "1");
     }
 } catch (e) {}
 
