@@ -573,7 +573,9 @@ async function openDetail(row) {
         infoRow("phone", t("work.phone"), row.tell) +
         infoRow("idcard", t("work.accountLoan"), row.accountLoan) +
         infoRow("officer", t("work.officer"), row.coResponse) +
-        infoRow("package", t("work.product"), row.product);
+        infoRow("package", t("work.product"), row.product) +
+        // e.g. "Gov - គ្រូបង្រៀន"
+        infoRow("users", t("work.occuMinistry"), [row.occu, row.ministry].map(v => String(v || "").trim()).filter(v => v && v !== "-").join(" - "), true);
 
     // One reason for every LD of the CIF (only offered when it has several).
     const n = siblings(row).length;
