@@ -114,6 +114,7 @@ CMI18n.register({
   "work.accountLoan": { km: "គណនីកម្ចី", en: "Loan account" },
   "work.officer": { km: "ភ្នាក់ងារ", en: "Officer" },
   "work.product": { km: "ផលិតផល", en: "Product" },
+  "work.occuMinistry": { km: "មុខរបរ និងក្រសួង", en: "Occupation & Ministry" },
   "work.submit": { km: "ដាក់ស្នើ", en: "Submit" },
   "work.lastUpdated": { km: "ដាក់ស្នើចុងក្រោយដោយ {by} {at}", en: "Last submitted by {by} {at}" },
   "work.savedLocal": { km: "រក្សាទុកក្នុងទូរស័ព្ទនៅ {at} (មិនទាន់ដាក់ស្នើ)", en: "Saved on this phone at {at} (not submitted)" },

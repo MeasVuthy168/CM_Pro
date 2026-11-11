@@ -2188,6 +2188,22 @@ display:none !important;
 .reason-group input[type="date"]{
     color:var(--arr-navy, #1a2e57);
 }
+/* iOS Safari sizes a date input to its own content and ignores
+   width:100% (it ran past the card's right edge) until the native look is
+   turned off; keep it inside its box. */
+.reason-group input[type="date"]{
+    -webkit-appearance:none;
+    appearance:none;
+    display:block;
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    box-sizing:border-box;
+}
+.reason-group input[type="date"]::-webkit-date-and-time-value{
+    text-align:center;
+    margin:0;
+}
 [data-theme="dark"] .reason-group input[type="date"]{
     color:var(--arr-gold-light, #ffd700);
 }

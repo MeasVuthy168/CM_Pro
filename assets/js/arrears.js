@@ -1248,7 +1248,16 @@ function longestIndexes(items, valueOf = x => x) {
 // ========================================
 
 const arrCardList = document.getElementById("arrCardList");
-let arrViewMode = localStorage.getItem("arr_view") === "table" ? "table" : "card";
+// Default (approved 11/11/2026): the list (table) view, by CIF. Applied
+// once for everyone (arr_default_v2), then each person's own choice is kept.
+try {
+    if (!localStorage.getItem("arr_default_v2")) {
+        localStorage.setItem("arr_view", "table");
+        localStorage.setItem("arr_group", "cif");
+        localStorage.setItem("arr_default_v2", "1");
+    }
+} catch (e) {}
+let arrViewMode = (localStorage.getItem("arr_view") || "table") === "card" ? "card" : "table";
 let arrTableStale = true;   // table DOM is out of date with currentRows (rebuilt when shown)
 let renderedCardCount = 0;
 
@@ -1432,7 +1441,7 @@ arrCardList.addEventListener("click", (e) => {
 // Remembered in localStorage ("arr_group"). Table view stays per LD.
 // ========================================
 
-let arrGroupMode = localStorage.getItem("arr_group") === "cif" ? "cif" : "ld";
+let arrGroupMode = (localStorage.getItem("arr_group") || "cif") === "ld" ? "ld" : "cif";
 let arrGroups = [];
 let arrGroupByKey = new Map();
 let renderedGroupCount = 0;
