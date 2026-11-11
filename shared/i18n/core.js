@@ -121,7 +121,7 @@ CMI18n.register({
   "login.withBiometric": { km: "ស្នាមម្រាមដៃ / ផ្ទៃមុខ", en: "Fingerprint / Face" },
   "login.pin.usePassword": { km: "ប្រើពាក្យសម្ងាត់", en: "Use password" },
   "login.withPin": { km: "លេខកូដ PIN", en: "PIN code" },
-  "login.usernamePlaceholder": { km: "ឈ្មោះអ្នកប្រើប្រាស់", en: "Username" },
+  "login.usernamePlaceholder": { km: "លេខកាតបុគ្គលិក", en: "Staff ID" },
   "login.passwordPlaceholder": { km: "ពាក្យសម្ងាត់", en: "Password" },
   "login.show": { km: "បង្ហាញ", en: "Show" },
   "login.hide": { km: "លាក់", en: "Hide" },
