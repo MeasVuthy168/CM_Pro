@@ -88,6 +88,8 @@ CMI18n.register({
   "work.tabUnOccNow": { km: "មិនទាន់បំពេញ មុខរបរបច្ចុប្បន្ន", en: "Unfilled: current occupation" },
   "work.tabUnPurpose": { km: "មិនទាន់បំពេញ គោលបំណង", en: "Unfilled: loan purpose" },
   "work.tilePurpose": { km: "គោលបំណង", en: "Purpose" },
+  "work.totalLd": { km: "សរុប {n} LD", en: "Total {n} LD" },
+  "work.pctFilled": { km: "{p}% បានបំពេញ", en: "{p}% filled" },
   "work.tabUnReason": { km: "មិនទាន់បំពេញ មូលហេតុ", en: "Unfilled: reason" },
   "work.tabUnSolution": { km: "មិនទាន់បំពេញ ដំណោះស្រាយ", en: "Unfilled: solution" },
   "work.tabExpired": { km: "ផុតកំណត់ថ្ងៃសន្យាសង", en: "Expired promise date" },

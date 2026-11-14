@@ -29,7 +29,8 @@ const wkShowFilters = wkRole !== "viewer_staff";
 const wkParams = new URLSearchParams(location.search);
 let wkRows = [];
 // The tiles (= the tabs): five "not filled yet" — one per reason field
-// (layout v2), each "n / all loans here" — then expired / promised today.
+// (layout v2), each with how much of it is filled — then expired /
+// promised today.
 const UNFILLED_TABS = {
     unOccLoan: "occupationLoan",
     unOccNow: "occupationNow",
@@ -387,11 +388,16 @@ function renderChips() {
 }
 
 // The tiles (= the tabs): counts for the branch / team / officer, and
-// how many loans that is out of (for the "n / all" on the field tiles).
+// how many loans that is out of (the field tiles' "% filled").
 function workCounts(scoped) {
     const c = { total: scoped.length };
     WK_TABS.forEach(tab => { c[tab] = scoped.filter(r => inTab(r, tab)).length; });
     return c;
+}
+
+// The share of the loans here with this field filled (null: no loans).
+function filledPct(c, tab) {
+    return c.total ? Math.floor((c.total - c[tab]) / c.total * 100) : null;
 }
 
 function renderStats(scoped) {
@@ -399,8 +405,15 @@ function renderStats(scoped) {
     WK_TABS.forEach(tab => {
         $(`wkCount-${tab}`).textContent = c[tab].toLocaleString();
     });
+    // Total once, in the hero; each field tile: a bar of how much of it
+    // is filled (red < 50%, yellow to 90%, green above).
+    $("wkTotal").textContent = tf("work.totalLd", { n: c.total.toLocaleString() });
     Object.keys(UNFILLED_TABS).forEach(tab => {
-        $(`wkOf-${tab}`).textContent = `/ ${c.total.toLocaleString()}`;
+        const pct = filledPct(c, tab);
+        const bar = $(`wkBar-${tab}`);
+        bar.style.width = `${pct ?? 0}%`;
+        bar.className = "wk-tile-fill" + (pct == null ? "" : pct < 50 ? " low" : pct <= 90 ? " mid" : " high");
+        $(`wkPct-${tab}`).textContent = pct == null ? "" : tf("work.pctFilled", { p: pct });
     });
 }
 
@@ -879,9 +892,10 @@ function buildReport() {
     const lines = [
         `📋 ${t("work.heroTitle")}`,
         `📅 ${d}${where ? " · " + where : ""}`,
+        `📊 ${tf("work.totalLd", { n: c.total.toLocaleString() })}`,
         "",
         ...WK_TABS.map(tab => `${TAB_EMOJI[tab]} ${t(`work.tab${tab[0].toUpperCase()}${tab.slice(1)}`)}: ${c[tab].toLocaleString()}` +
-            (isUnfilledTab(tab) ? ` / ${c.total.toLocaleString()}` : ""))
+            (isUnfilledTab(tab) && filledPct(c, tab) != null ? ` (${tf("work.pctFilled", { p: filledPct(c, tab) })})` : ""))
     ];
     // Every tile's list, in tile order (one copy for all of them).
     const byOfficer = wkView === "officer" && !wkOfficer && wkShowFilters;

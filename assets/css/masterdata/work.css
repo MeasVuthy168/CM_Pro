@@ -208,17 +208,23 @@
 .wk-tile.active{ border-color:#FFD700; background:rgba(255,215,0,.14); }
 .wk-tile-ico{ font-size:14px; opacity:.9; }
 .wk-tile b{ font-size:18px; }
-.wk-tile > span:last-child{ font-size:10.5px; white-space:normal; line-height:1.3; }
+.wk-tile > span:last-child, .wk-tile > .wk-tile-label{ font-size:10.5px; white-space:normal; line-height:1.3; }
 .wk-tile small{ font-weight:800; opacity:.95; }
 /* "Not filled yet" over the field name on the five field tiles. */
-/* "/ all loans" after a field tile's count. */
-.wk-tile .wk-tile-num{ display:flex; flex-wrap:wrap; align-items:baseline; column-gap:3px; max-width:100%; }
-.wk-tile .wk-tile-num > span{ font-size:inherit; opacity:1; overflow:visible; }
-.wk-tile .wk-tile-of{ font-size:10.5px; font-weight:700; opacity:.7; white-space:nowrap; }
+/* A field tile's "% filled": a thin bar + the figure. Its spans undo
+   outarea's .oa-ph-stat span (11.5px, ellipsis). */
+.wk-tile .wk-tile-prog{ display:flex; flex-direction:column; gap:2px; width:100%; margin:auto 0 0; padding-top:5px; opacity:1; overflow:visible; }
+.wk-tile .wk-tile-bar{ display:block; height:5px; width:100%; border-radius:999px; background:rgba(255,255,255,.14); overflow:hidden; opacity:1; }
+.wk-tile .wk-tile-fill{ display:block; height:100%; width:0; border-radius:inherit; background:#94A3B8; opacity:1; transition:width .3s ease; }
+.wk-tile .wk-tile-fill.low{ background:#F87171; }
+.wk-tile .wk-tile-fill.mid{ background:#FFD700; }
+.wk-tile .wk-tile-fill.high{ background:#4ADE80; }
+.wk-tile .wk-tile-pct{ font-size:10px; font-weight:700; opacity:.8; white-space:nowrap; }
+.wk-total{ display:block; font-weight:700; }
 .wk-tile .wk-tile-pre{ display:block; font-size:9.5px; font-weight:600; opacity:.75; }
-.wk-tile > span:last-child{ min-width:0; max-width:100%; overflow-wrap:anywhere; }
+.wk-tile > span:last-child, .wk-tile > .wk-tile-label{ min-width:0; max-width:100%; overflow-wrap:anywhere; }
 /* The label's own spans: wrap, not "…" (outarea's .oa-ph-stat span). */
-.wk-tile > span:last-child span{ white-space:normal; overflow:visible; text-overflow:clip; font-size:inherit; opacity:1; }
+.wk-tile > span:last-child span, .wk-tile > .wk-tile-label span{ white-space:normal; overflow:visible; text-overflow:clip; font-size:inherit; opacity:1; }
 .wk-tile-unfilled .wk-tile-ico, .wk-tile-unfilled b{ color:#FFD700; }
 .wk-tile-expired .wk-tile-ico, .wk-tile-expired b{ color:#FCA5A5; }
 .wk-tile-today .wk-tile-ico, .wk-tile-today b{ color:#93C5FD; }
