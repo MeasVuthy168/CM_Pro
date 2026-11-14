@@ -147,14 +147,30 @@ No Internet Connection
 
     <div class="oa-info" id="wkInfo"></div>
 
+    <!-- Reason Arrear layout v2: five fields (the workbook's AJ..AN) -->
     <div class="reason-group">
-      <label for="reasonAJ" data-i18n="arrears.reasonOccupationLabel">មុខរបរ</label>
-      <input type="text" id="reasonAJ" placeholder="...">
+      <label for="reasonOccLoan" data-i18n="arrears.reasonOccLoanLabel">មុខរបរពេលខ្ចី</label>
+      <input type="text" id="reasonOccLoan" placeholder="..." autocomplete="off">
     </div>
 
     <div class="reason-group">
-      <label for="reasonAK" data-i18n="arrears.reasonSolutionLabel">មូលហេតុ/ដំណោះស្រាយ</label>
-      <textarea id="reasonAK" placeholder="..."></textarea>
+      <label for="reasonOccNow" data-i18n="arrears.reasonOccNowLabel">មុខរបរបច្ចុប្បន្ន</label>
+      <input type="text" id="reasonOccNow" placeholder="..." autocomplete="off">
+    </div>
+
+    <div class="reason-group">
+      <label for="reasonPurpose" data-i18n="arrears.reasonPurposeLabel">គោលបំណងប្រើប្រាស់</label>
+      <input type="text" id="reasonPurpose" placeholder="..." autocomplete="off">
+    </div>
+
+    <div class="reason-group">
+      <label for="reasonReason" data-i18n="arrears.reasonReasonLabel">មូលហេតុ</label>
+      <textarea id="reasonReason" class="reason-text" placeholder="..."></textarea>
+    </div>
+
+    <div class="reason-group">
+      <label for="reasonSolution" data-i18n="arrears.reasonSolutionOnlyLabel">ដំណោះស្រាយ</label>
+      <textarea id="reasonSolution" class="reason-text" placeholder="..."></textarea>
     </div>
 
     <div class="reason-group">

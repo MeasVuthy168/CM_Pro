@@ -52,8 +52,14 @@ let wkRow = null;         // the loan open in the detail screen
 let wkBaseline = null;    // field values it was opened with (dirty check)
 
 const $ = id => document.getElementById(id);
-const reasonAJ = $("reasonAJ");
-const reasonAK = $("reasonAK");
+// The five reason fields (layout v2), keyed by their record field.
+const partEls = {
+    occupationLoan: $("reasonOccLoan"),
+    occupationNow: $("reasonOccNow"),
+    purpose: $("reasonPurpose"),
+    reason: $("reasonReason"),
+    solution: $("reasonSolution")
+};
 const reasonAL = $("reasonAL");
 const reasonGPS = $("reasonGPS");
 
@@ -121,10 +127,24 @@ function applyPending(rows) {
         const p = map[row.concate];
         row.__pending = !!p;
         if (!p) return;
-        row.aj = p.aj || "";
-        row.ak = p.ak || "";
+        setRowReason(row, p);
         row.al = p.al ? String(p.al).slice(0, 10) : "";
     });
+}
+
+// A row's reason from a record / draft / the form: the five parts, and
+// the combined aj / ak the list shows (the record's own when it has
+// them, else put together from the parts).
+function setRowReason(row, src) {
+    const p = ReasonKit.partsOf(src);
+    Object.assign(row, p);
+    row.aj = typeof src?.aj === "string" ? src.aj : ReasonKit.composeOccupation(p.occupationLoan, p.occupationNow);
+    row.ak = typeof src?.ak === "string" ? src.ak : ReasonKit.composeReason(p.reason, p.solution);
+}
+
+function fillParts(src) {
+    const p = ReasonKit.partsOf(src);
+    ReasonKit.PARTS.forEach(k => { partEls[k].value = p[k]; });
 }
 
 // ---------- load ----------
@@ -493,9 +513,10 @@ function showScreen(detail) {
 }
 
 function currentValues() {
+    const parts = {};
+    ReasonKit.PARTS.forEach(k => { parts[k] = partEls[k].value.trim(); });
     return {
-        aj: reasonAJ.value,
-        ak: reasonAK.value,
+        ...parts,
         al: reasonAL.value ? `${reasonAL.value}T00:00:00.000Z` : "",
         gps: reasonGPS.value.trim()
     };
@@ -504,7 +525,7 @@ function currentValues() {
 function isDirty() {
     if (!wkBaseline) return false;
     const now = currentValues();
-    return ["aj", "ak", "al", "gps"].some(k => now[k] !== wkBaseline[k]);
+    return [...ReasonKit.PARTS, "al", "gps"].some(k => now[k] !== wkBaseline[k]);
 }
 
 function siblings(row) {
@@ -583,8 +604,7 @@ async function openDetail(row) {
     $("reasonApplyAllText").textContent = t("arrears.applyAllLd").replace("{n}", n.toLocaleString());
 
     const pending = ReasonKit.getPending()[row.concate];
-    reasonAJ.value = pending ? pending.aj || "" : row.aj || "";
-    reasonAK.value = pending ? pending.ak || "" : row.ak || "";
+    fillParts(pending || row);
     reasonAL.value = pending ? String(pending.al || "").slice(0, 10) : row.al || "";
     reasonGPS.value = pending ? pending.gps || "" : "";
     setGpsHint("", "");
@@ -602,8 +622,7 @@ async function openDetail(row) {
         $("reasonMeta").textContent = tf("work.lastUpdated", { by: found.uploadedBy, at: found.uploadedAt ? fmtDateTime(found.uploadedAt) : "" });
     }
     if (!pending && !isDirty()) {
-        reasonAJ.value = found.aj || "";
-        reasonAK.value = found.ak || "";
+        fillParts(found);
         reasonAL.value = found.al ? found.al.slice(0, 10) : "";
         reasonGPS.value = found.gps || "";
         updateGpsButtons();
@@ -629,8 +648,7 @@ function paintPendingNote(pending) {
 async function discardDraft(row) {
     ReasonKit.removePending([row.concate]);
     const found = (await ReasonKit.fetchReasons([row.concate], API.getToken())).get(row.concate);
-    row.aj = found ? found.aj || "" : "";
-    row.ak = found ? found.ak || "" : "";
+    setRowReason(row, found || {});
     row.al = found && found.al ? found.al.slice(0, 10) : "";
     row.__pending = false;
     notify(t("work.draftDiscarded"), "success");
@@ -648,11 +666,10 @@ function saveDraft() {
     }
     const targets = $("reasonApplyAll").checked && !$("reasonApplyAllWrap").hidden ? siblings(wkRow) : [wkRow];
     targets.forEach(r => {
-        r.aj = v.aj;
-        r.ak = v.ak;
+        setRowReason(r, v);
         r.al = v.al ? v.al.slice(0, 10) : "";
         r.__pending = true;
-        ReasonKit.setPending(r.concate, v.aj, v.ak, v.al, v.gps);
+        ReasonKit.setPending(r.concate, v, v.al, v.gps);
     });
     wkBaseline = currentValues();
     return targets.length;
@@ -673,8 +690,7 @@ async function submitAll() {
         wkRows.forEach(r => {
             const found = saved.get(r.concate);
             if (!found) return;
-            r.aj = found.aj || "";
-            r.ak = found.ak || "";
+            setRowReason(r, found);
             r.al = found.al ? found.al.slice(0, 10) : "";
             r.__pending = false;
         });
@@ -750,18 +766,28 @@ function step(delta) {
 $("btnWkPrev").addEventListener("click", () => step(-1));
 $("btnWkNext").addEventListener("click", () => step(1));
 
-// ---------- fields: templates, suggestions, GPS ----------
-ReasonKit.attachTemplates(reasonAJ, reasonAK);
-const distinct = field => wkFocus?.suggest?.[field] ||
-    [...new Set(wkRows.map(r => String(r[field] || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-ReasonKit.attachSuggestions(reasonAJ, () => distinct("aj"));
-ReasonKit.attachSuggestions(reasonAK, () => distinct("ak"));
+// ---------- fields: suggestions, GPS ----------
+// Previously used answers per field: from the rows here, plus (opened
+// from Daily Arrears) the combined answers it handed over, split.
+let suggestCache = {};
+let suggestFor = null;   // the wkRows the cache was built from
+function distinct(part) {
+    if (suggestFor !== wkRows) { suggestCache = {}; suggestFor = wkRows; }
+    if (suggestCache[part]) return suggestCache[part];
+    const seen = new Set();
+    const add = v => { v = String(v || "").trim(); if (v) seen.add(v); };
+    wkRows.forEach(r => add(ReasonKit.partsOf(r)[part]));
+    (wkFocus?.suggest?.aj || []).forEach(x => add(ReasonKit.partsOf({ aj: x })[part]));
+    (wkFocus?.suggest?.ak || []).forEach(x => add(ReasonKit.partsOf({ ak: x })[part]));
+    return (suggestCache[part] = [...seen].sort((a, b) => a.localeCompare(b)));
+}
+ReasonKit.PARTS.forEach(k => ReasonKit.attachSuggestions(partEls[k], () => distinct(k)));
 
 // A × inside the right of Occupation, Reason / Solution, Promised
 // Payment Date and GPS that empties the field. CSS hides it while the
 // field is empty (:placeholder-shown; the date via syncDateClear), so it
 // follows values set in code too.
-[reasonAJ, reasonAK, reasonAL, reasonGPS].forEach(field => {
+[...Object.values(partEls), reasonAL, reasonGPS].forEach(field => {
     const wrap = document.createElement("div");
     wrap.className = "wk-clear-wrap";
     field.before(wrap);

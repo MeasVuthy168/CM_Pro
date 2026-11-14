@@ -1937,13 +1937,19 @@ display:none !important;
 /* ---- Taller reason/solution box ----
    The old height showed ~2 lines, so longer entries were cut
    mid-sentence. This fits ~6 and can still be dragged taller. */
-.reason-group textarea#reasonAK{
+.reason-group textarea#reasonAK,
+.reason-group textarea.reason-text{
     /* Sized so the whole modal fits a phone screen without scrolling.
        Still drag-resizable when a longer note is needed. */
     min-height:84px;
     max-height:120px;
     resize:vertical;
     line-height:1.5;
+}
+
+/* Reason / Solution are two boxes now (layout v2): a little shorter each. */
+.reason-group textarea.reason-text{
+    min-height:64px;
 }
 
 /* ---- GPS ---- */
@@ -2210,7 +2216,8 @@ display:none !important;
 
 /* Smaller text needs a little more line spacing to stay readable in
    Khmer, where the glyphs stack. */
-.reason-group textarea#reasonAK{
+.reason-group textarea#reasonAK,
+.reason-group textarea.reason-text{
     line-height:1.65;
     /* ~3 lines at the 11.5px field size. Still drag-resizable when a
        longer note is needed, and scrolls internally past that. */

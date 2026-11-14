@@ -2,6 +2,7 @@
 // REASON ARREAR KIT
 // The parts of Reason Arrear shared by Daily Arrears (its modal) and
 // Master Data > Work to complete (pages/masterdata/work.html):
+//   - the five reason fields: split / compose of the combined texts
 //   - the local pending store: Save writes to localStorage instantly,
 //     Submit pushes every pending edit in one batch. Same key on both
 //     pages, so a draft saved on one shows on the other.
@@ -28,11 +29,83 @@
         pendingListeners.forEach(fn => { try { fn(); } catch (e) {} });
     }
 
-    function setPending(concate, aj, ak, alISO, gps) {
+    // ---------- the five reason fields (layout v2, 13/11/2026) ----------
+    // The server keeps the combined texts aj "(ពេលខ្ចី)X, (បច្ចុប្បន្ន)Y"
+    // and ak "(មូលហេតុ)X, (ដំណោះស្រាយ)Y" in step with the five parts; these
+    // match CM-backend lib/reason-fields.js, so a draft shows the same
+    // combined text the server will save.
+    const LBL_OCC_LOAN = "(ពេលខ្ចី)";
+    const LBL_OCC_NOW = "(បច្ចុប្បន្ន)";
+    const LBL_REASON = "(មូលហេតុ)";
+    const LBL_SOLUTION = "(ដំណោះស្រាយ)";
+    const PARTS = ["occupationLoan", "occupationNow", "purpose", "reason", "solution"];
+    const str = v => (v == null ? "" : String(v));
+
+    function cleanPart(s) {
+        return str(s).replace(/^[\s:：]+/, "").replace(/[\s,，]+$/, "").trim();
+    }
+
+    // [first, second] of one combined text. Text with no label goes
+    // whole into the first part.
+    function splitTwo(text, firstLabel, secondLabel) {
+        const s = str(text);
+        if (!s.trim()) return ["", ""];
+        const a = s.indexOf(firstLabel);
+        const b = s.indexOf(secondLabel);
+        if (a < 0 && b < 0) return [cleanPart(s), ""];
+        let first = "";
+        let second = "";
+        if (a >= 0) first = s.slice(a + firstLabel.length, b > a ? b : s.length);
+        if (b >= 0) second = s.slice(b + secondLabel.length, a > b ? a : s.length);
+        const lead = cleanPart(s.slice(0, Math.min(...[a, b].filter(i => i >= 0))));
+        first = cleanPart(first);
+        if (lead) first = first ? `${lead} ${first}` : lead;
+        return [first, cleanPart(second)];
+    }
+
+    function splitOccupation(aj) {
+        const [occupationLoan, occupationNow] = splitTwo(aj, LBL_OCC_LOAN, LBL_OCC_NOW);
+        return { occupationLoan, occupationNow };
+    }
+
+    function splitReason(ak) {
+        const [reason, solution] = splitTwo(ak, LBL_REASON, LBL_SOLUTION);
+        return { reason, solution };
+    }
+
+    function composeOccupation(occupationLoan, occupationNow) {
+        const a = str(occupationLoan).trim();
+        const b = str(occupationNow).trim();
+        return a || b ? `${LBL_OCC_LOAN}${a}, ${LBL_OCC_NOW}${b}` : "";
+    }
+
+    function composeReason(reason, solution) {
+        const a = str(reason).trim();
+        const b = str(solution).trim();
+        return a || b ? `${LBL_REASON}${a}, ${LBL_SOLUTION}${b}` : "";
+    }
+
+    // The five parts of a record / row / draft: its own fields when it
+    // carries them, else split out of its combined aj / ak (a draft saved
+    // before this version, a row handed over from Daily Arrears).
+    function hasParts(o) {
+        return !!o && PARTS.some(k => typeof o[k] === "string");
+    }
+    function partsOf(o) {
+        const d = o || {};
+        if (hasParts(d)) return Object.fromEntries(PARTS.map(k => [k, str(d[k])]));
+        return { ...splitOccupation(d.aj), purpose: "", ...splitReason(d.ak) };
+    }
+
+    // parts: { occupationLoan, occupationNow, purpose, reason, solution }.
+    // The combined aj / ak go along, for every page that shows them.
+    function setPending(concate, parts, alISO, gps) {
+        const p = partsOf(parts);
         const map = getPending();
         map[concate] = {
-            aj,
-            ak,
+            aj: composeOccupation(p.occupationLoan, p.occupationNow),
+            ak: composeReason(p.reason, p.solution),
+            ...p,
             al: alISO,
             gps: gps || "",
             savedAt: new Date().toISOString()
@@ -130,12 +203,19 @@
         const UP_CHUNK = 1000;
         for (let i = 0; i < concates.length; i += UP_CHUNK) {
             const chunkConcates = concates.slice(i, i + UP_CHUNK);
-            // The 5th element tells the server this client manages GPS.
-            // Always sent, even when empty, so clearing a coordinate
-            // actually clears it server-side.
-            const rows = chunkConcates.map(c =>
-                [c, map[c].aj, map[c].ak, map[c].al, map[c].gps || ""]
-            );
+            // v2 rows (8 values): the five parts, promise date, GPS. A
+            // draft saved before the five fields existed (combined text
+            // only) goes as the old 5-value row; the server splits it.
+            // GPS is always sent, even when empty, so clearing a
+            // coordinate actually clears it server-side.
+            const rows = chunkConcates.map(c => {
+                const d = map[c];
+                if (hasParts(d)) {
+                    const p = partsOf(d);
+                    return [c, p.occupationLoan, p.occupationNow, p.purpose, p.reason, p.solution, d.al, d.gps || ""];
+                }
+                return [c, d.aj, d.ak, d.al, d.gps || ""];
+            });
 
             const res = await fetch(`${API.BASE_URL}/api/reasonarrear/upsert`, {
                 method: "POST",
@@ -319,47 +399,8 @@
         }, 1500);
     }
 
-    // ---------- field templates ----------
-    // Both fields follow a fixed "(label)value, (label)value" shape. The
-    // scaffolding is inserted on focus so it never has to be typed, with
-    // the caret parked after the first label. A value that is still
-    // nothing but scaffolding counts as empty (isTemplateOnly), so merely
-    // tapping a field doesn't save a row of empty brackets.
-    const TEMPLATE_AJ = "(ពេលខ្ចី), (បច្ចុប្បន្ន)";
-    const TEMPLATE_AK = "(មូលហេតុ), (ដំណោះស្រាយ)";
-
-    function isTemplateOnly(value, template) {
-        const labels = template.match(/\([^)]*\)/g) || [];
-        let rest = String(value || "");
-        labels.forEach(l => { rest = rest.split(l).join(""); });
-        return rest.replace(/[\s,]/g, "") === "";
-    }
-
-    function attachTemplate(el, tpl) {
-        if (!el) return;
-        el.addEventListener("focus", () => {
-            if (el.value.trim() !== "") return;
-            el.value = tpl;
-            // Caret after the first "(label)", so typing continues there.
-            const pos = tpl.indexOf(")") + 1;
-            requestAnimationFrame(() => {
-                try { el.setSelectionRange(pos, pos); } catch (e) { /* not supported */ }
-            });
-        });
-        // Left holding only scaffolding -> clear it, so it isn't saved as
-        // if it were a real answer.
-        el.addEventListener("blur", () => {
-            if (isTemplateOnly(el.value, tpl)) el.value = "";
-        });
-    }
-
-    function attachTemplates(ajEl, akEl) {
-        attachTemplate(ajEl, TEMPLATE_AJ);
-        attachTemplate(akEl, TEMPLATE_AK);
-    }
-
     // ---------- predictive suggestions ----------
-    // A custom dropdown rather than <datalist> (AK is a <textarea>):
+    // A custom dropdown rather than <datalist> (some fields are textareas):
     // previously-used answers from getSourceValues(), so a person can pick
     // one instead of retyping it.
     function attachSuggestions(fieldEl, getSourceValues) {
@@ -403,8 +444,13 @@
     }
 
     window.ReasonKit = {
-        attachTemplates,
         attachSuggestions,
+        PARTS,
+        partsOf,
+        splitOccupation,
+        splitReason,
+        composeOccupation,
+        composeReason,
         PENDING_KEY,
         getPending,
         setPending,
