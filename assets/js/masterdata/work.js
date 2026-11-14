@@ -1,7 +1,7 @@
 // ========================================
 // Master Data > Work to complete — ការងារត្រូវបំពេញ (Reason Arrear)
 // The officer's to-do list on its own page: loans with no reason yet,
-// expired promises, and what's filled — tap one to fill its reason.
+// expired promises and today's — tap one to fill its reason.
 //
 // Rows come from GET /api/arreast24byco/work (the user's scope, with the
 // saved reasonarrear record already applied). Saving and submitting use
@@ -29,7 +29,7 @@ const wkShowFilters = wkRole !== "viewer_staff";
 const wkParams = new URLSearchParams(location.search);
 let wkRows = [];
 // The tiles (= the tabs): five "not filled yet" — one per reason field
-// (layout v2) — then expired / promised today / filled.
+// (layout v2), each "n / all loans here" — then expired / promised today.
 const UNFILLED_TABS = {
     unOccLoan: "occupationLoan",
     unOccNow: "occupationNow",
@@ -37,7 +37,7 @@ const UNFILLED_TABS = {
     unReason: "reason",
     unSolution: "solution"
 };
-const WK_TABS = [...Object.keys(UNFILLED_TABS), "expired", "today", "filled"];
+const WK_TABS = [...Object.keys(UNFILLED_TABS), "expired", "today"];
 const isUnfilledTab = tab => tab in UNFILLED_TABS;
 let wkTab = (() => {
     const q = wkParams.get("tab");
@@ -125,15 +125,12 @@ function teamOf(row) {
 }
 
 // Expired = promise date (AL) before today (as the officer reminders).
-// Filled = all five reason fields (layout v2) are in.
-function isComplete(row) { return ReasonKit.PARTS.every(k => !isPartEmpty(row, k)); }
 function isExpired(row) { return !!row.al && row.al < todayKey(); }
 function isPartEmpty(row, part) { return String(row[part] || "").trim() === ""; }
 function inTab(row, tab) {
     if (isUnfilledTab(tab)) return isPartEmpty(row, UNFILLED_TABS[tab]);
     if (tab === "expired") return isExpired(row);
-    if (tab === "today") return row.al === todayKey();
-    return isComplete(row) && !isExpired(row);
+    return row.al === todayKey();   // "today"
 }
 
 // Local drafts (saved, not yet submitted) win over the server values.
@@ -389,13 +386,11 @@ function renderChips() {
     teamWrap.innerHTML = `<div class="wk-viewseg wk-teamseg" role="group" aria-label="CO / FSRO">${seg("", t("arrears.optionAll"))}${seg("Credit Officer", "CO")}${seg("FSRO", "FSRO")}</div>`;
 }
 
-// The tiles (= the tabs): counts for the branch / team / officer; the %
-// is the share with all five fields filled.
+// The tiles (= the tabs): counts for the branch / team / officer, and
+// how many loans that is out of (for the "n / all" on the field tiles).
 function workCounts(scoped) {
-    const c = {};
+    const c = { total: scoped.length };
     WK_TABS.forEach(tab => { c[tab] = scoped.filter(r => inTab(r, tab)).length; });
-    const complete = scoped.filter(isComplete).length;
-    c.pct = scoped.length ? Math.floor(complete / scoped.length * 100) : null;
     return c;
 }
 
@@ -404,7 +399,9 @@ function renderStats(scoped) {
     WK_TABS.forEach(tab => {
         $(`wkCount-${tab}`).textContent = c[tab].toLocaleString();
     });
-    $("wkStatPct").textContent = c.pct == null ? "" : `${c.pct}%`;
+    Object.keys(UNFILLED_TABS).forEach(tab => {
+        $(`wkOf-${tab}`).textContent = `/ ${c.total.toLocaleString()}`;
+    });
 }
 
 function renderPendingBar() {
@@ -459,7 +456,6 @@ function renderList() {
                     ${status}
                     ${r.__pending ? `<span class="wk-chip wk-chip-pending">${escapeHtml(t("work.notSubmitted"))}</span>` : ""}
                 </div>
-                ${wkTab === "filled" && r.ak ? `<div class="wk-item-reason">${escapeHtml(r.ak)}</div>` : ""}
             </div>
             <div class="oa-item-side">
                 ${Number.isFinite(day) ? `<span class="arr-day-badge">${day.toLocaleString()} <small>${escapeHtml(t("arrears.cardDays"))}</small></span>` : ""}
@@ -871,7 +867,7 @@ $("btnGpsOpen").addEventListener("click", () => {
 ReasonKit.onPendingChange(renderPendingBar);
 
 // ---------- copy report (Telegram) ----------
-const TAB_EMOJI = { unOccLoan: "📝", unOccNow: "📝", unPurpose: "📝", unReason: "📝", unSolution: "📝", expired: "⏰", today: "📆", filled: "✅" };
+const TAB_EMOJI = { unOccLoan: "📝", unOccNow: "📝", unPurpose: "📝", unReason: "📝", unSolution: "📝", expired: "⏰", today: "📆" };
 
 // What's on screen as plain text: the tile counts for the branch / team /
 // officer, then every tile's officers (by-officer view) or clients.
@@ -885,9 +881,9 @@ function buildReport() {
         `📅 ${d}${where ? " · " + where : ""}`,
         "",
         ...WK_TABS.map(tab => `${TAB_EMOJI[tab]} ${t(`work.tab${tab[0].toUpperCase()}${tab.slice(1)}`)}: ${c[tab].toLocaleString()}` +
-            (tab === "filled" && c.pct != null ? ` (${c.pct}%)` : ""))
+            (isUnfilledTab(tab) ? ` / ${c.total.toLocaleString()}` : ""))
     ];
-    // Every tile's list, in tile order (one copy for all eight).
+    // Every tile's list, in tile order (one copy for all of them).
     const byOfficer = wkView === "officer" && !wkOfficer && wkShowFilters;
     const MAX = byOfficer ? 30 : 20;
     WK_TABS.forEach(tab => {

@@ -195,10 +195,8 @@
 .wk-officer-n small{ font-size:10px; font-weight:700; opacity:.7; }
 .wk-officer-n-unfilled{ background:rgba(220,38,38,.10); color:#B91C1C; }
 .wk-officer-n-expired{ background:rgba(212,175,55,.18); color:#8A6D00; }
-.wk-officer-n-filled{ background:rgba(22,163,74,.12); color:#15803D; }
 [data-theme="dark"] .wk-officer-n-unfilled, [data-theme="darkgray"] .wk-officer-n-unfilled{ color:#FCA5A5; }
 [data-theme="dark"] .wk-officer-n-expired, [data-theme="darkgray"] .wk-officer-n-expired{ color:#FFD700; }
-[data-theme="dark"] .wk-officer-n-filled, [data-theme="darkgray"] .wk-officer-n-filled{ color:#86EFAC; }
 
 /* The summary tiles are the tabs (like the CM Pro AI chat) */
 .oa-ph-stats.wk-tiles{ grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px; }
@@ -213,6 +211,10 @@
 .wk-tile > span:last-child{ font-size:10.5px; white-space:normal; line-height:1.3; }
 .wk-tile small{ font-weight:800; opacity:.95; }
 /* "Not filled yet" over the field name on the five field tiles. */
+/* "/ all loans" after a field tile's count. */
+.wk-tile .wk-tile-num{ display:flex; flex-wrap:wrap; align-items:baseline; column-gap:3px; max-width:100%; }
+.wk-tile .wk-tile-num > span{ font-size:inherit; opacity:1; overflow:visible; }
+.wk-tile .wk-tile-of{ font-size:10.5px; font-weight:700; opacity:.7; white-space:nowrap; }
 .wk-tile .wk-tile-pre{ display:block; font-size:9.5px; font-weight:600; opacity:.75; }
 .wk-tile > span:last-child{ min-width:0; max-width:100%; overflow-wrap:anywhere; }
 /* The label's own spans: wrap, not "…" (outarea's .oa-ph-stat span). */
@@ -220,7 +222,6 @@
 .wk-tile-unfilled .wk-tile-ico, .wk-tile-unfilled b{ color:#FFD700; }
 .wk-tile-expired .wk-tile-ico, .wk-tile-expired b{ color:#FCA5A5; }
 .wk-tile-today .wk-tile-ico, .wk-tile-today b{ color:#93C5FD; }
-.wk-tile-filled .wk-tile-ico, .wk-tile-filled b{ color:#86EFAC; }
 .oa-ph-top .wk-copy{ margin-right:6px; }
 
 /* All | CO | FSRO with counts */
