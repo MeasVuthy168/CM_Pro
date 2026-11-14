@@ -880,54 +880,91 @@ $("btnGpsOpen").addEventListener("click", () => {
 ReasonKit.onPendingChange(renderPendingBar);
 
 // ---------- copy report (Telegram) ----------
-const TAB_EMOJI = { unOccLoan: "📝", unOccNow: "📝", unPurpose: "📝", unReason: "📝", unSolution: "📝", expired: "⏰", today: "📆" };
+// Field labels in the report: full in the summary, short per officer /
+// client.
+const FIELD_LABEL = {
+    occupationLoan: "arrears.reasonOccLoanLabel",
+    occupationNow: "arrears.reasonOccNowLabel",
+    purpose: "work.tilePurpose",
+    reason: "arrears.reasonReasonLabel",
+    solution: "arrears.reasonSolutionOnlyLabel"
+};
+const pctDot = pct => (pct == null ? "⚪" : pct < 50 ? "🔴" : pct <= 90 ? "🟡" : "🟢");
+const missingParts = row => ReasonKit.PARTS.filter(k => isPartEmpty(row, k));
 
-// What's on screen as plain text: the tile counts for the branch / team /
-// officer, then every tile's officers (by-officer view) or clients.
+// What's on screen as plain text, for Telegram: the summary (fields worst
+// first, coloured like the tiles' bars), then one block per officer (the
+// by-officer view) or per client — each listed once, with only what's
+// still missing. "▪️" rather than "1." so Telegram keeps the layout.
 function buildReport() {
     const scoped = scopedRows();
     const c = workCounts(scoped);
     const d = isoToDMY(todayKey());
     const where = [wkBranch || (wkShowFilters ? t("work.allBranches") : ""), wkTeam ? teamLabel(wkTeam) : "", wkOfficer].filter(Boolean).join(" · ");
+    const fields = Object.entries(UNFILLED_TABS)
+        .map(([tab, part]) => ({ tab, part, n: c[tab], pct: filledPct(c, tab) }))
+        .sort((a, b) => (a.pct ?? 101) - (b.pct ?? 101) || b.n - a.n);
     const lines = [
         `📋 ${t("work.heroTitle")}`,
         `📅 ${d}${where ? " · " + where : ""}`,
         `📊 ${tf("work.totalLd", { n: c.total.toLocaleString() })}`,
         "",
-        ...WK_TABS.map(tab => `${TAB_EMOJI[tab]} ${t(`work.tab${tab[0].toUpperCase()}${tab.slice(1)}`)}: ${c[tab].toLocaleString()}` +
-            (isUnfilledTab(tab) && filledPct(c, tab) != null ? ` (${tf("work.pctFilled", { p: filledPct(c, tab) })})` : ""))
+        `✍️ ${t("work.rpUnfilledHead")}`,
+        ...fields.map(f => `${pctDot(f.pct)} ${t(FIELD_LABEL[f.part])}: ${f.n.toLocaleString()}${f.pct == null ? "" : ` (${f.pct}%)`}`),
+        `⏰ ${t("work.tabExpired")}: ${c.expired.toLocaleString()}`,
+        `📆 ${t("work.tabToday")}: ${c.today.toLocaleString()}`,
+        ""
     ];
-    // Every tile's list, in tile order (one copy for all of them).
-    const byOfficer = wkView === "officer" && !wkOfficer && wkShowFilters;
-    const MAX = byOfficer ? 30 : 20;
-    WK_TABS.forEach(tab => {
-        const tabName = t(`work.tab${tab[0].toUpperCase()}${tab.slice(1)}`);
-        const rows = scoped.filter(r => inTab(r, tab));
-        lines.push("", `${TAB_EMOJI[tab]} ${tabName} (${rows.length.toLocaleString()} LD)${byOfficer ? ` — ${t("work.byOfficerTitle")}` : ""}:`);
-        if (byOfficer) {
-            const map = new Map();
-            rows.forEach(r => {
-                const k = r.coResponse || "-";
-                const o = map.get(k) || { name: k, team: teamOf(r), n: 0 };
-                o.n++;
-                map.set(k, o);
-            });
-            const officers = [...map.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
-            officers.slice(0, MAX).forEach((o, i) => lines.push(`${i + 1}. ${o.name} (${teamLabel(o.team)}) — ${o.n.toLocaleString()}`));
-            if (officers.length > MAX) lines.push(tf("work.reportMore", { n: (officers.length - MAX).toLocaleString() }));
-        } else {
-            const list = rows.slice().sort((a, b) => (parseInt(b.day, 10) || 0) - (parseInt(a.day, 10) || 0));
-            list.slice(0, MAX).forEach((r, i) => {
-                const parts = [r.customer || "-", r.loanNumber || r.concate];
-                if (tab === "expired" || tab === "today") parts.push(t("work.promiseShort").replace("{d}", isoToDMY(r.al)));
-                else parts.push(t("arrears.cardDays") ? `${parseInt(r.day, 10) || 0} ${t("arrears.cardDays")}` : "");
-                if (!wkOfficer && wkShowFilters && r.coResponse) parts.push(r.coResponse);
-                lines.push(`${i + 1}. ${parts.filter(Boolean).join(" · ")}`);
-            });
-            if (list.length > MAX) lines.push(tf("work.reportMore", { n: (list.length - MAX).toLocaleString() }));
-        }
-        if (!rows.length) lines.push("—");
-    });
+    const short = k => t(`work.short.${k}`);
+    const isToday = r => r.al === todayKey();
+    const MAX = 30;
+
+    if (wkView === "officer" && !wkOfficer && wkShowFilters) {
+        // Officer -> loans still missing something, count per field.
+        const map = new Map();
+        scoped.forEach(r => {
+            const miss = missingParts(r);
+            const exp = isExpired(r);
+            const tod = isToday(r);
+            if (!miss.length && !exp && !tod) return;
+            const k = r.coResponse || "-";
+            const o = map.get(k) || { name: k, n: 0, parts: {}, expired: 0, today: 0 };
+            if (miss.length) o.n++;
+            miss.forEach(p => { o.parts[p] = (o.parts[p] || 0) + 1; });
+            if (exp) o.expired++;
+            if (tod) o.today++;
+            map.set(k, o);
+        });
+        const officers = [...map.values()].sort((a, b) => b.n - a.n || b.expired - a.expired || a.name.localeCompare(b.name));
+        lines.push(`👤 ${t("work.rpByOfficer")}`);
+        officers.slice(0, MAX).forEach(o => {
+            const items = Object.entries(o.parts).sort((a, b) => b[1] - a[1])
+                .map(([p, n]) => `${short(p)} ${n.toLocaleString()}`);
+            if (o.expired) items.push(`${short("expired")} ${o.expired.toLocaleString()}`);
+            if (o.today) items.push(`${short("today")} ${o.today.toLocaleString()}`);
+            lines.push(`▪️ ${o.name} — ${o.n.toLocaleString()} LD`, `   ${items.join(" · ")}`);
+        });
+        if (officers.length > MAX) lines.push(tf("work.reportMore", { n: (officers.length - MAX).toLocaleString() }));
+        if (!officers.length) lines.push(t("work.emptyDone"));
+    } else {
+        // Clients still missing something (or whose promise is due /
+        // expired), most days late first.
+        const list = scoped.filter(r => missingParts(r).length || isExpired(r) || isToday(r))
+            .sort((a, b) => (parseInt(b.day, 10) || 0) - (parseInt(a.day, 10) || 0));
+        lines.push(`👥 ${t("work.rpClients")} (${list.length.toLocaleString()} LD)`);
+        list.slice(0, MAX).forEach(r => {
+            const head = [r.customer || "-", r.loanNumber || r.concate, `${parseInt(r.day, 10) || 0} ${t("arrears.cardDays")}`];
+            if (!wkOfficer && wkShowFilters && r.coResponse) head.push(r.coResponse);
+            const notes = [];
+            const miss = missingParts(r);
+            if (miss.length) notes.push(tf("work.rpMissing", { list: miss.map(short).join(", ") }));
+            if (isExpired(r)) notes.push(`⏰ ${t("work.promiseShort").replace("{d}", isoToDMY(r.al))}`);
+            else if (isToday(r)) notes.push(`📆 ${t("work.tabToday")}`);
+            lines.push(`▪️ ${head.join(" · ")}`, `   ${notes.join(" · ")}`);
+        });
+        if (list.length > MAX) lines.push(tf("work.reportMore", { n: (list.length - MAX).toLocaleString() }));
+        if (!list.length) lines.push(t("work.emptyDone"));
+    }
     return lines.join("\n").trim();
 }
 
