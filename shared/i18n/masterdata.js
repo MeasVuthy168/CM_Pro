@@ -90,7 +90,7 @@ CMI18n.register({
   "work.tilePurpose": { km: "គោលបំណង", en: "Purpose" },
   "work.tabUnReason": { km: "មិនទាន់បំពេញ មូលហេតុ", en: "Unfilled: reason" },
   "work.tabUnSolution": { km: "មិនទាន់បំពេញ ដំណោះស្រាយ", en: "Unfilled: solution" },
-  "work.tabExpired": { km: "ផុតកំណត់", en: "Expired" },
+  "work.tabExpired": { km: "ផុតកំណត់ថ្ងៃសន្យាសង", en: "Expired promise date" },
   "work.tabFilled": { km: "បានបំពេញ", en: "Filled" },
   "work.tabToday": { km: "សន្យាថ្ងៃនេះ", en: "Due today" },
   "work.copyReport": { km: "ចម្លងរបាយការណ៍", en: "Copy report" },
