@@ -28,7 +28,22 @@ const wkShowFilters = wkRole !== "viewer_staff";
 
 const wkParams = new URLSearchParams(location.search);
 let wkRows = [];
-let wkTab = ["unfilled", "expired", "today", "filled"].includes(wkParams.get("tab")) ? wkParams.get("tab") : "unfilled";
+// The tiles (= the tabs): five "not filled yet" — one per reason field
+// (layout v2) — then expired / promised today / filled.
+const UNFILLED_TABS = {
+    unOccLoan: "occupationLoan",
+    unOccNow: "occupationNow",
+    unPurpose: "purpose",
+    unReason: "reason",
+    unSolution: "solution"
+};
+const WK_TABS = [...Object.keys(UNFILLED_TABS), "expired", "today", "filled"];
+const isUnfilledTab = tab => tab in UNFILLED_TABS;
+let wkTab = (() => {
+    const q = wkParams.get("tab");
+    if (q === "unfilled") return "unReason";   // older links (Early Warning)
+    return WK_TABS.includes(q) ? q : WK_TABS[0];
+})();
 let wkBranch = wkParams.get("branch") || "";
 // ?q=<loan> (from Early Warning): open on the tab that holds that loan,
 // with it searched — straight into its editor when it is the only match.
@@ -113,8 +128,9 @@ function teamOf(row) {
 // complete: no Solution (AK) yet / promise date (AL) before today.
 function isUnfilled(row) { return String(row.ak || "").trim() === ""; }
 function isExpired(row) { return !!row.al && row.al < todayKey(); }
+function isPartEmpty(row, part) { return String(row[part] || "").trim() === ""; }
 function inTab(row, tab) {
-    if (tab === "unfilled") return isUnfilled(row);
+    if (isUnfilledTab(tab)) return isPartEmpty(row, UNFILLED_TABS[tab]);
     if (tab === "expired") return isExpired(row);
     if (tab === "today") return row.al === todayKey();
     return !isUnfilled(row) && !isExpired(row);
@@ -124,6 +140,8 @@ function inTab(row, tab) {
 function applyPending(rows) {
     const map = ReasonKit.getPending();
     rows.forEach(row => {
+        // Rows handed over by Daily Arrears carry only the combined text.
+        if (!ReasonKit.PARTS.every(k => typeof row[k] === "string")) Object.assign(row, ReasonKit.partsOf(row));
         const p = map[row.concate];
         row.__pending = !!p;
         if (!p) return;
@@ -176,7 +194,7 @@ function useRows(rows) {
     if (wkQuery) {
         const q = wkQuery.toLowerCase();
         const hits = wkRows.filter(r => String(r.loanNumber || "").toLowerCase() === q);
-        const tab = ["unfilled", "expired", "today", "filled"].find(tb => hits.some(r => inTab(r, tb)));
+        const tab = WK_TABS.find(tb => hits.some(r => inTab(r, tb)));
         if (tab) wkTab = tab;
         wkView = "clients";
         $("wkSearch").value = wkQuery;
@@ -319,7 +337,7 @@ function renderOfficers(list, scoped, q) {
     if (!officers.length) {
         list.innerHTML = `<div class="oa-empty oa-empty-art">
             <span class="oa-empty-ico"><span class="ui-ico ui-ico-clipboard" aria-hidden="true"></span></span>
-            <strong>${escapeHtml(t((wkTab === "unfilled" || wkTab === "expired") && !q ? "work.emptyDone" : "arrears.oaEmpty"))}</strong>
+            <strong>${escapeHtml(t((isUnfilledTab(wkTab) || wkTab === "expired") && !q ? "work.emptyDone" : "arrears.oaEmpty"))}</strong>
         </div>`;
         return;
     }
@@ -332,7 +350,7 @@ function renderOfficers(list, scoped, q) {
                 ${multiBranch && o.branch ? `<div class="oa-item-sub">${escapeHtml(o.branch)}</div>` : ""}
             </div>
             <div class="oa-item-side">
-                <span class="wk-officer-n wk-officer-n-${wkTab}">${o.n.toLocaleString()} <small>LD</small></span>
+                <span class="wk-officer-n wk-officer-n-${isUnfilledTab(wkTab) ? "unfilled" : wkTab}">${o.n.toLocaleString()} <small>LD</small></span>
                 <span class="oa-item-chevron" aria-hidden="true">›</span>
             </div>
         </div>`).join("");
@@ -371,19 +389,19 @@ function renderChips() {
     teamWrap.innerHTML = `<div class="wk-viewseg wk-teamseg" role="group" aria-label="CO / FSRO">${seg("", t("arrears.optionAll"))}${seg("Credit Officer", "CO")}${seg("FSRO", "FSRO")}</div>`;
 }
 
-// The four tiles (= the tabs): counts for the branch / team / officer.
+// The tiles (= the tabs): counts for the branch / team / officer. Filled
+// and its % keep their rule (a reason / solution is in).
 function workCounts(scoped) {
-    const n = tab => scoped.filter(r => inTab(r, tab)).length;
-    const unfilled = n("unfilled");
-    return {
-        unfilled, expired: n("expired"), today: n("today"), filled: n("filled"),
-        pct: scoped.length ? Math.floor((scoped.length - unfilled) / scoped.length * 100) : null
-    };
+    const c = {};
+    WK_TABS.forEach(tab => { c[tab] = scoped.filter(r => inTab(r, tab)).length; });
+    const unfilled = scoped.filter(isUnfilled).length;
+    c.pct = scoped.length ? Math.floor((scoped.length - unfilled) / scoped.length * 100) : null;
+    return c;
 }
 
 function renderStats(scoped) {
     const c = workCounts(scoped);
-    ["unfilled", "expired", "today", "filled"].forEach(tab => {
+    WK_TABS.forEach(tab => {
         $(`wkCount-${tab}`).textContent = c[tab].toLocaleString();
     });
     $("wkStatPct").textContent = c.pct == null ? "" : `${c.pct}%`;
@@ -417,7 +435,7 @@ function renderList() {
 
     const list = $("wkList");
     if (!shown.length) {
-        const done = (wkTab === "unfilled" || wkTab === "expired") && !q;
+        const done = (isUnfilledTab(wkTab) || wkTab === "expired") && !q;
         list.innerHTML = `<div class="oa-empty oa-empty-art">
             <span class="oa-empty-ico"><span class="ui-ico ui-ico-clipboard" aria-hidden="true"></span></span>
             <strong>${escapeHtml(t(done ? "work.emptyDone" : "arrears.oaEmpty"))}</strong>
@@ -853,7 +871,7 @@ $("btnGpsOpen").addEventListener("click", () => {
 ReasonKit.onPendingChange(renderPendingBar);
 
 // ---------- copy report (Telegram) ----------
-// What's on screen as plain text: the four counts for the branch / team /
+// What's on screen as plain text: the tile counts for the branch / team /
 // officer, then the officers (by-officer view) or the clients.
 function buildReport() {
     const scoped = scopedRows();
@@ -865,7 +883,7 @@ function buildReport() {
         `📋 ${t("work.heroTitle")}`,
         `📅 ${d}${where ? " · " + where : ""}`,
         "",
-        `📝 ${t("work.tabUnfilled")}: ${c.unfilled.toLocaleString()}`,
+        ...Object.keys(UNFILLED_TABS).map(tab => `📝 ${t(`work.tab${tab[0].toUpperCase()}${tab.slice(1)}`)}: ${c[tab].toLocaleString()}`),
         `⏰ ${t("work.tabExpired")}: ${c.expired.toLocaleString()}`,
         `📆 ${t("work.tabToday")}: ${c.today.toLocaleString()}`,
         `✅ ${t("work.tabFilled")}: ${c.filled.toLocaleString()}${c.pct == null ? "" : ` (${c.pct}%)`}`,
