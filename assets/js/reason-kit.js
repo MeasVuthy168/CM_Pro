@@ -203,18 +203,19 @@
         const UP_CHUNK = 1000;
         for (let i = 0; i < concates.length; i += UP_CHUNK) {
             const chunkConcates = concates.slice(i, i + UP_CHUNK);
-            // v2 rows (8 values): the five parts, promise date, GPS. A
-            // draft saved before the five fields existed (combined text
-            // only) goes as the old 5-value row; the server splits it.
-            // GPS is always sent, even when empty, so clearing a
-            // coordinate actually clears it server-side.
+            // v2 rows (8 values): the five parts, promise date, GPS — the
+            // only shape the server accepts (older rows mean an old Excel).
+            // A draft saved before the five fields existed (combined text
+            // only) is split here first. GPS is always sent, even when
+            // empty, so clearing a coordinate actually clears it.
+            // Such a draft has no purpose: keep the one already saved.
+            const legacy = chunkConcates.filter(c => !hasParts(map[c]));
+            const saved = legacy.length ? await fetchReasons(legacy, token) : new Map();
             const rows = chunkConcates.map(c => {
                 const d = map[c];
-                if (hasParts(d)) {
-                    const p = partsOf(d);
-                    return [c, p.occupationLoan, p.occupationNow, p.purpose, p.reason, p.solution, d.al, d.gps || ""];
-                }
-                return [c, d.aj, d.ak, d.al, d.gps || ""];
+                const p = partsOf(d);
+                if (!hasParts(d)) p.purpose = String(saved.get(c)?.purpose || "");
+                return [c, p.occupationLoan, p.occupationNow, p.purpose, p.reason, p.solution, d.al, d.gps || ""];
             });
 
             const res = await fetch(`${API.BASE_URL}/api/reasonarrear/upsert`, {
