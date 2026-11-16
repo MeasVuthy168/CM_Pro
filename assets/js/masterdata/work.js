@@ -452,15 +452,19 @@ function renderList() {
         </div>`;
         return;
     }
+    // How many LDs each customer (CIF) has in the work list — "1 LD", "2 LD"…
+    const ldPerCif = new Map();
+    wkRows.forEach(x => { if (x.cif) ldPerCif.set(x.cif, (ldPerCif.get(x.cif) || 0) + 1); });
     list.innerHTML = shown.map((r, i) => {
         const day = parseInt(r.day, 10);
+        const nLd = ldPerCif.get(r.cif) || 1;
         const amt = amount(r.arreas);
         const status = isExpired(r)
             ? `<span class="wk-chip wk-chip-expired">${escapeHtml(tf("work.expiredOn", { d: isoToDMY(r.al) }))}</span>`
             : r.al ? `<span class="wk-chip">${escapeHtml(tf("work.promiseOn", { d: isoToDMY(r.al) }))}</span>` : "";
         return `<div class="oa-item${r.__pending ? " wk-item-pending" : ""}" role="button" tabindex="0" data-i="${i}">
             <div class="oa-item-main">
-                <div class="oa-item-name">${escapeHtml(r.customer || "-")}</div>
+                <div class="oa-item-name">${escapeHtml(r.customer || "-")} <span class="wk-ld-count${nLd > 1 ? " multi" : ""}">${nLd.toLocaleString()} LD</span></div>
                 <div class="oa-item-sub">${escapeHtml(r.loanNumber || r.concate)} · CIF ${escapeHtml(r.cif)}</div>
                 ${r.location ? `<div class="oa-item-addr"><span class="ui-ico ui-ico-pin" aria-hidden="true"></span> ${escapeHtml(r.location)}</div>` : ""}
                 <div class="oa-item-meta">
