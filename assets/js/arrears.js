@@ -3897,7 +3897,7 @@ document.getElementById("btnColumnsShowAll")?.addEventListener("click", () => {
 
 
 // ========================================
-// OUT-OF-AREA ADDRESS — កែសម្រួលArrearក្រៅតំបន់
+// OUT-OF-AREA ADDRESS — កែសម្រួលឥណទានយឺតយ៉ាវក្រៅតំបន់
 // The editor itself lives in assets/js/outarea-editor.js (shared with
 // Master Data > Edit Out-of-Area Arrears). Here it's the modal opened
 // from Work to complete > NoCoRespone, working on this page's rows.

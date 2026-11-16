@@ -89,7 +89,7 @@ CMI18n.register({
   "assistant.work.showing": { km: "បង្ហាញ {n} នាក់ ក្នុងចំណោម {total}", en: "Showing {n} of {total}" },
   "assistant.work.days": { km: "{n} ថ្ងៃ", en: "{n} days" },
   "assistant.work.openWork": { km: "បើកការងារត្រូវបំពេញ", en: "Open Work to complete" },
-  "assistant.work.openOutArea": { km: "កែសម្រួល Arrear ក្រៅតំបន់", en: "Edit Out-of-Area Arrears" },
+  "assistant.work.openOutArea": { km: "កែសម្រួលឥណទានយឺតយ៉ាវក្រៅតំបន់", en: "Edit Out-of-Area Arrears" },
 
 
   "assistant.metric.os": { km: "OS (សមតុល្យឥណទាន)", en: "Loan Outstanding" },
@@ -190,7 +190,7 @@ CMI18n.register({
   "assistant.page.creditReportBranch": { km: "របាយការណ៍តាមសាខា", en: "Report by Branch" },
   "assistant.page.creditReportCO": { km: "របាយការណ៍តាម CO", en: "Report by CO" },
   "assistant.page.work": { km: "ការងារត្រូវបំពេញ", en: "Work to complete" },
-  "assistant.page.outArea": { km: "កែសម្រួល Arrear ក្រៅតំបន់", en: "Edit Out-of-Area Arrears" },
+  "assistant.page.outArea": { km: "កែសម្រួលឥណទានយឺតយ៉ាវក្រៅតំបន់", en: "Edit Out-of-Area Arrears" },
   "assistant.page.lgs": { km: "កម្ចីក្នុងដែនកំណត់ LGs", en: "LGs Loans" },
   "assistant.page.masterData": { km: "ទិន្នន័យមូលដ្ឋាន", en: "Master Data" },
   "assistant.page.land": { km: "ចំណាត់ថ្នាក់ដីធ្លី", en: "Land Classification" },

@@ -1,5 +1,5 @@
 // ========================================
-// Master Data > Edit Out-of-Area Arrears — កែសម្រួលArrearក្រៅតំបន់
+// Master Data > Edit Out-of-Area Arrears — កែសម្រួលឥណទានយឺតយ៉ាវក្រៅតំបន់
 // Its own page, running the shared editor (assets/js/outarea-editor.js)
 // on just the rows it needs: GET /api/arreast24byco/outarea returns the
 // NoCoRespone loans plus each branch's officers, instead of every
@@ -193,27 +193,44 @@ function oaManualOpenRows(rows) {
 
 function oaManualPaint() {
     const n = oaManualItems.length;
-    const all = oaManualPicked.size === n;
+    const picked = oaManualPicked.size;
+    const all = picked === n;
+    const late = oaManualItems.filter(it => it.inArrears);
+    // One customer (a CIF typed): their name once, not on every LD.
+    const names = [...new Set(oaManualItems.map(it => it.customer).filter(Boolean))];
+    const cifs = [...new Set(oaManualItems.map(it => String(it.concate).split("-")[1]).filter(Boolean))];
+    const one = names.length === 1 && cifs.length === 1;
     oaManual.results.innerHTML = `
         <div class="oa-manual-head">
-            <span>${oaEsc(tv("arrears.oaManualFound", { n }))}</span>
-            <button type="button" class="oa-manual-all" id="btnOaManualAll">${oaEsc(t(all ? "arrears.oaManualUnselectAll" : "arrears.oaManualSelectAll"))}</button>
+            <div class="oa-manual-who">
+                ${one ? `<b>${oaEsc(names[0])}</b><small>CIF ${oaEsc(cifs[0])} · ${oaEsc(tv("arrears.oaManualFound", { n }))}</small>`
+                      : `<b>${oaEsc(tv("arrears.oaManualFound", { n }))}</b>`}
+            </div>
+        </div>
+        <div class="oa-manual-quick">
+            <button type="button" class="oa-manual-chip${all ? " on" : ""}" data-oa-quick="all">${oaEsc(t(all ? "arrears.oaManualUnselectAll" : "arrears.oaManualSelectAll"))} (${n})</button>
+            ${late.length && late.length < n ? `<button type="button" class="oa-manual-chip" data-oa-quick="late">${oaEsc(t("arrears.oaManualOnlyLate"))} (${late.length})</button>` : ""}
         </div>
         <div class="oa-manual-list">${oaManualItems.map(it => {
             const day = parseInt(it.day, 10);
             const co = it.coResponse && !/nocorespone/i.test(it.coResponse) ? it.coResponse : t("arrears.oaManualNoCo");
+            const on = oaManualPicked.has(it.concate);
+            const ld = String(it.concate).split("-")[0];
             return `
-            <label class="oa-manual-item${oaManualPicked.has(it.concate) ? " on" : ""}">
-                <input type="checkbox" data-oa-pick="${oaEsc(it.concate)}"${oaManualPicked.has(it.concate) ? " checked" : ""}>
+            <label class="oa-manual-item${on ? " on" : ""}">
+                <input type="checkbox" data-oa-pick="${oaEsc(it.concate)}"${on ? " checked" : ""}>
                 <span class="oa-manual-item-text">
-                    <b>${oaEsc(it.customer || "-")}</b>
-                    <small>${oaEsc(it.concate)}${it.product ? " · " + oaEsc(it.product) : ""}</small>
-                    <small>${oaEsc([it.branch, co].filter(Boolean).join(" · "))}</small>
+                    <span class="oa-manual-line"><b>${oaEsc(one ? ld : it.concate)}</b>
+                        <span class="oa-manual-state ${it.inArrears ? "late" : "os"}">${oaEsc(it.inArrears && Number.isFinite(day) ? tv("arrears.oaManualLate", { n: day }) : t("arrears.oaManualNotLate"))}</span></span>
+                    ${one ? "" : `<small class="oa-manual-name">${oaEsc(it.customer || "-")}</small>`}
+                    <small>${oaEsc([it.product, it.branch, co].filter(Boolean).join(" · "))}</small>
                 </span>
-                <span class="oa-manual-state ${it.inArrears ? "late" : "os"}">${oaEsc(it.inArrears && Number.isFinite(day) ? tv("arrears.oaManualLate", { n: day }) : t("arrears.oaManualNotLate"))}</span>
             </label>`;
         }).join("")}</div>
-        <button type="button" class="oa-manual-go" id="btnOaManualGo"${oaManualPicked.size ? "" : " disabled"}>${oaEsc(tv("arrears.oaManualGo", { n: oaManualPicked.size }))}</button>`;
+        <div class="oa-manual-bar">
+            <span class="oa-manual-bar-n">${oaEsc(tv("arrears.oaManualPicked", { n: picked, total: n }))}</span>
+            <button type="button" class="oa-manual-go" id="btnOaManualGo"${picked ? "" : " disabled"}>${oaEsc(tv("arrears.oaManualGo", { n: picked }))}</button>
+        </div>`;
     oaManual.results.hidden = false;
 }
 
@@ -224,9 +241,15 @@ oaManual.results?.addEventListener("change", e => {
     oaManualPaint();
 });
 oaManual.results?.addEventListener("click", e => {
-    if (e.target.closest("#btnOaManualAll")) {
+    const quick = e.target.closest("[data-oa-quick]")?.dataset.oaQuick;
+    if (quick === "all") {
         if (oaManualPicked.size === oaManualItems.length) oaManualPicked.clear();
         else oaManualItems.forEach(it => oaManualPicked.add(it.concate));
+        return oaManualPaint();
+    }
+    if (quick === "late") {
+        oaManualPicked.clear();
+        oaManualItems.filter(it => it.inArrears).forEach(it => oaManualPicked.add(it.concate));
         return oaManualPaint();
     }
     if (e.target.closest("#btnOaManualGo")) {

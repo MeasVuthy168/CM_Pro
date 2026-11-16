@@ -1,5 +1,5 @@
 // =========================================================
-// EDIT OUT-OF-AREA ARREARS — កែសម្រួលArrearក្រៅតំបន់
+// EDIT OUT-OF-AREA ARREARS — កែសម្រួលឥណទានយឺតយ៉ាវក្រៅតំបន់
 // List -> pick one customer -> reassign Branch/CO -> Save.
 //
 // Shared by two pages, which both carry the same markup (same IDs):
