@@ -489,8 +489,8 @@
         "master credit card": "ប្រើប្រាស់ផ្ទាល់ខ្លួន",
         "payroll loan": "ប្រើប្រាស់ផ្ទាល់ខ្លួន",
         "small loan": "បន្ថែមទុនក្នុងមុខរបរ",
-        "ac moblie merchants": "បន្ថែមទុនក្នុងមុខរបរ",   // spelled so in T24
-        "ac mobile merchants": "បន្ថែមទុនក្នុងមុខរបរ",
+        "ac moblie merchants": "បង្វិលទុនក្នុងមុខរបរ",   // spelled so in T24
+        "ac mobile merchants": "បង្វិលទុនក្នុងមុខរបរ",
         "home improvement loan": "កែលម្អលំនៅឋាន",
         "public housing loan": "សាងសង់/ទិញផ្ទះ"
     };
