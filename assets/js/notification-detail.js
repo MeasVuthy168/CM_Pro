@@ -421,25 +421,89 @@
         return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
     }
 
+    // The five parts: the notification's own (sent since 17/11/2026), else
+    // split out of the combined aj / ak older ones carry.
+    const PART_LABELS = [
+        ["occupationLoan", "notifDetail.part.occLoan"],
+        ["occupationNow", "notifDetail.part.occNow"],
+        ["purpose", "notifDetail.part.purpose"],
+        ["reason", "notifDetail.part.reason"],
+        ["solution", "notifDetail.part.solution"]
+    ];
+    function partsOfClient(c) {
+        if (window.ReasonKit) return ReasonKit.partsOf(c);
+        return { occupationLoan: c.aj || "", occupationNow: "", purpose: "", reason: c.ak || "", solution: "" };
+    }
+
+    function todayKey() {
+        const d = new Date();
+        const p = v => String(v).padStart(2, "0");
+        return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    }
+
+    // Promise date against today: upcoming (in N days) / today / passed.
+    function promiseState(al) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(al || ""))) return null;
+        const diff = Math.round((Date.parse(al) - Date.parse(todayKey())) / 86400000);
+        if (diff < 0) return { cls: "past", note: t("notifDetail.promisePassed") };
+        if (diff === 0) return { cls: "today", note: t("notifDetail.promiseToday") };
+        return { cls: "soon", note: t("notifDetail.promiseIn", { n: diff }) };
+    }
+
+    const canOpenWork = () => userRole() !== "viewer_staff";
+
     function clientCard(c) {
         const day = parseInt(c.day, 10);
         const meta = [c.ld, c.cif ? `CIF ${c.cif}` : "", c.officer, c.branch].filter(Boolean).join(" · ");
+        const parts = partsOfClient(c);
+        const ps = promiseState(c.al);
+        const rows = PART_LABELS.map(([k, label]) => {
+            const v = String(parts[k] || "").trim();
+            return `<div class="nd-part${v ? "" : " nd-part-empty"}"><span>${esc(t(label))}</span><b>${esc(v || "—")}</b></div>`;
+        }).join("");
+        const ld = String(c.ld || "").trim();
+        const open = canOpenWork() && ld && c.customer
+            ? `<a class="nd-client-open" href="/CM_Pro/pages/masterdata/work.html?${new URLSearchParams({ q: ld })}">${esc(t("notifDetail.openClient"))}<span class="ui-ico ui-ico-chevron-right" aria-hidden="true"></span></a>`
+            : "";
         return `
             <div class="nd-card nd-client">
                 <div class="nd-client-head">
                     <span class="nd-who"><b>${esc(c.customer || c.ld || "-")}</b><small>${esc(meta)}</small></span>
                     ${Number.isFinite(day) ? `<span class="nd-client-day">${esc(t("notifDetail.daysLate", { n: day }))}</span>` : ""}
                 </div>
-                ${c.aj ? `<div class="nd-client-line"><em>${esc(t("notifDetail.occupation"))}</em>${esc(c.aj)}</div>` : ""}
-                ${c.ak ? `<div class="nd-client-line"><em>${esc(t("notifDetail.reason"))}</em>${esc(c.ak)}</div>` : ""}
-                ${c.al ? `<div class="nd-client-promise"><span class="ui-ico ui-ico-calendar" aria-hidden="true"></span>${esc(t("notifDetail.promiseOn", { d: dmy(c.al) }))}</div>` : ""}
+                <div class="nd-parts">${rows}</div>
+                <div class="nd-client-foot">
+                    ${ps ? `<span class="nd-client-promise nd-promise-${ps.cls}"><span class="ui-ico ui-ico-calendar" aria-hidden="true"></span>${esc(t("notifDetail.promiseOn", { d: dmy(c.al) }))}<small>${esc(ps.note)}</small></span>`
+                         : `<span class="nd-client-promise nd-promise-none">${esc(t("notifDetail.noPromise"))}</span>`}
+                    ${open}
+                </div>
             </div>`;
+    }
+
+    let submitQuery = "";
+
+    function matchesQuery(c, q) {
+        if (!q) return true;
+        return [c.customer, c.ld, c.cif, c.officer, c.concate].join(" ").toLowerCase().includes(q);
+    }
+
+    function paintSubmitList(list) {
+        const q = submitQuery.trim().toLowerCase();
+        const shown = list.filter(c => matchesQuery(c, q));
+        const box = document.getElementById("ndSubmitList");
+        if (!box) return;
+        box.innerHTML = shown.length
+            ? shown.map(clientCard).join("")
+            : `<p class="nd-hint">${esc(t("notifDetail.noMatch"))}</p>`;
     }
 
     function renderSubmit(n) {
         const x = n.extra || {};
         const list = applyFilters(x.clients || []);
         const who = [x.submittedByName, x.submittedBy || n.createdBy].filter(Boolean);
+        const states = list.map(c => promiseState(c.al));
+        const withPromise = states.filter(Boolean).length;
+        const passed = states.filter(s => s && s.cls === "past").length;
         el.hero.innerHTML = `
             <div class="nd-hero-top">
                 <span class="nd-hero-ico"><span class="ui-ico ui-ico-edit" aria-hidden="true"></span></span>
@@ -448,10 +512,23 @@
                     <div class="nd-hero-sub">${esc([who.length > 1 ? `${who[0]} (${who[1]})` : who[0], whenOf(n.createdAt), x.source === "excel" ? t("notifDetail.viaExcel") : ""].filter(Boolean).join(" · "))}</div>
                 </div>
             </div>
-            <div class="nd-hero-foot">${esc(t("notifDetail.submitCount", { n: list.length }))}</div>`;
-        el.body.innerHTML = list.length
-            ? `<div class="nd-list">${list.map(clientCard).join("")}</div>`
-            : `<p class="nd-hint">${esc(n.message || "")}</p>`;
+            <div class="nd-stats">
+                <div class="nd-stat"><b>${list.length}</b><span>${esc(t("notifDetail.statClients"))}</span></div>
+                <div class="nd-stat nd-stat-promise"><b>${withPromise}</b><span>${esc(t("notifDetail.statPromise"))}</span></div>
+                <div class="nd-stat nd-stat-passed"><b>${passed}</b><span>${esc(t("notifDetail.statPassed"))}</span></div>
+            </div>`;
+        if (!list.length) {
+            el.body.innerHTML = `<p class="nd-hint">${esc(n.message || "")}</p>`;
+            return;
+        }
+        el.body.innerHTML = `
+            ${list.length > 5 ? `<div class="nd-search"><span class="ui-ico ui-ico-search" aria-hidden="true"></span><input type="search" id="ndSubmitSearch" autocomplete="off" placeholder="${esc(t("notifDetail.searchClient"))}" value="${esc(submitQuery)}"></div>` : ""}
+            <div class="nd-list" id="ndSubmitList"></div>`;
+        paintSubmitList(list);
+        document.getElementById("ndSubmitSearch")?.addEventListener("input", e => {
+            submitQuery = e.target.value;
+            paintSubmitList(list);
+        });
     }
 
     // ---------- go ----------
