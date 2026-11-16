@@ -260,4 +260,5 @@
 
 /* Link to Reason Arrear records (pages/masterdata/reasons.html) */
 .md-go-records{ margin-top:8px; }
+.md-go-records[hidden]{ display:none; }
 .md-go-records-ico{ width:26px; height:26px; flex:none; display:grid; place-items:center; border-radius:8px; background:#fff; color:#1A2E57; }
