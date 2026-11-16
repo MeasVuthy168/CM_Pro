@@ -127,6 +127,7 @@ const anyOf = (vals, test) => !vals.length || vals.some(test);
 let allRows = [];        // every row, parsed to objects, unfiltered
 let arrearsUnsortedRows = []; // post-filter order, never reordered by sort — what "default" restores
 let currentRows = [];    // whatever's currently displayed (post-filter, post-sort)
+let arrearsBaseRows = []; // the page filters applied, before the column filters (their value lists)
 let selectedRow = null;  // the loan last opened in Work to complete (highlighted)
 
 // ========================================
@@ -179,6 +180,7 @@ function applyArrearsSort(rows) {
 }
 
 document.getElementById("arrearsHeadRow")?.addEventListener("click", (e) => {
+    if (e.target.closest(".arr-colf-btn")) return; // its filter, not a sort
     const th = e.target.closest("th[data-sort-key]");
     if (!th) return;
 
@@ -638,7 +640,7 @@ function applyFilters() {
         promiseStatus: filterVals("promiseStatus")
     };
 
-    arrearsUnsortedRows = allRows.filter(row => {
+    arrearsBaseRows = allRows.filter(row => {
         return anyOf(f.branch, v => containsMatch(row.branch, v))
             && anyOf(f.officerResponse, v => containsMatch(row.coResponse, v))
             && anyOf(f.officerOwner, v => exactMatch(row.coId, v))
@@ -655,6 +657,10 @@ function applyFilters() {
             && anyOf(f.promiseStatus, v => promiseStatusMatch(row, v))
             && reminderFocusMatch(row);
     });
+    // Excel-style column filters (arrears-colfilter.js).
+    arrearsUnsortedRows = window.ArrColFilter
+        ? arrearsBaseRows.filter(row => ArrColFilter.match(row))
+        : arrearsBaseRows;
 
     currentRows = applyArrearsSort(arrearsUnsortedRows);
     renderTable(currentRows);
@@ -682,6 +688,7 @@ function clearFilters() {
     });
     syncKeywordClearButton();
     populateOfficerOptions();
+    window.ArrColFilter?.clear();
     applyFilters();
 }
 
@@ -1757,6 +1764,7 @@ function applyCifSort(groups) {
 }
 
 document.getElementById("arrCifHeadRow")?.addEventListener("click", (e) => {
+    if (e.target.closest(".arr-colf-btn")) return; // its filter, not a sort
     const th = e.target.closest("th[data-sort-key]");
     if (!th) return;
     const key = th.dataset.sortKey;
@@ -3641,13 +3649,27 @@ function setFilterValues(key, vals) {
 
 function renderActiveChips() {
     const active = FILTER_CHIP_KEYS.filter(key => filterVals(key).length > 0);
+    const colKeys = window.ArrColFilter ? ArrColFilter.active() : [];
+    const total = active.length + colKeys.length;
     if (filterCountBadge) {
-        filterCountBadge.textContent = String(active.length);
-        filterCountBadge.hidden = active.length === 0;
+        filterCountBadge.textContent = String(total);
+        filterCountBadge.hidden = total === 0;
     }
     if (!activeChipsWrap) return;
-    activeChipsWrap.hidden = active.length === 0;
-    activeChipList.innerHTML = active.map(key => {
+    activeChipsWrap.hidden = total === 0;
+    // Column filters (header ▾) first: "Column: value +n".
+    const colChips = colKeys.map(key => {
+        const vals = ArrColFilter.values(key);
+        const blank = window.CMI18n ? CMI18n.t("arrears.colf.blank") : "(blank)";
+        const first = vals.length ? (vals[0] || blank) : "-";
+        const more = vals.length > 1 ? ` +${vals.length - 1}` : "";
+        const label = ArrColFilter.label(key);
+        const aria = window.CMI18n ? CMI18n.t("arrears.removeFilterAria", { f: label }) : label;
+        return `<button type="button" class="arr-chip arr-chip-col" data-colf-chip="${escHtml(key)}" aria-label="${escHtml(aria)}">
+            <span class="arr-chip-k">${escHtml(label)}:</span> <span class="arr-chip-v">${escHtml(first)}${more}</span>
+            <span class="arr-chip-x" aria-hidden="true">✕</span></button>`;
+    }).join("");
+    activeChipList.innerHTML = colChips + active.map(key => {
         const vals = filterVals(key);
         const first = optionText(filterEls[key], vals[0]);
         const more = vals.length > 1 ? ` +${vals.length - 1}` : "";
@@ -3711,6 +3733,11 @@ document.addEventListener("keydown", (e) => {
 });
 
 activeChipList?.addEventListener("click", (e) => {
+    const colChip = e.target.closest("[data-colf-chip]");
+    if (colChip) {
+        window.ArrColFilter?.remove(colChip.dataset.colfChip);
+        return runWithLoading(applyFilters, "សូមរង់ចាំ...");
+    }
     const chip = e.target.closest("[data-chip-key]");
     if (chip) setFilterValues(chip.dataset.chipKey, []);
 });
