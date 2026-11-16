@@ -454,6 +454,12 @@ async function fetchAllArrearsRows() {
 }
 
 function parseRow(values) {
+    const row = parseRowFields(values);
+    setReasonParts(row);
+    return row;
+}
+
+function parseRowFields(values) {
     const get = i => (values[i] ?? "").toString().trim();
     return {
         loanNumber: get(COL.LOAN_NUMBER),
@@ -1024,8 +1030,7 @@ function buildRowElement(row, index) {
         <td>${escapeHtml(row.coId)}</td>
         <td>${escapeHtml(row.coResponse)}</td>
         <td>${escapeHtml(row.cifCoborrower)}</td>
-        <td class="${followupCss}">${escapeHtml(row.ajReason)}</td>
-        <td class="${followupCss}">${escapeHtml(row.akSolution)}</td>
+        ${reasonPartCells(row, followupCss)}
         <td class="${followupCss}">${escapeHtml(formatRowDateDMY(row.alFollowup))}</td>
         <td>${escapeHtml(row.user)}</td>
         <td>${escapeHtml(formatRowDateTime12h(row.dateBackup))}</td>
@@ -1049,7 +1054,7 @@ const ldVirtual = new ArrVirtualList({
         const tr = document.createElement("tr");
         tr.className = "arr-vspace";
         tr.setAttribute("aria-hidden", "true");
-        tr.innerHTML = `<td colspan="28"></td>`;
+        tr.innerHTML = `<td colspan="31"></td>`;
         return tr;
     },
     build: i => {
@@ -1145,7 +1150,7 @@ function renderTableView(rows) {
     if (!rows.length) {
         tbodyArrears.innerHTML = `
             <tr class="row-empty">
-                <td colspan="28">No data found</td>
+                <td colspan="31">No data found</td>
             </tr>
         `;
         updateRenderedNote(); // else the last result's count stays
@@ -1652,7 +1657,7 @@ function renderCifCards(rows) {
 // its LD rows show each loan in full.
 const arrCifTable = document.getElementById("arrCifTable");
 const CIF_AMOUNT_KEYS = ["prnOS", "intOS", "prnDue", "intDue", "penalty", "arreas", "balance"];
-const CIF_COLS = 28;
+const CIF_COLS = 31;
 
 // Column header sort for the CIF table — same ▲ / ▼ / default cycle as
 // the LD table. Sorts the customers, and the LDs inside each customer.
@@ -1708,6 +1713,7 @@ function cifReason(rows) {
         return (has.find(r => r.__pendingSubmit) || cifLatestRow(has))[key];
     };
     const reason = { ajReason: pick("ajReason"), akSolution: pick("akSolution"), alFollowup: pick("alFollowup") };
+    ["rOccLoan", "rOccNow", "rPurpose", "rReason", "rSolution"].forEach(k => { reason[k] = pick(k); });
     reason.any = !!(reason.ajReason || reason.akSolution || reason.alFollowup);
     return reason;
 }
@@ -1794,11 +1800,14 @@ function buildGroupTbody(g, no) {
     const reasonCount = g.withReason < g.rows.length
         ? `<div class="arr-cif-reason-count">${g.withReason.toLocaleString()} / ${g.rows.length.toLocaleString()} LD</div>` : "";
     const reasonCells = reasonRow.any
-        ? `<td class="${followCss}">${escapeHtml(reasonRow.ajReason || "")}${reasonCount}</td>
-           <td class="${followCss}">${escapeHtml(reasonRow.akSolution || "")}</td>
+        ? `<td class="${followCss}">${escapeHtml(reasonRow.rOccLoan || "")}${reasonCount}</td>
+           <td class="${followCss}">${escapeHtml(reasonRow.rOccNow || "")}</td>
+           <td class="${followCss}">${escapeHtml(reasonRow.rPurpose || "")}</td>
+           <td class="${followCss}">${escapeHtml(reasonRow.rReason || "")}</td>
+           <td class="${followCss}">${escapeHtml(reasonRow.rSolution || "")}</td>
            <td class="${followCss}">${escapeHtml(formatRowDateDMY(reasonRow.alFollowup))}</td>`
         : `<td class="arr-cif-reason">${g.withReason.toLocaleString()} / ${g.rows.length.toLocaleString()} LD
-               <span class="arr-progress"><span style="width:${pct}%"></span></span></td><td></td><td></td>`;
+               <span class="arr-progress"><span style="width:${pct}%"></span></span></td><td></td><td></td><td></td><td></td><td></td>`;
 
     let html = `
         <tr class="arr-cif-row ${g.pending ? "arr-card-pending" : ""}" aria-expanded="${open}">
@@ -1866,8 +1875,7 @@ function buildGroupTbody(g, no) {
                 <td>${escapeHtml(row.coId)}</td>
                 <td>${escapeHtml(row.coResponse)}</td>
                 <td>${escapeHtml(row.cifCoborrower)}</td>
-                <td class="${followupCss}">${escapeHtml(row.ajReason)}</td>
-                <td class="${followupCss}">${escapeHtml(row.akSolution)}</td>
+                ${reasonPartCells(row, followupCss)}
                 <td class="${followupCss}">${escapeHtml(formatRowDateDMY(row.alFollowup))}</td>
                 <td>${escapeHtml(row.user)}</td>
                 <td>${escapeHtml(formatRowDateTime12h(row.dateBackup))}</td>
@@ -2163,7 +2171,7 @@ function updateRowInTable(row) {
     if (!tr) return false;
 
     const cells = tr.children;
-    if (cells.length < 28) return false; // sanity check — fall back to full render if structure looks unexpected
+    if (cells.length < 31) return false; // sanity check — fall back to full render if structure looks unexpected
 
     const promiseCss = promiseCellCssClass(row.promiseStatus);
     const followupCss = promiseCss || "cell-followup-default";
@@ -2172,18 +2180,18 @@ function updateRowInTable(row) {
     cells[19].textContent = row.promiseStatus; // Promise Status
     cells[19].className = promiseCss;
 
-    cells[23].textContent = row.ajReason;      // មុខរបរ
-    cells[23].className = followupCss + pendingCss;
+    // 23..27: មុខរបរពេលខ្ចី, មុខរបរបច្ចុប្បន្ន, គោលបំណង, មូលហេតុ, ដំណោះស្រាយ
+    ["rOccLoan", "rOccNow", "rPurpose", "rReason", "rSolution"].forEach((k, i) => {
+        cells[23 + i].textContent = row[k] || "";
+        cells[23 + i].className = followupCss + pendingCss;
+    });
 
-    cells[24].textContent = row.akSolution;    // មូលហេតុ/ដំណោះស្រាយ
-    cells[24].className = followupCss + pendingCss;
+    cells[28].textContent = formatRowDateDMY(row.alFollowup); // ថ្ងៃសន្យាសង
+    cells[28].className = followupCss + pendingCss;
 
-    cells[25].textContent = formatRowDateDMY(row.alFollowup); // ថ្ងៃសន្យាសង
-    cells[25].className = followupCss + pendingCss;
+    cells[29].textContent = row.user;          // User
 
-    cells[26].textContent = row.user;          // User
-
-    cells[27].textContent = formatRowDateTime12h(row.dateBackup); // DateBackUpReasonArrear
+    cells[30].textContent = formatRowDateTime12h(row.dateBackup); // DateBackUpReasonArrear
 
     return true;
 }
@@ -2229,6 +2237,26 @@ function computeStatusFromDate(alFollowupDMY) {
     return ReasonKit.computeStatus(alFollowupDMY);
 }
 
+// The five reason fields (layout v2) shown as their own columns, like
+// the workbook's AJ..AN: split from the combined texts (the server keeps
+// them in step), the purpose from the record / draft when known.
+function setReasonParts(row, purpose) {
+    const occ = ReasonKit.splitOccupation(row.ajReason);
+    const rea = ReasonKit.splitReason(row.akSolution);
+    row.rOccLoan = occ.occupationLoan;
+    row.rOccNow = occ.occupationNow;
+    row.rReason = rea.reason;
+    row.rSolution = rea.solution;
+    if (purpose !== undefined) row.rPurpose = String(purpose || "");
+    else if (row.rPurpose === undefined) row.rPurpose = "";
+}
+
+// The five reason cells of a row (LD table / CIF LD rows).
+function reasonPartCells(row, css) {
+    return ["rOccLoan", "rOccNow", "rPurpose", "rReason", "rSolution"]
+        .map(k => `<td class="${css}">${escapeHtml(row[k] || "")}</td>`).join("");
+}
+
 function applyReasonArrearOverlay(rows, map) {
     rows.forEach(row => {
         if (row.concate) {
@@ -2236,6 +2264,7 @@ function applyReasonArrearOverlay(rows, map) {
             if (found) {
                 row.ajReason = found.aj || "";
                 row.akSolution = found.ak || "";
+                setReasonParts(row, found.purpose);
                 row.alFollowup = found.al ? formatRowDateDMY(found.al) : "";
                 row.user = found.uploadedBy || row.user;
                 row.dateBackup = found.uploadedAt || row.dateBackup;
@@ -2295,6 +2324,7 @@ function applyPendingReasonsToRows(rows) {
         const pending = map[row.concate];
         row.ajReason = pending.aj || "";
         row.akSolution = pending.ak || "";
+        setReasonParts(row, typeof pending.purpose === "string" ? pending.purpose : undefined);
         row.alFollowup = pending.al ? formatRowDateDMY(pending.al) : "";
         row.promiseStatus = computeStatusFromDate(row.alFollowup);
         row.__pendingSubmit = true;
@@ -2373,12 +2403,14 @@ async function cancelPendingReasons(concates) {
             if (found) {
                 row.ajReason = found.aj || "";
                 row.akSolution = found.ak || "";
+                setReasonParts(row, found.purpose);
                 row.alFollowup = found.al ? formatRowDateDMY(found.al) : "";
                 row.user = found.uploadedBy || "";
                 row.dateBackup = found.uploadedAt || "";
             } else {
                 row.ajReason = "";
                 row.akSolution = "";
+                setReasonParts(row, "");
                 row.alFollowup = "";
             }
             row.promiseStatus = computeStatusFromDate(row.alFollowup);
@@ -2435,7 +2467,7 @@ async function refreshArrears() {
     } catch (err) {
         console.error(err);
         notify(err.message || "Failed to load arrears data.", "error");
-        tbodyArrears.innerHTML = `<tr class="row-empty"><td colspan="28">Failed to load data</td></tr>`;
+        tbodyArrears.innerHTML = `<tr class="row-empty"><td colspan="31">Failed to load data</td></tr>`;
         arrCardList.innerHTML = `<div class="arr-card-empty">Failed to load data</div>`;
         if (typeof hideAppLoading === "function") hideAppLoading();
         return;
@@ -2607,8 +2639,11 @@ function ldExportCols(rows) {
         { label: "CO_ID", ...text("coId") },
         { label: "CO_Response", ...text("coResponse") },
         { label: "CIF_អ្នករួមខ្ចី", ...text("cifCoborrower") },
-        { label: "មុខរបរ", ...text("ajReason"), style: followup, maxChars: 40 },
-        { label: "មូលហេតុ/ដំណោះស្រាយ", ...text("akSolution"), style: followup, maxChars: 60 },
+        { label: "មុខរបរពេលខ្ចី", ...text("rOccLoan"), style: followup, maxChars: 30 },
+        { label: "មុខរបរបច្ចុប្បន្ន", ...text("rOccNow"), style: followup, maxChars: 30 },
+        { label: "គោលបំណងប្រើប្រាស់", ...text("rPurpose"), style: followup, maxChars: 30 },
+        { label: "មូលហេតុ", ...text("rReason"), style: followup, maxChars: 50 },
+        { label: "ដំណោះស្រាយ", ...text("rSolution"), style: followup, maxChars: 50 },
         { label: "ថ្ងៃសន្យាសង", type: "date", align: "center", value: r => exportDate(r.alFollowup), text: r => formatRowDateDMY(r.alFollowup), style: followup }
     ];
 }
@@ -2659,10 +2694,13 @@ function cifExportCols() {
         { label: "CO_Response", ...shared("coResponse") },
         { label: "CIF_អ្នករួមខ្ចី", ...shared("cifCoborrower") },
         {
-            label: "មុខរបរ", type: "text", maxChars: 40, style: followup,
-            value: g => (cifReason(g.rows).any ? reason(g, "ajReason") || null : `${g.withReason} / ${g.rows.length} LD`)
+            label: "មុខរបរពេលខ្ចី", type: "text", maxChars: 30, style: followup,
+            value: g => (cifReason(g.rows).any ? reason(g, "rOccLoan") || null : `${g.withReason} / ${g.rows.length} LD`)
         },
-        { label: "មូលហេតុ/ដំណោះស្រាយ", type: "text", maxChars: 60, style: followup, value: g => reason(g, "akSolution") || null },
+        { label: "មុខរបរបច្ចុប្បន្ន", type: "text", maxChars: 30, style: followup, value: g => reason(g, "rOccNow") || null },
+        { label: "គោលបំណងប្រើប្រាស់", type: "text", maxChars: 30, style: followup, value: g => reason(g, "rPurpose") || null },
+        { label: "មូលហេតុ", type: "text", maxChars: 50, style: followup, value: g => reason(g, "rReason") || null },
+        { label: "ដំណោះស្រាយ", type: "text", maxChars: 50, style: followup, value: g => reason(g, "rSolution") || null },
         {
             label: "ថ្ងៃសន្យាសង", type: "date", align: "center", style: followup,
             value: g => exportDate(reason(g, "alFollowup")),
@@ -3400,6 +3438,7 @@ function applyRecentSubmits(rows) {
         if (!r) return;
         row.ajReason = r.aj || "";
         row.akSolution = r.ak || "";
+        setReasonParts(row, typeof r.purpose === "string" ? r.purpose : undefined);
         row.alFollowup = r.al ? formatRowDateDMY(r.al) : "";
         row.user = r.uploadedBy || row.user;
         row.dateBackup = r.uploadedAt || row.dateBackup;
@@ -3439,6 +3478,7 @@ window.addEventListener("pageshow", (e) => {
                 const found = map.get(r.concate);
                 r.ajReason = found ? found.aj || "" : "";
                 r.akSolution = found ? found.ak || "" : "";
+                setReasonParts(r, found ? found.purpose : "");
                 r.alFollowup = found && found.al ? formatRowDateDMY(found.al) : "";
                 r.promiseStatus = computeStatusFromDate(r.alFollowup);
                 r.__pendingSubmit = false;
@@ -3731,6 +3771,20 @@ try {
         hiddenColumns = new Set(Array.from(hiddenColumns).map(n => (n >= 22 ? n + 1 : n)));
         saveHiddenColumns(hiddenColumns);
         localStorage.setItem("arrears_hidden_columns_v3", "1");
+    }
+    // The two reason columns (24 មុខរបរ, 25 មូលហេតុ/ដំណោះស្រាយ) became
+    // five (24..28): a hidden មុខរបរ hides both occupations, a hidden
+    // មូលហេតុ/ដំណោះស្រាយ hides reason + solution; later columns move 3.
+    if (!localStorage.getItem("arrears_hidden_columns_v4")) {
+        const next = new Set();
+        hiddenColumns.forEach(n => {
+            if (n === 24) { next.add(24); next.add(25); }
+            else if (n === 25) { next.add(27); next.add(28); }
+            else next.add(n >= 26 ? n + 3 : n);
+        });
+        hiddenColumns = next;
+        saveHiddenColumns(hiddenColumns);
+        localStorage.setItem("arrears_hidden_columns_v4", "1");
     }
 } catch (e) {}
 
