@@ -110,14 +110,16 @@ No Internet Connection
 
     <!-- Any LD-CIF typed by hand — also ones not in Daily Arrears yet,
          or already with an officer (outarea.js) -->
-    <button type="button" class="oa-manual-btn" id="btnOaManual"><span class="ui-ico ui-ico-plus" aria-hidden="true"></span> <span data-i18n="arrears.oaManualBtn">បញ្ចូល LD-CIF ដោយដៃ</span></button>
+    <button type="button" class="oa-manual-btn" id="btnOaManual"><span class="ui-ico ui-ico-plus" aria-hidden="true"></span> <span data-i18n="arrears.oaManualBtn">បញ្ចូល CIF / LD-CIF ដោយដៃ</span></button>
     <div class="oa-manual-panel" id="oaManualPanel" hidden>
-      <label for="oaManualLdCif" data-i18n="arrears.oaManualLabel">LD-CIF</label>
+      <label for="oaManualLdCif" data-i18n="arrears.oaManualLabel">CIF / LD / LD-CIF</label>
       <div class="oa-manual-row">
-        <input type="text" id="oaManualLdCif" placeholder="LD2229300007-2492329" autocomplete="off" autocapitalize="characters" spellcheck="false">
-        <button type="button" id="btnOaManualNext" data-i18n="arrears.oaManualNext">បន្ទាប់</button>
+        <input type="search" id="oaManualLdCif" placeholder="2492329" data-i18n-placeholder="arrears.oaManualPlaceholder" enterkeyhint="search" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <button type="button" id="btnOaManualNext" data-i18n="arrears.oaManualFind">ស្វែងរក</button>
       </div>
+      <div class="oa-manual-hint" data-i18n="arrears.oaManualHint">វាយតែ CIF ក៏បាន — បង្ហាញ LD ទាំងអស់របស់អតិថិជន</div>
       <div class="oa-manual-err" id="oaManualErr" hidden></div>
+      <div class="oa-manual-results" id="oaManualResults" hidden></div>
     </div>
 
     <!-- Branch quick filter (counts per branch for the current tab) -->

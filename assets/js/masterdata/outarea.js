@@ -115,22 +115,40 @@ async function oaLoad() {
     }
 }
 
-// ---------- Add an LD-CIF by hand ----------
+// ---------- Add loans by hand: CIF / LD / LD-CIF ----------
 // Any loan, not only the NoCoRespone list: one already with an officer
 // (saving moves it), or one not in Daily Arrears yet (the saved move is
-// applied by the Excel sync once it appears). Opens the same reassign
-// screen as a list pick; the save is flagged manual.
+// applied by the Excel sync once it appears). A CIF alone lists every LD
+// of the customer (GET /api/arreast24byco/find-loans); the ones picked
+// open the same reassign screen, which can save them all at once.
 const oaManual = {
     btn: document.getElementById("btnOaManual"),
     panel: document.getElementById("oaManualPanel"),
     input: document.getElementById("oaManualLdCif"),
     next: document.getElementById("btnOaManualNext"),
-    err: document.getElementById("oaManualErr")
+    err: document.getElementById("oaManualErr"),
+    results: document.getElementById("oaManualResults")
 };
+let oaManualItems = [];        // the last search's loans
+const oaManualPicked = new Set(); // their concate keys, ticked
+
+const tv = (key, vars) => {
+    let s = t(key);
+    Object.entries(vars || {}).forEach(([k, v]) => { s = s.split(`{${k}}`).join(v); });
+    return s;
+};
+const oaEsc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 function oaManualError(msg) {
     oaManual.err.textContent = msg || "";
     oaManual.err.hidden = !msg;
+}
+
+function oaManualReset() {
+    oaManualItems = [];
+    oaManualPicked.clear();
+    oaManual.results.hidden = true;
+    oaManual.results.innerHTML = "";
 }
 
 oaManual.btn?.addEventListener("click", () => {
@@ -149,32 +167,94 @@ async function oaManualGet(path, init) {
     return data;
 }
 
-async function oaManualOpen() {
-    const ldCif = oaManual.input.value.replace(/\s+/g, "").toUpperCase();
-    if (!/^LD\d{6,}-\d+$/.test(ldCif)) return oaManualError(t("arrears.oaManualBad"));
+// The row the reassign screen works on: today's list row when the loan
+// is on it (so a save takes it off "to edit"), else the found one.
+function oaManualRow(item) {
+    const listed = item.inArrears ? oaRows.find(r => String(r.concate).toUpperCase() === item.concate.toUpperCase()) : null;
+    // A copy: the list row itself is only patched on save (listRef).
+    const row = { ...(listed || item), listRef: listed || null };
+    const co = row.coResponse || "";
+    row.manualNote = !item.inArrears
+        ? t("arrears.oaManualNotInArrears")
+        : (co && !/nocorespone/i.test(co) ? t("arrears.oaManualHasOfficer").replace("{co}", co) : "");
+    row.manual = true;
+    return row;
+}
+
+function oaManualOpenRows(rows) {
+    if (!rows.length) return oaManualError(t("arrears.oaManualPickOne"));
+    const first = rows[0];
+    first.applyGroup = rows.length > 1 ? rows : null;
+    oaManual.panel.hidden = true;
+    oaManual.input.value = "";
+    oaManualReset();
+    OutAreaEditor.select(first);
+}
+
+function oaManualPaint() {
+    const n = oaManualItems.length;
+    const all = oaManualPicked.size === n;
+    oaManual.results.innerHTML = `
+        <div class="oa-manual-head">
+            <span>${oaEsc(tv("arrears.oaManualFound", { n }))}</span>
+            <button type="button" class="oa-manual-all" id="btnOaManualAll">${oaEsc(t(all ? "arrears.oaManualUnselectAll" : "arrears.oaManualSelectAll"))}</button>
+        </div>
+        <div class="oa-manual-list">${oaManualItems.map(it => {
+            const day = parseInt(it.day, 10);
+            const co = it.coResponse && !/nocorespone/i.test(it.coResponse) ? it.coResponse : t("arrears.oaManualNoCo");
+            return `
+            <label class="oa-manual-item${oaManualPicked.has(it.concate) ? " on" : ""}">
+                <input type="checkbox" data-oa-pick="${oaEsc(it.concate)}"${oaManualPicked.has(it.concate) ? " checked" : ""}>
+                <span class="oa-manual-item-text">
+                    <b>${oaEsc(it.customer || "-")}</b>
+                    <small>${oaEsc(it.concate)}${it.product ? " · " + oaEsc(it.product) : ""}</small>
+                    <small>${oaEsc([it.branch, co].filter(Boolean).join(" · "))}</small>
+                </span>
+                <span class="oa-manual-state ${it.inArrears ? "late" : "os"}">${oaEsc(it.inArrears && Number.isFinite(day) ? tv("arrears.oaManualLate", { n: day }) : t("arrears.oaManualNotLate"))}</span>
+            </label>`;
+        }).join("")}</div>
+        <button type="button" class="oa-manual-go" id="btnOaManualGo"${oaManualPicked.size ? "" : " disabled"}>${oaEsc(tv("arrears.oaManualGo", { n: oaManualPicked.size }))}</button>`;
+    oaManual.results.hidden = false;
+}
+
+oaManual.results?.addEventListener("change", e => {
+    const key = e.target.dataset?.oaPick;
+    if (!key) return;
+    if (e.target.checked) oaManualPicked.add(key); else oaManualPicked.delete(key);
+    oaManualPaint();
+});
+oaManual.results?.addEventListener("click", e => {
+    if (e.target.closest("#btnOaManualAll")) {
+        if (oaManualPicked.size === oaManualItems.length) oaManualPicked.clear();
+        else oaManualItems.forEach(it => oaManualPicked.add(it.concate));
+        return oaManualPaint();
+    }
+    if (e.target.closest("#btnOaManualGo")) {
+        oaManualOpenRows(oaManualItems.filter(it => oaManualPicked.has(it.concate)).map(oaManualRow));
+    }
+});
+
+async function oaManualFind() {
+    const q = oaManual.input.value.replace(/\s+/g, "").toUpperCase();
+    const isLdCif = /^LD\d{6,}-\d+$/.test(q);
+    if (!isLdCif && !/^LD\d{6,}$/.test(q) && !/^\d{3,}$/.test(q)) return oaManualError(t("arrears.oaManualBad"));
     oaManualError("");
+    oaManualReset();
     oaManual.next.disabled = true;
     try {
-        let row;
-        const loan = await oaManualGet(`/api/arreast24byco/loan?ldCif=${encodeURIComponent(ldCif)}`);
-        if (loan.found) {
-            row = { ...loan.row };
-            const co = row.coResponse || "";
-            if (co && !/nocorespone/i.test(co)) {
-                row.manualNote = t("arrears.oaManualHasOfficer").replace("{co}", co);
+        const data = await oaManualGet(`/api/arreast24byco/find-loans?q=${encodeURIComponent(q)}`);
+        oaManualItems = data.items || [];
+        if (!oaManualItems.length) {
+            // A full LD-CIF not anywhere yet: save it ahead, as before.
+            if (isLdCif) {
+                return oaManualOpenRows([{ concate: q, customer: t("arrears.oaPreEntered"), location: "", branch: "", coId: "", coResponse: "",
+                    manual: true, manualNote: t("arrears.oaManualNotFound") }]);
             }
-        } else {
-            const os = await oaManualGet("/api/grid/lookup-batch", { method: "POST", body: JSON.stringify({ ldCifs: [ldCif] }) });
-            const m = (os.items || {})[ldCif];
-            row = m
-                ? { concate: ldCif, customer: m.name || "-", location: m.address || "", branch: m.branch || "", branchCode: m.branchCode || "", coId: m.coOwner || "", coResponse: m.coOwner || "" }
-                : { concate: ldCif, customer: t("arrears.oaPreEntered"), location: "", branch: "", coId: "", coResponse: "" };
-            row.manualNote = t(m ? "arrears.oaManualNotInArrears" : "arrears.oaManualNotFound");
+            return oaManualError(tv("arrears.oaManualNone", { q }));
         }
-        row.manual = true;
-        oaManual.panel.hidden = true;
-        oaManual.input.value = "";
-        OutAreaEditor.select(row);
+        if (oaManualItems.length === 1) return oaManualOpenRows([oaManualRow(oaManualItems[0])]);
+        oaManualItems.forEach(it => oaManualPicked.add(it.concate));
+        oaManualPaint();
     } catch (e) {
         console.error("[outArea page] manual lookup failed:", e);
         oaManualError(t("arrears.oaManualFailed"));
@@ -183,8 +263,8 @@ async function oaManualOpen() {
     }
 }
 
-oaManual.next?.addEventListener("click", oaManualOpen);
-oaManual.input?.addEventListener("keydown", e => { if (e.key === "Enter") oaManualOpen(); });
+oaManual.next?.addEventListener("click", oaManualFind);
+oaManual.input?.addEventListener("keydown", e => { if (e.key === "Enter") oaManualFind(); });
 
 oaLoad();
 oaLoadInfo();
