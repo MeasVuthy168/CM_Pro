@@ -576,9 +576,15 @@
 
         let outAreaHasSavedRecord = false; // tracks whether the currently viewed customer has a real WrongAddress record to delete
 
+        // Loans typed in by CIF and picked together: Save can apply the
+        // same move to all of them (outarea.js sets row.applyGroup).
+        let outAreaApplyGroup = null;
+
         async function selectOutAreaCustomer(row) {
             outAreaSelectedRow = row;
             outAreaHasSavedRecord = false;
+            outAreaApplyGroup = Array.isArray(row.applyGroup) && row.applyGroup.length > 1 ? row.applyGroup : null;
+            delete row.applyGroup;
 
             document.getElementById("outAreaListScreen").style.display = "none";
             document.getElementById("outAreaDetailScreen").style.display = "block";
@@ -604,6 +610,12 @@
                 </div>`;
             document.getElementById("outAreaInfo").innerHTML =
                 (row.manualNote ? `<div class="oa-manual-note">${escapeHtml(row.manualNote)}</div>` : "") +
+                (outAreaApplyGroup ? `
+                <label class="oa-apply-all">
+                    <input type="checkbox" id="oaApplyAll" checked>
+                    <span><b>${escapeHtml(tf("arrears.oaApplyAll", { n: outAreaApplyGroup.length }))}</b>
+                    <small>${outAreaApplyGroup.map(r => escapeHtml(formatLdCif(r.concate))).join(" · ")}</small></span>
+                </label>` : "") +
                 infoRow("pin", "អាសយដ្ឋាន", row.location) +
                 infoRow("idcard", "គណនីកម្ចី", row.accountLoan) +
                 infoRow("map", "សាខាបច្ចុប្បន្ន", row.branch + (row.branchCode ? ` (${row.branchCode})` : "")) +
@@ -844,37 +856,56 @@
                 JSON.parse(localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "{}").fullname
                 || "unknown";
 
+            // Every LD picked together (Apply to all ticked), else this one.
+            const applyAll = outAreaApplyGroup && document.getElementById("oaApplyAll")?.checked;
+            const targets = applyAll ? outAreaApplyGroup : [outAreaSelectedRow];
+
             if (typeof showAppLoading === "function") showAppLoading("កំពុងរក្សាទុក...");
 
             try {
-                const res = await fetch(`${API.BASE_URL}/api/wrongaddress/upsert`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${host.token()}`
-                    },
-                    body: JSON.stringify({
-                        ldCif: outAreaSelectedRow.concate,
-                        newBranch,
-                        newCoResponse,
-                        uploadedBy,
-                        // Typed in by hand (Add manually), not picked from the list.
-                        manual: !!outAreaSelectedRow.manual
-                    })
-                });
-                const data = await res.json();
-                if (!data.ok) throw new Error(data.message || "Save failed.");
+                let ok = 0;
+                let lastErr = null;
+                // One at a time: the server numbers new rows after the last one.
+                for (const target of targets) {
+                    try {
+                        const res = await fetch(`${API.BASE_URL}/api/wrongaddress/upsert`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${host.token()}`
+                            },
+                            body: JSON.stringify({
+                                ldCif: target.concate,
+                                newBranch,
+                                newCoResponse,
+                                uploadedBy,
+                                // Typed in by hand (Add manually), not picked from the list.
+                                manual: !!target.manual
+                            })
+                        });
+                        const data = await res.json();
+                        if (!data.ok) throw new Error(data.message || "Save failed.");
+                        // Mirrors the backend, which also writes newBranch/newCoResponse
+                        // onto the ArreasT24ByCO record. Patch the in-memory row (and the
+                        // page's own list row, listRef) so the loan leaves the
+                        // "NoCoRespone" list without a reload.
+                        for (const r of [target, target.listRef]) {
+                            if (!r) continue;
+                            r.branch = newBranch;
+                            r.coResponse = newCoResponse;
+                        }
+                        ok++;
+                    } catch (e) {
+                        lastErr = e;
+                    }
+                }
+                if (!ok) throw lastErr || new Error("Save failed.");
 
-                // Mirrors the backend, which now also writes newBranch/newCoResponse
-                // directly onto the ArreasT24ByCO record (matching VBA's dual write).
-                // Patch the SAME in-memory row object here too — the page's row
-                // lists reference it, so this instantly removes the customer from
-                // the "NoCoRespone" list (and, on Daily Arrears, updates the main
-                // table via onSaved) with no need for a full reload.
-                outAreaSelectedRow.branch = newBranch;
-                outAreaSelectedRow.coResponse = newCoResponse;
-
-                notify("បានរក្សាទុកដោយជោគជ័យ", "success");
+                if (ok < targets.length) {
+                    notify(tf("arrears.oaSavedPartial", { ok, n: targets.length, fail: targets.length - ok }), "warning");
+                } else {
+                    notify(targets.length > 1 ? tf("arrears.oaSavedN", { n: ok }) : "បានរក្សាទុកដោយជោគជ័យ", "success");
+                }
                 if (outAreaViewMode !== "edited") refreshOutAreaEditedCount();
 
                 // Back to the list instead of closing — lets the admin pick the
