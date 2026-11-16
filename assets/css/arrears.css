@@ -4218,6 +4218,10 @@ button.arx-gps:active{ transform:translateY(2px); border-bottom-width:1px; box-s
 .arx-selbar[hidden]{ display:none; }
 .arx-selbar-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
 .arx-seln{ font-weight:800; color:var(--arr-text); padding-left:4px; }
+.arx-selbar-tools{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.arx-selbtn-all{ border-color:var(--arr-navy); color:var(--arr-navy); }
+.arx-selbtn-all.on{ background:rgba(26,46,87,.08); }
+[data-theme="dark"] .arx-selbtn-all{ border-color:#D4AF37; color:#D4AF37; }
 .arx-selbar-acts{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 .arx-selbtn{ min-height:40px; padding:6px 12px; border-radius:12px; border:1px solid var(--arr-border); background:transparent; color:var(--arr-text); font:inherit; font-size:13.5px; font-weight:700; cursor:pointer; }
 .arx-selbtn[hidden]{ display:none; }
