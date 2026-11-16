@@ -1020,14 +1020,22 @@ cursor:default;
    long text, so this trades "see the full text inline" for "every
    row is the same height" (the full text is still available by
    tapping the row to open the Reason Arrear panel). If you add/
-   remove/reorder table columns, these nth-child indexes (24, 25, 26)
-   need to be updated to match. */
+   remove/reorder table columns, these nth-child indexes need to be
+   updated to match. Layout v2: 24..28 the five reason fields
+   (មុខរបរពេលខ្ចី, មុខរបរបច្ចុប្បន្ន, គោលបំណង, មូលហេតុ, ដំណោះស្រាយ),
+   29 ថ្ងៃសន្យាសង. */
 .table-card th:nth-child(24),
 .table-card td:nth-child(24),
 .table-card th:nth-child(25),
 .table-card td:nth-child(25),
 .table-card th:nth-child(26),
-.table-card td:nth-child(26){
+.table-card td:nth-child(26),
+.table-card th:nth-child(27),
+.table-card td:nth-child(27),
+.table-card th:nth-child(28),
+.table-card td:nth-child(28),
+.table-card th:nth-child(29),
+.table-card td:nth-child(29){
 
 width:110px;
 
@@ -1043,11 +1051,11 @@ text-overflow:ellipsis;
 
 }
 
-/* DateBackUpReasonArrear (column 28) — sized to fit its full
+/* DateBackUpReasonArrear (column 31) — sized to fit its full
    "yyyy-mm-dd hh:mm AM/PM" value without truncating, rather than
    sharing the narrower 110px width above. */
-.table-card th:nth-child(28),
-.table-card td:nth-child(28){
+.table-card th:nth-child(31),
+.table-card td:nth-child(31){
 
 width:160px;
 
