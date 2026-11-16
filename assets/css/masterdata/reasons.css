@@ -7,6 +7,9 @@
 .rr-tile-closed .wk-tile-ico, .rr-tile-closed b{ color:#CBD5E1; }
 .rr-tile-stale .wk-tile-ico, .rr-tile-stale b{ color:#FDBA74; }
 .rr-tile-poor .wk-tile-ico, .rr-tile-poor b{ color:#93C5FD; }
+.rr-tile-messy .wk-tile-ico, .rr-tile-messy b{ color:#F0ABFC; }
+.rr-st-messy{ background:rgba(192,38,211,.12); color:#A21CAF; }
+[data-theme="dark"] .rr-st-messy{ color:#F0ABFC; }
 
 .rr-go-clean .rr-go-ico{ width:26px; height:26px; display:grid; place-items:center; border-radius:8px; background:#fff; color:#DC2626; flex:none; }
 .rr-go-clean{ width:100%; font:inherit; font-weight:700; text-align:left; cursor:pointer; }
