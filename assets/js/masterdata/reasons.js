@@ -6,9 +6,9 @@
 // plus stale (in arrears, not updated for 30 days) and poor quality.
 //
 // GET /api/reasonarrear/records does the scope (like Work to complete),
-// filters, counts and paging; this page shows 50 at a time ("Show more")
-// and exports every match to Excel. Closed loans are cleaned up in
-// Admin › Clean up data (the link shows for admins).
+// filters, counts and paging; this page shows 50 at a time ("Show more"),
+// exports every match to Excel, copies a per-officer summary for
+// Telegram, and deletes closed-loan records (Excel backup first).
 // ========================================
 
 const t = (key) => (window.CMI18n ? CMI18n.t(key) : key);
@@ -125,7 +125,9 @@ function renderCounts(data) {
     $("rrStaleLabel").textContent = tf("rr.cardStaleN", { n: data.staleDays || 30 });
     document.querySelectorAll("[data-rr-card]").forEach(b => b.classList.toggle("active", b.dataset.rrCard === rrCard));
     $("rrSub").textContent = data.osLoaded === false ? t("rr.noOs") : tf("rr.subTotal", { n: (c.all || 0).toLocaleString() });
-    $("rrGoClean").hidden = !(rrIsAdmin && rrCard === "closed" && (c.closed || 0) > 0);
+    const del = $("btnRrDelete");
+    del.hidden = !(rrIsAdmin && rrCard === "closed" && (c.closed || 0) > 0);
+    $("rrDeleteText").textContent = tf("rr.delBtn", { n: (c.closed || 0).toLocaleString() });
 }
 
 // Pickers keep the chosen value even if it falls out of the list.
@@ -195,11 +197,13 @@ function renderList() {
 }
 
 // ---------- export (every match, Excel) ----------
-async function exportExcel() {
-    if (typeof ArrExport === "undefined") return;
-    if (typeof showAppLoading === "function") showAppLoading(t("rr.exporting"));
+// pre: rows already fetched (the delete's backup), else every match now.
+// Returns true once the file is saved.
+async function exportExcel(pre) {
+    if (typeof ArrExport === "undefined") return false;
+    if (!pre && typeof showAppLoading === "function") showAppLoading(t("rr.exporting"));
     try {
-        const data = await fetchRecords({ export: "1" });
+        const data = pre || await fetchRecords({ export: "1" });
         const text = key => ({ type: "text", value: r => r[key] || null });
         const cols = [
             { label: "No", type: "int", value: (r, i) => i + 1 },
@@ -221,14 +225,121 @@ async function exportExcel() {
             .concat(Object.entries(f).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`));
         const stamp = new Date().toISOString().slice(0, 10);
         await ArrExport.excel({
-            filename: `ReasonArrear_${rrCard}_${stamp}.xlsx`,
+            filename: `ReasonArrear_${pre ? "deleted_" : ""}${rrCard}_${stamp}.xlsx`,
             sheets: [{ name: "Reason Arrear", title: t("rr.heroTitle"), info, cols, rows: data.rows }]
         });
+        return true;
     } catch (err) {
         console.error("[reasons] export failed:", err);
         notify(t("rr.exportFailed"), "error");
+        return false;
+    } finally {
+        if (!pre && typeof hideAppLoading === "function") hideAppLoading();
+    }
+}
+
+// ---------- copy for Telegram ----------
+// The filtered records: the cards, then one block per officer (most
+// stale + poor first) with only what's above 0. "▪️" so Telegram keeps
+// the layout.
+async function copyReport() {
+    try {
+        const data = await fetchRecords({ summary: "1" });
+        const c = data.counts || {};
+        const f = filters();
+        const where = [f.branch, f.officer, f.uploadedBy && `${t("rr.colUser")}: ${f.uploadedBy}`,
+            (f.from || f.to) && `${f.from || "…"} → ${f.to || "…"}`, f.q && `"${f.q}"`].filter(Boolean).join(" · ");
+        const n = v => (v || 0).toLocaleString();
+        const lines = [
+            `📋 ${t("rr.heroTitle")}`,
+            `📅 ${isoToDMY(new Date(Date.now() + 7 * 3600e3).toISOString())}${where ? " · " + where : ""}`,
+            `📊 ${tf("rr.subTotal", { n: n(c.all) })}`,
+            "",
+            `🔴 ${t("rr.cardArrears")}: ${n(c.arrears)}`,
+            `🟢 ${t("rr.cardCurrent")}: ${n(c.current)}`,
+            `⚫ ${t("rr.cardClosed")}: ${n(c.closed)}`,
+            `🕒 ${tf("rr.cardStaleN", { n: data.staleDays || 30 })}: ${n(c.stale)}`,
+            `✏️ ${t("rr.cardPoor")}: ${n(c.poor)}`,
+            "",
+            `👤 ${t("rr.rpByOfficer")}`
+        ];
+        const MAX = 40;
+        const offs = data.byOfficer || [];
+        offs.slice(0, MAX).forEach(o => {
+            const items = [
+                o.arrears && `${t("rr.cardArrears")} ${n(o.arrears)}`,
+                o.stale && `${t("rr.rpStale")} ${n(o.stale)}`,
+                o.poor && `${t("rr.rpPoor")} ${n(o.poor)}`,
+                o.closed && `${t("rr.cardClosed")} ${n(o.closed)}`
+            ].filter(Boolean);
+            lines.push(`▪️ ${o.officer === "-" ? t("rr.noOfficer") : o.officer} — ${n(o.total)}`);
+            if (items.length) lines.push(`   ${items.join(" · ")}`);
+        });
+        if (offs.length > MAX) lines.push(tf("rr.rpMore", { n: n(offs.length - MAX) }));
+        await copyText(lines.join("\n"));
+        notify(t("rr.copied"), "success");
+    } catch (err) {
+        console.error("[reasons] copy failed:", err);
+        notify(t("rr.copyFailed"), "error");
+    }
+}
+
+async function copyText(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+    } catch (e) {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        ta.parentNode.removeChild(ta);
+        if (!ok) throw e;
+    }
+}
+
+// ---------- delete closed-loan records (admin) ----------
+// The "loan closed" records matching the filters: confirm, save them to
+// Excel first, then delete. The server re-checks each against a fresh
+// read of OS and only deletes those still closed.
+async function deleteClosed() {
+    if (!rrIsAdmin || rrCard !== "closed") return;
+    if (typeof showAppLoading === "function") showAppLoading(t("common.loading"));
+    let data;
+    try {
+        data = await fetchRecords({ export: "1" });
+    } catch (err) {
+        if (typeof hideAppLoading === "function") hideAppLoading();
+        notify(t("rr.loadFailed"), "error");
+        return;
+    }
+    if (typeof hideAppLoading === "function") hideAppLoading();
+    const rows = (data.rows || []).filter(r => r.status === "closed");
+    if (!rows.length) return notify(t("arrears.oaEmpty"), "info");
+    if (!confirm(tf("rr.delConfirm", { n: rows.length.toLocaleString() }))) return;
+    if (typeof showAppLoading === "function") showAppLoading(t("rr.delBackup"));
+    try {
+        // Backup first: no file, no delete.
+        if (!(await exportExcel({ ...data, rows }))) return;
+        if (typeof showAppLoading === "function") showAppLoading(tf("rr.deleting", { n: rows.length.toLocaleString() }));
+        const res = await fetch(`${API.BASE_URL}/api/reasonarrear/records/delete-closed`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${rrToken()}` },
+            body: JSON.stringify({ cifs: rows.map(r => r.cif) })
+        });
+        const out = await res.json();
+        if (!res.ok || !out.ok) throw new Error(out.message || `HTTP ${res.status}`);
+        notify(tf("rr.deleted", { n: (out.deletedCount || 0).toLocaleString() }) +
+            (out.skipped ? " " + tf("rr.delSkipped", { n: out.skipped.toLocaleString() }) : ""), "success");
+    } catch (err) {
+        console.error("[reasons] delete failed:", err);
+        notify(err.message || t("rr.delFailed"), "error");
     } finally {
         if (typeof hideAppLoading === "function") hideAppLoading();
+        load(1);
     }
 }
 
@@ -247,7 +358,9 @@ $("btnRrClear").addEventListener("click", () => {
 });
 $("btnRrMore").addEventListener("click", () => load(rrPage + 1));
 $("btnRrRefresh").addEventListener("click", () => load(1));
-$("btnRrExport").addEventListener("click", exportExcel);
+$("btnRrExport").addEventListener("click", () => exportExcel());
+$("btnRrCopy").addEventListener("click", copyReport);
+$("btnRrDelete").addEventListener("click", deleteClosed);
 window.addEventListener("cm-language-changed", () => load(1));
 
 // ========================================
