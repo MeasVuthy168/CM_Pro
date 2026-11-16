@@ -166,6 +166,9 @@ function setRowReason(row, src) {
 function fillParts(src) {
     const p = ReasonKit.partsOf(src);
     ReasonKit.PARTS.forEach(k => { partEls[k].value = p[k]; });
+    // A blank purpose takes the product's (Personal Loan / Visa Card,
+    // Small Loan / AC Moblie Merchants), as the server fills saved ones.
+    if (!partEls.purpose.value.trim() && wkRow) partEls.purpose.value = ReasonKit.purposeForProduct(wkRow.product);
 }
 
 // ---------- load ----------

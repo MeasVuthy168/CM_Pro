@@ -477,7 +477,21 @@
         fieldEl.addEventListener("blur", hide);
     }
 
+    // Purpose (គោលបំណងប្រើប្រាស់) for a blank one, from the loan's product.
+    // Same table as CM-backend lib/reason-purpose.js.
+    const PURPOSE_BY_PRODUCT = {
+        "personal loan": "ប្រើប្រាស់ផ្ទាល់ខ្លួន",
+        "visa card": "ប្រើប្រាស់ផ្ទាល់ខ្លួន",
+        "small loan": "បន្ថែមទុនក្នុងមុខរបរ",
+        "ac moblie merchants": "បន្ថែមទុនក្នុងមុខរបរ",   // spelled so in T24
+        "ac mobile merchants": "បន្ថែមទុនក្នុងមុខរបរ"
+    };
+    function purposeForProduct(product) {
+        return PURPOSE_BY_PRODUCT[String(product ?? "").trim().toLowerCase().replace(/\s+/g, " ")] || "";
+    }
+
     window.ReasonKit = {
+        purposeForProduct,
         attachSuggestions,
         PARTS,
         partsOf,
