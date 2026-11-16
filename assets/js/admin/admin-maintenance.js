@@ -629,10 +629,13 @@
       const data = await res.json();
       if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.maintenance.compactPreviewFailed"), "error");
 
-      lastCompactPreview = { months: data.monthsAffected, count: data.count };
+      lastCompactPreview = { months: data.monthsAffected || 0, years: data.yearsAffected || 0, count: data.count };
       cp.previewResult.hidden = false;
       cp.previewResult.textContent = data.count > 0
-        ? t("admin.maintenance.compactPreviewResult", { months: data.monthsAffected, count: data.count })
+        ? t("admin.maintenance.compactPreviewResult", {
+            months: data.monthsAffected || 0, monthCount: data.monthCount ?? data.count,
+            years: data.yearsAffected || 0, yearCount: data.yearCount || 0, count: data.count
+          })
         : t("admin.maintenance.compactPreviewEmpty");
       cp.btnRun.disabled = data.count === 0;
     } catch (e) {
@@ -652,7 +655,7 @@
 
     const body = document.createElement("div");
     body.innerHTML = `
-      <p class="adm-modal-message">${t("admin.maintenance.compactConfirmMessage", { count: lastCompactPreview.count, months: lastCompactPreview.months })}</p>
+      <p class="adm-modal-message">${t("admin.maintenance.compactConfirmMessage", { count: lastCompactPreview.count, months: lastCompactPreview.months, years: lastCompactPreview.years })}</p>
       <div class="adm-modal-footer">
         <button type="button" class="adm-btn" id="cpRunCancel">${t("admin.maintenance.cancel")}</button>
         <button type="button" class="adm-btn adm-btn-danger" id="cpRunConfirm">${t("admin.maintenance.confirmDelete")}</button>
@@ -673,7 +676,7 @@
         if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.maintenance.compactFailed"), "error");
 
         AdminUI.closeModal();
-        AdminUI.toast(t("admin.maintenance.compactDone", { count: data.deletedCount, months: data.monthsAffected }), "success");
+        AdminUI.toast(t("admin.maintenance.compactDone", { count: data.deletedCount, months: data.monthsAffected || 0, years: data.yearsAffected || 0 }), "success");
         invalidateCompactPreview();
       } catch (e) {
         console.error("compact run failed:", e);
