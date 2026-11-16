@@ -109,7 +109,14 @@
   function currentDays() {
     const entry = currentEntry();
     const n = parseInt(el.keepDays.value, 10);
-    return Number.isFinite(n) && n > 0 ? n : (entry ? entry.defaultDays : 30);
+    const min = entry && Number.isFinite(entry.minDays) ? entry.minDays : 1;
+    return Number.isFinite(n) && n >= min ? n : (entry ? entry.defaultDays : 30);
+  }
+
+  // Notifications may keep 0 days (delete them all); the others at least 1.
+  function applyMinDays() {
+    const entry = currentEntry();
+    el.keepDays.min = entry && Number.isFinite(entry.minDays) ? entry.minDays : 1;
   }
 
   function invalidatePreview() {
@@ -123,6 +130,7 @@
   el.collection.addEventListener("change", () => {
     const entry = currentEntry();
     if (entry) el.keepDays.value = entry.defaultDays;
+    applyMinDays();
     invalidatePreview();
   });
 
@@ -141,6 +149,7 @@
       collections = data.collections || [];
       el.collection.innerHTML = collections.map((c) => `<option value="${c.key}">${c.label}</option>`).join("");
       if (collections.length) el.keepDays.value = collections[0].defaultDays;
+      applyMinDays();
     } catch (e) {
       console.error("loadCollections failed:", e);
       AdminUI.toast(t("admin.maintenance.loadCollectionsFailed"), "error");
