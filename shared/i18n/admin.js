@@ -474,24 +474,30 @@ CMI18n.register({
   "admin.maintenance.dataIndexBreakdown": { km: "ទិន្នន័យ {dataMb} MB · លិបិក្រម {indexMb} MB (ទាំងពីរត្រូវបានរាប់បញ្ចូលខាងលើ)", en: "Data {dataMb} MB · Indexes {indexMb} MB (both counted above)" },
   "admin.maintenance.compactLabel": { km: "បង្រួមប្រវត្តិរូបភាពរបាយការណ៍", en: "Compact Report Snapshot History" },
   "admin.maintenance.compactExplain": {
-    km: "ប្រវត្តិរូបភាពប្រចាំថ្ងៃ (Branch/Officer/Location/Product) និងប្រវត្តិ NPL តាមគណនី (Credit Portfolio) កើនឡើងមួយជួរក្នុងមួយថ្ងៃជារៀងរហូត។ មុខងារនេះរក្សាទុកតែរូបភាពចុងបំផុតក្នុងខែ (ថ្ងៃធ្វើការចុងក្រោយ មិនរាប់ចុងសប្តាហ៍ និងថ្ងៃឈប់សម្រាកជាតិ) សម្រាប់ខែដែលបានបញ្ចប់ ហើយលុបរូបភាពប្រចាំថ្ងៃផ្សេងទៀតក្នុងខែនោះចោល។ ខែបច្ចុប្បន្នមិនត្រូវបានប៉ះពាល់ទេ។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។",
-    en: "Daily report-history snapshots (Branch/Officer/Location/Product) and the Credit Portfolio NPL account history grow by one row per day forever. This keeps only the last business day of each already-closed month (skipping weekends and Cambodian public holidays) and deletes the rest of that month's daily rows. The current month is never touched. This can't be undone."
+    km: "ប្រវត្តិរូបភាពប្រចាំថ្ងៃ (Branch/Officer/Location/Product) និងប្រវត្តិ NPL តាមគណនី (Credit Portfolio) កើនឡើងមួយជួរក្នុងមួយថ្ងៃជារៀងរហូត។ មុខងារនេះ៖ (1) ខែដែលបានបញ្ចប់ — រក្សាទុកតែរូបភាពចុងបំផុតក្នុងខែ (ថ្ងៃធ្វើការចុងក្រោយ មិនរាប់ចុងសប្តាហ៍ និងថ្ងៃឈប់សម្រាកជាតិ) ហើយលុបរូបភាពប្រចាំថ្ងៃផ្សេងទៀតក្នុងខែនោះចោល។ (2) ឆ្នាំដែលបានបញ្ចប់ និងចាស់ជាង 24 ខែចុងក្រោយ — រក្សាទុកតែរូបភាពចុងបំផុតក្នុងឆ្នាំ (ថ្ងៃធ្វើការចុងក្រោយនៃខែធ្នូ) ហើយលុបរូបភាពប្រចាំខែផ្សេងទៀតក្នុងឆ្នាំនោះចោល។ ខែបច្ចុប្បន្ន និងរូបភាពចុងខែ 24 ខែចុងក្រោយ មិនត្រូវបានប៉ះពាល់ទេ (Credit Intelligence ប្រើវាសម្រាប់និន្នាការ និង Forecast)។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។",
+    en: "Daily report-history snapshots (Branch/Officer/Location/Product) and the Credit Portfolio NPL account history grow by one row per day forever. This (1) keeps only the last business day of each closed month (skipping weekends and Cambodian public holidays) and deletes the month's other days, and (2) for closed years older than the last 24 months, keeps only the year's last business day (in December) and deletes its other month-ends. The current month and the last 24 month-ends are never touched (Credit Intelligence uses them for trends and the forecast). This can't be undone."
   },
   "admin.maintenance.compactPreview": { km: "មើលមុនលុប", en: "Preview" },
   "admin.maintenance.compactRun": { km: "បង្រួមឥឡូវនេះ", en: "Compact Now" },
   "admin.maintenance.compactPreviewResult": {
-    km: "ខែបិទចំនួន {months} នឹងបង្រួម — លុបជួរចំនួន {count} សរុប (រក្សាទុកថ្ងៃចុងខែនីមួយៗ)។",
-    en: "{months} closed month(s) to compact — {count} row(s) total would be deleted (each month's last day kept)."
+    km: "ខែបិទចំនួន {months} នឹងបង្រួម (លុប {monthCount} ជួរ រក្សាទុកថ្ងៃចុងខែ) និងឆ្នាំចាស់ចំនួន {years} (លុប {yearCount} ជួរ រក្សាទុកថ្ងៃចុងឆ្នាំ) — សរុប {count} ជួរ។",
+    en: "{months} closed month(s) to compact ({monthCount} row(s), each month's last day kept) and {years} old year(s) ({yearCount} row(s), each year's last day kept) — {count} row(s) in total."
   },
-  "admin.maintenance.compactPreviewEmpty": { km: "គ្មានខែបិទណាមួយត្រូវបង្រួមទេ — ទិន្នន័យទាំងអស់ត្រូវបានបង្រួមរួចហើយ ឬនៅក្នុងខែបច្ចុប្បន្ន។", en: "No closed months need compacting — everything's already compacted or still in the current month." },
+  "admin.maintenance.compactPreviewEmpty": {
+    km: "គ្មានខែ ឬឆ្នាំណាមួយត្រូវបង្រួមទេ — ទិន្នន័យទាំងអស់ត្រូវបានបង្រួមរួចហើយ ឬនៅក្នុងរយៈពេលដែលត្រូវរក្សាទុក។",
+    en: "Nothing needs compacting — everything's already compacted or still inside the kept period."
+  },
   "admin.maintenance.compactPreviewFailed": { km: "មើលមុនលុបបានបរាជ័យ។", en: "Preview failed." },
   "admin.maintenance.compactPreviewFailedServer": { km: "មើលមុនលុបបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Preview failed — could not reach the server." },
   "admin.maintenance.compactConfirmTitle": { km: "បញ្ជាក់ការបង្រួម", en: "Confirm Compaction" },
   "admin.maintenance.compactConfirmMessage": {
-    km: "អ្នកនឹងលុបជាអចិន្ត្រៃយ៍នូវជួរចំនួន {count} ពីខែបិទចំនួន {months} ដោយរក្សាទុកតែថ្ងៃចុងខែនីមួយៗ។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។ តើអ្នកប្រាកដទេ?",
-    en: "You are about to permanently delete {count} row(s) across {months} closed month(s), keeping only each month's last day. This can't be undone. Are you sure?"
+    km: "អ្នកនឹងលុបជាអចិន្ត្រៃយ៍នូវជួរចំនួន {count} ពីខែបិទចំនួន {months} និងឆ្នាំចាស់ចំនួន {years} ដោយរក្សាទុកតែថ្ងៃចុងខែ / ចុងឆ្នាំ។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។ តើអ្នកប្រាកដទេ?",
+    en: "You are about to permanently delete {count} row(s) across {months} closed month(s) and {years} old year(s), keeping only each month's / year's last day. This can't be undone. Are you sure?"
   },
-  "admin.maintenance.compactDone": { km: "បានបង្រួមរួចរាល់ — លុបជួរចំនួន {count} ពីខែបិទចំនួន {months}។", en: "Compaction complete — deleted {count} row(s) across {months} month(s)." },
+  "admin.maintenance.compactDone": {
+    km: "បានបង្រួមរួចរាល់ — លុបជួរចំនួន {count} ពីខែបិទចំនួន {months} និងឆ្នាំចាស់ចំនួន {years}។",
+    en: "Compaction complete — deleted {count} row(s) across {months} month(s) and {years} year(s)."
+  },
   "admin.maintenance.compactFailed": { km: "បង្រួមបានបរាជ័យ។", en: "Compaction failed." },
   "admin.maintenance.compactFailedServer": { km: "បង្រួមបានបរាជ័យ — មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ។", en: "Compaction failed — could not reach the server." },
   "admin.maintenance.raLabel": { km: "សម្អាត Reason Arrear", en: "Clean Up Reason Arrear" },
