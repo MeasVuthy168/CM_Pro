@@ -41,36 +41,69 @@
     const PARTS = ["occupationLoan", "occupationNow", "purpose", "reason", "solution"];
     const str = v => (v == null ? "" : String(v));
 
-    function cleanPart(s) {
-        return str(s).replace(/^[\s:：]+/, "").replace(/[\s,，]+$/, "").trim();
+    // Splitting (v3, 16/11/2026) — the same rules as CM-backend's
+    // lib/reason-fields.js. Labels were typed in many shapes, so each part
+    // has a pattern: "(ពេលខ្ចី)", "(មុនពេលខ្ចី)", "(មុខរបរពេលខ្ចី):",
+    // "(បច្ចុប្បន្ន)", "(មុខរបរបច្ចុប្បន្ន):", "(មូលហេតុ)", "(ដំណោះស្រាយ)" …
+    // In brackets: anywhere. Without: only at the very start, or after
+    // "," / ";" / a new line with a ":" after it — a word inside a
+    // sentence is never a label. Text before the first label goes in
+    // front of the first part; a part labelled twice keeps both; no label
+    // at all -> all of it is the first part.
+    const SP = "[\\s\\u200b]*";
+    const LABEL_SRC = {
+        occupationLoan: `(?:មុខរបរ${SP})?(?:មុន${SP})?ពេល${SP}ខ្ចី`,
+        occupationNow: `(?:មុខរបរ${SP})?(?:ពេល${SP})?បច្ចុប្បន្ន`,
+        reason: `មូល${SP}ហេតុ`,
+        solution: `ដំណោះ${SP}ស្រាយ`
+    };
+
+    function findLabels(s, keys) {
+        const hits = [];
+        for (const key of keys) {
+            const src = LABEL_SRC[key];
+            const bracket = new RegExp(`[(（]${SP}${src}${SP}[)）]${SP}[:：]?`, "g");
+            let m;
+            while ((m = bracket.exec(s))) hits.push({ key, start: m.index, end: m.index + m[0].length });
+            const startBare = new RegExp(`^${SP}${src}${SP}(?:[:：]|\\s)`);
+            if ((m = startBare.exec(s))) hits.push({ key, start: m.index, end: m.index + m[0].length });
+            const afterSep = new RegExp(`([,，;；\\n])${SP}(${src})${SP}[:：]`, "g");
+            while ((m = afterSep.exec(s))) hits.push({ key, start: m.index + m[1].length, end: m.index + m[0].length });
+        }
+        hits.sort((x, y) => x.start - y.start || y.end - x.end);
+        const out = [];
+        for (const h of hits) if (!out.length || h.start >= out[out.length - 1].end) out.push(h);
+        return out;
     }
 
-    // [first, second] of one combined text. Text with no label goes
-    // whole into the first part.
-    function splitTwo(text, firstLabel, secondLabel) {
+    function cleanPart(s) {
+        return str(s).replace(/^[\s:：,，;；​]+/, "").replace(/[\s,，;；​]+$/, "").trim();
+    }
+
+    function splitLabeled(text, firstKey, secondKey) {
+        const out = { [firstKey]: "", [secondKey]: "" };
         const s = str(text);
-        if (!s.trim()) return ["", ""];
-        const a = s.indexOf(firstLabel);
-        const b = s.indexOf(secondLabel);
-        if (a < 0 && b < 0) return [cleanPart(s), ""];
-        let first = "";
-        let second = "";
-        if (a >= 0) first = s.slice(a + firstLabel.length, b > a ? b : s.length);
-        if (b >= 0) second = s.slice(b + secondLabel.length, a > b ? a : s.length);
-        const lead = cleanPart(s.slice(0, Math.min(...[a, b].filter(i => i >= 0))));
-        first = cleanPart(first);
-        if (lead) first = first ? `${lead} ${first}` : lead;
-        return [first, cleanPart(second)];
+        if (!s.trim()) return out;
+        const hits = findLabels(s, [firstKey, secondKey]);
+        if (!hits.length) { out[firstKey] = cleanPart(s); return out; }
+        const pieces = { [firstKey]: [], [secondKey]: [] };
+        hits.forEach((h, i) => {
+            const v = cleanPart(s.slice(h.end, i + 1 < hits.length ? hits[i + 1].start : s.length));
+            if (v) pieces[h.key].push(v);
+        });
+        const lead = cleanPart(s.slice(0, hits[0].start));
+        if (lead) pieces[firstKey].unshift(lead);
+        out[firstKey] = pieces[firstKey].join(", ");
+        out[secondKey] = pieces[secondKey].join(", ");
+        return out;
     }
 
     function splitOccupation(aj) {
-        const [occupationLoan, occupationNow] = splitTwo(aj, LBL_OCC_LOAN, LBL_OCC_NOW);
-        return { occupationLoan, occupationNow };
+        return splitLabeled(aj, "occupationLoan", "occupationNow");
     }
 
     function splitReason(ak) {
-        const [reason, solution] = splitTwo(ak, LBL_REASON, LBL_SOLUTION);
-        return { reason, solution };
+        return splitLabeled(ak, "reason", "solution");
     }
 
     function composeOccupation(occupationLoan, occupationNow) {

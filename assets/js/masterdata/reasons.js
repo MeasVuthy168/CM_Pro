@@ -34,6 +34,11 @@ const PARTS = [
     ["solution", "arrears.reasonSolutionOnlyLabel"]
 ];
 
+const CARD_LABEL = {
+    all: "rr.cardAll", arrears: "rr.cardArrears", current: "rr.cardCurrent", closed: "rr.cardClosed",
+    stale: "rr.cardStale", poor: "rr.cardPoor", messy: "rr.cardMessy"
+};
+
 let rrCard = "all";
 let rrPage = 1;
 let rrPages = 1;
@@ -119,7 +124,7 @@ async function load(page = 1) {
 
 function renderCounts(data) {
     const c = data.counts || {};
-    ["all", "arrears", "current", "closed", "stale", "poor"].forEach(k => {
+    ["all", "arrears", "current", "closed", "stale", "poor", "messy"].forEach(k => {
         $(`rrCount-${k}`).textContent = (c[k] || 0).toLocaleString();
     });
     $("rrStaleLabel").textContent = tf("rr.cardStaleN", { n: data.staleDays || 30 });
@@ -155,7 +160,7 @@ function renderFacets(f) {
 const STATUS_CSS = { arrears: "rr-st-arrears", current: "rr-st-current", closed: "rr-st-closed", unknown: "rr-st-closed" };
 
 function renderList() {
-    const cardLabel = t({ all: "rr.cardAll", arrears: "rr.cardArrears", current: "rr.cardCurrent", closed: "rr.cardClosed", stale: "rr.cardStale", poor: "rr.cardPoor" }[rrCard]);
+    const cardLabel = t(CARD_LABEL[rrCard]);
     $("rrSubtitle").textContent = tf("rr.subtitle", { tab: cardLabel, n: rrTotal.toLocaleString() });
     const list = $("rrList");
     if (!rrRows.length) {
@@ -171,7 +176,8 @@ function renderList() {
             const flags = [
                 `<span class="rr-chip ${STATUS_CSS[r.status] || ""}">${escapeHtml(t(`rr.st.${r.status}`))}</span>`,
                 r.stale ? `<span class="rr-chip rr-st-stale">${escapeHtml(t("rr.flagStale"))}</span>` : "",
-                r.poor ? `<span class="rr-chip rr-st-poor">${escapeHtml(t("rr.flagPoor"))}</span>` : ""
+                r.poor ? `<span class="rr-chip rr-st-poor">${escapeHtml(t("rr.flagPoor"))}</span>` : "",
+                r.messy ? `<span class="rr-chip rr-st-messy">${escapeHtml(t("rr.cardMessy"))}</span>` : ""
             ].join("");
             const edit = r.status === "arrears"
                 ? `<a class="rr-edit" href="/CM_Pro/pages/masterdata/work.html?q=${encodeURIComponent(r.loanNumber)}"><span class="ui-ico ui-ico-edit" aria-hidden="true"></span> ${escapeHtml(t("rr.edit"))}</a>` : "";
@@ -217,11 +223,12 @@ async function exportExcel(pre) {
             { label: t("arrears.reasonPromiseDateLabel"), type: "text", value: r => isoToDMY(r.al) || null },
             { label: t("rr.colStale"), type: "text", value: r => (r.stale ? "✓" : null) },
             { label: t("rr.colPoor"), type: "text", value: r => (r.poor ? "✓" : null) },
+            { label: t("rr.cardMessy"), type: "text", value: r => (r.messy ? "✓" : null) },
             { label: "User", ...text("uploadedBy") },
             { label: "DateBackUpReasonArrear", type: "text", value: r => fmtDateTime(r.uploadedAt) || null }
         ];
         const f = filters();
-        const info = [`${t("rr.heroTitle")} · ${t({ all: "rr.cardAll", arrears: "rr.cardArrears", current: "rr.cardCurrent", closed: "rr.cardClosed", stale: "rr.cardStale", poor: "rr.cardPoor" }[rrCard])} · ${data.rows.length.toLocaleString()}`]
+        const info = [`${t("rr.heroTitle")} · ${t(CARD_LABEL[rrCard])} · ${data.rows.length.toLocaleString()}`]
             .concat(Object.entries(f).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`));
         const stamp = new Date().toISOString().slice(0, 10);
         await ArrExport.excel({
@@ -260,6 +267,7 @@ async function copyReport() {
             `⚫ ${t("rr.cardClosed")}: ${n(c.closed)}`,
             `🕒 ${tf("rr.cardStaleN", { n: data.staleDays || 30 })}: ${n(c.stale)}`,
             `✏️ ${t("rr.cardPoor")}: ${n(c.poor)}`,
+            `⚠️ ${t("rr.cardMessy")}: ${n(c.messy)}`,
             "",
             `👤 ${t("rr.rpByOfficer")}`
         ];

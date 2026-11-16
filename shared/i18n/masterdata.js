@@ -92,6 +92,7 @@ CMI18n.register({
   "rr.cardStale": { km: "ចាស់ (មិន update)", en: "Stale (not updated)" },
   "rr.cardStaleN": { km: "ចាស់ (> {n} ថ្ងៃ)", en: "Stale (> {n} days)" },
   "rr.cardPoor": { km: "គុណភាពខ្សោយ", en: "Poor quality" },
+  "rr.cardMessy": { km: "ទម្រង់មិនច្បាស់", en: "Unclear format" },
   "rr.st.arrears": { km: "នៅយឺតយ៉ាវ", en: "In arrears" },
   "rr.st.current": { km: "ឈប់យឺតហើយ", en: "No longer late" },
   "rr.st.closed": { km: "បិទកម្ចីហើយ", en: "Loan closed" },
