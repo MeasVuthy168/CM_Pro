@@ -619,17 +619,16 @@ function classChipCss(value) {
         doubtful: "wk-class-doubtful", loss: "wk-class-loss" }[v] || "";
 }
 
-async function openDetail(row) {
-    if (!row) return;
-    wkRow = row;
-    showScreen(true);
-
+// The loan's summary at the top of the editor.
+function paintSummary(row) {
     const day = parseInt(row.day, 10);
     const amt = amount(row.arreas);
+    const recStatus = row.recStatus === "current" ? "rr.cardCurrent" : row.recStatus === "closed" ? "rr.cardClosed" : "";
     $("wkName").textContent = row.customer || "-";
     $("wkSub").innerHTML = `
         <span>${escapeHtml(row.loanNumber || row.concate)} · CIF ${escapeHtml(row.cif)}</span>
         ${Number.isFinite(day) ? `<span class="arr-day-badge">${day.toLocaleString()} <small>${escapeHtml(t("arrears.cardDays"))}</small></span>` : ""}
+        ${recStatus ? `<span class="wk-rec-chip wk-rec-${row.recStatus}">${escapeHtml(t(recStatus))}</span>` : ""}
         ${row.class ? `<span class="wk-class-chip ${classChipCss(row.class)}">${escapeHtml(row.class)}</span>` : ""}
         ${amt ? `<span class="oa-hero-arrears">Arrears ${escapeHtml(amt)}${row.ccy ? ` ${escapeHtml(row.ccy)}` : ""}</span>` : ""}`;
     $("wkInfo").innerHTML =
@@ -640,6 +639,35 @@ async function openDetail(row) {
         infoRow("package", t("work.product"), row.product) +
         // e.g. "Gov - គ្រូបង្រៀន"
         infoRow("users", t("work.occuMinistry"), [row.occu, row.ministry].map(v => String(v || "").trim()).filter(v => v && v !== "-").join(" - "), true);
+}
+
+// Handed over by Reason Arrear records: a loan no longer on the arrears
+// sheet carries no summary, so read its address / phone from OS once.
+async function loadRecordDetail(row) {
+    if (row.recStatus !== "current" || row.__detail) return;
+    row.__detail = true;
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/reasonarrear/records/detail?cif=${encodeURIComponent(row.concate)}`, {
+            headers: { Authorization: `Bearer ${API.getToken()}` }
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.message || `HTTP ${res.status}`);
+        if (!data.detail) return;
+        if (!row.location) row.location = data.detail.location || "";
+        if (!row.tell) row.tell = data.detail.tell || "";
+        if (wkRow === row) paintSummary(row);
+    } catch (err) {
+        row.__detail = false;   // try again next time it is opened
+    }
+}
+
+async function openDetail(row) {
+    if (!row) return;
+    wkRow = row;
+    showScreen(true);
+
+    paintSummary(row);
+    if (wkFrom === "records") loadRecordDetail(row);
 
     // One reason for every LD of the CIF (only offered when it has several).
     const n = siblings(row).length;

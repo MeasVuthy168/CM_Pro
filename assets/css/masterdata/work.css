@@ -262,3 +262,10 @@
 .md-go-records{ margin-top:8px; }
 .md-go-records[hidden]{ display:none; }
 .md-go-records-ico{ width:26px; height:26px; flex:none; display:grid; place-items:center; border-radius:8px; background:#fff; color:#1A2E57; }
+
+/* Opened from Reason Arrear records: where a loan off the arrears sheet stands */
+.wk-rec-chip{ display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:700; white-space:nowrap; }
+.wk-rec-current{ background:rgba(22,163,74,.14); color:#15803D; }
+.wk-rec-closed{ background:rgba(100,116,139,.18); color:#475569; }
+[data-theme="dark"] .wk-rec-current{ color:#86EFAC; }
+[data-theme="dark"] .wk-rec-closed{ color:#CBD5E1; }
