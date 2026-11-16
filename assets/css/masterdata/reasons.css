@@ -9,6 +9,7 @@
 .rr-tile-poor .wk-tile-ico, .rr-tile-poor b{ color:#93C5FD; }
 
 .rr-go-clean .rr-go-ico{ width:26px; height:26px; display:grid; place-items:center; border-radius:8px; background:#fff; color:#DC2626; flex:none; }
+.rr-go-clean{ width:100%; font:inherit; font-weight:700; text-align:left; cursor:pointer; }
 .rr-go-clean[hidden]{ display:none; }
 
 .rr-filters{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
