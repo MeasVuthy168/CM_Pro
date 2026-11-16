@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<title>Reason Arrear records</title>
+
+<meta
+name="theme-color"
+content="#0e1b3c">
+
+<script>
+  document.documentElement.setAttribute(
+    "data-theme",
+    (function(){var t=localStorage.getItem("cm_theme")||"auto";return t==="auto"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;})()
+  );
+</script>
+
+<link rel="stylesheet" href="../../assets/css/main.css">
+<link rel="stylesheet" href="../../assets/css/masterdata/masterdata.css">
+<link rel="stylesheet" href="../../assets/css/arrears.css">
+<link rel="stylesheet" href="../../assets/css/masterdata/outarea.css">
+<link rel="stylesheet" href="../../assets/css/masterdata/work.css">
+<link rel="stylesheet" href="../../assets/css/masterdata/reasons.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/global-splash.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/toast.css">
+<link rel="stylesheet" href="/CM_Pro/assets/css/loading.css">
+
+<link rel="expect" href="#cm-pt-parsed" blocking="render">
+<link rel="preload" href="/CM_Pro/assets/fonts/Krasar-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<script src="/CM_Pro/shared/page-transition.js"></script>
+<script src="/CM_Pro/shared/sw-register.js"></script>
+</head>
+
+<body>
+
+<div id="offlineBanner" data-i18n="common.offline">
+No Internet Connection
+</div>
+
+<div id="topbar-container"></div>
+
+<div class="page-container">
+
+<!-- Summary: the cards are also the list's tabs (tap one) -->
+<section class="oa-page-hero">
+  <div class="oa-ph-top">
+    <span class="oa-ph-ico"><span class="ui-ico ui-ico-clipboard" aria-hidden="true"></span></span>
+    <div class="oa-ph-text">
+      <div class="oa-ph-title" data-i18n="rr.heroTitle">Reason Arrear — បញ្ជីដែលបានបញ្ចូល</div>
+      <div class="oa-ph-sub" id="rrSub">-</div>
+    </div>
+    <button type="button" id="btnRrExport" class="oa-ph-refresh" aria-label="Export Excel" data-i18n-aria-label="rr.export"><span class="ui-ico ui-ico-install" aria-hidden="true"></span></button>
+    <button type="button" id="btnRrRefresh" class="oa-ph-refresh" aria-label="Refresh" data-i18n-aria-label="common.refresh"><span class="ui-ico ui-ico-refresh" aria-hidden="true"></span></button>
+  </div>
+  <div class="oa-ph-stats wk-tiles rr-tiles" role="tablist">
+    <button type="button" class="oa-ph-stat wk-tile rr-tile-all active" data-rr-card="all" role="tab"><span class="ui-ico ui-ico-clipboard wk-tile-ico" aria-hidden="true"></span><b id="rrCount-all">-</b><span class="wk-tile-label" data-i18n="rr.cardAll">សរុប</span></button>
+    <button type="button" class="oa-ph-stat wk-tile rr-tile-arrears" data-rr-card="arrears" role="tab"><span class="ui-ico ui-ico-alert wk-tile-ico" aria-hidden="true"></span><b id="rrCount-arrears">-</b><span class="wk-tile-label" data-i18n="rr.cardArrears">នៅយឺតយ៉ាវ</span></button>
+    <button type="button" class="oa-ph-stat wk-tile rr-tile-current" data-rr-card="current" role="tab"><span class="ui-ico ui-ico-trend-up wk-tile-ico" aria-hidden="true"></span><b id="rrCount-current">-</b><span class="wk-tile-label" data-i18n="rr.cardCurrent">ឈប់យឺតហើយ</span></button>
+    <button type="button" class="oa-ph-stat wk-tile rr-tile-closed" data-rr-card="closed" role="tab"><span class="ui-ico ui-ico-stop wk-tile-ico" aria-hidden="true"></span><b id="rrCount-closed">-</b><span class="wk-tile-label" data-i18n="rr.cardClosed">បិទកម្ចីហើយ</span></button>
+    <button type="button" class="oa-ph-stat wk-tile rr-tile-stale" data-rr-card="stale" role="tab"><span class="ui-ico ui-ico-clock wk-tile-ico" aria-hidden="true"></span><b id="rrCount-stale">-</b><span class="wk-tile-label" id="rrStaleLabel" data-i18n="rr.cardStale">ចាស់ (&gt; 30 ថ្ងៃ)</span></button>
+    <button type="button" class="oa-ph-stat wk-tile rr-tile-poor" data-rr-card="poor" role="tab"><span class="ui-ico ui-ico-edit wk-tile-ico" aria-hidden="true"></span><b id="rrCount-poor">-</b><span class="wk-tile-label" data-i18n="rr.cardPoor">គុណភាពខ្សោយ</span></button>
+  </div>
+  <!-- Closed loans are cleaned up in Admin (admin only) -->
+  <a class="md-go-arrears rr-go-clean" id="rrGoClean" href="/CM_Pro/pages/admin/maintenance.html" hidden>
+    <span class="ui-ico ui-ico-trash rr-go-ico" aria-hidden="true"></span>
+    <span data-i18n="rr.goClean">សម្អាតកំណត់ត្រាបិទកម្ចីហើយ (Admin)</span>
+    <span class="md-go-chev" aria-hidden="true">›</span>
+  </a>
+</section>
+
+<div class="reason-card noreason-card oa-page">
+
+  <div class="oa-sticky-tools">
+    <div class="oa-search">
+      <span class="ui-ico ui-ico-search oa-search-ico" aria-hidden="true"></span>
+      <input type="search" id="rrSearch" placeholder="ឈ្មោះ / LD / CIF / មន្ត្រី / អ្នកបញ្ចូល..." data-i18n-placeholder="rr.searchPlaceholder" autocomplete="off">
+    </div>
+    <div class="rr-filters">
+      <select id="rrBranch" class="rr-sel"><option value="" data-i18n="rr.allBranches">សាខាទាំងអស់</option></select>
+      <select id="rrOfficer" class="rr-sel"><option value="" data-i18n="rr.allOfficers">មន្ត្រីទាំងអស់</option></select>
+      <select id="rrUploader" class="rr-sel"><option value="" data-i18n="rr.allUploaders">អ្នកបញ្ចូលទាំងអស់</option></select>
+      <label class="rr-date"><span data-i18n="rr.from">ពី</span> <input type="date" id="rrFrom"></label>
+      <label class="rr-date"><span data-i18n="rr.to">ដល់</span> <input type="date" id="rrTo"></label>
+      <button type="button" id="btnRrClear" class="rr-clear" data-i18n="rr.clearFilters" hidden>សម្អាតតម្រង</button>
+    </div>
+  </div>
+
+  <div class="reason-subtitle oa-count" id="rrSubtitle">-</div>
+  <div id="rrList" class="oa-list"></div>
+  <button type="button" id="btnRrMore" class="rr-more" hidden></button>
+
+</div>
+
+</div>
+
+<div id="bottomnav-container"></div>
+
+<script src="../../config/api.js"></script>
+<script src="/CM_Pro/shared/touch-polish.js"></script>
+<script src="../../config/auth.js"></script>
+<script src="../../config/session.js"></script>
+
+<script src="/CM_Pro/shared/topbar.js"></script>
+<script src="/CM_Pro/shared/theme.js"></script>
+<script src="/CM_Pro/shared/language.js"></script>
+<script src="/CM_Pro/shared/i18n.js"></script>
+<script src="/CM_Pro/shared/i18n/common.js"></script>
+<script src="/CM_Pro/shared/i18n/core.js"></script>
+<script src="/CM_Pro/shared/i18n/features.js"></script>
+<script src="/CM_Pro/shared/i18n/masterdata.js"></script>
+<script src="/CM_Pro/shared/loading.js"></script>
+<script src="/CM_Pro/assets/js/global-splash.js"></script>
+<script src="/CM_Pro/assets/js/toast.js"></script>
+<script src="/CM_Pro/assets/js/notification-badge.js"></script>
+
+<script src="../../assets/js/arrears-export.js"></script>
+<script src="../../assets/js/masterdata/reasons.js"></script>
+
+</body>
+
+</html>

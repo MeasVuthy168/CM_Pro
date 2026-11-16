@@ -257,3 +257,7 @@
 .wk-ld-count.multi{ background:#1A2E57; color:#FFD700; }
 [data-theme="dark"] .wk-ld-count, [data-theme="darkgray"] .wk-ld-count{ background:rgba(255,255,255,.1); color:#cbd5e1; }
 [data-theme="dark"] .wk-ld-count.multi, [data-theme="darkgray"] .wk-ld-count.multi{ background:#FFD700; color:#1A2E57; }
+
+/* Link to Reason Arrear records (pages/masterdata/reasons.html) */
+.md-go-records{ margin-top:8px; }
+.md-go-records-ico{ width:26px; height:26px; flex:none; display:grid; place-items:center; border-radius:8px; background:#fff; color:#1A2E57; }
