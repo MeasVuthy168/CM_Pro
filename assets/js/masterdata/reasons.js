@@ -21,6 +21,9 @@ const rrUser = (() => {
 })();
 const rrRole = String(rrUser.role || "").toLowerCase();
 const rrIsAdmin = rrRole === "admin";
+// Admin only (the API refuses everyone else too): anyone else goes back
+// to Work to complete.
+if (!rrIsAdmin) location.replace("/CM_Pro/pages/masterdata/work.html");
 const rrIsStaff = rrRole === "viewer_staff";
 
 const PARTS = [

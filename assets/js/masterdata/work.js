@@ -25,6 +25,8 @@ const wkUser = (() => {
 const wkRole = String(wkUser.role || "").toLowerCase();
 // Viewer_Staff only ever has their own loans — no branch / team filters.
 const wkShowFilters = wkRole !== "viewer_staff";
+// Reason Arrear records (reasons.html) is admin only.
+if (wkRole === "admin") document.getElementById("wkGoRecords")?.removeAttribute("hidden");
 
 const wkParams = new URLSearchParams(location.search);
 let wkRows = [];
