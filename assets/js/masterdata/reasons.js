@@ -109,6 +109,7 @@ async function load(page = 1) {
         rrPages = data.pages;
         rrTotal = data.total;
         rrRows = first ? data.rows : rrRows.concat(data.rows);
+        if (first) { rrSel.clear(); rrAllSelected = false; }   // new card / filters: start over
         renderCounts(data);
         renderFacets(data.facets);
         renderList();
@@ -179,9 +180,10 @@ function renderList() {
                 r.poor ? `<span class="rr-chip rr-st-poor">${escapeHtml(t("rr.flagPoor"))}</span>` : "",
                 r.messy ? `<span class="rr-chip rr-st-messy">${escapeHtml(t("rr.cardMessy"))}</span>` : ""
             ].join("");
-            const edit = r.status === "arrears"
-                ? `<a class="rr-edit" href="/CM_Pro/pages/masterdata/work.html?q=${encodeURIComponent(r.loanNumber)}"><span class="ui-ico ui-ico-edit" aria-hidden="true"></span> ${escapeHtml(t("rr.edit"))}</a>` : "";
-            return `<div class="oa-item rr-item">
+            const edit = `<button type="button" class="rr-edit" data-rr-edit="${escapeHtml(r.cif)}"><span class="ui-ico ui-ico-edit" aria-hidden="true"></span> ${escapeHtml(t("rr.edit"))}</button>`;
+            const on = rrAllSelected || rrSel.has(r.cif);
+            return `<div class="oa-item rr-item${on ? " rr-sel" : ""}" data-rr-cif="${escapeHtml(r.cif)}" role="checkbox" aria-checked="${on}" tabindex="0">
+                <span class="rr-check" aria-hidden="true">${on ? "✓" : ""}</span>
                 <div class="oa-item-main">
                     <div class="oa-item-name">${escapeHtml(r.customer || "-")}</div>
                     <div class="oa-item-sub">${escapeHtml(r.loanNumber)}${r.customerCif ? ` · CIF ${escapeHtml(r.customerCif)}` : ""}${r.day ? ` · ${escapeHtml(r.day)} ${escapeHtml(t("arrears.cardDays"))}` : ""}</div>
@@ -200,7 +202,115 @@ function renderList() {
     const more = $("btnRrMore");
     more.hidden = rrPage >= rrPages;
     more.textContent = tf("rr.more", { n: (rrTotal - rrRows.length).toLocaleString() });
+    renderSelBar();
 }
+
+// ---------- select records -> edit them in Work to complete ----------
+// Tap a card to select it (or Select all: every match of the card and
+// filters). "Open in the work list" hands them to Work to complete's
+// editor (?from=records), which walks them with ‹ › and comes back here.
+const MAX_OPEN = 1000;              // what the hand-over carries
+const rrSel = new Map();            // cif -> record
+let rrAllSelected = false;
+
+function selCount() { return rrAllSelected ? rrTotal : rrSel.size; }
+
+function renderSelBar() {
+    const bar = $("rrSelBar");
+    const n = selCount();
+    bar.hidden = n === 0;
+    document.body.classList.toggle("rr-selecting", n > 0);
+    if (!n) return;
+    const nav = document.querySelector(".bottom-nav");
+    bar.style.bottom = `${(nav ? nav.getBoundingClientRect().height : 0) + 10}px`;
+    $("rrSelN").textContent = tf("rr.selectedN", { n: n.toLocaleString() });
+    const all = $("btnRrSelAll");
+    all.textContent = rrAllSelected ? t("rr.unselectAll") : tf("rr.selectAll", { n: rrTotal.toLocaleString() });
+    $("btnRrOpenWork").textContent = tf("rr.openInWork", { n: Math.min(n, MAX_OPEN).toLocaleString() });
+}
+
+function clearSelection() {
+    rrSel.clear();
+    rrAllSelected = false;
+    renderList();
+}
+
+function toggleCard(cif) {
+    if (rrAllSelected) {
+        // Leaving "all" for a hand-picked set: keep what's on screen, minus this one.
+        rrAllSelected = false;
+        rrRows.forEach(r => rrSel.set(r.cif, r));
+    }
+    if (rrSel.has(cif)) rrSel.delete(cif);
+    else { const r = rrRows.find(x => x.cif === cif); if (r) rrSel.set(cif, r); }
+    renderList();
+}
+
+// A record as Work to complete's rows look (GET /api/arreast24byco/work).
+function toWorkRow(r) {
+    return {
+        loanNumber: r.loanNumber, customer: r.customer, location: "", arreas: "", day: r.day || "",
+        accountLoan: "", tell: "", cif: r.customerCif || "", occu: "", ministry: "", branch: r.branch || "",
+        coId: r.coId || "", coResponse: r.coResponse || "", ccy: "", teamLeader: "", class: "",
+        concate: r.cif, product: "", al: r.al || "", user: r.uploadedBy || "", dateBackup: r.uploadedAt || "",
+        occupationLoan: r.occupationLoan || "", occupationNow: r.occupationNow || "", purpose: r.purpose || "",
+        reason: r.reason || "", solution: r.solution || "", aj: "", ak: ""
+    };
+}
+
+function openInWork(records, startCif) {
+    const rows = records.slice(0, MAX_OPEN);
+    if (!rows.length) return;
+    if (records.length > MAX_OPEN) notify(tf("rr.tooMany", { max: MAX_OPEN.toLocaleString(), n: records.length.toLocaleString() }), "warning");
+    const focus = {
+        at: Date.now(),
+        username: rrUser.username || "",
+        concate: startCif && rows.some(r => r.cif === startCif) ? startCif : rows[0].cif,
+        nav: rows.map(r => r.cif),
+        rows: rows.map(toWorkRow),
+        applyAll: false,
+        suggest: {}
+    };
+    try {
+        sessionStorage.setItem("cm_work_focus_v1", JSON.stringify(focus));
+    } catch (e) {
+        return notify(t("rr.openFailed"), "error");
+    }
+    location.href = "/CM_Pro/pages/masterdata/work.html?from=records";
+}
+
+async function openSelected() {
+    if (!rrAllSelected) {
+        // In list order.
+        const order = new Map(rrRows.map((r, i) => [r.cif, i]));
+        return openInWork([...rrSel.values()].sort((a, b) => (order.get(a.cif) ?? 1e9) - (order.get(b.cif) ?? 1e9)));
+    }
+    if (typeof showAppLoading === "function") showAppLoading(t("common.loading"));
+    try {
+        const data = await fetchRecords({ export: "1" });
+        openInWork(data.rows || []);
+    } catch (err) {
+        notify(t("rr.loadFailed"), "error");
+    } finally {
+        if (typeof hideAppLoading === "function") hideAppLoading();
+    }
+}
+
+$("rrList").addEventListener("click", e => {
+    const edit = e.target.closest("[data-rr-edit]");
+    if (edit) {
+        e.stopPropagation();
+        // This one first; ‹ › walks the records on screen.
+        return openInWork(rrRows, edit.dataset.rrEdit);
+    }
+    const card = e.target.closest("[data-rr-cif]");
+    if (card) toggleCard(card.dataset.rrCif);
+});
+$("rrList").addEventListener("keydown", e => {
+    if (e.key !== " " && e.key !== "Enter") return;
+    const card = e.target.closest("[data-rr-cif]");
+    if (card && !e.target.closest("[data-rr-edit]")) { e.preventDefault(); toggleCard(card.dataset.rrCif); }
+});
 
 // ---------- export (every match, Excel) ----------
 // pre: rows already fetched (the delete's backup), else every match now.
@@ -408,5 +518,21 @@ function updateOnlineStatus() {
 window.addEventListener("online", updateOnlineStatus);
 window.addEventListener("offline", updateOnlineStatus);
 updateOnlineStatus();
+
+// Back from the editor: its message (e.g. "submitted n").
+try {
+    const flash = JSON.parse(sessionStorage.getItem("cm_records_flash_v1") || "null");
+    sessionStorage.removeItem("cm_records_flash_v1");
+    if (flash && Date.now() - flash.at < 60000 && flash.message) setTimeout(() => notify(flash.message, flash.type || "success"), 400);
+} catch (e) {}
+
+$("btnRrSelAll").addEventListener("click", () => {
+    if (rrAllSelected) return clearSelection();
+    rrAllSelected = true;
+    rrSel.clear();
+    renderList();
+});
+$("btnRrSelCancel").addEventListener("click", clearSelection);
+$("btnRrOpenWork").addEventListener("click", openSelected);
 
 load(1);

@@ -103,6 +103,18 @@ No Internet Connection
 
 </div>
 
+<!-- Selected records (tap cards / Select all) -> edit in Work to complete -->
+<div class="arx-selbar rr-selbar" id="rrSelBar" hidden>
+  <div class="arx-selbar-top">
+    <span class="arx-seln" id="rrSelN">0</span>
+    <span class="arx-selbar-tools">
+      <button type="button" class="arx-selbtn arx-selbtn-all" id="btnRrSelAll"></button>
+      <button type="button" class="arx-selbtn" id="btnRrSelCancel" data-i18n="common.cancel">បោះបង់</button>
+    </span>
+  </div>
+  <button type="button" class="arx-selbtn arx-selbtn-main rr-open-work" id="btnRrOpenWork"></button>
+</div>
+
 <div id="bottomnav-container"></div>
 
 <script src="../../config/api.js"></script>

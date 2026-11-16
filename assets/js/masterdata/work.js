@@ -50,7 +50,10 @@ let wkTab = (() => {
 let wkBranch = wkParams.get("branch") || "";
 // ?q=<loan> (from Early Warning): open on the tab that holds that loan,
 // with it searched — straight into its editor when it is the only match.
-let wkQuery = wkParams.get("from") === "arrears" ? "" : (wkParams.get("q") || "").trim();
+// Opened as an editor for loans handed over by Daily Arrears or by
+// Reason Arrear records (?from=arrears / ?from=records).
+const wkFrom = ["arrears", "records"].includes(wkParams.get("from")) ? wkParams.get("from") : "";
+let wkQuery = wkFrom ? "" : (wkParams.get("q") || "").trim();
 let wkTeam = "";          // "" | "Credit Officer" | "FSRO"
 // "officer": the list is the officers (CO / FSRO), tap one for their
 // clients; "clients": every client. Managers start by officer; the
@@ -252,7 +255,7 @@ async function wkLoadInfo() {
 // scrolls to the same loan.
 const WK_FOCUS_KEY = "cm_work_focus_v1";
 const wkFocus = (() => {
-    if (wkParams.get("from") !== "arrears") return null;
+    if (!wkFrom) return null;
     try {
         const f = JSON.parse(sessionStorage.getItem(WK_FOCUS_KEY) || "null");
         if (!f || !Array.isArray(f.rows) || f.username !== (wkUser.username || "")) return null;
@@ -265,8 +268,8 @@ const wkFocus = (() => {
 function openFocus() {
     const label = document.querySelector("#btnWkBack [data-i18n]");
     if (label) {
-        label.dataset.i18n = "dashboard.dailyArrears";
-        label.textContent = t("dashboard.dailyArrears");
+        label.dataset.i18n = wkFrom === "records" ? "rr.pageTitle" : "dashboard.dailyArrears";
+        label.textContent = t(label.dataset.i18n);
     }
     $("reasonApplyAll").checked = !!wkFocus.applyAll;
     wkRows = wkFocus.rows;
@@ -278,6 +281,13 @@ function openFocus() {
 
 // Back to Daily Arrears, with a message for it to show there.
 function backToArrears(flash) {
+    // Handed over by Reason Arrear records: back there (it reloads).
+    if (wkFrom === "records") {
+        try { if (flash) sessionStorage.setItem("cm_records_flash_v1", JSON.stringify({ at: Date.now(), ...flash })); } catch (e) {}
+        if (/\/pages\/masterdata\/reasons\.html/.test(document.referrer) && history.length > 1) history.back();
+        else cmNav.back("/CM_Pro/pages/masterdata/reasons.html");
+        return;
+    }
     try {
         sessionStorage.setItem("cm_arrears_back_v1", String(Date.now()));
         if (flash) sessionStorage.setItem("cm_work_flash_v1", JSON.stringify({ at: Date.now(), ...flash }));
@@ -1045,6 +1055,7 @@ async function loadComponent(id, file) {
                     }
                     // Opened from Daily Arrears' button: go back there.
                     if (/\/pages\/arrears\//.test(document.referrer)) return history.back();
+                    if (wkFrom === "records") return backToArrears();
                     cmNav.back("/CM_Pro/pages/masterdata/index.html");
                 };
             }
