@@ -246,3 +246,14 @@
 .wk-clear:hover, .wk-clear:active{ background:rgba(220,38,38,.14); color:#dc2626; }
 .wk-clear-wrap > input:placeholder-shown ~ .wk-clear, .wk-clear-wrap > textarea:placeholder-shown ~ .wk-clear, .wk-clear-wrap.wk-empty > .wk-clear{ display:none; }
 .wk-clear-wrap > input[type="date"]{ min-height:44px; }
+
+/* How many LDs the customer (CIF) has: "1 LD", "2 LD"… beside the name;
+   highlighted when more than one. */
+.wk-ld-count{
+    display:inline-block; vertical-align:middle; margin-left:6px; padding:1px 8px; border-radius:999px;
+    font-size:11.5px; font-weight:700; white-space:nowrap;
+    background:rgba(26,46,87,.07); color:#5b6b8c;
+}
+.wk-ld-count.multi{ background:#1A2E57; color:#FFD700; }
+[data-theme="dark"] .wk-ld-count, [data-theme="darkgray"] .wk-ld-count{ background:rgba(255,255,255,.1); color:#cbd5e1; }
+[data-theme="dark"] .wk-ld-count.multi, [data-theme="darkgray"] .wk-ld-count.multi{ background:#FFD700; color:#1A2E57; }
