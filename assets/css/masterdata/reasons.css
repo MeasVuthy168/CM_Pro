@@ -60,3 +60,17 @@
     border:1px solid var(--arr-border); background:transparent; color:var(--arr-text); font:inherit; font-weight:700;
 }
 .rr-more[hidden]{ display:none; }
+
+/* Selecting records (tap a card) */
+.rr-item{ cursor:pointer; position:relative; padding-left:44px; }
+.rr-check{
+    position:absolute; left:12px; top:16px; width:22px; height:22px; border-radius:7px;
+    border:2px solid var(--arr-border); display:grid; place-items:center;
+    font-size:14px; font-weight:800; color:#fff; background:transparent;
+}
+.rr-item.rr-sel{ border-color:#D4AF37; box-shadow:0 0 0 2px rgba(212,175,55,.35); }
+.rr-item.rr-sel .rr-check{ background:#1A2E57; border-color:#1A2E57; color:#FFD700; }
+[data-theme="dark"] .rr-item.rr-sel .rr-check{ background:#FFD700; border-color:#FFD700; color:#1A2E57; }
+.rr-edit{ border:0; cursor:pointer; font:inherit; }
+.rr-open-work{ width:100%; }
+body.rr-selecting .page-container{ padding-bottom:150px; }
