@@ -482,6 +482,12 @@
     const PURPOSE_BY_PRODUCT = {
         "personal loan": "ប្រើប្រាស់ផ្ទាល់ខ្លួន",
         "visa card": "ប្រើប្រាស់ផ្ទាល់ខ្លួន",
+        "advance salary loan": "ប្រើប្រាស់ផ្ទាល់ខ្លួន",
+        "by now pay later": "ប្រើប្រាស់ផ្ទាល់ខ្លួន",   // spelled so in T24
+        "buy now pay later": "ប្រើប្រាស់ផ្ទាល់ខ្លួន",
+        "consumer credit card": "ប្រើប្រាស់ផ្ទាល់ខ្លួន",
+        "master credit card": "ប្រើប្រាស់ផ្ទាល់ខ្លួន",
+        "payroll loan": "ប្រើប្រាស់ផ្ទាល់ខ្លួន",
         "small loan": "បន្ថែមទុនក្នុងមុខរបរ",
         "ac moblie merchants": "បន្ថែមទុនក្នុងមុខរបរ",   // spelled so in T24
         "ac mobile merchants": "បន្ថែមទុនក្នុងមុខរបរ"
