@@ -16,7 +16,7 @@ CMI18n.register({
   "masterdata.hub.listLocationSub": { km: "គ្រប់គ្រងទីតាំង", en: "Manage locations" },
   "masterdata.hub.listProduct": { km: "បញ្ជីផលិតផល", en: "List Product" },
   "masterdata.hub.listProductSub": { km: "គ្រប់គ្រងផលិតផល", en: "Manage products" },
-  "masterdata.hub.outArea": { km: "កែសម្រួលArrearក្រៅតំបន់", en: "Edit Out-of-Area Arrears" },
+  "masterdata.hub.outArea": { km: "កែសម្រួលឥណទានយឺតយ៉ាវក្រៅតំបន់", en: "Edit Out-of-Area Arrears" },
   "masterdata.hub.outAreaSub": { km: "ផ្ទេរ LD NoCoRespone ទៅមន្ត្រីទទួលបន្ទុក", en: "Move NoCoRespone loans to their officer" },
   "masterdata.hub.plan": { km: "ផែនការប្រចាំខែ", en: "Monthly Plan" },
   "masterdata.hub.planSub": { km: "គោលដៅ Daily Report តាមសាខា និងមន្ត្រី", en: "Targets for the Daily Reports by branch and officer" },
