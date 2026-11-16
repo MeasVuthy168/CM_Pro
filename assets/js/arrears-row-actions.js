@@ -104,7 +104,10 @@
 <div class="arx-selbar" id="arxSelBar" hidden>
   <div class="arx-selbar-top">
     <span class="arx-seln" id="arxSelN">0</span>
-    <button type="button" class="arx-selbtn" id="arxSelCancel" data-arx-t="common.cancel"></button>
+    <span class="arx-selbar-tools">
+      <button type="button" class="arx-selbtn arx-selbtn-all" id="arxSelAll"></button>
+      <button type="button" class="arx-selbtn" id="arxSelCancel" data-arx-t="common.cancel"></button>
+    </span>
   </div>
   <div class="arx-selbar-acts">
     <button type="button" class="arx-selbtn arx-selbtn-main" id="arxSelReason" data-arx-t="arrears.act.reason"></button>
@@ -330,6 +333,12 @@
         bar.style.bottom = `${(nav ? nav.getBoundingClientRect().height : 0) + 10}px`;
         const rows = selectedRows();
         document.getElementById("arxSelN").textContent = tr("arrears.act.selectedN", { n: rows.length });
+        // Select all = every row on screen now (the current filters / search).
+        const total = currentRows.length;
+        const allOn = rows.length >= total;
+        const allBtn = document.getElementById("arxSelAll");
+        allBtn.textContent = allOn ? tr("arrears.act.unselectAll") : tr("arrears.act.selectAll", { n: total.toLocaleString() });
+        allBtn.classList.toggle("on", allOn);
         document.getElementById("arxSelReason").disabled = !rows.length;
         const blockBtn = document.getElementById("arxSelBlock");
         blockBtn.hidden = false;
@@ -481,6 +490,12 @@
         .filter(Boolean).forEach(el => observer.observe(el, { childList: true, subtree: true }));
 
     document.getElementById("arxSelCancel").addEventListener("click", endSelect);
+    document.getElementById("arxSelAll").addEventListener("click", () => {
+        if (!sel) return;
+        if (sel.size >= currentRows.length) return endSelect();   // all on -> clear
+        sel = new Set(currentRows.map((_, i) => i));
+        mark();
+    });
     document.getElementById("arxSelReason").addEventListener("click", () => {
         const rows = selectedRows();
         if (!rows.length) return;

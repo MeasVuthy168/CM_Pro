@@ -150,6 +150,8 @@ CMI18n.register({
   "arrears.act.openList": { km: "មើលបញ្ជី", en: "Open the list" },
   "arrears.act.cifN": { km: "{n} CIF", en: "{n} CIFs" },
   "arrears.act.selectedN": { km: "បានជ្រើស {n}", en: "{n} selected" },
+  "arrears.act.selectAll": { km: "ជ្រើសទាំងអស់ ({n})", en: "Select all ({n})" },
+  "arrears.act.unselectAll": { km: "ដកការជ្រើសទាំងអស់", en: "Unselect all" },
   "arrears.act.noCif": { km: "កម្ចីដែលបានជ្រើសគ្មាន CIF ទេ", en: "The selected loans have no CIF" },
   "arrears.act.a.block": { km: "បង្ខាំងគណនី", en: "Block the account" },
   "arrears.act.a.unblock": { km: "ដោះបង្ខាំង", en: "Unblock" },
