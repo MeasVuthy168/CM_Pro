@@ -642,7 +642,7 @@ function paintSummary(row) {
 }
 
 // Handed over by Reason Arrear records: a loan no longer on the arrears
-// sheet carries no summary, so read its address / phone from OS once.
+// sheet carries no summary, so read its address / phone / product from OS once.
 async function loadRecordDetail(row) {
     if (row.recStatus !== "current" || row.__detail) return;
     row.__detail = true;
@@ -655,6 +655,7 @@ async function loadRecordDetail(row) {
         if (!data.detail) return;
         if (!row.location) row.location = data.detail.location || "";
         if (!row.tell) row.tell = data.detail.tell || "";
+        if (!row.product) row.product = data.detail.product || "";
         if (wkRow === row) paintSummary(row);
     } catch (err) {
         row.__detail = false;   // try again next time it is opened
