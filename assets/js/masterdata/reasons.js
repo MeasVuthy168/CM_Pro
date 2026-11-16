@@ -249,10 +249,10 @@ function toggleCard(cif) {
 // A record as Work to complete's rows look (GET /api/arreast24byco/work).
 function toWorkRow(r) {
     return {
-        loanNumber: r.loanNumber, customer: r.customer, location: "", arreas: "", day: r.day || "",
-        accountLoan: "", tell: "", cif: r.customerCif || "", occu: "", ministry: "", branch: r.branch || "",
-        coId: r.coId || "", coResponse: r.coResponse || "", ccy: "", teamLeader: "", class: "",
-        concate: r.cif, product: "", al: r.al || "", user: r.uploadedBy || "", dateBackup: r.uploadedAt || "",
+        loanNumber: r.loanNumber, customer: r.customer, location: r.location || "", arreas: r.arreas || "", day: r.day || "",
+        accountLoan: r.accountLoan || "", tell: r.tell || "", cif: r.customerCif || "", occu: r.occu || "", ministry: r.ministry || "",
+        branch: r.branch || "", coId: r.coId || "", coResponse: r.coResponse || "", ccy: r.ccy || "", teamLeader: "", class: r.class || "",
+        concate: r.cif, product: r.product || "", al: r.al || "", recStatus: r.status || "", user: r.uploadedBy || "", dateBackup: r.uploadedAt || "",
         occupationLoan: r.occupationLoan || "", occupationNow: r.occupationNow || "", purpose: r.purpose || "",
         reason: r.reason || "", solution: r.solution || "", aj: "", ak: ""
     };
