@@ -172,6 +172,16 @@
         <small class="um-field-hint" id="ufBranchHint"></small>
       </label>
 
+      <!-- Branch managers: every officer of the branch, or FSRO only -->
+      <label class="adm-field" id="ufScopeField" hidden>
+        <span data-i18n="admin.users.fieldStaffScope">Staff scope</span>
+        <select id="ufStaffScope">
+          <option value="all" data-i18n="admin.users.scopeAll">All staff (CO + FSRO)</option>
+          <option value="fsro" data-i18n="admin.users.scopeFsro">FSRO only</option>
+        </select>
+        <small class="um-field-hint" id="ufScopeHint"></small>
+      </label>
+
       <label class="adm-field">
         <span data-i18n="admin.users.fieldStatus">Status</span>
         <select id="ufStatus">

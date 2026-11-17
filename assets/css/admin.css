@@ -1678,3 +1678,7 @@ input.sa-date {
 #raBtnPreview.ra-busy { opacity: 1; cursor: progress; font-variant-numeric: tabular-nums; }
 #raBtnPreview.ra-busy .adm-ico { animation: ra-spin 1s linear infinite; }
 @keyframes ra-spin { to { transform: rotate(360deg); } }
+
+/* Staff scope: FSRO only (branch managers) */
+.um-meta-scope{ color:#2563eb; font-weight:700; }
+[data-theme="dark"] .um-meta-scope, [data-theme="darkgray"] .um-meta-scope{ color:#93c5fd; }
