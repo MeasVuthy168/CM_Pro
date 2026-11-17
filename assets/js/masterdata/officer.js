@@ -1,5 +1,5 @@
 // ========================================
-// List Officer — pages/masterdata/officer.html
+// List Staff (was List Officer) — pages/masterdata/officer.html
 // Reads/writes GET /api/creditofficer/list, POST
 // /api/creditofficer/upsert, DELETE /api/creditofficer/:officerId.
 // Add/Edit/Delete are admin-only — matches the backend's own
@@ -212,6 +212,10 @@ function mdInitials(name) {
     return ((parts[0] || "?")[0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
 }
 
+// A Manager position (Branch / Branch Credit / FSR Manager …) holds no
+// loans, so it has no Team: the field is hidden and saved blank.
+const mdIsManager = position => /Manager/.test(position || "");
+
 // Position group drives the avatar / badge colour.
 function mdPositionGroup(position) {
     if (!position) return "none";
@@ -265,7 +269,7 @@ function mdRenderCards(list, rows) {
                 <span class="md-meta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V8l8-5 8 5v13M9 21v-6h6v6"/></svg><span class="md-meta-k">${t("masterdata.officer.colBranch")}</span><span class="md-meta-v">${stopped
                     ? `<span class="md-stop-badge">Stop Disburse</span>`
                     : (mdHighlight(o.branch) || "-")}</span></span>
-                <span class="md-meta"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></svg><span class="md-meta-k">${t("masterdata.officer.colTeam")}</span><span class="md-meta-v">${mdHighlight(o.team) || "-"}</span></span>
+                <span class="md-meta"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></svg><span class="md-meta-k">${t("masterdata.officer.colTeam")}</span><span class="md-meta-v">${mdIsManager(o.position) ? "-" : (mdHighlight(o.team) || "-")}</span></span>
                 <span class="md-meta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2"/></svg><span class="md-meta-v">${mdPhoneLinks(o.phone)}</span></span>
             </div>
         </div>`;
@@ -296,7 +300,7 @@ function mdRenderTable(list, rows) {
             <td>${mdHighlight(o.nameKh) || "-"}</td>
             <td>${o.position ? `<span class="md-pos-badge md-pos-${mdPositionGroup(o.position)}">${mdHighlight(o.position)}</span>` : "-"}</td>
             <td>${mdPhoneLinks(o.phone)}</td>
-            <td>${mdHighlight(o.team) || "-"}</td>
+            <td>${mdIsManager(o.position) ? "-" : (mdHighlight(o.team) || "-")}</td>
             <td>${mdIsStopped(o) ? `<span class="md-stop-badge">Stop Disburse</span>` : (mdHighlight(o.branch) || "-")}</td>
             ${mdIsAdmin ? `<td>${mdActionButtons().replace("md-row-actions", "md-table-actions")}</td>` : ""}
         </tr>
@@ -572,8 +576,15 @@ function mdOpenDialog(officer) {
     document.getElementById("mdFieldPhone").value = officer ? (officer.phone || "") : "";
     document.getElementById("mdFieldTeam").value = officer ? (officer.team || "") : "";
     document.getElementById("mdFieldBranch").value = officer ? (officer.branch || "") : "";
+    mdSyncTeamField();
 
     document.getElementById("mdOfficerDialog").classList.add("show");
+}
+
+function mdSyncTeamField() {
+    const mgr = mdIsManager(document.getElementById("mdFieldPosition").value);
+    document.getElementById("mdTeamWrap").hidden = mgr;
+    document.getElementById("mdTeamMgrNote").hidden = !mgr;
 }
 
 function mdCloseDialog() {
@@ -587,7 +598,7 @@ async function mdSaveOfficer() {
     const nameKh = document.getElementById("mdFieldNameKh").value.trim();
     const position = document.getElementById("mdFieldPosition").value;
     const phone = document.getElementById("mdFieldPhone").value.trim();
-    const team = document.getElementById("mdFieldTeam").value;
+    const team = mdIsManager(position) ? "" : document.getElementById("mdFieldTeam").value;
     const branch = document.getElementById("mdFieldBranch").value;
 
     if (!officerId) return notify(t("masterdata.officer.idRequired"), "warning");
@@ -862,3 +873,5 @@ if (mdIsAdmin) {
     document.getElementById("mdAddRow").style.display = "block";
 }
 mdLoadOfficers();
+
+document.getElementById("mdFieldPosition").addEventListener("change", mdSyncTeamField);
