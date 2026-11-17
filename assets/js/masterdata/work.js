@@ -807,21 +807,22 @@ $("btnWkBack").addEventListener("click", () => {
     backToList();
 });
 
+// Save and Submit keep the editor open on this client (‹ › for the next
+// one, Back to leave); the lists behind it pick the changes up on return.
 $("btnWkSave").addEventListener("click", () => {
     const n = saveDraft();
     if (!n) return;
     const message = n > 1 ? t("arrears.savedAllLd").replace("{n}", n.toLocaleString()) : t("work.savedToast");
-    if (wkFocus) return backToArrears({ message, type: "success" });
     notify(message, "success");
-    backToList();
+    paintPendingNote(ReasonKit.getPending()[wkRow.concate]);
+    updateNav();
 });
 
 $("btnWkSubmit").addEventListener("click", async () => {
     if (isDirty() && !saveDraft()) return;
-    const n = ReasonKit.pendingCount();
     if (!(await submitAll())) return;
-    if (wkFocus) return backToArrears({ message: tf("work.submitted", { n: n.toLocaleString() }), type: "success" });
-    backToList();
+    // Show what the server now holds (and who saved it).
+    openDetail(wkRow);
 });
 
 $("btnWkSubmitAll").addEventListener("click", async () => {
