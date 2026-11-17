@@ -759,7 +759,7 @@ async function submitAll() {
     }
     if (typeof showAppLoading === "function") showAppLoading(tf("work.submitting", { n: concates.length.toLocaleString() }));
     try {
-        await ReasonKit.upsertPending(concates, map, API.getToken(), wkUser.fullname || "unknown");
+        const review = await ReasonKit.upsertPending(concates, map, API.getToken(), wkUser.fullname || "unknown");
         // Confirm from the server (the VBA's View step), then clear drafts.
         const saved = await ReasonKit.fetchReasons(concates, API.getToken());
         wkRows.forEach(r => {
@@ -781,6 +781,8 @@ async function submitAll() {
             sessionStorage.setItem("cm_work_recent_v1", JSON.stringify(recent));
         } catch (e) {}
         notify(tf("work.submitted", { n: concates.length.toLocaleString() }), "success");
+        const note = ReasonKit.reviewNote(review);
+        if (note) setTimeout(() => notify(note, "warning"), 600);
         return true;
     } catch (err) {
         console.error("[work] submit failed:", err);

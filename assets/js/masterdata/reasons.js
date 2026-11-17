@@ -134,6 +134,107 @@ function renderCounts(data) {
     const del = $("btnRrDelete");
     del.hidden = !(rrIsAdmin && rrCard === "closed" && (c.closed || 0) > 0);
     $("rrDeleteText").textContent = tf("rr.delBtn", { n: (c.closed || 0).toLocaleString() });
+    rrPendingCount = data.pendingCount || 0;
+    $("btnRrPending").hidden = !rrIsAdmin || !rrPendingCount;
+    $("rrPendingText").textContent = tf("rr.pendingBtn", { n: rrPendingCount.toLocaleString() });
+}
+
+// ---------- waiting for approval (Admin) ----------
+// An officer's change to a reason Admin corrected is held on the server
+// (lib/reason-review.js) until Admin approves or rejects it here.
+let rrPendingCount = 0;
+let rrPendingItems = [];
+
+function showPendingView(on) {
+    $("rrPendingView").hidden = !on;
+    $("rrMainCard").hidden = on;
+    if (on) requestAnimationFrame(() => {
+        const y = $("rrPendingView").getBoundingClientRect().top + window.scrollY - 70;
+        window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+    });
+}
+
+async function loadPending() {
+    if (typeof showAppLoading === "function") showAppLoading(t("common.loading"));
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/reasonarrear/pending`, { headers: { Authorization: `Bearer ${rrToken()}` } });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.message || `HTTP ${res.status}`);
+        rrPendingItems = data.items || [];
+        renderPending();
+        showPendingView(true);
+    } catch (err) {
+        console.error("[reasons] pending failed:", err);
+        notify(t("rr.loadFailed"), "error");
+    } finally {
+        if (typeof hideAppLoading === "function") hideAppLoading();
+    }
+}
+
+function renderPending() {
+    const n = rrPendingItems.length;
+    $("rrPendingTitle").textContent = tf("rr.pendingTitle", { n: n.toLocaleString() });
+    $("btnRrApproveAll").disabled = $("btnRrRejectAll").disabled = !n;
+    const list = $("rrPendingList");
+    if (!n) {
+        list.innerHTML = `<div class="oa-empty">${escapeHtml(t("rr.pendingEmpty"))}</div>`;
+        return;
+    }
+    const fields = PARTS.concat([["al", "rr.promise"]]);
+    list.innerHTML = rrPendingItems.map(it => {
+        const rows = fields.map(([k, key]) => {
+            const a = (it.current && it.current[k]) || "";
+            const b = (it.proposed && it.proposed[k]) || "";
+            const show = v => (k === "al" ? isoToDMY(v) : v) || "—";
+            const diff = a !== b;
+            return `<div class="rr-cmp-row${diff ? " diff" : ""}">
+                <span class="rr-cmp-label">${escapeHtml(t(key))}</span>
+                <span class="rr-cmp-a">${escapeHtml(show(a))}</span>
+                <span class="rr-cmp-b">${escapeHtml(show(b))}</span>
+            </div>`;
+        }).join("");
+        const ld = String(it.cif).split("-");
+        return `<div class="oa-item rr-pending-item" data-rr-pending="${escapeHtml(it.cif)}">
+            <div class="oa-item-main">
+                <div class="oa-item-name">${escapeHtml(it.customer || it.cif)}</div>
+                <div class="oa-item-sub">${escapeHtml(ld[0])}${ld[1] ? ` · CIF ${escapeHtml(ld[1])}` : ""}${it.officer ? ` · ${escapeHtml(it.officer)}` : ""}${it.branch ? ` · ${escapeHtml(it.branch)}` : ""}</div>
+                <div class="rr-cmp">
+                    <div class="rr-cmp-row rr-cmp-head"><span></span><span>${escapeHtml(tf("rr.cmpAdmin", { by: it.adminBy || "Admin" }))}</span><span>${escapeHtml(tf("rr.cmpOfficer", { by: it.submittedName || it.submittedBy || "-" }))}</span></div>
+                    ${rows}
+                </div>
+                <div class="rr-by">${escapeHtml(tf("rr.pendingBy", { by: it.submittedName || it.submittedBy || "-", at: fmtDateTime(it.submittedAt) || "-", src: it.source === "excel" ? "Excel" : "App" }))}</div>
+                <div class="rr-pending-actions">
+                    <button type="button" class="rr-pending-btn no" data-rr-decide="reject">${escapeHtml(t("rr.reject"))}</button>
+                    <button type="button" class="rr-pending-btn ok" data-rr-decide="approve">${escapeHtml(t("rr.approve"))}</button>
+                </div>
+            </div>
+        </div>`;
+    }).join("");
+}
+
+async function decidePending(cifs, action) {
+    if (!cifs.length) return;
+    if (cifs.length > 1 && !confirm(tf(action === "approve" ? "rr.approveAllConfirm" : "rr.rejectAllConfirm", { n: cifs.length.toLocaleString() }))) return;
+    if (typeof showAppLoading === "function") showAppLoading(t("common.loading"));
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/reasonarrear/pending/decide`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${rrToken()}` },
+            body: JSON.stringify({ cifs, action })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.message || `HTTP ${res.status}`);
+        notify(tf(action === "approve" ? "rr.approvedN" : "rr.rejectedN", { n: cifs.length.toLocaleString() }), "success");
+        const gone = new Set(cifs);
+        rrPendingItems = rrPendingItems.filter(it => !gone.has(it.cif));
+        rrPendingCount = rrPendingItems.length;
+        renderPending();
+    } catch (err) {
+        console.error("[reasons] decide failed:", err);
+        notify(err.message || t("rr.decideFailed"), "error");
+    } finally {
+        if (typeof hideAppLoading === "function") hideAppLoading();
+    }
 }
 
 // Pickers keep the chosen value even if it falls out of the list.
@@ -178,7 +279,8 @@ function renderList() {
                 `<span class="rr-chip ${STATUS_CSS[r.status] || ""}">${escapeHtml(t(`rr.st.${r.status}`))}</span>`,
                 r.stale ? `<span class="rr-chip rr-st-stale">${escapeHtml(t("rr.flagStale"))}</span>` : "",
                 r.poor ? `<span class="rr-chip rr-st-poor">${escapeHtml(t("rr.flagPoor"))}</span>` : "",
-                r.messy ? `<span class="rr-chip rr-st-messy">${escapeHtml(t("rr.cardMessy"))}</span>` : ""
+                r.messy ? `<span class="rr-chip rr-st-messy">${escapeHtml(t("rr.cardMessy"))}</span>` : "",
+                r.adminBy ? `<span class="rr-chip rr-st-admin">${escapeHtml(tf("rr.flagAdmin", { by: r.adminBy }))}</span>` : ""
             ].join("");
             const edit = `<button type="button" class="rr-edit" data-rr-edit="${escapeHtml(r.cif)}"><span class="ui-ico ui-ico-edit" aria-hidden="true"></span> ${escapeHtml(t("rr.edit"))}</button>`;
             const on = rrAllSelected || rrSel.has(r.cif);
@@ -479,6 +581,16 @@ $("btnRrRefresh").addEventListener("click", () => load(1));
 $("btnRrExport").addEventListener("click", () => exportExcel());
 $("btnRrCopy").addEventListener("click", copyReport);
 $("btnRrDelete").addEventListener("click", deleteClosed);
+$("btnRrPending").addEventListener("click", loadPending);
+$("btnRrPendingBack").addEventListener("click", () => { showPendingView(false); load(1); });
+$("btnRrApproveAll").addEventListener("click", () => decidePending(rrPendingItems.map(it => it.cif), "approve"));
+$("btnRrRejectAll").addEventListener("click", () => decidePending(rrPendingItems.map(it => it.cif), "reject"));
+$("rrPendingList").addEventListener("click", e => {
+    const b = e.target.closest("[data-rr-decide]");
+    if (!b) return;
+    const cif = b.closest("[data-rr-pending]")?.dataset.rrPending;
+    if (cif) decidePending([cif], b.dataset.rrDecide);
+});
 window.addEventListener("cm-language-changed", () => load(1));
 
 // ========================================

@@ -2361,7 +2361,7 @@ async function submitAllPendingReasons() {
     }
 
     try {
-        await ReasonKit.upsertPending(concates, map, arrearsToken, uploadedBy);
+        const review = await ReasonKit.upsertPending(concates, map, arrearsToken, uploadedBy);
 
         // Mirror VBA: after the upsert, pull the confirmed data back
         // (View step) rather than trusting the upsert response alone.
@@ -2378,6 +2378,8 @@ async function submitAllPendingReasons() {
         renderTable(currentRows); // multiple rows changed — full re-render is correct here
 
         notify(`បានដាក់ស្នើដោយជោគជ័យ (${concates.length})`, "success");
+        const reviewNote = ReasonKit.reviewNote(review);
+        if (reviewNote) setTimeout(() => notify(reviewNote, "warning"), 600);
     } catch (err) {
         console.error(err);
         notify(err.message || "ការដាក់ស្នើបរាជ័យ — ទិន្នន័យនៅតែរក្សាទុកក្នុងម៉ាស៊ីន", "error");
