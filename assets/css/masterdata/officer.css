@@ -481,6 +481,14 @@ body > .md-menu-wrap{ display:none; } /* until the topbar takes it */
     margin-bottom:16px;
 }
 
+/* List Staff: a Manager position has no Team (the field is hidden). */
+.md-field-note{
+    margin: 12px 0 4px;
+    font-size: 13px;
+    color: var(--md-text-muted);
+}
+.md-field-note[hidden], #mdTeamWrap[hidden]{ display: none; }
+
 .md-field-label{
     font-size:12.5px;
     color:var(--md-text-muted);

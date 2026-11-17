@@ -803,7 +803,7 @@ async function scAskSignatures(rows) {
             ${others.length ? `<optgroup label="សាខាផ្សេង">${others.map(opt).join("")}</optgroup>` : ""}
           </select>
           <input type="text" data-title placeholder="តួនាទី">
-          ${pool.length ? "" : `<small>មិនទាន់មាន ${esc(positions.join(" / "))} ក្នុង List Officer</small>`}
+          ${pool.length ? "" : `<small>មិនទាន់មាន ${esc(positions.join(" / "))} ក្នុង List Staff</small>`}
         </div>`;
       }).join("");
       overlay.querySelectorAll(".sc-sign-role[data-role]").forEach((row) => {

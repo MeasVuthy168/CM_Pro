@@ -10,7 +10,7 @@
 name="viewport"
 content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 
-<title>List Officer</title>
+<title>List Staff</title>
 
 <meta
 name="theme-color"
@@ -213,6 +213,7 @@ No Internet Connection
 <label class="md-field-label" data-i18n="masterdata.officer.fieldPhone">Phone Number</label>
 <input type="tel" id="mdFieldPhone" class="md-field-input">
 
+<div id="mdTeamWrap">
 <label class="md-field-label" data-i18n="masterdata.officer.fieldTeam">Team</label>
 <select id="mdFieldTeam" class="md-field-select">
 <option value=""></option>
@@ -223,6 +224,8 @@ No Internet Connection
 <option value="Theum Dany">Theum Dany</option>
 <option value="admin">admin</option>
 </select>
+</div>
+<div id="mdTeamMgrNote" class="md-field-note" data-i18n="masterdata.officer.teamNotForManager" hidden>Managers have no Team — they hold no loans.</div>
 
 <label class="md-field-label" data-i18n="masterdata.officer.fieldBranch">Branch</label>
 <select id="mdFieldBranch" class="md-field-select">
