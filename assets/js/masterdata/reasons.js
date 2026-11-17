@@ -135,6 +135,10 @@ function renderCounts(data) {
     del.hidden = !(rrIsAdmin && rrCard === "closed" && (c.closed || 0) > 0);
     $("rrDeleteText").textContent = tf("rr.delBtn", { n: (c.closed || 0).toLocaleString() });
     rrPendingCount = data.pendingCount || 0;
+    paintPendingBanner();
+}
+
+function paintPendingBanner() {
     $("btnRrPending").hidden = !rrIsAdmin || !rrPendingCount;
     $("rrPendingText").textContent = tf("rr.pendingBtn", { n: rrPendingCount.toLocaleString() });
 }
@@ -161,7 +165,9 @@ async function loadPending() {
         const data = await res.json();
         if (!res.ok || !data.ok) throw new Error(data.message || `HTTP ${res.status}`);
         rrPendingItems = data.items || [];
+        rrPendingCount = rrPendingItems.length;
         renderPending();
+        paintPendingBanner();
         showPendingView(true);
     } catch (err) {
         console.error("[reasons] pending failed:", err);
@@ -229,6 +235,7 @@ async function decidePending(cifs, action) {
         rrPendingItems = rrPendingItems.filter(it => !gone.has(it.cif));
         rrPendingCount = rrPendingItems.length;
         renderPending();
+        paintPendingBanner();
     } catch (err) {
         console.error("[reasons] decide failed:", err);
         notify(err.message || t("rr.decideFailed"), "error");
@@ -648,3 +655,5 @@ $("btnRrSelCancel").addEventListener("click", clearSelection);
 $("btnRrOpenWork").addEventListener("click", openSelected);
 
 load(1);
+// From the "Waiting for Approval" notification: open that list.
+if (rrIsAdmin && new URLSearchParams(location.search).get("view") === "pending") loadPending();
