@@ -754,6 +754,19 @@ function handleSWMessage(msg) {
   }
 
   // =====================================
+  // Notification tapped while the app was open on another page
+  // (service-worker.js notificationclick)
+  // =====================================
+
+  if (msg.type === "OPEN_URL") {
+
+    location.href = safeNotificationUrl(msg.url);
+
+    return;
+
+  }
+
+  // =====================================
   // Toast
   // =====================================
 
