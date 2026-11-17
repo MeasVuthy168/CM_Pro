@@ -194,6 +194,7 @@
         </button>
         <div class="um-card-meta">
           ${branchNote}
+          ${BRANCH_ROLES.has(u.role) && u.staffScope === "fsro" ? `<span class="um-meta um-meta-scope"><span class="ui-ico ui-ico-users" aria-hidden="true"></span>${escapeHtml(t("admin.users.scopeFsro"))}</span>` : ""}
           ${u.phone ? `<span class="um-meta"><span class="ui-ico ui-ico-phone" aria-hidden="true"></span>${escapeHtml(u.phone)}</span>` : ""}
           <span class="um-meta"><span class="adm-ico adm-ico-refresh" aria-hidden="true"></span>${escapeHtml(lastLoginLabel(u.lastLoginAt))}</span>
           ${u.isActive ? "" : `<span class="adm-badge adm-badge-status-inactive">${escapeHtml(t("admin.users.statusInactive"))}</span>`}
@@ -378,6 +379,37 @@
     const fRoleDesc = bodyNode.querySelector("#ufRoleDesc");
     const fBranchOptional = bodyNode.querySelector("#ufBranchOptional");
     const fBranchHint = bodyNode.querySelector("#ufBranchHint");
+    const fScopeField = bodyNode.querySelector("#ufScopeField");
+    const fScope = bodyNode.querySelector("#ufStaffScope");
+    const fScopeHint = bodyNode.querySelector("#ufScopeHint");
+    let scopeTouched = false;
+    fScope.addEventListener("change", () => { scopeTouched = true; });
+
+    // Staff scope suggestion from the account's Position on List Officer
+    // (username = Officer ID): FSR Manager "A" / "B" -> FSRO only.
+    const FSRO_ONLY_POSITIONS = ['Financial Service Relation Manager "A"', 'Financial Service Relation Manager "B"'];
+    const stripZeros = (v) => String(v || "").trim().replace(/^0+(?=.)/, "");
+    let positionLookupFor = null;
+    async function suggestScopeFromPosition() {
+      const uname = fUsername.value.trim();
+      if (!BRANCH_ROLES.has(fRole.value) || !uname || positionLookupFor === uname) return;
+      positionLookupFor = uname;
+      fScopeHint.textContent = "";
+      try {
+        const res = await fetch(`${API_BASE}/api/creditofficer/list?keyword=${encodeURIComponent(uname)}`, { headers: authHeaders() });
+        const data = await res.json();
+        const me = (data.items || []).find((o) => stripZeros(o.officerId) === stripZeros(uname));
+        if (positionLookupFor !== uname) return;
+        if (!me || !me.position) { fScopeHint.textContent = t("admin.users.scopeHintNoPosition"); return; }
+        const suggested = FSRO_ONLY_POSITIONS.includes(me.position) ? "fsro" : "all";
+        fScopeHint.textContent = t("admin.users.scopeHintPosition").replace("{position}", me.position)
+          .replace("{scope}", t(suggested === "fsro" ? "admin.users.scopeFsro" : "admin.users.scopeAll"));
+        if (!scopeTouched && !(isEdit && existingUser.staffScope === "fsro")) fScope.value = suggested;
+      } catch (e) {
+        console.warn("position lookup failed:", e);
+      }
+    }
+    fUsername.addEventListener("change", () => { positionLookupFor = null; suggestScopeFromPosition(); });
 
     // Branch: required for the manager roles, optional for User (it
     // only picks which branch's alerts they receive); hidden otherwise.
@@ -389,6 +421,8 @@
       fBranchOptional.hidden = !optional;
       fBranchHint.textContent = optional ? t("admin.users.branchHintUser") : required ? t("admin.users.branchHintManager") : "";
       if (fBranchField.hidden) fBranch.value = "";
+      fScopeField.hidden = !required;
+      if (required) suggestScopeFromPosition();
       fRoleDesc.innerHTML = `<span class="adm-ico adm-ico-key" aria-hidden="true"></span><span>${escapeHtml(roleDesc(role))}</span>`;
     }
     fRole.addEventListener("change", updateBranchVisibility);
@@ -413,6 +447,7 @@
       fRole.value = existingUser.role;
       fStatus.value = existingUser.isActive ? "active" : "inactive";
       fPhone.value = existingUser.phone;
+      fScope.value = existingUser.staffScope === "fsro" ? "fsro" : "all";
       updateBranchVisibility();
       fBranch.value = existingUser.branch || "";
       loadUserPhoto(bodyNode, existingUser.username);
@@ -451,7 +486,7 @@
       if (!fullname) return AdminUI.toast(t("admin.users.enterFullName"), "error");
       if (BRANCH_ROLES.has(role) && !branch) return AdminUI.toast(t("admin.users.selectBranchForRole"), "error");
 
-      const body = { fullname, role, phone: fPhone.value.trim(), branch };
+      const body = { fullname, role, phone: fPhone.value.trim(), branch, staffScope: BRANCH_ROLES.has(role) ? fScope.value : "all" };
 
       try {
         if (isEdit) {
