@@ -100,7 +100,7 @@ async function mrSavedTeamSplit(branch, date) {
         if (!item) return null;
         const nbc = x => (x ? { ...x, parT24: { parPct: ((x.nbcOverdue && x.nbcOverdue.total) || {}).parPct } } : null);
         const bd = item.breakdown || {};
-        return { co: nbc(bd.co), fsro: nbc(bd.fsro), digital: nbc(bd.digital), total: nbc(item) };
+        return { co: nbc(bd.co), fsro: nbc(bd.fsro), digital: nbc(bd.digital), total: nbc(item), staffScope: data.staffScope };
     } catch (e) {
         console.error(e);
         return null;
@@ -469,6 +469,13 @@ function mrRenderBranchDim(d) {
 
 // CO / FSRO / Digital Loan — one branch (or every branch combined when
 // none is picked), from branch-productivity-summary.
+// An FSRO-only branch manager (Staff scope "fsro"; the server marks the
+// report staffScope: "fsro") is served the FSRO part only: CO and Digital
+// would always read 0, so they are not shown.
+function mrFsroOnly(s) {
+    return !!(s && s.staffScope === "fsro");
+}
+
 function mrRenderTeamSplit(d) {
     const s = d.teamSplit;
     mrChartTeamSplit(s);
@@ -479,7 +486,7 @@ function mrRenderTeamSplit(d) {
         ["fsro", t("creditreport.byCO.fsro")],
         ["digital", t("creditreport.byBranch.teamDigital")],
         ["total", t("creditreport.risk.total")]
-    ];
+    ].filter(([key]) => !mrFsroOnly(s) || key === "fsro" || key === "total");
     const pct = v => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(2)}%`);
     box.innerHTML = `<thead><tr><th>${CI.esc(t("creditreport.mr.byTeam"))}</th><th class="num">${CI.esc(t("creditreport.mr.k.os"))}</th><th class="num">${CI.esc(t("creditreport.mr.k.disb"))}</th><th class="num">PAR %</th><th class="num">NPL %</th><th class="num">${CI.esc(t("creditreport.detail.woBalanceWO"))}</th></tr></thead><tbody>
         ${buckets.map(([key, label]) => {
@@ -756,7 +763,7 @@ function mrChartTeamSplit(s) {
         ["co", t("creditreport.byBranch.teamCo")],
         ["fsro", t("creditreport.byCO.fsro")],
         ["digital", t("creditreport.byBranch.teamDigital")]
-    ];
+    ].filter(([key]) => !mrFsroOnly(s) || key === "fsro");
     const par = buckets.map(([key]) => { const v = (s[key] && s[key].parT24 || {}).parPct; return v === null || v === undefined ? null : +(v * 100).toFixed(2); });
     const npl = buckets.map(([key]) => { const v = (s[key] && s[key].nbcOverdue && s[key].nbcOverdue.nonPerformingLoan || {}).parPct; return v === null || v === undefined ? null : +(v * 100).toFixed(2); });
     if (par.every(v => v === null) && npl.every(v => v === null)) return mrChart("mrChTeamSplit", null);

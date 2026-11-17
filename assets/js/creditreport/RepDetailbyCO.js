@@ -980,7 +980,7 @@ document.getElementById("crTbody").addEventListener("click", (e) => {
         woFromDate: crData?.woFromDate || "",
         woToDate: crData?.woToDate || ""
     };
-    sessionStorage.setItem("cr_officer_detail", JSON.stringify({ officer: item, meta }));
+    sessionStorage.setItem("cr_officer_detail", JSON.stringify({ officer: item, meta, staffScope: crData?.staffScope || "" }));
 
     const q = new URLSearchParams({
         name: item.name,

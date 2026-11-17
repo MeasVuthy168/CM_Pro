@@ -58,7 +58,7 @@ function lpCategories() {
         { bucket: "co", label: t("creditreport.byBranch.teamCo") },
         { bucket: "fsro", label: t("creditreport.byCO.fsro") },
         { bucket: "digital", label: t("creditreport.byBranch.teamDigital") }
-    ];
+    ].filter(c => !lpFsroOnly() || c.bucket === "fsro");
     const loan = k => ({ k, label: t("creditreport.productivity.colLoan") });
     const value = k => ({ k, label: t("creditreport.detail.colValue"), money: true, main: true });
     const par = k => ({ k, label: t("creditreport.productivity.colPar"), pct: true });
@@ -239,6 +239,16 @@ function lpRenderHeader() {
 // ========================================
 const LP_BUCKETS = ["co", "fsro", "digital", "total"];
 
+// An FSRO-only branch manager (Staff scope "fsro") is served the FSRO
+// part only (the server marks it staffScope: "fsro"): CO and Digital
+// would always read 0, so they are not shown.
+function lpFsroOnly() {
+    return !!(lpState.data && lpState.data.staffScope === "fsro");
+}
+function lpBuckets() {
+    return lpFsroOnly() ? LP_BUCKETS.filter(b => b === "fsro" || b === "total") : LP_BUCKETS;
+}
+
 function lpBucketLabel(b) {
     return b === "co" ? t("creditreport.byBranch.teamCo")
         : b === "fsro" ? t("creditreport.byCO.fsro")
@@ -249,7 +259,7 @@ function lpBucketLabel(b) {
 const lpCompare = CRPerf.controller({
     ids: { compare: "lpCompare", note: "lpCompareNote", strip: "lpStrip", cards: "lpCards" },
     cats: () => lpCategories(),
-    rows: (cat, last) => LP_BUCKETS.map(b => ({
+    rows: (cat, last) => lpBuckets().map(b => ({
         label: lpBucketLabel(b),
         data: lpState.data[b],
         last: b === "total" ? last : null,
@@ -751,7 +761,7 @@ function lpWireHeatmapTooltips(container) {
 // bucket-less "all" mode to the location-clients endpoint just for this.
 async function lpFetchDayClients(dateKey) {
     const q = lpBuildQuery({ ...lpState.meta, fromDate: dateKey, toDate: dateKey });
-    const buckets = ["co", "fsro", "digital"];
+    const buckets = lpFsroOnly() ? ["fsro"] : ["co", "fsro", "digital"];
     const results = await Promise.all(buckets.map(async bucket => {
         const url = `${API.BASE_URL}/api/creditreport/location-clients?location=${encodeURIComponent(lpState.location)}` +
             `&section=disburse&bucket=${bucket}${q}`;

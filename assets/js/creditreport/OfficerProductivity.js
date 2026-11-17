@@ -198,6 +198,10 @@ const opToken =
     sessionStorage.getItem("token");
 
 let opState = { officer: null, meta: null };
+// An FSRO-only branch manager (Staff scope "fsro"; the server marks the
+// report staffScope: "fsro") is served the FSRO part only, so the Area's
+// CO / Digital rows would always read 0 and are not shown.
+let opFsroOnly = false;
 
 // Last-fetched Loan Disburse heatmap data, kept around so the fullscreen
 // view (opOpenChartFullscreen) can re-render it without re-fetching.
@@ -268,6 +272,7 @@ function opReadHandoff() {
     } catch (e) { /* ignore malformed cache */ }
 
     if (handoff && handoff.officer && handoff.officer.name === name) {
+        opFsroOnly = handoff.staffScope === "fsro";
         return { officer: handoff.officer, meta: handoff.meta || urlMeta, name };
     }
     return { officer: null, meta: urlMeta, name };
@@ -290,6 +295,7 @@ async function opFetchAndFindOfficer(meta, name) {
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.message || t("creditreport.detail.failedLoadReport"));
+    opFsroOnly = data.staffScope === "fsro";
     const item = (data.items || []).find(it => it.name === name);
     // This is the exact same roster opEnsureOfficerRoster() would fetch
     // for the search box — cache it now so a search shortly after this
@@ -342,7 +348,7 @@ function opCardRows(cat, last) {
         { label: t("creditreport.compare.dimOfficer"), path: team("co"), sub: true },
         { label: t("creditreport.byBranch.teamDigital"), path: team("digital"), sub: true }
     ].map(r => ({ ...r, data: at(officer, r.path), last: last ? at(last, r.path) : null }))
-        .filter(r => !r.sub || r.data);
+        .filter(r => !r.sub || (r.data && !opFsroOnly));
 }
 
 const opCompare = CRPerf.controller({
