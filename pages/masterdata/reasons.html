@@ -76,9 +76,29 @@ No Internet Connection
     <span id="rrDeleteText"></span>
     <span class="md-go-chev" aria-hidden="true">›</span>
   </button>
+  <!-- Officer changes to admin-corrected reasons, waiting for approval -->
+  <button type="button" class="md-go-arrears rr-go-clean rr-go-pending" id="btnRrPending" hidden>
+    <span class="ui-ico ui-ico-alert rr-go-ico" aria-hidden="true"></span>
+    <span id="rrPendingText"></span>
+    <span class="md-go-chev" aria-hidden="true">›</span>
+  </button>
 </section>
 
-<div class="reason-card noreason-card oa-page">
+<!-- Waiting for approval: Admin's version vs the officer's change -->
+<div class="reason-card noreason-card oa-page rr-pending-view" id="rrPendingView" hidden>
+  <div class="rr-pending-top">
+    <button type="button" class="rr-clear rr-pending-back" id="btnRrPendingBack">← <span data-i18n="rr.pendingBack">បញ្ជី Reason Arrear</span></button>
+    <div class="rr-pending-title" id="rrPendingTitle">-</div>
+    <div class="rr-pending-hint" data-i18n="rr.pendingHint">មន្ត្រីបានកែ Reason ដែល Admin បានកែរួច។ ពិនិត្យ រួចអនុម័ត ឬបដិសេធ។</div>
+    <div class="rr-pending-all">
+      <button type="button" class="rr-pending-btn ok" id="btnRrApproveAll" data-i18n="rr.approveAll">អនុម័តទាំងអស់</button>
+      <button type="button" class="rr-pending-btn no" id="btnRrRejectAll" data-i18n="rr.rejectAll">បដិសេធទាំងអស់</button>
+    </div>
+  </div>
+  <div id="rrPendingList" class="oa-list"></div>
+</div>
+
+<div class="reason-card noreason-card oa-page" id="rrMainCard">
 
   <div class="oa-sticky-tools">
     <div class="oa-search">

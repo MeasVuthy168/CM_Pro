@@ -74,3 +74,35 @@
 .rr-edit{ border:0; cursor:pointer; font:inherit; }
 .rr-open-work{ width:100%; }
 body.rr-selecting .page-container{ padding-bottom:150px; }
+
+/* Admin-corrected records; officer changes waiting for approval */
+.rr-st-admin{ background:rgba(212,175,55,.16); color:#92700C; }
+[data-theme="dark"] .rr-st-admin{ color:#FCD34D; }
+.rr-go-pending .rr-go-ico{ color:#B45309; }
+.rr-go-pending{ margin-top:8px; }
+.rr-pending-view[hidden], #rrMainCard[hidden]{ display:none; }
+.rr-pending-top{ display:grid; gap:8px; margin-bottom:10px; }
+.rr-pending-back{ justify-self:start; border-color:var(--arr-border); color:var(--arr-text); }
+.rr-pending-title{ font-size:17px; font-weight:800; color:var(--arr-text); }
+.rr-pending-hint{ font-size:13px; color:var(--arr-text-muted); line-height:1.5; }
+.rr-pending-all, .rr-pending-actions{ display:flex; gap:8px; }
+.rr-pending-actions{ justify-content:flex-end; margin-top:8px; }
+.rr-pending-btn{ min-height:40px; padding:6px 16px; border-radius:10px; font:inherit; font-weight:800; cursor:pointer; border:1px solid transparent; }
+.rr-pending-all .rr-pending-btn{ flex:1; }
+.rr-pending-btn.ok{ background:#16A34A; color:#fff; }
+.rr-pending-btn.no{ background:transparent; border-color:#f87171; color:#dc2626; }
+.rr-pending-btn:disabled{ opacity:.5; }
+.rr-pending-item{ cursor:default; padding-left:14px; }
+.rr-cmp{ display:grid; gap:2px; margin:8px 0 4px; border-radius:10px; overflow:hidden; border:1px solid var(--arr-border); }
+.rr-cmp-row{ display:grid; grid-template-columns:minmax(78px, 26%) 1fr 1fr; gap:8px; padding:6px 8px; font-size:12.5px; line-height:1.45; }
+.rr-cmp-row span{ overflow-wrap:anywhere; color:var(--arr-text); }
+.rr-cmp-label{ color:var(--arr-text-muted) !important; }
+.rr-cmp-head{ font-weight:800; background:rgba(26,46,87,.06); }
+[data-theme="dark"] .rr-cmp-head{ background:rgba(255,255,255,.05); }
+.rr-cmp-head span:nth-child(2){ color:#B45309; }
+.rr-cmp-head span:nth-child(3){ color:#2563EB; }
+[data-theme="dark"] .rr-cmp-head span:nth-child(2){ color:#FCD34D; }
+[data-theme="dark"] .rr-cmp-head span:nth-child(3){ color:#93C5FD; }
+.rr-cmp-row.diff{ background:rgba(37,99,235,.07); }
+.rr-cmp-row.diff .rr-cmp-b{ font-weight:700; }
+.rr-cmp-row:not(.diff):not(.rr-cmp-head) .rr-cmp-b{ color:var(--arr-text-muted); }

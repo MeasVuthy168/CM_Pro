@@ -66,6 +66,8 @@ CMI18n.register({
   "notifDetail.remindTitle": { km: "ការងារត្រូវបំពេញ", en: "Work to complete" },
   "notifDetail.officerCount": { km: "{n} នាក់", en: "{n} officers" },
   "notifDetail.submitTitle": { km: "បានដាក់ស្នើ Reason Arrear", en: "Reason Arrear submitted" },
+  "reason.review.pending": { km: "{n} Reason ដែល Admin បានកែ — ការកែរបស់អ្នកកំពុងរង់ចាំ Admin អនុម័ត។", en: "{n} reason(s) were corrected by admin — your change waits for admin's approval." },
+  "reason.review.kept": { km: "{n} Reason រក្សាតាមការកែរបស់ Admin (ទិន្នន័យរបស់អ្នកចាស់ជាង)។", en: "{n} reason(s) kept as admin corrected them (your copy was older)." },
   "notifDetail.submitCount": { km: "អតិថិជន {n} នាក់", en: "{n} clients" },
   "notifDetail.viaExcel": { km: "តាម Excel (VBA)", en: "via Excel (VBA)" },
   "notifDetail.daysLate": { km: "{n} ថ្ងៃ", en: "{n} days" },

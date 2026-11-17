@@ -232,8 +232,12 @@
     // Pushes the given pending edits (chunked at 1000, the VBA's
     // UP_CHUNK). Throws on the first failed chunk; the pending store is
     // left for the caller to clear once it's confirmed.
+    // Returns { pending, keptAdmin }: LD-CIFs whose change waits for
+    // Admin's approval / that kept Admin's correction (server's review of
+    // admin-corrected reasons).
     async function upsertPending(concates, map, token, uploadedBy) {
         const UP_CHUNK = 1000;
+        const out = { pending: [], keptAdmin: [] };
         for (let i = 0; i < concates.length; i += UP_CHUNK) {
             const chunkConcates = concates.slice(i, i + UP_CHUNK);
             // v2 rows (8 values): the five parts, promise date, GPS — the
@@ -261,7 +265,19 @@
             });
             const data = await res.json();
             if (!data.ok) throw new Error(data.message || "Submit failed.");
+            out.pending.push(...(data.pending || []));
+            out.keptAdmin.push(...(data.keptAdmin || []));
         }
+        return out;
+    }
+
+    // The toast text for what the review held back ("" when nothing).
+    function reviewNote(r) {
+        const t = (k, v) => (window.CMI18n ? CMI18n.t(k, v) : k);
+        const parts = [];
+        if (r && r.pending && r.pending.length) parts.push(t("reason.review.pending", { n: r.pending.length }));
+        if (r && r.keptAdmin && r.keptAdmin.length) parts.push(t("reason.review.kept", { n: r.keptAdmin.length }));
+        return parts.join(" ");
     }
 
     // ---------- map picker ----------
@@ -499,6 +515,7 @@
     }
 
     window.ReasonKit = {
+        reviewNote,
         purposeForProduct,
         attachSuggestions,
         PARTS,
