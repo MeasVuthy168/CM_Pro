@@ -64,7 +64,7 @@ function ppCategories() {
         { bucket: "co", label: t("creditreport.byBranch.teamCo") },
         { bucket: "fsro", label: t("creditreport.byCO.fsro") },
         { bucket: "digital", label: t("creditreport.byBranch.teamDigital") }
-    ];
+    ].filter(c => !ppFsroOnly() || c.bucket === "fsro");
     const loan = k => ({ k, label: t("creditreport.productivity.colLoan") });
     const value = k => ({ k, label: t("creditreport.detail.colValue"), money: true, main: true });
     const par = k => ({ k, label: t("creditreport.productivity.colPar"), pct: true });
@@ -245,6 +245,16 @@ function ppRenderHeader() {
 // ========================================
 const PP_BUCKETS = ["co", "fsro", "digital", "total"];
 
+// An FSRO-only branch manager (Staff scope "fsro") is served the FSRO
+// part only (the server marks it staffScope: "fsro"): CO and Digital
+// would always read 0, so they are not shown.
+function ppFsroOnly() {
+    return !!(ppState.data && ppState.data.staffScope === "fsro");
+}
+function ppBuckets() {
+    return ppFsroOnly() ? PP_BUCKETS.filter(b => b === "fsro" || b === "total") : PP_BUCKETS;
+}
+
 function ppBucketLabel(b) {
     return b === "co" ? t("creditreport.byBranch.teamCo")
         : b === "fsro" ? t("creditreport.byCO.fsro")
@@ -255,7 +265,7 @@ function ppBucketLabel(b) {
 const ppCompare = CRPerf.controller({
     ids: { compare: "ppCompare", note: "ppCompareNote", strip: "ppStrip", cards: "ppCards" },
     cats: () => ppCategories(),
-    rows: (cat, last) => PP_BUCKETS.map(b => ({
+    rows: (cat, last) => ppBuckets().map(b => ({
         label: ppBucketLabel(b),
         data: ppState.data[b],
         last: b === "total" ? last : null,
@@ -757,7 +767,7 @@ function ppWireHeatmapTooltips(container) {
 // bucket-less "all" mode to the product-clients endpoint just for this.
 async function ppFetchDayClients(dateKey) {
     const q = ppBuildQuery({ ...ppState.meta, fromDate: dateKey, toDate: dateKey });
-    const buckets = ["co", "fsro", "digital"];
+    const buckets = ppFsroOnly() ? ["fsro"] : ["co", "fsro", "digital"];
     const results = await Promise.all(buckets.map(async bucket => {
         const url = `${API.BASE_URL}/api/creditreport/product-clients?product=${encodeURIComponent(ppState.product)}` +
             `&section=disburse&bucket=${bucket}${q}`;

@@ -699,10 +699,13 @@ function crBuildRow(item, section, isTotal, rank) {
             CRLastMonth.attach(digital, bd.digital);
         }
         if (co) {
+            // An FSRO-only branch manager (Staff scope "fsro") is served the
+            // FSRO part only: CO and Digital would always read 0.
+            const fsroOnly = crDetailedData.staffScope === "fsro";
             html +=
-                crBuildSummaryBreakdownRow(co, section, t("creditreport.byBranch.teamCo")) +
+                (fsroOnly ? "" : crBuildSummaryBreakdownRow(co, section, t("creditreport.byBranch.teamCo"))) +
                 crBuildSummaryBreakdownRow(fsro, section, t("creditreport.byCO.fsro")) +
-                crBuildSummaryBreakdownRow(digital, section, t("creditreport.byBranch.teamDigital"));
+                (fsroOnly ? "" : crBuildSummaryBreakdownRow(digital, section, t("creditreport.byBranch.teamDigital")));
         }
     }
     return html;
@@ -928,10 +931,11 @@ function crBuildHistoryRow(dateKey, item, section, isTotal, t24AsOfText) {
       </tr>`;
 
     if (isExpanded && item.breakdown) {
+        const fsroOnly = !!(crHistoryData && crHistoryData.staffScope === "fsro");
         html +=
-            crBuildHistoryBreakdownRow(dateKey, item.breakdown.co, section, t("creditreport.byBranch.teamCo"), t24AsOfText) +
+            (fsroOnly ? "" : crBuildHistoryBreakdownRow(dateKey, item.breakdown.co, section, t("creditreport.byBranch.teamCo"), t24AsOfText)) +
             crBuildHistoryBreakdownRow(dateKey, item.breakdown.fsro, section, t("creditreport.byCO.fsro"), t24AsOfText) +
-            crBuildHistoryBreakdownRow(dateKey, item.breakdown.digital, section, t("creditreport.byBranch.teamDigital"), t24AsOfText);
+            (fsroOnly ? "" : crBuildHistoryBreakdownRow(dateKey, item.breakdown.digital, section, t("creditreport.byBranch.teamDigital"), t24AsOfText));
     }
     return html;
 }
