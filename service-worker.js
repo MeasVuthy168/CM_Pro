@@ -6,7 +6,7 @@ console.log("🔥 SERVICE WORKER LOADED");
    CM_Pro – Production Service Worker
 ========================================================= */
 
-const SW_VERSION = "v857";
+const SW_VERSION = "v858";
 
 const CACHE_NAME = `cm-pro-cache-${SW_VERSION}`;
 
@@ -861,24 +861,17 @@ self.addEventListener(
 
                     });
 
-                // =========================
-                // FOCUS EXISTING TAB
-                // =========================
+                const target =
+                    new URL(url, self.location.origin);
 
+                // Already on that exact page (path + query): just focus it.
                 for(const client of allClients){
 
-                    const samePath =
-
-                        new URL(client.url)
-                            .pathname ===
-
-                        new URL(
-                            url,
-                            self.location.origin
-                        ).pathname;
+                    const u = new URL(client.url);
 
                     if(
-                        samePath &&
+                        u.pathname === target.pathname &&
+                        u.search === target.search &&
                         "focus" in client
                     ){
 
@@ -888,10 +881,31 @@ self.addEventListener(
 
                 }
 
-                // =========================
-                // OPEN NEW TAB
-                // =========================
+                // The app is open on another page: bring it forward and
+                // take it there. navigate() only works on a page this
+                // worker controls, so the page is also asked to go
+                // itself (toast.js handles OPEN_URL).
+                const appClient =
+                    allClients.find(c => c.url.startsWith(self.location.origin + "/CM_Pro/"));
 
+                if(appClient){
+
+                    try{ await appClient.focus(); }catch(e){}
+
+                    try{
+                        if("navigate" in appClient){
+                            const done = await appClient.navigate(target.href);
+                            if(done) return done;
+                        }
+                    }catch(e){}
+
+                    appClient.postMessage({ type: "OPEN_URL", url });
+
+                    return;
+
+                }
+
+                // Not open: open it there.
                 return clients.openWindow(
                     url
                 );
