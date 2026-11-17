@@ -392,8 +392,13 @@ const DETAIL_TYPES=["smart_alert","officer_reminder"];
 // An LGs Loans alert (sent after an OS upload) opens the LGs Loans page.
 const LGS_ALERT_URL="/CM_Pro/pages/masterdata/lgs.html";
 
+// "Reason Arrear Waiting for Approval" (to Admin) opens the records
+// page straight on its waiting-for-approval list.
+const PENDING_URL="/CM_Pro/pages/masterdata/reasons.html?view=pending";
+const isPendingAlert=item=>item.eventKey==="reasonarrear_pending";
+
 function hasDetail(item){
-return DETAIL_TYPES.includes(item.type) || item.type==="lgs_alert" ||
+return DETAIL_TYPES.includes(item.type) || item.type==="lgs_alert" || isPendingAlert(item) ||
 (item.moduleCode==="ReasonArrear_Submit" && Array.isArray(item.extra && item.extra.clients) && item.extra.clients.length>0);
 }
 
@@ -406,6 +411,20 @@ notifyList.addEventListener("click",(e)=>{
     const item=allNotifications.find(n=>String(n._id)===id);
     if(!item) return;
     if(item.type==="lgs_alert"){ location.href=LGS_ALERT_URL; return; }
+    if(isPendingAlert(item)){
+        // keepalive: the page is leaving, so a plain fetch could be cut off.
+        if(!item.isRead){
+            try{
+                fetch(`${API.BASE_URL}/api/notifications/mark-read`,{
+                    method:"POST", keepalive:true,
+                    headers:{ "Content-Type":"application/json", Authorization:`Bearer ${notificationToken}` },
+                    body:JSON.stringify({ notificationId:id })
+                }).catch(()=>{});
+            }catch(err){}
+        }
+        location.href=PENDING_URL;
+        return;
+    }
     try{ sessionStorage.setItem("cm_notif_detail",JSON.stringify(item)); }catch(err){}
     location.href=`/CM_Pro/pages/notifications/detail.html?id=${encodeURIComponent(id)}`;
 });
