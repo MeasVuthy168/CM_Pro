@@ -187,6 +187,8 @@ CMI18n.register({
   "creditreport.saved.tab": { km: "ថ្ងៃរក្សាទុក & ប្រៀបធៀប", en: "Saved & Compare" },
   "creditreport.saved.compareOption": { km: "ថ្ងៃដែលបានរក្សាទុក…", en: "Saved date…" },
   "creditreport.saved.compareWith": { km: "ធៀបនឹងថ្ងៃ", en: "Compare with" },
+  "creditreport.saved.headSaved": { km: "ថ្ងៃរក្សាទុក", en: "saved day" },
+  "creditreport.saved.headT24": { km: "T24 = NBC Overdue {date}", en: "T24 = NBC Overdue {date}" },
   "creditreport.saved.baseLabel": { km: "ថ្ងៃទិន្នន័យ", en: "Data date" },
   "creditreport.saved.chipPrev": { km: "ថ្ងៃមុន", en: "Day before" },
   "creditreport.saved.chipWeek": { km: "7 ថ្ងៃមុន", en: "7 days before" },

@@ -534,6 +534,15 @@ window.CRLastMonth = (() => {
     function isSavedCompare(v) { return v === SAVED; }
     function compareAt() { return savedCompare() ? saved.cmpAt || "" : ""; }
     function baseOn() { return !!saved.baseOn; }
+    // The table's title line while Saved & Compare shows a saved day: its
+    // own date, not the live report's (the panel above stays live).
+    const dmyKey = k => { const [y, m, d] = String(k || "").split("-"); return y && m && d ? `${d}/${m}/${y}` : ""; };
+    function headAsOf(data, liveText) {
+        return data && data.savedBase ? `${dmyKey(data.savedBase)} (${t("creditreport.saved.headSaved")})` : liveText;
+    }
+    function headT24(data, liveText) {
+        return data && data.savedBase ? t("creditreport.saved.headT24", { date: dmyKey(data.savedBase) }) : liveText;
+    }
     // The saved day the table actually shows (the picked one, or the last
     // saved day before it) — what Excel exports.
     let shownBase = "";
@@ -654,5 +663,5 @@ window.CRLastMonth = (() => {
     function canRefreshT24() { return false; }
 
     return { cutoff, shortDate, load, attach, diffTree, expand, cell, renderNote, hideNote, scopeSaved, controller, t24FromNbcHistory, t24HistNote, phnomPenhToday, fetchLive, addLiveToday, liveDayShown, isLiveDate, canRefreshT24,
-        SAVED, isSavedCompare, compareAt, baseAt, sumRows };
+        SAVED, isSavedCompare, compareAt, baseAt, sumRows, headAsOf, headT24 };
 })();
