@@ -385,10 +385,51 @@
     let scopeTouched = false;
     fScope.addEventListener("change", () => { scopeTouched = true; });
 
-    // Staff scope suggestion from the account's Position on List Officer
-    // (username = Officer ID): FSR Manager "A" / "B" -> FSRO only.
+    // The account's List Staff record (Username = Staff ID). List Staff is
+    // where the phone is kept: when the record has one, the Phone field
+    // shows it read-only (edit it on List Staff); an empty Full Name is
+    // filled from it. Accounts with no record keep their own phone.
+    const fStaffHint = bodyNode.querySelector("#ufStaffHint");
+    const stripZeros = (v) => String(v || "").trim().replace(/^0+(?=.)/, "").toLowerCase();
+    const staffLookups = new Map();
+    function lookupStaff(uname) {
+      if (!staffLookups.has(uname)) {
+        // Search without leading zeros: "02831" is stored as "2831".
+        const kw = uname.replace(/^0+(?=.)/, "");
+        staffLookups.set(uname, fetch(`${API_BASE}/api/creditofficer/list?keyword=${encodeURIComponent(kw)}`, { headers: authHeaders() })
+          .then((res) => res.json())
+          .then((data) => (data.items || []).find((o) => stripZeros(o.officerId) === stripZeros(uname)) || null)
+          .catch(() => { staffLookups.delete(uname); return null; }));
+      }
+      return staffLookups.get(uname);
+    }
+    let staffFor = null;
+    async function applyStaffRecord() {
+      const uname = fUsername.value.trim();
+      staffFor = uname;
+      fPhone.readOnly = false;
+      fPhone.classList.remove("um-from-staff");
+      fStaffHint.textContent = "";
+      if (!uname) return;
+      const me = await lookupStaff(uname);
+      if (staffFor !== uname) return;
+      if (!me) { fStaffHint.textContent = t("admin.users.staffNone"); return; }
+      if (!fFullname.value.trim() && me.name) fFullname.value = me.name;
+      const pos = me.position ? `${me.position} · ` : "";
+      if (me.phone) {
+        fPhone.value = me.phone;
+        fPhone.readOnly = true;
+        fPhone.classList.add("um-from-staff");
+        fStaffHint.textContent = pos + t("admin.users.phoneFromStaff");
+      } else {
+        fStaffHint.textContent = pos + t("admin.users.phoneNotOnStaff");
+      }
+    }
+    fUsername.addEventListener("change", applyStaffRecord);
+
+    // Staff scope suggestion from the account's Position on List Staff
+    // (username = Staff ID): FSR Manager "A" / "B" -> FSRO only.
     const FSRO_ONLY_POSITIONS = ['Financial Service Relation Manager "A"', 'Financial Service Relation Manager "B"'];
-    const stripZeros = (v) => String(v || "").trim().replace(/^0+(?=.)/, "");
     let positionLookupFor = null;
     async function suggestScopeFromPosition() {
       const uname = fUsername.value.trim();
@@ -396,9 +437,7 @@
       positionLookupFor = uname;
       fScopeHint.textContent = "";
       try {
-        const res = await fetch(`${API_BASE}/api/creditofficer/list?keyword=${encodeURIComponent(uname)}`, { headers: authHeaders() });
-        const data = await res.json();
-        const me = (data.items || []).find((o) => stripZeros(o.officerId) === stripZeros(uname));
+        const me = await lookupStaff(uname);
         if (positionLookupFor !== uname) return;
         if (!me || !me.position) { fScopeHint.textContent = t("admin.users.scopeHintNoPosition"); return; }
         const suggested = FSRO_ONLY_POSITIONS.includes(me.position) ? "fsro" : "all";
@@ -446,11 +485,13 @@
       fFullname.value = existingUser.fullname;
       fRole.value = existingUser.role;
       fStatus.value = existingUser.isActive ? "active" : "inactive";
-      fPhone.value = existingUser.phone;
+      // Stored phone first; applyStaffRecord() shows List Staff's.
+      fPhone.value = existingUser.accountPhone ?? existingUser.phone;
       fScope.value = existingUser.staffScope === "fsro" ? "fsro" : "all";
       updateBranchVisibility();
       fBranch.value = existingUser.branch || "";
       loadUserPhoto(bodyNode, existingUser.username);
+      applyStaffRecord();
     } else {
       fRole.value = "user";
       updateBranchVisibility();

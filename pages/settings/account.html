@@ -215,6 +215,8 @@ href="../../assets/css/main.css">
 
 }
 
+.row[hidden]{ display:none; }
+
 .row{
 
     display:flex;
@@ -321,6 +323,24 @@ class="value">
 
 <div
 id="role"
+class="value">
+
+-
+
+</div>
+
+</div>
+
+<div class="row" id="positionRow" hidden>
+
+<div class="label" data-i18n="settings.account.position">
+
+Position:
+
+</div>
+
+<div
+id="position"
 class="value">
 
 -
@@ -447,6 +467,11 @@ function renderAccount(user){
 
         user.role ||
         t("dashboard.defaultUser");
+
+    // Position (job title) comes from List Staff (Username = Staff ID).
+    const position = user.staff && user.staff.position;
+    document.getElementById("positionRow").hidden = !position;
+    document.getElementById("position").innerText = position || "-";
 
     document.getElementById("branch").innerText =
 

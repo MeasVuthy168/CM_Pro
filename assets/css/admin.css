@@ -1682,3 +1682,9 @@ input.sa-date {
 /* Staff scope: FSRO only (branch managers) */
 .um-meta-scope{ color:#2563eb; font-weight:700; }
 [data-theme="dark"] .um-meta-scope, [data-theme="darkgray"] .um-meta-scope{ color:#93c5fd; }
+
+/* Phone taken from List Staff (read-only here; edited on List Staff). */
+.adm-field input.um-from-staff{
+  opacity: .75;
+  cursor: not-allowed;
+}
