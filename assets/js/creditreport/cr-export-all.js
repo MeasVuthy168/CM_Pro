@@ -241,9 +241,12 @@
     // across every column, same convention cr-export.js's single-page
     // export already uses — a column's own conditional colour (Achieved
     // / (+/-)) still shows through on top of it.
-    function groupedCols(identityLabel, identityGet, groups, isTotal) {
-        const cols = [textCol(identityLabel, identityGet)];
-        const colGroups = [{ span: 1 }];
+    // extraCols: more text columns right after the identity one (the
+    // officer sheet's Branch and Position).
+    function groupedCols(identityLabel, identityGet, groups, isTotal, extraCols = []) {
+        const cols = [textCol(identityLabel, identityGet), ...extraCols];
+        // One unlabelled group per column, so each label runs down every header row.
+        const colGroups = [{ span: 1 }, ...extraCols.map(() => ({ span: 1 }))];
         groups.forEach(g => {
             const { cols: gcols, lanes } = sectionCols(g.fields);
             cols.push(...gcols);
@@ -281,7 +284,10 @@
     // live T24 feed showed, never a true historical or planned figure,
     // so it doesn't belong in a downloaded file.
     // ========================================
-    function nbcOverdueGroups(prefix, totalKey, withPlan) {
+    // which: "area" / "own" — the officer sheet names each group's side
+    // ("…_តំបន់" / "…_ផ្ទាល់ខ្លួន"), as the on-screen table does.
+    const sideLabel = (label, which) => (which ? `${label}_${t(`creditreport.detail.${which}`)}` : label);
+    function nbcOverdueGroups(prefix, totalKey, withPlan, which) {
         const pk = key => (withPlan ? key : undefined);
         return [
             crGroupPct(`${prefix}.minor`, t("creditreport.detail.classMinorDefault")),
@@ -292,9 +298,9 @@
             crGroupPct(`${prefix}.majorDefault`, t("creditreport.detail.classMajorDefault")),
             crGroupPct(`${prefix}.nonPerformingLoan`, t("creditreport.detail.classNonPerformingLoan"), pk("nplPct")),
             crGroupPct(`${prefix}.${totalKey}`, t("creditreport.detail.classTotalNbcOverdue"), pk("nbcOverduePct"))
-        ];
+        ].map(g => ({ ...g, label: sideLabel(g.label, which) }));
     }
-    function writeOffGroups(prefix) {
+    function writeOffGroups(prefix, which) {
         return [
             { label: t("creditreport.detail.woBalanceWO"), fields: [
                 { key: `${prefix}.balanceWO.cif`, label: t("creditreport.detail.colCifHash") },
@@ -309,7 +315,7 @@
                 { key: `${prefix}.woCollected.int`, label: t("creditreport.detail.colInt"), money: true },
                 { key: `${prefix}.woCollected.prn`, label: t("creditreport.detail.colPrn"), money: true }
             ] }
-        ];
+        ].map(g => ({ ...g, label: sideLabel(g.label, which) }));
     }
 
     function branchGroups() {
@@ -347,28 +353,28 @@
     }
     function officerGroups() {
         return [
-            { label: t("creditreport.detail.sectionOutstanding") + " — Area", fields: [
+            { label: sideLabel(t("creditreport.detail.sectionOutstanding"), "area"), fields: [
                 { key: "loanOutstandingArea.loan", label: t("creditreport.detail.colLoanHash") },
                 { key: "loanOutstandingArea.client", label: t("creditreport.detail.colClient") },
                 { key: "loanOutstandingArea.value", label: t("creditreport.detail.colValue"), money: true }
             ] },
-            { label: t("creditreport.detail.sectionOutstanding") + " — Own", fields: [
+            { label: sideLabel(t("creditreport.detail.sectionOutstanding"), "own"), fields: [
                 { key: "loanOutstanding.loan", label: t("creditreport.detail.colLoanHash"), planKey: "osCount" },
                 { key: "loanOutstanding.client", label: t("creditreport.detail.colClient"), planKey: "osClients" },
                 { key: "loanOutstanding.value", label: t("creditreport.detail.colValue"), money: true, planKey: "osAmount" }
             ] },
-            { label: t("creditreport.detail.sectionDisburse") + " — Area", fields: [
+            { label: sideLabel(t("creditreport.detail.sectionDisburse"), "area"), fields: [
                 { key: "loanDisburseArea.loan", label: t("creditreport.detail.colLoanHash") },
                 { key: "loanDisburseArea.value", label: t("creditreport.detail.colValue"), money: true }
             ] },
-            { label: t("creditreport.detail.sectionDisburse") + " — Own", fields: [
+            { label: sideLabel(t("creditreport.detail.sectionDisburse"), "own"), fields: [
                 { key: "loanDisburse.loan", label: t("creditreport.detail.colLoanHash"), planKey: "disbCount" },
                 { key: "loanDisburse.value", label: t("creditreport.detail.colValue"), money: true, planKey: "disbAmount" }
             ] },
-            ...nbcOverdueGroups("nbcOverdueArea", "total", false),
-            ...nbcOverdueGroups("nbcOverdue", "totalOwn", true),
-            ...writeOffGroups("writeOffArea"),
-            ...writeOffGroups("writeOffOwn")
+            ...nbcOverdueGroups("nbcOverdueArea", "total", false, "area"),
+            ...nbcOverdueGroups("nbcOverdue", "totalOwn", true, "own"),
+            ...writeOffGroups("writeOffArea", "area"),
+            ...writeOffGroups("writeOffOwn", "own")
         ];
     }
 
@@ -410,7 +416,7 @@
     //                    like Daily History shows it; no Monthly Plan (it
     //                    only exists against the live figures).
     async function sheetDailyMonitoring(opts) {
-        const { path, historyPath, planPath, planMatchField, name, title, identityKey, groups, otherLabel, asOf } = opts;
+        const { path, historyPath, planPath, planMatchField, name, title, identityKey, identityLabel, groups, otherLabel, asOf, staffCols } = opts;
         const noFilter = { t24Class: [], t24Product: [], nbcProduct: [] };
         let d;
         if (asOf) {
@@ -428,7 +434,21 @@
         if (!d || !Array.isArray(d.items)) return [];
         const totalLabel = t("common.total");
         const toRows = (items, total) => (total && typeof total === "object" ? [...items, { ...total, [identityKey]: totalLabel }] : items);
-        let rows = toRows(d.items, d.total);
+        // Officer sheet: Branch + Position (List Staff) after the name,
+        // and only the staff the report itself shows (crStaffInReport).
+        let extraCols = [];
+        let items = d.items;
+        if (staffCols) {
+            const positions = await staffPositions();
+            const posOf = r => positions.get(String(r.id ?? "").trim().replace(/^0+(?=.)/, "")) || "";
+            if (positions.size) items = items.filter(r => crStaffInReport(r, posOf(r)));
+            const isTot = r => r[identityKey] === totalLabel;
+            extraCols = [
+                textCol(t("creditreport.pi.branch"), r => (isTot(r) ? "" : r.branch)),
+                textCol(t("creditreport.export.position"), r => (isTot(r) ? "" : posOf(r)))
+            ];
+        }
+        let rows = toRows(items, d.total);
 
         const lm = await lastMonthDay(historyPath, d.toDate);
         if (lm && lm.day) {
@@ -456,10 +476,11 @@
         }
 
         const { cols, groups: colGroups } = groupedCols(
-            t("creditreport.detail.branch"),
+            identityLabel || t("creditreport.detail.branch"),
             r => r[identityKey] || (otherLabel || "—"),
             groups,
-            r => r[identityKey] === totalLabel
+            r => r[identityKey] === totalLabel,
+            extraCols
         );
         const info = [
             d.toDate ? t("creditreport.tblhead.asOf", { date: dmy(d.toDate) }) : "",
@@ -467,7 +488,22 @@
             asOf ? t("creditreport.hub.exportFromHistory") : "",
             planInfo && planInfo.month ? t("creditreport.plan.noteMonth", { month: planInfo.month.split("-").reverse().join("-"), from: dmy(planInfo.fromDate), to: dmy(planInfo.toDate), done: planInfo.daysDone, days: planInfo.daysInMonth }) : ""
         ].filter(Boolean);
-        return [{ name, title, info, cols, groups: colGroups, rows, freezeCols: 1 }];
+        return [{ name, title, info, cols, groups: colGroups, rows, freezeCols: 1 + extraCols.length }];
+    }
+
+    // List Staff positions, officerId (no leading zeros) -> position.
+    async function staffPositions() {
+        const d = await get("/api/creditofficer/list", {});
+        return new Map(((d && d.items) || []).map(o => [String(o.officerId ?? "").trim().replace(/^0+(?=.)/, ""), String(o.position || "").trim()]));
+    }
+    // Same rule as the By-CO page (RepDetailbyCO.js crInReport): a row
+    // with any figure, or an active Credit Officer / FSRO.
+    function crStaffInReport(r, position) {
+        const has = (v, k) => (k === "parPct" ? false : typeof v === "number" ? Number.isFinite(v) && v !== 0
+            : v && typeof v === "object" ? Object.entries(v).some(([kk, x]) => has(x, kk)) : false);
+        if (has(r)) return true;
+        const branch = String(r.branch || "").trim().toLowerCase();
+        return ["credit officer", "financial service relation officer"].includes(position.toLowerCase()) && !!branch && branch !== "stop disburse";
     }
 
     // ========================================
@@ -774,7 +810,8 @@
         asOf,
         path: "/api/creditreport/byco", historyPath: "/api/creditreport/byco/history",
         planPath: "/api/creditreport/officer-plan-vs-actual", planMatchField: "id",
-        name: "DailyMonitoring_Officer", title: dmTitle("creditreport.hub.tileOfficer"), identityKey: "name", groups: officerGroups()
+        name: "DailyMonitoring_Officer", title: dmTitle("creditreport.hub.tileOfficer"), identityKey: "name", groups: officerGroups(),
+        identityLabel: t("creditreport.compare.colName"), staffCols: true
     });
     const sheetDmProduct = asOf => sheetDailyMonitoring({
         asOf,
