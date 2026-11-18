@@ -1281,7 +1281,7 @@ function crTableHeadMeta() {
         const [y, m] = String(crPlanData.month || "").split("-");
         parts.push(span(t("creditreport.tblhead.planMonth", { month: `${m}-${y}` })), span(`${crFmtDateDMY(crPlanData.fromDate)} → ${crFmtDateDMY(crPlanData.toDate)}`));
     } else {
-        parts.push(span(t("creditreport.tblhead.asOf", { date: document.getElementById("crOsGridMerge").textContent.trim() })));
+        parts.push(span(t("creditreport.tblhead.asOf", { date: CRLastMonth.headAsOf(d, document.getElementById("crOsGridMerge").textContent.trim()) })));
     }
     const keys = crSectionKeys();
     const has = (...ks) => !keys.length || ks.some(k => keys.includes(k));
@@ -1289,7 +1289,7 @@ function crTableHeadMeta() {
         if (has("disburse", "disburseArea", "los", "losArea")) parts.push(span(t("creditreport.tblhead.disb", { from: crFmtDateDMY(d.fromDate), to: crFmtDateDMY(d.toDate) })));
         if (has("writeOff", "writeOffArea")) parts.push(span(t("creditreport.tblhead.wo", { from: crFmtDateDMY(d.woFromDate), to: crFmtDateDMY(d.woToDate) })));
     }
-    if (has("parT24", "parT24Area")) parts.push(span(`T24 ${document.getElementById("crArrearsPenalty").textContent.trim()}`));
+    if (has("parT24", "parT24Area")) parts.push(span(CRLastMonth.headT24(d, `T24 ${document.getElementById("crArrearsPenalty").textContent.trim()}`)));
     return parts.join("");
 }
 
