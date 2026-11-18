@@ -29,6 +29,28 @@ let crPlanLoading = null;
 // same as everything else here; cheap, and keeps picks (e.g. a newly
 // reassigned officer) current.
 let crOfficerPositions = new Map(); // officerId -> lowercased position
+
+// Who belongs in this report (18/11/2026). List Staff also lists people
+// who hold no loans — managers, staff gone to "Stop Disburse", rows with
+// no branch. A row is shown when it has any figure at all, or when it is
+// an active Credit Officer / FSRO (a new one may still read 0). Rows
+// left out are all zero, so the Total row is unchanged.
+const CR_LOAN_POSITIONS = ["credit officer", "financial service relation officer"];
+const crIdKey = v => String(v ?? "").trim().replace(/^0+(?=.)/, "");
+function crHasFigures(v, key) {
+    if (key === "parPct") return false;
+    if (typeof v === "number") return Number.isFinite(v) && v !== 0;
+    if (v && typeof v === "object") return Object.entries(v).some(([k, x]) => crHasFigures(x, k));
+    return false;
+}
+function crInReport(it) {
+    if (!crOfficerPositions.size) return true; // positions not loaded: show everyone
+    if (crHasFigures(it)) return true;
+    let pos = crOfficerPositions.get(String(it.id)) ?? "";
+    if (!pos) for (const [id, p] of crOfficerPositions) if (crIdKey(id) === crIdKey(it.id)) { pos = p; break; }
+    const branch = String(it.branch || "").trim().toLowerCase();
+    return CR_LOAN_POSITIONS.includes(pos) && !!branch && branch !== "stop disburse";
+}
 async function crLoadOfficerPositions() {
     try {
         const res = await fetch(`${API.BASE_URL}/api/creditofficer/list`, { headers: { Authorization: `Bearer ${crToken}` } });
@@ -688,12 +710,13 @@ function crRenderSection() {
         return;
     }
 
-    crDisplayItems = crApplySort(crData.items);
-    crBarItems = new Set(crData.items);
+    const shown = crData.items.filter(crInReport);
+    crDisplayItems = crApplySort(shown);
+    crBarItems = new Set(shown);
     crBarMax = crCompareMode() === "actual" ? {} : null;
     if (crBarMax) {
         section.groups.forEach(g => g.fields.forEach(f => {
-            if (f.money && /\.value$/.test(f.key)) crBarMax[f.key] = Math.max(0, ...crData.items.map(it => Number(crGetByPath(it, f.key)) || 0));
+            if (f.money && /\.value$/.test(f.key)) crBarMax[f.key] = Math.max(0, ...shown.map(it => Number(crGetByPath(it, f.key)) || 0));
         }));
     }
 
