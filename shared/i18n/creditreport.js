@@ -106,6 +106,7 @@ CMI18n.register({
 
   "creditreport.compare.colCif": { km: "CIF", en: "CIF" },
   "creditreport.compare.colName": { km: "ឈ្មោះ", en: "Name" },
+  "creditreport.export.position": { km: "តួនាទី", en: "Position" },
   "creditreport.compare.colClass": { km: "ចំណាត់ថ្នាក់", en: "Class" },
 
   "creditreport.compare.dowSun": { km: "អា", en: "Sun" },
