@@ -31,7 +31,8 @@ CMI18n.register({
 
   // account.html
   "settings.account.employeeId": { km: "អត្តលេខៈ", en: "Employee ID" },
-  "settings.account.role": { km: "តួនាទី", en: "Role" },
+  "settings.account.role": { km: "សិទ្ធិ (Role)", en: "Role" },
+  "settings.account.position": { km: "តួនាទី (Position)", en: "Position" },
   "settings.account.branch": { km: "សាខា", en: "Branch" },
   "settings.account.phone": { km: "លេខទូរស័ព្ទ", en: "Phone Number" },
   "settings.account.unknown": { km: "មិនស្គាល់", en: "Unknown" },
