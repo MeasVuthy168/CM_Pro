@@ -349,7 +349,9 @@
             // sheetDailyMonitoring() (cr-export-all.js) returns an array
             // (it may be empty on a failed fetch) — the same shape its
             // own SHEET_JOBS entries all have, for runPool() to flatten.
-            const [sheet] = await window.crExportDailyMonitoring[dmKey]();
+            // Saved & Compare on: the sheet is that saved day (asOf).
+            const asOf = window.CRLastMonth && CRLastMonth.baseAt ? CRLastMonth.baseAt() || undefined : undefined;
+            const [sheet] = await window.crExportDailyMonitoring[dmKey](asOf);
             if (!sheet || !sheet.rows || !sheet.rows.length) {
                 notify(t("creditreport.detail.nothingToExport"), "warning");
                 return;

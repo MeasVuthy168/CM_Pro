@@ -1042,7 +1042,9 @@ function crPopulateFilters(data) {
 // ========================================
 function crCompareMode() {
     if (crMode !== "current") return "actual";
-    return document.getElementById("crCompare")?.value === "lastMonth" ? "lastMonth" : "actual";
+    const v = document.getElementById("crCompare")?.value;
+    // "Saved date…" is Last Month against a picked day (cr-last-month.js).
+    return v === "lastMonth" || CRLastMonth.isSavedCompare(v) ? "lastMonth" : "actual";
 }
 
 // Branch / Officer change every location's figures and aren't saved.
@@ -1068,6 +1070,7 @@ const crLastMonth = CRLastMonth.controller({
     blockedBy: crLastMonthFilters,
     sectionFilters: crLastMonthSectionFilters,
     render: () => crRenderSection(),
+    reload: () => crRunReport(),
     noteEl: "crLmNote",
     compact: true,
     fmtDate: v => crFmtDateDMY(v),
@@ -1156,7 +1159,7 @@ function crReadStateFromUrl() {
 
     crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
 
-    if (p.get("compare") === "lastMonth") document.getElementById("crCompare").value = "lastMonth";
+    if (p.get("compare") === "lastMonth" || CRLastMonth.isSavedCompare(p.get("compare"))) document.getElementById("crCompare").value = p.get("compare");
 
     // Branch/Officer/District/Commune selects have no options yet at this
     // point (they're populated from the first API response) — stash the
@@ -1237,6 +1240,10 @@ async function crRunReport() {
         }
 
         crData = data;
+        if (!(await crLastMonth.applyBase())) {
+            crShowEmpty(crLastMonth.baseMessage());
+            return;
+        }
         crPopulateHistoryLocationRoster(data.items);
         crSeedHistoryDates(data);
         document.getElementById("crSearchWrap").style.display = "flex";

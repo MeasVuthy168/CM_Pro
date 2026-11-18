@@ -197,6 +197,8 @@ function crSections() {
 function crCompareMode() {
     if (crMode !== "current") return "actual";
     const v = document.getElementById("crCompare")?.value;
+    // "Saved date…" is Last Month against a picked day (cr-last-month.js).
+    if (CRLastMonth.isSavedCompare(v)) return "lastMonth";
     return v === "plan" || v === "lastMonth" ? v : "actual";
 }
 
@@ -347,6 +349,7 @@ const crLastMonth = CRLastMonth.controller({
     blockedBy: () => [],
     sectionFilters: crLastMonthSectionFilters,
     render: () => crRenderSummary(),
+    reload: () => crRunReport(),
     noteEl: "crLmNote",
     compact: true,
     fmtDate: v => crFmtDateDMY(v),
@@ -438,7 +441,7 @@ function crReadStateFromUrl() {
     crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
 
     const compare = p.get("compare");
-    if (compare === "plan" || compare === "lastMonth") document.getElementById("crCompare").value = compare;
+    if (compare === "plan" || compare === "lastMonth" || CRLastMonth.isSavedCompare(compare)) document.getElementById("crCompare").value = compare;
 }
 
 function crSyncStateToUrl() {
@@ -684,9 +687,13 @@ function crBuildRow(item, section, isTotal, rank) {
         ${cells}
       </tr>`;
 
-    if (isExpanded && crDetailedData) {
+    const savedBase = !!(crSummaryData && crSummaryData.savedBase);
+    if (isExpanded && (crDetailedData || savedBase)) {
         let co, fsro, digital;
-        if (isTotal) {
+        // Saved & Compare: the saved day's own CO / FSRO / Digital.
+        if (savedBase) {
+            ({ co, fsro, digital } = item.breakdown || {});
+        } else if (isTotal) {
             ({ co, fsro, digital } = crDetailedData.grand);
         } else {
             const group = crDetailedData.groups.find(g => g.branch === item.branch);
@@ -701,7 +708,7 @@ function crBuildRow(item, section, isTotal, rank) {
         if (co) {
             // An FSRO-only branch manager (Staff scope "fsro") is served the
             // FSRO part only: CO and Digital would always read 0.
-            const fsroOnly = crDetailedData.staffScope === "fsro";
+            const fsroOnly = (crDetailedData || crSummaryData || {}).staffScope === "fsro";
             html +=
                 (fsroOnly ? "" : crBuildSummaryBreakdownRow(co, section, t("creditreport.byBranch.teamCo"))) +
                 crBuildSummaryBreakdownRow(fsro, section, t("creditreport.byCO.fsro")) +
@@ -1446,6 +1453,10 @@ async function crRunReport() {
         }
 
         crSummaryData = data;
+        if (!(await crLastMonth.applyBase())) {
+            crShowEmpty(crLastMonth.baseMessage());
+            return;
+        }
         crSeedHistoryDates(data);
         crPopulateHistoryBranchFilter(data);
         document.getElementById("crTableScroll").style.display = "block";

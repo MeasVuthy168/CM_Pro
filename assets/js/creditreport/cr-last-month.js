@@ -45,8 +45,10 @@ window.CRLastMonth = (() => {
     // The last saved day on or before last month's end: { date, day } or
     // null when none was saved in the 2 months before it. query: extra
     // parameters for the history endpoint (e.g. { branch }).
-    function load({ endpoint, token, toDate, query }) {
-        const to = cutoff(toDate);
+    // at: a date key to use instead of last month's end (Saved date
+    // compare / Saved & Compare) — the last saved day on or before it.
+    function load({ endpoint, token, toDate, query, at }) {
+        const to = at || cutoff(toDate);
         if (!to) return Promise.resolve(null);
         const params = new URLSearchParams({ ...(query || {}), dateFrom: daysBefore(to, 62), dateTo: to, latest: "1" });
         const key = `${endpoint}|${params}`;
@@ -155,15 +157,16 @@ window.CRLastMonth = (() => {
 
     // The note under the table: which day "Last Month" is, and why some
     // figures show "—".
-    function renderNote(el, { showsT24, info, error, blocked, totalBlocked, filters, productSections, t24Class, fmtDate }) {
+    function renderNote(el, { showsT24, info, error, blocked, totalBlocked, filters, productSections, t24Class, fmtDate, savedMode }) {
         if (!el) return;
         el.style.display = "";
         const lines = [];
+        const k = savedMode ? "creditreport.saved" : "creditreport.lastMonth";
         if (error) lines.push(t("creditreport.lastMonth.loadFailed"));
         else if (!info) lines.push(t("creditreport.plan.loading"));
         else if (!info.date) lines.push(t("creditreport.lastMonth.noSnapshot", { date: fmtDate(info.cutoff) }));
-        else lines.push(t("creditreport.lastMonth.noteDate", { date: fmtDate(info.date) }), t("creditreport.lastMonth.noteFlows"));
-        if (showsT24) lines.push(t("creditreport.lastMonth.noteT24"));
+        else lines.push(t(`${k}.noteDate`, { date: fmtDate(info.date) }), t(`${k}.noteFlows`));
+        if (showsT24) lines.push(t(`${k}.noteT24`));
         if (blocked) lines.push(t("creditreport.lastMonth.noteFilters", { filters }));
         if (productSections) lines.push(t("creditreport.lastMonth.noteProduct", { sections: productSections }));
         if (t24Class) lines.push(t("creditreport.lastMonth.noteClass"));
@@ -288,8 +291,10 @@ window.CRLastMonth = (() => {
     //   totalBlocked() true when the rows on screen are a subset (the
     //             saved total then isn't theirs)
     //   render()  re-draws the table; noteEl the note's element id
+    //   reload()  fetches the live report again (Saved & Compare on / off)
     function controller(opts) {
         let info = null, error = false;
+        let baseInfo = null, baseMsg = "", baseSummed = false;
         const filters = () => {
             const f = (opts.sectionFilters && opts.sectionFilters()) || {};
             return { t24Class: f.t24Class || [], t24Product: f.t24Product || [], nbcProduct: f.nbcProduct || [] };
@@ -307,6 +312,7 @@ window.CRLastMonth = (() => {
         }
 
         function note() {
+            syncUi();
             const el = document.getElementById(opts.noteEl);
             if (!opts.active()) return hideNote(el);
             const blocked = opts.blockedBy();
@@ -321,16 +327,20 @@ window.CRLastMonth = (() => {
                 info, error, blocked: blocked.length > 0, filters: blocked.join(" / "),
                 productSections: blocked.length ? "" : sections.join(" / "),
                 t24Class: !blocked.length && !f.t24Product.length && f.t24Class.length > 0,
-                totalBlocked: !!(opts.totalBlocked && opts.totalBlocked()), fmtDate: opts.fmtDate
+                totalBlocked: !!(opts.totalBlocked && opts.totalBlocked()), fmtDate: opts.fmtDate,
+                savedMode: savedCompare()
             });
         }
 
         async function ensure() {
             const data = opts.data();
+            syncUi();
             if (!data || !opts.active()) return note();
+            if (savedCompare() && !saved.cmpAt) { saved.cmpAt = daysBefore(String(data.toDate).slice(0, 10), 1); persist(); syncUi(); }
+            info = null;
             note();
             try {
-                info = await load({ endpoint: opts.endpoint, token: opts.token, toDate: data.toDate });
+                info = await load({ endpoint: opts.endpoint, token: opts.token, toDate: data.toDate, at: compareAt() || undefined });
                 error = false;
                 (data.items || []).forEach(it => attach(it, itemFor(opts.keyOf(it))));
                 attach(data.total, itemFor("total"));
@@ -352,7 +362,213 @@ window.CRLastMonth = (() => {
         // Last month's saved date as the table shows it ("30-Sep-26"), or "".
         const lastLabel = () => (opts.active() && info && info.date ? shortDate(info.date) : "");
 
-        return { ensure, note, itemFor, expand: expandSection, lastLabel };
+        // ---- Saved & Compare: the table shows a saved day instead of
+        // the live report. Called by the page right after the live fetch
+        // (the live rows keep the page's own filters and scope); each row
+        // takes that day's saved figures. false = nothing to show
+        // (baseMessage() says why).
+        async function applyBase() {
+            const data = opts.data();
+            baseInfo = null; baseMsg = ""; baseSummed = false; shownBase = "";
+            if (!baseOn() || !data) { syncUi(); return true; }
+            const liveTo = String(data.toDate || "").slice(0, 10);
+            if (!saved.baseAt) { saved.baseAt = daysBefore(liveTo, 1); persist(); }
+            const blocked = opts.blockedBy();
+            if (blocked.length) { baseMsg = t("creditreport.saved.blocked", { filters: blocked.join(" / ") }); syncUi(); return false; }
+            const got = await load({ endpoint: opts.endpoint, token: opts.token, at: saved.baseAt });
+            if (!got || !got.day) { baseMsg = t("creditreport.lastMonth.noSnapshot", { date: opts.fmtDate(saved.baseAt) }); syncUi(); return false; }
+            const f = filters();
+            const byKey = new Map((got.day.items || []).map(it => [opts.keyOf(it), it]));
+            const seen = new Set(), rows = [];
+            for (const it of data.items || []) {
+                const k = opts.keyOf(it), prev = byKey.get(k);
+                if (!prev) continue;
+                swapFigures(it, scopeSaved(prev, f));
+                seen.add(k); rows.push(it);
+            }
+            const subset = !!(opts.totalBlocked && opts.totalBlocked());
+            // Rows saved that day but gone from the live list (an officer
+            // who left …) — only when the list isn't narrowed by a filter.
+            if (!subset) for (const [k, prev] of byKey) if (!seen.has(k)) rows.push(scopeSaved(prev, f));
+            data.items = rows;
+            if (data.total) {
+                if (subset) { swapFigures(data.total, sumRows(rows)); baseSummed = true; }
+                else if (got.day.total) swapFigures(data.total, scopeSaved(got.day.total, f));
+            }
+            const [y, m] = got.date.split("-");
+            data.live = data.live || { toDate: data.toDate, fromDate: data.fromDate, woFromDate: data.woFromDate, woToDate: data.woToDate };
+            data.toDate = got.date; data.fromDate = `${y}-${m}-01`;
+            data.woFromDate = `${y}-01-01`; data.woToDate = `${y}-12-31`;
+            data.savedBase = got.date;
+            baseInfo = got; shownBase = got.date;
+            syncUi();
+            return true;
+        }
+        const baseMessage = () => baseMsg;
+
+        // ---- the controls (added once, to the page's own filter card) ----
+        function syncUi() {
+            const ui = mountUi();
+            if (!ui) return;
+            const { sel, cmpRow, cmpInput, baseRow, baseInput, baseText, savedBtn, compareRow } = ui;
+            const inCurrent = compareRow.style.display !== "none" || baseOn();
+            cmpRow.style.display = inCurrent && savedCompare() ? "" : "none";
+            if (cmpInput.value !== (saved.cmpAt || "")) cmpInput.value = saved.cmpAt || "";
+            baseRow.style.display = baseOn() ? "" : "none";
+            if (baseInput.value !== (saved.baseAt || "")) baseInput.value = saved.baseAt || "";
+            savedBtn.classList.toggle("active", baseOn());
+            if (baseOn()) document.getElementById("crModeCurrentBtn")?.classList.remove("active");
+            const planOpt = sel.querySelector('option[value="plan"]');
+            if (planOpt) {
+                planOpt.hidden = baseOn(); planOpt.disabled = baseOn();
+                if (baseOn() && sel.value === "plan") { sel.value = "actual"; sel.dispatchEvent(new Event("change")); }
+            }
+            const lines = [];
+            if (baseInfo) {
+                lines.push(t("creditreport.saved.baseShowing", { date: opts.fmtDate(baseInfo.date) }));
+                if (baseInfo.date !== saved.baseAt) lines.push(t("creditreport.saved.baseNearest", { picked: opts.fmtDate(saved.baseAt) }));
+                if (baseSummed) lines.push(t("creditreport.saved.totalSum"));
+            } else if (baseMsg) lines.push(baseMsg);
+            baseText.textContent = lines.join(" ");
+        }
+
+        function chips(kind) {
+            const list = kind === "base"
+                ? [["prev", "creditreport.saved.chipPrev"], ["monthEnd", "creditreport.saved.chipMonthEnd"], ["yearEnd", "creditreport.saved.chipYearEnd"]]
+                : [["prev", "creditreport.saved.chipPrev"], ["week", "creditreport.saved.chipWeek"], ["monthEnd", "creditreport.saved.chipMonthEnd"]];
+            return list.map(([k, key]) => `<button type="button" class="cr-saved-chip" data-chip="${k}">${t(key)}</button>`).join("");
+        }
+        function chipDate(chip, from) {
+            if (!from) return "";
+            if (chip === "prev") return daysBefore(from, 1);
+            if (chip === "week") return daysBefore(from, 7);
+            if (chip === "monthEnd") return cutoff(from);
+            if (chip === "yearEnd") return `${Number(from.slice(0, 4)) - 1}-12-31`;
+            return "";
+        }
+        let ui = null;
+        function mountUi() {
+            if (ui) return ui;
+            const sel = document.getElementById("crCompare");
+            const compareRow = document.getElementById("crCompareRow");
+            const modeRow = document.querySelector(".cr-mode-row");
+            if (!sel || !compareRow || !modeRow) return null;
+            const opt = document.createElement("option");
+            opt.value = SAVED; opt.textContent = t("creditreport.saved.compareOption");
+            sel.appendChild(opt);
+            if (pendingCompare === SAVED) sel.value = SAVED;
+            const today = phnomPenhToday();
+            const row = (id, label, kind) => {
+                const r = document.createElement("div");
+                r.className = "cr-section-row cr-saved-row"; r.id = id; r.style.display = "none";
+                r.innerHTML = `<label class="cr-section-label" for="${id}Date">${t(label)}</label>
+                    <div class="cr-saved-pick"><input type="date" id="${id}Date" class="cr-section-select cr-saved-date" max="${today}">
+                    <div class="cr-saved-chips">${chips(kind)}</div>${kind === "base" ? `<div class="cr-saved-text" id="${id}Text"></div>` : ""}</div>`;
+                return r;
+            };
+            const cmpRow = row("crSavedCmpRow", "creditreport.saved.compareWith", "cmp");
+            compareRow.after(cmpRow);
+            const baseRow = row("crSavedBaseRow", "creditreport.saved.baseLabel", "base");
+            modeRow.after(baseRow);
+            const savedBtn = document.createElement("button");
+            savedBtn.type = "button"; savedBtn.id = "crModeSavedBtn"; savedBtn.className = "cr-mode-btn";
+            savedBtn.textContent = t("creditreport.saved.tab");
+            modeRow.appendChild(savedBtn);
+            ui = { sel, compareRow, cmpRow, cmpInput: cmpRow.querySelector("input"), baseRow, baseInput: baseRow.querySelector("input"),
+                baseText: baseRow.querySelector(".cr-saved-text"), savedBtn };
+
+            const setCmp = v => { if (!v || v === saved.cmpAt) return; saved.cmpAt = v; persist(); ensure(); };
+            const setBase = v => { if (!v || v === saved.baseAt) return; saved.baseAt = v; persist(); if (opts.reload) opts.reload(); };
+            ui.cmpInput.addEventListener("change", () => setCmp(ui.cmpInput.value));
+            ui.baseInput.addEventListener("change", () => setBase(ui.baseInput.value));
+            cmpRow.addEventListener("click", e => {
+                const b = e.target.closest("[data-chip]"); if (!b) return;
+                const d = opts.data();
+                setCmp(chipDate(b.dataset.chip, d && String(d.toDate || "").slice(0, 10)));
+            });
+            baseRow.addEventListener("click", e => {
+                const b = e.target.closest("[data-chip]"); if (!b) return;
+                const d = opts.data();
+                const from = d && String((d.live && d.live.toDate) || d.toDate || "").slice(0, 10);
+                setBase(chipDate(b.dataset.chip, from));
+            });
+            sel.addEventListener("change", syncUi);
+            let switching = false;
+            const leaveBase = () => {
+                if (switching || !baseOn()) return;
+                saved.baseOn = false; persist(); baseInfo = null; baseMsg = "";
+                syncUi();
+                if (opts.reload) opts.reload();
+            };
+            document.getElementById("crModeCurrentBtn")?.addEventListener("click", leaveBase);
+            document.getElementById("crModeHistoryBtn")?.addEventListener("click", leaveBase);
+            savedBtn.addEventListener("click", () => {
+                if (baseOn()) return;
+                saved.baseOn = true; persist();
+                switching = true;
+                document.getElementById("crModeCurrentBtn")?.click();
+                switching = false;
+                syncUi();
+                if (opts.reload) opts.reload();
+            });
+            return ui;
+        }
+        mountUi();
+
+        return { ensure, note, itemFor, expand: expandSection, lastLabel, applyBase, baseMessage, syncUi };
+    }
+
+    // ---------- Saved date compare + Saved & Compare (18/11/2026) ----------
+    // Comparison "Saved date…": the same blocks as Last Month, against the
+    // last saved day on or before a picked date. Saved & Compare: the
+    // table shows a saved day instead of the live report (controller.
+    // applyBase), and compares it with its own last month or a saved
+    // date. Picks are kept per page for the browser session.
+    const SAVED = "savedDate";
+    const stKey = () => `cr_saved|${location.pathname}`;
+    const saved = (() => { try { return JSON.parse(sessionStorage.getItem(stKey()) || "{}") || {}; } catch (e) { return {}; } })();
+    function persist() { try { sessionStorage.setItem(stKey(), JSON.stringify(saved)); } catch (e) { /* private mode */ } }
+    // compare=savedDate in the URL, set before the option exists.
+    const pendingCompare = (() => { try { return new URLSearchParams(location.search).get("compare"); } catch (e) { return null; } })();
+    function savedCompare() { const s = document.getElementById("crCompare"); return !!s && s.value === SAVED; }
+    function isSavedCompare(v) { return v === SAVED; }
+    function compareAt() { return savedCompare() ? saved.cmpAt || "" : ""; }
+    function baseOn() { return !!saved.baseOn; }
+    // The saved day the table actually shows (the picked one, or the last
+    // saved day before it) — what Excel exports.
+    let shownBase = "";
+    function baseAt() { return baseOn() ? shownBase || "" : ""; }
+
+    // A row takes a saved day's figures: every non-text field is replaced,
+    // the row's own names (branch, officer, product …) stay.
+    function swapFigures(it, prev) {
+        if (!it || !prev) return;
+        for (const k of Object.keys(it)) if (typeof it[k] !== "string") delete it[k];
+        for (const k of Object.keys(prev)) if (typeof prev[k] !== "string" || !(k in it)) it[k] = prev[k];
+    }
+    // The rows shown added up (a filtered list's Total): counts and
+    // amounts summed; PAR % = value over the outstanding (Area figures
+    // over the Area outstanding).
+    function sumRows(rows) {
+        const out = {};
+        const add = (o, src) => {
+            for (const [k, v] of Object.entries(src || {})) {
+                if (typeof v === "number") { if (k !== "parPct") o[k] = (o[k] || 0) + (Number.isFinite(v) ? v : 0); }
+                else if (v && typeof v === "object" && !Array.isArray(v)) { if (!o[k] || typeof o[k] !== "object") o[k] = {}; add(o[k], v); }
+            }
+        };
+        rows.forEach(r => add(out, r));
+        const setPct = (node, d) => {
+            if (!node || typeof node !== "object") return;
+            if (typeof node.value === "number") node.parPct = d ? node.value / d : 0;
+            for (const v of Object.values(node)) if (v && typeof v === "object") setPct(v, d);
+        };
+        for (const k of Object.keys(out)) {
+            if (!/^(parT24|nbcOverdue)/.test(k)) continue;
+            const den = /Area/.test(k) ? (out.loanOutstandingArea || {}).value : (out.loanOutstanding || {}).value;
+            setPct(out[k], den);
+        }
+        return out;
     }
 
     // ---------- Daily History: T24 of past days = NBC Overdue ----------
@@ -437,5 +653,6 @@ window.CRLastMonth = (() => {
     // T24 is no longer saved in snapshots — nothing to refresh.
     function canRefreshT24() { return false; }
 
-    return { cutoff, shortDate, load, attach, diffTree, expand, cell, renderNote, hideNote, scopeSaved, controller, t24FromNbcHistory, t24HistNote, phnomPenhToday, fetchLive, addLiveToday, liveDayShown, isLiveDate, canRefreshT24 };
+    return { cutoff, shortDate, load, attach, diffTree, expand, cell, renderNote, hideNote, scopeSaved, controller, t24FromNbcHistory, t24HistNote, phnomPenhToday, fetchLive, addLiveToday, liveDayShown, isLiveDate, canRefreshT24,
+        SAVED, isSavedCompare, compareAt, baseAt, sumRows };
 })();

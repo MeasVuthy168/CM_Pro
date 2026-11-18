@@ -775,7 +775,9 @@ function crUpdateClassVisibility() {
 // ========================================
 function crCompareMode() {
     if (crMode !== "current") return "actual";
-    return document.getElementById("crCompare")?.value === "lastMonth" ? "lastMonth" : "actual";
+    const v = document.getElementById("crCompare")?.value;
+    // "Saved date…" is Last Month against a picked day (cr-last-month.js).
+    return v === "lastMonth" || CRLastMonth.isSavedCompare(v) ? "lastMonth" : "actual";
 }
 
 // The T24 / NBC filters only change their own section (cr-last-month.js).
@@ -792,6 +794,7 @@ const crLastMonth = CRLastMonth.controller({
     blockedBy: () => [],
     sectionFilters: crLastMonthSectionFilters,
     render: () => crRenderSection(),
+    reload: () => crRunReport(),
     noteEl: "crLmNote",
     compact: true,
     fmtDate: v => crFmtDateDMY(v),
@@ -880,7 +883,7 @@ function crReadStateFromUrl() {
 
     crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
 
-    if (p.get("compare") === "lastMonth") document.getElementById("crCompare").value = "lastMonth";
+    if (p.get("compare") === "lastMonth" || CRLastMonth.isSavedCompare(p.get("compare"))) document.getElementById("crCompare").value = p.get("compare");
 }
 
 function crSyncStateToUrl() {
@@ -944,6 +947,10 @@ async function crRunReport() {
         }
 
         crData = data;
+        if (!(await crLastMonth.applyBase())) {
+            crShowEmpty(crLastMonth.baseMessage());
+            return;
+        }
         crPopulateHistoryProductRoster(data.items);
         crSeedHistoryDates(data);
         document.getElementById("crSearchWrap").style.display = "flex";
