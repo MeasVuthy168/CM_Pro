@@ -106,6 +106,8 @@
     // Excel would show (thousands separators, 2-decimal %).
     const fmtInt = n => (Number(n) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
     const fmtPct = n => (Number(n) * 100).toFixed(2) + "%";
+    // The Last Month lane's label while a sheet is built ("" = "Last Month").
+    let lmLaneLabel = "";
     const textCol = (label, get) => ({ label, type: "text", value: safeText(get) });
     const intCol = (label, get) => { const v = safeNum(get); return { label, type: "int", numFmt: "#,##0", value: v, text: r => { const n = v(r); return n === null ? "" : fmtInt(n); } }; };
     const moneyCol = (label, get) => { const v = safeNum(get); return { label, type: "num", numFmt: "#,##0", value: v, text: r => { const n = v(r); return n === null ? "" : fmtInt(n); } }; };
@@ -173,7 +175,7 @@
             return { ...kindCol(f.label, r => getPath(r.lastMonth, f.key)), tone: "past" };
         });
         cols.push(...lmCols);
-        lanes.push({ label: t("creditreport.lastMonth.col"), span: lmCols.length, tone: "past" });
+        lanes.push({ label: lmLaneLabel || t("creditreport.lastMonth.col"), span: lmCols.length, tone: "past" });
 
         // ---- Actual — the figure that matters most on this sheet,
         // tinted gold in its header and data cells, same highlight the
@@ -384,10 +386,11 @@
     // cutoff rule, same cache), unfiltered (every branch/officer/
     // product/location at once, matching the live sheet). `day.items`
     // / `day.total` are the same shape as the live {items,total}.
-    async function lastMonthDay(historyPath, toDate) {
+    // at: a picked saved date (the page's Comparison "Saved date…").
+    async function lastMonthDay(historyPath, toDate, at) {
         if (!toDate || typeof window.CRLastMonth === "undefined") return null;
         try {
-            const info = await CRLastMonth.load({ endpoint: historyPath, token: token(), toDate });
+            const info = await CRLastMonth.load({ endpoint: historyPath, token: token(), toDate, at: at || undefined });
             return info && info.day ? info : null;
         } catch (e) {
             console.error(`[export all] last month ${historyPath} failed:`, e);
@@ -450,7 +453,10 @@
         }
         let rows = toRows(items, d.total);
 
-        const lm = await lastMonthDay(historyPath, d.toDate);
+        // The page's own Comparison "Saved date…" (none from Export All).
+        const cmpAt = window.CRLastMonth && CRLastMonth.compareAt ? CRLastMonth.compareAt() : "";
+        const lm = await lastMonthDay(historyPath, d.toDate, cmpAt);
+        lmLaneLabel = cmpAt && lm && lm.date ? dmy(lm.date) : "";
         if (lm && lm.day) {
             const lmByKey = new Map(toRows(lm.day.items || [], lm.day.total).map(r => [String(r[identityKey]), r]));
             // Saved rows read like the reports' own Last Month: T24 from NBC.
@@ -484,7 +490,7 @@
         );
         const info = [
             d.toDate ? t("creditreport.tblhead.asOf", { date: dmy(d.toDate) }) : "",
-            lm && lm.date ? `${t("creditreport.lastMonth.col")}: ${dmy(lm.date)}` : "",
+            lm && lm.date ? `${cmpAt ? t("creditreport.saved.compareWith") : t("creditreport.lastMonth.col")}: ${dmy(lm.date)}` : "",
             asOf ? t("creditreport.hub.exportFromHistory") : "",
             planInfo && planInfo.month ? t("creditreport.plan.noteMonth", { month: planInfo.month.split("-").reverse().join("-"), from: dmy(planInfo.fromDate), to: dmy(planInfo.toDate), done: planInfo.daysDone, days: planInfo.daysInMonth }) : ""
         ].filter(Boolean);

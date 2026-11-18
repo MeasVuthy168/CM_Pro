@@ -533,6 +533,8 @@ function crT24ClassGroup(prefix, label) {
 function crCompareMode() {
     if (crMode !== "current") return "actual";
     const v = document.getElementById("crCompare")?.value;
+    // "Saved date…" is Last Month against a picked day (cr-last-month.js).
+    if (CRLastMonth.isSavedCompare(v)) return "lastMonth";
     return v === "plan" || v === "lastMonth" ? v : "actual";
 }
 
@@ -1247,6 +1249,7 @@ const crLastMonth = CRLastMonth.controller({
     sectionFilters: crLastMonthSectionFilters,
     totalBlocked: () => crPicks("crBranch").length > 0 || crPicks("crTeam").length > 0,
     render: () => crRenderSection(),
+    reload: () => crRunReport(),
     noteEl: "crLmNote",
     compact: true,
     fmtDate: v => crFmtDateDMY(v),
@@ -1342,7 +1345,7 @@ function crReadStateFromUrl() {
     crRestorePicks("crNbcClass", p.getAll("nbcClass"));
     crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
 
-    if (p.get("compare") === "plan" || p.get("compare") === "lastMonth") document.getElementById("crCompare").value = p.get("compare");
+    if (p.get("compare") === "plan" || p.get("compare") === "lastMonth" || CRLastMonth.isSavedCompare(p.get("compare"))) document.getElementById("crCompare").value = p.get("compare");
 }
 
 function crSyncStateToUrl() {
@@ -1424,6 +1427,10 @@ async function crRunReport() {
         }
 
         crData = data;
+        if (!(await crLastMonth.applyBase())) {
+            crShowEmpty(crLastMonth.baseMessage());
+            return;
+        }
         crPopulateHistoryOfficerRoster(data.items);
         crSeedHistoryDates(data);
         document.getElementById("crSearchWrap").style.display = "flex";
