@@ -712,10 +712,24 @@ function tidyGps(text) {
     return `${g.lat.toFixed(6)}, ${g.lng.toFixed(6)}`;
 }
 
+// GPS the person edited: any change to its text counts, even one that
+// only reformats the same place ("11.1,105.7" -> "11.1, 105.7", or the
+// same spot pasted as N / E or a Plus Code) — Save then stores it as
+// "lat, lng". Values put in by the editor itself (loading, tidying on
+// blur) don't set this.
+let wkGpsEdited = false;
+let wkGpsRaw = "";
+function markBaseline() {
+    wkBaseline = currentValues();
+    wkGpsRaw = reasonGPS.value.trim();
+    wkGpsEdited = false;
+}
+
 function isDirty() {
     if (!wkBaseline) return false;
     const now = currentValues();
-    return [...ReasonKit.PARTS, "al", "gps"].some(k => now[k] !== wkBaseline[k]);
+    if ([...ReasonKit.PARTS, "al", "gps"].some(k => now[k] !== wkBaseline[k])) return true;
+    return wkGpsEdited && reasonGPS.value.trim() !== wkGpsRaw;
 }
 
 function siblings(row) {
@@ -831,7 +845,7 @@ async function openDetail(row) {
     paintPendingNote(pending);
     updateGpsButtons();
     updateNav();
-    wkBaseline = currentValues();
+    markBaseline();
     wkStoredAt = "";
     refreshActions();
 
@@ -848,7 +862,7 @@ async function openDetail(row) {
         reasonAL.value = found.al ? found.al.slice(0, 10) : "";
         reasonGPS.value = found.gps || "";
         updateGpsButtons();
-        wkBaseline = currentValues();
+        markBaseline();
     }
     refreshActions();
 }
@@ -894,7 +908,7 @@ function saveDraft() {
         r.__pending = true;
         ReasonKit.setPending(r.concate, v, v.al, v.gps);
     });
-    wkBaseline = currentValues();
+    markBaseline();
     wkAutoFill = false;
     return targets.length;
 }
@@ -1071,6 +1085,7 @@ syncDateClear();
         const at = reasonGPS.selectionStart ?? v.length, end = reasonGPS.selectionEnd ?? at;
         const before = v.slice(0, at).replace(/[\s,]+$/, ""), after = v.slice(end).replace(/^[\s,]+/, "");
         reasonGPS.value = `${before}, ${after}`;
+        wkGpsEdited = true;
         const pos = before.length + 2;
         reasonGPS.focus();
         try { reasonGPS.setSelectionRange(pos, pos); } catch (e) {}
@@ -1092,6 +1107,7 @@ syncDateClear();
         try { text = await navigator.clipboard.readText(); } catch (e) { text = ""; }
         if (!String(text || "").trim()) return notify(t("work.gpsPasteHow"), "info");
         reasonGPS.value = String(text).trim();
+        wkGpsEdited = true;
         reasonGPS.dispatchEvent(new Event("input", { bubbles: true }));
         const tidy = tidyGps(reasonGPS.value);
         if (ReasonKit.parseGps(tidy)) {
@@ -1103,6 +1119,7 @@ syncDateClear();
     });
     document.querySelector(".reason-gps-row")?.appendChild(paste);
     reasonGPS.addEventListener("blur", () => {
+        if (!wkGpsEdited) return;   // a value as loaded stays as it is
         const tidy = tidyGps(reasonGPS.value);
         if (ReasonKit.parseGps(tidy) && tidy !== reasonGPS.value) {
             const hint = $("reasonGpsHint").textContent, cls = $("reasonGpsHint").className;
@@ -1113,7 +1130,8 @@ syncDateClear();
     });
 })();
 
-reasonGPS.addEventListener("input", () => {
+reasonGPS.addEventListener("input", e => {
+    if (e.isTrusted) wkGpsEdited = true;
     updateGpsButtons();
     const raw = reasonGPS.value.trim();
     if (!raw) return setGpsHint("", "");
@@ -1133,6 +1151,7 @@ $("btnGpsHere").addEventListener("click", () => {
     ReasonKit.locateHere(
         (lat, lng, acc) => {
             reasonGPS.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            wkGpsEdited = true;
             updateGpsButtons();
             refreshActions();
             setGpsHint(`±${Math.round(acc)}m`, "ok");
@@ -1147,6 +1166,7 @@ $("btnGpsPick").addEventListener("click", () => {
         notify,
         confirm: (lat, lng) => {
             reasonGPS.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            wkGpsEdited = true;
             updateGpsButtons();
             refreshActions();
             setGpsHint(t("work.gpsFromMap"), "ok");
