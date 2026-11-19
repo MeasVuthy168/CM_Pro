@@ -109,6 +109,7 @@ let scAllRecords = [];      // raw {k, v, uploadedAt} from server
 let scEditingCIF = null;    // null = adding new
 let scDeleteTargetCIF = null;
 let scOccupationSuggestions = [];
+let scConclusionSuggestions = [];   // conclusions written by hand before (សរសេរផ្ទាល់)
 let scCurrentRows = [];     // whatever's currently displayed (post-filter, post-sort) — feeds Export Excel
 let scViewMode = localStorage.getItem("sc_view") === "list" ? "list" : "card";
 let scOriginalCycle = null; // the cycle value a record was opened with, while editing — see the cboCycle change listener
@@ -220,6 +221,16 @@ function scRebuildOccupationSuggestions() {
     });
   });
   scOccupationSuggestions = Array.from(set).sort((a, b) => a.localeCompare(b));
+
+  // Conclusions typed in "សរសេរផ្ទាល់" (not the preset choices), most
+  // used first, for that field's suggestions.
+  const counts = new Map();
+  scAllRecords.forEach((r) => {
+    const c = String(scRecordToObj(r).conclusion || "").trim();
+    if (c && !SC_CONCLUSION_OPTIONS.includes(c)) counts.set(c, (counts.get(c) || 0) + 1);
+  });
+  scConclusionSuggestions = Array.from(counts.keys())
+    .sort((a, b) => counts.get(b) - counts.get(a) || a.localeCompare(b));
 }
 
 // ---------------------------------------------------------
@@ -1774,9 +1785,10 @@ async function scConfirmDelete() {
 }
 
 // ---------------------------------------------------------
-// Autosuggest (Occupation In File / Current Occupation)
+// Autosuggest (Occupation In File / Current Occupation, and the
+// conclusion written by hand). source() -> the values to suggest.
 // ---------------------------------------------------------
-function scBindAutosuggest(inputId, listId) {
+function scBindAutosuggest(inputId, listId, source = () => scOccupationSuggestions) {
   const input = document.getElementById(inputId);
   const list = document.getElementById(listId);
 
@@ -1786,7 +1798,7 @@ function scBindAutosuggest(inputId, listId) {
       list.hidden = true;
       return;
     }
-    const matches = scOccupationSuggestions.filter((s) => s.toLowerCase().includes(kw)).slice(0, 20);
+    const matches = source().filter((s) => s.toLowerCase().includes(kw) && s.toLowerCase() !== kw).slice(0, 20);
     list.innerHTML = "";
     matches.forEach((m) => {
       const li = document.createElement("li");
@@ -1794,6 +1806,7 @@ function scBindAutosuggest(inputId, listId) {
       li.addEventListener("click", () => {
         input.value = m;
         list.hidden = true;
+        input.dispatchEvent(new Event("change", { bubbles: true }));
       });
       list.appendChild(li);
     });
@@ -2024,6 +2037,7 @@ function scBindEvents() {
 
   scBindAutosuggest("txtOccupationInFile", "lstOccupationInFileSuggest");
   scBindAutosuggest("txtCurrentOccupation", "lstCurrentOccupationSuggest");
+  scBindAutosuggest("txtConclusionOther", "lstConclusionOtherSuggest", () => scConclusionSuggestions);
 
   document.querySelectorAll(".sc-tab-btn").forEach((btn) => {
     btn.addEventListener("click", () => scSwitchTab(btn.dataset.tab));

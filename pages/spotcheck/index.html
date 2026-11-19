@@ -452,9 +452,10 @@ No Internet Connection
             </select>
           </div>
 
-          <div class="sc-field" id="conclusionOtherWrap" hidden>
+          <div class="sc-field sc-autosuggest" id="conclusionOtherWrap" hidden>
             <label for="txtConclusionOther" data-i18n="spotcheck.writeOwnLabel">សរសេរផ្ទាល់</label>
-            <textarea id="txtConclusionOther" rows="3"></textarea>
+            <textarea id="txtConclusionOther" rows="3" autocomplete="off"></textarea>
+            <ul id="lstConclusionOtherSuggest" class="sc-suggest-list" hidden></ul>
           </div>
         </fieldset>
 
