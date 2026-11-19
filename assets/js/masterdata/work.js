@@ -207,9 +207,17 @@ const PART_LABEL = {
     occupationLoan: "arrears.reasonOccLoanLabel", occupationNow: "arrears.reasonOccNowLabel",
     purpose: "arrears.reasonPurposeLabel", reason: "arrears.reasonReasonLabel", solution: "arrears.reasonSolutionOnlyLabel"
 };
+// The next client after this one. With "same reason for every LD of the
+// CIF" ticked, the CIF's other LDs got it too, so they are skipped: the
+// next one is the next CIF (19/11/2026).
 function nextRow() {
     const i = wkShown.indexOf(wkRow);
-    return i >= 0 ? wkShown[i + 1] || null : null;
+    if (i < 0) return null;
+    const allLd = $("reasonApplyAll").checked && !$("reasonApplyAllWrap").hidden;
+    for (let j = i + 1; j < wkShown.length; j++) {
+        if (!allLd || !wkRow.cif || wkShown[j].cif !== wkRow.cif) return wkShown[j];
+    }
+    return null;
 }
 
 function refreshActions() {
@@ -233,10 +241,12 @@ function refreshActions() {
         submit.disabled = missing.length > 0;
         submit.textContent = t("work.submit");
     } else if (wkStoredAt) {
+        // Nothing left after it (e.g. a list of one CIF's LDs, all
+        // given the reason at once): "✓ Done · Back" leaves the editor.
         const next = nextRow();
         submit.dataset.mode = next ? "next" : "done";
-        submit.disabled = !next;
-        submit.textContent = next ? `${t("work.nextClient")} ›` : `✓ ${t("work.submittedState")}`;
+        submit.disabled = false;
+        submit.textContent = next ? `${t("work.nextClient")} ›` : `✓ ${t("work.doneBack")}`;
         submit.classList.toggle("wk-done", !next);
     } else {
         submit.disabled = true;
@@ -993,7 +1003,12 @@ $("btnWkSubmit").addEventListener("click", async () => {
     const btn = $("btnWkSubmit");
     if (wkBusy || btn.disabled) return;
     // Once submitted, the yellow button moves on to the next client.
-    if (btn.dataset.mode === "next") return step(1);
+    if (btn.dataset.mode === "next") {
+        const target = nextRow();
+        if (target && (await okToLeave())) openDetail(target);
+        return;
+    }
+    if (btn.dataset.mode === "done") return $("btnWkBack").click();
     if (requiredMissing(currentValues()).length) return refreshActions();
     if ((isDirty() || wkAutoFill) && !saveDraft()) return;
     wkBusy = true; refreshActions();
