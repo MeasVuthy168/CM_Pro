@@ -1037,12 +1037,12 @@ function buildRowElement(row, index) {
         <td>${escapeHtml(row.coId)}</td>
         <td>${escapeHtml(row.coResponse)}</td>
         <td>${escapeHtml(row.cifCoborrower)}</td>
+        <td>${escapeHtml(row.product)}</td>
+        <td>${gpsCellHtml(row.gps)}</td>
         ${reasonPartCells(row, followupCss)}
         <td class="${followupCss}">${escapeHtml(formatRowDateDMY(row.alFollowup))}</td>
         <td>${escapeHtml(row.user)}</td>
         <td>${escapeHtml(formatRowDateTime12h(row.dateBackup))}</td>
-        <td>${escapeHtml(row.product)}</td>
-        <td>${gpsCellHtml(row.gps)}</td>
     `;
     return tr;
 }
@@ -1845,11 +1845,11 @@ function buildGroupTbody(g, no) {
             <td>${escapeHtml(g.coId || "")}</td>
             <td>${shared("coResponse")}</td>
             <td>${shared("cifCoborrower")}</td>
+            <td>${shared("product")}</td>
+            <td>${gpsCellHtml(cifSharedValue(g.rows, "gps"))}</td>
             ${reasonCells}
             <td>${escapeHtml(latest.user || "")}</td>
             <td>${escapeHtml(formatRowDateTime12h(latest.dateBackup || ""))}</td>
-            <td>${shared("product")}</td>
-            <td>${gpsCellHtml(cifSharedValue(g.rows, "gps"))}</td>
         </tr>`;
 
     if (open) {
@@ -1887,12 +1887,12 @@ function buildGroupTbody(g, no) {
                 <td>${escapeHtml(row.coId)}</td>
                 <td>${escapeHtml(row.coResponse)}</td>
                 <td>${escapeHtml(row.cifCoborrower)}</td>
+                <td>${escapeHtml(row.product)}</td>
+                <td>${gpsCellHtml(row.gps)}</td>
                 ${reasonPartCells(row, followupCss)}
                 <td class="${followupCss}">${escapeHtml(formatRowDateDMY(row.alFollowup))}</td>
                 <td>${escapeHtml(row.user)}</td>
                 <td>${escapeHtml(formatRowDateTime12h(row.dateBackup))}</td>
-                <td>${escapeHtml(row.product)}</td>
-                <td>${gpsCellHtml(row.gps)}</td>
             </tr>`;
         }).join("");
     }
@@ -2667,14 +2667,14 @@ function ldExportCols(rows) {
         { label: "CO_ID", ...text("coId") },
         { label: "CO_Response", ...text("coResponse") },
         { label: "CIF_អ្នករួមខ្ចី", ...text("cifCoborrower") },
+        { label: "Product Type", ...text("product") },
+        { label: "GPS", type: "text", value: r => gpsText(r.gps) || null },
         { label: "មុខរបរពេលខ្ចី", ...text("rOccLoan"), style: followup, maxChars: 30 },
         { label: "មុខរបរបច្ចុប្បន្ន", ...text("rOccNow"), style: followup, maxChars: 30 },
         { label: "គោលបំណងប្រើប្រាស់", ...text("rPurpose"), style: followup, maxChars: 30 },
         { label: "មូលហេតុ", ...text("rReason"), style: followup, maxChars: 50 },
         { label: "ដំណោះស្រាយ", ...text("rSolution"), style: followup, maxChars: 50 },
-        { label: "ថ្ងៃសន្យាសង", type: "date", align: "center", value: r => exportDate(r.alFollowup), text: r => formatRowDateDMY(r.alFollowup), style: followup },
-        { label: "Product Type", ...text("product") },
-        { label: "GPS", type: "text", value: r => gpsText(r.gps) || null }
+        { label: "ថ្ងៃសន្យាសង", type: "date", align: "center", value: r => exportDate(r.alFollowup), text: r => formatRowDateDMY(r.alFollowup), style: followup }
     ];
 }
 const LD_PDF_LAST = "Ministry";
@@ -2728,6 +2728,8 @@ function cifExportCols() {
         { label: "CO_ID", type: "text", value: g => g.coId || null },
         { label: "CO_Response", ...shared("coResponse") },
         { label: "CIF_អ្នករួមខ្ចី", ...shared("cifCoborrower") },
+        { label: "Product Type", ...shared("product") },
+        { label: "GPS", type: "text", value: g => gpsText(cifSharedValue(g.rows, "gps")) || null },
         {
             label: "មុខរបរពេលខ្ចី", type: "text", maxChars: 30, style: followup,
             value: g => (cifReason(g.rows).any ? reason(g, "rOccLoan") || null : `${g.withReason} / ${g.rows.length} LD`)
@@ -2740,9 +2742,7 @@ function cifExportCols() {
             label: "ថ្ងៃសន្យាសង", type: "date", align: "center", style: followup,
             value: g => exportDate(reason(g, "alFollowup")),
             text: g => formatRowDateDMY(reason(g, "alFollowup"))
-        },
-        { label: "Product Type", ...shared("product") },
-        { label: "GPS", type: "text", value: g => gpsText(cifSharedValue(g.rows, "gps")) || null }
+        }
     ];
 }
 
@@ -3841,6 +3841,19 @@ try {
         hiddenColumns = next;
         saveHiddenColumns(hiddenColumns);
         localStorage.setItem("arrears_hidden_columns_v4", "1");
+    }
+    // Product Type + GPS moved from the end (32, 33) to right after
+    // CIF_អ្នករួមខ្ចី (24, 25); the reason columns .. DateBackUp move 2.
+    if (!localStorage.getItem("arrears_hidden_columns_v5")) {
+        const next = new Set();
+        hiddenColumns.forEach(n => {
+            if (n === 32) next.add(24);
+            else if (n === 33) next.add(25);
+            else next.add(n >= 24 ? n + 2 : n);
+        });
+        hiddenColumns = next;
+        saveHiddenColumns(hiddenColumns);
+        localStorage.setItem("arrears_hidden_columns_v5", "1");
     }
 } catch (e) {}
 
