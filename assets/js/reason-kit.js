@@ -179,9 +179,11 @@
 
     // Accepts "11.5564, 104.9282" or "11.5564,104.9282".
     // Returns null when it isn't a usable coordinate pair.
+    // "lat, lng" — the two numbers may also be split by a space, ";" or
+    // "/" (iOS's number pad has no ","; 19/11/2026).
     function parseGps(text) {
         const m = String(text || "").trim().match(
-            /^(-?\d{1,2}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$/
+            /^(-?\d{1,2}(?:\.\d+)?)\s*(?:[,;/，]\s*|\s+)(-?\d{1,3}(?:\.\d+)?)$/
         );
         if (!m) return null;
 

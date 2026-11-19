@@ -199,6 +199,7 @@ CMI18n.register({
   "work.occuMinistry": { km: "មុខរបរ និងក្រសួង", en: "Occupation & Ministry" },
   "work.submit": { km: "ដាក់ស្នើ", en: "Submit" },
   // Editor states (19/11/2026)
+  "work.gpsComma": { km: "បញ្ចូលសញ្ញាក្បៀស (,)", en: "Insert a comma (,)" },
   "work.savedState": { km: "បានរក្សាទុក", en: "Saved" },
   "work.submittingShort": { km: "កំពុងបញ្ជូន…", en: "Submitting…" },
   "work.nextClient": { km: "អតិថិជនបន្ទាប់", en: "Next client" },

@@ -693,8 +693,14 @@ function currentValues() {
     return {
         ...parts,
         al: reasonAL.value ? `${reasonAL.value}T00:00:00.000Z` : "",
-        gps: reasonGPS.value.trim()
+        gps: tidyGps(reasonGPS.value)
     };
+}
+
+// A valid "lat lng" / "lat;lng" written as "lat, lng" (else as typed).
+function tidyGps(text) {
+    const v = String(text || "").trim();
+    return ReasonKit.parseGps(v) ? v.split(/\s*(?:[,;/，]\s*|\s+)/).join(", ") : v;
 }
 
 function isDirty() {
@@ -1038,6 +1044,39 @@ ReasonKit.PARTS.forEach(k => ReasonKit.attachSuggestions(partEls[k], () => disti
 reasonAL.addEventListener("input", syncDateClear);
 reasonAL.addEventListener("change", syncDateClear);
 syncDateClear();
+
+// iOS's number pad (inputmode="decimal") has no "," or space, so a ","
+// key sits inside the field; on leaving it, "lat lng" / "lat;lng" is
+// written back as "lat, lng".
+(() => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "wk-gps-comma";
+    btn.textContent = ",";
+    const label = () => { btn.setAttribute("aria-label", t("work.gpsComma")); btn.title = t("work.gpsComma"); };
+    label();
+    window.addEventListener("cm-language-changed", label);
+    btn.addEventListener("mousedown", e => e.preventDefault());   // keep the keyboard up
+    btn.addEventListener("click", () => {
+        const v = reasonGPS.value;
+        const at = reasonGPS.selectionStart ?? v.length, end = reasonGPS.selectionEnd ?? at;
+        const before = v.slice(0, at).replace(/[\s,]+$/, ""), after = v.slice(end).replace(/^[\s,]+/, "");
+        reasonGPS.value = `${before}, ${after}`;
+        const pos = before.length + 2;
+        reasonGPS.focus();
+        try { reasonGPS.setSelectionRange(pos, pos); } catch (e) {}
+        reasonGPS.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    reasonGPS.parentElement.appendChild(btn);
+    reasonGPS.parentElement.classList.add("wk-gps-wrap");
+    reasonGPS.addEventListener("blur", () => {
+        const tidy = tidyGps(reasonGPS.value);
+        if (ReasonKit.parseGps(tidy) && tidy !== reasonGPS.value) {
+            reasonGPS.value = tidy;
+            reasonGPS.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+    });
+})();
 
 reasonGPS.addEventListener("input", () => {
     updateGpsButtons();
