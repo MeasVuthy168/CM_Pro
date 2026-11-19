@@ -179,18 +179,94 @@
 
     // Accepts "11.5564, 104.9282" or "11.5564,104.9282".
     // Returns null when it isn't a usable coordinate pair.
+    // A location as typed or pasted (19/11/2026). Returns { lat, lng,
+    // kind: "coords" | "plus" | "url", code? } or null. Accepts:
+    //   • coordinates "lat, lng" — split by ",", a space, ";" or "/" (iOS's
+    //     number pad has no ","), brackets allowed: "(11.09, 105.79)"
+    //   • a Plus Code (Google Maps): full "7P8F3QVR+39V", or short
+    //     "3QVR+39V Svay Rieng" — recovered near PLUS_REF
+    //   • a Google Maps link carrying the coordinates (…@lat,lng / ?q=lat,lng)
+    function inRange(lat, lng) {
+        return isFinite(lat) && isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+    }
     function parseGps(text) {
-        const m = String(text || "").trim().match(
-            /^(-?\d{1,2}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$/
-        );
+        const raw = String(text || "").trim();
+        if (!raw) return null;
+        const plain = raw.replace(/^[(\[]\s*|\s*[)\]]$/g, "");
+        const m = plain.match(/^(-?\d{1,2}(?:\.\d+)?)\s*(?:[,;/，]\s*|\s+)(-?\d{1,3}(?:\.\d+)?)$/);
+        if (m) {
+            const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+            return inRange(lat, lng) ? { lat, lng, kind: "coords" } : null;
+        }
+        const u = raw.match(/(?:@|[?&](?:q|ll|query|center|destination)=)(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/);
+        if (u) {
+            const lat = parseFloat(u[1]), lng = parseFloat(u[2]);
+            return inRange(lat, lng) ? { lat, lng, kind: "url" } : null;
+        }
+        const p = plusCode(raw);
+        return p ? { ...p, kind: "plus" } : null;
+    }
+
+    // ---- Plus Codes (Open Location Code), decoded here — no network ----
+    const OLC = "23456789CFGHJMPQRVWX";
+    // Short codes ("3QVR+39V") drop their first 4 characters; they are
+    // recovered as the nearest match to this point — Svay Rieng province,
+    // where every branch is (valid within ~55 km of it).
+    const PLUS_REF = { lat: 11.08, lng: 105.80 };
+    function olcPrefix(lat, lng, len) {
+        let la = Math.min(Math.max(lat, -90), 89.999999) + 90, lo = ((lng + 180) % 360 + 360) % 360;
+        let res = 20, out = "";
+        for (let i = 0; i < len / 2; i++) {
+            const a = Math.floor(la / res), b = Math.floor(lo / res);
+            out += OLC[a] + OLC[b];
+            la -= a * res; lo -= b * res; res /= 20;
+        }
+        return out;
+    }
+    function olcDecode(code) {
+        const c = code.replace("+", "");
+        let lat = -90, lng = -180, res = 20, latRes = 20, lngRes = 20;
+        const pairs = c.slice(0, 10);
+        for (let i = 0; i + 1 < pairs.length; i += 2) {
+            lat += OLC.indexOf(pairs[i]) * res;
+            lng += OLC.indexOf(pairs[i + 1]) * res;
+            latRes = lngRes = res;
+            res /= 20;
+        }
+        for (const ch of c.slice(10)) {
+            latRes /= 5; lngRes /= 4;
+            const v = OLC.indexOf(ch);
+            lat += Math.floor(v / 4) * latRes;
+            lng += (v % 4) * lngRes;
+        }
+        return { lat: lat + latRes / 2, lng: lng + lngRes / 2 };
+    }
+    function plusCode(text) {
+        const m = String(text).toUpperCase().match(/(?:^|[^0-9A-Z+])([23456789CFGHJMPQRVWX]{2,8}\+[23456789CFGHJMPQRVWX]{0,7})(?=$|[^0-9A-Z+])/);
         if (!m) return null;
-
-        const lat = parseFloat(m[1]);
-        const lng = parseFloat(m[2]);
-        if (!isFinite(lat) || !isFinite(lng)) return null;
-        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
-
-        return { lat, lng };
+        const code = m[1];
+        const sep = code.indexOf("+");
+        if (sep % 2 === 1 || code.length - sep - 1 === 1) return null;
+        if (sep < 8 && code.length - sep - 1 < 2) return null;   // a short code needs its last part
+        let full = code;
+        if (sep < 8) {
+            // Short code: the reference's own first characters, then the
+            // nearest of the neighbouring cells (OLC's recoverNearest).
+            const pad = 8 - sep;
+            const resolution = Math.pow(20, 2 - pad / 2);
+            full = olcPrefix(PLUS_REF.lat, PLUS_REF.lng, pad) + code;
+            const area = olcDecode(full);
+            let { lat, lng } = area;
+            const half = resolution / 2;
+            if (PLUS_REF.lat + half < lat && lat - resolution >= -90) lat -= resolution;
+            else if (PLUS_REF.lat - half > lat && lat + resolution <= 90) lat += resolution;
+            if (PLUS_REF.lng + half < lng) lng -= resolution;
+            else if (PLUS_REF.lng - half > lng) lng += resolution;
+            return inRange(lat, lng) ? { lat, lng, code } : null;
+        }
+        if (sep !== 8 || OLC.indexOf(full[0]) > 8 || OLC.indexOf(full[1]) > 17) return null;
+        const { lat, lng } = olcDecode(full);
+        return inRange(lat, lng) ? { lat, lng, code } : null;
     }
 
     // Canonical reasonarrear records for a batch of LD-CIF keys, as a Map

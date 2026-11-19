@@ -693,8 +693,19 @@ function currentValues() {
     return {
         ...parts,
         al: reasonAL.value ? `${reasonAL.value}T00:00:00.000Z` : "",
-        gps: reasonGPS.value.trim()
+        gps: tidyGps(reasonGPS.value)
     };
+}
+
+// A valid location written as "lat, lng" (else as typed): coordinates
+// keep their own digits; a Plus Code or a Maps link becomes its
+// coordinates (6 decimals, ~0.1 m).
+function tidyGps(text) {
+    const v = String(text || "").trim();
+    const g = ReasonKit.parseGps(v);
+    if (!g) return v;
+    if (g.kind === "coords") return v.replace(/^[(\[]\s*|\s*[)\]]$/g, "").split(/\s*(?:[,;/，]\s*|\s+)/).join(", ");
+    return `${g.lat.toFixed(6)}, ${g.lng.toFixed(6)}`;
 }
 
 function isDirty() {
@@ -1039,12 +1050,77 @@ reasonAL.addEventListener("input", syncDateClear);
 reasonAL.addEventListener("change", syncDateClear);
 syncDateClear();
 
+// iOS's number pad (inputmode="decimal") has no "," or space, so a ","
+// key sits inside the field; on leaving it, "lat lng" / "lat;lng" is
+// written back as "lat, lng".
+(() => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "wk-gps-comma";
+    btn.textContent = ",";
+    const label = () => { btn.setAttribute("aria-label", t("work.gpsComma")); btn.title = t("work.gpsComma"); };
+    label();
+    window.addEventListener("cm-language-changed", label);
+    btn.addEventListener("mousedown", e => e.preventDefault());   // keep the keyboard up
+    btn.addEventListener("click", () => {
+        const v = reasonGPS.value;
+        const at = reasonGPS.selectionStart ?? v.length, end = reasonGPS.selectionEnd ?? at;
+        const before = v.slice(0, at).replace(/[\s,]+$/, ""), after = v.slice(end).replace(/^[\s,]+/, "");
+        reasonGPS.value = `${before}, ${after}`;
+        const pos = before.length + 2;
+        reasonGPS.focus();
+        try { reasonGPS.setSelectionRange(pos, pos); } catch (e) {}
+        reasonGPS.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    reasonGPS.parentElement.appendChild(btn);
+    reasonGPS.parentElement.classList.add("wk-gps-wrap");
+    // Paste: what was copied in Google Maps (Plus Code, coordinates or a
+    // link) goes straight in, written as "lat, lng".
+    const paste = document.createElement("button");
+    paste.type = "button";
+    paste.id = "btnGpsPaste";
+    paste.className = "reason-gps-btn";
+    const pasteLabel = () => { paste.innerHTML = `<span class="ui-ico ui-ico-copy" aria-hidden="true"></span> <span>${escapeHtml(t("work.gpsPaste"))}</span>`; };
+    pasteLabel();
+    window.addEventListener("cm-language-changed", pasteLabel);
+    paste.addEventListener("click", async () => {
+        let text = "";
+        try { text = await navigator.clipboard.readText(); } catch (e) { text = ""; }
+        if (!String(text || "").trim()) return notify(t("work.gpsPasteHow"), "info");
+        reasonGPS.value = String(text).trim();
+        reasonGPS.dispatchEvent(new Event("input", { bubbles: true }));
+        const tidy = tidyGps(reasonGPS.value);
+        if (ReasonKit.parseGps(tidy)) {
+            const hint = $("reasonGpsHint").textContent, cls = $("reasonGpsHint").className;
+            reasonGPS.value = tidy;
+            reasonGPS.dispatchEvent(new Event("input", { bubbles: true }));
+            $("reasonGpsHint").textContent = hint; $("reasonGpsHint").className = cls;   // keep "Plus Code … →"
+        }
+    });
+    document.querySelector(".reason-gps-row")?.appendChild(paste);
+    reasonGPS.addEventListener("blur", () => {
+        const tidy = tidyGps(reasonGPS.value);
+        if (ReasonKit.parseGps(tidy) && tidy !== reasonGPS.value) {
+            const hint = $("reasonGpsHint").textContent, cls = $("reasonGpsHint").className;
+            reasonGPS.value = tidy;
+            reasonGPS.dispatchEvent(new Event("input", { bubbles: true }));
+            $("reasonGpsHint").textContent = hint; $("reasonGpsHint").className = cls;   // keep "Plus Code … →"
+        }
+    });
+})();
+
 reasonGPS.addEventListener("input", () => {
     updateGpsButtons();
     const raw = reasonGPS.value.trim();
     if (!raw) return setGpsHint("", "");
-    const ok = !!ReasonKit.parseGps(raw);
-    setGpsHint(ok ? t("work.gpsOk") : t("work.badGps"), ok ? "ok" : "bad");
+    const g = ReasonKit.parseGps(raw);
+    if (!g) {
+        // A short share link (maps.app.goo.gl …) carries no coordinates.
+        return setGpsHint(/goo\.gl|maps\.app|g\.co\//i.test(raw) ? t("work.gpsShortLink") : t("work.badGps"), "bad");
+    }
+    const ll = `${g.lat.toFixed(6)}, ${g.lng.toFixed(6)}`;
+    setGpsHint(g.kind === "plus" ? tf("work.gpsFromPlus", { code: g.code, ll })
+        : g.kind === "url" ? tf("work.gpsFromLink", { ll }) : t("work.gpsOk"), "ok");
 });
 
 $("btnGpsHere").addEventListener("click", () => {

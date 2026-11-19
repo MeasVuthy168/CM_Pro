@@ -320,3 +320,14 @@
 }
 .wk-leave-btns .wk-leave-save{ border:none; background:linear-gradient(180deg,#FFD700,#D4AF37); color:#0E1B3C; }
 .wk-leave-btns .wk-leave-discard{ border-color:#D9534F; color:#D9534F; }
+
+/* GPS: a "," key inside the field, left of × (iOS number pad has none). */
+.wk-gps-wrap > input{ padding-right:84px !important; }
+.wk-gps-comma{
+    position:absolute; top:6px; right:44px; width:32px; height:32px; border:0; border-radius:8px;
+    background:rgba(26,46,87,.10); color:var(--arr-text, #1C2333); font-size:22px; font-weight:700; line-height:1;
+    display:grid; place-items:center; cursor:pointer; padding:0 0 6px;
+}
+.wk-gps-comma:active{ background:rgba(26,46,87,.22); }
+.wk-gps-wrap > input:placeholder-shown ~ .wk-gps-comma{ right:6px; }
+[data-theme="dark"] .wk-gps-comma, [data-theme="darkgray"] .wk-gps-comma{ background:rgba(255,255,255,.12); }
