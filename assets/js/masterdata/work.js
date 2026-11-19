@@ -1120,7 +1120,8 @@ reasonGPS.addEventListener("input", () => {
     }
     const ll = `${g.lat.toFixed(6)}, ${g.lng.toFixed(6)}`;
     setGpsHint(g.kind === "plus" ? tf("work.gpsFromPlus", { code: g.code, ll })
-        : g.kind === "url" ? tf("work.gpsFromLink", { ll }) : t("work.gpsOk"), "ok");
+        : g.kind === "url" ? tf("work.gpsFromLink", { ll })
+        : g.kind === "deg" ? tf("work.gpsFromDeg", { ll }) : t("work.gpsOk"), "ok");
 });
 
 $("btnGpsHere").addEventListener("click", () => {

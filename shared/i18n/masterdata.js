@@ -201,6 +201,7 @@ CMI18n.register({
   // Editor states (19/11/2026)
   "work.gpsFromPlus": { km: "Plus Code {code} → {ll}", en: "Plus Code {code} → {ll}" },
   "work.gpsFromLink": { km: "ពីតំណ Google Maps → {ll}", en: "From the Google Maps link → {ll}" },
+  "work.gpsFromDeg": { km: "ពីដឺក្រេ (N / E) → {ll}", en: "From degrees (N / E) → {ll}" },
   "work.gpsShortLink": { km: "តំណខ្លី (maps.app.goo.gl) មិនមានកូអរដោនេ — សូមចម្លង Plus Code ឬកូអរដោនេពី Google Maps ជំនួសវិញ។", en: "A short link (maps.app.goo.gl) has no coordinates — copy the Plus Code or the coordinates from Google Maps instead." },
   "work.gpsPaste": { km: "បិទភ្ជាប់", en: "Paste" },
   "work.gpsPasteHow": { km: "ចុចជាប់ក្នុងប្រអប់ GPS ហើយជ្រើស Paste (ឬអនុញ្ញាតឲ្យអាន Clipboard)។", en: "Long-press the GPS box and choose Paste (or allow clipboard access)." },

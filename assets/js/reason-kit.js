@@ -198,6 +198,8 @@
             const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
             return inRange(lat, lng) ? { lat, lng, kind: "coords" } : null;
         }
+        const d = degrees(plain);
+        if (d) return d;
         const u = raw.match(/(?:@|[?&](?:q|ll|query|center|destination)=)(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/);
         if (u) {
             const lat = parseFloat(u[1]), lng = parseFloat(u[2]);
@@ -205,6 +207,37 @@
         }
         const p = plusCode(raw);
         return p ? { ...p, kind: "plus" } : null;
+    }
+
+    // Degrees with N / S / E / W, as phones and Google Maps write them:
+    //   "N 11.137802°, E 105.705169°", "11.137802° N 105.705169° E",
+    //   "11°08'16.1"N 105°42'18.6"E" (degrees, minutes, seconds).
+    // Two parts, each with a ° or a hemisphere letter; S / W are negative.
+    // A letter after a number belongs to it when it touches a mark (° " ')
+    // or no number follows; otherwise it starts the next part.
+    const DEG_PART = /([NSEW])?\s*(\d{1,3}(?:\.\d+)?)\s*(°|º|˚)?\s*(?:(\d{1,2}(?:\.\d+)?)\s*['′’]\s*)?(?:(\d{1,2}(?:\.\d+)?)\s*(?:"|″|”|['′’]{2})\s*)?(?:\s*([NSEW])(?!\s*\d))?/gi;
+    function degrees(input) {
+        if (!/[°º˚]|[NSEW]/i.test(input)) return null;
+        // A letter touching a mark ends its part: 16.1"N 105… -> 16.1"N; 105…
+        // (no regex look-behind: older iPhones can't parse it).
+        const text = input.replace(/([°º˚"″”'′’])([NSEW])(?=\s*\d)/gi, "$1$2;");
+        const parts = [];
+        for (const m of text.matchAll(DEG_PART)) {
+            if (!m[2]) continue;
+            const letter = (m[1] || m[6] || "").toUpperCase();
+            if (!letter && !m[3]) continue;
+            let v = parseFloat(m[2]) + (m[4] ? parseFloat(m[4]) / 60 : 0) + (m[5] ? parseFloat(m[5]) / 3600 : 0);
+            if (letter === "S" || letter === "W") v = -v;
+            parts.push({ v, letter });
+        }
+        if (parts.length !== 2) return null;
+        // What is left besides the two parts may only be "," ";" "/" or spaces.
+        if (text.replace(DEG_PART, "").replace(/[\s,;/，]/g, "") !== "") return null;
+        let [a, b] = parts;
+        const isLng = l => l === "E" || l === "W", isLat = l => l === "N" || l === "S";
+        if (isLng(a.letter) && !isLng(b.letter)) [a, b] = [b, a];   // "E …, N …"
+        if (isLng(a.letter) || isLat(b.letter)) return null;         // "N …, N …"
+        return inRange(a.v, b.v) && Math.abs(a.v) <= 90 ? { lat: a.v, lng: b.v, kind: "deg" } : null;
     }
 
     // ---- Plus Codes (Open Location Code), decoded here — no network ----
