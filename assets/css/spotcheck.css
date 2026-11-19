@@ -775,7 +775,8 @@
   left: 0;
   right: 0;
   z-index: 20;
-  background: #fff;
+  background: var(--sc-card-bg, #fff);
+  color: var(--sc-text);
   border: 1px solid var(--sc-border);
   border-radius: 10px;
   margin: 2px 0 0;
@@ -791,6 +792,9 @@
   cursor: pointer;
 }
 .sc-suggest-list li:hover { background: var(--sc-bg); }
+/* A written conclusion can be long: wrap it instead of cutting it off. */
+#lstConclusionOtherSuggest li { white-space: normal; line-height: 1.5; border-bottom: 1px solid var(--sc-border); }
+#lstConclusionOtherSuggest li:last-child { border-bottom: 0; }
 
 .sc-form-meta {
   display: flex;
