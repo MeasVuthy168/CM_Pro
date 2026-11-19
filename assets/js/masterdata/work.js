@@ -71,6 +71,9 @@ let wkOfficer = "";       // the officer picked in the "officer" view
 let wkShown = [];         // the list as currently filtered (also what ‹ › walks)
 let wkRow = null;         // the loan open in the detail screen
 let wkBaseline = null;    // field values it was opened with (dirty check)
+let wkAutoFill = false;   // the purpose was filled from the product, not yet saved
+let wkStoredAt = "";      // when the server's record was last submitted ("" = none)
+let wkBusy = false;       // a submit is running
 
 const $ = id => document.getElementById(id);
 // The five reason fields (layout v2), keyed by their record field.
@@ -168,7 +171,133 @@ function fillParts(src) {
     ReasonKit.PARTS.forEach(k => { partEls[k].value = p[k]; });
     // A blank purpose takes the product's (ReasonKit.purposeForProduct),
     // as the server fills saved ones.
-    if (!partEls.purpose.value.trim() && wkRow) partEls.purpose.value = ReasonKit.purposeForProduct(wkRow.product);
+    wkAutoFill = false;
+    if (!partEls.purpose.value.trim() && wkRow) {
+        partEls.purpose.value = ReasonKit.purposeForProduct(wkRow.product);
+        wkAutoFill = !!partEls.purpose.value;
+    }
+}
+
+// ---------- the editor's state (19/11/2026) ----------
+// Save / Submit follow what is on screen: Save only while there are
+// changes, "✓ Saved" once a draft is stored; Submit only when the five
+// fields are filled; once submitted the yellow button becomes "Next
+// client ›". A chip by the name tells the loan's stage.
+const WK_REVIEW_KEY = "cm_work_review_v1";   // loans whose submit waits for admin
+function reviewSet() {
+    try { return new Set(JSON.parse(sessionStorage.getItem(WK_REVIEW_KEY) || "[]")); } catch (e) { return new Set(); }
+}
+function markReview(concates) {
+    try {
+        const set = reviewSet();
+        (concates || []).forEach(c => set.add(c));
+        sessionStorage.setItem(WK_REVIEW_KEY, JSON.stringify([...set]));
+    } catch (e) {}
+}
+// A field holds an answer: not empty, not only "." / "-" and the like.
+const hasAnswer = v => /[\p{L}\p{N}]/u.test(String(v || ""));
+function requiredMissing(values) {
+    return ReasonKit.PARTS.filter(k => !hasAnswer(values[k]));
+}
+const PART_LABEL = {
+    occupationLoan: "arrears.reasonOccLoanLabel", occupationNow: "arrears.reasonOccNowLabel",
+    purpose: "arrears.reasonPurposeLabel", reason: "arrears.reasonReasonLabel", solution: "arrears.reasonSolutionOnlyLabel"
+};
+function nextRow() {
+    const i = wkShown.indexOf(wkRow);
+    return i >= 0 ? wkShown[i + 1] || null : null;
+}
+
+function refreshActions() {
+    if (!wkRow) return;
+    const save = $("btnWkSave"), submit = $("btnWkSubmit");
+    const pending = !!ReasonKit.getPending()[wkRow.concate];
+    const changed = isDirty() || wkAutoFill;
+    const missing = requiredMissing(currentValues());
+    const toSubmit = changed || pending;
+    // Save
+    save.disabled = wkBusy || !changed;
+    save.textContent = !changed && pending ? `✓ ${t("work.savedState")}` : t("common.save");
+    save.classList.toggle("wk-done", !changed && pending);
+    // Submit / Next
+    submit.dataset.mode = "submit";
+    submit.classList.remove("wk-done");
+    if (wkBusy) {
+        submit.disabled = true;
+        submit.textContent = t("work.submittingShort");
+    } else if (toSubmit) {
+        submit.disabled = missing.length > 0;
+        submit.textContent = t("work.submit");
+    } else if (wkStoredAt) {
+        const next = nextRow();
+        submit.dataset.mode = next ? "next" : "done";
+        submit.disabled = !next;
+        submit.textContent = next ? `${t("work.nextClient")} ›` : `✓ ${t("work.submittedState")}`;
+        submit.classList.toggle("wk-done", !next);
+    } else {
+        submit.disabled = true;
+        submit.textContent = t("work.submit");
+    }
+    // Required fields: marked only while there is something to submit.
+    const showMissing = toSubmit && missing.length > 0;
+    ReasonKit.PARTS.forEach(k => partEls[k].classList.toggle("wk-missing", showMissing && missing.includes(k)));
+    const hint = $("wkRequiredHint");
+    if (hint) {
+        hint.hidden = !showMissing;
+        hint.textContent = showMissing ? tf("work.requiredHint", { fields: missing.map(k => t(PART_LABEL[k])).join(", ") }) : "";
+    }
+    paintStatus(changed, pending);
+}
+
+function paintStatus(changed, pending) {
+    let el = $("wkStatusChip");
+    if (!el) {
+        el = document.createElement("div");
+        el.id = "wkStatusChip";
+        $("wkSub").after(el);
+    }
+    let cls = "", text = "";
+    if (changed) { cls = "unsaved"; text = t("work.stUnsaved"); }
+    else if (pending) { cls = "draft"; text = t("work.stDraft"); }
+    else if (reviewSet().has(wkRow.concate)) { cls = "review"; text = t("work.stReview"); }
+    else if (wkStoredAt) { cls = "done"; text = tf("work.stSubmitted", { at: fmtDateTime(wkStoredAt) }); }
+    else { cls = "empty"; text = t("work.stEmpty"); }
+    el.className = `wk-status-chip wk-st-${cls}`;
+    el.textContent = text;
+}
+
+// Leaving with unsaved changes: Save and go / Discard / Stay.
+// Resolves "save" | "discard" | "stay".
+function askLeave() {
+    return new Promise(resolve => {
+        const wrap = document.createElement("div");
+        wrap.className = "wk-leave-backdrop";
+        wrap.innerHTML = `<div class="wk-leave-box" role="dialog" aria-modal="true">
+            <div class="wk-leave-title">${escapeHtml(t("work.leaveTitle"))}</div>
+            <div class="wk-leave-text">${escapeHtml(t("work.leaveText"))}</div>
+            <div class="wk-leave-btns">
+              <button type="button" data-a="save" class="wk-leave-save">${escapeHtml(t("work.leaveSave"))}</button>
+              <button type="button" data-a="discard" class="wk-leave-discard">${escapeHtml(t("work.leaveDiscard"))}</button>
+              <button type="button" data-a="stay" class="wk-leave-stay">${escapeHtml(t("work.leaveStay"))}</button>
+            </div></div>`;
+        const done = a => { wrap.remove(); document.removeEventListener("keydown", onKey); resolve(a); };
+        const onKey = e => { if (e.key === "Escape") done("stay"); };
+        wrap.addEventListener("click", e => {
+            const b = e.target.closest("[data-a]");
+            if (b) done(b.dataset.a); else if (e.target === wrap) done("stay");
+        });
+        document.addEventListener("keydown", onKey);
+        document.body.appendChild(wrap);
+        wrap.querySelector(".wk-leave-save").focus();
+    });
+}
+// true when it is fine to leave this client (saved first if asked).
+async function okToLeave() {
+    if (!wkRow || !isDirty()) return true;
+    const a = await askLeave();
+    if (a === "stay") return false;
+    if (a === "save") return !!saveDraft();
+    return true;
 }
 
 // ---------- load ----------
@@ -688,11 +817,14 @@ async function openDetail(row) {
     updateGpsButtons();
     updateNav();
     wkBaseline = currentValues();
+    wkStoredAt = "";
+    refreshActions();
 
     // The saved record: GPS and who last submitted it (and fresher values
     // when there's no local draft).
     const found = (await ReasonKit.fetchReasons([row.concate], API.getToken())).get(row.concate);
     if (wkRow !== row || !found) return;
+    wkStoredAt = found.uploadedAt || (found.uploadedBy ? "-" : "");
     if (found.uploadedBy) {
         $("reasonMeta").textContent = tf("work.lastUpdated", { by: found.uploadedBy, at: found.uploadedAt ? fmtDateTime(found.uploadedAt) : "" });
     }
@@ -703,6 +835,7 @@ async function openDetail(row) {
         updateGpsButtons();
         wkBaseline = currentValues();
     }
+    refreshActions();
 }
 
 function paintPendingNote(pending) {
@@ -747,6 +880,7 @@ function saveDraft() {
         ReasonKit.setPending(r.concate, v, v.al, v.gps);
     });
     wkBaseline = currentValues();
+    wkAutoFill = false;
     return targets.length;
 }
 
@@ -757,9 +891,16 @@ async function submitAll() {
         notify(t("work.nothingToSubmit"), "warning");
         return false;
     }
+    // Every draft sent needs its five fields (required, 19/11/2026).
+    const incomplete = concates.filter(c => requiredMissing(ReasonKit.partsOf(map[c])).length);
+    if (incomplete.length) {
+        notify(tf("work.draftsIncomplete", { n: incomplete.length.toLocaleString() }), "warning");
+        return false;
+    }
     if (typeof showAppLoading === "function") showAppLoading(tf("work.submitting", { n: concates.length.toLocaleString() }));
     try {
         const review = await ReasonKit.upsertPending(concates, map, API.getToken(), wkUser.fullname || "unknown");
+        markReview(review && review.pending);
         // Confirm from the server (the VBA's View step), then clear drafts.
         const saved = await ReasonKit.fetchReasons(concates, API.getToken());
         wkRows.forEach(r => {
@@ -801,8 +942,8 @@ function backToList() {
     renderList();
 }
 
-$("btnWkBack").addEventListener("click", () => {
-    if (isDirty() && !confirm(t("work.leaveUnsaved"))) return;
+$("btnWkBack").addEventListener("click", async () => {
+    if (!(await okToLeave())) return;
     if (wkFocus) return backToArrears();
     backToList();
 });
@@ -816,11 +957,20 @@ $("btnWkSave").addEventListener("click", () => {
     notify(message, "success");
     paintPendingNote(ReasonKit.getPending()[wkRow.concate]);
     updateNav();
+    refreshActions();
 });
 
 $("btnWkSubmit").addEventListener("click", async () => {
-    if (isDirty() && !saveDraft()) return;
-    if (!(await submitAll())) return;
+    const btn = $("btnWkSubmit");
+    if (wkBusy || btn.disabled) return;
+    // Once submitted, the yellow button moves on to the next client.
+    if (btn.dataset.mode === "next") return step(1);
+    if (requiredMissing(currentValues()).length) return refreshActions();
+    if ((isDirty() || wkAutoFill) && !saveDraft()) return;
+    wkBusy = true; refreshActions();
+    let ok = false;
+    try { ok = await submitAll(); } finally { wkBusy = false; }
+    if (!ok) return refreshActions();
     // Show what the server now holds (and who saved it).
     openDetail(wkRow);
 });
@@ -830,15 +980,11 @@ $("btnWkSubmitAll").addEventListener("click", async () => {
 });
 
 // ‹ › — the list as filtered; unsaved edits are asked about, not dropped.
-function step(delta) {
+async function step(delta) {
     const i = wkShown.indexOf(wkRow);
     const target = wkShown[i + delta];
     if (!target) return;
-    if (isDirty()) {
-        if (confirm(t("work.keepEdits"))) {
-            if (!saveDraft()) return;
-        }
-    }
+    if (!(await okToLeave())) return;
     openDetail(target);
 }
 $("btnWkPrev").addEventListener("click", () => step(-1));
@@ -887,6 +1033,8 @@ ReasonKit.PARTS.forEach(k => ReasonKit.attachSuggestions(partEls[k], () => disti
     });
     wrap.appendChild(btn);
 });
+// Every edit re-checks Save / Submit, the required marks and the chip.
+["input", "change"].forEach(ev => $("wkDetailScreen").addEventListener(ev, () => { if (wkRow) refreshActions(); }));
 reasonAL.addEventListener("input", syncDateClear);
 reasonAL.addEventListener("change", syncDateClear);
 syncDateClear();
@@ -905,6 +1053,7 @@ $("btnGpsHere").addEventListener("click", () => {
         (lat, lng, acc) => {
             reasonGPS.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
             updateGpsButtons();
+            refreshActions();
             setGpsHint(`±${Math.round(acc)}m`, "ok");
         },
         err => setGpsHint(err && err.code === 1 ? t("work.gpsDenied") : t("work.gpsFailed"), "bad")
@@ -918,6 +1067,7 @@ $("btnGpsPick").addEventListener("click", () => {
         confirm: (lat, lng) => {
             reasonGPS.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
             updateGpsButtons();
+            refreshActions();
             setGpsHint(t("work.gpsFromMap"), "ok");
         }
     });

@@ -269,3 +269,54 @@
 .wk-rec-closed{ background:rgba(100,116,139,.18); color:#475569; }
 [data-theme="dark"] .wk-rec-current{ color:#86EFAC; }
 [data-theme="dark"] .wk-rec-closed{ color:#CBD5E1; }
+
+/* ===== Editor states (19/11/2026) ===== */
+.oa-page .wk-actions button:disabled{ opacity:.45; cursor:not-allowed; }
+.oa-page .wk-actions .wk-save-btn.wk-done,
+.oa-page .wk-actions .wk-submit-btn.wk-done{ opacity:.8; }
+.oa-page .wk-actions .wk-submit-btn[data-mode="next"]{
+    background:linear-gradient(180deg,#2E9E5B,#1F7A44);
+    color:#fff;
+}
+/* A required field still empty (only while there is something to submit). */
+.wk-missing{ border-color:#D9534F !important; box-shadow:0 0 0 2px rgba(217,83,79,.15); }
+.wk-required-hint{
+    margin:4px 0 8px; padding:8px 10px; border-radius:10px;
+    background:rgba(217,83,79,.10); color:#C0392B; font-size:13px; line-height:1.45;
+}
+.wk-required-hint[hidden]{ display:none; }
+/* The loan's stage, under its name. */
+.wk-status-chip{
+    display:inline-block; margin-top:6px; padding:3px 10px; border-radius:999px;
+    font-size:12px; font-weight:600; line-height:1.5;
+}
+.wk-st-unsaved{ background:#FFF1D6; color:#9A6200; }
+.wk-st-draft{ background:#E3EEFF; color:#1F4E9E; }
+.wk-st-review{ background:#F0E6FF; color:#6A3DB8; }
+.wk-st-done{ background:#E2F5E9; color:#0A7A35; }
+.wk-st-empty{ background:#EEF0F4; color:#5B6475; }
+[data-theme="dark"] .wk-st-unsaved{ background:rgba(255,193,7,.16); color:#FFCF66; }
+[data-theme="dark"] .wk-st-draft{ background:rgba(90,150,255,.16); color:#9DC1FF; }
+[data-theme="dark"] .wk-st-review{ background:rgba(170,120,255,.18); color:#CDB1FF; }
+[data-theme="dark"] .wk-st-done{ background:rgba(46,158,91,.18); color:#7FD9A2; }
+[data-theme="dark"] .wk-st-empty{ background:rgba(255,255,255,.08); color:#AEB6C6; }
+[data-theme="dark"] .wk-required-hint{ color:#FF8A80; }
+/* Leave with unsaved changes: Save / Discard / Stay. */
+.wk-leave-backdrop{
+    position:fixed; inset:0; z-index:4000; background:rgba(8,14,30,.55);
+    display:flex; align-items:center; justify-content:center; padding:16px;
+}
+.wk-leave-box{
+    width:100%; max-width:360px; border-radius:16px; padding:18px;
+    background:var(--arr-card-bg, #fff); color:var(--arr-text, #1C2333);
+    box-shadow:0 12px 40px rgba(0,0,0,.3);
+}
+.wk-leave-title{ font-weight:700; font-size:16px; margin-bottom:6px; }
+.wk-leave-text{ font-size:14px; opacity:.85; margin-bottom:14px; }
+.wk-leave-btns{ display:flex; flex-direction:column; gap:8px; }
+.wk-leave-btns button{
+    padding:11px; border-radius:12px; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer;
+    border:1.5px solid var(--arr-outline-btn-border, #1A2E57); background:transparent; color:inherit;
+}
+.wk-leave-btns .wk-leave-save{ border:none; background:linear-gradient(180deg,#FFD700,#D4AF37); color:#0E1B3C; }
+.wk-leave-btns .wk-leave-discard{ border-color:#D9534F; color:#D9534F; }
