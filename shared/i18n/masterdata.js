@@ -210,6 +210,7 @@ CMI18n.register({
   "work.submittingShort": { km: "កំពុងបញ្ជូន…", en: "Submitting…" },
   "work.nextClient": { km: "អតិថិជនបន្ទាប់", en: "Next client" },
   "work.submittedState": { km: "បានដាក់ស្នើ", en: "Submitted" },
+  "work.doneBack": { km: "រួចរាល់ · ត្រឡប់", en: "Done · Back" },
   "work.requiredHint": { km: "ត្រូវបំពេញមុនដាក់ស្នើ៖ {fields}", en: "Fill in before submitting: {fields}" },
   "work.draftsIncomplete": { km: "{n} ព្រាងមិនទាន់បំពេញគ្រប់វាល — សូមបើក ហើយបំពេញមុនដាក់ស្នើ។", en: "{n} draft(s) are missing fields — open and complete them before submitting." },
   "work.stUnsaved": { km: "មានការកែមិនទាន់រក្សាទុក", en: "Unsaved changes" },
