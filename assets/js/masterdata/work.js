@@ -196,8 +196,12 @@ function markReview(concates) {
 }
 // A field holds an answer: not empty, not only "." / "-" and the like.
 const hasAnswer = v => /[\p{L}\p{N}]/u.test(String(v || ""));
+// Fields that must be filled before Submit. Empty since 19/11/2026
+// (owner: no required fields) — list part keys here to bring the check
+// back; the red marks, the hint and Submit All's check all follow it.
+const REQUIRED_PARTS = [];
 function requiredMissing(values) {
-    return ReasonKit.PARTS.filter(k => !hasAnswer(values[k]));
+    return REQUIRED_PARTS.filter(k => !hasAnswer(values[k]));
 }
 const PART_LABEL = {
     occupationLoan: "arrears.reasonOccLoanLabel", occupationNow: "arrears.reasonOccNowLabel",
