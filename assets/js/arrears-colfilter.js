@@ -42,6 +42,7 @@
             case "dateBackup": v = typeof formatRowDateDMY === "function" ? formatRowDateDMY(row.dateBackup) : row.dateBackup; break;
             case "tell": v = typeof formatPhone === "function" ? formatPhone(row.tell) : row.tell; break;
             case "balanceDg": v = typeof balanceDgText === "function" ? balanceDgText(row.balanceDg) : row.balanceDg; break;
+            case "gps": v = typeof gpsText === "function" ? gpsText(row.gps) : row.gps; break;
             default: v = row[key];
         }
         return String(v == null ? "" : v).trim();

@@ -111,6 +111,8 @@ CMI18n.register({
   "arrears.colLoanNumber": { km: "លេខកិច្ចសន្យា", en: "Loan Number" },
   "arrears.colDaysLate": { km: "ថ្ងៃយឺត", en: "Days Late" },
   "arrears.colCifCoborrower": { km: "CIF_អ្នករួមខ្ចី", en: "CIF_Co-Borrower" },
+  "arrears.colProductType": { km: "ប្រភេទផលិតផល", en: "Product Type" },
+  "arrears.colGps": { km: "GPS", en: "GPS" },
   "arrears.backArrowBtn": { km: "← ត្រឡប់ក្រោយ", en: "← Back" },
   "arrears.outAreaSearchPlaceholder": { km: "ឈ្មោះ / LD-CIF / សាខា...", en: "Name / LD-CIF / Branch..." },
   "arrears.viewEditedRecordsBtn": { km: "មើលកំណត់ត្រាដែលបានកែសម្រួល", en: "View Edited Records" },
