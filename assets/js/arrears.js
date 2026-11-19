@@ -1041,6 +1041,8 @@ function buildRowElement(row, index) {
         <td class="${followupCss}">${escapeHtml(formatRowDateDMY(row.alFollowup))}</td>
         <td>${escapeHtml(row.user)}</td>
         <td>${escapeHtml(formatRowDateTime12h(row.dateBackup))}</td>
+        <td>${escapeHtml(row.product)}</td>
+        <td>${gpsCellHtml(row.gps)}</td>
     `;
     return tr;
 }
@@ -1061,7 +1063,7 @@ const ldVirtual = new ArrVirtualList({
         const tr = document.createElement("tr");
         tr.className = "arr-vspace";
         tr.setAttribute("aria-hidden", "true");
-        tr.innerHTML = `<td colspan="31"></td>`;
+        tr.innerHTML = `<td colspan="33"></td>`;
         return tr;
     },
     build: i => {
@@ -1157,7 +1159,7 @@ function renderTableView(rows) {
     if (!rows.length) {
         tbodyArrears.innerHTML = `
             <tr class="row-empty">
-                <td colspan="31">No data found</td>
+                <td colspan="33">No data found</td>
             </tr>
         `;
         updateRenderedNote(); // else the last result's count stays
@@ -1664,7 +1666,7 @@ function renderCifCards(rows) {
 // its LD rows show each loan in full.
 const arrCifTable = document.getElementById("arrCifTable");
 const CIF_AMOUNT_KEYS = ["prnOS", "intOS", "prnDue", "intDue", "penalty", "arreas", "balance"];
-const CIF_COLS = 31;
+const CIF_COLS = 33;
 
 // Column header sort for the CIF table — same ▲ / ▼ / default cycle as
 // the LD table. Sorts the customers, and the LDs inside each customer.
@@ -1846,6 +1848,8 @@ function buildGroupTbody(g, no) {
             ${reasonCells}
             <td>${escapeHtml(latest.user || "")}</td>
             <td>${escapeHtml(formatRowDateTime12h(latest.dateBackup || ""))}</td>
+            <td>${shared("product")}</td>
+            <td>${gpsCellHtml(cifSharedValue(g.rows, "gps"))}</td>
         </tr>`;
 
     if (open) {
@@ -1887,6 +1891,8 @@ function buildGroupTbody(g, no) {
                 <td class="${followupCss}">${escapeHtml(formatRowDateDMY(row.alFollowup))}</td>
                 <td>${escapeHtml(row.user)}</td>
                 <td>${escapeHtml(formatRowDateTime12h(row.dateBackup))}</td>
+                <td>${escapeHtml(row.product)}</td>
+                <td>${gpsCellHtml(row.gps)}</td>
             </tr>`;
         }).join("");
     }
@@ -1957,6 +1963,7 @@ function renderCifTable(rows) {
 }
 
 arrCifTable?.addEventListener("click", (e) => {
+    if (e.target.closest(".arr-gps-link")) return;   // the map opens; no row action
     const ldRow = e.target.closest("tr.arr-cif-ld[data-index]");
     if (ldRow) {
         const row = currentRows[Number(ldRow.dataset.index)];
@@ -2209,7 +2216,17 @@ function updateRowInTable(row) {
 // roles that can't block go straight to Work to complete)
 // ========================================
 
+// GPS saved with the loan's Reason Arrear (an unsent local edit wins in
+// row.gps too): "lat, lng", a link that opens the map.
+function gpsCellHtml(text) {
+    const g = window.ReasonKit && text ? ReasonKit.parseGps(text) : null;
+    if (!g) return escapeHtml(text || "");
+    const ll = `${g.lat.toFixed(6)}, ${g.lng.toFixed(6)}`;
+    return `<a class="arr-gps-link" href="https://www.google.com/maps?q=${g.lat},${g.lng}" target="_blank" rel="noopener">${escapeHtml(ll)}</a>`;
+}
+
 tbodyArrears.addEventListener("click", (e) => {
+    if (e.target.closest(".arr-gps-link")) return;   // the map opens; no row action
     const tr = e.target.closest("tr[data-index]");
     if (!tr) return;
 
@@ -2335,6 +2352,7 @@ function applyPendingReasonsToRows(rows) {
         setReasonParts(row, typeof pending.purpose === "string" ? pending.purpose : undefined);
         row.alFollowup = pending.al ? formatRowDateDMY(pending.al) : "";
         row.promiseStatus = computeStatusFromDate(row.alFollowup);
+        if (typeof pending.gps === "string") row.gps = pending.gps;   // GPS column
         row.__pendingSubmit = true;
     });
 }
@@ -2477,7 +2495,7 @@ async function refreshArrears() {
     } catch (err) {
         console.error(err);
         notify(err.message || "Failed to load arrears data.", "error");
-        tbodyArrears.innerHTML = `<tr class="row-empty"><td colspan="31">Failed to load data</td></tr>`;
+        tbodyArrears.innerHTML = `<tr class="row-empty"><td colspan="33">Failed to load data</td></tr>`;
         arrCardList.innerHTML = `<div class="arr-card-empty">Failed to load data</div>`;
         if (typeof hideAppLoading === "function") hideAppLoading();
         return;
@@ -2654,10 +2672,17 @@ function ldExportCols(rows) {
         { label: "គោលបំណងប្រើប្រាស់", ...text("rPurpose"), style: followup, maxChars: 30 },
         { label: "មូលហេតុ", ...text("rReason"), style: followup, maxChars: 50 },
         { label: "ដំណោះស្រាយ", ...text("rSolution"), style: followup, maxChars: 50 },
-        { label: "ថ្ងៃសន្យាសង", type: "date", align: "center", value: r => exportDate(r.alFollowup), text: r => formatRowDateDMY(r.alFollowup), style: followup }
+        { label: "ថ្ងៃសន្យាសង", type: "date", align: "center", value: r => exportDate(r.alFollowup), text: r => formatRowDateDMY(r.alFollowup), style: followup },
+        { label: "Product Type", ...text("product") },
+        { label: "GPS", type: "text", value: r => gpsText(r.gps) || null }
     ];
 }
 const LD_PDF_LAST = "Ministry";
+// GPS as "lat, lng" for the export (as typed when it doesn't read).
+function gpsText(text) {
+    const g = window.ReasonKit && text ? ReasonKit.parseGps(text) : null;
+    return g ? `${g.lat.toFixed(6)}, ${g.lng.toFixed(6)}` : String(text || "");
+}
 
 // The CIF table's columns, No … ថ្ងៃសន្យាសង: one row per customer, as on
 // screen with no customer opened — Loan Number is the LD count, amounts
@@ -2715,7 +2740,9 @@ function cifExportCols() {
             label: "ថ្ងៃសន្យាសង", type: "date", align: "center", style: followup,
             value: g => exportDate(reason(g, "alFollowup")),
             text: g => formatRowDateDMY(reason(g, "alFollowup"))
-        }
+        },
+        { label: "Product Type", ...shared("product") },
+        { label: "GPS", type: "text", value: g => gpsText(cifSharedValue(g.rows, "gps")) || null }
     ];
 }
 
