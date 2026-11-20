@@ -220,6 +220,20 @@ function nextRow() {
     return null;
 }
 
+// A button's label, in its own <span>: rewriting the whole button
+// (textContent) would also drop the invisible switch shared/touch-polish.js
+// puts over it for the iPhone haptic — mid-tap, so no haptic.
+function setBtnText(btn, text) {
+    let span = btn.querySelector(":scope > .wk-btn-text");
+    if (!span) {
+        btn.textContent = "";
+        span = document.createElement("span");
+        span.className = "wk-btn-text";
+        btn.prepend(span);
+    }
+    if (span.textContent !== text) span.textContent = text;
+}
+
 function refreshActions() {
     if (!wkRow) return;
     const save = $("btnWkSave"), submit = $("btnWkSubmit");
@@ -229,28 +243,28 @@ function refreshActions() {
     const toSubmit = changed || pending;
     // Save
     save.disabled = wkBusy || !changed;
-    save.textContent = !changed && pending ? `✓ ${t("work.savedState")}` : t("common.save");
+    setBtnText(save, !changed && pending ? `✓ ${t("work.savedState")}` : t("common.save"));
     save.classList.toggle("wk-done", !changed && pending);
     // Submit / Next
     submit.dataset.mode = "submit";
     submit.classList.remove("wk-done");
     if (wkBusy) {
         submit.disabled = true;
-        submit.textContent = t("work.submittingShort");
+        setBtnText(submit, t("work.submittingShort"));
     } else if (toSubmit) {
         submit.disabled = missing.length > 0;
-        submit.textContent = t("work.submit");
+        setBtnText(submit, t("work.submit"));
     } else if (wkStoredAt) {
         // Nothing left after it (e.g. a list of one CIF's LDs, all
         // given the reason at once): "✓ Done · Back" leaves the editor.
         const next = nextRow();
         submit.dataset.mode = next ? "next" : "done";
         submit.disabled = false;
-        submit.textContent = next ? `${t("work.nextClient")} ›` : `✓ ${t("work.doneBack")}`;
+        setBtnText(submit, next ? `${t("work.nextClient")} ›` : `✓ ${t("work.doneBack")}`);
         submit.classList.toggle("wk-done", !next);
     } else {
         submit.disabled = true;
-        submit.textContent = t("work.submit");
+        setBtnText(submit, t("work.submit"));
     }
     // Required fields: marked only while there is something to submit.
     const showMissing = toSubmit && missing.length > 0;
