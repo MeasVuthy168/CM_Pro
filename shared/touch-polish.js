@@ -26,8 +26,8 @@ document.addEventListener("contextmenu", (e) => {
 
 // =========================================================
 // HAPTIC TAP (20/11/2026) — the dashboard's 9 cards, the bottom bar
-// (Home / Settings / Notifications) and anything marked data-haptic
-// (Work to complete's Save / Submit / ‹ ›).
+// (Home / Settings / Notifications), the PIN keypads, and anything
+// marked data-haptic (Work to complete's Save / Submit / ‹ ›).
 //
 //   Android: navigator.vibrate(15).
 //   iPhone:  there is no Vibration API, and a switch clicked from code
@@ -40,7 +40,9 @@ document.addEventListener("contextmenu", (e) => {
 //            code (a tap on a form control inside a link isn't).
 // =========================================================
 (function () {
-    const SEL = ".dashboard-card, .bottom-nav-item, [data-haptic]";
+    // + the PIN keypads: login (.pin-key) and the lock screen on resume
+    // (config/session.js .cm-lock-key, its backspace and fingerprint).
+    const SEL = ".dashboard-card, .bottom-nav-item, [data-haptic], .pin-key, .cm-lock-key, #cmLockBackspace, .cm-lock-fp-btn";
     const IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
