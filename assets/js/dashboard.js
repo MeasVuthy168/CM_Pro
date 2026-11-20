@@ -190,35 +190,49 @@ function isIOSDevice(){
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
-// The same steps as the ios-haptics library (MIT): a switch inside its
-// label, hidden with display:none in <head>, made and clicked on every
-// tap, then removed — a reused or merely off-screen one was found not
-// to play on iPhone.
-function iosHaptic(){
-    const label = document.createElement("label");
-    label.ariaHidden = "true";
-    label.style.display = "none";
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.setAttribute("switch", "");
-    label.appendChild(input);
-    document.head.appendChild(label);
-    label.click();
-    document.head.removeChild(label);
+// iPhone (20/11/2026): a switch clicked from code no longer plays a
+// haptic on newer iOS (owner's iOS 27). A REAL tap on a switch still
+// does — so every card carries an invisible native switch over its
+// whole face: the finger lands on it, iOS plays its haptic, and the
+// card's link is then followed by code (a tap on a form control inside
+// a link doesn't follow the link by itself).
+function addIOSHapticTargets(){
+    document.querySelectorAll(".dashboard-card").forEach(card => {
+        if(card.querySelector(".cm-haptic-hit")) return;
+        const label = document.createElement("label");
+        label.className = "cm-haptic-hit";
+        label.setAttribute("aria-hidden", "true");
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.setAttribute("switch", "");
+        input.tabIndex = -1;
+        label.appendChild(input);
+        card.appendChild(label);
+        // The switch toggled (and buzzed): now open the card's page.
+        // Straight to it: the page-transition script already took the
+        // tap as this link's (its loading bar is running) and would
+        // block a second, synthetic click on the card as a double tap.
+        input.addEventListener("change", () => {
+            location.href = card.href;
+        });
+    });
 }
 
 function haptic(){
     try{
-        if(isIOSDevice()) iosHaptic();
-        else if(navigator.vibrate) navigator.vibrate(20);
+        if(!isIOSDevice() && navigator.vibrate) navigator.vibrate(20);
     }catch(e){ /* no haptics here */ }
 }
 
 document.addEventListener("click",(e)=>{
 
+    // The switch's own clicks (iOS) are not a card tap.
+    if(e.target.closest(".cm-haptic-hit")) return;
     if(e.target.closest(".dashboard-card")) haptic();
 
 });
+
+if(isIOSDevice()) addIOSHapticTargets();
 
 // =========================
 // LOAD COMPONENTS
