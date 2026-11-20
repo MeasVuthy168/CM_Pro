@@ -190,25 +190,21 @@ function isIOSDevice(){
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
-let iosHapticLabel = null;
-
+// The same steps as the ios-haptics library (MIT): a switch inside its
+// label, hidden with display:none in <head>, made and clicked on every
+// tap, then removed — a reused or merely off-screen one was found not
+// to play on iPhone.
 function iosHaptic(){
-    if(!iosHapticLabel){
-        const input = document.createElement("input");
-        input.type = "checkbox";
-        input.setAttribute("switch", "");
-        input.id = "cmHapticSwitch";
-        input.tabIndex = -1;
-        input.setAttribute("aria-hidden", "true");
-        const label = document.createElement("label");
-        label.htmlFor = input.id;
-        label.setAttribute("aria-hidden", "true");
-        label.style.cssText = input.style.cssText =
-            "position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px;top:0";
-        document.body.append(input, label);
-        iosHapticLabel = label;
-    }
-    iosHapticLabel.click();
+    const label = document.createElement("label");
+    label.ariaHidden = "true";
+    label.style.display = "none";
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.setAttribute("switch", "");
+    label.appendChild(input);
+    document.head.appendChild(label);
+    label.click();
+    document.head.removeChild(label);
 }
 
 function haptic(){
