@@ -113,6 +113,7 @@ async function load(page = 1) {
         renderCounts(data);
         renderFacets(data.facets);
         renderList();
+        loadStaffNames();
     } catch (err) {
         console.error("[reasons] load failed:", err);
         notify(t("rr.loadFailed"), "error");
@@ -244,21 +245,54 @@ async function decidePending(cifs, action) {
     }
 }
 
+// Who submitted, as "Name-ID" (20/11/2026): a username that is a Staff
+// ID gets its List Staff name (leading zeros ignored); a name, admin or
+// an ID not on List Staff stays as it is. List Staff is read once; the
+// list and the user picker re-draw when it arrives.
+let rrStaff = null;          // Map id -> name, once loaded
+let rrStaffLoading = null;
+function loadStaffNames() {
+    if (!rrStaffLoading) {
+        rrStaffLoading = fetch(`${API.BASE_URL}/api/creditofficer/list`, { headers: { Authorization: `Bearer ${API.getToken()}` } })
+            .then(res => res.json())
+            .then(data => {
+                rrStaff = new Map(((data && data.items) || [])
+                    .map(o => [String(o.officerId || "").trim().replace(/^0+(?=.)/, ""), String(o.name || "").trim()])
+                    .filter(([id, name]) => id && name));
+                if (rrFacets) renderFacets(rrFacets);
+                renderList();
+            })
+            .catch(() => { rrStaffLoading = null; });
+    }
+    return rrStaffLoading;
+}
+function userLabel(by) {
+    const id = String(by || "").trim();
+    if (!rrStaff || !/^\d+$/.test(id)) return id;
+    const name = rrStaff.get(id.replace(/^0+(?=.)/, ""));
+    return name ? `${name}-${id}` : id;
+}
+
 // Pickers keep the chosen value even if it falls out of the list.
-function fillSelect(el, values, allKey) {
+// label(v): the text shown for a value (the value itself by default).
+function fillSelect(el, values, allKey, label = v => v) {
     const cur = el.value;
     const opts = [`<option value="">${escapeHtml(t(allKey))}</option>`]
-        .concat(values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
-    if (cur && !values.includes(cur)) opts.push(`<option value="${escapeHtml(cur)}">${escapeHtml(cur)}</option>`);
+        .concat(values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(label(v))}</option>`));
+    if (cur && !values.includes(cur)) opts.push(`<option value="${escapeHtml(cur)}">${escapeHtml(label(cur))}</option>`);
     el.innerHTML = opts.join("");
     el.value = cur;
 }
 
+let rrFacets = null;
 function renderFacets(f) {
     if (!f) return;
+    rrFacets = f;
     fillSelect($("rrBranch"), f.branches || [], "rr.allBranches");
     fillSelect($("rrOfficer"), f.officers || [], "rr.allOfficers");
-    fillSelect($("rrUploader"), f.uploaders || [], "rr.allUploaders");
+    // By name (A-Z), the value stays the username the filter sends.
+    const uploaders = [...(f.uploaders || [])].sort((a, b) => userLabel(a).localeCompare(userLabel(b)));
+    fillSelect($("rrUploader"), uploaders, "rr.allUploaders", userLabel);
     // One branch / one officer only: no point offering the picker.
     $("rrBranch").hidden = rrIsStaff || (f.branches || []).length < 2;
     $("rrOfficer").hidden = rrIsStaff;
@@ -268,6 +302,7 @@ function renderFacets(f) {
 
 const STATUS_CSS = { arrears: "rr-st-arrears", current: "rr-st-current", closed: "rr-st-closed", unknown: "rr-st-closed" };
 
+const rrOpenParts = new Set();   // cards whose long answers are shown whole
 function renderList() {
     const cardLabel = t(CARD_LABEL[rrCard]);
     $("rrSubtitle").textContent = tf("rr.subtitle", { tab: cardLabel, n: rrTotal.toLocaleString() });
@@ -282,6 +317,9 @@ function renderList() {
                 const v = r[k];
                 return `<div class="rr-part${v ? "" : " rr-part-empty"}"><span>${escapeHtml(t(key))}</span><b>${escapeHtml(v || "—")}</b></div>`;
             }).join("");
+            // Long answers are cut to 2 lines; "More" shows them whole.
+            const long = PARTS.some(([k]) => String(r[k] || "").length > 45);
+            const open = rrOpenParts.has(r.cif);
             const flags = [
                 `<span class="rr-chip ${STATUS_CSS[r.status] || ""}">${escapeHtml(t(`rr.st.${r.status}`))}</span>`,
                 r.stale ? `<span class="rr-chip rr-st-stale">${escapeHtml(t("rr.flagStale"))}</span>` : "",
@@ -297,12 +335,12 @@ function renderList() {
                     <div class="oa-item-name">${escapeHtml(r.customer || "-")}</div>
                     <div class="oa-item-sub">${escapeHtml(r.loanNumber)}${r.customerCif ? ` · CIF ${escapeHtml(r.customerCif)}` : ""}${r.day ? ` · ${escapeHtml(r.day)} ${escapeHtml(t("arrears.cardDays"))}` : ""}</div>
                     <div class="rr-flags">${flags}</div>
-                    <div class="rr-parts">${parts}</div>
+                    <div class="rr-parts${open ? " rr-parts-open" : ""}">${parts}${long ? `<button type="button" class="rr-parts-more" data-rr-more="${escapeHtml(r.cif)}">${escapeHtml(t(open ? "rr.less" : "rr.moreText"))}</button>` : ""}</div>
                     <div class="oa-item-meta">
                         ${r.coResponse ? `<span><span class="ui-ico ui-ico-officer" aria-hidden="true"></span> ${escapeHtml(r.coResponse)}</span>` : ""}
                         ${r.al ? `<span class="wk-chip">${escapeHtml(tf("work.promiseOn", { d: isoToDMY(r.al) }))}</span>` : ""}
                     </div>
-                    <div class="rr-by">${escapeHtml(tf("rr.by", { by: r.uploadedBy || "-", at: fmtDateTime(r.uploadedAt) || "-" }))}</div>
+                    <div class="rr-by">${escapeHtml(tf("rr.by", { by: userLabel(r.uploadedBy) || "-", at: fmtDateTime(r.uploadedAt) || "-" }))}</div>
                 </div>
                 ${edit}
             </div>`;
@@ -406,6 +444,17 @@ async function openSelected() {
 }
 
 $("rrList").addEventListener("click", e => {
+    const more = e.target.closest("[data-rr-more]");
+    if (more) {
+        e.stopPropagation();   // not a card selection
+        const cif = more.dataset.rrMore;
+        if (rrOpenParts.has(cif)) rrOpenParts.delete(cif); else rrOpenParts.add(cif);
+        const box = more.closest(".rr-parts");
+        const open = rrOpenParts.has(cif);
+        box.classList.toggle("rr-parts-open", open);
+        more.textContent = t(open ? "rr.less" : "rr.moreText");
+        return;
+    }
     const edit = e.target.closest("[data-rr-edit]");
     if (edit) {
         e.stopPropagation();
@@ -443,7 +492,7 @@ async function exportExcel(pre) {
             { label: t("rr.colStale"), type: "text", value: r => (r.stale ? "✓" : null) },
             { label: t("rr.colPoor"), type: "text", value: r => (r.poor ? "✓" : null) },
             { label: t("rr.cardMessy"), type: "text", value: r => (r.messy ? "✓" : null) },
-            { label: "User", ...text("uploadedBy") },
+            { label: "User", type: "text", value: r => userLabel(r.uploadedBy) || null },
             { label: "DateBackUpReasonArrear", type: "text", value: r => fmtDateTime(r.uploadedAt) || null }
         ];
         const f = filters();

@@ -106,3 +106,26 @@ body.rr-selecting .page-container{ padding-bottom:150px; }
 .rr-cmp-row.diff{ background:rgba(37,99,235,.07); }
 .rr-cmp-row.diff .rr-cmp-b{ font-weight:700; }
 .rr-cmp-row:not(.diff):not(.rr-cmp-head) .rr-cmp-b{ color:var(--arr-text-muted); }
+
+/* ===== Compact cards (20/11/2026) =====
+   Edit sits in the card's top-right corner instead of a column of its
+   own, so the answers get the card's full width; long answers are cut
+   to 2 lines ("Show all ▾" opens them). */
+.rr-item{ position:relative; }
+.rr-item .oa-item-name{ padding-right:84px; }
+.rr-item .rr-edit{
+    position:absolute; top:10px; right:10px; margin:0;
+    padding:6px 10px; font-size:12.5px; border-radius:9px;
+}
+.rr-part{ grid-template-columns:minmax(84px, 28%) 1fr; }
+.rr-parts:not(.rr-parts-open) .rr-part b{
+    display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-clamp:2; overflow:hidden;
+    /* Khmer marks reach past the line box: a taller line and a hard cap
+       keep the 3rd line's tops out of view. */
+    line-height:1.7; max-height:3.4em;
+}
+.rr-parts-more{
+    justify-self:end; margin-top:2px; padding:2px 6px; border:0; background:transparent; cursor:pointer;
+    font:inherit; font-size:12.5px; font-weight:700; color:#1F6FD1;
+}
+[data-theme="dark"] .rr-parts-more{ color:#8AB8FF; }
