@@ -123,6 +123,8 @@ CMI18n.register({
   "rr.loadFailed": { km: "ផ្ទុកទិន្នន័យមិនបាន", en: "Could not load the records" },
   "rr.colCustomer": { km: "អតិថិជន", en: "Customer" },
   "rr.colBranch": { km: "សាខា", en: "Branch" },
+  "rr.moreText": { km: "មើលទាំងអស់ ▾", en: "Show all ▾" },
+  "rr.less": { km: "បង្រួម ▴", en: "Show less ▴" },
   "rr.colOfficer": { km: "មន្ត្រី", en: "Officer" },
   "rr.colStatus": { km: "ស្ថានភាព", en: "Status" },
   "rr.colStale": { km: "មិន update យូរ", en: "Stale" },
