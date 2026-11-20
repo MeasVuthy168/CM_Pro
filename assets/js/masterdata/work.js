@@ -865,7 +865,12 @@ async function openDetail(row) {
     if (wkRow !== row || !found) return;
     wkStoredAt = found.uploadedAt || (found.uploadedBy ? "-" : "");
     if (found.uploadedBy) {
-        $("reasonMeta").textContent = tf("work.lastUpdated", { by: found.uploadedBy, at: found.uploadedAt ? fmtDateTime(found.uploadedAt) : "" });
+        const at = found.uploadedAt ? fmtDateTime(found.uploadedAt) : "";
+        $("reasonMeta").textContent = tf("work.lastUpdated", { by: found.uploadedBy, at });
+        // "05210" -> "Meas Vuthy-05210" once List Staff has answered.
+        submitterLabel(found.uploadedBy).then(by => {
+            if (wkRow === row && by !== found.uploadedBy) $("reasonMeta").textContent = tf("work.lastUpdated", { by, at });
+        });
     }
     if (!pending && !isDirty()) {
         fillParts(found);
@@ -875,6 +880,28 @@ async function openDetail(row) {
         markBaseline();
     }
     refreshActions();
+}
+
+// Who submitted, as "Name-ID": a Username that is a Staff ID gets its
+// List Staff name (leading zeros ignored); anything else (a name, admin)
+// stays as it is. List Staff is read once per page.
+let wkStaffNames = null;
+function staffNames() {
+    if (!wkStaffNames) {
+        wkStaffNames = fetch(`${API.BASE_URL}/api/creditofficer/list`, { headers: { Authorization: `Bearer ${API.getToken()}` } })
+            .then(res => res.json())
+            .then(data => new Map(((data && data.items) || [])
+                .map(o => [String(o.officerId || "").trim().replace(/^0+(?=.)/, ""), String(o.name || "").trim()])
+                .filter(([id, name]) => id && name)))
+            .catch(() => { wkStaffNames = null; return new Map(); });
+    }
+    return wkStaffNames;
+}
+async function submitterLabel(by) {
+    const id = String(by || "").trim();
+    if (!/^\d+$/.test(id)) return id;
+    const name = (await staffNames()).get(id.replace(/^0+(?=.)/, ""));
+    return name ? `${name}-${id}` : id;
 }
 
 function paintPendingNote(pending) {
