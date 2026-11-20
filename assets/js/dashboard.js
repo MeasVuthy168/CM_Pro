@@ -177,23 +177,50 @@ updateOnlineStatus();
 // =========================
 // CARD VIBRATION
 // =========================
-// iOS Safari doesn't support the Vibration API — except some iOS
-// versions expose a `navigator.vibrate` function that silently
-// no-ops OR (reported on-device) actually buzzes, so feature-
-// detecting `navigator.vibrate` alone isn't reliable there. Skip it
-// outright on iOS rather than trusting the feature check.
+// Android: the Vibration API (20 ms).
+// iOS has no Vibration API (some versions expose a `navigator.vibrate`
+// that does nothing or misbehaves, so it is never used there). Since
+// iOS 18, Safari plays the system haptic when a switch-style checkbox
+// (<input type="checkbox" switch>) is toggled through its <label> — so
+// a hidden one is toggled on each tap (20/11/2026). Older iOS, or
+// "System Haptics" turned off in Settings, simply stays silent.
 
 function isIOSDevice(){
-    return /iphone|ipad|ipod/i.test(navigator.userAgent);
+    return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+let iosHapticLabel = null;
+
+function iosHaptic(){
+    if(!iosHapticLabel){
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.setAttribute("switch", "");
+        input.id = "cmHapticSwitch";
+        input.tabIndex = -1;
+        input.setAttribute("aria-hidden", "true");
+        const label = document.createElement("label");
+        label.htmlFor = input.id;
+        label.setAttribute("aria-hidden", "true");
+        label.style.cssText = input.style.cssText =
+            "position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px;top:0";
+        document.body.append(input, label);
+        iosHapticLabel = label;
+    }
+    iosHapticLabel.click();
+}
+
+function haptic(){
+    try{
+        if(isIOSDevice()) iosHaptic();
+        else if(navigator.vibrate) navigator.vibrate(20);
+    }catch(e){ /* no haptics here */ }
 }
 
 document.addEventListener("click",(e)=>{
 
-    if(e.target.closest(".dashboard-card") && navigator.vibrate && !isIOSDevice()){
-
-        navigator.vibrate(20);
-
-    }
+    if(e.target.closest(".dashboard-card")) haptic();
 
 });
 
