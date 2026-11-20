@@ -153,12 +153,3 @@
 [data-theme="dark"] .dashboard-card:hover{
     box-shadow:0 8px 22px rgba(0,0,0,.34);
 }
-
-/* iPhone haptic (dashboard.js addIOSHapticTargets): an invisible native
-   switch over the whole card takes the tap, so iOS plays its haptic. */
-.dashboard-card{ position:relative; }
-.cm-haptic-hit{
-    position:absolute; inset:0; z-index:3; margin:0; border-radius:inherit;
-    opacity:0.011; cursor:pointer; -webkit-tap-highlight-color:transparent;
-}
-.cm-haptic-hit input{ position:absolute; inset:0; width:100%; height:100%; margin:0; opacity:0.011; }
