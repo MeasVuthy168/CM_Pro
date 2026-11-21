@@ -158,65 +158,92 @@
            moving it up by exactly what the part above lost.
            translate(±13,0) widens the stance. -->
       <g id="left-leg" transform="translate(-13, 0)">
-        <!-- thigh: foreshortens (scaleY) at the hip when the knee comes forward -->
+        <!-- thigh: foreshortens (scaleY) at the hip when the knee comes forward.
+             pose: leans in 1.4° from the hip, so the knee sits a little inside the hip -->
         <g id="left-thigh-pivot">
           <circle id="left-hip-joint" cx="207" cy="388" r="18" fill="url(#jointGrad)"/>
-          <rect id="left-thigh" x="179" y="388" width="56" height="156" rx="27" fill="url(#bodyGrad)"/>
-          <rect x="188" y="398" width="9" height="124" rx="4.5" fill="#ffffff" opacity="0.55"/>
+          <g class="pose-thigh" transform="rotate(-1.4 207 388)">
+            <rect id="left-thigh" x="179" y="388" width="56" height="156" rx="27" fill="url(#bodyGrad)"/>
+            <rect x="188" y="398" width="9" height="124" rx="4.5" fill="#ffffff" opacity="0.55"/>
+          </g>
         </g>
         <!-- everything below the knee follows the thigh's lower end -->
         <g id="left-lower-leg">
           <g id="left-shin-pivot">
-            <rect id="left-shin" x="183" y="560" width="48" height="114" rx="23" fill="url(#bodyGrad)"/>
-            <rect x="190" y="570" width="8" height="88" rx="4" fill="#ffffff" opacity="0.55"/>
+            <!-- pose: the shin leans back out 1.71° so the ankle stays under the hip -->
+            <g class="pose-shin" transform="translate(3.81 0) rotate(1.71 207 545)">
+              <rect id="left-shin" x="183" y="558" width="48" height="116" rx="23" fill="url(#bodyGrad)"/>
+              <rect x="190" y="569" width="8" height="88" rx="4" fill="#ffffff" opacity="0.55"/>
+            </g>
           </g>
           <g id="left-knee">
-            <circle cx="207" cy="545" r="21" fill="url(#jointGrad)"/>
-            <circle cx="207" cy="545" r="12" fill="url(#bodyGrad)"/>
-            <circle cx="207" cy="545" r="12" fill="none" stroke="#000000" stroke-width="1.5" opacity="0.25"/>
+            <g class="pose-knee" transform="translate(3.81 0)">
+              <circle cx="207" cy="545" r="21" fill="url(#jointGrad)"/>
+              <circle cx="207" cy="545" r="12" fill="url(#bodyGrad)"/>
+              <circle cx="207" cy="545" r="12" fill="none" stroke="#000000" stroke-width="1.5" opacity="0.25"/>
+            </g>
           </g>
           <!-- ankle + boot follow the shin's lower end and tilt for taps -->
           <g id="left-ankle-pivot">
-            <circle id="left-ankle" cx="207" cy="673" r="15" fill="url(#jointGrad)"/>
+            <circle id="left-ankle" cx="207" cy="673" r="14" fill="url(#jointGrad)"/>
             <g id="left-foot">
-              <rect x="180" y="668" width="54" height="10" rx="5" fill="#5fd6f5"/>
-              <rect x="174" y="674" width="66" height="40" rx="19" fill="url(#bodyGrad)"/>
-              <ellipse cx="196" cy="684" rx="14" ry="5" fill="#ffffff" opacity="0.7"/>
-              <rect x="166" y="704" width="82" height="22" rx="11" fill="url(#blackLimbs)"/>
-              <rect x="190" y="713" width="34" height="5" rx="2.5" fill="#5fd6f5"/>
+              <!-- pose: boot toes out (sole flat on the ground, upper leans in toward the ankle) -->
+              <g class="pose-foot" transform="translate(-6 0) translate(207 726) scale(1) translate(-207 -726)">
+                <g class="pose-upper" transform="translate(207 726) skewX(-10) translate(-207 -726)">
+                  <rect x="184" y="671" width="46" height="9" rx="4.5" fill="#5fd6f5"/>
+                  <rect x="178" y="677" width="58" height="36" rx="17" fill="url(#bodyGrad)"/>
+                  <ellipse cx="194" cy="686" rx="12" ry="4.5" fill="#ffffff" opacity="0.7"/>
+                </g>
+                <rect x="171" y="705" width="72" height="21" rx="10.5" fill="url(#blackLimbs)"/>
+                <rect x="192" y="713" width="30" height="5" rx="2.5" fill="#5fd6f5"/>
+              </g>
             </g>
           </g>
         </g>
       </g>
 
-      <!-- right leg mirrors the left about x=240 -->
+      <!-- right leg mirrors the left about x=240 (relaxed leg: knee a little
+           softer, boot a small step forward) -->
       <g id="right-leg" transform="translate(13, 0)">
-        <!-- thigh: foreshortens (scaleY) at the hip when the knee comes forward -->
+        <!-- thigh: foreshortens (scaleY) at the hip when the knee comes forward.
+             pose: leans in 2.6° from the hip, so the knee sits a little inside the hip -->
         <g id="right-thigh-pivot">
           <circle id="right-hip-joint" cx="273" cy="388" r="18" fill="url(#jointGrad)"/>
-          <rect id="right-thigh" x="245" y="388" width="56" height="156" rx="27" fill="url(#bodyGrad)"/>
-          <rect x="283" y="398" width="9" height="124" rx="4.5" fill="#ffffff" opacity="0.4"/>
+          <g class="pose-thigh" transform="rotate(2.6 273 388)">
+            <rect id="right-thigh" x="245" y="388" width="56" height="156" rx="27" fill="url(#bodyGrad)"/>
+            <rect x="283" y="398" width="9" height="124" rx="4.5" fill="#ffffff" opacity="0.4"/>
+          </g>
         </g>
         <!-- everything below the knee follows the thigh's lower end -->
         <g id="right-lower-leg">
           <g id="right-shin-pivot">
-            <rect id="right-shin" x="249" y="560" width="48" height="114" rx="23" fill="url(#bodyGrad)"/>
-            <rect x="282" y="570" width="8" height="88" rx="4" fill="#ffffff" opacity="0.4"/>
+            <!-- pose: the shin leans back out 3.77° so the ankle stays under the hip -->
+            <g class="pose-shin" transform="translate(-7.08 0) rotate(-3.77 273 545)">
+              <rect id="right-shin" x="249" y="558" width="48" height="116" rx="23" fill="url(#bodyGrad)"/>
+              <rect x="282" y="569" width="8" height="88" rx="4" fill="#ffffff" opacity="0.4"/>
+            </g>
           </g>
           <g id="right-knee">
-            <circle cx="273" cy="545" r="21" fill="url(#jointGrad)"/>
-            <circle cx="273" cy="545" r="12" fill="url(#bodyGrad)"/>
-            <circle cx="273" cy="545" r="12" fill="none" stroke="#000000" stroke-width="1.5" opacity="0.25"/>
+            <g class="pose-knee" transform="translate(-7.08 0)">
+              <circle cx="273" cy="545" r="21" fill="url(#jointGrad)"/>
+              <circle cx="273" cy="545" r="12" fill="url(#bodyGrad)"/>
+              <circle cx="273" cy="545" r="12" fill="none" stroke="#000000" stroke-width="1.5" opacity="0.25"/>
+            </g>
           </g>
           <!-- ankle + boot follow the shin's lower end and tilt for taps -->
           <g id="right-ankle-pivot">
-            <circle id="right-ankle" cx="273" cy="673" r="15" fill="url(#jointGrad)"/>
+            <circle id="right-ankle" cx="274.34" cy="673" r="14" fill="url(#jointGrad)"/>
             <g id="right-foot">
-              <rect x="246" y="668" width="54" height="10" rx="5" fill="#5fd6f5"/>
-              <rect x="240" y="674" width="66" height="40" rx="19" fill="url(#bodyGrad)"/>
-              <ellipse cx="262" cy="684" rx="14" ry="5" fill="#ffffff" opacity="0.7"/>
-              <rect x="232" y="704" width="82" height="22" rx="11" fill="url(#blackLimbs)"/>
-              <rect x="256" y="713" width="34" height="5" rx="2.5" fill="#5fd6f5"/>
+              <!-- pose: boot toes out (sole flat on the ground, upper leans in toward the ankle), set a step forward -->
+              <g class="pose-foot" transform="translate(8.34 5) translate(273 726) scale(1.03) translate(-273 -726)">
+                <g class="pose-upper" transform="translate(273 726) skewX(12) translate(-273 -726)">
+                  <rect x="250" y="671" width="46" height="9" rx="4.5" fill="#5fd6f5"/>
+                  <rect x="244" y="677" width="58" height="36" rx="17" fill="url(#bodyGrad)"/>
+                  <ellipse cx="262" cy="686" rx="12" ry="4.5" fill="#ffffff" opacity="0.7"/>
+                </g>
+                <rect x="237" y="705" width="72" height="21" rx="10.5" fill="url(#blackLimbs)"/>
+                <rect x="258" y="713" width="30" height="5" rx="2.5" fill="#5fd6f5"/>
+              </g>
             </g>
           </g>
         </g>
