@@ -101,80 +101,6 @@ only holds styles specific to the notifications page.
 }
 
 /* =========================
-   Summary
-   Reduced padding/font-size — these were taller than they needed to
-   be for just a label + a number.
-========================= */
-
-.notify-summary{
-
-    display:grid;
-
-    grid-template-columns:repeat(3,minmax(0,1fr));
-
-    gap:8px;
-
-    padding:12px 14px 10px;
-
-}
-
-.summary-card{
-
-    flex:1;
-
-    background:var(--notif-card-bg);
-
-    border:1px solid var(--notif-border);
-
-    border-radius:12px;
-
-    padding:7px 10px;
-
-    box-shadow:var(--notif-shadow);
-
-    min-width:0;
-
-}
-
-.summary-card-unread{
-
-    border-left:3px solid #FFD700;
-
-}
-
-.summary-label{
-
-    font-size:11px;
-
-    color:var(--notif-text-muted);
-
-    margin-bottom:1px;
-
-    white-space:nowrap;
-
-    overflow:hidden;
-
-    text-overflow:ellipsis;
-
-}
-
-.summary-value{
-
-    font-size:16px;
-
-    font-weight:700;
-
-    color:var(--notif-navy-dark);
-
-}
-
-[data-theme="dark"] .summary-value{
-
-    color:#FFD700;
-
-}
-
-/* =========================
    Pull to Refresh
    Height is driven directly from JS on every touchmove frame (see
    notification.js) while dragging — .snapping only gets added right
@@ -266,10 +192,10 @@ only holds styles specific to the notifications page.
 }
 
 /* =========================
-   Filter Tabs (All / Unread)
-   Client-side filter over the already-fetched list — the summary
-   counts above always reflect the FULL list regardless of which tab
-   is active, only the cards shown here change.
+   Filter Tabs (All / Unread / Read)
+   Client-side filter over the already-fetched list. Their counts are
+   the page's only counters and always reflect the FULL list,
+   whichever tab is active — only the cards shown change.
 ========================= */
 
 .notify-filter-tabs{
@@ -278,7 +204,7 @@ only holds styles specific to the notifications page.
 
     gap:6px;
 
-    padding:0 14px 8px;
+    padding:12px 14px 8px;
 
 }
 
@@ -1453,8 +1379,6 @@ only holds styles specific to the notifications page.
 
 /* Very narrow phones: keep everything on screen. */
 @media (max-width:360px){
-    .notify-summary{ gap:6px; }
-    .summary-card{ padding:6px 8px; }
     .notify-filter-tab{ font-size:12px; gap:4px; }
     .notify-sort{ max-width:38%; font-size:12px; }
     .notify-user{ max-width:42%; }

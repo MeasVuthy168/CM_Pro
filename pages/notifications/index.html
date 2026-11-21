@@ -153,33 +153,14 @@ No Internet Connection
         Read All
     </button>
 
-    <!-- SUMMARY (always the whole list, whatever the filters) -->
-    <div class="notify-summary">
-
-        <div class="summary-card summary-card-unread">
-            <div class="summary-label" data-i18n="notifications.unread">Unread</div>
-            <div class="summary-value" id="unreadCount">0</div>
-        </div>
-
-        <div class="summary-card">
-            <div class="summary-label" data-i18n="common.total">Total</div>
-            <div class="summary-value" id="totalCount">0</div>
-        </div>
-
-        <div class="summary-card">
-            <div class="summary-label" data-i18n="notifications.today">Today</div>
-            <div class="summary-value" id="todayCount">0</div>
-        </div>
-
-    </div>
-
     <!-- PULL TO REFRESH (replaces the old static Refresh button — see
          the "PULL TO REFRESH" section in notification.js) -->
     <div class="pull-refresh-indicator" id="pullRefreshIndicator">
         <div class="pull-refresh-spinner"></div>
     </div>
 
-    <!-- STATUS FILTER (All / Unread / Read, with counts) -->
+    <!-- STATUS FILTER (All / Unread / Read, with counts — these are the
+         page's only counters; "Today" shows on its group heading) -->
     <div class="notify-filter-tabs" id="notifyFilterTabs" role="tablist" data-i18n-aria-label="notifications.statusFilter">
         <button type="button" class="notify-filter-tab active" data-filter="all" role="tab" aria-selected="true">
             <span data-i18n="notifications.all">ទាំងអស់</span><span class="tab-count" data-count="all">0</span>

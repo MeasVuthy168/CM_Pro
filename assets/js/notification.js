@@ -5,12 +5,6 @@
 const notifyList=
 document.getElementById("notifyList");
 
-const unreadCount=
-document.getElementById("unreadCount");
-
-const totalCount=
-document.getElementById("totalCount");
-
 const loadingBox=
 document.getElementById("loadingBox");
 
@@ -616,13 +610,11 @@ window.addEventListener("cm-language-changed",()=>{
 });
 
 // =========================================================
-// UPDATE SUMMARY
-// Always reflects the FULL list, independent of which filter tab is
-// active — "Unread" showing only 3 cards shouldn't make the summary
-// row claim there are only 3 notifications in total.
+// UPDATE COUNTS
+// The status tabs carry the page's counters (the separate summary
+// cards repeated the same numbers, so they were removed). They always
+// reflect the FULL list, independent of which filter is active.
 // =========================================================
-
-const todayCount=document.getElementById("todayCount");
 
 function setCount(el,n){
     if(el && el.textContent!==String(n)) el.textContent=n;
@@ -630,18 +622,10 @@ function setCount(el,n){
 
 function updateSummaryFromState(){
 
-    const now=new Date();
-    let unread=0, today=0;
-    allNotifications.forEach(x=>{
-        if(!x.isRead) unread++;
-        if(dateGroupOf(x,now)==="today" && timeOf(x)!=null) today++;
-    });
+    let unread=0;
+    allNotifications.forEach(x=>{ if(!x.isRead) unread++; });
 
-    setCount(totalCount,allNotifications.length);
-    setCount(unreadCount,unread);
-    setCount(todayCount,today);
-
-    // Status tab counts: the whole list, like the cards above.
+    // Status tab counts: always the whole list, whatever the filters.
     setCount(document.querySelector('[data-count="all"]'),allNotifications.length);
     setCount(document.querySelector('[data-count="unread"]'),unread);
     setCount(document.querySelector('[data-count="read"]'),allNotifications.length-unread);
