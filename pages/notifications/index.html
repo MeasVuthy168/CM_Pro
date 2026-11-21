@@ -153,69 +153,73 @@ No Internet Connection
         Read All
     </button>
 
-    <!-- SUMMARY -->
-
+    <!-- SUMMARY (always the whole list, whatever the filters) -->
     <div class="notify-summary">
 
-        <div class="summary-card">
-
-            <div class="summary-label" data-i18n="notifications.unread">
-
-                Unread
-
-            </div>
-
-            <div
-                class="summary-value"
-                id="unreadCount"
-            >
-
-                0
-
-            </div>
-
+        <div class="summary-card summary-card-unread">
+            <div class="summary-label" data-i18n="notifications.unread">Unread</div>
+            <div class="summary-value" id="unreadCount">0</div>
         </div>
 
         <div class="summary-card">
+            <div class="summary-label" data-i18n="common.total">Total</div>
+            <div class="summary-value" id="totalCount">0</div>
+        </div>
 
-            <div class="summary-label" data-i18n="common.total">
-
-                Total
-
-            </div>
-
-            <div
-                class="summary-value"
-                id="totalCount"
-            >
-
-                0
-
-            </div>
-
+        <div class="summary-card">
+            <div class="summary-label" data-i18n="notifications.today">Today</div>
+            <div class="summary-value" id="todayCount">0</div>
         </div>
 
     </div>
 
     <!-- PULL TO REFRESH (replaces the old static Refresh button — see
          the "PULL TO REFRESH" section in notification.js) -->
-
     <div class="pull-refresh-indicator" id="pullRefreshIndicator">
         <div class="pull-refresh-spinner"></div>
     </div>
 
-    <!-- FILTER TABS -->
-
-    <div class="notify-filter-tabs" id="notifyFilterTabs">
-
-        <button type="button" class="notify-filter-tab active" data-filter="all" data-i18n="notifications.all">
-            ទាំងអស់
+    <!-- STATUS FILTER (All / Unread / Read, with counts) -->
+    <div class="notify-filter-tabs" id="notifyFilterTabs" role="tablist" data-i18n-aria-label="notifications.statusFilter">
+        <button type="button" class="notify-filter-tab active" data-filter="all" role="tab" aria-selected="true">
+            <span data-i18n="notifications.all">ទាំងអស់</span><span class="tab-count" data-count="all">0</span>
         </button>
-
-        <button type="button" class="notify-filter-tab" data-filter="unread" data-i18n="notifications.unread">
-            មិនទាន់អាន
+        <button type="button" class="notify-filter-tab" data-filter="unread" role="tab" aria-selected="false">
+            <span data-i18n="notifications.unread">មិនទាន់អាន</span><span class="tab-count" data-count="unread">0</span>
         </button>
+        <button type="button" class="notify-filter-tab" data-filter="read" role="tab" aria-selected="false">
+            <span data-i18n="notifications.read">បានអាន</span><span class="tab-count" data-count="read">0</span>
+        </button>
+    </div>
 
+    <!-- SEARCH + SORT (local only, over the list already loaded) -->
+    <div class="notify-tools">
+        <div class="notify-search">
+            <span class="notify-search-ico" aria-hidden="true"></span>
+            <input type="search" id="notifySearch" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search"
+                data-i18n-placeholder="notifications.searchPlaceholder" data-i18n-aria-label="notifications.searchPlaceholder"
+                placeholder="ស្វែងរកការជូនដំណឹង…">
+            <button type="button" id="notifySearchClear" class="notify-search-clear" hidden
+                data-i18n-aria-label="notifications.clearSearch" data-i18n-title="notifications.clearSearch">
+                <span aria-hidden="true">×</span>
+            </button>
+        </div>
+        <select id="notifySort" class="notify-sort" data-i18n-aria-label="notifications.sortBy" data-i18n-title="notifications.sortBy">
+            <option value="newest" data-i18n="notifications.newestFirst" selected>ថ្មីបំផុតមុន</option>
+            <option value="oldest" data-i18n="notifications.oldestFirst">ចាស់បំផុតមុន</option>
+            <option value="unread" data-i18n="notifications.unreadFirst">មិនទាន់អានមុន</option>
+        </select>
+    </div>
+
+    <!-- CATEGORY CHIPS (scroll sideways on a narrow screen) -->
+    <div class="notify-chips" id="notifyChips" role="tablist" data-i18n-aria-label="notifications.typeFilter">
+        <button type="button" class="notify-chip active" data-cat="all" role="tab" aria-selected="true"><span data-i18n="notifications.allTypes">គ្រប់ប្រភេទ</span><span class="notify-chip-count">0</span></button>
+        <button type="button" class="notify-chip" data-cat="reasonArrear" role="tab" aria-selected="false"><span data-i18n="notifications.reasonArrear">Reason Arrear</span><span class="notify-chip-count">0</span></button>
+        <button type="button" class="notify-chip" data-cat="system" role="tab" aria-selected="false"><span data-i18n="notifications.system">ប្រព័ន្ធ</span><span class="notify-chip-count">0</span></button>
+        <button type="button" class="notify-chip" data-cat="reports" role="tab" aria-selected="false"><span data-i18n="notifications.reports">របាយការណ៍</span><span class="notify-chip-count">0</span></button>
+        <button type="button" class="notify-chip" data-cat="security" role="tab" aria-selected="false"><span data-i18n="notifications.security">សុវត្ថិភាព</span><span class="notify-chip-count">0</span></button>
+        <button type="button" class="notify-chip" data-cat="userActivity" role="tab" aria-selected="false"><span data-i18n="notifications.userActivity">សកម្មភាពអ្នកប្រើ</span><span class="notify-chip-count">0</span></button>
+        <button type="button" class="notify-chip" data-cat="other" role="tab" aria-selected="false"><span data-i18n="notifications.other">ផ្សេងៗ</span><span class="notify-chip-count">0</span></button>
     </div>
 
     <!-- LIST -->
@@ -249,6 +253,10 @@ No Internet Connection
             Everything is up to date
 
         </div>
+
+        <button type="button" class="refresh-btn" id="emptyClearBtn" hidden data-i18n="notifications.clearSearch">
+            សម្អាតការស្វែងរក
+        </button>
 
     </div>
 
@@ -313,6 +321,28 @@ No Internet Connection
             <button id="btnDeleteAllYes" data-i18n="common.delete">លុប</button>
 
             <button id="btnDeleteAllNo" data-i18n="common.cancel">បោះបង់</button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- DELETE ONE CONFIRM (the bin button on a card; a swipe-left
+     still deletes straight away, as before) -->
+<div id="deleteOneDialog" class="dialog" role="dialog" aria-modal="true" aria-labelledby="deleteOneTitle">
+
+    <div class="dialog-box">
+
+        <div class="dialog-title" id="deleteOneTitle" data-i18n="notifications.deleteOneConfirm">
+            តើអ្នកចង់លុបការជូនដំណឹងនេះមែនទេ?
+        </div>
+
+        <div class="dialog-buttons">
+
+            <button id="btnDeleteOneYes" data-i18n="common.delete">លុប</button>
+
+            <button id="btnDeleteOneNo" data-i18n="common.cancel">បោះបង់</button>
 
         </div>
 

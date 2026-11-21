@@ -16,6 +16,14 @@ only holds styles specific to the notifications page.
     --notif-navy-dark:#0E1B3C;
     --notif-shadow:0 4px 14px rgba(0,0,0,.08);
     --notif-avatar-bg:#E2E6ED;
+    --notif-accent:#0d2d5c;
+    --notif-gold:#D4AF37;
+    --notif-chip-bg:#FFFFFF;
+    --notif-chip-active-text:#0E1B3C;
+    --notif-input-bg:#FFFFFF;
+    --notif-unread-bg:#FFFCF0;
+    --notif-tag-bg:rgba(212,175,55,.15);
+    --notif-tag-text:#8A6D1D;
 }
 
 [data-theme="dark"]{
@@ -28,6 +36,12 @@ only holds styles specific to the notifications page.
     --notif-text-muted2:#8FA0C7;
     --notif-shadow:0 2px 14px rgba(0,0,0,.4);
     --notif-avatar-bg:#16223F;
+    --notif-accent:#FFD700;
+    --notif-chip-bg:#131C2E;
+    --notif-input-bg:#0F1828;
+    --notif-unread-bg:#16213A;
+    --notif-tag-bg:rgba(255,215,0,.12);
+    --notif-tag-text:#FFD54A;
 }
 
 /* GOLD THEME — its own warm page/card background, not just a
@@ -38,6 +52,12 @@ only holds styles specific to the notifications page.
     --notif-navy-dark:#6B4500;
     --notif-border:#C9971F;
     --notif-avatar-bg:#FFF6DC;
+    --notif-accent:#6B4500;
+    --notif-chip-bg:#FFFDF6;
+    --notif-input-bg:#FFFDF6;
+    --notif-unread-bg:#FFF3CF;
+    --notif-tag-bg:rgba(201,151,31,.18);
+    --notif-tag-text:#6B4500;
 }
 
 /* DARK GRAY THEME — flat neutral dark with a subtle neutral border
@@ -53,6 +73,12 @@ only holds styles specific to the notifications page.
     --notif-navy-dark:#D8DAE0;
     --notif-shadow:0 4px 14px rgba(0,0,0,.35);
     --notif-avatar-bg:#40454D;
+    --notif-accent:#FFD700;
+    --notif-chip-bg:#363A41;
+    --notif-input-bg:#30333A;
+    --notif-unread-bg:#3C3F46;
+    --notif-tag-bg:rgba(255,255,255,.08);
+    --notif-tag-text:#E3D29A;
 }
 
 /* =========================
@@ -82,11 +108,13 @@ only holds styles specific to the notifications page.
 
 .notify-summary{
 
-    display:flex;
+    display:grid;
 
-    gap:14px;
+    grid-template-columns:repeat(3,minmax(0,1fr));
 
-    padding:14px;
+    gap:8px;
+
+    padding:12px 14px 10px;
 
 }
 
@@ -100,9 +128,17 @@ only holds styles specific to the notifications page.
 
     border-radius:12px;
 
-    padding:8px 12px;
+    padding:7px 10px;
 
     box-shadow:var(--notif-shadow);
+
+    min-width:0;
+
+}
+
+.summary-card-unread{
+
+    border-left:3px solid #FFD700;
 
 }
 
@@ -112,7 +148,13 @@ only holds styles specific to the notifications page.
 
     color:var(--notif-text-muted);
 
-    margin-bottom:2px;
+    margin-bottom:1px;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
 
 }
 
@@ -234,9 +276,9 @@ only holds styles specific to the notifications page.
 
     display:flex;
 
-    gap:8px;
+    gap:6px;
 
-    padding:0 14px 12px;
+    padding:0 14px 8px;
 
 }
 
@@ -244,7 +286,19 @@ only holds styles specific to the notifications page.
 
     flex:1;
 
-    height:38px;
+    min-width:0;
+
+    height:34px;
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:6px;
+
+    padding:0 6px;
 
     border:1px solid var(--notif-border);
 
@@ -282,13 +336,228 @@ only holds styles specific to the notifications page.
 
 }
 
+.tab-count,
+.notify-chip-count{
+    min-width:18px;
+    height:18px;
+    padding:0 5px;
+    border-radius:9px;
+    background:var(--notif-tag-bg);
+    color:var(--notif-text-muted);
+    font-size:10.5px;
+    font-weight:700;
+    line-height:18px;
+    text-align:center;
+    font-family:system-ui,-apple-system,sans-serif;
+    box-sizing:border-box;
+}
+
+.notify-filter-tab.active .tab-count,
+.notify-chip.active .notify-chip-count{
+    background:rgba(14,27,60,.14);
+    color:#0E1B3C;
+}
+
+/* =========================
+   Search + Sort
+========================= */
+
+.notify-tools{
+    display:flex;
+    gap:6px;
+    padding:0 14px 8px;
+}
+
+.notify-search{
+    position:relative;
+    flex:1;
+    min-width:0;
+}
+
+.notify-search input{
+    width:100%;
+    height:36px;
+    box-sizing:border-box;
+    border:1px solid var(--notif-border);
+    border-radius:10px;
+    background:var(--notif-input-bg);
+    color:var(--notif-text);
+    /* 16px stops iOS zooming the page when the box gets focus */
+    font-size:16px;
+    font-family:'KRASAR',sans-serif;
+    padding:0 32px 0 32px;
+    outline:none;
+    -webkit-appearance:none;
+    appearance:none;
+}
+
+.notify-search input::placeholder{
+    color:var(--notif-text-muted2);
+    font-size:13px;
+}
+
+.notify-search input::-webkit-search-cancel-button,
+.notify-search input::-webkit-search-decoration{
+    -webkit-appearance:none;
+    display:none;
+}
+
+.notify-search input:focus{
+    border-color:var(--notif-gold);
+    box-shadow:0 0 0 3px rgba(212,175,55,.22);
+}
+
+.notify-search-ico{
+    position:absolute;
+    left:10px;
+    top:50%;
+    width:15px;
+    height:15px;
+    transform:translateY(-50%);
+    background-color:var(--notif-text-muted2);
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='7' fill='none' stroke='%23000' stroke-width='2.2'/%3E%3Cpath d='m20 20-4-4' stroke='%23000' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='7' fill='none' stroke='%23000' stroke-width='2.2'/%3E%3Cpath d='m20 20-4-4' stroke='%23000' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
+    pointer-events:none;
+}
+
+.notify-search-clear{
+    position:absolute;
+    right:3px;
+    top:50%;
+    transform:translateY(-50%);
+    width:30px;
+    height:30px;
+    border:none;
+    border-radius:8px;
+    background:transparent;
+    color:var(--notif-text-muted);
+    font-size:20px;
+    line-height:1;
+    cursor:pointer;
+}
+
+.notify-search-clear[hidden]{ display:none; }
+
+.notify-sort{
+    flex:0 0 auto;
+    max-width:42%;
+    height:36px;
+    border:1px solid var(--notif-border);
+    border-radius:10px;
+    background:var(--notif-input-bg);
+    color:var(--notif-text);
+    font-size:12.5px;
+    font-family:'KRASAR',sans-serif;
+    padding:0 26px 0 10px;
+    -webkit-appearance:none;
+    appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6' fill='none' stroke='%239AA5B8' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 8px center;
+    background-size:14px;
+    cursor:pointer;
+}
+
+.notify-sort:focus-visible,
+.notify-filter-tab:focus-visible,
+.notify-chip:focus-visible,
+.notify-act:focus-visible,
+.notify-more:focus-visible,
+.notify-card:focus-visible{
+    outline:2px solid var(--notif-gold);
+    outline-offset:2px;
+}
+
+/* =========================
+   Category chips — one row that scrolls sideways
+========================= */
+
+.notify-chips{
+    display:flex;
+    gap:6px;
+    padding:0 14px 10px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-x:contain;
+    scroll-padding:0 14px;
+}
+
+.notify-chips::-webkit-scrollbar{ display:none; }
+
+.notify-chip{
+    flex:0 0 auto;
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    height:30px;
+    padding:0 6px 0 11px;
+    border:1px solid var(--notif-border);
+    border-radius:15px;
+    background:var(--notif-chip-bg);
+    color:var(--notif-text-body);
+    font-family:'KRASAR',sans-serif;
+    font-size:12px;
+    font-weight:700;
+    white-space:nowrap;
+    cursor:pointer;
+    transition:background .15s, border-color .15s;
+}
+
+.notify-chip:active{ transform:scale(.97); }
+
+.notify-chip.active{
+    background:linear-gradient(180deg,#FFD700,#D4AF37);
+    border-color:#D4AF37;
+    color:var(--notif-chip-active-text);
+}
+
+.notify-chip.is-empty:not(.active){ opacity:.55; }
+
+/* =========================
+   Date groups (Today / Yesterday / Earlier)
+========================= */
+
+.notify-group-head{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin:4px 2px 6px;
+    font-size:12px;
+    font-weight:700;
+    color:var(--notif-text-muted);
+    letter-spacing:.2px;
+}
+
+.notify-group-count{
+    font-size:10.5px;
+    font-weight:700;
+    color:var(--notif-text-muted2);
+    font-family:system-ui,-apple-system,sans-serif;
+}
+
+.notify-group + .notify-group{ margin-top:6px; }
+
+.sr-only{
+    position:absolute !important;
+    width:1px;
+    height:1px;
+    padding:0;
+    margin:-1px;
+    overflow:hidden;
+    clip:rect(0,0,0,0);
+    white-space:nowrap;
+    border:0;
+}
+
 /* =========================
    List
 ========================= */
 
 .notify-list{
 
-    padding:0 14px 90px;
+    padding:0 14px calc(90px + env(safe-area-inset-bottom, 0px));
 
 }
 
@@ -309,11 +578,11 @@ only holds styles specific to the notifications page.
 
     border:1px solid var(--notif-border);
 
-    border-radius:16px;
+    border-radius:14px;
 
-    padding:12px 14px;
+    padding:10px 12px;
 
-    margin-bottom:10px;
+    margin-bottom:8px;
 
     display:flex;
 
@@ -340,6 +609,21 @@ only holds styles specific to the notifications page.
 
     border-left:4px solid #FFD700;
 
+    background:var(--notif-unread-bg);
+
+}
+
+.notify-card.unread .notify-card-title{ font-weight:800; }
+
+.notify-dot{
+    display:inline-block;
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:#FFD700;
+    box-shadow:0 0 0 2px rgba(255,215,0,.25);
+    margin-right:5px;
+    vertical-align:middle;
 }
 
 /* Read cards recede rather than carrying an icon/button to mark them
@@ -413,7 +697,19 @@ only holds styles specific to the notifications page.
 
     color:var(--notif-text);
 
-    line-height:1.35;
+    line-height:1.45;
+
+    min-width:0;
+
+    overflow-wrap:anywhere;
+
+    display:-webkit-box;
+
+    -webkit-line-clamp:2;
+
+    -webkit-box-orient:vertical;
+
+    overflow:hidden;
 
 }
 
@@ -445,7 +741,34 @@ only holds styles specific to the notifications page.
     -webkit-line-clamp:2;
     -webkit-box-orient:vertical;
     overflow:hidden;
+    /* Khmer stacks marks above/below: a taller line keeps the 3rd
+       line's tops from peeking under the clamp. */
+    line-height:1.65;
+    max-height:3.3em;
 
+    overflow-wrap:anywhere;
+
+    white-space:pre-line;
+
+}
+
+.notify-card.expanded .notify-message{
+    display:block;
+    -webkit-line-clamp:unset;
+    max-height:none;
+    overflow:visible;
+}
+
+.notify-more{
+    border:none;
+    background:none;
+    padding:0 0 4px;
+    margin-top:-3px;
+    color:var(--notif-accent);
+    font-family:'KRASAR',sans-serif;
+    font-size:11.5px;
+    font-weight:700;
+    cursor:pointer;
 }
 
 .notify-meta-row{
@@ -454,7 +777,11 @@ only holds styles specific to the notifications page.
 
     align-items:center;
 
-    justify-content:space-between;
+    justify-content:flex-start;
+
+    flex-wrap:nowrap;
+
+    min-width:0;
 
     gap:8px;
 
@@ -476,9 +803,9 @@ only holds styles specific to the notifications page.
 
     border-radius:10px;
 
-    background:rgba(212,175,55,.15);
+    background:var(--notif-tag-bg);
 
-    color:#8A6D1D;
+    color:var(--notif-tag-text);
 
     font-size:11px;
 
@@ -486,6 +813,15 @@ only holds styles specific to the notifications page.
 
     min-width:0;
 
+    flex:0 1 auto;
+
+}
+
+.notify-user-name{
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
 }
 
 .notify-user-avatar{
@@ -506,21 +842,60 @@ only holds styles specific to the notifications page.
 
 .notify-type{
 
-    font-size:11px;
+    font-size:10.5px;
 
-    background:rgba(212,175,55,.15);
+    background:var(--notif-tag-bg);
 
-    color:#8A6D1D;
+    color:var(--notif-tag-text);
 
-    padding:3px 8px;
+    padding:2px 8px;
 
     border-radius:8px;
 
-    font-weight:600;
+    font-weight:700;
 
     flex-shrink:0;
 
+    white-space:nowrap;
+
 }
+
+.notify-type-security{ background:rgba(220,38,38,.12); color:#B91C1C; }
+.notify-type-reports{ background:rgba(37,99,235,.12); color:#1D4ED8; }
+.notify-type-reasonArrear{ background:rgba(15,118,110,.12); color:#0F766E; }
+[data-theme="dark"] .notify-type-security,
+[data-theme="darkgray"] .notify-type-security{ color:#FCA5A5; }
+[data-theme="dark"] .notify-type-reports,
+[data-theme="darkgray"] .notify-type-reports{ color:#93C5FD; }
+[data-theme="dark"] .notify-type-reasonArrear,
+[data-theme="darkgray"] .notify-type-reasonArrear{ color:#5EEAD4; }
+
+/* Mark read / delete — small, quiet, but real buttons (the swipes
+   still work; these are for anyone who can't or doesn't swipe). */
+.notify-acts{
+    display:flex;
+    gap:2px;
+    margin-left:auto;
+    flex-shrink:0;
+}
+
+.notify-act{
+    width:30px;
+    height:28px;
+    border:none;
+    border-radius:8px;
+    background:transparent;
+    color:var(--notif-text-muted2);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    padding:0;
+}
+
+.notify-act .nt-ico{ width:16px; height:16px; }
+.notify-act-read:active{ color:#28a745; background:rgba(40,167,69,.12); }
+.notify-act-del:active{ color:#dc3545; background:rgba(220,53,69,.12); }
 
 /* =========================
    Icons — read / read all / delete / delete all.
@@ -533,6 +908,7 @@ only holds styles specific to the notifications page.
 :root{
 
     --nt-ico-read:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 10 12 4l9 6v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 19Z' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3Cpath d='m3.5 10.5 8.5 5.8 8.5-5.8' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3C/svg%3E");
+    --nt-ico-check:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 6 9 17l-5-5' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.4'/%3E%3C/svg%3E");
     --nt-ico-read-all:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M17 6 6.5 16.5 2 12' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.2'/%3E%3Cpath d='m22 9.5-7.5 7.5-1.8-1.8' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.2'/%3E%3C/svg%3E");
     --nt-ico-delete:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.5 6h17M9 6V3.8h6V6' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3Cpath d='M5.5 6l1 14.2A2 2 0 0 0 8.5 22h7a2 2 0 0 0 2-1.8L18.5 6M10 10.5v7M14 10.5v7' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3C/svg%3E");
     --nt-ico-delete-all:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.5 6h17M9 6V3.8h6V6' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3Cpath d='M5.5 6l1 14.2A2 2 0 0 0 8.5 22h7a2 2 0 0 0 2-1.8L18.5 6' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3Cpath d='m9.6 11 4.8 4.8M14.4 11l-4.8 4.8' fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3C/svg%3E");
@@ -563,6 +939,7 @@ only holds styles specific to the notifications page.
 .nt-ico-read{ -webkit-mask-image:var(--nt-ico-read); mask-image:var(--nt-ico-read); }
 .nt-ico-read-all{ -webkit-mask-image:var(--nt-ico-read-all); mask-image:var(--nt-ico-read-all); }
 .nt-ico-delete{ -webkit-mask-image:var(--nt-ico-delete); mask-image:var(--nt-ico-delete); }
+.nt-ico-read-one{ -webkit-mask-image:var(--nt-ico-check); mask-image:var(--nt-ico-check); }
 .nt-ico-delete-all{ -webkit-mask-image:var(--nt-ico-delete-all); mask-image:var(--nt-ico-delete-all); }
 
 /* Type colors for the card's icon box — same hues as the toast types
@@ -1050,7 +1427,8 @@ only holds styles specific to the notifications page.
 
 }
 
-#btnDeleteAllYes{
+#btnDeleteAllYes,
+#btnDeleteOneYes{
 
     background:#d9534f;
 
@@ -1058,7 +1436,8 @@ only holds styles specific to the notifications page.
 
 }
 
-#btnDeleteAllNo{
+#btnDeleteAllNo,
+#btnDeleteOneNo{
 
     background:transparent;
 
@@ -1071,3 +1450,12 @@ only holds styles specific to the notifications page.
 /* Smart Alert / Officer Reminder cards open a detail page on tap */
 .notify-card.has-detail{ cursor:pointer; }
 .notify-card.has-detail .notify-type::after{ content:" ›"; font-weight:800; }
+
+/* Very narrow phones: keep everything on screen. */
+@media (max-width:360px){
+    .notify-summary{ gap:6px; }
+    .summary-card{ padding:6px 8px; }
+    .notify-filter-tab{ font-size:12px; gap:4px; }
+    .notify-sort{ max-width:38%; font-size:12px; }
+    .notify-user{ max-width:42%; }
+}
