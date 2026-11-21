@@ -5,12 +5,6 @@
 const notifyList=
 document.getElementById("notifyList");
 
-const unreadCount=
-document.getElementById("unreadCount");
-
-const totalCount=
-document.getElementById("totalCount");
-
 const loadingBox=
 document.getElementById("loadingBox");
 
@@ -110,9 +104,14 @@ function canSeeNotificationLocally(notify){
 // =========================================================
 
 let allNotifications=[];
-let currentFilter="all"; // "all" | "unread"
+let currentFilter="all"; // status: "all" | "unread" | "read"
+let currentCategory="all"; // "all" | one of NOTIF_CATEGORIES
+let currentSearch=""; // raw text typed in the search box
+let currentSort="newest"; // "newest" | "oldest" | "unread"
 let hasLoadedOnce=false;
 let lastRenderSignature=null;
+// Cards whose long message the user opened — kept across re-renders.
+const expandedIds=new Set();
 
 const errorBox=document.getElementById("errorBox");
 const emptyTitle=document.getElementById("emptyTitle");
@@ -266,19 +265,211 @@ async function loadNotifications(){
 // user has mid-gesture for no reason.
 // =========================================================
 
+// =========================================================
+// CATEGORIES
+// One place decides which friendly group a notification belongs to,
+// from its type / moduleCode / eventKey (falling back to title and
+// extra for older rows). Never writes to the item. Anything it can't
+// place goes to "other", so a new server-side notification kind can't
+// break the page — it just shows under Other until mapped here.
+// =========================================================
+
+const NOTIF_CATEGORIES=["reasonArrear","system","reports","security","userActivity","other"];
+
+const CATEGORY_ICON={
+    reasonArrear:"clipboard", system:"system", reports:"upload",
+    security:"error", userActivity:"update", other:"bell"
+};
+
+const RE_SECURITY=/(^|[^a-z])(login|logout|sign.?in|password|passcode|pin|security|biometric|webauthn|fingerprint|face.?id|permission|locked|lockout|2fa|otp)([^a-z]|$)/i;
+const RE_REASON=/reason.?arrear|officer.?reminder/i;
+const RE_REPORTS=/^upload|snapshot|report|smart.?alert|lgs|debit.?turn.?over|overdue|write.?off/i;
+const RE_USER=/(^|[^a-z])(user|profile|photo|avatar|account|staff)([^a-z]|$)/i;
+const RE_SYSTEM=/^(system|app|info)$|storage|cleanup|wipe|wallpaper|app.?version|manual|prune|backup|maintenance|update/i;
+
+const categoryMemo=new WeakMap();
+
+function getNotificationCategory(item){
+
+    if(!item || typeof item!=="object") return "other";
+    if(categoryMemo.has(item)) return categoryMemo.get(item);
+
+    const type=String(item.type || "").trim();
+    const moduleCode=String(item.moduleCode || "").trim();
+    const eventKey=String(item.eventKey || "").trim();
+    const extra=item.extra && typeof item.extra==="object" ? item.extra : null;
+    const extraHint=extra ? String(extra.category || extra.module || extra.kind || "") : "";
+    const codes=[type,moduleCode,eventKey,extraHint].filter(Boolean);
+    const anyCode=re=>codes.some(c=>re.test(c));
+
+    let cat="other";
+
+    if(anyCode(RE_SECURITY)) cat="security";
+    else if(anyCode(RE_REASON)) cat="reasonArrear";
+    else if(type==="upload" || type==="snapshot" || anyCode(RE_REPORTS)) cat="reports";
+    else if(anyCode(RE_USER)) cat="userActivity";
+    else if(anyCode(RE_SYSTEM)) cat="system";
+    else{
+        // No usable code (e.g. an optimistic live push, or a very old
+        // row) — look at the title as a last resort.
+        const title=String(item.title || "");
+        if(RE_SECURITY.test(title)) cat="security";
+        else if(/reason|មូលហេតុ/i.test(title)) cat="reasonArrear";
+        else if(/upload|report|snapshot|របាយការណ៍/i.test(title)) cat="reports";
+    }
+
+    categoryMemo.set(item,cat);
+    return cat;
+
+}
+
+function categoryLabelKey(cat){
+    return `notifications.${NOTIF_CATEGORIES.includes(cat) ? cat : "other"}`;
+}
+
+function tr(key){
+    return window.CMI18n ? CMI18n.t(key) : key;
+}
+
+// Search words for each category in BOTH languages, so a Khmer search
+// finds "System" cards while the app is in English and the other way
+// round. The shown label always comes from the dictionary (features.js);
+// this list is only extra words to match, plus the current label.
+const CATEGORY_SEARCH_TERMS={
+    reasonArrear:"reason arrear មូលហេតុយឺតយ៉ាវ មូលហេតុ",
+    system:"system ប្រព័ន្ធ",
+    reports:"reports report upload របាយការណ៍",
+    security:"security សុវត្ថិភាព",
+    userActivity:"user activity សកម្មភាពអ្នកប្រើ អ្នកប្រើប្រាស់",
+    other:"other ផ្សេងៗ"
+};
+
+function categoryLabelsBoth(cat){
+    return `${CATEGORY_SEARCH_TERMS[cat] || ""} ${tr(categoryLabelKey(cat))}`;
+}
+
+// =========================================================
+// VIEW PIPELINE
+// allNotifications → status → category → search → sort → group.
+// Each step returns a new array; the state array is never re-ordered.
+// =========================================================
+
+function filterByStatus(list,status){
+    if(status==="unread") return list.filter(x=>!x.isRead);
+    if(status==="read") return list.filter(x=>!!x.isRead);
+    return list.slice();
+}
+
+function filterByCategory(list,cat){
+    if(!cat || cat==="all") return list;
+    return list.filter(x=>getNotificationCategory(x)===cat);
+}
+
+// Case-insensitive; also drops the zero-width spaces Khmer text often
+// carries, so a typed word still matches text copied from elsewhere.
+function normalizeText(s){
+    let str=String(s == null ? "" : s);
+    if(str.normalize) str=str.normalize("NFC");
+    return str.replace(/[​-‍﻿]/g,"").toLowerCase().replace(/\s+/g," ").trim();
+}
+
+const haystackMemo=new WeakMap();
+
+function searchHaystack(item){
+    let h=haystackMemo.get(item);
+    if(h==null){
+        h=normalizeText([
+            item.title, item.message, item.createdBy, item.username,
+            categoryLabelsBoth(getNotificationCategory(item))
+        ].join(" \u0001 "));
+        haystackMemo.set(item,h);
+    }
+    return h;
+}
+
+function filterBySearch(list,query){
+    const q=normalizeText(query);
+    if(!q) return list;
+    // Every word must match somewhere, in any order.
+    const words=q.split(" ").filter(Boolean);
+    return list.filter(x=>{
+        const h=searchHaystack(x);
+        return words.every(w=>h.includes(w));
+    });
+}
+
+function timeOf(item){
+    const t=item && item.createdAt ? new Date(item.createdAt).getTime() : NaN;
+    return Number.isFinite(t) ? t : null;
+}
+
+function sortNotifications(list,mode){
+    // Items with no/invalid date always go last, whatever the order.
+    const decorated=list.map((item,i)=>({ item, i, t:timeOf(item) }));
+    decorated.sort((a,b)=>{
+        if(mode==="unread"){
+            const ua=a.item.isRead ? 1 : 0, ub=b.item.isRead ? 1 : 0;
+            if(ua!==ub) return ua-ub;
+        }
+        if(a.t==null || b.t==null){
+            if(a.t==null && b.t==null) return a.i-b.i;
+            return a.t==null ? 1 : -1;
+        }
+        if(a.t!==b.t) return mode==="oldest" ? a.t-b.t : b.t-a.t;
+        return a.i-b.i;
+    });
+    return decorated.map(d=>d.item);
+}
+
+function localDayKey(d){
+    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function dateGroupOf(item,now){
+    const t=timeOf(item);
+    if(t==null) return "earlier";
+    const d=new Date(t);
+    const today=now || new Date();
+    if(localDayKey(d)===localDayKey(today)) return "today";
+    const y=new Date(today.getFullYear(),today.getMonth(),today.getDate()-1);
+    if(localDayKey(d)===localDayKey(y)) return "yesterday";
+    return "earlier";
+}
+
+// Groups follow the sort direction (Earlier first when oldest-first);
+// items keep their sorted order inside a group. Empty groups are dropped.
+function groupNotifications(list,mode,now){
+    const order=mode==="oldest" ? ["earlier","yesterday","today"] : ["today","yesterday","earlier"];
+    const buckets={ today:[], yesterday:[], earlier:[] };
+    list.forEach(item=>buckets[dateGroupOf(item,now)].push(item));
+    return order.filter(k=>buckets[k].length).map(k=>({ key:k, items:buckets[k] }));
+}
+
 function getVisibleList(){
+    const byStatus=filterByStatus(allNotifications,currentFilter);
+    const byCat=filterByCategory(byStatus,currentCategory);
+    const bySearch=filterBySearch(byCat,currentSearch);
+    return sortNotifications(bySearch,currentSort);
+}
 
-    return currentFilter==="unread"
-        ? allNotifications.filter(x=>!x.isRead)
-        : allNotifications;
-
+function viewConfigKey(){
+    const lang=window.CMI18n && CMI18n.lang ? CMI18n.lang() : "";
+    return [currentFilter,currentCategory,normalizeText(currentSearch),currentSort,lang,localDayKey(new Date())].join("|");
 }
 
 function computeSignature(list){
 
-    return list.map(x=>`${x._id}:${x.isRead?1:0}`).join(",");
+    return viewConfigKey()+"#"+list.map(x=>
+        `${x._id}:${x.isRead?1:0}:${x.title||""}:${x.message||""}:${getNotificationCategory(x)}:${x.createdAt||""}`
+    ).join("\u0002");
 
 }
+
+// Exposed for tests / debugging only; nothing in the app depends on it.
+window.CMNotifCenter={
+    getNotificationCategory, filterByStatus, filterByCategory, filterBySearch,
+    sortNotifications, groupNotifications, dateGroupOf
+};
 
 function renderList(){
 
@@ -322,8 +513,16 @@ function renderList(){
     // hang for a long time once a user had hundreds/thousands of
     // notifications. Building the full HTML string first and assigning it
     // once does the same rendering in a single parse pass.
+    const now=new Date();
     notifyList.innerHTML=
-    visible.map(createNotificationCard).join("");
+    groupNotifications(visible,currentSort,now).map(g=>
+        `<section class="notify-group" data-group="${g.key}">`+
+        `<div class="notify-group-head" role="heading" aria-level="2">`+
+        `<span data-i18n="notifications.${g.key}">${escapeHtml(tr(`notifications.${g.key}`))}</span>`+
+        `<span class="notify-group-count">${g.items.length}</span></div>`+
+        g.items.map(item=>createNotificationCard(item,now)).join("")+
+        `</section>`
+    ).join("");
 
     enableSwipeCards();
 
@@ -335,40 +534,113 @@ function renderList(){
 // FILTER TABS
 // =========================================================
 
-document.querySelectorAll(".notify-filter-tab").forEach(tab=>{
-
-    tab.addEventListener("click",()=>{
-
-        if(tab.dataset.filter===currentFilter) return;
-
-        document.querySelectorAll(".notify-filter-tab").forEach(t=>t.classList.remove("active"));
-        tab.classList.add("active");
-
-        currentFilter=tab.dataset.filter;
-
-        // Force a rebuild even if the signature matches the last render
-        // of the OTHER filter — switching tabs always needs a repaint.
-        lastRenderSignature=null;
-        renderList();
-
+// Each control only changes its piece of the view config and repaints;
+// nothing here fetches — filtering is all over the list already loaded.
+function setActive(selector,attr,value){
+    document.querySelectorAll(selector).forEach(el=>{
+        const on=el.dataset[attr]===value;
+        el.classList.toggle("active",on);
+        el.setAttribute("aria-selected",on ? "true" : "false");
     });
+}
 
+function applyViewChange(){
+    // Force a rebuild — a view change always needs a repaint, and it
+    // starts back at the top of the new list.
+    lastRenderSignature=null;
+    renderList();
+}
+
+document.getElementById("notifyFilterTabs")?.addEventListener("click",(e)=>{
+    const tab=e.target.closest(".notify-filter-tab[data-filter]");
+    if(!tab || tab.dataset.filter===currentFilter) return;
+    currentFilter=tab.dataset.filter;
+    setActive(".notify-filter-tab[data-filter]","filter",currentFilter);
+    applyViewChange();
+});
+
+const chipRow=document.getElementById("notifyChips");
+
+chipRow?.addEventListener("click",(e)=>{
+    const chip=e.target.closest(".notify-chip[data-cat]");
+    if(!chip || chip.dataset.cat===currentCategory) return;
+    currentCategory=chip.dataset.cat;
+    setActive(".notify-chip[data-cat]","cat",currentCategory);
+    // Keep the picked chip in view on a narrow screen.
+    try{ chip.scrollIntoView({ block:"nearest", inline:"nearest", behavior:"smooth" }); }catch(err){}
+    applyViewChange();
+});
+
+const searchInput=document.getElementById("notifySearch");
+const searchClear=document.getElementById("notifySearchClear");
+let searchTimer=null;
+
+function setSearch(value,immediate){
+    if(searchInput && searchInput.value!==value) searchInput.value=value;
+    if(searchClear) searchClear.hidden=!value;
+    clearTimeout(searchTimer);
+    const run=()=>{
+        if(normalizeText(value)===normalizeText(currentSearch)){ currentSearch=value; return; }
+        currentSearch=value;
+        applyViewChange();
+    };
+    if(immediate) run(); else searchTimer=setTimeout(run,150);
+}
+
+searchInput?.addEventListener("input",()=>setSearch(searchInput.value,false));
+searchInput?.addEventListener("keydown",(e)=>{
+    if(e.key==="Escape" && searchInput.value){ e.preventDefault(); setSearch("",true); }
+    if(e.key==="Enter"){ e.preventDefault(); setSearch(searchInput.value,true); searchInput.blur(); }
+});
+searchClear?.addEventListener("click",()=>{ setSearch("",true); searchInput?.focus(); });
+document.getElementById("emptyClearBtn")?.addEventListener("click",()=>setSearch("",true));
+
+document.getElementById("notifySort")?.addEventListener("change",(e)=>{
+    const v=e.target.value;
+    currentSort=["newest","oldest","unread"].includes(v) ? v : "newest";
+    applyViewChange();
+});
+
+// Card text is rendered already translated (with data-i18n so the
+// shared i18n pass keeps it right); a repaint after a language switch
+// also refreshes anything built from the current language.
+window.addEventListener("cm-language-changed",()=>{
+    lastRenderSignature=null;
+    renderList();
 });
 
 // =========================================================
-// UPDATE SUMMARY
-// Always reflects the FULL list, independent of which filter tab is
-// active — "Unread" showing only 3 cards shouldn't make the summary
-// row claim there are only 3 notifications in total.
+// UPDATE COUNTS
+// The status tabs carry the page's counters (the separate summary
+// cards repeated the same numbers, so they were removed). They always
+// reflect the FULL list, independent of which filter is active.
 // =========================================================
+
+function setCount(el,n){
+    if(el && el.textContent!==String(n)) el.textContent=n;
+}
 
 function updateSummaryFromState(){
 
-    totalCount.innerText=
-        allNotifications.length;
+    let unread=0;
+    allNotifications.forEach(x=>{ if(!x.isRead) unread++; });
 
-    unreadCount.innerText=
-        allNotifications.filter(x=>!x.isRead).length;
+    // Status tab counts: always the whole list, whatever the filters.
+    setCount(document.querySelector('[data-count="all"]'),allNotifications.length);
+    setCount(document.querySelector('[data-count="unread"]'),unread);
+    setCount(document.querySelector('[data-count="read"]'),allNotifications.length-unread);
+
+    // Chip counts: within the picked status, so "Unread" + a chip shows
+    // where the unread ones are.
+    const byStatus=filterByStatus(allNotifications,currentFilter);
+    const perCat={ all:byStatus.length };
+    NOTIF_CATEGORIES.forEach(c=>{ perCat[c]=0; });
+    byStatus.forEach(x=>{ perCat[getNotificationCategory(x)]++; });
+    document.querySelectorAll(".notify-chip[data-cat]").forEach(chip=>{
+        const n=perCat[chip.dataset.cat] || 0;
+        setCount(chip.querySelector(".notify-chip-count"),n);
+        chip.classList.toggle("is-empty",n===0);
+    });
 
 }
 // =========================================================
@@ -404,8 +676,28 @@ return DETAIL_TYPES.includes(item.type) || item.type==="lgs_alert" || isPendingA
 
 // A plain tap on such a card opens it. A swipe never fires click on
 // touch devices, and a card mid-swipe is skipped anyway.
+// One delegated listener for everything inside the list (the card's own
+// buttons first, then opening a card), so re-renders never stack more.
 notifyList.addEventListener("click",(e)=>{
+    const actBtn=e.target.closest("[data-act]");
+    if(actBtn && notifyList.contains(actBtn)){
+        e.preventDefault();
+        const actCard=actBtn.closest(".notify-card");
+        if(actCard) handleCardAction(actBtn.dataset.act,actCard,actBtn);
+        return;
+    }
+    openCardDetail(e.target.closest(".notify-card.has-detail"));
+});
+
+notifyList.addEventListener("keydown",(e)=>{
+    if(e.key!=="Enter" && e.key!==" ") return;
     const card=e.target.closest(".notify-card.has-detail");
+    if(!card || e.target!==card) return;
+    e.preventDefault();
+    openCardDetail(card);
+});
+
+function openCardDetail(card){
     if(!card || card.classList.contains("swiping")) return;
     const id=card.dataset.id;
     const item=allNotifications.find(n=>String(n._id)===id);
@@ -427,97 +719,155 @@ notifyList.addEventListener("click",(e)=>{
     }
     try{ sessionStorage.setItem("cm_notif_detail",JSON.stringify(item)); }catch(err){}
     location.href=`/CM_Pro/pages/notifications/detail.html?id=${encodeURIComponent(id)}`;
-});
+}
 
-function createNotificationCard(item){
+// A message is "long" (gets a Show more toggle) past ~2 lines' worth
+// of text — a cheap estimate instead of measuring 1,000 cards' layout.
+function isLongMessage(msg){
+    const s=String(msg || "");
+    return s.length>110 || (s.match(/\n/g) || []).length>=2;
+}
 
-const icon=
-getTypeIcon(item.type);
+const AVATAR_PLACEHOLDER="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath fill=%22%239AA5B1%22 d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E";
 
-const time=
-formatTime(item.createdAt);
+function createNotificationCard(item,now){
 
-const uploadedBy=
+const cat=getNotificationCategory(item);
+const id=String(item._id == null ? "" : item._id);
+const detail=hasDetail(item);
+const group=dateGroupOf(item,now || new Date());
+const fullTime=formatTime(item.createdAt);
+// Under a Today / Yesterday heading the time of day is enough.
+const time=(group==="today" || group==="yesterday") && timeOf(item)!=null
+    ? formatClock(item.createdAt) : fullTime;
+const uploadedBy=item.createdBy || item.username || "Unknown";
+const iconName=getTypeIconName(item.type, cat);
+const long=isLongMessage(item.message);
+const expanded=long && expandedIds.has(id);
+const catKey=categoryLabelKey(cat);
 
-    item.createdBy ||
-    item.username ||
-    "Unknown";
-
-return `
-
-<div
-class="
-notify-card
-${item.isRead ? "" : "unread"}
-${hasDetail(item) ? "has-detail" : ""}
-"
-data-id="${escapeHtml(item._id)}"
-data-url="${escapeHtml(item.url || '')}"
->
-
-<div class="notify-icon notify-icon-${getTypeIconName(item.type)}">
-
-${icon}
-
-</div>
-
-<div class="notify-content">
-
-<div class="notify-top">
-
-<div class="notify-card-title">
-
-${escapeHtml(item.title || "Notification")}
-
-</div>
-
-<div class="notify-time">
-
-${time}
-
-</div>
-
-</div>
-
-<div class="notify-message">
-
-${escapeHtml(item.message || "")}
-
-</div>
-
-<div class="notify-meta-row">
-
-<div class="notify-user">
-
-<img
-
-class="notify-user-avatar"
-
-data-avatar-user="${escapeHtml(uploadedBy)}"
-
-src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath fill=%22%239AA5B1%22 d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E"
-
->
-
-${escapeHtml(uploadedBy)}
-
-</div>
-
-<div class="notify-type">
-
-${escapeHtml(item.type || "system")}
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-`;
+return `<article class="notify-card${item.isRead ? "" : " unread"}${detail ? " has-detail" : ""}${expanded ? " expanded" : ""}" data-id="${escapeHtml(id)}" data-url="${escapeHtml(item.url || "")}" data-cat="${cat}"${detail ? ` tabindex="0" role="button"` : ""}>`+
+`<div class="notify-icon notify-icon-${iconName}">${getTypeIcon(item.type, cat)}</div>`+
+`<div class="notify-content">`+
+`<div class="notify-top">`+
+`<div class="notify-card-title">${escapeHtml(item.title || "Notification")}</div>`+
+`<div class="notify-time" title="${escapeHtml(fullTime)}">${item.isRead ? "" : `<span class="notify-dot" aria-hidden="true"></span>`}${escapeHtml(time)}</div>`+
+`</div>`+
+(item.message ? `<div class="notify-message">${escapeHtml(item.message)}</div>` : "")+
+(long ? `<button type="button" class="notify-more" data-act="toggle" aria-expanded="${expanded}" data-i18n="notifications.${expanded ? "collapse" : "expand"}">${escapeHtml(tr(`notifications.${expanded ? "collapse" : "expand"}`))}</button>` : "")+
+`<div class="notify-meta-row">`+
+`<div class="notify-user"><img class="notify-user-avatar" alt="" data-avatar-user="${escapeHtml(uploadedBy)}" src="${AVATAR_PLACEHOLDER}"><span class="notify-user-name">${escapeHtml(uploadedBy)}</span></div>`+
+`<span class="notify-type notify-type-${cat}" data-i18n="${catKey}">${escapeHtml(tr(catKey))}</span>`+
+`<span class="notify-status sr-only" data-i18n="notifications.${item.isRead ? "read" : "unread"}">${escapeHtml(tr(`notifications.${item.isRead ? "read" : "unread"}`))}</span>`+
+`<div class="notify-acts">`+
+(item.isRead ? "" : `<button type="button" class="notify-act notify-act-read" data-act="read" data-i18n-aria-label="notifications.markRead" data-i18n-title="notifications.markRead" aria-label="${escapeHtml(tr("notifications.markRead"))}" title="${escapeHtml(tr("notifications.markRead"))}"><span class="nt-ico nt-ico-read-one" aria-hidden="true"></span></button>`)+
+`<button type="button" class="notify-act notify-act-del" data-act="delete" data-i18n-aria-label="notifications.deleteOne" data-i18n-title="notifications.deleteOne" aria-label="${escapeHtml(tr("notifications.deleteOne"))}" title="${escapeHtml(tr("notifications.deleteOne"))}"><span class="nt-ico nt-ico-delete" aria-hidden="true"></span></button>`+
+`</div>`+
+`</div>`+
+`</div>`+
+`</article>`;
 
 }
+
+// =========================================================
+// CARD BUTTONS (accessible twins of the swipe gestures)
+// =========================================================
+
+function handleCardAction(act,card,btn){
+
+    const id=card.dataset.id;
+
+    if(act==="toggle"){
+        const open=!card.classList.contains("expanded");
+        card.classList.toggle("expanded",open);
+        if(open) expandedIds.add(id); else expandedIds.delete(id);
+        const key=`notifications.${open ? "collapse" : "expand"}`;
+        btn.setAttribute("data-i18n",key);
+        btn.setAttribute("aria-expanded",open ? "true" : "false");
+        btn.textContent=tr(key);
+        return;
+    }
+
+    if(act==="read"){
+        markCardRead(card);
+        markRead(id);
+        return;
+    }
+
+    if(act==="delete"){
+        confirmDeleteOne(card);
+    }
+
+}
+
+// Shared by the swipe-right gesture and the ✓ button.
+function markCardRead(card){
+    const id=card.dataset.id;
+    markReadInState(id);
+    card.classList.remove("unread");
+    card.querySelector(".notify-act-read")?.remove();
+    card.querySelector(".notify-dot")?.remove();
+    const st=card.querySelector(".notify-status");
+    if(st){ st.setAttribute("data-i18n","notifications.read"); st.textContent=tr("notifications.read"); }
+    updateSummaryFromState();
+    updateBadgeDisplay(allNotifications.filter(x=>!x.isRead).length);
+}
+
+// Shared by the swipe-left gesture and the bin button: slide the card
+// out, then tidy the group heading (count, or drop it when emptied).
+function removeCardAnimated(card,direction){
+    const id=card.dataset.id;
+    removeFromState(id);
+    expandedIds.delete(id);
+    card.style.transform=`translateX(${direction<0 ? "-120%" : "120%"})`;
+    card.style.opacity=0;
+    setTimeout(()=>{
+        const section=card.closest(".notify-group");
+        card.remove();
+        if(section){
+            const left=section.querySelectorAll(".notify-card").length;
+            if(!left) section.remove();
+            else{ const c=section.querySelector(".notify-group-count"); if(c) c.textContent=left; }
+        }
+        updateSummaryFromState();
+        updateBadgeDisplay(allNotifications.filter(x=>!x.isRead).length);
+        if(!notifyList.querySelector(".notify-card")){
+            lastRenderSignature=null;
+            renderList();
+        }
+    },250);
+}
+
+const deleteOneDialog=document.getElementById("deleteOneDialog");
+let pendingDeleteCard=null;
+
+function confirmDeleteOne(card){
+    if(!deleteOneDialog){ doDeleteOne(card); return; }
+    pendingDeleteCard=card;
+    deleteOneDialog.classList.add("show");
+    document.getElementById("btnDeleteOneNo")?.focus();
+}
+
+function closeDeleteOne(){
+    deleteOneDialog?.classList.remove("show");
+    pendingDeleteCard=null;
+}
+
+async function doDeleteOne(card){
+    if(!card || !card.isConnected) return;
+    vibrate([50,50,50]);
+    removeCardAnimated(card,-1);
+    await deleteNotification(card.dataset.id);
+}
+
+document.getElementById("btnDeleteOneYes")?.addEventListener("click",()=>{
+    const card=pendingDeleteCard;
+    closeDeleteOne();
+    doDeleteOne(card);
+});
+document.getElementById("btnDeleteOneNo")?.addEventListener("click",closeDeleteOne);
+deleteOneDialog?.addEventListener("click",(e)=>{ if(e.target===deleteOneDialog) closeDeleteOne(); });
+document.addEventListener("keydown",(e)=>{ if(e.key==="Escape" && deleteOneDialog?.classList.contains("show")) closeDeleteOne(); });
 
 // =========================================================
 // AVATAR HYDRATION
@@ -727,26 +1077,13 @@ function enableSwipeCards(){
                     vibrate([50,50,50]);
 
                     await deleteNotification(id);
-                    removeFromState(id);
-
-                    card.style.transform="translateX(-120%)";
-
-                    card.style.opacity=0;
-
-                    setTimeout(()=>{
-
-                        card.remove();
-
-                        updateSummaryFromState();
-
-                    },250);
+                    removeCardAnimated(card,-1);
 
                 }else if(moved && diff>120){
 
                     vibrate(40);
 
                     await markRead(id);
-                    markReadInState(id);
 
                     card.style.transform="translateX(100%)";
 
@@ -754,9 +1091,7 @@ function enableSwipeCards(){
 
                         card.style.transform="translateX(0)";
 
-                        card.classList.remove("unread");
-
-                        updateSummaryFromState();
+                        markCardRead(card);
 
                     },150);
 
@@ -1106,10 +1441,27 @@ function showEmpty(){
 
     // Swap the data-i18n keys too (not just the text) so a later
     // CMI18n.apply() pass or language switch keeps the right message.
-    const unread=currentFilter==="unread";
+    // Which empty message: the search found nothing / a filter has
+    // nothing / genuinely nothing at all.
+    const searching=!!normalizeText(currentSearch);
+    const clearBtn=document.getElementById("emptyClearBtn");
 
-    setEmptyText(emptyTitle, unread ? "notifications.emptyUnreadTitle" : "notifications.emptyTitle");
-    setEmptyText(emptySubtitle, unread ? "notifications.emptyUnreadSubtitle" : "notifications.emptySubtitle");
+    if(searching){
+        setEmptyText(emptyTitle,"notifications.noSearchResults");
+        emptySubtitle.removeAttribute("data-i18n");
+        emptySubtitle.textContent=`“${currentSearch.trim()}”`;
+    }else if(allNotifications.length && currentFilter==="unread" && currentCategory==="all"){
+        setEmptyText(emptyTitle,"notifications.emptyUnreadTitle");
+        setEmptyText(emptySubtitle,"notifications.emptyUnreadSubtitle");
+    }else if(allNotifications.length){
+        setEmptyText(emptyTitle,"notifications.noFilterResults");
+        setEmptyText(emptySubtitle,"notifications.noFilterResultsSub");
+    }else{
+        setEmptyText(emptyTitle,"notifications.emptyTitle");
+        setEmptyText(emptySubtitle,"notifications.emptySubtitle");
+    }
+
+    if(clearBtn) clearBtn.hidden=!searching;
 
 }
 
@@ -1154,7 +1506,7 @@ show ? "flex" : "none";
 // Same line icons as the toast (cm-type-ico set in toast.css). The
 // returned name also picks the icon box's color (notify-icon-<name>
 // in notification.css).
-function getTypeIconName(type){
+function getTypeIconName(type,cat){
 
 const known=["backup","upload","warning","error","success","update","delete","system"];
 
@@ -1164,13 +1516,16 @@ const byType={ smart_alert:"warning", officer_reminder:"clipboard", lgs_alert:"s
 
 if(byType[type]) return byType[type];
 
-return known.includes(type) ? type : "bell";
+if(known.includes(type)) return type;
+
+// Unknown type: the category's icon (Reason Arrear → clipboard, …).
+return (cat && CATEGORY_ICON[cat]) || "bell";
 
 }
 
-function getTypeIcon(type){
+function getTypeIcon(type,cat){
 
-return `<span class="cm-type-ico cm-type-ico-${getTypeIconName(type)}" aria-hidden="true"></span>`;
+return `<span class="cm-type-ico cm-type-ico-${getTypeIconName(type,cat)}" aria-hidden="true"></span>`;
 
 }
 
@@ -1196,21 +1551,27 @@ return `${d.getDate()}-${months[d.getMonth()]}-${String(d.getFullYear()).slice(2
 
 }
 
+// HH:mm only — for cards under the Today / Yesterday headings.
+function formatClock(date){
+    const d=new Date(date);
+    if(!date || isNaN(d)) return "";
+    const pad=n=>String(n).padStart(2,"0");
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 // =========================================================
 // SAFE HTML
 // =========================================================
 
+// Escapes & < > and both quotes — several callers interpolate this into
+// quoted HTML attributes (data-url, avatar src), not just text nodes.
+// Plain string replace (not a throwaway DOM node per call): a 1,000-card
+// render calls this ~8,000 times.
+const HTML_ESC={ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" };
+
 function escapeHtml(text){
 
-const div=
-document.createElement("div");
-
-div.textContent=text == null ? "" : String(text);
-
-// textContent->innerHTML escapes & < > but not quotes, which this needs
-// too — several callers interpolate this into quoted HTML attributes
-// (data-url, avatar src), not just text nodes.
-return div.innerHTML.replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+return (text == null ? "" : String(text)).replace(/[&<>"']/g,ch=>HTML_ESC[ch]);
 
 }
 
@@ -1298,6 +1659,12 @@ if("BroadcastChannel" in window){
             message:notification.message,
 
             type:notification.type,
+
+            moduleCode:notification.moduleCode,
+
+            eventKey:notification.eventKey,
+
+            extra:notification.extra,
 
             createdBy:notification.uploadedBy,
 
