@@ -62,7 +62,7 @@ function recRenderSummary() {
     const tg = k.target;
     const extra = CI.esc(t("creditreport.rec.sumLine", {
         rate: k.recoveryRate === null ? "—" : CI.pct(k.recoveryRate, 1),
-        target: tg.value === null ? t("creditreport.rec.notSet") : `${CI.pct(tg.achievement, 0)} / ${CI.money(tg.value)}`
+        target: tg.value === null ? t("creditreport.rec.notSet") : `${tg.achievement === null ? "—" : CI.pct(tg.achievement, 0)} / ${CI.money(tg.value)}`
     }));
     nplShowSummary(nplSummaryHtml({
         fromKey: d.movement.openingDate, toKey: d.movement.closingDate, opening: k.opening, closing: k.closing,
@@ -84,11 +84,18 @@ function recCard(label, value, sub, tone, tipKey) {
     </article>`;
 }
 
+// Target = cash collected on NPL (NPL Collected, principal, since the
+// first kept month) ÷ PLAN-BP (yearly) — the same as the Meeting Report /
+// Portfolio Intelligence; "left NPL" is a balance, not collected cash.
+function recSinceText(since) {
+    return since ? t("creditreport.rec.sinceDate", { date: `01/${since.slice(5, 7)}/${since.slice(0, 4)}` }) : t("creditreport.rec.ytdShort");
+}
 function recRenderKpis(d) {
     const k = d.kpis;
     const tg = k.target;
-    const targetText = tg.value === null ? t("creditreport.rec.notSet") : CI.pct(tg.achievement, 1);
-    const targetSub = tg.value === null ? t("creditreport.rec.notSetSub") : t("creditreport.rec.ofTarget", { target: CI.money(tg.value) });
+    const targetText = tg.value === null ? t("creditreport.rec.notSet") : tg.achievement === null ? "—" : CI.pct(tg.achievement, 1);
+    const targetSub = tg.value === null ? t("creditreport.rec.notSetSub")
+        : t("creditreport.rec.ofTargetCollected", { collected: CI.money(tg.collected || 0), target: CI.money(tg.value), since: recSinceText(tg.since) });
     document.getElementById("recKpis").innerHTML =
         recCard(t("creditreport.rec.recovered"), CI.money(k.recovered.value), t("creditreport.npl.accountsN", { n: CI.num(k.recovered.count) }), "good", "creditreport.rec.tip.recovered") +
         recCard(t("creditreport.rec.rate"), k.recoveryRate === null ? "—" : CI.pct(k.recoveryRate, 1), t("creditreport.rec.rateSub", { opening: CI.money(k.opening) }), "", "creditreport.rec.tip.rate") +
@@ -133,8 +140,18 @@ function recRenderTable(d) {
     const bar = (v, good) => `<div class="ci-mini${good === null ? "" : good ? " is-good" : " is-bad"}"><span style="width:${Math.max(0, Math.min(100, v * 100))}%"></span></div>`;
     const clickable = ["officer", "branch", "product"].includes(recDim);
     const head = ["creditreport.risk.colName", "creditreport.npl.step.opening", "creditreport.rec.recovered", "creditreport.rec.rate",
-        "creditreport.rec.kReduction", "creditreport.npl.step.new", "creditreport.rec.net"]
+        "creditreport.rec.kReduction", "creditreport.npl.step.new", "creditreport.rec.net", "creditreport.rec.cashMonth"]
         .concat(showTarget ? ["creditreport.rec.target"] : []);
+    // Cash collected this month (HQ's NPL COLLECT THIS PERIOD_PRN-INT) and
+    // the year's collected principal against the row's PLAN-BP.
+    const cash = r => r.collected
+        ? `${CI.money(r.collected.period.prnInt || 0)}<div class="ci-sub">${CI.esc(`${CI.num(r.collected.period.loans || 0)} LD · ${CI.num(r.collected.period.cifs || 0)} CIF`)}</div>`
+        : CI.money(0);
+    const targetCell = r => {
+        if (!r.target) return CI.esc(t("creditreport.rec.notSet"));
+        const got = r.collected ? r.collected.ytd : 0;
+        return `${CI.pct(got / r.target, 0)}${bar(got / r.target, got >= r.target)}<div class="ci-sub">${CI.money(got)} / ${CI.money(r.target)}</div>`;
+    };
     const rows = (d.byDim || []).map(r => `<tr${clickable ? ` class="ci-row-link" tabindex="0" data-key="${CI.esc(r.key)}" title="${CI.esc(t("creditreport.rec.openLoans"))}"` : ""}>
         <td>${CI.esc(recName(r))}${recDim === "officer" && r.branch ? `<div class="ci-sub">${CI.esc(r.branch)}</div>` : ""}</td>
         <td class="num">${CI.money(r.opening)}</td>
@@ -143,7 +160,8 @@ function recRenderTable(d) {
         <td class="num">${CI.money(r.reduction.value)}</td>
         <td class="num ci-bad">${CI.money(r.newNpl.value)}</td>
         <td class="num${r.net > 0 ? " ci-bad" : r.net < 0 ? " ci-good" : ""}">${r.net > 0 ? "+" : ""}${CI.money(r.net)}</td>
-        ${showTarget ? `<td class="num">${r.target ? `${CI.pct(r.left.value / r.target, 0)}${bar(r.left.value / r.target, r.left.value >= r.target)}<div class="ci-sub">${CI.money(r.target)}</div>` : CI.esc(t("creditreport.rec.notSet"))}</td>` : ""}
+        <td class="num ci-good">${cash(r)}</td>
+        ${showTarget ? `<td class="num">${targetCell(r)}</td>` : ""}
     </tr>`).join("");
     document.getElementById("recTable").innerHTML =
         `<thead><tr>${head.map((h, i) => `<th${i ? ' class="num"' : ""}>${CI.esc(t(h))}</th>`).join("")}</tr></thead>` +
