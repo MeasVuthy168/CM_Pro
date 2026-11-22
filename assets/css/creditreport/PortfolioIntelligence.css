@@ -1049,3 +1049,8 @@ a.ci-ews-card:active{ background:var(--pi-track); }
     font-weight:800; font-size:13.5px; text-decoration:none;
 }
 .pi-mr-open:active{ opacity:.85; }
+
+/* NPL Management: cash collected on NPL, under the movement */
+.ci-collect{ margin-top:16px; padding-top:14px; border-top:1px dashed var(--cr-border); }
+.ci-collect-title{ font-size:14px; font-weight:800; margin:0 0 10px; color:var(--pi-navy); }
+.ci-collect-note{ margin-top:10px; }

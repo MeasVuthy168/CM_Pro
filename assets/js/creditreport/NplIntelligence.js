@@ -124,6 +124,7 @@ function nplRender() {
     nplRenderSummary();
     nplRenderWaterfall(m);
     nplRenderSteps(m);
+    nplRenderCollected(d);
     nplRenderTable();
     nplRenderWhy();
 }
@@ -152,12 +153,37 @@ function nplRenderWaterfall(m) {
     };
     const box = document.getElementById("nplWaterfall").parentElement;
     box.style.height = `${Math.max(150, bars.length * 44 + 40)}px`;
+    // Every bar carries its value, and a tiny one (a $1,534 recovery next
+    // to $570,642 of new NPL) still shows as a sliver: minBarLength.
+    const vals = bars.map(b => b.value);
+    const hi = Math.max(0, ...vals), lo = Math.min(0, ...vals);
+    const span = Math.max(hi, -lo) || 1;
+    const fmt = v => `${v > 0 ? "+" : v < 0 ? "−" : ""}${CI.money(Math.abs(v))}`;
+    const valueLabels = {
+        id: "nplValues",
+        afterDatasetsDraw(chart) {
+            const ctx = chart.ctx;
+            const meta = chart.getDatasetMeta(0);
+            ctx.save();
+            ctx.font = "700 11.5px system-ui, -apple-system, sans-serif";
+            ctx.fillStyle = col.text;
+            ctx.textBaseline = "middle";
+            ctx.textAlign = "left";
+            // Right of the bar's right end (right of zero for a decrease),
+            // so the label never runs into the category names.
+            // A $0 step has no bar (null): its label sits at zero.
+            const zero = chart.scales.x.getPixelForValue(0);
+            meta.data.forEach((bar, i) => ctx.fillText(fmt(bars[i].value), bars[i].value ? Math.max(bar.x, bar.base) + 6 : zero + 6, bar.y));
+            ctx.restore();
+        }
+    };
     nplChart = new Chart(document.getElementById("nplWaterfall"), {
         type: "bar",
         data: {
             labels: bars.map(b => nplStepLabel(b.step)),
-            datasets: [{ data: bars.map(b => b.value), backgroundColor: bars.map(colorOf), borderRadius: 4, maxBarThickness: 28 }]
+            datasets: [{ data: bars.map(b => b.value || null), backgroundColor: bars.map(colorOf), borderRadius: 4, maxBarThickness: 28, minBarLength: 5 }]
         },
+        plugins: [valueLabels],
         options: {
             indexAxis: "y",
             responsive: true,
@@ -168,7 +194,8 @@ function nplRenderWaterfall(m) {
                 tooltip: { callbacks: { label: c => `${nplStepLabel(bars[c.dataIndex].step)}: ${bars[c.dataIndex].value > 0 ? "+" : ""}${CI.money(bars[c.dataIndex].value)}` } }
             },
             scales: {
-                x: { grid: { color: col.grid }, border: { display: false }, ticks: { color: col.text, callback: v => CI.money(v), maxTicksLimit: 5 } },
+                // Room on the right for the labels.
+                x: { suggestedMin: lo < 0 ? lo * 1.1 : 0, suggestedMax: hi + span * 0.35, grid: { color: col.grid }, border: { display: false }, ticks: { color: col.text, callback: v => CI.money(v), maxTicksLimit: 5 } },
                 y: { grid: { display: false }, ticks: { color: col.text, font: { family: "KRASAR, sans-serif", size: 12 } } }
             }
         }
@@ -202,6 +229,34 @@ function nplRenderSteps(m) {
     document.getElementById("nplRecon").innerHTML = r.ok
         ? `<span class="pi-badge pi-badge-good"><span aria-hidden="true">✓</span> ${CI.esc(t("creditreport.npl.reconOk"))}</span> ${CI.esc(t("creditreport.npl.reconFormula", { opening: CI.money(tt.opening.bal), add: CI.money(tt.new.bal), sub: CI.money(ex.recovered.bal), wo: CI.money(ex.writeOff.bal + ex.moved.bal), chg: CI.money(bc), closing: CI.money(tt.closing.bal) }))}`
         : `<span class="pi-badge pi-badge-bad"><span aria-hidden="true">⚠</span> ${CI.esc(t("creditreport.npl.reconBad", { diff: CI.money(r.diff) }))}</span>`;
+}
+
+// Cash collected on NPL (HQ's way: NBC Overdue COLL_*_PER, NPL loans):
+// this month's PRN+INT with #LD / #CIF, and the principal year to date —
+// next to "Recovered NPL", which is the balance of loans that LEFT NPL.
+let nplCollectSeq = 0;
+async function nplRenderCollected(d) {
+    const box = document.getElementById("nplCollect");
+    if (!box) return;
+    const mine = ++nplCollectSeq;
+    const rec = await CI.collected(d && d.asOf && d.asOf.osDate);
+    if (mine !== nplCollectSeq) return;
+    const c = rec && rec.collected;
+    if (!c || !c.available) { box.hidden = true; box.innerHTML = ""; return; }
+    const p = c.period || {}, y = c.ytd || {};
+    const mm = m => `${m.slice(5, 7)}/${m.slice(0, 4)}`;
+    const ytdSub = y.since ? t("creditreport.mr.nplY2dSince", { date: `01/${mm(y.since)}` }) : t("creditreport.mr.nplY2dNoBase");
+    const ach = c.target ? ` · ${t("creditreport.mr.ofPlan", { pct: `${Math.round((y.prn / c.target) * 100)}%` })} ${CI.money(c.target)}` : "";
+    const card = (label, value, sub) => `
+        <div class="ci-step ci-step-good">
+            <div class="pi-kpi-label">${CI.esc(label)}</div>
+            <div class="ci-step-value">${CI.esc(CI.money(value))}</div>
+            <div class="pi-kpi-sub">${CI.esc(sub)}</div>
+        </div>`;
+    box.innerHTML = `<h3 class="ci-collect-title">${CI.esc(t("creditreport.npl.collectTitle"))}</h3>
+        <div class="ci-steps">${card(t("creditreport.mr.k.nplPeriod"), p.prnInt || 0, t("creditreport.mr.nplPeriodSub", { ld: CI.num(p.loans || 0), cif: CI.num(p.cifs || 0), prn: CI.money(p.prn || 0), int: CI.money(p.int || 0) }))}${card(t("creditreport.mr.k.nplCollected"), y.prn || 0, ytdSub + ach)}</div>
+        <p class="pi-note ci-collect-note">${CI.esc(t("creditreport.npl.collectNote"))}</p>`;
+    box.hidden = false;
 }
 
 // ---------- accounts ----------
