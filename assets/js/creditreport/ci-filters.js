@@ -639,10 +639,34 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
         box.appendChild(d);
     }
 
+    // /recovery?ytd=1 (NPL Collected: year to date + this month) with the
+    // page's filters. Fetched on its own, not via get(), so it never
+    // cancels (or is cancelled by) the page's own loads. liveDay: the live
+    // data's day — an end day on or after it means the live NBC Overdue
+    // (its day can be later than the OS day); only a past end day picks a
+    // saved day.
+    async function collected(liveDay) {
+        try {
+            const q = query();
+            q.delete("fromDate");
+            if (!q.get("toDate") || (liveDay && q.get("toDate") >= liveDay)) q.delete("toDate");
+            q.set("dim", "branch");
+            q.set("ytd", "1");
+            const res = await fetch(`${API.BASE_URL}/api/credit-intelligence/recovery?${q.toString()}`, {
+                headers: { Authorization: `Bearer ${token()}` }
+            });
+            const body = await res.json();
+            return body && body.ok !== false ? body : null;
+        } catch (e) {
+            console.error(e);
+            return null;
+        }
+    }
+
     window.CI = {
         t, esc, num, money, pct, signedPct, pts, dmy, short,
         mountFilters, setPeriodLabel, setFilter, query, infoBtn, tip, explain, clsName, fillOptions, renderAsOf, mountNav, get, toast, chartColors,
-        allowed, scope: () => scope
+        allowed, scope: () => scope, collected
     };
 
     // Every page of the section: the role gate first, then the navigation.
