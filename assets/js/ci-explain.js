@@ -97,7 +97,7 @@
         const k = d.kpis;
         const out = scopeLead(d, t);
         out.push(t("ex.rec.main", { value: money(k.recovered.value), n: num(k.recovered.count), rate: pct(k.recoveryRate, 1), open: money(k.opening) }));
-        if (k.target && k.target.value) {
+        if (k.target && k.target.value && k.target.achievement !== null && k.target.achievement !== undefined) {
             out.push(t(k.target.achievement >= 1 ? "ex.rec.targetMet" : "ex.rec.targetMiss", { ach: pct(k.target.achievement, 0), target: money(k.target.value) }));
         }
         out.push(t("ex.rec.new", { value: money(k.newNpl.value), n: num(k.newNpl.count), net: signedMoney(k.net) }));
