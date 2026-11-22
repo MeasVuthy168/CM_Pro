@@ -146,12 +146,21 @@
     // yearly target, this period's PRN / INT (COLL_*_PER) underneath.
     // c: /api/credit-intelligence/recovery?ytd=1's `collected`.
     function nplCollectedOf(c) {
-        return c && c.available ? { actual: c.ytd.prn, loans: c.ytd.loans, plan: c.target || null, period: c.period || {} } : null;
+        return c && c.available ? { actual: c.ytd.prn, plan: c.target || null, period: c.period || {}, ytd: c.ytd || {} } : null;
     }
     function nplCollectedSub(npl, emptyKey) {
         if (!npl) return t(emptyKey || "creditreport.mr.nplNoData");
-        const p = npl.period;
-        return `${t("creditreport.mr.nplCollectedHq", { n: num(npl.loans) })} · ${t("creditreport.mr.nplThisPeriod", { prn: money(p.prn || 0), int: money(p.int || 0), sum: money(p.prnInt || 0) })}`;
+        const p = npl.period, y = npl.ytd;
+        const mm = m => (m ? `${m.slice(5, 7)}/${m.slice(0, 4)}` : "");
+        // How the year to date is made: HQ's figure through a month end +
+        // the later months the app kept + this month (COLL_PRI_PER).
+        const after = (y.months || []).reduce((s, m) => s + (m.prn || 0), 0);
+        const how = y.baseline !== null && y.baseline !== undefined
+            ? t("creditreport.mr.nplY2dBase", { month: mm(y.baselineMonth), base: money(y.baseline), after: money(after), cur: money(y.current || 0) })
+            : t("creditreport.mr.nplY2dNoBase");
+        const month = t("creditreport.mr.nplThisPeriod", { prn: money(p.prn || 0), int: money(p.int || 0), sum: money(p.prnInt || 0) });
+        const missing = (y.missing || []).length ? ` · ${t("creditreport.mr.nplY2dMissing", { months: y.missing.map(mm).join(", ") })}` : "";
+        return `${how} · ${month}${missing}`;
     }
     function nplCollectedRow(c, withLm, emptyKey) {
         const npl = nplCollectedOf(c);
