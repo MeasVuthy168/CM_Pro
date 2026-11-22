@@ -158,19 +158,26 @@
         const how = y.baseline !== null && y.baseline !== undefined
             ? t("creditreport.mr.nplY2dBase", { month: mm(y.baselineMonth), base: money(y.baseline), after: money(after), cur: money(y.current || 0) })
             : t("creditreport.mr.nplY2dNoBase");
-        const month = t("creditreport.mr.nplThisPeriod", { prn: money(p.prn || 0), int: money(p.int || 0), sum: money(p.prnInt || 0) });
         const missing = (y.missing || []).length ? ` · ${t("creditreport.mr.nplY2dMissing", { months: y.missing.map(mm).join(", ") })}` : "";
-        return `${how} · ${month}${missing}`;
+        return `${how}${missing}`;
     }
     function nplCollectedRow(c, withLm, emptyKey) {
         const npl = nplCollectedOf(c);
         const cell = npl ? { actual: npl.actual, plan: npl.plan, ach: npl.plan ? npl.actual / npl.plan : null } : null;
         return `<tr><td>${esc(t("creditreport.mr.k.nplCollected"))}<div class="ci-plan-sub">${esc(nplCollectedSub(npl, emptyKey))}</div></td><td class="num"><b>${npl ? money(npl.actual) : "—"}</b></td>${withLm ? `<td class="num">—</td>` : ""}<td class="num">${npl && npl.plan ? money(npl.plan) : "—"}</td><td class="num ci-plan-ach">${achCell({ kind: "amount" }, cell)}</td></tr>`;
     }
-    // Adds the row to a table() string.
+    // HQ's "NPL COLLECT THIS PERIOD_PRN-INT": this month's principal +
+    // interest collected on the NPL loans (COLL_PRI_PER + COLL_INT_PER),
+    // with #LD and #CIF like HQ's columns. No plan.
+    function nplPeriodRow(c, withLm) {
+        const p = c && c.available ? c.period || {} : null;
+        const sub = p ? t("creditreport.mr.nplPeriodSub", { ld: num(p.loans || 0), cif: num(p.cifs || 0), prn: money(p.prn || 0), int: money(p.int || 0) }) : "";
+        return `<tr><td>${esc(t("creditreport.mr.k.nplPeriod"))}${sub ? `<div class="ci-plan-sub">${esc(sub)}</div>` : ""}</td><td class="num"><b>${p ? money(p.prnInt || 0) : "—"}</b></td>${withLm ? `<td class="num">—</td>` : ""}<td class="num">—</td><td class="num ci-plan-ach"><span class="ci-plan-na">—</span></td></tr>`;
+    }
+    // Adds both rows to a table() string.
     function withNplCollected(html, c, withLm, emptyKey) {
-        return html ? html.replace(/<\/tbody>$/, `${nplCollectedRow(c, withLm, emptyKey)}</tbody>`) : html;
+        return html ? html.replace(/<\/tbody>$/, `${nplCollectedRow(c, withLm, emptyKey)}${nplPeriodRow(c, withLm)}</tbody>`) : html;
     }
 
-    window.CIPlan = { branch, branchRows, officers, table, combine, fmt, achCell, METRICS, nplCollectedOf, nplCollectedSub, nplCollectedRow, withNplCollected };
+    window.CIPlan = { branch, branchRows, officers, table, combine, fmt, achCell, METRICS, nplCollectedOf, nplCollectedSub, nplCollectedRow, nplPeriodRow, withNplCollected };
 })();

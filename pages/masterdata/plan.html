@@ -104,23 +104,10 @@ No Internet Connection
   <ul class="mp-notes">
     <li data-i18n="masterdata.plan.noteLower">NBC Overdue % និង NPL % ជាកម្រិតខ្ពស់បំផុត — ទាបជាងផែនការ = ល្អ។</li>
     <li data-i18n="masterdata.plan.noteTotalPct">% ក្នុងជួរសរុប = គិតតាមទម្ងន់សមតុល្យឥណទាន៖ Σ(% × សមតុល្យ) ÷ Σ សមតុល្យ — បង្ហាញតែពេលគ្រប់ជួរមានទាំង % និងសមតុល្យ។</li>
+    <li data-i18n="masterdata.plan.noteNplHq">NPL COLLECT Y2D_PRN (HQ)៖ បញ្ចូលតួលេខ HQ ពីដើមឆ្នាំ គិតដល់ចុងខែមុន (សាខា)។ Report បូកបន្ថែម COLL_PRI_PER ខែនេះ ដោយខ្លួនឯង។ "ចម្លងពីខែមុន" មិនចម្លងជួរនេះទេ។</li>
     <li data-i18n="masterdata.plan.noteBlank">ប្រអប់ទទេ = មិនមានផែនការ (Report បង្ហាញ "—")។</li>
     <li id="mpNoteDim"></li>
   </ul>
-</section>
-
-<!-- NPL Collected: HQ's year to date through a month end (see plan-npl-baseline.js) -->
-<section class="mp-card nb-card" id="nbCard">
-  <div class="mp-card-head">
-    <div>
-      <div class="mp-card-title" data-i18n="masterdata.plan.nplBaseTitle">ប្រមូល NPL បាន — តួលេខ HQ ពីដើមឆ្នាំ</div>
-      <div class="mp-card-sub" id="nbUpdated"></div>
-    </div>
-    <label class="mp-month"><span data-i18n="masterdata.plan.nplBaseMonth">ដល់ចុងខែ</span><input type="month" id="nbMonth"></label>
-  </div>
-  <p class="nb-help" data-i18n="masterdata.plan.nplBaseHelp">បញ្ចូល "NPL COLLECT Y2D_PRN" របស់ HQ តាមសាខា គិតដល់ចុងខែដែលបានជ្រើស។ ខែបន្ទាប់ៗ App បូកបន្ថែមពី COLL_PRI_PER ដោយខ្លួនឯង។</p>
-  <div class="mp-table-wrap"><table class="mp-table nb-table" id="nbTable"></table></div>
-  <div class="nb-actions"><button type="button" class="mp-btn mp-btn-primary" id="nbSave" data-i18n="common.save">រក្សាទុក</button></div>
 </section>
 
 <div class="mp-savebar" id="mpSaveBar" hidden>
@@ -153,7 +140,6 @@ No Internet Connection
 
 <script src="../../assets/js/arrears-export.js"></script>
 <script src="../../assets/js/masterdata/plan.js"></script>
-<script src="../../assets/js/masterdata/plan-npl-baseline.js"></script>
 
 </body>
 

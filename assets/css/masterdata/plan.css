@@ -143,11 +143,3 @@
     .mp-in{ width:84px; }
     .mp-table th.mp-grp span{ left:144px; }
 }
-
-/* NPL Collected — HQ's year to date (plan-npl-baseline.js) */
-.nb-card{ margin-top:14px; }
-.nb-help{ margin:4px 0 10px; font-size:12.5px; line-height:1.6; color:var(--md-text-muted, #6B7280); }
-.nb-table td:first-child, .nb-table th:first-child{ text-align:left; }
-.nb-table td:last-child, .nb-table th:last-child{ text-align:right; }
-.nb-table .mp-in{ width:140px; }
-.nb-actions{ display:flex; justify-content:flex-end; margin-top:10px; }
