@@ -1501,6 +1501,11 @@ CMI18n.register({
   "creditreport.mr.nplCollectedSub": { km: "ពីដើមឆ្នាំ · {n} គណនីចេញពី NPL", en: "Year to date · {n} loans left NPL" },
   "creditreport.mr.nplCollectedSince": { km: "ពី {date} (ថ្ងៃដំបូងដែលមានទិន្នន័យ NPL) · {n} គណនីចេញពី NPL", en: "Since {date} (first day of NPL history) · {n} loans left NPL" },
   "creditreport.mr.nplNoHistory": { km: "មិនទាន់មានប្រវត្តិ NPL គ្រប់គ្រាន់", en: "Not enough NPL history yet" },
+  // NPL Collected as HQ counts it (NBC Overdue COLL_PRI_END / COLL_*_PER)
+  "creditreport.mr.nplCollectedHq": { km: "ពីដើមឆ្នាំ (ប្រាក់ដើម) · {n} គណនី", en: "Year to date (principal) · {n} loans" },
+  "creditreport.mr.nplThisPeriod": { km: "គ្រានេះ៖ ប្រាក់ដើម {prn} · ការប្រាក់ {int} · សរុប {sum}", en: "This period: PRN {prn} · INT {int} · PRN+INT {sum}" },
+  "creditreport.mr.nplNoData": { km: "មិនទាន់មានទិន្នន័យ NBC Overdue", en: "No NBC Overdue data yet" },
+  "creditreport.mr.nplNotKept": { km: "ថ្ងៃដែលបានរក្សាទុកនេះ មិនមានទិន្នន័យប្រមូល NPL", en: "This saved day has no NPL collection data" },
   "creditreport.mr.target": { km: "គោលដៅ", en: "Target" },
   "creditreport.mr.makingWord": { km: "កំពុងបង្កើតឯកសារ Word…", en: "Making the Word file…" },
   "creditreport.mr.wordFailed": { km: "មិនអាចបង្កើតឯកសារ Word បានទេ — សូមពិនិត្យអ៊ីនធឺណិត ហើយសាកម្តងទៀត។", en: "Couldn't make the Word file — check the internet connection and try again." },
