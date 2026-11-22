@@ -77,7 +77,7 @@ async function piRenderPlan(d) {
         box.innerHTML = "";
         return;
     }
-    const p = await CIPlan.branch(q.getAll("branch"));
+    const [p, rec] = await Promise.all([CIPlan.branch(q.getAll("branch")), piNplCollected(d)]);
     if (piData !== d) return;
     if (!p || !p.metrics) { note.textContent = t("creditreport.plan.none"); box.innerHTML = ""; return; }
     note.textContent = p.hasPlan
@@ -91,7 +91,34 @@ async function piRenderPlan(d) {
         nplPct: k.nplPct && k.nplPct.prev !== null && k.nplPct.prev !== undefined ? k.nplPct.prev * 100 : null
     } : null;
     // The rows this page always showed (CIPlan now knows more metrics).
-    box.innerHTML = CIPlan.table(p, { lastMonth: lm, lmLabel: d.comparison && d.comparison.mode === "month" ? "creditreport.plan.lastMonth" : "creditreport.mr.before", keys: ["osAmount", "osCount", "osClients", "disbAmount", "disbCount", "nbcOverduePct", "nplPct", "woCollected"] });
+    // + NPL Collected, as HQ counts it (same row as the Meeting Report's 2.1).
+    box.innerHTML = CIPlan.withNplCollected(
+        CIPlan.table(p, { lastMonth: lm, lmLabel: d.comparison && d.comparison.mode === "month" ? "creditreport.plan.lastMonth" : "creditreport.mr.before", keys: ["osAmount", "osCount", "osClients", "disbAmount", "disbCount", "nbcOverduePct", "nplPct", "woCollected"] }),
+        rec && rec.collected, !!lm);
+}
+
+// /recovery?ytd=1 with the page's filters — fetched here, not via CI.get,
+// so it never cancels (or is cancelled by) the page's own loads.
+async function piNplCollected(d) {
+    try {
+        const q = CI.query();
+        // The period's own dates: ytd=1 starts on 1 January anyway, and an
+        // end on the live data's day means the live NBC Overdue (its day can
+        // be later than the OS day) — only a past end day picks a saved day.
+        const live = d && d.asOf && d.asOf.osDate;
+        q.delete("fromDate");
+        if (!q.get("toDate") || (live && q.get("toDate") >= live)) q.delete("toDate");
+        q.set("dim", "branch");
+        q.set("ytd", "1");
+        const res = await fetch(`${API.BASE_URL}/api/credit-intelligence/recovery?${q.toString()}`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token") || sessionStorage.getItem("token") || ""}` }
+        });
+        const body = await res.json();
+        return body && body.ok !== false ? body : null;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
 }
 
 function piAlertText(a) {

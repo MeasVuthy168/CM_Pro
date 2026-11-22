@@ -256,15 +256,11 @@ function mrNumberSections(saved) {
 // A saved day uses that day's saved NPL list; days saved before the
 // columns were kept show "—".
 function mrNplCollected(d) {
-    const c = d.recB && d.recB.collected;
-    if (!c || !c.available) return null;
-    return { actual: c.ytd.prn, loans: c.ytd.loans, plan: c.target || null, period: c.period };
+    return CIPlan.nplCollectedOf(d.recB && d.recB.collected);
 }
-// "Year to date · n loans · This period: PRN … · INT …"
+// "Year to date (principal) · n loans · This period: PRN … · INT …"
 function mrNplCollectedSub(npl, d) {
-    if (!npl) return t(d && d.asOf ? "creditreport.mr.nplNotKept" : "creditreport.mr.nplNoData");
-    const p = npl.period || {};
-    return `${t("creditreport.mr.nplCollectedHq", { n: CI.num(npl.loans) })} · ${t("creditreport.mr.nplThisPeriod", { prn: CI.money(p.prn || 0), int: CI.money(p.int || 0), sum: CI.money(p.prnInt || 0) })}`;
+    return CIPlan.nplCollectedSub(npl, d && d.asOf ? "creditreport.mr.nplNotKept" : "creditreport.mr.nplNoData");
 }
 function mrAchText(actual, plan) {
     return plan ? t("creditreport.mr.ofPlan", { pct: `${Math.round((actual / plan) * 100)}%` }) : t("creditreport.mr.noTarget");
@@ -293,7 +289,7 @@ function mrRecoveryByKey(rec) {
 function mrCollectedCells(wo, rec, have) {
     const F = CIPlan.fmt;
     const w = wo || {};
-    // have: the day carries collections at all — a row without NPL loans
+    // have: the day carries collections at all — a row with no collection
     // collected nothing ($0); a day without the columns shows "—".
     const actual = rec ? CI.money(rec.ytd.prn) : have ? CI.money(0) : "—";
     return `<td class="num">${F("amount", w.actual)}</td><td class="num">${F("amount", w.plan)}</td>` +
@@ -301,10 +297,7 @@ function mrCollectedCells(wo, rec, have) {
 }
 // The NPL Collected row of 2.1 (added to CIPlan.table's own rows).
 function mrNplCollectedRow(d, withLm) {
-    const npl = mrNplCollected(d);
-    const cell = npl ? { actual: npl.actual, plan: npl.plan, ach: npl.plan ? npl.actual / npl.plan : null } : null;
-    const sub = mrNplCollectedSub(npl, d);
-    return `<tr><td>${CI.esc(t("creditreport.mr.k.nplCollected"))}<div class="ci-plan-sub">${CI.esc(sub)}</div></td><td class="num"><b>${npl ? CI.money(npl.actual) : "—"}</b></td>${withLm ? `<td class="num">—</td>` : ""}<td class="num">${npl && npl.plan ? CI.money(npl.plan) : "—"}</td><td class="num ci-plan-ach">${CIPlan.achCell({ kind: "amount" }, cell)}</td></tr>`;
+    return CIPlan.nplCollectedRow(d.recB && d.recB.collected, withLm, d.asOf ? "creditreport.mr.nplNotKept" : "creditreport.mr.nplNoData");
 }
 
 // 2.1 for a saved day: the day against the comparison day (no Monthly

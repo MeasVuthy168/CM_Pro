@@ -140,5 +140,28 @@
         return `<thead><tr><th>${esc(t("creditreport.plan.metric"))}</th><th class="num">${esc(t("creditreport.plan.actual"))}</th>${lm ? `<th class="num">${esc(t(opts.lmLabel || "creditreport.plan.lastMonth"))}</th>` : ""}<th class="num">${esc(t("creditreport.plan.plan"))}</th><th class="num">${esc(t("creditreport.plan.ach"))}</th></tr></thead><tbody>${rows}</tbody>`;
     }
 
-    window.CIPlan = { branch, branchRows, officers, table, combine, fmt, achCell, METRICS };
+    // NPL Collected as HQ counts it (approved 22/11/2026), for a table()
+    // above: the principal collected this year (NBC Overdue COLL_PRI_END —
+    // HQ "NPL COLLECT Y2D_PRN") against the NPL Recovery plan taken as a
+    // yearly target, this period's PRN / INT (COLL_*_PER) underneath.
+    // c: /api/credit-intelligence/recovery?ytd=1's `collected`.
+    function nplCollectedOf(c) {
+        return c && c.available ? { actual: c.ytd.prn, loans: c.ytd.loans, plan: c.target || null, period: c.period || {} } : null;
+    }
+    function nplCollectedSub(npl, emptyKey) {
+        if (!npl) return t(emptyKey || "creditreport.mr.nplNoData");
+        const p = npl.period;
+        return `${t("creditreport.mr.nplCollectedHq", { n: num(npl.loans) })} · ${t("creditreport.mr.nplThisPeriod", { prn: money(p.prn || 0), int: money(p.int || 0), sum: money(p.prnInt || 0) })}`;
+    }
+    function nplCollectedRow(c, withLm, emptyKey) {
+        const npl = nplCollectedOf(c);
+        const cell = npl ? { actual: npl.actual, plan: npl.plan, ach: npl.plan ? npl.actual / npl.plan : null } : null;
+        return `<tr><td>${esc(t("creditreport.mr.k.nplCollected"))}<div class="ci-plan-sub">${esc(nplCollectedSub(npl, emptyKey))}</div></td><td class="num"><b>${npl ? money(npl.actual) : "—"}</b></td>${withLm ? `<td class="num">—</td>` : ""}<td class="num">${npl && npl.plan ? money(npl.plan) : "—"}</td><td class="num ci-plan-ach">${achCell({ kind: "amount" }, cell)}</td></tr>`;
+    }
+    // Adds the row to a table() string.
+    function withNplCollected(html, c, withLm, emptyKey) {
+        return html ? html.replace(/<\/tbody>$/, `${nplCollectedRow(c, withLm, emptyKey)}</tbody>`) : html;
+    }
+
+    window.CIPlan = { branch, branchRows, officers, table, combine, fmt, achCell, METRICS, nplCollectedOf, nplCollectedSub, nplCollectedRow, withNplCollected };
 })();
