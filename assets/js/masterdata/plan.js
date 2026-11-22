@@ -42,14 +42,8 @@ const MP_GROUPS = [
     { label: "masterdata.plan.grpLos", metrics: [["losCount"]] },
     { label: "masterdata.plan.colNbc", metrics: [["nbcOverduePct"]] },
     { label: "masterdata.plan.colNpl", metrics: [["nplPct"]] },
-    // NPL COLLECT Y2D, named like HQ's report: the plan (PLAN-BP) and —
-    // branch only — HQ's actual Y2D through the end of last month, which
-    // the reports add this month's COLL_PRI_PER to (approved 23/11/2026).
-    // The officer tab has the plan only (single: its header).
-    {
-        label: "masterdata.plan.grpNplCollect", single: "masterdata.plan.colRecovery",
-        metrics: [["nplRecovery", "masterdata.plan.colNplPlanBp"], ["nplCollectBase", "masterdata.plan.colNplHqBase"]]
-    },
+    // Named like HQ's report: NPL COLLECT Y2D PLAN-BP $.
+    { label: "masterdata.plan.colRecovery", metrics: [["nplRecovery"]] },
     { label: "masterdata.plan.colWoYtd", metrics: [["woYtd"]] },
     { label: "masterdata.plan.colWo", metrics: [["woCollected"]] }
 ];
@@ -342,7 +336,7 @@ function mpRender() {
     let head = `<thead><tr><th class="mp-name" ${two ? 'rowspan="2"' : ""}>${mpEsc(nameHead)}</th>`;
     head += groups.map(g => g.metrics.length > 1
         ? `<th class="mp-grp" colspan="${g.metrics.length}"><span>${mpEsc(t(g.label))}</span></th>`
-        : `<th class="mp-wrap" ${two ? 'rowspan="2"' : ""}>${mpEsc(t(g.single || g.label))}</th>`).join("");
+        : `<th class="mp-wrap" ${two ? 'rowspan="2"' : ""}>${mpEsc(t(g.label))}</th>`).join("");
     head += "</tr>";
     if (two) {
         head += "<tr>" + groups.filter(g => g.metrics.length > 1)
@@ -502,8 +496,7 @@ async function mpCopyPrev() {
         mp.values = {};
         for (const [key, row] of Object.entries(rows)) {
             mp.values[key] = {};
-            // HQ's actual Y2D is a new figure every month — never copied.
-            for (const m of mp.metrics) if (row[m.key] !== undefined && m.key !== "nplCollectBase") mp.values[key][m.key] = mpFormat(m.kind, row[m.key]);
+            for (const m of mp.metrics) if (row[m.key] !== undefined) mp.values[key][m.key] = mpFormat(m.kind, row[m.key]);
         }
         mpRender();
         mpPaintSaveBar();

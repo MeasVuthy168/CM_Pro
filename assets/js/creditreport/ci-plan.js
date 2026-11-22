@@ -152,11 +152,10 @@
         if (!npl) return t(emptyKey || "creditreport.mr.nplNoData");
         const p = npl.period, y = npl.ytd;
         const mm = m => (m ? `${m.slice(5, 7)}/${m.slice(0, 4)}` : "");
-        // How the year to date is made: HQ's figure through a month end +
-        // the later months the app kept + this month (COLL_PRI_PER).
-        const after = (y.months || []).reduce((s, m) => s + (m.prn || 0), 0);
-        const how = y.baseline !== null && y.baseline !== undefined
-            ? t("creditreport.mr.nplY2dBase", { month: mm(y.baselineMonth), base: money(y.baseline), after: money(after), cur: money(y.current || 0) })
+        // How the year to date is made: the monthly COLL_PRI_PER the app
+        // kept, from its first month (01/11/2026) or from January.
+        const how = y.since
+            ? t("creditreport.mr.nplY2dSince", { date: `01/${mm(y.since)}` })
             : t("creditreport.mr.nplY2dNoBase");
         const missing = (y.missing || []).length ? ` · ${t("creditreport.mr.nplY2dMissing", { months: y.missing.map(mm).join(", ") })}` : "";
         return `${how}${missing}`;
