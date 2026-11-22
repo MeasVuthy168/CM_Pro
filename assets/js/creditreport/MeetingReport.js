@@ -146,8 +146,9 @@ async function mrLoad() {
             () => CIPlan.officers(),
             () => CIPlan.branchRows(),
             () => mrTeamSplit(branch),
-            // NPL Collected = NPL recovered (left NPL) year to date, against
-            // the NPL Recovery plan as a yearly target — like WO Collected.
+            // NPL Collected = HQ's "NPL COLLECT Y2D_PRN" (COLL_PRI_END of the
+            // NPL loans, ?ytd=1's "collected"), against the NPL Recovery plan
+            // as a yearly target — like WO Collected.
             () => mrGet("recovery", { branch, dim: "branch", ytd: "1" }),
             () => mrGet("recovery", { branch, dim: "officer", ytd: "1" })
         ];
@@ -247,26 +248,23 @@ function mrNumberSections(saved) {
 
 // ---------- WO Collected / NPL Collected ----------
 // WO Collected: write-offs collected (interest + principal), year to date,
-// against the yearly plan (the branch plan's woCollected). NPL Collected:
-// NPL loans that left NPL year to date (Recovery Performance's
-// "recovered", ?ytd=1), against the NPL Recovery plan taken as a yearly
-// target. A saved day closes on that day's saved NPL list.
+// against the yearly plan (the branch plan's woCollected). NPL Collected
+// (approved 22/11/2026): as HQ's report counts it — the principal
+// collected this year on the NPL loans (NBC Overdue COLL_PRI_END,
+// "NPL COLLECT Y2D_PRN"), against the NPL Recovery plan taken as a yearly
+// target; this period's principal / interest (COLL_PRI/INT_PER) beside it.
+// A saved day uses that day's saved NPL list; days saved before the
+// columns were kept show "—".
 function mrNplCollected(d) {
-    const mv = d.recB && d.recB.movement;
-    const k = mv && mv.available ? d.recB.kpis : null;
-    if (!k) return null;
-    return {
-        actual: k.recovered.value, loans: k.recovered.count, plan: k.target && k.target.value ? k.target.value : null,
-        // NPL history younger than the year: measured from its first day.
-        since: mv.openedLate ? mv.openingDate : null
-    };
+    const c = d.recB && d.recB.collected;
+    if (!c || !c.available) return null;
+    return { actual: c.ytd.prn, loans: c.ytd.loans, plan: c.target || null, period: c.period };
 }
-// "Year to date · n loans left NPL", or "Since dd/mm/yyyy · …".
-function mrNplCollectedSub(npl) {
-    if (!npl) return t("creditreport.mr.nplNoHistory");
-    return npl.since
-        ? t("creditreport.mr.nplCollectedSince", { date: CI.dmy(npl.since), n: CI.num(npl.loans) })
-        : t("creditreport.mr.nplCollectedSub", { n: CI.num(npl.loans) });
+// "Year to date · n loans · This period: PRN … · INT …"
+function mrNplCollectedSub(npl, d) {
+    if (!npl) return t(d && d.asOf ? "creditreport.mr.nplNotKept" : "creditreport.mr.nplNoData");
+    const p = npl.period || {};
+    return `${t("creditreport.mr.nplCollectedHq", { n: CI.num(npl.loans) })} · ${t("creditreport.mr.nplThisPeriod", { prn: CI.money(p.prn || 0), int: CI.money(p.int || 0), sum: CI.money(p.prnInt || 0) })}`;
 }
 function mrAchText(actual, plan) {
     return plan ? t("creditreport.mr.ofPlan", { pct: `${Math.round((actual / plan) * 100)}%` }) : t("creditreport.mr.noTarget");
@@ -283,26 +281,29 @@ function mrCollectedTiles(d, tile) {
         tile(t("creditreport.mr.k.nplCollected"),
             npl ? CI.money(npl.actual) : "—",
             npl ? `<span class="${tone(npl.actual, npl.plan)}">${CI.esc(mrAchText(npl.actual, npl.plan))}</span>` : "",
-            CI.esc(mrNplCollectedSub(npl)))
+            CI.esc(mrNplCollectedSub(npl, d)))
     ];
 }
 // Per row (officer / branch): WO Collected (actual, yearly plan) and NPL
-// Collected (recovered this month, the branch's target).
+// Collected (COLL_PRI_END year to date, the yearly target).
 function mrRecoveryByKey(rec) {
-    const rows = rec && rec.movement && rec.movement.available ? rec.byDim || [] : null;
-    return rows ? new Map(rows.map(r => [String(r.key), r])) : new Map();
+    const c = rec && rec.collected;
+    return c && c.available ? new Map((c.byDim || []).map(r => [String(r.key), r])) : null;
 }
-function mrCollectedCells(wo, rec) {
+function mrCollectedCells(wo, rec, have) {
     const F = CIPlan.fmt;
     const w = wo || {};
+    // have: the day carries collections at all — a row without NPL loans
+    // collected nothing ($0); a day without the columns shows "—".
+    const actual = rec ? CI.money(rec.ytd.prn) : have ? CI.money(0) : "—";
     return `<td class="num">${F("amount", w.actual)}</td><td class="num">${F("amount", w.plan)}</td>` +
-        `<td class="num">${rec ? CI.money(rec.left.value) : "—"}</td><td class="num">${rec && rec.target ? CI.money(rec.target) : "—"}</td>`;
+        `<td class="num">${actual}</td><td class="num">${rec && rec.target ? CI.money(rec.target) : "—"}</td>`;
 }
 // The NPL Collected row of 2.1 (added to CIPlan.table's own rows).
 function mrNplCollectedRow(d, withLm) {
     const npl = mrNplCollected(d);
     const cell = npl ? { actual: npl.actual, plan: npl.plan, ach: npl.plan ? npl.actual / npl.plan : null } : null;
-    const sub = mrNplCollectedSub(npl);
+    const sub = mrNplCollectedSub(npl, d);
     return `<tr><td>${CI.esc(t("creditreport.mr.k.nplCollected"))}<div class="ci-plan-sub">${CI.esc(sub)}</div></td><td class="num"><b>${npl ? CI.money(npl.actual) : "—"}</b></td>${withLm ? `<td class="num">—</td>` : ""}<td class="num">${npl && npl.plan ? CI.money(npl.plan) : "—"}</td><td class="num ci-plan-ach">${CIPlan.achCell({ kind: "amount" }, cell)}</td></tr>`;
 }
 
@@ -409,7 +410,8 @@ function mrRenderTeam(d) {
     const showBranch = !d.branch;
     const rows = d.team && d.team.rows ? d.team.rows.slice().sort((a, b) => b.os - a.os).slice(0, 25) : [];
     const plans = new Map(((d.teamPlan && d.teamPlan.rows) || []).map(r => [String(r.id), r.metrics]));
-    const rec = mrRecoveryByKey(d.recO);
+    const rec = mrRecoveryByKey(d.recO) || new Map();
+    const haveO = !!(d.recO && d.recO.collected && d.recO.collected.available);
     const F = CIPlan.fmt;
     const ach = (m, c) => CIPlan.achCell(CIPlan.METRICS.find(x => x.key === m), c);
     const pct = v => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(2)}%`);
@@ -427,7 +429,7 @@ function mrRenderTeam(d) {
                 <td class="num">${F("amount", r.disb)}</td><td class="num">${F("amount", db.plan)}</td><td class="num ci-plan-ach">${ach("disbAmount", { ...db, actual: r.disb })}</td>
                 <td class="num">${pct(r.parPct)}</td><td class="num">${r.prev ? pct(r.prev.parPct) : "—"}</td><td class="num">${F("pct", par.plan)}</td>
                 <td class="num">${pct(r.nplPct)}</td><td class="num">${F("pct", npl.plan)}</td>
-                ${mrCollectedCells(pm.woCollected, rec.get(String(r.key)))}</tr>`;
+                ${mrCollectedCells(pm.woCollected, rec.get(String(r.key)), haveO)}</tr>`;
         }).join("")}</tbody>` : `<tbody><tr><td>${CI.esc(t("creditreport.pi.nothing"))}</td></tr></tbody>`;
 }
 
@@ -445,7 +447,8 @@ function mrRenderBranchDim(d) {
     mrChartBranchDim(d);
     const rows = d.branchRisk && d.branchRisk.rows ? d.branchRisk.rows.slice().sort((a, b) => b.os - a.os).slice(0, 25) : [];
     const plans = new Map(((d.branchPlan && d.branchPlan.rows) || []).map(r => [String(r.id), r.metrics]));
-    const rec = mrRecoveryByKey(d.recB);
+    const rec = mrRecoveryByKey(d.recB) || new Map();
+    const haveB = !!(d.recB && d.recB.collected && d.recB.collected.available);
     const F = CIPlan.fmt;
     const ach = (m, c) => CIPlan.achCell(CIPlan.METRICS.find(x => x.key === m), c);
     const pct = v => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(2)}%`);
@@ -463,7 +466,7 @@ function mrRenderBranchDim(d) {
                 <td class="num">${F("amount", r.disb)}</td><td class="num">${F("amount", db.plan)}</td><td class="num ci-plan-ach">${ach("disbAmount", { ...db, actual: r.disb })}</td>
                 <td class="num">${pct(r.parPct)}</td><td class="num">${r.prev ? pct(r.prev.parPct) : "—"}</td><td class="num">${F("pct", par.plan)}</td>
                 <td class="num">${pct(r.nplPct)}</td><td class="num">${F("pct", npl.plan)}</td>
-                ${mrCollectedCells(pm.woCollected, rec.get(String(r.key)))}</tr>`;
+                ${mrCollectedCells(pm.woCollected, rec.get(String(r.key)), haveB)}</tr>`;
         }).join("")}</tbody>` : `<tbody><tr><td>${CI.esc(t("creditreport.pi.nothing"))}</td></tr></tbody>`;
 }
 
