@@ -1502,8 +1502,11 @@ CMI18n.register({
   "creditreport.mr.nplCollectedSince": { km: "ពី {date} (ថ្ងៃដំបូងដែលមានទិន្នន័យ NPL) · {n} គណនីចេញពី NPL", en: "Since {date} (first day of NPL history) · {n} loans left NPL" },
   "creditreport.mr.nplNoHistory": { km: "មិនទាន់មានប្រវត្តិ NPL គ្រប់គ្រាន់", en: "Not enough NPL history yet" },
   // NPL Collected as HQ counts it (NBC Overdue COLL_PRI_END / COLL_*_PER)
-  "creditreport.mr.nplCollectedHq": { km: "ពីដើមឆ្នាំ (ប្រាក់ដើម) · {n} គណនី", en: "Year to date (principal) · {n} loans" },
-  "creditreport.mr.nplThisPeriod": { km: "គ្រានេះ៖ ប្រាក់ដើម {prn} · ការប្រាក់ {int} · សរុប {sum}", en: "This period: PRN {prn} · INT {int} · PRN+INT {sum}" },
+  "creditreport.mr.nplThisPeriod": { km: "ខែនេះ៖ ប្រាក់ដើម {prn} · ការប្រាក់ {int} · សរុប {sum}", en: "This month: PRN {prn} · INT {int} · PRN+INT {sum}" },
+  // Year to date = HQ's figure through a month end + later months + this month (COLL_PRI_PER)
+  "creditreport.mr.nplY2dBase": { km: "ពីដើមឆ្នាំ (ប្រាក់ដើម) = HQ ដល់ {month} {base} + ខែក្រោយៗ {after} + ខែនេះ {cur}", en: "Year to date (principal) = HQ to {month} {base} + later months {after} + this month {cur}" },
+  "creditreport.mr.nplY2dNoBase": { km: "ពីដើមឆ្នាំ (ប្រាក់ដើម) = COLL_PRI_PER ប្រចាំខែបូកបញ្ចូលគ្នា", en: "Year to date (principal) = monthly COLL_PRI_PER added up" },
+  "creditreport.mr.nplY2dMissing": { km: "⚠ ខ្វះខែ {months} — Admin បញ្ចូលតួលេខ HQ ក្នុង ផែនការប្រចាំខែ", en: "⚠ Missing {months} — admin: enter HQ's figure in Monthly Plan" },
   "creditreport.mr.nplNoData": { km: "មិនទាន់មានទិន្នន័យ NBC Overdue", en: "No NBC Overdue data yet" },
   "creditreport.mr.nplNotKept": { km: "ថ្ងៃដែលបានរក្សាទុកនេះ មិនមានទិន្នន័យប្រមូល NPL", en: "This saved day has no NPL collection data" },
   "creditreport.mr.target": { km: "គោលដៅ", en: "Target" },
