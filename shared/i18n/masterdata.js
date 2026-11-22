@@ -58,11 +58,6 @@ CMI18n.register({
   "masterdata.plan.noRows": { km: "មិនមានជួរដែលត្រូវនឹងតម្រង", en: "No rows match the filter" },
   "masterdata.plan.notInReport": { km: "មិនមានក្នុង Report ទៀតទេ", en: "No longer in the report" },
   "masterdata.plan.noBranchPlan": { km: "សាខាគ្មានផែនការ", en: "no branch plan" },
-  // NPL COLLECT Y2D group, named like HQ's report
-  "masterdata.plan.grpNplCollect": { km: "NPL COLLECT Y2D", en: "NPL COLLECT Y2D" },
-  "masterdata.plan.colNplPlanBp": { km: "PLAN-BP $", en: "PLAN-BP $" },
-  "masterdata.plan.colNplHqBase": { km: "Y2D_PRN (HQ) ដល់ចុងខែមុន $", en: "Y2D_PRN (HQ) to last month end $" },
-  "masterdata.plan.noteNplHq": { km: "NPL COLLECT Y2D_PRN (HQ)៖ បញ្ចូលតួលេខ HQ ពីដើមឆ្នាំ គិតដល់ចុងខែមុន (សាខា)។ Report បូកបន្ថែម COLL_PRI_PER ខែនេះ ដោយខ្លួនឯង។ \"ចម្លងពីខែមុន\" មិនចម្លងជួរនេះទេ។", en: "NPL COLLECT Y2D_PRN (HQ): enter HQ's year-to-date figure through the end of last month (branch). The reports add this month's COLL_PRI_PER themselves. \"Copy from last month\" leaves it out." },
   "masterdata.plan.updatedBy": { km: "កែចុងក្រោយ៖ {user} · {at}", en: "Last saved by {user} · {at}" },
   "masterdata.plan.notSetYet": { km: "មិនទាន់មានផែនការសម្រាប់ខែនេះ", en: "No plan for this month yet" },
   "masterdata.plan.unsaved": { km: "មានការកែប្រែមិនទាន់រក្សាទុក", en: "Unsaved changes" },
