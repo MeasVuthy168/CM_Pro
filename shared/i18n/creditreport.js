@@ -339,7 +339,10 @@ CMI18n.register({
   "creditreport.detail.colPrn": { km: "ប្រាក់ដើម", en: "Prn" },
   "creditreport.detail.woBalanceWO": { km: "សមតុល្យឥណទានលុបចេញពីបញ្ជី", en: "Balance WO" },
   "creditreport.detail.woWO": { km: "WO YTD", en: "WO YTD" },
-  "creditreport.detail.woCollected": { km: "ឥណទានលុបចេញពីបញ្ជីប្រមូលបាន", en: "WO Collected" },
+  "creditreport.detail.woCollected": { km: "WO Collected YTD", en: "WO Collected YTD" },
+  // WO Collected This Period (approved 23/11/2026): PRN + INT collected in
+  // the report's own period (by default the month to date), #LD / #CIF.
+  "creditreport.detail.woCollectedPeriod": { km: "WO Collected This Period", en: "WO Collected This Period" },
 
   "creditreport.detail.t24AsOfTooltip": { km: "សមតុល្យឥណទានប្រថុយប្រថាន (T24) គឺគិតតាមទិន្នន័យផ្ទាល់របស់វា មិនមែនតាមកាលបរិច្ឆេទជួរដេកនេះទេ", en: "Balance Loan at Risk (T24) is as of its own ArreasT24ByCO feed, not this row's Date" },
   "creditreport.detail.deleteDaySnapshotTitle": { km: "លុបរូបថតរក្សាទុកសម្រាប់ថ្ងៃនេះ", en: "Delete this day's snapshot" },

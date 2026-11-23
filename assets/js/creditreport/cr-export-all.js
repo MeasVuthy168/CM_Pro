@@ -316,6 +316,11 @@
             { label: t("creditreport.detail.woCollected"), fields: [
                 { key: `${prefix}.woCollected.int`, label: t("creditreport.detail.colInt"), money: true },
                 { key: `${prefix}.woCollected.prn`, label: t("creditreport.detail.colPrn"), money: true }
+            ] },
+            { label: t("creditreport.detail.woCollectedPeriod"), fields: [
+                { key: `${prefix}.woCollectedPeriod.ld`, label: "#LD" },
+                { key: `${prefix}.woCollectedPeriod.cif`, label: "#CIF" },
+                { key: `${prefix}.woCollectedPeriod.value`, label: t("creditreport.detail.colValue"), money: true }
             ] }
         ].map(g => ({ ...g, label: sideLabel(g.label, which) }));
     }

@@ -278,6 +278,14 @@ function crSections() {
                         { key: "writeOffArea.woCollected.int", label: t("creditreport.detail.colInt"), money: true },
                         { key: "writeOffArea.woCollected.prn", label: t("creditreport.detail.colPrn"), money: true }
                     ]
+                },
+                {
+                    label: crAreaLabel("creditreport.detail.woCollectedPeriod"),
+                    fields: [
+                        { key: "writeOffArea.woCollectedPeriod.ld", label: "#LD" },
+                        { key: "writeOffArea.woCollectedPeriod.cif", label: "#CIF" },
+                        { key: "writeOffArea.woCollectedPeriod.value", label: t("creditreport.detail.colValue"), money: true }
+                    ]
                 }
             ]
         },
@@ -303,6 +311,14 @@ function crSections() {
                     fields: [
                         { key: "writeOffOwn.woCollected.int", label: t("creditreport.detail.colInt"), money: true },
                         { key: "writeOffOwn.woCollected.prn", label: t("creditreport.detail.colPrn"), money: true }
+                    ]
+                },
+                {
+                    label: crOwnLabel("creditreport.detail.woCollectedPeriod"),
+                    fields: [
+                        { key: "writeOffOwn.woCollectedPeriod.ld", label: "#LD" },
+                        { key: "writeOffOwn.woCollectedPeriod.cif", label: "#CIF" },
+                        { key: "writeOffOwn.woCollectedPeriod.value", label: t("creditreport.detail.colValue"), money: true }
                     ]
                 }
             ]
