@@ -135,7 +135,7 @@
             const c = p.metrics[m.key] || {};
             const note = m.toDate && c.expected ? `<div class="ci-plan-sub">${esc(t("creditreport.plan.expected", { v: fmt(m.kind, c.expected) }))}</div>`
                 : m.yearly ? `<div class="ci-plan-sub">${esc(t("creditreport.plan.ytd"))}</div>` : "";
-            return `<tr><td>${esc(t(m.label))}${note}</td><td class="num"><b>${fmt(m.kind, c.actual)}</b></td>${lm ? `<td class="num">${fmt(m.kind, lm[m.key])}</td>` : ""}<td class="num">${fmt(m.kind, c.plan)}</td><td class="num ci-plan-ach">${achCell(m, c)}</td></tr>`;
+            return `<tr data-key="${m.key}"><td>${esc(t(m.label))}${note}</td><td class="num"><b>${fmt(m.kind, c.actual)}</b></td>${lm ? `<td class="num">${fmt(m.kind, lm[m.key])}</td>` : ""}<td class="num">${fmt(m.kind, c.plan)}</td><td class="num ci-plan-ach">${achCell(m, c)}</td></tr>`;
         }).join("");
         return `<thead><tr><th>${esc(t("creditreport.plan.metric"))}</th><th class="num">${esc(t("creditreport.plan.actual"))}</th>${lm ? `<th class="num">${esc(t(opts.lmLabel || "creditreport.plan.lastMonth"))}</th>` : ""}<th class="num">${esc(t("creditreport.plan.plan"))}</th><th class="num">${esc(t("creditreport.plan.ach"))}</th></tr></thead><tbody>${rows}</tbody>`;
     }
@@ -173,9 +173,23 @@
         const sub = p ? t("creditreport.mr.nplPeriodSub", { ld: num(p.loans || 0), cif: num(p.cifs || 0), prn: money(p.prn || 0), int: money(p.int || 0) }) : "";
         return `<tr><td>${esc(t("creditreport.mr.k.nplPeriod"))}${sub ? `<div class="ci-plan-sub">${esc(sub)}</div>` : ""}</td><td class="num"><b>${p ? money(p.prnInt || 0) : "—"}</b></td>${withLm ? `<td class="num">—</td>` : ""}<td class="num">—</td><td class="num ci-plan-ach"><span class="ci-plan-na">—</span></td></tr>`;
     }
-    // Adds both rows to a table() string.
+    // Adds both rows to a table() string, in the reports' order (approved
+    // 23/11/2026): NPL % → NPL Collected → NPL COLLECT THIS PERIOD_PRN-INT
+    // → WO collected → WO YTD $. Right before WO collected (or the first WO
+    // row), else after NPL %, else at the end.
     function withNplCollected(html, c, withLm, emptyKey) {
-        return html ? html.replace(/<\/tbody>$/, `${nplCollectedRow(c, withLm, emptyKey)}${nplPeriodRow(c, withLm)}</tbody>`) : html;
+        if (!html) return html;
+        const rows = `${nplCollectedRow(c, withLm, emptyKey)}${nplPeriodRow(c, withLm)}`;
+        for (const k of ["woCollected", "woYtd"]) {
+            const at = html.indexOf(`<tr data-key="${k}">`);
+            if (at >= 0) return html.slice(0, at) + rows + html.slice(at);
+        }
+        const npl = html.indexOf(`<tr data-key="nplPct">`);
+        if (npl >= 0) {
+            const end = html.indexOf("</tr>", npl) + "</tr>".length;
+            return html.slice(0, end) + rows + html.slice(end);
+        }
+        return html.replace(/<\/tbody>$/, `${rows}</tbody>`);
     }
 
     window.CIPlan = { branch, branchRows, officers, table, combine, fmt, achCell, METRICS, nplCollectedOf, nplCollectedSub, nplCollectedRow, nplPeriodRow, withNplCollected };

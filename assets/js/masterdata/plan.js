@@ -44,8 +44,8 @@ const MP_GROUPS = [
     { label: "masterdata.plan.colNpl", metrics: [["nplPct"]] },
     // Named like HQ's report: NPL COLLECT Y2D PLAN-BP $.
     { label: "masterdata.plan.colRecovery", metrics: [["nplRecovery"]] },
-    { label: "masterdata.plan.colWoYtd", metrics: [["woYtd"]] },
-    { label: "masterdata.plan.colWo", metrics: [["woCollected"]] }
+    { label: "masterdata.plan.colWo", metrics: [["woCollected"]] },
+    { label: "masterdata.plan.colWoYtd", metrics: [["woYtd"]] }
 ];
 // Officer rows are compared with their branch plan on these.
 const MP_COMPARE = ["osAmount", "disbAmount"];
