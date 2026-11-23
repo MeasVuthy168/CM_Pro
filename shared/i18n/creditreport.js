@@ -1515,7 +1515,7 @@ CMI18n.register({
   "creditreport.mr.thisMonth": { km: "ខែនេះ (PRN+INT)", en: "This month (PRN+INT)" },
   "creditreport.npl.collectTitle": { km: "ប្រាក់ប្រមូលបានពីគណនី NPL", en: "Cash collected on NPL" },
   "creditreport.npl.collectNote": { km: "Recovered NPL = សមតុល្យនៃគណនីដែលចេញពី NPL ក្នុងគ្រានេះ។ ប្រាក់ប្រមូលបាន = ប្រាក់ដែលបានប្រមូលពិតៗ (COLL_*_PER ពី NBC Overdue) ពីគណនី NPL ទាំងអស់ ដែលភាគច្រើននៅតែជា NPL — ដូច្នេះលេខទាំងពីរមិនស្មើគ្នាទេ។", en: "Recovered NPL = the balance of loans that left NPL in the period. Cash collected = money actually collected (NBC Overdue COLL_*_PER) on all NPL loans, most of which are still NPL — so the two figures differ." },
-  "creditreport.mr.k.nplPeriod": { km: "NPL COLLECT THIS PERIOD_PRN-INT", en: "NPL COLLECT THIS PERIOD_PRN-INT" },
+  "creditreport.mr.k.nplPeriod": { km: "NPL Collect This Period", en: "NPL Collect This Period" },
   "creditreport.mr.nplPeriodSub": { km: "{ld} LD · {cif} CIF · ប្រាក់ដើម {prn} · ការប្រាក់ {int} (ខែនេះ)", en: "{ld} LD · {cif} CIF · PRN {prn} · INT {int} (this month)" },
   "creditreport.mr.nplThisPeriod": { km: "ខែនេះ៖ ប្រាក់ដើម {prn} · ការប្រាក់ {int} · សរុប {sum}", en: "This month: PRN {prn} · INT {int} · PRN+INT {sum}" },
   // Year to date = HQ's figure through a month end + later months + this month (COLL_PRI_PER)

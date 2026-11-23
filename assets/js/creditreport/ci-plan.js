@@ -181,7 +181,7 @@
         return `<tr><td>${esc(t("creditreport.mr.k.nplPeriod"))}${sub ? `<div class="ci-plan-sub">${esc(sub)}</div>` : ""}</td><td class="num"><b>${p ? money(p.prnInt || 0) : "—"}</b></td>${withLm ? `<td class="num">—</td>` : ""}<td class="num">—</td><td class="num ci-plan-ach"><span class="ci-plan-na">—</span></td></tr>`;
     }
     // Adds both rows to a table() string, in the reports' order (approved
-    // 23/11/2026): NPL % → NPL Collect YTD → NPL COLLECT THIS PERIOD_PRN-INT
+    // 23/11/2026): NPL % → NPL Collect YTD → NPL Collect This Period
     // → WO collected → WO YTD $. Right before WO collected (or the first WO
     // row), else after NPL %, else at the end.
     function withNplCollected(html, c, withLm, emptyKey) {
