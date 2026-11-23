@@ -43,7 +43,7 @@ CMI18n.register({
   "masterdata.plan.colAmount": { km: "ទឹកប្រាក់ $", en: "Amount $" },
   "masterdata.plan.colNbc": { km: "NBC Overdue ≤ %", en: "NBC Overdue ≤ %" },
   "masterdata.plan.colNpl": { km: "NPL ≤ %", en: "NPL ≤ %" },
-  "masterdata.plan.colWo": { km: "WO ប្រមូលបាន $ (ផែនការឆ្នាំ · ការប្រាក់ + ប្រាក់ដើម)", en: "WO Collected $ (yearly plan · interest + principal)" },
+  "masterdata.plan.colWo": { km: "WO Collected YTD $ (ផែនការឆ្នាំ · ការប្រាក់ + ប្រាក់ដើម)", en: "WO Collected YTD $ (yearly plan · interest + principal)" },
   "masterdata.plan.colWoYtd": { km: "WO YTD $ (ផែនការឆ្នាំ · ប្រាក់ដើម · ខ្ពស់បំផុត)", en: "WO YTD $ (yearly plan · principal · ceiling)" },
   "masterdata.plan.colRecovery": { km: "NPL Collect YTD", en: "NPL Collect YTD" },
   "masterdata.plan.colName": { km: "ឈ្មោះ", en: "Name" },

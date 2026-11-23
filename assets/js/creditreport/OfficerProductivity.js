@@ -183,7 +183,8 @@ function opCategories() {
             { k: "prn", label: t("creditreport.detail.colPrn"), money: true, main: true }
         ],
         plan: [
-            { key: "woCollected", label: `${t("creditreport.perf.woCollected")} (${t("creditreport.plan.yearPlan")})`, money: true, head: true }
+            { key: "woCollected", label: `${t("creditreport.perf.woCollected")} (${t("creditreport.plan.yearPlan")})`, money: true, head: true },
+            { key: "woCollectedPeriod", label: t("creditreport.plan.m.woCollectedPeriod"), money: true, actualOnly: true }
         ],
         clientLists: [
             { section: "writeOff", label: t("creditreport.detail.own") },

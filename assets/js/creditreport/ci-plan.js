@@ -33,6 +33,9 @@
         { key: "nbcOverduePct", kind: "pct", label: "creditreport.plan.m.parPct" },
         { key: "nplPct", kind: "pct", label: "creditreport.plan.m.nplPct" },
         { key: "woCollected", kind: "amount", label: "creditreport.plan.m.woCollected", yearly: true },
+        // WO Collected This Period: interest + principal, month to date —
+        // no plan of its own (approved 23/11/2026).
+        { key: "woCollectedPeriod", kind: "amount", label: "creditreport.plan.m.woCollectedPeriod", period: true },
         // WO YTD $ (branch plan): write-offs' principal from 1 January — a
         // yearly ceiling, at or under the plan is good.
         { key: "woYtd", kind: "amount", label: "creditreport.plan.m.woYtd", yearly: true, lowerBetter: true }
@@ -73,6 +76,9 @@
                 if (m.toDate && cells.every(c => c.expected !== null && c.expected !== undefined)) expected = cells.reduce((s, c) => s + Number(c.expected), 0);
             }
             out[m.key] = { actual, plan, expected, ach: plan && actual !== null ? actual / plan : null };
+            // PRN / INT of a figure that carries them (WO Collected This Period).
+            const details = cells.map(c => c.detail).filter(Boolean);
+            if (details.length) out[m.key].detail = { prn: details.reduce((s, d) => s + (Number(d.prn) || 0), 0), int: details.reduce((s, d) => s + (Number(d.int) || 0), 0) };
         }
         return out;
     }
@@ -134,7 +140,8 @@
         const rows = METRICS.filter(m => opts.keys ? opts.keys.includes(m.key) : true).map(m => {
             const c = p.metrics[m.key] || {};
             const note = m.toDate && c.expected ? `<div class="ci-plan-sub">${esc(t("creditreport.plan.expected", { v: fmt(m.kind, c.expected) }))}</div>`
-                : m.yearly ? `<div class="ci-plan-sub">${esc(t("creditreport.plan.ytd"))}</div>` : "";
+                : m.yearly ? `<div class="ci-plan-sub">${esc(t("creditreport.plan.ytd"))}</div>`
+                : m.period && c.detail ? `<div class="ci-plan-sub">${esc(t("creditreport.plan.woPeriodSub", { prn: money(c.detail.prn), int: money(c.detail.int) }))}</div>` : "";
             return `<tr data-key="${m.key}"><td>${esc(t(m.label))}${note}</td><td class="num"><b>${fmt(m.kind, c.actual)}</b></td>${lm ? `<td class="num">${fmt(m.kind, lm[m.key])}</td>` : ""}<td class="num">${fmt(m.kind, c.plan)}</td><td class="num ci-plan-ach">${achCell(m, c)}</td></tr>`;
         }).join("");
         return `<thead><tr><th>${esc(t("creditreport.plan.metric"))}</th><th class="num">${esc(t("creditreport.plan.actual"))}</th>${lm ? `<th class="num">${esc(t(opts.lmLabel || "creditreport.plan.lastMonth"))}</th>` : ""}<th class="num">${esc(t("creditreport.plan.plan"))}</th><th class="num">${esc(t("creditreport.plan.ach"))}</th></tr></thead><tbody>${rows}</tbody>`;
