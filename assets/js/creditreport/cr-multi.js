@@ -27,7 +27,7 @@
 // the sub-filter #crNplItems (shown only while that class is picked;
 // All = the three):
 //   nplPct     NPL % — ceiling (the class's own group)
-//   nplYtd     NPL Collect YTD          ({prefix}.ytd.value)
+//   nplYtd     NPL Collect YTD          ({prefix}.ytd.ld/cif/value)
 //   nplPeriod  NPL Collect This Period  ({prefix}.period.ld/cif/value)
 // Days saved before the columns existed carry no figures: "—".
 // ========================================
@@ -48,7 +48,11 @@ function crNplGroups(nplGroup, prefix, labelOf = k => t(k)) {
         nplPct: nplGroup,
         nplYtd: {
             label: labelOf("creditreport.mr.k.nplCollected"),
-            fields: [{ key: `${prefix}.ytd.value`, label: t("creditreport.detail.colValue"), money: true }]
+            fields: [
+                { key: `${prefix}.ytd.ld`, label: "#LD" },
+                { key: `${prefix}.ytd.cif`, label: "#CIF" },
+                { key: `${prefix}.ytd.value`, label: t("creditreport.detail.colValue"), money: true }
+            ]
         },
         nplPeriod: {
             label: labelOf("creditreport.mr.k.nplPeriod"),
