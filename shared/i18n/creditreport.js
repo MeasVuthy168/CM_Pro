@@ -192,6 +192,8 @@ CMI18n.register({
   "creditreport.saved.headSaved": { km: "ថ្ងៃរក្សាទុក", en: "saved day" },
   "creditreport.saved.headT24": { km: "T24 = NBC Overdue {date}", en: "T24 = NBC Overdue {date}" },
   "creditreport.saved.baseLabel": { km: "ថ្ងៃទិន្នន័យ", en: "Data date" },
+  "creditreport.saved.dayLatest": { km: "ថ្មីបំផុត", en: "Latest" },
+  "creditreport.saved.dayPicked": { km: "ថ្ងៃ", en: "Saved day" },
   "creditreport.saved.chipPrev": { km: "ថ្ងៃមុន", en: "Day before" },
   "creditreport.saved.chipWeek": { km: "7 ថ្ងៃមុន", en: "7 days before" },
   "creditreport.saved.chipMonthEnd": { km: "ចុងខែមុន", en: "Last month-end" },

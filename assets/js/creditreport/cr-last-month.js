@@ -417,7 +417,10 @@ window.CRLastMonth = (() => {
             baseRow.style.display = baseOn() ? "" : "none";
             if (baseInput.value !== (saved.baseAt || "")) baseInput.value = saved.baseAt || "";
             savedBtn.classList.toggle("active", baseOn());
-            if (baseOn()) document.getElementById("crModeCurrentBtn")?.classList.remove("active");
+            if (ui.dayRow) {
+                ui.dayRow.style.display = compareRow.style.display !== "none" || baseOn() ? "" : "none";
+                ui.dayPick.value = baseOn() ? "saved" : "latest";
+            }
             const planOpt = sel.querySelector('option[value="plan"]');
             if (planOpt) {
                 planOpt.hidden = baseOn(); planOpt.disabled = baseOn();
@@ -468,14 +471,22 @@ window.CRLastMonth = (() => {
             };
             const cmpRow = row("crSavedCmpRow", "creditreport.saved.compareWith", "cmp");
             compareRow.after(cmpRow);
-            const baseRow = row("crSavedBaseRow", "creditreport.saved.baseLabel", "base");
-            modeRow.after(baseRow);
-            const savedBtn = document.createElement("button");
-            savedBtn.type = "button"; savedBtn.id = "crModeSavedBtn"; savedBtn.className = "cr-mode-btn";
-            savedBtn.textContent = t("creditreport.saved.tab");
-            modeRow.appendChild(savedBtn);
+            // Saved & Compare is no longer a third tab (UX phase 2, approved
+            // 24/11/2026): Latest & Compare picks the day it shows —
+            // "Data date: Latest / Saved day…" — and the saved day's date
+            // row follows. Same behaviour as the tab had.
+            const dayRow = document.createElement("div");
+            dayRow.className = "cr-section-row"; dayRow.id = "crDayRow";
+            dayRow.innerHTML = `<label class="cr-section-label" for="crDayPick">${t("creditreport.saved.baseLabel")}</label>
+                <select id="crDayPick" class="cr-section-select"><option value="latest">${t("creditreport.saved.dayLatest")}</option><option value="saved">${t("creditreport.saved.compareOption")}</option></select>`;
+            modeRow.after(dayRow);
+            const baseRow = row("crSavedBaseRow", "creditreport.saved.dayPicked", "base");
+            dayRow.after(baseRow);
+            const savedBtn = document.createElement("button");   // kept off screen: its state only
+            savedBtn.type = "button"; savedBtn.id = "crModeSavedBtn"; savedBtn.className = "cr-mode-btn"; savedBtn.hidden = true;
+            const dayPick = dayRow.querySelector("select");
             ui = { sel, compareRow, cmpRow, cmpInput: cmpRow.querySelector("input"), baseRow, baseInput: baseRow.querySelector("input"),
-                baseText: baseRow.querySelector(".cr-saved-text"), savedBtn };
+                baseText: baseRow.querySelector(".cr-saved-text"), savedBtn, dayRow, dayPick };
 
             const setCmp = v => { if (!v || v === saved.cmpAt) return; saved.cmpAt = v; persist(); ensure(); };
             const setBase = v => { if (!v || v === saved.baseAt) return; saved.baseAt = v; persist(); if (opts.reload) opts.reload(); };
@@ -500,8 +511,10 @@ window.CRLastMonth = (() => {
                 syncUi();
                 if (opts.reload) opts.reload();
             };
-            document.getElementById("crModeCurrentBtn")?.addEventListener("click", leaveBase);
             document.getElementById("crModeHistoryBtn")?.addEventListener("click", leaveBase);
+            dayPick.addEventListener("change", () => (dayPick.value === "saved" ? savedBtn.click() : leaveBase()));
+            // The day row shows with the Comparison row (Latest & Compare only).
+            new MutationObserver(syncUi).observe(compareRow, { attributes: true, attributeFilter: ["style"] });
             savedBtn.addEventListener("click", () => {
                 if (baseOn()) return;
                 saved.baseOn = true; persist();
