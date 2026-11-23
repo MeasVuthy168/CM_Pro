@@ -87,6 +87,42 @@ function crNplSyncRow() {
     row.style.display = cls && cls.style.display !== "none" && crPicks("crNbcClass").includes("nonPerformingLoan") ? "" : "none";
 }
 
+// ========================================
+// Data dates, compact (UX phase 1, approved 24/11/2026): the five-row
+// "Loan Disbursement from / Write Off from / NBC OS / NBC Overdue /
+// Payment in Arrears" box becomes one line — NBC OS · NBC Overdue · T24
+// — like Credit Portfolio's; "Details" opens the full box. The
+// disbursement / write-off periods also stay in the report's own heading.
+// The T24 (penalty) row hides while it has no date.
+// ========================================
+function crInfoCompact() {
+    const block = document.querySelector(".filter-card .cr-info-block");
+    if (!block || block.dataset.compact) return;
+    block.dataset.compact = "1";
+    const val = id => { const el = document.getElementById(id); return el ? el.textContent.trim() : ""; };
+    const has = v => v && v !== "-";
+    const esc = s => String(s).replace(/[<>&]/g, "");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "cr-info-sum";
+    btn.setAttribute("aria-expanded", "false");
+    block.before(btn);
+    let open = false;
+    const draw = () => {
+        const item = (label, v) => (has(v) ? `<span class="cr-info-sum-item">${esc(label)} <b>${esc(v)}</b></span>` : "");
+        btn.innerHTML = `<span class="cr-info-sum-items">${item(t("creditreport.ci.dataOs"), val("crOsGridMerge"))}${item(t("creditreport.ci.dataOd"), val("crOverdueGridMerge"))}${item("T24", val("crArrearsPenalty"))}</span>` +
+            `<span class="cr-info-sum-more">${esc(t(open ? "creditreport.detail.hideDetails" : "creditreport.detail.showDetails"))} <span aria-hidden="true">${open ? "▴" : "▾"}</span></span>`;
+        const pen = document.getElementById("crArrearsPenalty");
+        const row = pen && pen.closest(".cr-info-row");
+        if (row) row.hidden = !has(val("crArrearsPenalty"));
+    };
+    const set = o => { open = o; block.hidden = !o; btn.setAttribute("aria-expanded", String(o)); draw(); };
+    btn.addEventListener("click", () => set(!open));
+    new MutationObserver(draw).observe(block, { childList: true, subtree: true, characterData: true });
+    set(false);
+}
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", crInfoCompact); else crInfoCompact();
+
 function crMultiEnhance(ids) {
     if (!window.MultiSelect) return;
     ids.forEach(id => {

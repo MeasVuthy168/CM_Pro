@@ -60,7 +60,10 @@ function piRender() {
 function piRenderMrLink() {
     const branches = CI.query().getAll("branch").filter(Boolean);
     const url = branches.length === 1 ? `MeetingReport.html?${new URLSearchParams({ branch: branches[0] })}` : "MeetingReport.html";
-    document.getElementById("piMrOpen").setAttribute("href", url);
+    // The explainer card is gone (UX phase 1); the "Meeting report" tab
+    // already carries the page's filters (ci-filters updateNav).
+    const a = document.getElementById("piMrOpen");
+    if (a) a.setAttribute("href", url);
 }
 
 // Plan: the branch Monthly Plan (same as the Daily Report by Branch) for
