@@ -13,13 +13,15 @@ window.CRPerf = (() => {
     const num = v => (typeof v === "number" && Number.isFinite(v) ? v : null);
     const fmtNum = n => (Number(n) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
     const compact = n => (window.CRTable ? CRTable.compact(n) : fmtNum(n));
+    // Money carries "$" (UX phase 1), like Meeting Report / Portfolio.
+    const usd = s => `$${s}`;
 
     // A figure as shown: % (fraction) as "8.55%", money as K / M when
     // asked, else the whole number.
     function fmt(v, f, short) {
         if (num(v) === null) return "—";
         if (f.pct) return `${(v * 100).toFixed(2)}%`;
-        return f.money && short ? compact(v) : fmtNum(v);
+        return f.money ? usd(short ? compact(v) : fmtNum(v)) : fmtNum(v);
     }
 
     // ▲ / ▼ now − last month: { html, cls } ("" when either is missing).
@@ -30,7 +32,7 @@ window.CRPerf = (() => {
         const shown = f.pct ? Math.round(d * 10000) / 100 : Math.round(d);
         if (!shown) return { html: "0", cls: "" };
         const good = f.risk ? shown < 0 : shown > 0;
-        const amount = f.pct ? Math.abs(shown).toFixed(2) : f.money ? compact(Math.abs(d)) : fmtNum(Math.abs(shown));
+        const amount = f.pct ? Math.abs(shown).toFixed(2) : f.money ? usd(compact(Math.abs(d))) : fmtNum(Math.abs(shown));
         const rel = withPct && !f.pct && prev ? ` · ${Math.abs(d / prev * 100).toFixed(1)}%` : "";
         return { html: `<span class="cp-arrow">${shown > 0 ? "▲" : "▼"}</span>${amount}${rel}`, cls: good ? "good" : "bad" };
     }
@@ -113,7 +115,7 @@ window.CRPerf = (() => {
     // ± in points, ▼ = under it, good).
     // metrics: [{ label, m: { plan, actual, ach }, money, pctPts, lowerBetter, disb }]
     function planTable(metrics) {
-        const v = (x, mt) => (num(x) === null ? "—" : mt.pctPts ? `${Number(x).toFixed(2)}%` : mt.money ? compact(x) : fmtNum(x));
+        const v = (x, mt) => (num(x) === null ? "—" : mt.pctPts ? `${Number(x).toFixed(2)}%` : mt.money ? usd(compact(x)) : fmtNum(x));
         const body = metrics.map(mt => {
             const m = mt.m || {};
             let last;

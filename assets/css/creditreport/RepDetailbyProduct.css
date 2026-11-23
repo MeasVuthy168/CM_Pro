@@ -1022,3 +1022,10 @@ body.cr-force-landscape .landscape-bar.hidden{
     .cr-total-row td{ background:#f2f2f2 !important; color:#000 !important; font-weight:800; }
     .cr-par-high{ color:#000 !important; text-decoration:underline; }
 }
+
+/* Data dates, one line (UX phase 1) */
+.cr-info-sum{ display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; padding:8px 10px; margin:0 0 10px; border:1px solid var(--cr-border, #e3e7ef); border-radius:10px; background:var(--cr-card-bg, #fff); color:var(--cr-text, #1b2540); font:inherit; font-size:12.5px; text-align:left; cursor:pointer; }
+.cr-info-sum-items{ display:flex; flex-wrap:wrap; gap:4px 12px; color:var(--cr-text-muted, #6b7488); }
+.cr-info-sum-item b{ color:var(--cr-text, #1b2540); font-weight:600; }
+.cr-info-sum-more{ flex:none; color:var(--cr-gold, #b8860b); font-weight:600; white-space:nowrap; }
+.cr-info-block[hidden], .cr-info-row[hidden]{ display:none !important; }
