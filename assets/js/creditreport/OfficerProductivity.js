@@ -131,20 +131,6 @@ function opCategories() {
         ]
     },
     {
-        key: "parT24",
-        icon: '<span class="cr-ico cr-ico-trend-up" aria-hidden="true"></span>',
-        label: t("creditreport.detail.sectionT24"),
-        chart: false,
-        risk: true,
-        own: "parT24", area: "parT24Area", byTeam: "parT24AreaByTeam",
-        fields: [loan("loan"), value("value"), par],
-        plan: null,
-        clientLists: [
-            { section: "parT24", label: t("creditreport.detail.own") },
-            { section: "parT24Area", label: t("creditreport.detail.area") }
-        ]
-    },
-    {
         key: "nbcOverdue",
         icon: '<span class="cr-ico cr-ico-warning" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionNbcOverdue"),
@@ -154,7 +140,9 @@ function opCategories() {
         fields: [loan("count"), value("value"), par],
         plan: [
             { key: "nbcOverduePct", label: t("creditreport.plan.nbcPct"), pctPts: true, lowerBetter: true, head: true },
-            { key: "nplPct", label: t("creditreport.plan.nplPct"), pctPts: true, lowerBetter: true }
+            { key: "nplPct", label: t("creditreport.plan.nplPct"), pctPts: true, lowerBetter: true },
+            // NPL Collect YTD (Own) vs the yearly NPL Recovery $, #LD / #CIF under it.
+            { key: "nplRecovery", label: `${t("creditreport.mr.k.nplCollected")} (${t("creditreport.plan.yearPlan")})`, money: true }
         ],
         // Two separate "List of Client" sub-tabs (Own/Area) instead of
         // one — each hits a different officer-clients `section` (see
