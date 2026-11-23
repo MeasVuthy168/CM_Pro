@@ -108,6 +108,7 @@ function lpCategories() {
             { k: "writeOff.balanceWO.int", label: t("creditreport.detail.colInt"), money: true },
             { k: "writeOff.balanceWO.prn", label: t("creditreport.detail.colPrn"), money: true, main: true }
         ],
+        actualTitle: t("creditreport.detail.woBalanceWO"),
         plan: null,
         clientLists: clientLists()
     }

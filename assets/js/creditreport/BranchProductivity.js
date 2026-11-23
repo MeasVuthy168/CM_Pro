@@ -126,7 +126,8 @@ function bpCategories() {
             { key: "woCollectedPeriod", label: t("creditreport.plan.m.woCollectedPeriod"), money: true, actualOnly: true }
         ],
         // Plan view: Balance WO too, under the plan rows.
-        planActual: t("creditreport.detail.woBalanceWO"),
+        planActual: true,
+        actualTitle: t("creditreport.detail.woBalanceWO"),
         clientLists: clientLists()
     }
     ];
