@@ -85,16 +85,6 @@ function lpCategories() {
         clientLists: clientLists()
     },
     {
-        key: "parT24",
-        icon: '<span class="cr-ico cr-ico-trend-up" aria-hidden="true"></span>',
-        label: t("creditreport.detail.sectionT24"),
-        chart: false,
-        risk: true,
-        fields: [loan("parT24.loan"), value("parT24.value"), par("parT24.parPct")],
-        plan: null,
-        clientLists: clientLists()
-    },
-    {
         key: "nbcOverdue",
         icon: '<span class="cr-ico cr-ico-warning" aria-hidden="true"></span>',
         label: t("creditreport.detail.sectionNbcOverdue"),
