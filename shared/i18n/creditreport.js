@@ -1254,7 +1254,7 @@ CMI18n.register({
   "creditreport.rec.sumLine": { km: "អត្រាប្រមូល {rate} · សម្រេចគោលដៅ {target}", en: "Recovery rate {rate} · Target {target}" },
   "creditreport.rec.tip.recovered": { km: "សមតុល្យដើមគ្រានៃឥណទាន NPL ដែលចេញពី NPL ដោយប្រសើរថ្នាក់ ល្អធម្មតា ឬបិទ/សងរួច។", en: "Opening balance of NPL loans that left NPL by upgrade, becoming performing or closing." },
   "creditreport.rec.tip.rate": { km: "ចេញពី NPL (សមតុល្យ) ÷ NPL ដើមគ្រា។ ក្នុងតារាង របារបៃតង = លើសអត្រាសរុប, ក្រហម = ក្រោមអត្រាសរុប។", en: "Left NPL (balance) ÷ opening NPL. In the table, green bar = above the overall rate, red = below." },
-  "creditreport.rec.tip.target": { km: "ប្រាក់ដើមប្រមូលបានពីគណនី NPL (NPL Collected — COLL_PRI_PER ប្រចាំខែបូកបញ្ចូលគ្នា) ÷ NPL COLLECT Y2D PLAN-BP (ផែនការប្រចាំឆ្នាំ ក្នុងផែនការប្រចាំខែ) — ដូច Meeting Report។ មិនមែន \"ចេញពី NPL\" ទេ ព្រោះវាជាសមតុល្យ មិនមែនប្រាក់ប្រមូល។ មន្ត្រី (Own)៖ ផែនការមន្ត្រី។", en: "Principal collected on NPL loans (NPL Collected — monthly COLL_PRI_PER added up) ÷ NPL COLLECT Y2D PLAN-BP (the yearly plan in the Monthly Plan) — as in the Meeting Report. Not \"Left NPL\", which is a balance, not cash. Officers (Own): the officer plan." },
+  "creditreport.rec.tip.target": { km: "ប្រាក់ដើមប្រមូលបានពីគណនី NPL (NPL Collect YTD — COLL_PRI_PER ប្រចាំខែបូកបញ្ចូលគ្នា) ÷ NPL COLLECT Y2D PLAN-BP (ផែនការប្រចាំឆ្នាំ ក្នុងផែនការប្រចាំខែ) — ដូច Meeting Report។ មិនមែន \"ចេញពី NPL\" ទេ ព្រោះវាជាសមតុល្យ មិនមែនប្រាក់ប្រមូល។ មន្ត្រី (Own)៖ ផែនការមន្ត្រី។", en: "Principal collected on NPL loans (NPL Collect YTD — monthly COLL_PRI_PER added up) ÷ NPL COLLECT Y2D PLAN-BP (the yearly plan in the Monthly Plan) — as in the Meeting Report. Not \"Left NPL\", which is a balance, not cash. Officers (Own): the officer plan." },
   "creditreport.rec.openLoans": { km: "មើលគណនីក្នុងចលនា NPL", en: "See the loans in NPL Movement" },
   "creditreport.rec.rowHint": { km: "ចុចលើជួរ ដើម្បីមើលគណនីរបស់វាក្នុងផ្ទាំងចលនា NPL។", en: "Tap a row to see its loans in NPL Movement." },
   "creditreport.ci.navPrediction": { km: "ទស្សន៍ទាយហានិភ័យអតិថិជន", en: "Customer Prediction" },
@@ -1497,7 +1497,7 @@ CMI18n.register({
   "creditreport.mr.exportPdf": { km: "ទាញយក PDF", en: "Export PDF" },
   "creditreport.mr.exportWord": { km: "ទាញយក Word", en: "Export Word" },
   "creditreport.mr.k.woCollected": { km: "ប្រមូល WO បាន", en: "WO Collected" },
-  "creditreport.mr.k.nplCollected": { km: "ប្រមូល NPL បាន", en: "NPL Collected" },
+  "creditreport.mr.k.nplCollected": { km: "NPL Collect YTD", en: "NPL Collect YTD" },
   "creditreport.mr.ofPlan": { km: "{pct} នៃផែនការ", en: "{pct} of plan" },
   "creditreport.mr.noTarget": { km: "គ្មានផែនការ", en: "No plan" },
   "creditreport.mr.ytd": { km: "ពីដើមឆ្នាំដល់ថ្ងៃនេះ", en: "Year to date" },
@@ -1505,7 +1505,7 @@ CMI18n.register({
   "creditreport.mr.nplCollectedSub": { km: "ពីដើមឆ្នាំ · {n} គណនីចេញពី NPL", en: "Year to date · {n} loans left NPL" },
   "creditreport.mr.nplCollectedSince": { km: "ពី {date} (ថ្ងៃដំបូងដែលមានទិន្នន័យ NPL) · {n} គណនីចេញពី NPL", en: "Since {date} (first day of NPL history) · {n} loans left NPL" },
   "creditreport.mr.nplNoHistory": { km: "មិនទាន់មានប្រវត្តិ NPL គ្រប់គ្រាន់", en: "Not enough NPL history yet" },
-  // NPL Collected as HQ counts it (NBC Overdue COLL_PRI_END / COLL_*_PER)
+  // NPL Collect YTD as HQ counts it (NBC Overdue COLL_*_PER, monthly)
   "creditreport.mr.thisMonth": { km: "ខែនេះ (PRN+INT)", en: "This month (PRN+INT)" },
   "creditreport.npl.collectTitle": { km: "ប្រាក់ប្រមូលបានពីគណនី NPL", en: "Cash collected on NPL" },
   "creditreport.npl.collectNote": { km: "Recovered NPL = សមតុល្យនៃគណនីដែលចេញពី NPL ក្នុងគ្រានេះ។ ប្រាក់ប្រមូលបាន = ប្រាក់ដែលបានប្រមូលពិតៗ (COLL_*_PER ពី NBC Overdue) ពីគណនី NPL ទាំងអស់ ដែលភាគច្រើននៅតែជា NPL — ដូច្នេះលេខទាំងពីរមិនស្មើគ្នាទេ។", en: "Recovered NPL = the balance of loans that left NPL in the period. Cash collected = money actually collected (NBC Overdue COLL_*_PER) on all NPL loans, most of which are still NPL — so the two figures differ." },

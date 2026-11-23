@@ -84,7 +84,7 @@ function recCard(label, value, sub, tone, tipKey) {
     </article>`;
 }
 
-// Target = cash collected on NPL (NPL Collected, principal, since the
+// Target = cash collected on NPL (NPL Collect YTD, principal, since the
 // first kept month) ÷ PLAN-BP (yearly) — the same as the Meeting Report /
 // Portfolio Intelligence; "left NPL" is a balance, not collected cash.
 function recSinceText(since) {
