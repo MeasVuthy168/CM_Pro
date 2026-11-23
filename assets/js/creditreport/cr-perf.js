@@ -124,7 +124,9 @@ window.CRPerf = (() => {
                 const cls = achCls(m.ach, mt.disb);
                 last = num(m.ach) === null ? "<td>—</td>" : `<td class="cp-${cls}">${Math.round(m.ach * 100)}%</td>`;
             }
-            return `<tr><td>${esc(mt.label)}</td><td>${v(m.plan, mt)}</td><td class="cp-now">${v(m.actual, mt)}</td>${last}</tr>`;
+            // counts: #LD / #CIF of the figure (NPL Collect YTD).
+            const sub = m.counts ? `<div class="cp-cnt">${fmtNum(m.counts.ld)} LD · ${fmtNum(m.counts.cif)} CIF</div>` : "";
+            return `<tr><td>${esc(mt.label)}${sub}</td><td>${v(m.plan, mt)}</td><td class="cp-now">${v(m.actual, mt)}</td>${last}</tr>`;
         }).join("");
         return `<table class="cp-table"><thead><tr><th></th><th>${esc(t("creditreport.plan.plan"))}</th><th class="cp-now">${esc(t("creditreport.plan.actual"))}</th><th>%</th></tr></thead><tbody>${body}</tbody></table>`;
     }

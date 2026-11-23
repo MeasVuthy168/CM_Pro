@@ -110,7 +110,9 @@ function bpCategories() {
         fields: [loan("nbcOverdue.total.count"), value("nbcOverdue.total.value"), par("nbcOverdue.total.parPct")],
         plan: [
             { key: "nbcOverduePct", label: t("creditreport.plan.nbcPct"), pctPts: true, lowerBetter: true, head: true },
-            { key: "nplPct", label: t("creditreport.plan.nplPct"), pctPts: true, lowerBetter: true }
+            { key: "nplPct", label: t("creditreport.plan.nplPct"), pctPts: true, lowerBetter: true },
+            // NPL Collect YTD vs the yearly NPL Recovery $, #LD / #CIF under it.
+            { key: "nplRecovery", label: `${t("creditreport.mr.k.nplCollected")} (${t("creditreport.plan.yearPlan")})`, money: true }
         ],
         clientLists: clientLists()
     },
