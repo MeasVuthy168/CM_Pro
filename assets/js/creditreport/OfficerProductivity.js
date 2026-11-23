@@ -174,6 +174,8 @@ function opCategories() {
             { key: "woCollected", label: `${t("creditreport.perf.woCollected")} (${t("creditreport.plan.yearPlan")})`, money: true, head: true },
             { key: "woCollectedPeriod", label: t("creditreport.plan.m.woCollectedPeriod"), money: true, actualOnly: true }
         ],
+        // Plan view: Balance WO too, under the plan rows.
+        planActual: t("creditreport.detail.woBalanceWO"),
         clientLists: [
             { section: "writeOff", label: t("creditreport.detail.own") },
             { section: "writeOffArea", label: t("creditreport.detail.area") }
