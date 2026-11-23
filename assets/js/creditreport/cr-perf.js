@@ -211,14 +211,17 @@ window.CRPerf = (() => {
 
         function body(cat) {
             const rows = o.rows(cat, lmRow());
-            const actual = () => actualTable(rows, cat.fields);
+            // actualTitle: a title over the card's own figures (Write Off:
+            // "Balance WO"), in every view.
+            const title = cat.actualTitle ? `<div class="cp-subhead">${esc(cat.actualTitle)}</div>` : "";
+            const actual = () => title + actualTable(rows, cat.fields);
             if (st.mode === "lastMonth") {
                 if (st.lm.state !== "done" && st.lm.state !== "error") return loading();
                 if (!lmRow()) return actual();
                 const main = { ...cat.fields.find(f => f.main), risk: cat.risk };
                 const others = cat.fields.filter(f => !f.main).map(f => ({ ...f, risk: cat.risk }));
                 const head = rows.find(r => r.head) || rows[rows.length - 1];
-                return lastMonthTable(rows, main, { lastLabel: CRLastMonth.shortDate(st.lm.info.date), nowLabel: CRLastMonth.shortDate(o.toDate()) })
+                return title + lastMonthTable(rows, main, { lastLabel: CRLastMonth.shortDate(st.lm.info.date), nowLabel: CRLastMonth.shortDate(o.toDate()) })
                     + (others.length ? `<div class="cp-foot">${lastMonthFoot(head, others)}</div>` : "");
             }
             if (st.mode === "plan") {
@@ -238,9 +241,9 @@ window.CRPerf = (() => {
                 const top = head && num(head.m.ach) !== null
                     ? `<div class="cp-ach cp-${cls}">${bar(head.m.ach, cls)}<span>${Math.round(head.m.ach * 100)}%</span></div>`
                     : "";
-                // planActual: the card's own figures, titled, under the plan
-                // (Write Off: Balance WO — approved 24/11/2026).
-                const extra = cat.planActual ? `<div class="cp-subhead">${esc(cat.planActual)}</div>${actual()}` : "";
+                // planActual: the card's own figures (titled) under the plan
+                // too (Write Off: Balance WO — approved 24/11/2026).
+                const extra = cat.planActual ? actual() : "";
                 return top + planTable(metrics) + extra;
             }
             return actual();
