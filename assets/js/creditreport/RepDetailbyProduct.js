@@ -132,6 +132,14 @@ function crSections() {
                         { key: "writeOff.woCollected.int", label: t("creditreport.detail.colInt"), money: true },
                         { key: "writeOff.woCollected.prn", label: t("creditreport.detail.colPrn"), money: true }
                     ]
+                },
+                {
+                    label: t("creditreport.detail.woCollectedPeriod"),
+                    fields: [
+                        { key: "writeOff.woCollectedPeriod.ld", label: "#LD" },
+                        { key: "writeOff.woCollectedPeriod.cif", label: "#CIF" },
+                        { key: "writeOff.woCollectedPeriod.value", label: t("creditreport.detail.colValue"), money: true }
+                    ]
                 }
             ]
         }
