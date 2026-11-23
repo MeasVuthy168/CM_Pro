@@ -222,9 +222,15 @@ window.CRPerf = (() => {
             if (st.mode === "plan") {
                 if (st.plan.state !== "done" && st.plan.state !== "error") return loading();
                 if (!cat.plan) return `<div class="cp-empty">${esc(t("creditreport.perf.noPlanSection"))}</div>${actual()}`;
-                const metrics = cat.plan.map(p => ({ ...p, m: planMetric(p.key) })).filter(p => p.m);
+                // actualOnly: a figure with no plan of its own (WO Collected
+                // This Period) — shown beside the planned ones, plan "—".
+                const actualOf = key => {
+                    const m = planOk() && st.plan.metrics[key];
+                    return m && num(m.actual) !== null ? m : null;
+                };
+                const metrics = cat.plan.map(p => ({ ...p, m: planMetric(p.key) || (p.actualOnly ? actualOf(p.key) : null) })).filter(p => p.m);
                 // No plan at all: the note at the top says so once.
-                if (!metrics.length) return planOk() ? `<div class="cp-empty">${esc(t("creditreport.plan.noPlan"))}</div>${actual()}` : actual();
+                if (!metrics.some(p => !p.actualOnly)) return planOk() ? `<div class="cp-empty">${esc(t("creditreport.plan.noPlan"))}</div>${actual()}` : actual();
                 const head = metrics.find(p => p.head && !p.lowerBetter);
                 const cls = head && achCls(head.m.ach, head.disb);
                 const top = head && num(head.m.ach) !== null
