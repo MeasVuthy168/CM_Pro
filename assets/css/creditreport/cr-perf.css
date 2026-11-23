@@ -133,3 +133,4 @@
 }
 .cp-foot b{ color:var(--cr-text); }
 .cp-empty{ padding:10px 14px; font-size:11.5px; color:var(--cr-text-muted); }
+.cp-subhead{ padding:12px 14px 6px; font-size:12px; font-weight:600; color:var(--cr-text); border-top:1px solid var(--cr-border); }

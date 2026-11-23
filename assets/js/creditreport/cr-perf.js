@@ -238,7 +238,10 @@ window.CRPerf = (() => {
                 const top = head && num(head.m.ach) !== null
                     ? `<div class="cp-ach cp-${cls}">${bar(head.m.ach, cls)}<span>${Math.round(head.m.ach * 100)}%</span></div>`
                     : "";
-                return top + planTable(metrics);
+                // planActual: the card's own figures, titled, under the plan
+                // (Write Off: Balance WO — approved 24/11/2026).
+                const extra = cat.planActual ? `<div class="cp-subhead">${esc(cat.planActual)}</div>${actual()}` : "";
+                return top + planTable(metrics) + extra;
             }
             return actual();
         }
