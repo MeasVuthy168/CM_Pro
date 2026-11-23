@@ -140,10 +140,10 @@
         return `<thead><tr><th>${esc(t("creditreport.plan.metric"))}</th><th class="num">${esc(t("creditreport.plan.actual"))}</th>${lm ? `<th class="num">${esc(t(opts.lmLabel || "creditreport.plan.lastMonth"))}</th>` : ""}<th class="num">${esc(t("creditreport.plan.plan"))}</th><th class="num">${esc(t("creditreport.plan.ach"))}</th></tr></thead><tbody>${rows}</tbody>`;
     }
 
-    // NPL Collected as HQ counts it (approved 22/11/2026), for a table()
-    // above: the principal collected this year (NBC Overdue COLL_PRI_END —
-    // HQ "NPL COLLECT Y2D_PRN") against the NPL Recovery plan taken as a
-    // yearly target, this period's PRN / INT (COLL_*_PER) underneath.
+    // NPL Collect YTD as HQ counts it, for a table() above: the principal
+    // collected on the NPL loans, each month's NBC Overdue COLL_PRI_PER
+    // added up (HQ "NPL COLLECT Y2D_PRN"; since 01/11/2026) against the
+    // yearly PLAN-BP; this month's PRN / INT (COLL_*_PER) in its own row.
     // c: /api/credit-intelligence/recovery?ytd=1's `collected`.
     function nplCollectedOf(c) {
         return c && c.available ? { actual: c.ytd.prn, plan: c.target || null, period: c.period || {}, ytd: c.ytd || {} } : null;
@@ -174,7 +174,7 @@
         return `<tr><td>${esc(t("creditreport.mr.k.nplPeriod"))}${sub ? `<div class="ci-plan-sub">${esc(sub)}</div>` : ""}</td><td class="num"><b>${p ? money(p.prnInt || 0) : "—"}</b></td>${withLm ? `<td class="num">—</td>` : ""}<td class="num">—</td><td class="num ci-plan-ach"><span class="ci-plan-na">—</span></td></tr>`;
     }
     // Adds both rows to a table() string, in the reports' order (approved
-    // 23/11/2026): NPL % → NPL Collected → NPL COLLECT THIS PERIOD_PRN-INT
+    // 23/11/2026): NPL % → NPL Collect YTD → NPL COLLECT THIS PERIOD_PRN-INT
     // → WO collected → WO YTD $. Right before WO collected (or the first WO
     // row), else after NPL %, else at the end.
     function withNplCollected(html, c, withLm, emptyKey) {

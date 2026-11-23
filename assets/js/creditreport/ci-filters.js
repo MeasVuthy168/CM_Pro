@@ -639,7 +639,7 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
         box.appendChild(d);
     }
 
-    // /recovery?ytd=1 (NPL Collected: year to date + this month) with the
+    // /recovery?ytd=1 (NPL Collect YTD: year to date + this month) with the
     // page's filters. Fetched on its own, not via get(), so it never
     // cancels (or is cancelled by) the page's own loads. liveDay: the live
     // data's day — an end day on or after it means the live NBC Overdue

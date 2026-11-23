@@ -91,7 +91,7 @@ async function piRenderPlan(d) {
         nplPct: k.nplPct && k.nplPct.prev !== null && k.nplPct.prev !== undefined ? k.nplPct.prev * 100 : null
     } : null;
     // The rows this page always showed (CIPlan now knows more metrics).
-    // + NPL Collected, as HQ counts it (same row as the Meeting Report's 2.1).
+    // + NPL Collect YTD, as HQ counts it (same row as the Meeting Report's 2.1).
     box.innerHTML = CIPlan.withNplCollected(
         CIPlan.table(p, { lastMonth: lm, lmLabel: d.comparison && d.comparison.mode === "month" ? "creditreport.plan.lastMonth" : "creditreport.mr.before", keys: ["osAmount", "osCount", "osClients", "disbAmount", "disbCount", "nbcOverduePct", "nplPct", "woCollected"] }),
         rec && rec.collected, !!lm);

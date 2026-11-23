@@ -146,9 +146,9 @@ async function mrLoad() {
             () => CIPlan.officers(),
             () => CIPlan.branchRows(),
             () => mrTeamSplit(branch),
-            // NPL Collected = HQ's "NPL COLLECT Y2D_PRN" (COLL_PRI_END of the
-            // NPL loans, ?ytd=1's "collected"), against the NPL Recovery plan
-            // as a yearly target — like WO Collected.
+            // NPL Collect YTD = HQ's "NPL COLLECT Y2D_PRN": the NPL loans'
+            // monthly COLL_PRI_PER added up (?ytd=1's "collected"), against
+            // the yearly PLAN-BP — like WO Collected.
             () => mrGet("recovery", { branch, dim: "branch", ytd: "1" }),
             () => mrGet("recovery", { branch, dim: "officer", ytd: "1" })
         ];
@@ -246,15 +246,14 @@ function mrNumberSections(saved) {
     });
 }
 
-// ---------- WO Collected / NPL Collected ----------
+// ---------- WO Collected / NPL Collect YTD ----------
 // WO Collected: write-offs collected (interest + principal), year to date,
-// against the yearly plan (the branch plan's woCollected). NPL Collected
-// (approved 22/11/2026): as HQ's report counts it — the principal
-// collected this year on the NPL loans (NBC Overdue COLL_PRI_END,
-// "NPL COLLECT Y2D_PRN"), against the NPL Recovery plan taken as a yearly
-// target; this period's principal / interest (COLL_PRI/INT_PER) beside it.
-// A saved day uses that day's saved NPL list; days saved before the
-// columns were kept show "—".
+// against the yearly plan (the branch plan's woCollected). NPL Collect YTD:
+// as HQ's report counts it — the principal collected on the NPL loans,
+// each month's NBC Overdue COLL_PRI_PER added up (HQ "NPL COLLECT
+// Y2D_PRN"; counted since 01/11/2026), against the yearly PLAN-BP; this
+// month's PRN / INT (HQ "THIS PERIOD_PRN-INT") beside it. A saved day uses
+// that day's saved list; days saved before 23/11/2026 show "—".
 function mrNplCollected(d) {
     return CIPlan.nplCollectedOf(d.recB && d.recB.collected);
 }
@@ -269,7 +268,7 @@ function mrCollectedTiles(d, tile) {
     const wo = d.plan && d.plan.metrics ? d.plan.metrics.woCollected : null;
     const npl = mrNplCollected(d);
     const tone = (a, p) => (!p ? "mr-flat" : a / p >= 1 ? "mr-good" : a / p >= 0.9 ? "mr-flat" : "mr-bad");
-    // Order: NPL Collected (with this month's PRN-INT), then WO collected.
+    // Order: NPL Collect YTD (with this month's PRN-INT), then WO collected.
     return [
         tile(t("creditreport.mr.k.nplCollected"),
             npl ? CI.money(npl.actual) : "—",
@@ -281,8 +280,8 @@ function mrCollectedTiles(d, tile) {
             CI.esc(t("creditreport.mr.ytd")))
     ];
 }
-// Per row (officer / branch): WO Collected (actual, yearly plan) and NPL
-// Collected (COLL_PRI_END year to date, the yearly target).
+// Per row (officer / branch): NPL Collect YTD (actual, yearly target, this
+// month) and WO Collected (actual, yearly plan).
 function mrRecoveryByKey(rec) {
     const c = rec && rec.collected;
     return c && c.available ? new Map((c.byDim || []).map(r => [String(r.key), r])) : null;
@@ -295,7 +294,7 @@ function mrCollectedCells(wo, rec, have) {
     const actual = rec ? CI.money(rec.ytd.prn) : have ? CI.money(0) : "—";
     // + this month's PRN+INT (HQ "NPL COLLECT THIS PERIOD_PRN-INT"), #LD under it.
     const per = rec ? `${CI.money(rec.period.prnInt || 0)}<div class="mr-sub">${CI.num(rec.period.loans || 0)} LD · ${CI.num(rec.period.cifs || 0)} CIF</div>` : have ? CI.money(0) : "—";
-    // NPL Collected (actual, target, this month) first, then WO collected.
+    // NPL Collect YTD (actual, target, this month) first, then WO collected.
     return `<td class="num">${actual}</td><td class="num">${rec && rec.target ? CI.money(rec.target) : "—"}</td><td class="num">${per}</td>` +
         `<td class="num">${F("amount", w.actual)}</td><td class="num">${F("amount", w.plan)}</td>`;
 }
@@ -376,7 +375,7 @@ function mrRenderProgress(d) {
         nplPct: k.nplPct.prev === null || k.nplPct.prev === undefined ? null : k.nplPct.prev * 100
     } : null;
     document.getElementById("mrProgress").innerHTML = d.asOf && !(p && p.metrics) ? mrSavedProgress(d) : p && p.metrics
-        // + NPL Collected / THIS PERIOD_PRN-INT, between NPL % and WO collected.
+        // + NPL Collect YTD / THIS PERIOD_PRN-INT, between NPL % and WO collected.
         ? CIPlan.withNplCollected(
             CIPlan.table(p, { lastMonth: lm, lmLabel: d.compare === "month" ? "creditreport.plan.lastMonth" : "creditreport.mr.before", keys: ["osAmount", "osCount", "osClients", "osKhr", "osSmall", "disbAmount", "disbCount", "losCount", "nbcOverduePct", "nplPct", "woCollected", "woYtd"] }),
             d.recB && d.recB.collected, !!lm, d.asOf ? "creditreport.mr.nplNotKept" : "creditreport.mr.nplNoData")
