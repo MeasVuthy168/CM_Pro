@@ -21,6 +21,68 @@
 //                              side in list order; none picked = "all"
 // ========================================
 
+// ========================================
+// NBC Overdue — Non Performing Loan items (approved 23/11/2026)
+// Loan Class "Non Performing Loan" shows up to three groups, picked in
+// the sub-filter #crNplItems (shown only while that class is picked;
+// All = the three):
+//   nplPct     NPL % — ceiling (the class's own group)
+//   nplYtd     NPL Collect YTD          ({prefix}.ytd.value)
+//   nplPeriod  NPL Collect This Period  ({prefix}.period.ld/cif/value)
+// Days saved before the columns existed carry no figures: "—".
+// ========================================
+const CR_NPL_ITEMS = ["nplPct", "nplYtd", "nplPeriod"];
+
+function crNplItems() {
+    if (!crPicks("crNbcClass").includes("nonPerformingLoan")) return CR_NPL_ITEMS;
+    const picks = crPicks("crNplItems").filter(v => CR_NPL_ITEMS.includes(v));
+    return picks.length ? picks : CR_NPL_ITEMS;
+}
+
+// nplGroup: the NPL % group; prefix: the rows' field (nplCollect /
+// nplCollectOwn / nplCollectArea); labelOf: the group label from an i18n
+// key (by Officer adds _Own / _Area).
+function crNplGroups(nplGroup, prefix, labelOf = k => t(k)) {
+    const items = crNplItems();
+    const groups = {
+        nplPct: nplGroup,
+        nplYtd: {
+            label: labelOf("creditreport.mr.k.nplCollected"),
+            fields: [{ key: `${prefix}.ytd.value`, label: t("creditreport.detail.colValue"), money: true }]
+        },
+        nplPeriod: {
+            label: labelOf("creditreport.mr.k.nplPeriod"),
+            fields: [
+                { key: `${prefix}.period.ld`, label: "#LD" },
+                { key: `${prefix}.period.cif`, label: "#CIF" },
+                { key: `${prefix}.period.value`, label: t("creditreport.detail.colValue"), money: true }
+            ]
+        }
+    };
+    return CR_NPL_ITEMS.filter(i => items.includes(i)).map(i => groups[i]);
+}
+
+// The NBC section's groups for the picked classes (All = every class),
+// the NPL class expanded into its picked items.
+function crNbcGroups(section, prefix, labelOf) {
+    const picked = crPicks("crNbcClass").map(v => CR_NBC_CLASS_INDEX[v]).filter(i => i !== undefined);
+    const idxs = picked.length ? picked.sort((a, b) => a - b) : section.groups.map((_, i) => i);
+    return {
+        groups: idxs.flatMap(i => i === CR_NBC_CLASS_INDEX.nonPerformingLoan
+            ? crNplGroups(section.groups[i], prefix, labelOf)
+            : [section.groups[i]])
+    };
+}
+
+// Show the sub-filter only while the Loan Class row is on screen with
+// "Non Performing Loan" picked.
+function crNplSyncRow() {
+    const row = document.getElementById("crNplItemsRow");
+    const cls = document.getElementById("crNbcClassRow");
+    if (!row) return;
+    row.style.display = cls && cls.style.display !== "none" && crPicks("crNbcClass").includes("nonPerformingLoan") ? "" : "none";
+}
+
 function crMultiEnhance(ids) {
     if (!window.MultiSelect) return;
     ids.forEach(id => {

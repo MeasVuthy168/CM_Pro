@@ -339,9 +339,7 @@ function crSectionFor(sectionKey) {
 
     if (sectionKey === "nbcOverdue") {
         // Several classes picked: one group each, in the order listed.
-        const idxs = crPicks("crNbcClass").map(v => CR_NBC_CLASS_INDEX[v]).filter(i => i !== undefined);
-        if (!idxs.length) return section;
-        return { groups: idxs.sort((a, b) => a - b).map(i => section.groups[i]) };
+        return crNbcGroups(section, "nplCollect");
     }
 
     // Current mode already narrows parT24 server-side (see
@@ -771,6 +769,7 @@ function crUpdateClassVisibility() {
     document.getElementById("crClassRow").style.display = isT24 ? "" : "none";
     document.getElementById("crProductRow").style.display = (isT24 && !isHistory) ? "" : "none";
     document.getElementById("crNbcClassRow").style.display = isNbc ? "" : "none";
+    crNplSyncRow();
     document.getElementById("crNbcProductRow").style.display = (isNbc && !isHistory) ? "" : "none";
 }
 
@@ -888,6 +887,8 @@ function crReadStateFromUrl() {
     crRestorePicks("crProduct", p.getAll("t24Product"));
 
     crRestorePicks("crNbcClass", p.getAll("nbcClass"));
+    crRestorePicks("crNplItems", p.getAll("nplItems"));
+    crNplSyncRow();
 
     crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
 
@@ -901,6 +902,7 @@ function crSyncStateToUrl() {
     crAddPicks(p, "t24Class", "crClass");
     crAddPicks(p, "t24Product", "crProduct");
     crAddPicks(p, "nbcClass", "crNbcClass");
+    if (crPicks("crNbcClass").includes("nonPerformingLoan")) crAddPicks(p, "nplItems", "crNplItems");
     crAddPicks(p, "nbcProduct", "crNbcProduct");
     if (document.getElementById("crCompare").value !== "actual") p.set("compare", document.getElementById("crCompare").value);
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
@@ -1001,6 +1003,13 @@ document.getElementById("crProduct").addEventListener("change", crRunReport);
 // (see crActiveSection()) — local re-render, no refetch, same as
 // switching "Showing" itself.
 document.getElementById("crNbcClass").addEventListener("change", () => {
+    crNplSyncRow();
+    crUpdateChartButtonVisibility();
+    if (crMode === "history") crRenderHistory(); else crRenderSection();
+    crSyncStateToUrl();
+});
+// The NPL items: a local re-render, like the Loan Class.
+document.getElementById("crNplItems").addEventListener("change", () => {
     crUpdateChartButtonVisibility();
     if (crMode === "history") crRenderHistory(); else crRenderSection();
     crSyncStateToUrl();
@@ -1417,7 +1426,7 @@ document.getElementById("crChartOverlay").addEventListener("click", (e) => {
 // INIT
 // ========================================
 // Every filter picks several values, Showing (crSection) included.
-crMultiEnhance(["crSection", "crClass", "crProduct", "crNbcClass", "crNbcProduct"]);
+crMultiEnhance(["crSection", "crClass", "crProduct", "crNbcClass", "crNplItems", "crNbcProduct"]);
 crReadStateFromUrl();
 crUpdateClassVisibility();
 crRunReport();

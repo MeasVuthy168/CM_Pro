@@ -264,6 +264,9 @@ function crCompareSection(sectionKey, section) {
                 ...g,
                 fields: crPlanFields(metric, { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct") })
             });
+        } else if (first.startsWith("nplCollect.ytd.")) {
+            // NPL Collect YTD: the year's NPL principal collected vs NPL Recovery $ (yearly).
+            groups.push({ ...g, fields: crPlanFields("nplRecovery", { money: true, withActual: true, actualLabel: t("creditreport.plan.thisYear"), planLabel: t("creditreport.plan.yearPlan") }) });
         } else if (first.startsWith("writeOff.wo.")) {
             // WO YTD $: a yearly ceiling — the year's write-offs (principal) vs that plan.
             groups.push({ ...g, fields: crPlanFields("woYtd", { money: true, withActual: true, lowerBetter: true, actualLabel: t("creditreport.plan.thisYear"), planLabel: t("creditreport.plan.yearPlan") }) });
@@ -445,6 +448,8 @@ function crReadStateFromUrl() {
     crRestorePicks("crProduct", p.getAll("t24Product"));
 
     crRestorePicks("crNbcClass", p.getAll("nbcClass"));
+    crRestorePicks("crNplItems", p.getAll("nplItems"));
+    crNplSyncRow();
 
     crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
 
@@ -459,6 +464,7 @@ function crSyncStateToUrl() {
     crAddPicks(p, "t24Class", "crClass");
     crAddPicks(p, "t24Product", "crProduct");
     crAddPicks(p, "nbcClass", "crNbcClass");
+    if (crPicks("crNbcClass").includes("nonPerformingLoan")) crAddPicks(p, "nplItems", "crNplItems");
     crAddPicks(p, "nbcProduct", "crNbcProduct");
     const compare = document.getElementById("crCompare").value;
     if (compare !== "actual") p.set("compare", compare);
@@ -791,9 +797,7 @@ function crSectionFor(sectionKey) {
 
     if (sectionKey === "nbcOverdue") {
         // Several classes picked: one group each, in the order listed.
-        const idxs = crPicks("crNbcClass").map(v => CR_NBC_CLASS_INDEX[v]).filter(i => i !== undefined);
-        if (!idxs.length) return section;
-        return { groups: idxs.sort((a, b) => a - b).map(i => section.groups[i]) };
+        return crNbcGroups(section, "nplCollect");
     }
 
     // Current mode already narrows parT24 server-side (see
@@ -1286,6 +1290,13 @@ document.getElementById("crProduct").addEventListener("change", crRunReport);
 // (see crActiveSection()) — local re-render, no refetch, same as
 // switching "Showing" itself.
 document.getElementById("crNbcClass").addEventListener("change", () => {
+    crNplSyncRow();
+    crUpdateChartButtonVisibility();
+    if (crMode === "history") crRenderHistory(); else crRenderSummary();
+    crSyncStateToUrl();
+});
+// The NPL items: a local re-render, like the Loan Class.
+document.getElementById("crNplItems").addEventListener("change", () => {
     crUpdateChartButtonVisibility();
     if (crMode === "history") crRenderHistory(); else crRenderSummary();
     crSyncStateToUrl();
@@ -1390,6 +1401,7 @@ function crUpdateClassVisibility() {
     document.getElementById("crClassRow").style.display = isT24 ? "" : "none";
     document.getElementById("crProductRow").style.display = (isT24 && !isHistory) ? "" : "none";
     document.getElementById("crNbcClassRow").style.display = isNbc ? "" : "none";
+    crNplSyncRow();
     document.getElementById("crNbcProductRow").style.display = (isNbc && !isHistory) ? "" : "none";
 }
 
@@ -1870,7 +1882,7 @@ if (crIsAdmin) {
 // INIT
 // ========================================
 // Every filter picks several values, Showing (crSection) included.
-crMultiEnhance(["crSection", "crHistBranch", "crHistTeam", "crClass", "crProduct", "crNbcClass", "crNbcProduct"]);
+crMultiEnhance(["crSection", "crHistBranch", "crHistTeam", "crClass", "crProduct", "crNbcClass", "crNplItems", "crNbcProduct"]);
 crReadStateFromUrl();
 crUpdateClassVisibility();
 crRunReport();

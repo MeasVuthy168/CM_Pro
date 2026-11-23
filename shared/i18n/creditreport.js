@@ -318,6 +318,8 @@ CMI18n.register({
   "creditreport.detail.classMinorDefault": { km: "ធម្មតា​", en: "Minor Default" },
   "creditreport.detail.classMajorDefault": { km: "Major Default", en: "Major Default" },
   "creditreport.detail.classNonPerformingLoan": { km: "ឥណទានមិនដំណើរការ", en: "Non Performing Loan" },
+  "creditreport.detail.nplItems": { km: "ធាតុ NPL", en: "NPL Items" },
+  "creditreport.detail.nplItemPct": { km: "NPL % — ពិដាន", en: "NPL % — ceiling" },
   "creditreport.detail.classTotalNbcOverdue": { km: "ឥណទាន​យឺតយ៉ាវ​សរុប NBC", en: "Total NBC Overdue" },
 
   "creditreport.detail.productType": { km: "ប្រភេទផលិតផល", en: "Product Type" },

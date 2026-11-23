@@ -600,6 +600,8 @@ function crCompareSection(section) {
         } else if (first.startsWith("nbcOverdue.totalOwn.") || first.startsWith("nbcOverdue.nonPerformingLoan.")) {
             const metric = first.startsWith("nbcOverdue.totalOwn.") ? "nbcOverduePct" : "nplPct";
             groups.push({ ...g, fields: crPlanFields(metric, { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct") }) });
+        } else if (first.startsWith("nplCollectOwn.ytd.")) {
+            groups.push({ ...g, fields: crPlanFields("nplRecovery", { money: true, withActual: true, actualLabel: t("creditreport.plan.thisYear"), planLabel: t("creditreport.plan.yearPlan") }) });
         } else if (first.startsWith("writeOffOwn.woCollected.")) {
             groups.push({ ...g, fields: crPlanFields("woCollected", { money: true, withActual: true, actualLabel: t("creditreport.plan.thisYear"), planLabel: t("creditreport.plan.yearPlan") }) });
         }
@@ -690,9 +692,9 @@ function crSectionFor(sectionKey) {
 
     // Several classes picked: one group each, in the order listed.
     if (sectionKey === "nbcOverdue" || sectionKey === "nbcOverdueArea") {
-        const idxs = crPicks("crNbcClass").map(v => CR_NBC_CLASS_INDEX[v]).filter(i => i !== undefined);
-        if (!idxs.length) return section;
-        return { groups: idxs.sort((a, b) => a - b).map(i => section.groups[i]) };
+        return sectionKey === "nbcOverdue"
+            ? crNbcGroups(section, "nplCollectOwn", crOwnLabel)
+            : crNbcGroups(section, "nplCollectArea", crAreaLabel);
     }
 
     // Current mode already narrows parT24/parT24Area server-side (see
@@ -1131,6 +1133,7 @@ function crUpdateClassVisibility() {
     document.getElementById("crClassRow").style.display = isT24 ? "" : "none";
     document.getElementById("crProductRow").style.display = (isT24 && !isHistory) ? "" : "none";
     document.getElementById("crNbcClassRow").style.display = isNbc ? "" : "none";
+    crNplSyncRow();
     document.getElementById("crNbcProductRow").style.display = (isNbc && !isHistory) ? "" : "none";
 }
 
@@ -1359,6 +1362,8 @@ function crReadStateFromUrl() {
     crRestorePicks("crClass", p.getAll("t24Class"));
     crRestorePicks("crProduct", p.getAll("t24Product"));
     crRestorePicks("crNbcClass", p.getAll("nbcClass"));
+    crRestorePicks("crNplItems", p.getAll("nplItems"));
+    crNplSyncRow();
     crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
 
     if (p.get("compare") === "plan" || p.get("compare") === "lastMonth" || CRLastMonth.isSavedCompare(p.get("compare"))) document.getElementById("crCompare").value = p.get("compare");
@@ -1373,6 +1378,7 @@ function crSyncStateToUrl() {
     crAddPicks(p, "t24Class", "crClass");
     crAddPicks(p, "t24Product", "crProduct");
     crAddPicks(p, "nbcClass", "crNbcClass");
+    if (crPicks("crNbcClass").includes("nonPerformingLoan")) crAddPicks(p, "nplItems", "crNplItems");
     crAddPicks(p, "nbcProduct", "crNbcProduct");
     if (document.getElementById("crCompare").value !== "actual") p.set("compare", document.getElementById("crCompare").value);
 
@@ -1504,6 +1510,13 @@ document.getElementById("crProduct").addEventListener("change", crRunReport);
 // (see crActiveSection()) — local re-render, no refetch, same as
 // switching "Showing" itself.
 document.getElementById("crNbcClass").addEventListener("change", () => {
+    crNplSyncRow();
+    crUpdateChartButtonVisibility();
+    if (crMode === "history") crRenderHistory(); else crRenderSection();
+    crSyncStateToUrl();
+});
+// The NPL items: a local re-render, like the Loan Class.
+document.getElementById("crNplItems").addEventListener("change", () => {
     crUpdateChartButtonVisibility();
     if (crMode === "history") crRenderHistory(); else crRenderSection();
     crSyncStateToUrl();
@@ -1932,7 +1945,7 @@ document.getElementById("crChartOverlay").addEventListener("click", (e) => {
 // INIT
 // ========================================
 // Every filter picks several values, Showing (crSection) included.
-crMultiEnhance(["crSection", "crBranch", "crTeam", "crClass", "crProduct", "crNbcClass", "crNbcProduct"]);
+crMultiEnhance(["crSection", "crBranch", "crTeam", "crClass", "crProduct", "crNbcClass", "crNplItems", "crNbcProduct"]);
 crReadStateFromUrl();
 crUpdateClassVisibility();
 crRunReport();
