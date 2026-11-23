@@ -295,7 +295,9 @@ function mrCollectedCells(wo, rec, have, woPer) {
     const w = wo || {};
     // have: the day carries collections at all — a row with no collection
     // collected nothing ($0); a day without the columns shows "—".
-    const actual = rec ? CI.money(rec.ytd.prn) : have ? CI.money(0) : "—";
+    // #LD / #CIF under it (since 24/11/2026; older days have none).
+    const ytdSub = rec && rec.ytd.loans !== undefined ? `<div class="mr-sub">${CI.num(rec.ytd.loans)} LD · ${CI.num(rec.ytd.cifs || 0)} CIF</div>` : "";
+    const actual = rec ? `${CI.money(rec.ytd.prn)}${ytdSub}` : have ? CI.money(0) : "—";
     // + this month's PRN+INT (HQ "NPL COLLECT THIS PERIOD_PRN-INT"), #LD under it.
     const per = rec ? `${CI.money(rec.period.prnInt || 0)}<div class="mr-sub">${CI.num(rec.period.loans || 0)} LD · ${CI.num(rec.period.cifs || 0)} CIF</div>` : have ? CI.money(0) : "—";
     // NPL Collect YTD (actual, target, this month) first, then WO collected.

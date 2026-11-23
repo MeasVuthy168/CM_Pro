@@ -165,7 +165,9 @@
             ? t("creditreport.mr.nplY2dSince", { date: `01/${mm(y.since)}` })
             : t("creditreport.mr.nplY2dNoBase");
         const missing = (y.missing || []).length ? ` · ${t("creditreport.mr.nplY2dMissing", { months: y.missing.map(mm).join(", ") })}` : "";
-        return `${how}${missing}`;
+        // #LD / #CIF of the year to date (since 24/11/2026; older days have none).
+        const counts = y.loans !== undefined ? `${num(y.loans)} LD · ${num(y.cifs || 0)} CIF · ` : "";
+        return `${counts}${how}${missing}`;
     }
     function nplCollectedRow(c, withLm, emptyKey) {
         const npl = nplCollectedOf(c);
