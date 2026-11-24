@@ -478,6 +478,10 @@ window.CRLastMonth = (() => {
             compareRow.after(cmpRow);
             const baseRow = row("crSavedBaseRow", "creditreport.saved.chooseData", "base");
             modeRow.after(baseRow);
+            // Comparison (and its Compare with date) right under Choose Data:
+            // the day shown, then what it is compared with (owner, 24/11/2026).
+            baseRow.after(compareRow);
+            compareRow.after(cmpRow);
             ui = { sel, compareRow, cmpRow, cmpInput: cmpRow.querySelector("input"), baseRow, baseInput: baseRow.querySelector("input"),
                 baseText: baseRow.querySelector(".cr-saved-text"), latestBtn: baseRow.querySelector("#crSavedLatest") };
 

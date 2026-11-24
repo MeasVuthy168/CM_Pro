@@ -151,6 +151,7 @@ CMI18n.register({
   "creditreport.detail.overdueGridMerge": { km: "ឥណទានយឺតយ៉ាវបញ្ចូលគ្នា ​NBC", en: "NBC Overdue Loan Grid Merge" },
   "creditreport.detail.arrearsPenalty": { km: "ឥណទានយឺតយ៉ាវមានប្រាក់ពិន័យ​ T24", en: "Payment in Arrears with Penalty" },
   "creditreport.detail.showDetails": { km: "ព័ត៌មានលម្អិត", en: "Details" },
+  "creditreport.detail.resetFilters": { km: "កំណត់តម្រងឡើងវិញ", en: "Reset filters" },
   "creditreport.detail.hideDetails": { km: "បិទ", en: "Hide" },
 
   "creditreport.detail.current": { km: "ចុងក្រោយ & ប្រៀបធៀប", en: "Latest & Compare" },
