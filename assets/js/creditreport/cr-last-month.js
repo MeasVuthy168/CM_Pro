@@ -466,11 +466,17 @@ window.CRLastMonth = (() => {
             sel.appendChild(opt);
             if (pendingCompare === SAVED) sel.value = SAVED;
             const today = phnomPenhToday();
+            // The page's own row / label / field classes (By Branch uses
+            // cr-section-*, the other reports cr-select-*), so the rows look
+            // like the page's Comparison row.
+            const rowCls = compareRow.className || "cr-section-row";
+            const labelCls = (compareRow.querySelector("label") || {}).className || "cr-section-label";
+            const fieldCls = sel.className || "cr-section-select";
             const row = (id, label, kind) => {
                 const r = document.createElement("div");
-                r.className = "cr-section-row cr-saved-row"; r.id = id; r.style.display = "none";
-                r.innerHTML = `<label class="cr-section-label" for="${id}Date">${t(label)}</label>
-                    <div class="cr-saved-pick"><input type="date" id="${id}Date" class="cr-section-select cr-saved-date" max="${today}">
+                r.className = `${rowCls} cr-saved-row`; r.id = id; r.style.display = "none";
+                r.innerHTML = `<label class="${labelCls}" for="${id}Date">${t(label)}</label>
+                    <div class="cr-saved-pick"><input type="date" id="${id}Date" class="${fieldCls} cr-saved-date" max="${today}">
                     ${kind === "cmp" ? `<div class="cr-saved-chips">${chips(kind)}</div>` : ""}${kind === "base" ? `<div class="cr-saved-chips"><button type="button" class="cr-saved-chip" id="crSavedLatest" hidden>${t("creditreport.saved.backLatest")}</button></div><div class="cr-saved-text" id="${id}Text"></div>` : ""}</div>`;
                 return r;
             };
