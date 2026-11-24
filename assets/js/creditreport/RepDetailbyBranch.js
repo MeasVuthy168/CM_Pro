@@ -287,7 +287,9 @@ async function crEnsurePlan() {
     if (crPlanData) return crRenderPlanNote();
     if (!crPlanLoading) {
         crPlanLoading = (async () => {
-            const res = await fetch(`${API.BASE_URL}/api/creditreport/plan-vs-actual`, { headers: { Authorization: `Bearer ${crToken}` } });
+            // Saved & Compare: the saved day against its month's plan.
+            const asOf = CRLastMonth.baseAt();
+            const res = await fetch(`${API.BASE_URL}/api/creditreport/plan-vs-actual${asOf ? `?asOf=${asOf}` : ""}`, { headers: { Authorization: `Bearer ${crToken}` } });
             const data = await res.json();
             if (!res.ok || !data.ok) throw new Error(data.message || `HTTP ${res.status}`);
             return data;

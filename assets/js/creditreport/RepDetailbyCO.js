@@ -625,6 +625,8 @@ async function crEnsurePlan() {
         crAddPicks(q, "branch", "crBranch");
         // Team is NOT sent — same reason as crBuildQuery() above.
         crPlanLoading = (async () => {
+            // Saved & Compare: the saved day against its month's plan.
+            if (CRLastMonth.baseAt()) q.set("asOf", CRLastMonth.baseAt());
             const res = await fetch(`${API.BASE_URL}/api/creditreport/officer-plan-vs-actual?${q.toString()}`, { headers: { Authorization: `Bearer ${crToken}` } });
             const data = await res.json();
             if (!res.ok || !data.ok) throw new Error(data.message || `HTTP ${res.status}`);
