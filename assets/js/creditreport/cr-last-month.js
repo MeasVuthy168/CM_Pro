@@ -410,32 +410,30 @@ window.CRLastMonth = (() => {
         function syncUi() {
             const ui = mountUi();
             if (!ui) return;
-            const { sel, cmpRow, cmpInput, baseRow, baseInput, baseText, savedBtn, compareRow } = ui;
-            const inCurrent = compareRow.style.display !== "none" || baseOn();
-            // Saved & Compare has its own Start Date instead (owner, 24/11/2026).
-            cmpRow.style.display = inCurrent && savedCompare() && !baseOn() ? "" : "none";
+            const { cmpRow, cmpInput, baseRow, baseInput, baseText, compareRow, latestBtn } = ui;
+            // Latest & Compare only (the Comparison row hides in Daily History).
+            const inCurrent = compareRow.style.display !== "none";
+            cmpRow.style.display = inCurrent && savedCompare() ? "" : "none";
             if (cmpInput.value !== (saved.cmpAt || "")) cmpInput.value = saved.cmpAt || "";
-            baseRow.style.display = baseOn() ? "" : "none";
-            if (baseInput.value !== (saved.baseAt || "")) baseInput.value = saved.baseAt || "";
-            // Plan vs Actual uses Date To only.
-            ui.startRow.style.display = baseOn() && sel.value !== "plan" ? "" : "none";
-            if (ui.startInput.value !== (saved.startAt || "")) ui.startInput.value = saved.startAt || "";
-            // Saved & Compare's Comparison: Actual Only / Plan vs Actual only.
-            sel.style.display = baseOn() ? "none" : "";
-            ui.savedCmp.style.display = baseOn() ? "" : "none";
-            ui.savedCmp.value = sel.value === "plan" ? "plan" : "actual";
-            if (baseOn() && !ui.hasPlan) compareRow.style.display = "none";
-            savedBtn.classList.toggle("active", baseOn());
-            if (baseOn()) document.getElementById("crModeCurrentBtn")?.classList.remove("active");
-            // Plan vs Actual works on a saved day: that day against the
-            // whole month's plan (the page asks ?asOf=, baseAt()).
+            // Choose Data: the latest data's date by default, or the saved day picked.
+            baseRow.style.display = inCurrent ? "" : "none";
+            const want = baseOn() ? saved.baseAt || "" : liveDate();
+            if (baseInput.value !== want) baseInput.value = want;
+            latestBtn.hidden = !baseOn();
             const lines = [];
-            if (baseInfo) {
-                lines.push(t("creditreport.saved.baseShowing", { date: opts.fmtDate(baseInfo.date) }));
-                if (baseInfo.date !== saved.baseAt) lines.push(t("creditreport.saved.baseNearest", { picked: opts.fmtDate(saved.baseAt) }));
-                if (baseSummed) lines.push(t("creditreport.saved.totalSum"));
-            } else if (baseMsg) lines.push(baseMsg);
+            if (baseOn()) {
+                if (baseInfo) {
+                    lines.push(t("creditreport.saved.baseShowing", { date: opts.fmtDate(baseInfo.date) }));
+                    if (baseInfo.date !== saved.baseAt) lines.push(t("creditreport.saved.baseNearest", { picked: opts.fmtDate(saved.baseAt) }));
+                    if (baseSummed) lines.push(t("creditreport.saved.totalSum"));
+                } else if (baseMsg) lines.push(baseMsg);
+            }
             baseText.textContent = lines.join(" ");
+        }
+        // The latest data's day (the live report's OS date).
+        function liveDate() {
+            const d = opts.data();
+            return d ? String((d.live && d.live.toDate) || d.toDate || "").slice(0, 10) : "";
         }
 
         function chips(kind) {
@@ -453,6 +451,10 @@ window.CRLastMonth = (() => {
             return "";
         }
         let ui = null;
+        // Choose Data (owner, 24/11/2026): Latest & Compare shows the latest
+        // data by default, or a saved day picked here — the Saved & Compare
+        // tab is gone. Every Comparison works on the day chosen (Plan vs
+        // Actual = that day against its month's plan, ?asOf=).
         function mountUi() {
             if (ui) return ui;
             const sel = document.getElementById("crCompare");
@@ -469,78 +471,44 @@ window.CRLastMonth = (() => {
                 r.className = "cr-section-row cr-saved-row"; r.id = id; r.style.display = "none";
                 r.innerHTML = `<label class="cr-section-label" for="${id}Date">${t(label)}</label>
                     <div class="cr-saved-pick"><input type="date" id="${id}Date" class="cr-section-select cr-saved-date" max="${today}">
-                    ${kind === "cmp" ? `<div class="cr-saved-chips">${chips(kind)}</div>` : ""}${kind === "base" ? `<div class="cr-saved-text" id="${id}Text"></div>` : ""}</div>`;
+                    ${kind === "cmp" ? `<div class="cr-saved-chips">${chips(kind)}</div>` : ""}${kind === "base" ? `<div class="cr-saved-chips"><button type="button" class="cr-saved-chip" id="crSavedLatest" hidden>${t("creditreport.saved.backLatest")}</button></div><div class="cr-saved-text" id="${id}Text"></div>` : ""}</div>`;
                 return r;
             };
             const cmpRow = row("crSavedCmpRow", "creditreport.saved.compareWith", "cmp");
             compareRow.after(cmpRow);
-            // Saved & Compare (owner, 24/11/2026): Start Date (A) and Date To
-            // (B, the day the table shows); Actual Only = A | B | (+/-).
-            const startRow = row("crSavedStartRow", "creditreport.saved.startDate", "start");
-            modeRow.after(startRow);
-            const baseRow = row("crSavedBaseRow", "creditreport.saved.dateTo", "base");
-            startRow.after(baseRow);
-            const savedCmp = document.createElement("select");
-            savedCmp.id = "crSavedCmp"; savedCmp.className = sel.className; savedCmp.style.display = "none";
-            const hasPlan = !!sel.querySelector('option[value="plan"]');
-            savedCmp.innerHTML = `<option value="actual">${t("creditreport.plan.compareActual")}</option>` +
-                (hasPlan ? `<option value="plan">${t("creditreport.plan.comparePlan")}</option>` : "");
-            sel.after(savedCmp);
-            const savedBtn = document.createElement("button");
-            savedBtn.type = "button"; savedBtn.id = "crModeSavedBtn"; savedBtn.className = "cr-mode-btn";
-            savedBtn.textContent = t("creditreport.saved.tab");
-            modeRow.appendChild(savedBtn);
+            const baseRow = row("crSavedBaseRow", "creditreport.saved.chooseData", "base");
+            modeRow.after(baseRow);
             ui = { sel, compareRow, cmpRow, cmpInput: cmpRow.querySelector("input"), baseRow, baseInput: baseRow.querySelector("input"),
-                baseText: baseRow.querySelector(".cr-saved-text"), savedBtn, startRow, startInput: startRow.querySelector("input"), savedCmp, hasPlan };
-            // Saved & Compare's choice → the page's own Comparison select:
-            // Actual Only with a Start Date = the saved-date compare against it.
-            const applySavedCmp = () => {
-                const want = savedCmp.value === "plan" ? "plan" : saved.startAt ? SAVED : "actual";
-                if (want === SAVED && saved.cmpAt !== saved.startAt) { saved.cmpAt = saved.startAt; persist(); }
-                if (sel.value !== want) { sel.value = want; sel.dispatchEvent(new Event("change")); }
-                else { syncUi(); if (want === SAVED) ensure(); }
-            };
-            savedCmp.addEventListener("change", applySavedCmp);
-            ui.startInput.addEventListener("change", () => { saved.startAt = ui.startInput.value || ""; persist(); applySavedCmp(); });
+                baseText: baseRow.querySelector(".cr-saved-text"), latestBtn: baseRow.querySelector("#crSavedLatest") };
 
             const setCmp = v => { if (!v || v === saved.cmpAt) return; saved.cmpAt = v; persist(); ensure(); };
-            const setBase = v => { if (!v || v === saved.baseAt) return; saved.baseAt = v; persist(); if (opts.reload) opts.reload(); };
+            const leaveBase = () => {
+                if (!baseOn()) return syncUi();
+                saved.baseOn = false; persist(); baseInfo = null; baseMsg = "";
+                syncUi();
+                if (opts.reload) opts.reload();
+            };
+            // A day on / after the latest data = the latest data.
+            const chooseDay = v => {
+                const live = liveDate();
+                if (!v || (live && v >= live)) return leaveBase();
+                if (baseOn() && v === saved.baseAt) return;
+                saved.baseAt = v; saved.baseOn = true; persist();
+                syncUi();
+                if (opts.reload) opts.reload();
+            };
             ui.cmpInput.addEventListener("change", () => setCmp(ui.cmpInput.value));
-            ui.baseInput.addEventListener("change", () => setBase(ui.baseInput.value));
+            ui.baseInput.addEventListener("change", () => chooseDay(ui.baseInput.value));
+            ui.latestBtn.addEventListener("click", leaveBase);
             cmpRow.addEventListener("click", e => {
                 const b = e.target.closest("[data-chip]"); if (!b) return;
                 const d = opts.data();
                 setCmp(chipDate(b.dataset.chip, d && String(d.toDate || "").slice(0, 10)));
             });
-            baseRow.addEventListener("click", e => {
-                const b = e.target.closest("[data-chip]"); if (!b) return;
-                const d = opts.data();
-                const from = d && String((d.live && d.live.toDate) || d.toDate || "").slice(0, 10);
-                setBase(chipDate(b.dataset.chip, from));
-            });
             sel.addEventListener("change", syncUi);
-            let switching = false;
-            const leaveBase = () => {
-                if (switching || !baseOn()) return;
-                saved.baseOn = false; persist(); baseInfo = null; baseMsg = "";
-                if (sel.value === SAVED) { sel.value = "actual"; sel.dispatchEvent(new Event("change")); }
-                syncUi();
-                if (opts.reload) opts.reload();
-            };
-            document.getElementById("crModeCurrentBtn")?.addEventListener("click", leaveBase);
             document.getElementById("crModeHistoryBtn")?.addEventListener("click", leaveBase);
-            savedBtn.addEventListener("click", () => {
-                if (baseOn()) return;
-                saved.baseOn = true; persist();
-                // Start Date drives the compare here (the Latest tab's own
-                // saved-date compare is left behind).
-                if (sel.value === "lastMonth" || sel.value === SAVED) { sel.value = saved.startAt ? SAVED : "actual"; if (saved.startAt) saved.cmpAt = saved.startAt; persist(); sel.dispatchEvent(new Event("change")); }
-                switching = true;
-                document.getElementById("crModeCurrentBtn")?.click();
-                switching = false;
-                syncUi();
-                if (opts.reload) opts.reload();
-            });
+            // Follows the Comparison row (Latest & Compare only).
+            new MutationObserver(syncUi).observe(compareRow, { attributes: true, attributeFilter: ["style"] });
             return ui;
         }
         mountUi();
