@@ -378,6 +378,8 @@ CMI18n.register({
 
   "creditreport.detail.area": { km: "តំបន់", en: "Area" },
   "creditreport.detail.own": { km: "ផ្ទាល់ខ្លួន", en: "Own" },
+  "creditreport.byCO.side": { km: "តំបន់/ផ្ទាល់ខ្លួន", en: "Area/Own" },
+  "creditreport.byCO.sideBoth": { km: "តំបន់ និង ផ្ទាល់ខ្លួន", en: "Area & Own" },
 
   // ==================================================================
   // DAILY MONITORING BY LOCATION

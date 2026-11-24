@@ -1947,7 +1947,52 @@ document.getElementById("crChartOverlay").addEventListener("click", (e) => {
 // INIT
 // ========================================
 // Every filter picks several values, Showing (crSection) included.
-crMultiEnhance(["crSection", "crBranch", "crTeam", "crClass", "crProduct", "crNbcClass", "crNplItems", "crNbcProduct"]);
+crMultiEnhance(["crSection", "crShowBase", "crBranch", "crTeam", "crClass", "crProduct", "crNbcClass", "crNplItems", "crNbcProduct"]);
+
+// ========================================
+// Showing + Area/Own (owner, 24/11/2026): Showing names each section once
+// and Area/Own picks the side; both write the page's own section list
+// (crSection, hidden: "outstandingArea" = Area, "outstanding" = Own …),
+// which the report, the URL and the exports keep reading.
+//   Area & Own + no section picked = All Sections (as before).
+// ========================================
+const CR_SIDE_BASES = ["outstanding", "disburse", "khr", "small", "los", "parT24", "nbcOverdue", "writeOff"];
+let crSideSyncing = false;
+function crSideKeys(bases, side) {
+    if (!bases.length && side === "both") return [];
+    return (bases.length ? CR_SIDE_BASES.filter(b => bases.includes(b)) : CR_SIDE_BASES)
+        .flatMap(b => (side === "area" ? [`${b}Area`] : side === "own" ? [b] : [`${b}Area`, b]));
+}
+function crSetPicks(id, values) {
+    const el = document.getElementById(id);
+    if (window.MultiSelect && el._msBtn) MultiSelect.setValues(el, values);
+    else [...el.options].forEach(o => { o.selected = values.includes(o.value) || (!values.length && o.hasAttribute("data-ms-all")); });
+}
+function crSideToSections() {
+    if (crSideSyncing) return;
+    crSideSyncing = true;
+    crSetPicks("crSection", crSideKeys(crPicks("crShowBase"), document.getElementById("crSide").value));
+    document.getElementById("crSection").dispatchEvent(new Event("change", { bubbles: true }));
+    crSideSyncing = false;
+}
+// The section list → Showing + Area/Own (from the URL, Reset …).
+function crSectionsToSide() {
+    if (crSideSyncing) return;
+    const picks = crPicks("crSection");
+    const area = picks.some(k => k.endsWith("Area")), own = picks.some(k => !k.endsWith("Area"));
+    const side = area && !own ? "area" : own && !area ? "own" : "both";
+    let bases = [...new Set(picks.map(k => k.replace(/Area$/, "")))].filter(b => CR_SIDE_BASES.includes(b));
+    if (bases.length === CR_SIDE_BASES.length) bases = [];
+    crSideSyncing = true;
+    document.getElementById("crSide").value = side;
+    crSetPicks("crShowBase", bases);
+    crSideSyncing = false;
+}
+document.getElementById("crShowBase").addEventListener("change", crSideToSections);
+document.getElementById("crSide").addEventListener("change", crSideToSections);
+document.getElementById("crSection").addEventListener("change", crSectionsToSide);
+
 crReadStateFromUrl();
+crSectionsToSide();
 crUpdateClassVisibility();
 crRunReport();
