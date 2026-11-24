@@ -1146,10 +1146,13 @@ function crUpdateClassVisibility() {
     document.getElementById("crBranchRow").style.display = isHistory ? "none" : "";
     document.getElementById("crTeamRow").style.display = isHistory ? "none" : "";
     document.getElementById("crClassRow").style.display = isT24 ? "" : "none";
-    document.getElementById("crProductRow").style.display = (isT24 && !isHistory) ? "" : "none";
+    // Product Type (Digital / Non-Digital) only with the Area side on
+    // screen (Area or Area & Own) — owner, 24/11/2026.
+    const hasArea = crSideValue() !== "own";
+    document.getElementById("crProductRow").style.display = (isT24 && !isHistory && hasArea) ? "" : "none";
     document.getElementById("crNbcClassRow").style.display = isNbc ? "" : "none";
     crNplSyncRow();
-    document.getElementById("crNbcProductRow").style.display = (isNbc && !isHistory) ? "" : "none";
+    document.getElementById("crNbcProductRow").style.display = (isNbc && !isHistory && hasArea) ? "" : "none";
 }
 
 let crBranchesInitialised = false;
@@ -2014,6 +2017,7 @@ document.getElementById("crSection").addEventListener("change", crSectionsToSide
     const side = document.getElementById("crSideRow");
     if (after && side) after.after(side);
 }
+crMoveRowsAfter(["crSideRow"], ["crProductRow", "crNbcProductRow"]);
 crReadStateFromUrl();
 crSectionsToSide();
 crUpdateClassVisibility();
