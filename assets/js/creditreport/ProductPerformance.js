@@ -136,42 +136,14 @@ let ppDisburseChartData = null;
 // ========================================
 // HELPERS
 // ========================================
-function ppGet(obj, path) {
-    return path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj);
-}
-function ppFmtNum(n) {
-    n = Number(n) || 0;
-    return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
-}
-function ppFmtDateDMY(s) {
-    if (!s) return "-";
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
-    if (!m) return s;
-    return `${m[3]}-${m[2]}-${m[1]}`;
-}
-function ppFmtDateDDMMYY(s) {
-    if (!s) return "-";
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
-    if (!m) return s;
-    return `${m[3]}/${m[2]}/${m[1].slice(2)}`;
-}
-function ppToDMY(yyyymmdd) {
-    const [y, m, d] = yyyymmdd.split("-");
-    return `${d}-${m}-${y}`;
-}
-function ppEscapeHtml(text) {
-    const div = document.createElement("div");
-    div.textContent = text == null ? "" : String(text);
-    return div.innerHTML;
-}
-function ppSkeletonHtml() {
-    return `<div class="op-skel-line" style="width:90%"></div>
-             <div class="op-skel-line" style="width:75%"></div>
-             <div class="op-skel-line" style="width:82%"></div>`;
-}
-function ppErrorHtml(err) {
-    return `<div class="op-state op-state-error">${ppEscapeHtml((err && err.message) || t("voice.genericError"))}</div>`;
-}
+function ppGet(...args) { return CRPerf.kit.get(...args); }
+function ppFmtNum(...args) { return CRPerf.kit.fmtNum(...args); }
+function ppFmtDateDMY(...args) { return CRPerf.kit.fmtDateDMY(...args); }
+function ppFmtDateDDMMYY(...args) { return CRPerf.kit.fmtDateDDMMYY(...args); }
+function ppToDMY(...args) { return CRPerf.kit.toDMY(...args); }
+function ppEscapeHtml(...args) { return CRPerf.kit.escapeHtml(...args); }
+function ppSkeletonHtml(...args) { return CRPerf.kit.skeletonHtml(...args); }
+function ppErrorHtml(...args) { return CRPerf.kit.errorHtml(...args); }
 
 // ========================================
 // READ PRODUCT + FILTERS FROM THE URL
@@ -442,16 +414,8 @@ function ppArrearsTableCols() {
     ];
 }
 
-function ppTableThHtml(col) {
-    return `<th data-sort-key="${col.key}" data-sort-type="${col.type}">${ppEscapeHtml(col.label)}</th>`;
-}
-function ppTableTdHtml(col, row) {
-    const v = row[col.key];
-    if (v === "" || v == null) return "<td></td>";
-    if (col.type === "number") return `<td>${ppEscapeHtml(ppFmtNum(v))}</td>`;
-    if (col.type === "date") return `<td>${ppEscapeHtml(ppFmtDateDMY(v))}</td>`;
-    return `<td>${ppEscapeHtml(v)}</td>`;
-}
+function ppTableThHtml(...args) { return CRPerf.kit.tableThHtml(...args); }
+function ppTableTdHtml(...args) { return CRPerf.kit.tableTdHtml(...args); }
 
 function ppClientTableHtml(rows, { showDate = true } = {}) {
     if (!rows.length) return `<div class="op-state">${t("creditreport.productivity.noClientsFound")}</div>`;
@@ -495,29 +459,7 @@ function ppCompareForSort(a, b, type) {
     return sa < sb ? -1 : sa > sb ? 1 : 0;
 }
 
-function ppExportRowsToExcel(rows, cols, filenamePrefix) {
-    if (typeof XLSX === "undefined") {
-        if (typeof showToast === "function") showToast(t("creditreport.detail.excelLibFailed"), "error");
-        return;
-    }
-    if (!rows.length) {
-        if (typeof showToast === "function") showToast(t("creditreport.detail.nothingToExport"), "warning");
-        return;
-    }
-    const sheetData = rows.map((r, i) => {
-        const out = { [t("creditreport.productivity.colNo")]: i + 1 };
-        cols.forEach(c => {
-            const v = r[c.key];
-            out[c.label] = c.type === "date" ? ppFmtDateDMY(v) : (v === "" || v == null ? "" : v);
-        });
-        return out;
-    });
-    const ws = XLSX.utils.json_to_sheet(sheetData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Clients");
-    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "");
-    XLSX.writeFile(wb, `${filenamePrefix}_${stamp}.xlsx`);
-}
+function ppExportRowsToExcel(...args) { return CRPerf.kit.exportRowsToExcel(...args); }
 
 // One-stop render for any client list on this page — same "Show More"
 // pagination as Branch Productivity's own bpRenderClientListInto().
@@ -595,22 +537,9 @@ function ppRenderClientListInto(container, rows, { arrears = false, showDate = t
 // etc.) — product-wide (CO+FSRO+Digital combined into one chart, not
 // split into three), reused function-for-function under the pp prefix.
 // ========================================
-function ppHeatBucket(value, maxValue) {
-    if (!value || value <= 0 || !maxValue) return 0;
-    const pct = value / maxValue;
-    if (pct > 0.7) return 4;
-    if (pct > 0.45) return 3;
-    if (pct > 0.2) return 2;
-    return 1;
-}
+function ppHeatBucket(...args) { return CRPerf.kit.heatBucket(...args); }
 
-function ppHeatDow() {
-    return [
-        t("creditreport.compare.dowSun"), t("creditreport.compare.dowMon"), t("creditreport.compare.dowTue"),
-        t("creditreport.compare.dowWed"), t("creditreport.compare.dowThu"), t("creditreport.compare.dowFri"),
-        t("creditreport.compare.dowSat")
-    ];
-}
+function ppHeatDow(...args) { return CRPerf.kit.heatDow(...args); }
 
 let ppKhHolidays = new Set();
 let ppKhHolidaysPromise = null;
@@ -702,20 +631,9 @@ function ppBuildDisburseHeatmapHtml(dates, values, counts, product, meta, totalD
       <div class="op-heat-day-panel"></div>`;
 }
 
-function ppWireDisburseNav(container, onNavigate) {
-    container.querySelectorAll(".op-heat-nav-btn").forEach(btn => {
-        btn.addEventListener("click", e => {
-            e.stopPropagation();
-            onNavigate(btn.dataset.dir === "next" ? 1 : -1);
-        });
-    });
-}
+function ppWireDisburseNav(...args) { return CRPerf.kit.wireDisburseNav(...args); }
 
-function ppShiftMonthKey(anchorKey, delta) {
-    const [y, m] = anchorKey.split("-").map(Number);
-    const d = new Date(y, m - 1 + delta, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
-}
+function ppShiftMonthKey(...args) { return CRPerf.kit.shiftMonthKey(...args); }
 
 let ppHeatTooltipEl = null;
 function ppEnsureHeatTooltip() {
@@ -727,16 +645,7 @@ function ppEnsureHeatTooltip() {
     return ppHeatTooltipEl;
 }
 
-function ppShowHeatTooltip(cell, tooltip) {
-    const date = cell.dataset.date;
-    const value = Number(cell.dataset.value);
-    const count = Number(cell.dataset.count);
-    const [, mm, dd] = date.split("-");
-    tooltip.innerHTML = `<span class="op-heat-tt-date">${dd}-${mm}:</span> ` + (
-        value > 0 ? `${ppFmtNum(value)} · ${t("creditreport.productivity.loanCount", { count })}` : t("creditreport.productivity.noDisbursement")
-    );
-    tooltip.classList.add("show");
-}
+function ppShowHeatTooltip(...args) { return CRPerf.kit.showHeatTooltip(...args); }
 
 function ppWireHeatmapTooltips(container) {
     const tooltip = ppEnsureHeatTooltip();

@@ -202,45 +202,17 @@ let opDisburseChartData = null;
 // ========================================
 // HELPERS
 // ========================================
-function opGet(obj, path) {
-    return path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj);
-}
-function opFmtNum(n) {
-    n = Number(n) || 0;
-    return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
-}
-function opFmtDateDMY(s) {
-    if (!s) return "-";
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
-    if (!m) return s;
-    return `${m[3]}-${m[2]}-${m[1]}`;
-}
+function opGet(...args) { return CRPerf.kit.get(...args); }
+function opFmtNum(...args) { return CRPerf.kit.fmtNum(...args); }
+function opFmtDateDMY(...args) { return CRPerf.kit.fmtDateDMY(...args); }
 // "DD/MM/YY" (slash-separated, 2-digit year) — used only by the heatmap's
 // "Period Date: ..." subtitle, whose format was specified separately from
 // the rest of the page's "DD-MM-YYYY" convention (opFmtDateDMY above).
-function opFmtDateDDMMYY(s) {
-    if (!s) return "-";
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
-    if (!m) return s;
-    return `${m[3]}/${m[2]}/${m[1].slice(2)}`;
-}
-function opToDMY(yyyymmdd) {
-    const [y, m, d] = yyyymmdd.split("-");
-    return `${d}-${m}-${y}`;
-}
-function opEscapeHtml(text) {
-    const div = document.createElement("div");
-    div.textContent = text == null ? "" : String(text);
-    return div.innerHTML;
-}
-function opSkeletonHtml() {
-    return `<div class="op-skel-line" style="width:90%"></div>
-             <div class="op-skel-line" style="width:75%"></div>
-             <div class="op-skel-line" style="width:82%"></div>`;
-}
-function opErrorHtml(err) {
-    return `<div class="op-state op-state-error">${opEscapeHtml((err && err.message) || t("voice.genericError"))}</div>`;
-}
+function opFmtDateDDMMYY(...args) { return CRPerf.kit.fmtDateDDMMYY(...args); }
+function opToDMY(...args) { return CRPerf.kit.toDMY(...args); }
+function opEscapeHtml(...args) { return CRPerf.kit.escapeHtml(...args); }
+function opSkeletonHtml(...args) { return CRPerf.kit.skeletonHtml(...args); }
+function opErrorHtml(...args) { return CRPerf.kit.errorHtml(...args); }
 
 // ========================================
 // READ HANDOFF FROM RepDetailbyCO.js
@@ -566,16 +538,8 @@ function opArrearsTableCols() {
     ];
 }
 
-function opTableThHtml(col) {
-    return `<th data-sort-key="${col.key}" data-sort-type="${col.type}">${opEscapeHtml(col.label)}</th>`;
-}
-function opTableTdHtml(col, row) {
-    const v = row[col.key];
-    if (v === "" || v == null) return "<td></td>";
-    if (col.type === "number") return `<td>${opEscapeHtml(opFmtNum(v))}</td>`;
-    if (col.type === "date") return `<td>${opEscapeHtml(opFmtDateDMY(v))}</td>`;
-    return `<td>${opEscapeHtml(v)}</td>`;
-}
+function opTableThHtml(...args) { return CRPerf.kit.tableThHtml(...args); }
+function opTableTdHtml(...args) { return CRPerf.kit.tableTdHtml(...args); }
 
 // Shared by the category "List of Client" tab above and the heatmap's
 // per-day client list below (see opWireDayClientPanel) — showDate is off
@@ -699,29 +663,7 @@ function opWireSortableTable(container, rows, buildTableHtml) {
 // Exports the CURRENT (possibly sorted) rows to an .xlsx download, using
 // the same column set/order/labels the on-screen table shows — never a
 // silent superset or subset of what's visible.
-function opExportRowsToExcel(rows, cols, filenamePrefix) {
-    if (typeof XLSX === "undefined") {
-        if (typeof showToast === "function") showToast(t("creditreport.detail.excelLibFailed"), "error");
-        return;
-    }
-    if (!rows.length) {
-        if (typeof showToast === "function") showToast(t("creditreport.detail.nothingToExport"), "warning");
-        return;
-    }
-    const sheetData = rows.map((r, i) => {
-        const out = { [t("creditreport.productivity.colNo")]: i + 1 };
-        cols.forEach(c => {
-            const v = r[c.key];
-            out[c.label] = c.type === "date" ? opFmtDateDMY(v) : (v === "" || v == null ? "" : v);
-        });
-        return out;
-    });
-    const ws = XLSX.utils.json_to_sheet(sheetData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Clients");
-    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "");
-    XLSX.writeFile(wb, `${filenamePrefix}_${stamp}.xlsx`);
-}
+function opExportRowsToExcel(...args) { return CRPerf.kit.exportRowsToExcel(...args); }
 
 // One-stop render for any client list in this page (category tabs below
 // and the heatmap's per-day panel) — inserts the table (or the "No
@@ -749,22 +691,9 @@ function opRenderClientListInto(container, rows, { arrears = false, showDate = t
 // means literally no disbursement that day (rendered as a distinct empty
 // cell, not just "the lightest color in the ramp") — a day with a small
 // amount still gets step 1, not folded into "no activity."
-function opHeatBucket(value, maxValue) {
-    if (!value || value <= 0 || !maxValue) return 0;
-    const pct = value / maxValue;
-    if (pct > 0.7) return 4;
-    if (pct > 0.45) return 3;
-    if (pct > 0.2) return 2;
-    return 1;
-}
+function opHeatBucket(...args) { return CRPerf.kit.heatBucket(...args); }
 
-function opHeatDow() {
-    return [
-        t("creditreport.compare.dowSun"), t("creditreport.compare.dowMon"), t("creditreport.compare.dowTue"),
-        t("creditreport.compare.dowWed"), t("creditreport.compare.dowThu"), t("creditreport.compare.dowFri"),
-        t("creditreport.compare.dowSat")
-    ];
-}
+function opHeatDow(...args) { return CRPerf.kit.heatDow(...args); }
 
 // Cambodian public holidays ("yyyy-mm-dd" keys) that get the same
 // highlight ring as Sat/Sun on the heatmap (see op-heat-holiday below).
@@ -889,24 +818,13 @@ function opBuildDisburseHeatmapHtml(dates, values, counts, officer, meta) {
 // Wires the prev/next month buttons appended by opBuildDisburseHeatmapHtml.
 // stopPropagation keeps a nav click from also bubbling up to the inline
 // view's fullscreen-open listener (see opWireChartFullscreenTriggers).
-function opWireDisburseNav(container, onNavigate) {
-    container.querySelectorAll(".op-heat-nav-btn").forEach(btn => {
-        btn.addEventListener("click", e => {
-            e.stopPropagation();
-            onNavigate(btn.dataset.dir === "next" ? 1 : -1);
-        });
-    });
-}
+function opWireDisburseNav(...args) { return CRPerf.kit.wireDisburseNav(...args); }
 
 // "yyyy-mm-01" -> "yyyy-mm-01" shifted by `delta` whole months (can be
 // negative). Used to turn a prev/next click into the fromDate override
 // opFetchDisburseChartData sends the backend, which always renders
 // whichever full calendar month that date falls in.
-function opShiftMonthKey(anchorKey, delta) {
-    const [y, m] = anchorKey.split("-").map(Number);
-    const d = new Date(y, m - 1 + delta, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
-}
+function opShiftMonthKey(...args) { return CRPerf.kit.shiftMonthKey(...args); }
 
 // One shared floating tooltip element (created once, reused by both the
 // inline and fullscreen heatmap) rather than the browser's default
@@ -921,16 +839,7 @@ function opEnsureHeatTooltip() {
     return opHeatTooltipEl;
 }
 
-function opShowHeatTooltip(cell, tooltip) {
-    const date = cell.dataset.date;
-    const value = Number(cell.dataset.value);
-    const count = Number(cell.dataset.count);
-    const [, mm, dd] = date.split("-");
-    tooltip.innerHTML = `<span class="op-heat-tt-date">${dd}-${mm}:</span> ` + (
-        value > 0 ? `${opFmtNum(value)} · ${t("creditreport.productivity.loanCount", { count })}` : t("creditreport.productivity.noDisbursement")
-    );
-    tooltip.classList.add("show");
-}
+function opShowHeatTooltip(...args) { return CRPerf.kit.showHeatTooltip(...args); }
 
 // Hover-only (desktop mouse) — a cell click is handled separately by
 // opWireDayClientPanel below, which shows the day's actual client list

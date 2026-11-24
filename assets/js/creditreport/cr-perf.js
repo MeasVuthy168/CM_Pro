@@ -344,5 +344,120 @@ window.CRPerf = (() => {
     const headSlot = '<div class="cp-head-figs"></div>';
     const bodySlot = '<div class="cp-body"></div>';
 
-    return { fmt, delta, chip, achCls, bar, ring, switcher, strip, actualTable, lastMonthTable, lastMonthFoot, planTable, compact, controller, headSlot, bodySlot };
+
+    // ---- Page helpers shared by Branch / Officer Productivity and
+    // Location / Product Performance (phase 3b, approved 24/11/2026): one
+    // copy here instead of four; each page keeps its own names as one-line
+    // wrappers (bpFmtNum → CRPerf.kit.fmtNum …).
+    const kit = (() => {
+        function escapeHtml(text) {
+            const div = document.createElement("div");
+            div.textContent = text == null ? "" : String(text);
+            return div.innerHTML;
+        }
+        function fmtNum(n) {
+            n = Number(n) || 0;
+            return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+        }
+        function fmtDateDMY(s) {
+            if (!s) return "-";
+            const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+            if (!m) return s;
+            return `${m[3]}-${m[2]}-${m[1]}`;
+        }
+        function fmtDateDDMMYY(s) {
+            if (!s) return "-";
+            const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+            if (!m) return s;
+            return `${m[3]}/${m[2]}/${m[1].slice(2)}`;
+        }
+        function get(obj, path) {
+            return path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj);
+        }
+        function heatBucket(value, maxValue) {
+            if (!value || value <= 0 || !maxValue) return 0;
+            const pct = value / maxValue;
+            if (pct > 0.7) return 4;
+            if (pct > 0.45) return 3;
+            if (pct > 0.2) return 2;
+            return 1;
+        }
+        function heatDow() {
+            return [
+                t("creditreport.compare.dowSun"), t("creditreport.compare.dowMon"), t("creditreport.compare.dowTue"),
+                t("creditreport.compare.dowWed"), t("creditreport.compare.dowThu"), t("creditreport.compare.dowFri"),
+                t("creditreport.compare.dowSat")
+            ];
+        }
+        function shiftMonthKey(anchorKey, delta) {
+            const [y, m] = anchorKey.split("-").map(Number);
+            const d = new Date(y, m - 1 + delta, 1);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+        }
+        function skeletonHtml() {
+            return `<div class="op-skel-line" style="width:90%"></div>
+                     <div class="op-skel-line" style="width:75%"></div>
+                     <div class="op-skel-line" style="width:82%"></div>`;
+        }
+        function toDMY(yyyymmdd) {
+            const [y, m, d] = yyyymmdd.split("-");
+            return `${d}-${m}-${y}`;
+        }
+        function wireDisburseNav(container, onNavigate) {
+            container.querySelectorAll(".op-heat-nav-btn").forEach(btn => {
+                btn.addEventListener("click", e => {
+                    e.stopPropagation();
+                    onNavigate(btn.dataset.dir === "next" ? 1 : -1);
+                });
+            });
+        }
+        function tableThHtml(col) {
+            return `<th data-sort-key="${col.key}" data-sort-type="${col.type}">${escapeHtml(col.label)}</th>`;
+        }
+        function tableTdHtml(col, row) {
+            const v = row[col.key];
+            if (v === "" || v == null) return "<td></td>";
+            if (col.type === "number") return `<td>${escapeHtml(fmtNum(v))}</td>`;
+            if (col.type === "date") return `<td>${escapeHtml(fmtDateDMY(v))}</td>`;
+            return `<td>${escapeHtml(v)}</td>`;
+        }
+        function errorHtml(err) {
+            return `<div class="op-state op-state-error">${escapeHtml((err && err.message) || t("voice.genericError"))}</div>`;
+        }
+        function exportRowsToExcel(rows, cols, filenamePrefix) {
+            if (typeof XLSX === "undefined") {
+                if (typeof showToast === "function") showToast(t("creditreport.detail.excelLibFailed"), "error");
+                return;
+            }
+            if (!rows.length) {
+                if (typeof showToast === "function") showToast(t("creditreport.detail.nothingToExport"), "warning");
+                return;
+            }
+            const sheetData = rows.map((r, i) => {
+                const out = { [t("creditreport.productivity.colNo")]: i + 1 };
+                cols.forEach(c => {
+                    const v = r[c.key];
+                    out[c.label] = c.type === "date" ? fmtDateDMY(v) : (v === "" || v == null ? "" : v);
+                });
+                return out;
+            });
+            const ws = XLSX.utils.json_to_sheet(sheetData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Clients");
+            const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "");
+            XLSX.writeFile(wb, `${filenamePrefix}_${stamp}.xlsx`);
+        }
+        function showHeatTooltip(cell, tooltip) {
+            const date = cell.dataset.date;
+            const value = Number(cell.dataset.value);
+            const count = Number(cell.dataset.count);
+            const [, mm, dd] = date.split("-");
+            tooltip.innerHTML = `<span class="op-heat-tt-date">${dd}-${mm}:</span> ` + (
+                value > 0 ? `${fmtNum(value)} · ${t("creditreport.productivity.loanCount", { count })}` : t("creditreport.productivity.noDisbursement")
+            );
+            tooltip.classList.add("show");
+        }
+        return { escapeHtml, fmtNum, fmtDateDMY, fmtDateDDMMYY, get, heatBucket, heatDow, shiftMonthKey, skeletonHtml, toDMY, wireDisburseNav, tableThHtml, tableTdHtml, errorHtml, exportRowsToExcel, showHeatTooltip };
+    })();
+    return { fmt, delta, chip, achCls, bar, ring, switcher, strip, actualTable, lastMonthTable, lastMonthFoot, planTable, compact, controller, headSlot, bodySlot, kit };
 })();

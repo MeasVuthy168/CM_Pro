@@ -148,42 +148,14 @@ let bpDisburseChartData = null;
 // ========================================
 // HELPERS
 // ========================================
-function bpGet(obj, path) {
-    return path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj);
-}
-function bpFmtNum(n) {
-    n = Number(n) || 0;
-    return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
-}
-function bpFmtDateDMY(s) {
-    if (!s) return "-";
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
-    if (!m) return s;
-    return `${m[3]}-${m[2]}-${m[1]}`;
-}
-function bpFmtDateDDMMYY(s) {
-    if (!s) return "-";
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
-    if (!m) return s;
-    return `${m[3]}/${m[2]}/${m[1].slice(2)}`;
-}
-function bpToDMY(yyyymmdd) {
-    const [y, m, d] = yyyymmdd.split("-");
-    return `${d}-${m}-${y}`;
-}
-function bpEscapeHtml(text) {
-    const div = document.createElement("div");
-    div.textContent = text == null ? "" : String(text);
-    return div.innerHTML;
-}
-function bpSkeletonHtml() {
-    return `<div class="op-skel-line" style="width:90%"></div>
-             <div class="op-skel-line" style="width:75%"></div>
-             <div class="op-skel-line" style="width:82%"></div>`;
-}
-function bpErrorHtml(err) {
-    return `<div class="op-state op-state-error">${bpEscapeHtml((err && err.message) || t("voice.genericError"))}</div>`;
-}
+function bpGet(...args) { return CRPerf.kit.get(...args); }
+function bpFmtNum(...args) { return CRPerf.kit.fmtNum(...args); }
+function bpFmtDateDMY(...args) { return CRPerf.kit.fmtDateDMY(...args); }
+function bpFmtDateDDMMYY(...args) { return CRPerf.kit.fmtDateDDMMYY(...args); }
+function bpToDMY(...args) { return CRPerf.kit.toDMY(...args); }
+function bpEscapeHtml(...args) { return CRPerf.kit.escapeHtml(...args); }
+function bpSkeletonHtml(...args) { return CRPerf.kit.skeletonHtml(...args); }
+function bpErrorHtml(...args) { return CRPerf.kit.errorHtml(...args); }
 
 // ========================================
 // READ BRANCH + FILTERS FROM THE URL
@@ -470,16 +442,8 @@ function bpArrearsTableCols() {
     ];
 }
 
-function bpTableThHtml(col) {
-    return `<th data-sort-key="${col.key}" data-sort-type="${col.type}">${bpEscapeHtml(col.label)}</th>`;
-}
-function bpTableTdHtml(col, row) {
-    const v = row[col.key];
-    if (v === "" || v == null) return "<td></td>";
-    if (col.type === "number") return `<td>${bpEscapeHtml(bpFmtNum(v))}</td>`;
-    if (col.type === "date") return `<td>${bpEscapeHtml(bpFmtDateDMY(v))}</td>`;
-    return `<td>${bpEscapeHtml(v)}</td>`;
-}
+function bpTableThHtml(...args) { return CRPerf.kit.tableThHtml(...args); }
+function bpTableTdHtml(...args) { return CRPerf.kit.tableTdHtml(...args); }
 
 function bpClientTableHtml(rows, { showDate = true } = {}) {
     if (!rows.length) return `<div class="op-state">${t("creditreport.productivity.noClientsFound")}</div>`;
@@ -523,29 +487,7 @@ function bpCompareForSort(a, b, type) {
     return sa < sb ? -1 : sa > sb ? 1 : 0;
 }
 
-function bpExportRowsToExcel(rows, cols, filenamePrefix) {
-    if (typeof XLSX === "undefined") {
-        if (typeof showToast === "function") showToast(t("creditreport.detail.excelLibFailed"), "error");
-        return;
-    }
-    if (!rows.length) {
-        if (typeof showToast === "function") showToast(t("creditreport.detail.nothingToExport"), "warning");
-        return;
-    }
-    const sheetData = rows.map((r, i) => {
-        const out = { [t("creditreport.productivity.colNo")]: i + 1 };
-        cols.forEach(c => {
-            const v = r[c.key];
-            out[c.label] = c.type === "date" ? bpFmtDateDMY(v) : (v === "" || v == null ? "" : v);
-        });
-        return out;
-    });
-    const ws = XLSX.utils.json_to_sheet(sheetData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Clients");
-    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "");
-    XLSX.writeFile(wb, `${filenamePrefix}_${stamp}.xlsx`);
-}
+function bpExportRowsToExcel(...args) { return CRPerf.kit.exportRowsToExcel(...args); }
 
 // One-stop render for any client list on this page — a branch can carry
 // far more clients per category than one officer would, so only the
@@ -629,22 +571,9 @@ function bpRenderClientListInto(container, rows, { arrears = false, showDate = t
 // etc.) — branch-wide (CO+FSRO+Digital Loan combined into one chart, not
 // split into three), reused function-for-function under the bp prefix.
 // ========================================
-function bpHeatBucket(value, maxValue) {
-    if (!value || value <= 0 || !maxValue) return 0;
-    const pct = value / maxValue;
-    if (pct > 0.7) return 4;
-    if (pct > 0.45) return 3;
-    if (pct > 0.2) return 2;
-    return 1;
-}
+function bpHeatBucket(...args) { return CRPerf.kit.heatBucket(...args); }
 
-function bpHeatDow() {
-    return [
-        t("creditreport.compare.dowSun"), t("creditreport.compare.dowMon"), t("creditreport.compare.dowTue"),
-        t("creditreport.compare.dowWed"), t("creditreport.compare.dowThu"), t("creditreport.compare.dowFri"),
-        t("creditreport.compare.dowSat")
-    ];
-}
+function bpHeatDow(...args) { return CRPerf.kit.heatDow(...args); }
 
 let bpKhHolidays = new Set();
 let bpKhHolidaysPromise = null;
@@ -736,20 +665,9 @@ function bpBuildDisburseHeatmapHtml(dates, values, counts, branch, meta, totalDa
       <div class="op-heat-day-panel"></div>`;
 }
 
-function bpWireDisburseNav(container, onNavigate) {
-    container.querySelectorAll(".op-heat-nav-btn").forEach(btn => {
-        btn.addEventListener("click", e => {
-            e.stopPropagation();
-            onNavigate(btn.dataset.dir === "next" ? 1 : -1);
-        });
-    });
-}
+function bpWireDisburseNav(...args) { return CRPerf.kit.wireDisburseNav(...args); }
 
-function bpShiftMonthKey(anchorKey, delta) {
-    const [y, m] = anchorKey.split("-").map(Number);
-    const d = new Date(y, m - 1 + delta, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
-}
+function bpShiftMonthKey(...args) { return CRPerf.kit.shiftMonthKey(...args); }
 
 let bpHeatTooltipEl = null;
 function bpEnsureHeatTooltip() {
@@ -761,16 +679,7 @@ function bpEnsureHeatTooltip() {
     return bpHeatTooltipEl;
 }
 
-function bpShowHeatTooltip(cell, tooltip) {
-    const date = cell.dataset.date;
-    const value = Number(cell.dataset.value);
-    const count = Number(cell.dataset.count);
-    const [, mm, dd] = date.split("-");
-    tooltip.innerHTML = `<span class="op-heat-tt-date">${dd}-${mm}:</span> ` + (
-        value > 0 ? `${bpFmtNum(value)} · ${t("creditreport.productivity.loanCount", { count })}` : t("creditreport.productivity.noDisbursement")
-    );
-    tooltip.classList.add("show");
-}
+function bpShowHeatTooltip(...args) { return CRPerf.kit.showHeatTooltip(...args); }
 
 function bpWireHeatmapTooltips(container) {
     const tooltip = bpEnsureHeatTooltip();
