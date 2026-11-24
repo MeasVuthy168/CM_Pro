@@ -1144,12 +1144,16 @@ function crUpdateClassVisibility() {
     // (parT24ByClass/parT24AreaByClass), same as in Current mode — see
     // crActiveSection().
     const isHistory = crMode === "history";
+    // Area/Own: under Comparison in Latest & Compare, under Officer in
+    // Daily History (owner, 24/11/2026).
+    crMoveRowsAfter(isHistory ? ["crHistOfficerRow"] : ["crSavedCmpRow", "crCompareRow"], ["crSideRow", "crAreaProductRow", "crTeamRow"]);
     document.getElementById("crBranchRow").style.display = isHistory ? "none" : "";
     document.getElementById("crTeamRow").style.display = isHistory ? "none" : "";
     document.getElementById("crClassRow").style.display = isT24 ? "" : "none";
     // Product Type (Digital / Non-Digital) only with the Area side on
     // screen (Area or Area & Own) — owner, 24/11/2026.
-    const hasArea = crSideValue() !== "own";
+    // Product Type only once "Area" is picked in Area/Own (owner, 24/11/2026).
+    const hasArea = crPicks("crSide").includes("area");
     // One Product Type (crAreaProduct, every Area section) replaces the
     // T24 / NBC Overdue ones on this report (owner, 24/11/2026).
     document.getElementById("crAreaProductRow").style.display = (hasArea && !isHistory) ? "" : "none";
@@ -1549,7 +1553,13 @@ document.getElementById("crNplItems").addEventListener("change", () => {
     crSyncStateToUrl();
 });
 document.getElementById("crNbcProduct").addEventListener("change", crRunReport);
-document.getElementById("crAreaProduct").addEventListener("change", crRunReport);
+// Digital Products are Credit Officers' loans: picking Digital alone sets
+// Team to Credit Officer (owner, 24/11/2026).
+document.getElementById("crAreaProduct").addEventListener("change", () => {
+    const picks = crPicks("crAreaProduct");
+    if (picks.includes("Digital Products") && !picks.includes("Non-Digital Products")) crSetPicks("crTeam", ["Credit Officer"]);
+    crRunReport();
+});
 
 // Clicking a column header cycles it through ascending -> descending ->
 // default (unsorted, the order the server returned) -> ascending again.
@@ -2024,7 +2034,7 @@ document.getElementById("crSection").addEventListener("change", crSectionsToSide
     const side = document.getElementById("crSideRow");
     if (after && side) after.after(side);
 }
-crMoveRowsAfter(["crSideRow"], ["crAreaProductRow"]);
+crMoveRowsAfter(["crSideRow"], ["crAreaProductRow", "crTeamRow"]);
 crReadStateFromUrl();
 // The old T24 / NBC Product Type filters are off on this report (their
 // rows stay hidden) — an old link's picks would otherwise filter unseen.
