@@ -99,6 +99,12 @@ function crInfoCompact() {
     const block = document.querySelector(".filter-card .cr-info-block");
     if (!block || block.dataset.compact) return;
     block.dataset.compact = "1";
+    // Removed from the page (owner, 24/11/2026): the data dates show on
+    // the hub and in the table's own heading (As of …, Disburse …,
+    // Write Off …, T24 …). The box stays in the page, hidden, as the
+    // reports still fill its fields.
+    block.hidden = true;
+    return;
     const val = id => { const el = document.getElementById(id); return el ? el.textContent.trim() : ""; };
     const has = v => v && v !== "-";
     const esc = s => String(s).replace(/[<>&]/g, "");
@@ -160,6 +166,53 @@ function crResetFilters() {
     });
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", crResetFilters); else crResetFilters();
+
+// ========================================
+// Section colours (owner, 24/11/2026): each section's header its own
+// colour, same order as the Excel export (cr-export-all.js) — Plan /
+// Last Month lanes keep their own colours (only the top section row is
+// coloured then). Runs after every render of the report's tables.
+// ========================================
+const CR_SECTION_COLORS = ["#1F3A5F", "#0F6E6E", "#5B3A8C", "#8A5A12", "#2E6B3A", "#8C2F39", "#275D9E", "#5C6B1F", "#7B2D63", "#3F4E5E"];
+function crColorSections(table) {
+    const thead = table && table.tHead;
+    if (!thead) return;
+    const rows = [...thead.rows];
+    if (!rows.length) return;
+    const total = rows.length;
+    const top = rows[0];
+    const lead = [...top.cells].filter(c => (c.rowSpan || 1) >= total);
+    const leadCols = lead.reduce((n, c) => n + (c.colSpan || 1), 0);
+    // top row: one cell per section
+    const spans = [];
+    let col = leadCols;
+    [...top.cells].filter(c => !lead.includes(c)).forEach((c, i) => {
+        const color = CR_SECTION_COLORS[i % CR_SECTION_COLORS.length];
+        c.style.background = color; c.style.color = "#FFFFFF";
+        spans.push({ from: col, to: col + (c.colSpan || 1), color });
+        col += c.colSpan || 1;
+    });
+    // a plain 2-row header (Actual Only): the field row too, a lighter shade
+    if (total === 2) {
+        let x = 0;
+        [...rows[1].cells].forEach(c => {
+            const at = leadCols + x;
+            const s = spans.find(r => at >= r.from && at < r.to);
+            if (s) { c.style.background = s.color + "D9"; c.style.color = "#FFFFFF"; }
+            x += c.colSpan || 1;
+        });
+    }
+}
+function crColorSectionsWatch() {
+    const card = document.querySelector(".table-card");
+    if (!card) return;
+    let pending = false;
+    const run = () => { pending = false; card.querySelectorAll("table").forEach(crColorSections); };
+    new MutationObserver(() => { if (!pending) { pending = true; requestAnimationFrame(run); } })
+        .observe(card, { childList: true, subtree: true });
+    run();
+}
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", crColorSectionsWatch); else crColorSectionsWatch();
 
 function crMultiEnhance(ids) {
     if (!window.MultiSelect) return;

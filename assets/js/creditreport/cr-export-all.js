@@ -124,6 +124,7 @@
     // The Total row's own fill, same convention cr-export.js's own
     // single-page Excel export already uses for it.
     const TOTAL_FILL = "#FFF4C2";
+    const SECTION_COLORS = ["#1F3A5F", "#0F6E6E", "#5B3A8C", "#8A5A12", "#2E6B3A", "#8C2F39", "#275D9E", "#5C6B1F", "#7B2D63", "#3F4E5E"];
 
     // A Daily-Monitoring-style field: {key, label, money|pct, planKey?,
     // ceiling?} against an item object (crSections()'s own field shape,
@@ -161,7 +162,12 @@
         if (planFields.length) {
             const planCols = planFields.map(f => {
                 const kindCol = f.ceiling ? pctCol : (f.money ? moneyCol : intCol);
-                return kindCol(f.label, r => ((r.planVs || {})[f.planKey] || {}).plan);
+                // A ceiling's plan (PAR % / NPL %) is in percent points
+                // (4.00 = 4%); the sheet's % columns take fractions.
+                return kindCol(f.label, r => {
+                    const p = ((r.planVs || {})[f.planKey] || {}).plan;
+                    return f.ceiling && p !== null && p !== undefined ? p / 100 : p;
+                });
             });
             cols.push(...planCols);
             lanes.push({ label: t(anyCeiling ? "creditreport.plan.planMax" : "creditreport.plan.plan"), span: planCols.length });
@@ -189,10 +195,16 @@
         // thresholds as the on-screen table's own planCell(). ----
         if (planFields.length) {
             const achCols = planFields.map(f => {
+                // ± of a ceiling = actual − plan, both in percent points
+                // (the plan vs actual figures), as a fraction for the %
+                // column — it was the report's fraction minus the plan's
+                // points (14.55% − 4.00 → −385.45%).
                 const raw = f.ceiling
                     ? r => {
-                        const p = ((r.planVs || {})[f.planKey] || {}).plan, a = getPath(r, f.key);
-                        return (p === null || p === undefined || a === null || a === undefined) ? null : a - p;
+                        const m = (r.planVs || {})[f.planKey] || {};
+                        if (m.plan === null || m.plan === undefined) return null;
+                        const a = m.actual !== null && m.actual !== undefined ? m.actual : (getPath(r, f.key) == null ? null : getPath(r, f.key) * 100);
+                        return a === null ? null : (a - m.plan) / 100;
                     }
                     : r => {
                         const m = (r.planVs || {})[f.planKey] || {};
@@ -249,10 +261,12 @@
         const cols = [textCol(identityLabel, identityGet), ...extraCols];
         // One unlabelled group per column, so each label runs down every header row.
         const colGroups = [{ span: 1 }, ...extraCols.map(() => ({ span: 1 }))];
-        groups.forEach(g => {
+        groups.forEach((g, i) => {
             const { cols: gcols, lanes } = sectionCols(g.fields);
             cols.push(...gcols);
-            colGroups.push({ label: g.label, span: gcols.length, groups: lanes });
+            // Each section its own header colour (owner, 24/11/2026), the
+            // same order of colours as the on-screen table (cr-multi.js).
+            colGroups.push({ label: g.label, span: gcols.length, groups: lanes, fill: SECTION_COLORS[i % SECTION_COLORS.length] });
         });
         const withTotal = isTotal ? cols.map(c => ({
             ...c,
@@ -289,8 +303,23 @@
     // which: "area" / "own" — the officer sheet names each group's side
     // ("…_តំបន់" / "…_ផ្ទាល់ខ្លួន"), as the on-screen table does.
     const sideLabel = (label, which) => (which ? `${label}_${t(`creditreport.detail.${which}`)}` : label);
-    function nbcOverdueGroups(prefix, totalKey, withPlan, which) {
+    // collect: the rows' NPL Collect field (nplCollect / nplCollectOwn /
+    // nplCollectArea) — NPL Collect YTD and This Period follow the NPL
+    // class, as on screen (owner, 24/11/2026).
+    function nbcOverdueGroups(prefix, totalKey, withPlan, which, collect = "nplCollect") {
         const pk = key => (withPlan ? key : undefined);
+        const nplCollect = [
+            { label: t("creditreport.mr.k.nplCollected"), fields: [
+                { key: `${collect}.ytd.ld`, label: "#LD" },
+                { key: `${collect}.ytd.cif`, label: "#CIF" },
+                { key: `${collect}.ytd.value`, label: t("creditreport.detail.colValue"), money: true, planKey: pk("nplRecovery") }
+            ] },
+            { label: t("creditreport.mr.k.nplPeriod"), fields: [
+                { key: `${collect}.period.ld`, label: "#LD" },
+                { key: `${collect}.period.cif`, label: "#CIF" },
+                { key: `${collect}.period.value`, label: t("creditreport.detail.colValue"), money: true }
+            ] }
+        ];
         return [
             crGroupPct(`${prefix}.minor`, t("creditreport.detail.classMinorDefault")),
             crGroupPct(`${prefix}.specialMention`, t("creditreport.detail.classSpecialMention")),
@@ -299,6 +328,7 @@
             crGroupPct(`${prefix}.loss`, t("creditreport.detail.classLoss")),
             crGroupPct(`${prefix}.majorDefault`, t("creditreport.detail.classMajorDefault")),
             crGroupPct(`${prefix}.nonPerformingLoan`, t("creditreport.detail.classNonPerformingLoan"), pk("nplPct")),
+            ...nplCollect,
             crGroupPct(`${prefix}.${totalKey}`, t("creditreport.detail.classTotalNbcOverdue"), pk("nbcOverduePct"))
         ].map(g => ({ ...g, label: sideLabel(g.label, which) }));
     }
@@ -378,8 +408,8 @@
                 { key: "loanDisburse.loan", label: t("creditreport.detail.colLoanHash"), planKey: "disbCount" },
                 { key: "loanDisburse.value", label: t("creditreport.detail.colValue"), money: true, planKey: "disbAmount" }
             ] },
-            ...nbcOverdueGroups("nbcOverdueArea", "total", false, "area"),
-            ...nbcOverdueGroups("nbcOverdue", "totalOwn", true, "own"),
+            ...nbcOverdueGroups("nbcOverdueArea", "total", false, "area", "nplCollectArea"),
+            ...nbcOverdueGroups("nbcOverdue", "totalOwn", true, "own", "nplCollectOwn"),
             ...writeOffGroups("writeOffArea", "area"),
             ...writeOffGroups("writeOffOwn", "own")
         ];
