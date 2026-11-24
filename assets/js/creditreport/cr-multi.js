@@ -226,6 +226,19 @@ function crMoveRowsAfter(anchorIds, rowIds) {
     });
 }
 
+// A filter Daily History doesn't keep (Product Type, 24/11/2026): named
+// for CRLastMonth's blockedBy — Last Month / a saved day then show "—"
+// with a note instead of unfiltered figures next to filtered ones.
+function crProductBlocked(id) {
+    return crPicks(id).length ? [t("creditreport.detail.productType")] : [];
+}
+function crClearPicks(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (window.MultiSelect && el._msBtn) MultiSelect.setValues(el, []);
+    else [...el.options].forEach(o => { o.selected = o.hasAttribute("data-ms-all") || o.value === ""; });
+}
+
 function crMultiEnhance(ids) {
     if (!window.MultiSelect) return;
     ids.forEach(id => {
