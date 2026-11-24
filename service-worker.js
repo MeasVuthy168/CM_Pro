@@ -6,7 +6,7 @@ console.log("🔥 SERVICE WORKER LOADED");
    CM_Pro – Production Service Worker
 ========================================================= */
 
-const SW_VERSION = "v921";
+const SW_VERSION = "v922";
 
 const CACHE_NAME = `cm-pro-cache-${SW_VERSION}`;
 
