@@ -350,7 +350,9 @@ function crRenderPlanNote() {
 
 // The T24 / NBC filters only change their own section (cr-last-month.js).
 function crLastMonthSectionFilters() {
-    return { t24Class: crPicks("crClass"), t24Product: crPicks("crProduct"), nbcProduct: crPicks("crNbcProduct") };
+    // teams: saved days keep each branch's CO / FSRO / Digital breakdown,
+    // so Last Month and a chosen saved day follow the Team filter.
+    return { t24Class: crPicks("crClass"), t24Product: crPicks("crProduct"), nbcProduct: crPicks("crNbcProduct"), teams: crPicks("crTeam") };
 }
 
 const crLastMonth = CRLastMonth.controller({
@@ -359,7 +361,7 @@ const crLastMonth = CRLastMonth.controller({
     active: () => crCompareMode() === "lastMonth",
     data: () => crSummaryData,
     keyOf: it => it.branch,
-    blockedBy: () => crProductBlocked("crAllProduct"),
+    blockedBy: () => [],
     sectionFilters: crLastMonthSectionFilters,
     render: () => crRenderSummary(),
     reload: () => crRunReport(),
@@ -454,7 +456,7 @@ function crReadStateFromUrl() {
     crNplSyncRow();
 
     crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
-    crRestorePicks("crAllProduct", p.getAll("productType"));
+    crRestorePicks("crTeam", p.getAll("team"));
 
     const compare = p.get("compare");
     if (compare === "plan" || compare === "lastMonth" || CRLastMonth.isSavedCompare(compare)) document.getElementById("crCompare").value = compare;
@@ -469,7 +471,7 @@ function crSyncStateToUrl() {
     crAddPicks(p, "nbcClass", "crNbcClass");
     if (crPicks("crNbcClass").includes("nonPerformingLoan")) crAddPicks(p, "nplItems", "crNplItems");
     crAddPicks(p, "nbcProduct", "crNbcProduct");
-    crAddPicks(p, "productType", "crAllProduct");
+    crAddPicks(p, "team", "crTeam");
     const compare = document.getElementById("crCompare").value;
     if (compare !== "actual") p.set("compare", compare);
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
@@ -1306,7 +1308,17 @@ document.getElementById("crNplItems").addEventListener("change", () => {
     crSyncStateToUrl();
 });
 document.getElementById("crNbcProduct").addEventListener("change", crRunReport);
-document.getElementById("crAllProduct").addEventListener("change", crRunReport);
+// Team: a refetch (the server adds the picked teams up). Plan vs Actual
+// is a branch plan, not a team one — off while a team is picked.
+function crSyncTeamPlan() {
+    const sel = document.getElementById("crCompare");
+    const opt = sel && sel.querySelector('option[value="plan"]');
+    if (!opt) return;
+    const team = crPicks("crTeam").length > 0;
+    opt.disabled = team; opt.hidden = team;
+    if (team && sel.value === "plan") { sel.value = "actual"; sel.dispatchEvent(new Event("change")); }
+}
+document.getElementById("crTeam").addEventListener("change", () => { crSyncTeamPlan(); crRunReport(); });
 
 // ========================================
 // STICKY HEADER OFFSET
@@ -1384,7 +1396,7 @@ function crBuildDateQuery() {
     // crNbcClass is NOT sent — every classification is already in the
     // response (see crActiveSection() above), so it's a display-only pick.
     crPicks("crNbcProduct").forEach(v => parts.push(`nbcProduct=${encodeURIComponent(v)}`));
-    crPicks("crAllProduct").forEach(v => parts.push(`productType=${encodeURIComponent(v)}`));
+    crPicks("crTeam").forEach(v => parts.push(`team=${encodeURIComponent(v)}`));
     return parts.length ? `?${parts.join("&")}` : "";
 }
 
@@ -1405,9 +1417,9 @@ function crUpdateClassVisibility() {
     // Current mode.
     const isHistory = crMode === "history";
     document.getElementById("crClassRow").style.display = isT24 ? "" : "none";
-    // One Product Type for every section (crAllProduct) replaces the
-    // T24 / NBC Overdue ones (owner, 24/11/2026); not in Daily History.
-    document.getElementById("crAllProductRow").style.display = isHistory ? "none" : "";
+    // Team (crTeam) replaces Product Type (owner, 24/11/2026); Daily
+    // History has its own Team filter.
+    document.getElementById("crTeamRow").style.display = isHistory ? "none" : "";
     document.getElementById("crProductRow").style.display = "none";
     document.getElementById("crNbcClassRow").style.display = isNbc ? "" : "none";
     crNplSyncRow();
@@ -1891,12 +1903,13 @@ if (crIsAdmin) {
 // INIT
 // ========================================
 // Every filter picks several values, Showing (crSection) included.
-crMultiEnhance(["crSection", "crHistBranch", "crHistTeam", "crClass", "crProduct", "crNbcClass", "crNplItems", "crNbcProduct", "crAllProduct"]);
-crMoveRowsAfter(["crSavedCmpRow", "crCompareRow"], ["crAllProductRow"]);
+crMultiEnhance(["crSection", "crHistBranch", "crHistTeam", "crClass", "crProduct", "crNbcClass", "crNplItems", "crNbcProduct", "crTeam"]);
+crMoveRowsAfter(["crSavedCmpRow", "crCompareRow"], ["crTeamRow"]);
 crReadStateFromUrl();
 // The old T24 / NBC Product Type filters are off (rows hidden): an old
 // link's picks would otherwise filter unseen.
 crClearPicks("crProduct");
 crClearPicks("crNbcProduct");
+crSyncTeamPlan();
 crUpdateClassVisibility();
 crRunReport();

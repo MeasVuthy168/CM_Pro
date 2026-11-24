@@ -260,6 +260,13 @@ window.CRLastMonth = (() => {
     // nbcProduct } (picked values). Works on a copy, breakdown rows too.
     function scopeSaved(prev, f) {
         if (!prev || typeof prev !== "object") return prev;
+        // f.teams (By Branch's Team filter): the row's picked teams from
+        // its saved CO / FSRO / Digital breakdown, added up.
+        const teams = (f.teams || []).filter(x => prev.breakdown && prev.breakdown[x]);
+        if (teams.length && teams.length < 3) {
+            const names = Object.fromEntries(Object.entries(prev).filter(([, v]) => typeof v === "string"));
+            return scopeSaved({ ...sumRows(teams.map(x => prev.breakdown[x])), ...names }, { ...f, teams: [] });
+        }
         const out = { ...prev };
         t24LastMonth(out);
         if (f.t24Product.length) {
