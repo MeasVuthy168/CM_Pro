@@ -464,14 +464,18 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
         { key: "risk", label: "creditreport.ci.g.risk", pages: [
             { key: "npl", href: "NplIntelligence.html", label: "creditreport.ci.navNpl" },
             { key: "risk", href: "RiskIntelligence.html", label: "creditreport.ci.navRisk" },
-            { key: "warning", href: "EarlyWarning.html", label: "creditreport.ci.navWarning" },
-            { key: "customers", href: "CustomerRisk.html", label: "creditreport.ci.navCustomers" }] },
+            // Customers at risk (UX phase 2, approved 24/11/2026): one entry,
+            // three views of today's overdue loans — who to follow up (rules),
+            // ranking / concentration, likely to roll (model).
+            { key: "customers", href: "EarlyWarning.html", label: "creditreport.ci.navAtRisk", views: [
+                { key: "warning", href: "EarlyWarning.html", label: "creditreport.ci.viewFollowUp" },
+                { key: "ranking", href: "CustomerRisk.html", label: "creditreport.ci.viewRanking" },
+                { key: "prediction", href: "CustomerPrediction.html", label: "creditreport.ci.viewRoll" }] }] },
         { key: "action", label: "creditreport.ci.g.action", pages: [
             { key: "causes", href: "RootCause.html", label: "creditreport.ci.navCauses" },
             { key: "actions", href: "RecoveryActions.html", label: "creditreport.ci.navActions" }] },
         { key: "forecast", label: "creditreport.ci.g.forecast", pages: [
-            { key: "forecast", href: "ParForecast.html", label: "creditreport.ci.navForecast" },
-            { key: "prediction", href: "CustomerPrediction.html", label: "creditreport.ci.navPrediction" }] },
+            { key: "forecast", href: "ParForecast.html", label: "creditreport.ci.navForecast" }] },
         { key: "meeting", label: "creditreport.ci.g.meeting", pages: [
             { key: "meeting", href: "MeetingReport.html", label: "creditreport.ci.g.meeting" }] }
     ];
@@ -479,17 +483,19 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
 
     function mountNav() {
         const file = pageFile();
-        const group = GROUPS.find(g => g.pages.some(p => p.href.toLowerCase() === file));
+        const isFile = p => p.href.toLowerCase() === file || (p.views || []).some(v => v.href.toLowerCase() === file);
+        const group = GROUPS.find(g => g.pages.some(isFile));
         const host = document.querySelector(".pi-page");
         if (!group || !host || document.getElementById("ciNav")) return;
-        const page = group.pages.find(p => p.href.toLowerCase() === file);
+        const page = group.pages.find(isFile);
         const nav = document.createElement("nav");
         nav.id = "ciNav";
         nav.className = "ci-gnav";
         nav.setAttribute("aria-label", t("creditreport.ci.modules"));
         const link = (p, cls, on) => `<a class="${cls}${on ? " is-active" : ""}" data-base="${p.href}"${on ? ' aria-current="page"' : ""}>${esc(t(p.label))}</a>`;
         nav.innerHTML = `<div class="ci-gnav-groups">${GROUPS.map(g => link({ href: g.pages[0].href, label: g.label }, "ci-gnav-group", g === group)).join("")}</div>` +
-            (group.pages.length > 1 ? `<div class="ci-gnav-pages">${group.pages.map(p => link(p, "ci-gnav-page", p === page)).join("")}</div>` : "");
+            (group.pages.length > 1 ? `<div class="ci-gnav-pages">${group.pages.map(p => link(p, "ci-gnav-page", p === page)).join("")}</div>` : "") +
+            (page && page.views ? `<div class="ci-gnav-views" role="tablist">${page.views.map(v => link(v, "ci-gnav-view", v.href.toLowerCase() === file)).join("")}</div>` : "");
         host.insertBefore(nav, host.firstChild);
         updateNav();
         const active = nav.querySelector(".ci-gnav-group.is-active");
@@ -498,7 +504,8 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
 
     function updateNav() {
         const q = query().toString();
-        document.querySelectorAll("#ciNav [data-base]").forEach(a => {
+        document.querySelectorAll("#ciNav [data-base], a[data-ci-link]").forEach(a => {
+            if (!a.dataset.base) a.dataset.base = a.dataset.ciLink;
             const base = a.dataset.base;
             a.href = q ? `${base}${base.includes("?") ? "&" : "?"}${q}` : base;
         });
