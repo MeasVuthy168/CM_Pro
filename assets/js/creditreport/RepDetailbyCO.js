@@ -1157,6 +1157,7 @@ function crUpdateClassVisibility() {
     // One Product Type (crAreaProduct, every Area section) replaces the
     // T24 / NBC Overdue ones on this report (owner, 24/11/2026).
     document.getElementById("crAreaProductRow").style.display = (hasArea && !isHistory) ? "" : "none";
+    if (typeof crSyncTeamLock === "function") crSyncTeamLock();
     document.getElementById("crProductRow").style.display = "none";
     document.getElementById("crNbcClassRow").style.display = isNbc ? "" : "none";
     crNplSyncRow();
@@ -1555,11 +1556,27 @@ document.getElementById("crNplItems").addEventListener("change", () => {
 document.getElementById("crNbcProduct").addEventListener("change", crRunReport);
 // Digital Products are Credit Officers' loans: picking Digital alone sets
 // Team to Credit Officer (owner, 24/11/2026).
-document.getElementById("crAreaProduct").addEventListener("change", () => {
+// While it holds (Product Type shown, Digital alone), FSRO and Stop
+// Disburse can't be picked (owner, 24/11/2026).
+function crDigitalTeamLock() {
     const picks = crPicks("crAreaProduct");
-    if (picks.includes("Digital Products") && !picks.includes("Non-Digital Products")) crSetPicks("crTeam", ["Credit Officer"]);
+    const shown = getComputedStyle(document.getElementById("crAreaProductRow")).display !== "none";
+    return shown && picks.includes("Digital Products") && !picks.includes("Non-Digital Products");
+}
+function crSyncTeamLock() {
+    const lock = crDigitalTeamLock();
+    [...document.getElementById("crTeam").options].forEach(o => {
+        if (o.value === "FSRO" || o.value === "Stop Disburse") o.disabled = lock;
+    });
+    if (lock && JSON.stringify(crPicks("crTeam")) !== JSON.stringify(["Credit Officer"])) crSetPicks("crTeam", ["Credit Officer"]);
+}
+document.getElementById("crAreaProduct").addEventListener("change", () => {
+    crSyncTeamLock();
     crRunReport();
 });
+// Before the page's own Team handler (capture): "Clear" while locked
+// stays Credit Officer.
+document.getElementById("crTeam").addEventListener("change", crSyncTeamLock, true);
 
 // Clicking a column header cycles it through ascending -> descending ->
 // default (unsorted, the order the server returned) -> ascending again.
@@ -2036,6 +2053,8 @@ document.getElementById("crSection").addEventListener("change", crSectionsToSide
 }
 crMoveRowsAfter(["crSideRow"], ["crAreaProductRow", "crTeamRow"]);
 crReadStateFromUrl();
+// (the Team lock follows the restored Product Type, after the rows settle)
+setTimeout(crSyncTeamLock, 0);
 // The old T24 / NBC Product Type filters are off on this report (their
 // rows stay hidden) — an old link's picks would otherwise filter unseen.
 crSetPicks("crProduct", []);

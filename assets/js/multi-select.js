@@ -78,6 +78,7 @@
         sheet.addEventListener("click", e => {
             if (e.target === sheet || e.target.closest("[data-ms-close]")) return close();
             const row = e.target.closest(".ms-item");
+            if (row && row.classList.contains("ms-off")) return;
             if (row) {
                 const v = row.dataset.v;
                 if (picked.has(v)) picked.delete(v); else picked.add(v);
@@ -87,7 +88,7 @@
                 return;
             }
             const act = e.target.closest("[data-ms]")?.dataset.ms;
-            if (act === "all") { visibleItems().forEach(r => picked.add(r.dataset.v)); paintList(); }
+            if (act === "all") { visibleItems().filter(r => !r.classList.contains("ms-off")).forEach(r => picked.add(r.dataset.v)); paintList(); }
             if (act === "none") { picked.clear(); paintList(); }
             if (act === "ok") apply();
         });
@@ -108,7 +109,9 @@
         sheet.querySelector(".ms-list").innerHTML = opts.length
             ? opts.map(o => {
                 const on = picked.has(o.value);
-                return `<button type="button" class="ms-item${on ? " on" : ""}" role="option" aria-selected="${on}" data-v="${esc(o.value)}"><span class="ms-box" aria-hidden="true"></span><span>${esc(o.textContent)}</span></button>`;
+                // A disabled <option>: shown, greyed, can't be picked.
+                const off = o.disabled ? " disabled aria-disabled=\"true\"" : "";
+                return `<button type="button" class="ms-item${on ? " on" : ""}${o.disabled ? " ms-off" : ""}" role="option" aria-selected="${on}" data-v="${esc(o.value)}"${off}><span class="ms-box" aria-hidden="true"></span><span>${esc(o.textContent)}</span></button>`;
             }).join("")
             : `<div class="ms-empty">${esc(tr("ms.noMatch"))}</div>`;
         paintCount();
