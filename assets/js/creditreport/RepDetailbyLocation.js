@@ -1712,6 +1712,7 @@ document.getElementById("crChartOverlay").addEventListener("click", (e) => {
 // ========================================
 // Every filter picks several values, Showing (crSection) included.
 crMultiEnhance(["crSection", "crDistrict", "crCommune", "crBranch", "crOfficer", "crClass", "crProduct", "crNbcClass", "crNplItems", "crNbcProduct"]);
+crMoveRowsAfter(["crSavedCmpRow", "crCompareRow"], ["crProductRow", "crNbcProductRow"]);
 crReadStateFromUrl();
 crUpdateClassVisibility();
 crRunReport();

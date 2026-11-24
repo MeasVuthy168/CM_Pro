@@ -214,6 +214,18 @@ function crColorSectionsWatch() {
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", crColorSectionsWatch); else crColorSectionsWatch();
 
+// Rows moved to sit right after another (owner, 24/11/2026: Product Type
+// under Comparison — and its Compare with date — or, By Officer, under
+// Area/Own). anchorIds: the first one present is the anchor.
+function crMoveRowsAfter(anchorIds, rowIds) {
+    let at = anchorIds.map(id => document.getElementById(id)).find(Boolean);
+    if (!at) return;
+    rowIds.forEach(id => {
+        const row = document.getElementById(id);
+        if (row) { at.after(row); at = row; }
+    });
+}
+
 function crMultiEnhance(ids) {
     if (!window.MultiSelect) return;
     ids.forEach(id => {

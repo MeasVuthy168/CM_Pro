@@ -1885,6 +1885,7 @@ if (crIsAdmin) {
 // ========================================
 // Every filter picks several values, Showing (crSection) included.
 crMultiEnhance(["crSection", "crHistBranch", "crHistTeam", "crClass", "crProduct", "crNbcClass", "crNplItems", "crNbcProduct"]);
+crMoveRowsAfter(["crSavedCmpRow", "crCompareRow"], ["crProductRow", "crNbcProductRow"]);
 crReadStateFromUrl();
 crUpdateClassVisibility();
 crRunReport();
