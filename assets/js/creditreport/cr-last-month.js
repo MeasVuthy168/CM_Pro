@@ -427,6 +427,8 @@ window.CRLastMonth = (() => {
             const want = baseOn() ? saved.baseAt || "" : liveDate();
             if (baseInput.value !== want) baseInput.value = want;
             latestBtn.hidden = !baseOn();
+            // its box takes no room while hidden (rows evenly spaced)
+            if (latestBtn.parentElement) latestBtn.parentElement.style.display = baseOn() ? "" : "none";
             const lines = [];
             if (baseOn()) {
                 if (baseInfo) {
