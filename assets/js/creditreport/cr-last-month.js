@@ -469,7 +469,7 @@ window.CRLastMonth = (() => {
                     <div class="cr-saved-chips">${chips(kind)}</div>${kind === "base" ? `<div class="cr-saved-text" id="${id}Text"></div>` : ""}</div>`;
                 return r;
             };
-            const cmpRow = row("crSavedCmpRow", "creditreport.saved.compareWith", "cmp");
+            const cmpRow = row("crSavedCmpRow", "creditreport.saved.dayB", "cmp");
             compareRow.after(cmpRow);
             // Saved & Compare is no longer a third tab (UX phase 2, approved
             // 24/11/2026): Latest & Compare picks the day it shows —
@@ -477,10 +477,14 @@ window.CRLastMonth = (() => {
             // row follows. Same behaviour as the tab had.
             const dayRow = document.createElement("div");
             dayRow.className = "cr-section-row"; dayRow.id = "crDayRow";
-            dayRow.innerHTML = `<label class="cr-section-label" for="crDayPick">${t("creditreport.saved.baseLabel")}</label>
+            dayRow.innerHTML = `<label class="cr-section-label" for="crDayPick" data-i18n="creditreport.saved.dataA">${t("creditreport.saved.dataA")}</label>
                 <select id="crDayPick" class="cr-section-select"><option value="latest">${t("creditreport.saved.dayLatest")}</option><option value="saved">${t("creditreport.saved.compareOption")}</option></select>`;
-            modeRow.after(dayRow);
-            const baseRow = row("crSavedBaseRow", "creditreport.saved.dayPicked", "base");
+            // Data A (the day shown) right above Data B (Comparison), so
+            // the two days compared sit together (owner, 24/11/2026).
+            compareRow.before(dayRow);
+            const cmpLabel = compareRow.querySelector("label");
+            if (cmpLabel) { cmpLabel.dataset.i18n = "creditreport.saved.dataB"; cmpLabel.textContent = t("creditreport.saved.dataB"); }
+            const baseRow = row("crSavedBaseRow", "creditreport.saved.dayA", "base");
             dayRow.after(baseRow);
             const savedBtn = document.createElement("button");   // kept off screen: its state only
             savedBtn.type = "button"; savedBtn.id = "crModeSavedBtn"; savedBtn.className = "cr-mode-btn"; savedBtn.hidden = true;
