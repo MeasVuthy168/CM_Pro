@@ -134,3 +134,23 @@
 .cp-foot b{ color:var(--cr-text); }
 .cp-empty{ padding:10px 14px; font-size:11.5px; color:var(--cr-text-muted); }
 .cp-subhead{ padding:12px 14px 6px; font-size:12px; font-weight:600; color:var(--cr-text); border-top:1px solid var(--cr-border); }
+
+/* ===== Section colours (owner, 24/11/2026) — each card its own colour,
+   like the Daily Monitoring headers: a coloured top edge, icon tile and
+   table header. The Actual column (cp-now) keeps its gold. ===== */
+.op-card[data-key="outstanding"]{ --cr-sec:#1F3A5F; }
+.op-card[data-key="disburse"]{ --cr-sec:#8A5A12; }
+.op-card[data-key="nbcOverdue"]{ --cr-sec:#8C2F39; }
+.op-card[data-key="writeOff"]{ --cr-sec:#5B3A8C; }
+.op-card[data-key]{ border-top:4px solid var(--cr-sec, var(--cr-border)); }
+.op-card[data-key] .op-card-icon{ background:var(--cr-sec, var(--cr-chip-bg)); color:#FFFFFF; }
+.op-card[data-key] .cp-table thead th:not(.cp-now){
+    background:var(--cr-row-alt);
+    background:color-mix(in srgb, var(--cr-sec) 14%, var(--cr-card-bg));
+    color:var(--cr-sec);
+}
+[data-theme="dark"] .op-card[data-key] .cp-table thead th:not(.cp-now),
+[data-theme="darkgray"] .op-card[data-key] .cp-table thead th:not(.cp-now){
+    background:color-mix(in srgb, var(--cr-sec) 45%, var(--cr-card-bg));
+    color:var(--cr-text);
+}
