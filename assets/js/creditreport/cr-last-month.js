@@ -412,19 +412,26 @@ window.CRLastMonth = (() => {
             if (!ui) return;
             const { sel, cmpRow, cmpInput, baseRow, baseInput, baseText, savedBtn, compareRow } = ui;
             const inCurrent = compareRow.style.display !== "none" || baseOn();
-            cmpRow.style.display = inCurrent && savedCompare() ? "" : "none";
+            // The date box only for "Choose a day…" (UX, 24/11/2026).
+            cmpRow.style.display = inCurrent && savedCompare() && cmpKind() === "pick" ? "" : "none";
             if (cmpInput.value !== (saved.cmpAt || "")) cmpInput.value = saved.cmpAt || "";
             baseRow.style.display = baseOn() ? "" : "none";
+            baseInput.style.display = baseKind() === "pick" ? "" : "none";
             if (baseInput.value !== (saved.baseAt || "")) baseInput.value = saved.baseAt || "";
             savedBtn.classList.toggle("active", baseOn());
             if (ui.dayRow) {
                 ui.dayRow.style.display = compareRow.style.display !== "none" || baseOn() ? "" : "none";
-                ui.dayPick.value = baseOn() ? "saved" : "latest";
+                ui.dayPick.value = baseOn() ? baseKind() : "latest";
             }
             const planOpt = sel.querySelector('option[value="plan"]');
             if (planOpt) {
                 planOpt.hidden = baseOn(); planOpt.disabled = baseOn();
                 if (baseOn() && sel.value === "plan") { sel.value = "actual"; sel.dispatchEvent(new Event("change")); }
+            }
+            if (ui.cmpPick) {
+                const pPlan = ui.cmpPick.querySelector('option[value="plan"]');
+                if (pPlan) { pPlan.hidden = baseOn(); pPlan.disabled = baseOn(); }
+                ui.cmpPick.value = savedCompare() ? cmpKind() : sel.value;
             }
             const lines = [];
             if (baseInfo) {
@@ -464,9 +471,10 @@ window.CRLastMonth = (() => {
             const row = (id, label, kind) => {
                 const r = document.createElement("div");
                 r.className = "cr-section-row cr-saved-row"; r.id = id; r.style.display = "none";
-                r.innerHTML = `<label class="cr-section-label" for="${id}Date">${t(label)}</label>
-                    <div class="cr-saved-pick"><input type="date" id="${id}Date" class="cr-section-select cr-saved-date" max="${today}">
-                    <div class="cr-saved-chips">${chips(kind)}</div>${kind === "base" ? `<div class="cr-saved-text" id="${id}Text"></div>` : ""}</div>`;
+                // No label of its own: it belongs to the dropdown above it.
+                r.innerHTML = `<span class="cr-section-label" aria-hidden="true"></span>
+                    <div class="cr-saved-pick"><input type="date" id="${id}Date" class="cr-section-select cr-saved-date" max="${today}" aria-label="${t(label)}">
+                    ${kind === "base" ? `<div class="cr-saved-text" id="${id}Text"></div>` : ""}</div>`;
                 return r;
             };
             const cmpRow = row("crSavedCmpRow", "creditreport.saved.dayB", "cmp");
@@ -477,20 +485,32 @@ window.CRLastMonth = (() => {
             // row follows. Same behaviour as the tab had.
             const dayRow = document.createElement("div");
             dayRow.className = "cr-section-row"; dayRow.id = "crDayRow";
-            dayRow.innerHTML = `<label class="cr-section-label" for="crDayPick" data-i18n="creditreport.saved.dataA">${t("creditreport.saved.dataA")}</label>
-                <select id="crDayPick" class="cr-section-select"><option value="latest">${t("creditreport.saved.dayLatest")}</option><option value="saved">${t("creditreport.saved.compareOption")}</option></select>`;
+            // Two plain questions (owner, 24/11/2026): "Show data of" and
+            // "Compare with" — the quick days are options, a date box only
+            // for "Choose a day…".
+            const o = (v, key) => `<option value="${v}">${t(key)}</option>`;
+            dayRow.innerHTML = `<label class="cr-section-label" for="crDayPick" data-i18n="creditreport.saved.showOf">${t("creditreport.saved.showOf")}</label>
+                <select id="crDayPick" class="cr-section-select">${o("latest", "creditreport.saved.dayLatest")}${o("prev", "creditreport.saved.chipPrev")}${o("monthEnd", "creditreport.saved.chipMonthEnd")}${o("yearEnd", "creditreport.saved.chipYearEnd")}${o("pick", "creditreport.saved.pickDay")}</select>`;
             // Data A (the day shown) right above Data B (Comparison), so
             // the two days compared sit together (owner, 24/11/2026).
             compareRow.before(dayRow);
             const cmpLabel = compareRow.querySelector("label");
-            if (cmpLabel) { cmpLabel.dataset.i18n = "creditreport.saved.dataB"; cmpLabel.textContent = t("creditreport.saved.dataB"); }
+            if (cmpLabel) { cmpLabel.dataset.i18n = "creditreport.saved.cmpWith"; cmpLabel.textContent = t("creditreport.saved.cmpWith"); cmpLabel.setAttribute("for", "crCmpPick"); }
+            // "Compare with": one list over the page's own Comparison select
+            // (kept, hidden — the page code reads it).
+            const cmpPick = document.createElement("select");
+            cmpPick.id = "crCmpPick"; cmpPick.className = "cr-section-select";
+            cmpPick.innerHTML = o("actual", "creditreport.saved.cmpNothing") + o("plan", "creditreport.saved.cmpPlan") + o("lastMonth", "creditreport.saved.chipMonthEnd") +
+                o("prev", "creditreport.saved.chipPrev") + o("week", "creditreport.saved.chipWeek") + o("pick", "creditreport.saved.pickDay");
+            sel.after(cmpPick);
+            sel.style.display = "none";
             const baseRow = row("crSavedBaseRow", "creditreport.saved.dayA", "base");
             dayRow.after(baseRow);
             const savedBtn = document.createElement("button");   // kept off screen: its state only
             savedBtn.type = "button"; savedBtn.id = "crModeSavedBtn"; savedBtn.className = "cr-mode-btn"; savedBtn.hidden = true;
             const dayPick = dayRow.querySelector("select");
             ui = { sel, compareRow, cmpRow, cmpInput: cmpRow.querySelector("input"), baseRow, baseInput: baseRow.querySelector("input"),
-                baseText: baseRow.querySelector(".cr-saved-text"), savedBtn, dayRow, dayPick };
+                baseText: baseRow.querySelector(".cr-saved-text"), savedBtn, dayRow, dayPick, cmpPick };
 
             const setCmp = v => { if (!v || v === saved.cmpAt) return; saved.cmpAt = v; persist(); ensure(); };
             const setBase = v => { if (!v || v === saved.baseAt) return; saved.baseAt = v; persist(); if (opts.reload) opts.reload(); };
@@ -516,7 +536,27 @@ window.CRLastMonth = (() => {
                 if (opts.reload) opts.reload();
             };
             document.getElementById("crModeHistoryBtn")?.addEventListener("click", leaveBase);
-            dayPick.addEventListener("change", () => (dayPick.value === "saved" ? savedBtn.click() : leaveBase()));
+            const liveFrom = () => { const d = opts.data(); return d ? String((d.live && d.live.toDate) || d.toDate || "").slice(0, 10) : ""; };
+            dayPick.addEventListener("change", () => {
+                const k = dayPick.value;
+                if (k === "latest") return leaveBase();
+                saved.baseKind = k;
+                if (k !== "pick") saved.baseAt = chipDate(k, liveFrom()) || saved.baseAt;
+                persist();
+                if (baseOn()) { syncUi(); if (opts.reload) opts.reload(); } else savedBtn.click();
+            });
+            cmpPick.addEventListener("change", () => {
+                const k = cmpPick.value;
+                saved.cmpKind = k;
+                if (k === "prev" || k === "week") {
+                    const d = opts.data();
+                    saved.cmpAt = chipDate(k, d && String(d.toDate || "").slice(0, 10)) || saved.cmpAt;
+                }
+                persist();
+                const want = ["prev", "week", "pick"].includes(k) ? SAVED : k;
+                if (sel.value !== want) { sel.value = want; sel.dispatchEvent(new Event("change")); }
+                else { syncUi(); if (want === SAVED) ensure(); }
+            });
             // The day row shows with the Comparison row (Latest & Compare only).
             new MutationObserver(syncUi).observe(compareRow, { attributes: true, attributeFilter: ["style"] });
             savedBtn.addEventListener("click", () => {
@@ -551,6 +591,9 @@ window.CRLastMonth = (() => {
     function isSavedCompare(v) { return v === SAVED; }
     function compareAt() { return savedCompare() ? saved.cmpAt || "" : ""; }
     function baseOn() { return !!saved.baseOn; }
+    // How the days were picked: a quick option, or "pick" (a date box).
+    function baseKind() { return ["prev", "monthEnd", "yearEnd", "pick"].includes(saved.baseKind) ? saved.baseKind : "pick"; }
+    function cmpKind() { return ["prev", "week", "pick"].includes(saved.cmpKind) ? saved.cmpKind : "pick"; }
     // The table's title line while Saved & Compare shows a saved day: its
     // own date, not the live report's (the panel above stays live).
     const dmyKey = k => { const [y, m, d] = String(k || "").split("-"); return y && m && d ? `${d}/${m}/${y}` : ""; };

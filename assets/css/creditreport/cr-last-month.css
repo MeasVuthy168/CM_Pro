@@ -49,6 +49,7 @@
     font-family:inherit;
 }
 .cr-saved-chip:active{ opacity:.7; }
-.cr-saved-text{ font-size:12px; line-height:1.45; color:var(--cr-gold, #c99a1f); }
+.cr-saved-text{ font-size:12px; line-height:1.45; color:var(--cr-text-muted, #6b7488); }
+.cr-saved-row{ margin-top:-4px; }
 .cr-saved-text:empty{ display:none; }
 .cr-mode-row #crModeSavedBtn{ font-size:12px; }
