@@ -1118,6 +1118,7 @@ function crBuildQuery() {
     // crNbcClass is NOT sent — every classification is already in the
     // response (see crActiveSection() above), so it's a display-only pick.
     crAddPicks(p, "nbcProduct", "crNbcProduct");
+    crAddPicks(p, "areaProduct", "crAreaProduct");
     const q = p.toString();
     return q ? `?${q}` : "";
 }
@@ -1149,10 +1150,13 @@ function crUpdateClassVisibility() {
     // Product Type (Digital / Non-Digital) only with the Area side on
     // screen (Area or Area & Own) — owner, 24/11/2026.
     const hasArea = crSideValue() !== "own";
-    document.getElementById("crProductRow").style.display = (isT24 && !isHistory && hasArea) ? "" : "none";
+    // One Product Type (crAreaProduct, every Area section) replaces the
+    // T24 / NBC Overdue ones on this report (owner, 24/11/2026).
+    document.getElementById("crAreaProductRow").style.display = (hasArea && !isHistory) ? "" : "none";
+    document.getElementById("crProductRow").style.display = "none";
     document.getElementById("crNbcClassRow").style.display = isNbc ? "" : "none";
     crNplSyncRow();
-    document.getElementById("crNbcProductRow").style.display = (isNbc && !isHistory && hasArea) ? "" : "none";
+    document.getElementById("crNbcProductRow").style.display = "none";
 }
 
 let crBranchesInitialised = false;
@@ -1386,6 +1390,7 @@ function crReadStateFromUrl() {
     crRestorePicks("crNplItems", p.getAll("nplItems"));
     crNplSyncRow();
     crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
+    crRestorePicks("crAreaProduct", p.getAll("areaProduct"));
 
     if (p.get("compare") === "plan" || p.get("compare") === "lastMonth" || CRLastMonth.isSavedCompare(p.get("compare"))) document.getElementById("crCompare").value = p.get("compare");
 }
@@ -1401,6 +1406,7 @@ function crSyncStateToUrl() {
     crAddPicks(p, "nbcClass", "crNbcClass");
     if (crPicks("crNbcClass").includes("nonPerformingLoan")) crAddPicks(p, "nplItems", "crNplItems");
     crAddPicks(p, "nbcProduct", "crNbcProduct");
+    crAddPicks(p, "areaProduct", "crAreaProduct");
     if (document.getElementById("crCompare").value !== "actual") p.set("compare", document.getElementById("crCompare").value);
 
     history.replaceState(null, "", `${location.pathname}?${p.toString()}`);
@@ -1543,6 +1549,7 @@ document.getElementById("crNplItems").addEventListener("change", () => {
     crSyncStateToUrl();
 });
 document.getElementById("crNbcProduct").addEventListener("change", crRunReport);
+document.getElementById("crAreaProduct").addEventListener("change", crRunReport);
 
 // Clicking a column header cycles it through ascending -> descending ->
 // default (unsorted, the order the server returned) -> ascending again.
@@ -1966,7 +1973,7 @@ document.getElementById("crChartOverlay").addEventListener("click", (e) => {
 // INIT
 // ========================================
 // Every filter picks several values, Showing (crSection) included.
-crMultiEnhance(["crSection", "crShowBase", "crSide", "crBranch", "crTeam", "crClass", "crProduct", "crNbcClass", "crNplItems", "crNbcProduct"]);
+crMultiEnhance(["crSection", "crShowBase", "crSide", "crAreaProduct", "crBranch", "crTeam", "crClass", "crProduct", "crNbcClass", "crNplItems", "crNbcProduct"]);
 
 // ========================================
 // Showing + Area/Own (owner, 24/11/2026): Showing names each section once
@@ -2017,8 +2024,12 @@ document.getElementById("crSection").addEventListener("change", crSectionsToSide
     const side = document.getElementById("crSideRow");
     if (after && side) after.after(side);
 }
-crMoveRowsAfter(["crSideRow"], ["crProductRow", "crNbcProductRow"]);
+crMoveRowsAfter(["crSideRow"], ["crAreaProductRow"]);
 crReadStateFromUrl();
+// The old T24 / NBC Product Type filters are off on this report (their
+// rows stay hidden) — an old link's picks would otherwise filter unseen.
+crSetPicks("crProduct", []);
+crSetPicks("crNbcProduct", []);
 crSectionsToSide();
 crUpdateClassVisibility();
 crRunReport();
