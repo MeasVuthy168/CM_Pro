@@ -143,8 +143,10 @@
                 c.font = { name: FONT, size: 10, color: { argb: "FF5B6475" } };
             });
 
-            const headCell = (c, value, tone) => {
-                const t = tone && TONES[tone];
+            // own: { fill, text } — a group's own header colour (each Daily
+            // Monitoring section its own, 24/11/2026).
+            const headCell = (c, value, tone, own) => {
+                const t = own || (tone && TONES[tone]);
                 c.value = value;
                 c.font = { name: FONT, size: 10, bold: true, color: { argb: argb(t ? t.text : GOLD) } };
                 c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: argb(t ? t.fill : NAVY) } };
@@ -164,9 +166,10 @@
                 // that do.
                 let c = 1;
                 groups.forEach(g => {
-                    for (let j = c; j < c + g.span; j++) headCell(ws.getCell(headTop, j), null);
+                    const own = g.fill ? { fill: g.fill, text: "#FFFFFF" } : null;
+                    for (let j = c; j < c + g.span; j++) headCell(ws.getCell(headTop, j), null, null, own);
                     if (g.label) {
-                        headCell(ws.getCell(headTop, c), g.label);
+                        headCell(ws.getCell(headTop, c), g.label, null, own);
                         if (g.span > 1) ws.mergeCells(headTop, c, headTop, c + g.span - 1);
                         if (hasLanes) {
                             if (Array.isArray(g.groups) && g.groups.length) {
