@@ -205,6 +205,16 @@ No Internet Connection
 <option value="own" data-i18n="creditreport.detail.own">Own</option>
 </select>
 </div>
+<!-- Product Type of the Area figures (owner, 24/11/2026): shows as soon
+     as the Area side is on screen; narrows every Area section. -->
+<div class="cr-select-row" id="crAreaProductRow" style="display:none;">
+<label for="crAreaProduct" class="cr-select-label" data-i18n="creditreport.detail.productType">Product Type</label>
+<select id="crAreaProduct" class="cr-select">
+<option value="" data-ms-all data-i18n="creditreport.detail.all">All</option>
+<option value="Digital Products" data-i18n="creditreport.detail.digitalProducts">Digital Products</option>
+<option value="Non-Digital Products" data-i18n="creditreport.detail.nonDigitalProducts">Non-Digital Products</option>
+</select>
+</div>
 <div id="crSectionHost" hidden>
 <select id="crSection" class="cr-select">
 <option value="all" data-ms-all data-i18n="creditreport.detail.allSections">All Sections</option>
