@@ -106,8 +106,11 @@ function crGroupPct(prefix, labelKey) {
 // "_Area"/"_Own" suffixed group labels compose the base section/class
 // name with the Area/Own word, rather than needing a dedicated dict
 // entry for every base label x suffix combination.
-function crAreaLabel(baseKey) { return `${t(baseKey)}_${t("creditreport.detail.area")}`; }
-function crOwnLabel(baseKey) { return `${t(baseKey)}_${t("creditreport.detail.own")}`; }
+// The _Area / _Own suffix only while both sides are on screen (Area/Own
+// filter = Area & Own); one side picked — the plain name (owner, 24/11/2026).
+function crOneSide() { const el = document.getElementById("crSide"); return !!el && el.value !== "both"; }
+function crAreaLabel(baseKey) { return crOneSide() ? t(baseKey) : `${t(baseKey)}_${t("creditreport.detail.area")}`; }
+function crOwnLabel(baseKey) { return crOneSide() ? t(baseKey) : `${t(baseKey)}_${t("creditreport.detail.own")}`; }
 
 // Built by a function (not a frozen module-level const) so every label
 // picks up the current language when a report is (re)rendered, rather
@@ -1317,7 +1320,10 @@ function crTableHeadMeta() {
 function crRenderTableHead() {
     const keys = crSectionKeys();
     const sel = document.getElementById("crSection");
-    const optText = v => [...sel.options].find(o => o.value === v)?.textContent.trim() || v;
+    const base = document.getElementById("crShowBase");
+    // One side picked: the section's plain name (Showing's own list).
+    const optText = v => (crOneSide() && base && [...base.options].find(o => o.value === v.replace(/Area$/, ""))?.textContent.trim())
+        || [...sel.options].find(o => o.value === v)?.textContent.trim() || v;
     document.getElementById("crTblSub").textContent = keys.length ? keys.map(optText).join(" · ") : optText("all");
     document.getElementById("crTblMeta").innerHTML = crTableHeadMeta();
     document.getElementById("crTblHead").hidden = false;
