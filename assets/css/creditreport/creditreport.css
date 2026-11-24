@@ -243,7 +243,10 @@
 .page-container > .cr-hub-section-title,
 .page-container > .cr-hub-list,
 .page-container > .cr-hub-grid,
-.page-container > .cr-hub-export-row{
+.page-container > .cr-hub-export-row,
+.page-container > .cr-hub-dates,
+.page-container > .cr-hub-tools,
+.page-container > .cr-hub-meeting-card{
     max-width:760px;
     margin-left:auto;
     margin-right:auto;
@@ -459,3 +462,22 @@
    a report to open rather than a file to download. */
 .cr-hub-meeting-btn{ background:linear-gradient(135deg,#B8891A,#D4AF37); color:#1a2238; }
 [data-theme="dark"] .cr-hub-meeting-btn{ background:linear-gradient(135deg,#2a3a63,#1e2c4d); color:#FFD700; box-shadow:inset 0 0 0 1px rgba(212,175,55,.55); }
+
+/* ===== Hub 3a (24/11/2026) ===== */
+.cr-hub-dates{ display:flex; flex-wrap:wrap; gap:4px 14px; padding:9px 12px; margin-bottom:12px; border:1px solid var(--cr-border); border-radius:12px; background:var(--cr-card-bg); font-size:12.5px; color:var(--cr-text-muted); }
+.cr-hub-dates[hidden]{ display:none; }
+.cr-hub-dates b{ color:var(--cr-text); font-weight:600; }
+.cr-hub-tools{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+.cr-hub-tool-btn{ display:inline-flex; align-items:center; gap:6px; padding:7px 12px; border-radius:999px; border:1px solid var(--cr-border); background:var(--cr-card-bg); color:var(--cr-text); font:inherit; font-size:12.5px; font-weight:600; cursor:pointer; }
+.cr-hub-tool-btn:disabled{ opacity:.6; cursor:default; }
+.cr-hub-tool-ico{ display:inline-flex; }
+.cr-hub-tool-ico svg{ width:16px; height:16px; display:block; }
+.cr-hub-meeting-card{ display:flex; align-items:center; gap:14px; width:100%; padding:14px; margin-bottom:16px; border:1px solid var(--cr-border); border-radius:16px; background:linear-gradient(135deg, rgba(212,175,55,.18), rgba(212,175,55,.06)); color:var(--cr-text); font:inherit; text-align:left; cursor:pointer; }
+.cr-hub-meeting-card .cr-hub-text{ display:flex; flex-direction:column; gap:2px; }
+.cr-hub-meeting-card .cr-hub-icon svg{ width:30px; height:30px; }
+.cr-hub-meeting-card .cr-hub-arrow{ font-size:24px; line-height:1; color:var(--cr-gold, #b8860b); }
+.cr-hub-meeting-card:active{ opacity:.85; transform:scale(.99); }
+/* Same width as the tile grids (the hub is a flex column). */
+.page-container > .cr-hub-dates,
+.page-container > .cr-hub-meeting-card{ flex:0 0 auto; box-sizing:border-box; width:calc(100% - 32px); max-width:728px; margin-left:auto; margin-right:auto; padding-left:12px; padding-right:12px; }
+.page-container > .cr-hub-tools{ flex:0 0 auto; box-sizing:border-box; width:100%; }

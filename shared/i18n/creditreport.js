@@ -1378,6 +1378,7 @@ CMI18n.register({
   "creditreport.hub.gOverview": { km: "ទិដ្ឋភាពទូទៅ", en: "Overview" },
   "creditreport.hub.gOverviewSub": { km: "តួលេខសំខាន់ៗ និន្នាការ និងការជូនដំណឹង", en: "Key figures, trend and alerts" },
   "creditreport.hub.gRisk": { km: "ហានិភ័យ", en: "Risk" },
+  "creditreport.hub.sectionMeeting": { km: "កិច្ចប្រជុំ", en: "Meeting" },
   "creditreport.hub.gRiskSub": { km: "NPL · វិភាគហានិភ័យ · អតិថិជនមានហានិភ័យ", en: "NPL · risk analysis · customers at risk" },
   "creditreport.hub.gAction": { km: "មូលហេតុ & សកម្មភាព", en: "Causes & actions" },
   "creditreport.hub.gActionSub": { km: "មូលហេតុ PAR · ការតាមដានប្រមូលបំណុល", en: "PAR causes · collection follow-up" },

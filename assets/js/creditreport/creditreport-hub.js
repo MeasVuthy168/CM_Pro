@@ -174,24 +174,35 @@ function crHubWireMeetingButton(btnId) {
     });
 }
 
-// Credit Portfolio Intelligence is for admin and user only (owner,
-// 31/10/2026); the server refuses every other role too. The standalone
-// Export All row only shows for "user" — admins already have it in the
-// admin toolbar below, same row as Snapshot All.
+// Data dates (hub 3a, approved 24/11/2026): the latest NBC OS, NBC
+// Overdue and T24 days, as the reports' own header shows them.
+(async () => {
+    try {
+        const res = await fetch(`${API.BASE_URL}/api/creditreport/data-dates`, { headers: { Authorization: `Bearer ${crHubToken}` } });
+        const d = await res.json();
+        if (!res.ok || !d.ok) return;
+        const has = v => v && v !== "-";
+        document.getElementById("crHubDateOs").textContent = d.os || "-";
+        document.getElementById("crHubDateOd").textContent = d.overdue || "-";
+        document.getElementById("crHubDateT24").textContent = d.t24 || "-";
+        document.getElementById("crHubDateT24Item").hidden = !has(d.t24);
+        document.getElementById("crHubDates").hidden = !(has(d.os) || has(d.overdue));
+    } catch (e) { /* the hub works without it */ }
+})();
+
+// Credit Portfolio, Branch Meeting Report and Export All: admin and user
+// only (owner, 31/10/2026); the server refuses every other role too.
+// Snapshot All: admin only.
 if (["admin", "user"].includes(String(crHubLoggedInUser.role || "").trim().toLowerCase())) {
-    document.getElementById("crHubPortfolioTitle").style.display = "";
-    document.getElementById("crHubPortfolio").style.display = "";
-    if (!crHubIsAdmin) {
-        document.getElementById("crHubExportRow").style.display = "";
-        crHubWireExportButton("btnCrExportAll", "crHubExportBtnLabel");
-        crHubWireMeetingButton("btnCrMeeting");
+    for (const id of ["crHubPortfolioTitle", "crHubPortfolio", "crHubMeetingTitle", "btnCrMeeting", "crHubTools"]) {
+        document.getElementById(id).style.display = "";
     }
+    crHubWireExportButton("btnCrExportAll", "crHubExportBtnLabel");
+    crHubWireMeetingButton("btnCrMeeting");
 }
 
 if (crHubIsAdmin) {
-    document.getElementById("crHubAdminToolbar").style.display = "";
-    crHubWireExportButton("btnCrExportAllAdmin", "crHubExportBtnLabelAdmin");
-    crHubWireMeetingButton("btnCrMeetingAdmin");
+    document.getElementById("btnCrSnapshotAll").style.display = "";
 
     document.getElementById("btnCrSnapshotResultsClose").addEventListener("click", () => {
         document.getElementById("crHubSnapshotResults").style.display = "none";
