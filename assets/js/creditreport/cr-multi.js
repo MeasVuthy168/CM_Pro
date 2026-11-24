@@ -123,6 +123,44 @@ function crInfoCompact() {
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", crInfoCompact); else crInfoCompact();
 
+// ========================================
+// Reset filters (owner, 24/11/2026): once anything differs from the
+// defaults — a filter, a Comparison, Showing or a chosen day — a
+// "Reset filters" button shows at the foot of the filter card; it clears
+// them all (the URL and the chosen-day state) and reloads the report
+// with its defaults: latest data, All Sections, Actual Only.
+// ========================================
+function crResetFilters() {
+    const card = document.querySelector(".filter-card");
+    if (!card || document.getElementById("crResetFilters")) return;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "crResetFilters";
+    btn.className = "cr-reset-btn";
+    btn.hidden = true;
+    btn.innerHTML = `<span aria-hidden="true">↺</span> <span data-i18n="creditreport.detail.resetFilters">${t("creditreport.detail.resetFilters")}</span>`;
+    card.appendChild(btn);
+    const savedKey = `cr_saved|${location.pathname}`;
+    const changed = () => {
+        let base = false;
+        try { base = !!(JSON.parse(sessionStorage.getItem(savedKey) || "{}") || {}).baseOn; } catch (e) { /* private mode */ }
+        // Defaults the pages also write to the URL don't count.
+        const q = new URLSearchParams(location.search);
+        const off = [...q.entries()].filter(([k, v]) => v && !(k === "section" && v === "all") && !(k === "compare" && v === "actual"));
+        return off.length > 0 || base;
+    };
+    const sync = () => { btn.hidden = !changed(); };
+    // The pages write their filters to the URL right after a change.
+    card.addEventListener("change", () => setTimeout(sync, 300), true);
+    card.addEventListener("click", () => setTimeout(sync, 300), true);
+    setTimeout(sync, 1500);
+    btn.addEventListener("click", () => {
+        try { sessionStorage.removeItem(savedKey); } catch (e) { /* private mode */ }
+        location.replace(location.pathname);
+    });
+}
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", crResetFilters); else crResetFilters();
+
 function crMultiEnhance(ids) {
     if (!window.MultiSelect) return;
     ids.forEach(id => {
