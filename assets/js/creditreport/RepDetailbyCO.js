@@ -108,7 +108,13 @@ function crGroupPct(prefix, labelKey) {
 // entry for every base label x suffix combination.
 // The _Area / _Own suffix only while both sides are on screen (Area/Own
 // filter = Area & Own); one side picked — the plain name (owner, 24/11/2026).
-function crOneSide() { const el = document.getElementById("crSide"); return !!el && el.value !== "both"; }
+// Area/Own picks several (owner, 24/11/2026): none or both = "both".
+function crSideValue() {
+    const el = document.getElementById("crSide");
+    const picks = el ? crPicks("crSide") : [];
+    return picks.length === 1 ? picks[0] : "both";
+}
+function crOneSide() { return crSideValue() !== "both"; }
 function crAreaLabel(baseKey) { return crOneSide() ? t(baseKey) : `${t(baseKey)}_${t("creditreport.detail.area")}`; }
 function crOwnLabel(baseKey) { return crOneSide() ? t(baseKey) : `${t(baseKey)}_${t("creditreport.detail.own")}`; }
 
@@ -1122,8 +1128,12 @@ function crBuildQuery() {
 // each pair otherwise so they can't be mistaken for applying to a
 // section they don't affect.
 function crUpdateClassVisibility() {
-    const isT24 = crHasSection("parT24", "parT24Area");
-    const isNbc = crHasSection("nbcOverdue", "nbcOverdueArea");
+    // Showing = All Sections (with Area or Own only, the section list
+    // holds every section of that side): no T24 / NBC class filters,
+    // same as All Sections always had.
+    const allSections = !!document.getElementById("crShowBase") && !crPicks("crShowBase").length;
+    const isT24 = !allSections && crHasSection("parT24", "parT24Area");
+    const isNbc = !allSections && crHasSection("nbcOverdue", "nbcOverdueArea");
     // History rows are precomputed daily snapshots covering every
     // officer with every classification/product already in them — the
     // Branch/Team scope and the T24/NBC Product Type filters all need a
@@ -1953,7 +1963,7 @@ document.getElementById("crChartOverlay").addEventListener("click", (e) => {
 // INIT
 // ========================================
 // Every filter picks several values, Showing (crSection) included.
-crMultiEnhance(["crSection", "crShowBase", "crBranch", "crTeam", "crClass", "crProduct", "crNbcClass", "crNplItems", "crNbcProduct"]);
+crMultiEnhance(["crSection", "crShowBase", "crSide", "crBranch", "crTeam", "crClass", "crProduct", "crNbcClass", "crNplItems", "crNbcProduct"]);
 
 // ========================================
 // Showing + Area/Own (owner, 24/11/2026): Showing names each section once
@@ -1977,7 +1987,7 @@ function crSetPicks(id, values) {
 function crSideToSections() {
     if (crSideSyncing) return;
     crSideSyncing = true;
-    crSetPicks("crSection", crSideKeys(crPicks("crShowBase"), document.getElementById("crSide").value));
+    crSetPicks("crSection", crSideKeys(crPicks("crShowBase"), crSideValue()));
     document.getElementById("crSection").dispatchEvent(new Event("change", { bubbles: true }));
     crSideSyncing = false;
 }
@@ -1990,7 +2000,7 @@ function crSectionsToSide() {
     let bases = [...new Set(picks.map(k => k.replace(/Area$/, "")))].filter(b => CR_SIDE_BASES.includes(b));
     if (bases.length === CR_SIDE_BASES.length) bases = [];
     crSideSyncing = true;
-    document.getElementById("crSide").value = side;
+    crSetPicks("crSide", side === "both" ? [] : [side]);
     crSetPicks("crShowBase", bases);
     crSideSyncing = false;
 }
@@ -1998,6 +2008,12 @@ document.getElementById("crShowBase").addEventListener("change", crSideToSection
 document.getElementById("crSide").addEventListener("change", crSideToSections);
 document.getElementById("crSection").addEventListener("change", crSectionsToSide);
 
+// Area/Own sits right under Comparison (and its Compare with date).
+{
+    const after = document.getElementById("crSavedCmpRow") || document.getElementById("crCompareRow");
+    const side = document.getElementById("crSideRow");
+    if (after && side) after.after(side);
+}
 crReadStateFromUrl();
 crSectionsToSide();
 crUpdateClassVisibility();
