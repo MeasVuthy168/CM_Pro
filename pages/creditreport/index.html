@@ -74,45 +74,21 @@ No Internet Connection
 
 <div class="page-container cr-hub-fit">
 
-<!-- Admin-only — single "Snapshot All" control replacing the 4 separate
-     per-report "Snapshot Now" buttons (removed 2026-10-07) plus Report
-     Comparison's own standalone one (removed 2026-10-08), all
-     consolidated here per explicit request. Runs all 5 reports' existing
-     /snapshot/run endpoints in parallel and shows a combined result. -->
-<div class="cr-hub-admin-toolbar" id="crHubAdminToolbar" style="display:none">
-<div class="cr-hub-section-title" data-i18n="creditreport.hub.adminTools">ឧបករណ៍ Admin</div>
-<div class="cr-hub-snapshot-card">
-<div class="cr-hub-admin-buttons">
-<button type="button" id="btnCrSnapshotAll" class="cr-hub-snapshot-btn">
-<span class="cr-hub-snapshot-btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 1.4v2.4M7.1 3.1l1.2 1.9M16.9 3.1l-1.2 1.9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path fill="currentColor" fill-rule="evenodd" d="M8.6 7.6 9.7 6h4.6l1.1 1.6H19a3 3 0 0 1 3 3V18a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-7.4a3 3 0 0 1 3-3h3.6ZM12 9.8a4.2 4.2 0 1 0 0 8.4 4.2 4.2 0 0 0 0-8.4Zm0 2.2a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z"/></svg></span>
-<span id="crHubSnapshotBtnLabel" data-i18n="creditreport.hub.snapshotAll">Snapshot All</span>
-</button>
-<!-- Admin escape hatch for the per-date T24 freeze (see each
-     lib/creditreport-*.js's own comment): refreshes T24 for every
-     already-saved Daily History date across all 4 reports in one
-     click, instead of the per-row 🔄 button on each report's own
-     history table. -->
-<!-- Hidden: saved T24 is no longer shown anywhere (Daily History,
-     AI Assistant and Smart Alerts use NBC Overdue for saved days and
-     live T24 for today), so re-pulling it has no visible effect. -->
-<button type="button" id="btnCrRefreshAllT24" class="cr-hub-refresh-btn" hidden style="display:none">
-<span class="cr-hub-snapshot-btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19.8 11A8 8 0 0 0 5.6 6.4"/><path d="M5 3.5V8h4.5"/><path d="M4.2 13a8 8 0 0 0 14.2 4.6"/><path d="M19 20.5V16h-4.5"/></svg></span>
-<span id="crHubRefreshBtnLabel" data-i18n="creditreport.hub.refreshAllT24">Refresh All T24</span>
-</button>
-<!-- Export All (Excel) — same row as Snapshot All / Refresh All T24
-     (owner request, 31/10/2026). Admin sees it here; the "user" role,
-     who never sees this admin-only toolbar, still gets it in its own
-     row under Credit Portfolio Intelligence (crHubExportRow below). -->
-<button type="button" id="btnCrExportAllAdmin" class="cr-hub-snapshot-btn">
-<span class="cr-hub-snapshot-btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/></svg></span>
-<span id="crHubExportBtnLabelAdmin" data-i18n="creditreport.hub.exportAll">Export All (Excel)</span>
-</button>
-<!-- Branch Meeting Report — beside Export All (owner, 09/11/2026); asks
-     for latest data or a saved Daily History date first. -->
-<button type="button" id="btnCrMeetingAdmin" class="cr-hub-snapshot-btn cr-hub-meeting-btn">
-<span class="cr-hub-snapshot-btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
-<span data-i18n="creditreport.hub.meeting">Branch Meeting Report</span>
-</button>
+<!-- Hub, phase 3a (approved 24/11/2026): the data's day on top, a compact
+     Tools row, then Daily Monitoring → Credit Portfolio → Branch Meeting
+     Report. -->
+<div class="cr-hub-dates" id="crHubDates" hidden>
+<span class="cr-hub-dates-item"><span data-i18n="creditreport.ci.dataOs">NBC OS</span> <b id="crHubDateOs">-</b></span>
+<span class="cr-hub-dates-item"><span data-i18n="creditreport.ci.dataOd">NBC Overdue</span> <b id="crHubDateOd">-</b></span>
+<span class="cr-hub-dates-item" id="crHubDateT24Item">T24 <b id="crHubDateT24">-</b></span>
+</div>
+
+<!-- Tools: Export All (admin, user) · Snapshot All (admin) -->
+<div class="cr-hub-tools" id="crHubTools" style="display:none">
+<button type="button" id="btnCrExportAll" class="cr-hub-tool-btn"><span class="cr-hub-tool-ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/></svg></span><span id="crHubExportBtnLabel" data-i18n="creditreport.hub.exportAll">Export All (Excel)</span></button>
+<button type="button" id="btnCrSnapshotAll" class="cr-hub-tool-btn" style="display:none"><span class="cr-hub-tool-ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 1.4v2.4M7.1 3.1l1.2 1.9M16.9 3.1l-1.2 1.9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path fill="currentColor" fill-rule="evenodd" d="M8.6 7.6 9.7 6h4.6l1.1 1.6H19a3 3 0 0 1 3 3V18a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-7.4a3 3 0 0 1 3-3h3.6ZM12 9.8a4.2 4.2 0 1 0 0 8.4 4.2 4.2 0 0 0 0-8.4Zm0 2.2a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z"/></svg></span><span id="crHubSnapshotBtnLabel" data-i18n="creditreport.hub.snapshotAll">Snapshot All</span></button>
+<!-- Hidden: saved T24 is no longer shown anywhere, so re-pulling it has no visible effect. -->
+<button type="button" id="btnCrRefreshAllT24" class="cr-hub-tool-btn" hidden style="display:none"><span class="cr-hub-tool-ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19.8 11A8 8 0 0 0 5.6 6.4"/><path d="M5 3.5V8h4.5"/><path d="M4.2 13a8 8 0 0 0 14.2 4.6"/><path d="M19 20.5V16h-4.5"/></svg></span><span id="crHubRefreshBtnLabel" data-i18n="creditreport.hub.refreshAllT24">Refresh All T24</span></button>
 </div>
 <div class="cr-hub-snapshot-results" id="crHubSnapshotResults">
 <div class="cr-hub-snapshot-results-head">
@@ -120,8 +96,6 @@ No Internet Connection
 <button type="button" class="cr-hub-snapshot-close" id="btnCrSnapshotResultsClose" aria-label="Dismiss" data-i18n-aria-label="creditreport.hub.dismiss">✕</button>
 </div>
 <div id="crHubSnapshotRows"></div>
-</div>
-</div>
 </div>
 
 <!-- Daily Monitoring — one tile per dimension -->
@@ -149,20 +123,8 @@ No Internet Connection
 </a>
 </div>
 
-<!-- Credit Portfolio Intelligence: admin and user only (shown by
-     creditreport-hub.js); 4 groups (owner, 31/10/2026). The meeting report
-     moved beside Export All (owner, 09/11/2026). -->
+<!-- Credit Portfolio: admin and user only (creditreport-hub.js) -->
 <div class="cr-hub-section-title" id="crHubPortfolioTitle" style="display:none" data-i18n="creditreport.hub.sectionPortfolio">ផលប័ត្រឥណទាន</div>
-<div class="cr-hub-export-row" id="crHubExportRow" style="display:none">
-<button type="button" id="btnCrExportAll" class="cr-hub-snapshot-btn">
-<span class="cr-hub-snapshot-btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/></svg></span>
-<span id="crHubExportBtnLabel" data-i18n="creditreport.hub.exportAll">Export All (Excel)</span>
-</button>
-<button type="button" id="btnCrMeeting" class="cr-hub-snapshot-btn cr-hub-meeting-btn">
-<span class="cr-hub-snapshot-btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
-<span data-i18n="creditreport.hub.meeting">Branch Meeting Report</span>
-</button>
-</div>
 <div class="cr-hub-grid cr-hub-ci" id="crHubPortfolio" style="display:none">
 <a class="cr-hub-tile cr-hub-link cr-tone-navy" href="PortfolioIntelligence.html">
 <div class="cr-hub-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/></svg></div>
@@ -186,8 +148,15 @@ No Internet Connection
 </a>
 </div>
 
+<!-- Branch Meeting Report: admin and user; asks for the latest data or a saved day first -->
+<div class="cr-hub-section-title" id="crHubMeetingTitle" style="display:none" data-i18n="creditreport.hub.sectionMeeting">Meeting</div>
+<button type="button" id="btnCrMeeting" class="cr-hub-meeting-card" style="display:none">
+<span class="cr-hub-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
+<span class="cr-hub-text"><span class="cr-hub-tile-title" data-i18n="creditreport.hub.meeting">Branch Meeting Report</span>
+<span class="cr-hub-card-sub" data-i18n="creditreport.hub.meetingSub">Credit progress, causes, solutions and forecast — ready to print</span></span>
+<span class="cr-hub-arrow" aria-hidden="true">›</span>
+</button>
 </div>
-
 <div id="bottomnav-container"></div>
 
 <script src="/CM_Pro/assets/js/notification-badge.js"></script>
