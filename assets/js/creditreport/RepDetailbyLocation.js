@@ -908,6 +908,7 @@ function crBuildQuery() {
     // crNbcClass is NOT sent — every classification is already in the
     // response (see crActiveSection() above), so it's a display-only pick.
     crPicks("crNbcProduct").forEach(v => parts.push(`nbcProduct=${encodeURIComponent(v)}`));
+    crPicks("crAllProduct").forEach(v => parts.push(`productType=${encodeURIComponent(v)}`));
 
     // Branch/Officer/District/Commune: before crPopulateFilters() has run
     // (i.e. on the very first request of a page load), these selects have
@@ -941,10 +942,13 @@ function crUpdateClassVisibility() {
     // Current mode.
     const isHistory = crMode === "history";
     document.getElementById("crClassRow").style.display = isT24 ? "" : "none";
-    document.getElementById("crProductRow").style.display = (isT24 && !isHistory) ? "" : "none";
+    // One Product Type for every section (crAllProduct) replaces the
+    // T24 / NBC Overdue ones (owner, 24/11/2026); not in Daily History.
+    document.getElementById("crAllProductRow").style.display = isHistory ? "none" : "";
+    document.getElementById("crProductRow").style.display = "none";
     document.getElementById("crNbcClassRow").style.display = isNbc ? "" : "none";
     crNplSyncRow();
-    document.getElementById("crNbcProductRow").style.display = (isNbc && !isHistory) ? "" : "none";
+    document.getElementById("crNbcProductRow").style.display = "none";
 }
 
 // ========================================
@@ -1074,7 +1078,7 @@ const crLastMonth = CRLastMonth.controller({
     data: () => crData,
     keyOf: it => it.location,
     totalBlocked: () => crPicks("crDistrict").length > 0 || crPicks("crCommune").length > 0,
-    blockedBy: crLastMonthFilters,
+    blockedBy: () => [...crLastMonthFilters(), ...crProductBlocked("crAllProduct")],
     sectionFilters: crLastMonthSectionFilters,
     render: () => crRenderSection(),
     reload: () => crRunReport(),
@@ -1167,6 +1171,7 @@ function crReadStateFromUrl() {
     crNplSyncRow();
 
     crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
+    crRestorePicks("crAllProduct", p.getAll("productType"));
 
     if (p.get("compare") === "lastMonth" || CRLastMonth.isSavedCompare(p.get("compare"))) document.getElementById("crCompare").value = p.get("compare");
 
@@ -1189,6 +1194,7 @@ function crSyncStateToUrl() {
     crAddPicks(p, "nbcClass", "crNbcClass");
     if (crPicks("crNbcClass").includes("nonPerformingLoan")) crAddPicks(p, "nplItems", "crNplItems");
     crAddPicks(p, "nbcProduct", "crNbcProduct");
+    crAddPicks(p, "productType", "crAllProduct");
     if (document.getElementById("crCompare").value !== "actual") p.set("compare", document.getElementById("crCompare").value);
     // Only reached after crPopulateFilters() has already run (see
     // crRunReport()), so these selects always hold the live, restored value.
@@ -1308,6 +1314,7 @@ document.getElementById("crNplItems").addEventListener("change", () => {
     crSyncStateToUrl();
 });
 document.getElementById("crNbcProduct").addEventListener("change", crRunReport);
+document.getElementById("crAllProduct").addEventListener("change", crRunReport);
 
 // Branch/Officer/District/Commune are server-side filters, same as the
 // T24/NBC Loan Class/Product Type filters above — any change refetches.
@@ -1711,8 +1718,12 @@ document.getElementById("crChartOverlay").addEventListener("click", (e) => {
 // INIT
 // ========================================
 // Every filter picks several values, Showing (crSection) included.
-crMultiEnhance(["crSection", "crDistrict", "crCommune", "crBranch", "crOfficer", "crClass", "crProduct", "crNbcClass", "crNplItems", "crNbcProduct"]);
-crMoveRowsAfter(["crSavedCmpRow", "crCompareRow"], ["crProductRow", "crNbcProductRow"]);
+crMultiEnhance(["crSection", "crDistrict", "crCommune", "crBranch", "crOfficer", "crClass", "crProduct", "crNbcClass", "crNplItems", "crNbcProduct", "crAllProduct"]);
+crMoveRowsAfter(["crSavedCmpRow", "crCompareRow"], ["crAllProductRow"]);
 crReadStateFromUrl();
+// The old T24 / NBC Product Type filters are off (rows hidden): an old
+// link's picks would otherwise filter unseen.
+crClearPicks("crProduct");
+crClearPicks("crNbcProduct");
 crUpdateClassVisibility();
 crRunReport();

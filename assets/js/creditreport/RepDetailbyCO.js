@@ -1286,7 +1286,7 @@ const crLastMonth = CRLastMonth.controller({
     active: () => crCompareMode() === "lastMonth",
     data: () => crData,
     keyOf: it => `${it.name}|${it.branch}`,
-    blockedBy: () => [],
+    blockedBy: () => crProductBlocked("crAreaProduct"),
     sectionFilters: crLastMonthSectionFilters,
     totalBlocked: () => crPicks("crBranch").length > 0 || crPicks("crTeam").length > 0,
     render: () => crRenderSection(),
