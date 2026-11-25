@@ -16,8 +16,14 @@
 //     xLabels, colors, getItemForDay, getByPath, fmtNum,
 //     getPlan,      // optional: (field, dateKey) → { value, ceiling } | null
 //     hasPlanFor,   // optional: fieldKey → true when the field can have a plan
-//     planDataset   // optional: (field) → the dashed plan dataset (CRPlanLine)
+//     planDataset,  // optional: (field, slots, series) → the dashed plan dataset (CRPlanLine)
+//     history,      // { path, params, token } of the Daily History request —
+//                   //   Monthly / Yearly re-ask it with ?monthEnd=1
+//     rerender,     // () → draws the chart again (once those days arrive)
+//     loadPlan      // optional: (days) → the plan series for those days
 //   });
+// getPlan / planDataset get a 3rd argument in Monthly / Yearly: the plan
+// series loaded for that period (undefined in Daily: the page's own).
 // ========================================
 (function () {
     const tr = (key, vars, fallback) => {
@@ -70,43 +76,36 @@
         return `<span class="cr-ico cr-ico-${name}" aria-hidden="true"></span>`;
     }
 
-    function compact(n) {
+    // extra: more decimals, for axis labels that would otherwise repeat.
+    function compact(n, extra = 0) {
         const abs = Math.abs(n);
-        if (abs >= 1e9) return (n / 1e9).toFixed(2) + "B";
-        if (abs >= 1e6) return (n / 1e6).toFixed(2) + "M";
-        if (abs >= 1e3) return (n / 1e3).toFixed(1) + "K";
-        return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+        if (abs >= 1e9) return (n / 1e9).toFixed(2 + extra) + "B";
+        if (abs >= 1e6) return (n / 1e6).toFixed(2 + extra) + "M";
+        if (abs >= 1e3) return (n / 1e3).toFixed(1 + extra) + "K";
+        return n.toLocaleString(undefined, { maximumFractionDigits: 2 + extra });
     }
 
     // Formats for one field: full, short (chart labels), and a change.
     function formatter(field, fmtNum) {
         if (field.pct) {
             const p = v => (v * 100).toFixed(2) + "%";
-            return { full: p, short: p, delta: d => (d * 100).toFixed(2) + " pt", unit: "%" };
+            return { full: p, short: p, shortX: (v, x) => (v * 100).toFixed(2 + x) + "%", delta: d => (d * 100).toFixed(2) + " pt", unit: "%" };
         }
         if (field.money) {
             const m = v => (v < 0 ? "-$" : "$") + fmtNum(Math.abs(v));
-            return { full: m, short: v => "$" + compact(v), delta: d => "$" + fmtNum(Math.abs(d)), unit: "USD" };
+            return { full: m, short: v => "$" + compact(v), shortX: (v, x) => "$" + compact(v, x), delta: d => "$" + fmtNum(Math.abs(d)), unit: "USD" };
         }
-        return { full: v => fmtNum(v), short: v => compact(v), delta: d => fmtNum(Math.abs(d)), unit: "" };
+        return { full: v => fmtNum(v), short: v => compact(v), shortX: (v, x) => compact(v, x), delta: d => fmtNum(Math.abs(d)), unit: "" };
     }
 
-    function pointsOf(days, getItemForDay, getByPath, key) {
-        return days.map(day => {
-            const item = getItemForDay(day);
-            const raw = item ? getByPath(item, key) : null;
-            const v = raw == null || raw === "" ? null : Number(raw);
-            return { date: day.date, value: Number.isFinite(v) ? v : null };
-        });
-    }
-
-    // Change since the first day: { d, rel, tone, arrow }. None for a
-    // month-to-date figure over more than one month (it restarts on the 1st).
-    function changeOf(field, pts) {
+    // Change { d, rel, tone, arrow }. Daily: since the first day — none
+    // for a month-to-date figure over more than one month (it restarts on
+    // the 1st). Monthly / Yearly: since the month / year before (MoM / YoY).
+    function changeOf(field, pts, mode = "daily") {
         const have = pts.filter(p => p.value !== null);
         if (have.length < 2) return null;
-        const first = have[0], last = have[have.length - 1];
-        if (monthToDate(field.key) && first.date.slice(0, 7) !== last.date.slice(0, 7)) return null;
+        const first = mode === "daily" ? have[0] : have[have.length - 2], last = have[have.length - 1];
+        if (mode === "daily" && monthToDate(field.key) && first.date.slice(0, 7) !== last.date.slice(0, 7)) return null;
         const d = last.value - first.value;
         const flat = Math.abs(d) < 1e-9;
         const up = d > 0;
@@ -162,7 +161,7 @@
     }
 
     // ---------- Key insights (worked out from the days only) ----------
-    function insightsOf(field, f, pts, getPlan, groupFields, days, getItemForDay, getByPath) {
+    function insightsOf(field, f, pts, getPlan, groupFields, ptsOf, mode, lab) {
         const have = pts.filter(p => p.value !== null);
         const out = [];
         if (have.length < 2) return out;
@@ -210,7 +209,7 @@
                 out.push({
                     tone: "bad",
                     title: worse ? tr("biggestRise", null, "Biggest rise.") : tr("biggestDip", null, "Biggest dip."),
-                    text: tr(worse ? "riseText" : "dipText", { amt: f.delta(best.move), from: fmtDay(best.from.date), to: fmtDay(best.to.date) },
+                    text: tr(worse ? "riseText" : "dipText", { amt: f.delta(best.move), from: lab(best.from.date), to: lab(best.to.date) },
                         worse ? "Up {amt} between {from} and {to}." : "About {amt} fell between {from} and {to}.")
                 });
             }
@@ -231,8 +230,10 @@
             const good = (dir > 0) !== worse;
             out.push({
                 tone: good ? "good" : "bad",
-                title: dir > 0 ? tr("risingSince", { date: fmtDay(since.date) }, "Rising since {date}.") : tr("fallingSince", { date: fmtDay(since.date) }, "Falling since {date}."),
-                text: tr("streakText", { n, amt: f.delta(last.value - since.value) }, "{n} days in a row, {amt} in all.")
+                title: dir > 0 ? tr("risingSince", { date: lab(since.date) }, "Rising since {date}.") : tr("fallingSince", { date: lab(since.date) }, "Falling since {date}."),
+                text: mode === "monthly" ? tr("streakTextMonthly", { n, amt: f.delta(last.value - since.value) }, "{n} months in a row, {amt} in all.")
+                    : mode === "yearly" ? tr("streakTextYearly", { n, amt: f.delta(last.value - since.value) }, "{n} years in a row, {amt} in all.")
+                    : tr("streakText", { n, amt: f.delta(last.value - since.value) }, "{n} days in a row, {amt} in all.")
             });
         }
 
@@ -240,8 +241,8 @@
         const loanF = groupFields.find(x => /\.loan$/.test(x.key));
         const valueF = groupFields.find(x => x.money && /\.value$/.test(x.key));
         if (loanF && valueF) {
-            const lp = pointsOf(days, getItemForDay, getByPath, loanF.key).filter(p => p.value);
-            const vp = pointsOf(days, getItemForDay, getByPath, valueF.key);
+            const lp = ptsOf(loanF.key).filter(p => p.value);
+            const vp = ptsOf(valueF.key);
             const avg = p => { const v = vp.find(x => x.date === p.date); return v && v.value !== null ? v.value / p.value : null; };
             if (lp.length >= 2) {
                 const a = avg(lp[0]), b = avg(lp[lp.length - 1]);
@@ -257,7 +258,7 @@
         }
 
         // 5) Nothing stood out: the overall change.
-        const ch = changeOf(field, pts);
+        const ch = changeOf(field, pts, mode);
         if (!out.length && ch) {
             out.push({
                 tone: ch.tone === "flat" ? "info" : ch.tone,
@@ -298,13 +299,36 @@
     const offDay = k => { const wd = new Date(`${k}T00:00:00Z`).getUTCDay(); return wd === 0 || wd === 6 || holidays.has(k); };
     const dayMs = d => Date.parse(`${d}T00:00:00Z`);
     const keyOf = ms => new Date(ms).toISOString().slice(0, 10);
-    function calendarOf(days) {
+    // mode "daily": one slot per calendar day (an unsaved day is empty;
+    //   weekends / holidays marked crOff). levels: the x ticks from fine
+    //   to coarse (1/8/15/22 → 1/15 → the 1st → every 2nd / 3rd month →
+    //   January) — the chart picks the finest that fits its width.
+    // mode "monthly": one slot per month — its last saved day.
+    // mode "yearly": one slot per year — its last saved day, with the
+    //   year's month-ends in crMonths (month-to-date figures add them up).
+    function calendarOf(days, mode) {
         const ds = days.filter(d => d && /^\d{4}-\d{2}-\d{2}/.test(String(d.date))).slice()
             .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-        if (!ds.length) return { days, labels: days.map(d => d.date), ticks: null, mode: "daily" };
-        const byDate = new Map(ds.map(d => [String(d.date).slice(0, 10), d]));
+        if (!ds.length) return { days: [], labels: [], levels: null, mode };
         const first = String(ds[0].date).slice(0, 10), last = String(ds[ds.length - 1].date).slice(0, 10);
-        if ((dayMs(last) - dayMs(first)) / 86400000 > 92) {
+        if (mode === "yearly") {
+            const byYear = new Map();
+            ds.forEach(d => {
+                const k = String(d.date).slice(0, 10);
+                const e = byYear.get(k.slice(0, 4)) || { day: d, months: new Map() };
+                e.day = d;
+                e.months.set(k.slice(0, 7), d);
+                byYear.set(k.slice(0, 4), e);
+            });
+            const out = [], labels = [];
+            for (let y = Number(first.slice(0, 4)); y <= Number(last.slice(0, 4)); y++) {
+                const e = byYear.get(String(y));
+                out.push(e ? { date: String(e.day.date).slice(0, 10), crDay: e.day, crMonths: [...e.months.values()] } : { date: `${y}-12-31`, crEmpty: true });
+                labels.push(String(y));
+            }
+            return { days: out, labels, levels: null, mode };
+        }
+        if (mode === "monthly") {
             const lastOfMonth = new Map();
             ds.forEach(d => lastOfMonth.set(String(d.date).slice(0, 7), d));
             const out = [], labels = [];
@@ -316,19 +340,37 @@
                 labels.push(`${MON[m - 1]} ${String(y).slice(2)}`);
                 m++; if (m > 12) { m = 1; y++; }
             }
-            return { days: out, labels, ticks: null, mode: "monthly" };
+            return { days: out, labels, levels: null, mode };
         }
-        const out = [], labels = [], ticks = new Set();
-        for (let t = dayMs(first), i = 0; t <= dayMs(last); t += 86400000, i++) {
+        const byDate = new Map(ds.map(d => [String(d.date).slice(0, 10), d]));
+        const out = [], labels = [], meta = [];
+        for (let t = dayMs(first); t <= dayMs(last); t += 86400000) {
             const k = keyOf(t);
             out.push(byDate.get(k) || { date: k, crEmpty: true, crOff: offDay(k) });
-            const dd = Number(k.slice(8, 10));
-            labels.push(`${dd} ${MON[Number(k.slice(5, 7)) - 1]}`);
-            // Weekly ticks: the 1st, 8th, 15th and 22nd of each month.
-            if ([1, 8, 15, 22].includes(dd)) ticks.add(i);
+            const dd = Number(k.slice(8, 10)), mm = Number(k.slice(5, 7));
+            labels.push(`${dd} ${MON[mm - 1]}`);
+            meta.push({ dd, mm });
         }
-        if (!ticks.size || !ticks.has(0) && out.length <= 10) ticks.add(0);
-        return { days: out, labels, ticks, mode: "daily" };
+        const levels = [
+            x => [1, 8, 15, 22].includes(x.dd),
+            x => x.dd === 1 || x.dd === 15,
+            x => x.dd === 1,
+            x => x.dd === 1 && x.mm % 2 === 1,
+            x => x.dd === 1 && x.mm % 3 === 1,
+            x => x.dd === 1 && x.mm === 1
+        ].map(fn => {
+            const s = new Set();
+            meta.forEach((x, i) => { if (fn(x)) s.add(i); });
+            if (!s.size || out.length <= 10) s.add(0);
+            return s;
+        });
+        return { days: out, labels, levels, mode };
+    }
+
+    // The finest tick level whose labels fit the axis (~56px a label).
+    function pickLevel(levels, width) {
+        const max = Math.max(2, Math.floor((width || 300) / 56));
+        return levels.find(s => s.size <= max) || levels[levels.length - 1];
     }
 
     function markersPlugin(primaryIndex, planIndex, f, colors) {
@@ -353,7 +395,7 @@
                 });
                 if (peakIdx >= 0 && peakIdx !== lastIdx && ds.data.filter(v => v !== null).length > 2) {
                     const p = meta.data[peakIdx];
-                    const label = `${tr("peak", null, "Peak")} ${f.short(ds.data[peakIdx])}`;
+                    const label = `${tr("peak", null, "Peak")} ${f.shortX(ds.data[peakIdx], 1)}`;
                     ctx.fillStyle = text;
                     ctx.textAlign = "center";
                     const x = Math.min(Math.max(p.x, chartArea.left + 30), chartArea.right - 30);
@@ -361,7 +403,7 @@
                 }
                 if (lastIdx >= 0) {
                     const p = meta.data[lastIdx];
-                    const label = f.short(ds.data[lastIdx]);
+                    const label = f.shortX(ds.data[lastIdx], 1);
                     const w = ctx.measureText(label).width + 12, h = 18;
                     const x = Math.min(p.x - w / 2, chartArea.right - w);
                     const y = Math.max(p.y - h - 10, chartArea.top);
@@ -395,13 +437,75 @@
                         ctx.fillStyle = pd.borderColor;
                         ctx.textAlign = "left";
                         ctx.textBaseline = above ? "bottom" : "top";
-                        ctx.fillText(`${tr("plan", null, "Plan")} ${f.short(pd.data[i])}`,
+                        ctx.fillText(`${tr("plan", null, "Plan")} ${f.shortX(pd.data[i], 1)}`,
                             Math.min(pm.data[s].x + 4, chartArea.right - 90), pm.data[s].y + (above ? -5 : 5));
                     }
                 }
                 ctx.restore();
             }
         };
+    }
+
+    // ---------- Daily | Monthly | Yearly (chart step 2, 25/11/2026) ----------
+    // Daily: the Daily History days. Monthly: the last 12 months; Yearly:
+    // every year — each fetched on its own with month-end days only
+    // (?monthEnd=1), whatever range Daily History shows. The pick holds
+    // while the same history is open; a new history goes back to the
+    // automatic one (Daily up to 3 months, Monthly beyond).
+    const PERIODS = ["daily", "monthly", "yearly"];
+    let periodPick = null, periodKey = "", lastDays = null, rerenderLast = null;
+    const periodCache = new Map();
+    const chartClosed = () => { const ov = document.getElementById("crChartOverlay"); return !!(ov && ov.hidden); };
+
+    function periodQuery(hq, mode, days) {
+        const p = new URLSearchParams(hq.params);
+        const to = p.get("dateTo") || String(days[days.length - 1].date).slice(0, 10);
+        let from = "2000-01-01";
+        if (mode === "monthly") {
+            let [y, m] = to.slice(0, 7).split("-").map(Number);
+            m -= 11;
+            while (m < 1) { m += 12; y--; }
+            from = `${y}-${String(m).padStart(2, "0")}-01`;
+        }
+        p.set("dateFrom", from);
+        p.set("dateTo", to);
+        p.set("monthEnd", "1");
+        p.delete("latest");
+        return `${hq.path}?${p.toString()}`;
+    }
+
+    // { days, plan, failed }; days null while it loads (then re-renders).
+    function periodData(hq, mode, days, opts) {
+        const q = periodQuery(hq, mode, days);
+        if (periodCache.has(q)) return periodCache.get(q);
+        const entry = { days: null, plan: null, failed: false };
+        periodCache.set(q, entry);
+        const key = periodKey;
+        fetch(`${API.BASE_URL}${q}`, { headers: { Authorization: `Bearer ${hq.token}` } })
+            .then(r => r.json())
+            .then(async data => {
+                if (!data || !data.ok) throw new Error((data && data.message) || "history failed");
+                const d = window.CRLastMonth && CRLastMonth.t24FromNbcHistory ? CRLastMonth.t24FromNbcHistory(data) : data;
+                const ds = d.days || [];
+                if (opts.loadPlan && ds.length) {
+                    try { entry.plan = await opts.loadPlan(ds); } catch (e) { entry.plan = null; }
+                }
+                entry.days = ds;
+            })
+            .catch(e => { console.error("chart period failed:", e); entry.failed = true; })
+            .finally(() => { if (key === periodKey && rerenderLast && !chartClosed()) rerenderLast(); });
+        return entry;
+    }
+
+    // The latest day Daily shows (today's live T24 row included) stands
+    // for its month when it is newer than that month's saved month-end.
+    function withLatest(ends, days, getItemForDay) {
+        const tail = days.reduce((a, d) => (!a || String(d.date) > String(a.date) ? d : a), null);
+        if (!tail || !getItemForDay(tail)) return ends;
+        const tk = String(tail.date).slice(0, 10);
+        const lastKey = ends.length ? String(ends[ends.length - 1].date).slice(0, 10) : "";
+        if (tk <= lastKey) return ends;
+        return [...ends.filter(d => String(d.date).slice(0, 7) !== tk.slice(0, 7)), tail];
     }
 
     // Chart | Analysis: the popup fits the screen without scrolling, so
@@ -415,19 +519,55 @@
     }
 
     function render(opts) {
-        const { section, days, metricLabel, scopeParts = [], xLabels, colors, getItemForDay, getByPath, fmtNum,
-            getPlan, hasPlanFor, planDataset } = opts;
+        const { section, days, metricLabel, scopeParts = [], colors, getItemForDay, getByPath, fmtNum,
+            getPlan, hasPlanFor, planDataset, history } = opts;
         const groups = section.groups.filter(g => g.fields.some(f => f.label === metricLabel));
         if (!groups.length || !days.length) return null;
         const group = groups[0];
         const field = group.fields.find(x => x.label === metricLabel);
         const f = formatter(field, fmtNum);
-        const pts = pointsOf(days, getItemForDay, getByPath, field.key);
+        const worse = higherIsWorse(field.key);
+
+        // ---- the period: Daily | Monthly | Yearly ----
+        const hkey = history ? `${history.path}?${history.params}` : "";
+        if (hkey !== periodKey) { periodKey = hkey; periodPick = null; }
+        if (days !== lastDays) { lastDays = days; periodCache.clear(); }
+        rerenderLast = opts.rerender || null;
+        const keys = days.map(d => String(d.date).slice(0, 10)).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
+        const span = keys.length ? (dayMs(keys[keys.length - 1]) - dayMs(keys[0])) / 86400000 : 0;
+        const mode = periodPick || (span > 92 ? "monthly" : "daily");
+        let src = days, series, loading = false;
+        if (mode !== "daily" && history && window.API) {
+            const e = periodData(history, mode, days, opts);
+            if (e.days && e.days.length) { src = withLatest(e.days, days, getItemForDay); series = e.plan; } else if (!e.days && !e.failed) loading = true;
+        }
+        const cal = calendarOf(src, mode);
+        const numOf = (item, key) => {
+            const raw = item ? getByPath(item, key) : null;
+            const v = raw == null || raw === "" ? null : Number(raw);
+            return Number.isFinite(v) ? v : null;
+        };
+        // A year's month-to-date figure: the sum of its month-ends.
+        const valueAt = (s, key) => {
+            if (s.crEmpty) return null;
+            if (s.crMonths && monthToDate(key)) {
+                let sum = null;
+                s.crMonths.forEach(d => { const v = numOf(getItemForDay(d), key); if (v !== null) sum = (sum || 0) + v; });
+                return sum;
+            }
+            return numOf(getItemForDay(s.crDay || s), key);
+        };
+        const ptsOf = key => cal.days.map(s => ({ date: String(s.date).slice(0, 10), value: valueAt(s, key) }));
+        const lab = date => {
+            const [y, m] = parts(date);
+            return mode === "yearly" ? String(y) : mode === "monthly" ? `${MONTHS[m - 1]} ${y}` : fmtDay(date);
+        };
+        // The monthly plan doesn't fit a year's sum of months.
+        const gp = getPlan ? (fl, dk) => (mode === "yearly" && monthToDate(fl.key) ? null : getPlan(fl, dk, series)) : null;
+        const pts = ptsOf(field.key);
         const have = pts.filter(p => p.value !== null);
         const last = have[have.length - 1] || null;
-        const first = have[0] || null;
-        const range = fmtRange(days[0].date, days[days.length - 1].date);
-        const worse = higherIsWorse(field.key);
+        const range = have.length ? fmtRange(have[0].date, last.date) : fmtRange(days[0].date, days[days.length - 1].date);
 
         // ---- header ----
         const headerRoot = document.getElementById("crChartTitle");
@@ -444,8 +584,13 @@
 
         // ---- hero ----
         const hero = document.getElementById("crChartHero");
-        const ch = changeOf(field, pts);
-        const plan = last && getPlan ? getPlan(field, last.date) : null;
+        const ch = changeOf(field, pts, mode);
+        const vsText = !ch ? "" : mode === "monthly"
+            ? tr("vsPrevMonth", { value: f.full(ch.first.value), month: lab(ch.first.date) }, "vs. {value} at the end of {month} (month on month)")
+            : mode === "yearly"
+                ? tr("vsPrevYear", { value: f.full(ch.first.value), year: lab(ch.first.date) }, "vs. {value} at the end of {year} (year on year)")
+                : tr("vsFirst", { value: f.full(ch.first.value), date: fmtDay(ch.first.date) }, "vs. {value} on {date}");
+        const plan = last && gp ? gp(field, last.date) : null;
         const pb = last ? planOf(field, f, last.value, plan, { big: true }) : null;
         hero.innerHTML = last ? `
             <div class="crv-hero-top">
@@ -454,12 +599,12 @@
             </div>
             <div class="crv-hero-main">
                 <span class="crv-hero-value">${esc(f.full(last.value))}</span>
-                ${ch ? `<span class="crv-hero-change" title="${esc(tr("vsFirst", { value: f.full(ch.first.value), date: fmtDay(ch.first.date) }, "vs. {value} on {date}"))}">${chip(field, f, ch)}</span>` : ""}
+                ${ch ? `<span class="crv-hero-change" title="${esc(vsText)}">${chip(field, f, ch)}</span>` : ""}
             </div>
-            ${ch ? `<div class="crv-muted crv-vs">${esc(tr("vsFirst", { value: f.full(ch.first.value), date: fmtDay(ch.first.date) }, "vs. {value} on {date}"))}</div>` : ""}
+            ${ch ? `<div class="crv-muted crv-vs">${esc(vsText)}</div>` : ""}
             ${pb ? `<div class="crv-hero-plan">${pb.html}</div>`
-                : hasPlanFor && hasPlanFor(field.key) && getPlan ? `<div class="crv-muted crv-noplan">${esc(tr("noPlan", null, "No plan set"))}</div>` : ""}
-        ` : `<div class="crv-muted">${esc(tr("noData", null, "No figures for these days."))}</div>`;
+                : hasPlanFor && hasPlanFor(field.key) && gp && !(mode === "yearly" && monthToDate(field.key)) ? `<div class="crv-muted crv-noplan">${esc(tr("noPlan", null, "No plan set"))}</div>` : ""}
+        ` : `<div class="crv-muted">${esc(loading ? tr("loading", null, "Loading…") : tr("noData", null, "No figures for these days."))}</div>`;
         hero.hidden = false;
 
         // ---- Chart | Analysis switch ----
@@ -485,12 +630,10 @@
         // ---- chart card head + datasets ----
         const datasets = [];
         let planIndex = -1;
-        const cal = calendarOf(days);
-        const calItem = d => (d.crEmpty ? null : getItemForDay(d));
-        // A gap that holds a working day (or a month) stays a gap; one of
-        // weekends / holidays only is drawn across.
-        // Chart.js asks per pair of neighbouring slots (19→20, 20→21 …),
-        // so look out to the saved days on either side of the pair.
+        // A gap that holds a working day (or a month / year) stays a gap;
+        // one of weekends / holidays only is drawn across. Chart.js asks
+        // per pair of neighbouring slots (19→20, 20→21 …), so look out to
+        // the saved days on either side of the pair.
         const workingGap = (i, j) => {
             let a = i, b = j;
             while (a > 0 && cal.days[a].crEmpty) a--;
@@ -500,68 +643,92 @@
         };
         const hide = c => (workingGap(c.p0DataIndex, c.p1DataIndex) ? "transparent" : undefined);
         const bridge = { borderColor: hide, backgroundColor: hide };
-        const goodShade = "rgba(46,160,110,.16)", badShade = "rgba(214,69,69,.14)";
+        const badShade = "rgba(214,69,69,.10)";
         groups.forEach((g, idx) => {
             const fl = g.fields.find(x => x.label === metricLabel);
-            const data = pointsOf(cal.days, calItem, getByPath, fl.key).map(p => p.value);
+            const data = cal.days.map(s => valueAt(s, fl.key));
             const color = colors[idx % colors.length];
             const n = data.filter(v => v !== null).length;
-            // Straight lines between the days (no smoothing: nothing drawn
-            // between two saved figures that wasn't there), a dot on every
-            // saved day, and a break where a day / month wasn't saved.
+            // Straight lines between the points, a dot on each, a break
+            // where a working day / month / year wasn't saved.
             datasets.push({
                 label: g.label, data, borderColor: color, backgroundColor: color,
                 pointRadius: n > 62 ? 1.5 : 2.5, pointHoverRadius: 5, pointBackgroundColor: color,
                 borderWidth: 2, tension: 0, spanGaps: true, segment: bridge
             });
-            const pds = planDataset ? planDataset(fl, cal.days) : null;
+            const pds = planDataset && !(mode === "yearly" && monthToDate(fl.key)) ? planDataset(fl, cal.days, series) : null;
             if (pds && idx === 0) {
                 pds.label = tr("plan", null, "Plan");
                 datasets.push(pds);
                 planIndex = datasets.length - 1;
             }
         });
-        // The band between the line and the plan (above / below), or a
-        // soft area under a single line.
+        // Shading only where the line is on the wrong side of the plan /
+        // ceiling; none without a plan (a plain line reads cleaner).
         if (groups.length === 1) {
             datasets[0].fill = planIndex >= 0
-                ? { target: planIndex, above: worse ? badShade : goodShade, below: worse ? goodShade : badShade }
-                : { target: "start", above: "rgba(57,135,229,.10)" };
+                ? { target: planIndex, above: worse ? badShade : "transparent", below: worse ? "transparent" : badShade }
+                : false;
         }
         const legend = [
             ...groups.map((g, i) => `<span class="crv-key"><i class="line" style="background:${colors[i % colors.length]}"></i>${esc(groups.length > 1 ? g.label : tr("actual", null, "Actual"))}</span>`),
             planIndex >= 0 ? `<span class="crv-key"><i class="dash"></i>${esc(tr("plan", null, "Plan"))}</span>` : "",
-            planIndex >= 0 && groups.length === 1 ? `<span class="crv-key"><i class="band"></i>${esc(tr("abovePlanKey", null, "Above plan"))}</span>` : ""
+            planIndex >= 0 && groups.length === 1 ? `<span class="crv-key"><i class="band bad"></i>${esc(worse ? tr("aboveCeiling", null, "Above ceiling") : tr("belowPlanKey", null, "Below plan"))}</span>` : ""
         ].join("");
-        document.getElementById("crChartCardHead").innerHTML = `
-            <div class="crv-legend">${legend}<span class="crv-key crv-mtd">${esc(cal.mode === "monthly" ? tr("modeMonthly", null, "Monthly · month-end") : tr("modeDaily", null, "Daily"))}</span>${monthToDate(field.key) ? `<span class="crv-key crv-mtd">${esc(tr("mtd", null, "month to date"))}</span>` : ""}</div>`;
+        const mtdKey = !monthToDate(field.key) ? ""
+            : mode === "yearly" ? tr("mtdYear", null, "sum of the year's months")
+                : mode === "monthly" ? tr("mtdMonth", null, "month total at month-end") : tr("mtd", null, "month to date");
+        const names = { daily: tr("periodDaily", null, "Daily"), monthly: tr("periodMonthly", null, "Monthly"), yearly: tr("periodYearly", null, "Yearly") };
+        const head = document.getElementById("crChartCardHead");
+        head.innerHTML = `
+            <div class="crv-head-row">
+                <div class="crv-period" role="tablist">${PERIODS.map(p => `<button type="button" class="crv-period-btn${p === mode ? " active" : ""}" data-period="${p}" role="tab" aria-selected="${p === mode}">${esc(names[p])}</button>`).join("")}</div>
+                <div class="crv-legend">${legend}${loading ? `<span class="crv-key crv-mtd">${esc(tr("loading", null, "Loading…"))}</span>` : ""}${mtdKey ? `<span class="crv-key crv-mtd">${esc(mtdKey)}</span>` : ""}</div>
+            </div>`;
+        if (!head.dataset.crvPeriod) {
+            head.dataset.crvPeriod = "1";
+            head.addEventListener("click", e => {
+                const b = e.target.closest(".crv-period-btn");
+                if (!b || !PERIODS.includes(b.dataset.period)) return;
+                periodPick = b.dataset.period;
+                if (rerenderLast) rerenderLast();
+            });
+        }
 
         // ---- other figures + insights ----
         const others = group.fields.filter(x => x.key !== field.key).map(x => {
             const xf = formatter(x, fmtNum);
-            const xp = pointsOf(days, getItemForDay, getByPath, x.key);
+            const xp = ptsOf(x.key);
             const xh = xp.filter(p => p.value !== null);
             if (!xh.length) return "";
             const xl = xh[xh.length - 1];
-            const xch = changeOf(x, xp);
-            const xplan = getPlan ? getPlan(x, xl.date) : null;
+            const xch = changeOf(x, xp, mode);
+            const xplan = gp ? gp(x, xl.date) : null;
             const xpb = planOf(x, xf, xl.value, xplan, { big: false });
             return `
                 <article class="crv-mini">
                     <div class="crv-mini-top"><span class="crv-kicker">${esc(x.label)}</span>${xch ? chip(x, xf, xch) : ""}</div>
                     <div class="crv-mini-value">${esc(xf.full(xl.value))}</div>
                     ${xpb ? `<div class="crv-mini-plan">${xpb.html}</div>`
-                        : xch ? `<div class="crv-muted">${esc(tr("was", { value: xf.full(xch.first.value) }, "Was {value}"))}${hasPlanFor && hasPlanFor(x.key) && getPlan ? " · " + esc(tr("noPlan", null, "No plan set")) : ""}</div>` : ""}
+                        : xch ? `<div class="crv-muted">${esc(tr("was", { value: xf.full(xch.first.value) }, "Was {value}"))}${hasPlanFor && hasPlanFor(x.key) && gp ? " · " + esc(tr("noPlan", null, "No plan set")) : ""}</div>` : ""}
                 </article>`;
         }).filter(Boolean);
 
-        const insights = insightsOf(field, f, pts, getPlan, group.fields, days, getItemForDay, getByPath);
+        const insights = insightsOf(field, f, pts, gp, group.fields, ptsOf, mode, lab);
         const scopeText = scopeParts.filter(Boolean).join(" — ");
+        const metric = `${group.label} · ${field.label}`;
         const about = [
-            tr("aboutText", { metric: `${group.label} · ${field.label}`, scope: scopeText, range }, "{metric} for {scope}, day by day over {range}."),
-            cal.mode === "monthly" ? tr("aboutMonthly", null, "Over more than 3 months the chart shows each month's last saved day; a month with none is left as a gap.") : tr("aboutGaps", null, "The line runs across weekends and public holidays; a working day that wasn't saved is left as a gap."),
-            planIndex >= 0 ? tr("aboutPlan", null, "The solid line is the actual figure; the dashed gold line is the monthly plan, and the shaded band is the gap between them.") : "",
-            monthToDate(field.key) ? tr("aboutMtd", null, "This figure is month to date, so it starts again on the 1st of each month.") : ""
+            mode === "monthly" ? tr("aboutTextMonthly", { metric, scope: scopeText, range }, "{metric} for {scope}, month by month over {range}.")
+                : mode === "yearly" ? tr("aboutTextYearly", { metric, scope: scopeText, range }, "{metric} for {scope}, year by year over {range}.")
+                    : tr("aboutText", { metric, scope: scopeText, range }, "{metric} for {scope}, day by day over {range}."),
+            mode === "monthly" ? tr("aboutMonthly", null, "Monthly shows the last 12 months, each at its month-end (the month's last saved day); a month with none is left as a gap.")
+                : mode === "yearly" ? tr("aboutYearly", null, "Yearly shows every year at its year-end (the year's last saved day); this year runs to the latest day.")
+                    : tr("aboutGaps", null, "The line runs across weekends and public holidays; a working day that wasn't saved is left as a gap."),
+            planIndex >= 0 ? tr("aboutPlan", null, "The solid line is the actual figure; the dashed gold line is the monthly plan, and red shading marks where it is on the wrong side of the plan.") : "",
+            monthToDate(field.key) ? (mode === "yearly"
+                ? tr("aboutYearSum", null, "This figure is month to date, so each year adds up its months; no monthly plan is compared.")
+                : tr("aboutMtd", null, "This figure is month to date, so it starts again on the 1st of each month.")) : "",
+            tr("aboutTap", null, "Tap a point to pin its details; tap it again to let go.")
         ].filter(Boolean).join(" ");
         const dash = document.getElementById("crGrowthDashboard");
         dash.innerHTML = `
@@ -584,22 +751,74 @@
         const min = values.length ? Math.min(...values) : 0;
         const max = values.length ? Math.max(...values) : 0;
         const pad = Math.max((max - min) * 0.18, Math.abs(max) * 0.01, field.pct ? 0.001 : 1);
+        // y labels: more decimals while the short ones would repeat.
+        const yCache = new WeakMap();
+        const yLabels = ticks => {
+            if (yCache.has(ticks)) return yCache.get(ticks);
+            let out = null;
+            for (let x = 0; x <= 3 && !out; x++) {
+                const l = ticks.map(t => f.shortX(t.value, x));
+                if (new Set(l).size === l.length) out = l;
+            }
+            out = out || ticks.map(t => f.full(t.value));
+            yCache.set(ticks, out);
+            return out;
+        };
+        const ceiling = !!(plan && plan.ceiling);
+        const slotDate = i => String(cal.days[i].date).slice(0, 10);
+        // Tap pins the tooltip (pointer moves are ignored while pinned);
+        // tapping the same point again lets it go.
+        let pinned = -1;
+        const pin = {
+            id: "crvPin",
+            beforeEvent(chart, args) {
+                const t = args.event.type;
+                if (pinned >= 0 && (t === "mousemove" || t === "mouseout")) return false;
+            }
+        };
         return new Chart(document.getElementById("crChartCanvas").getContext("2d"), {
             type: "line",
-            // "29-Sep-26" → "29 Sep": short enough for a phone's width.
             data: { labels: cal.labels, datasets },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 layout: { padding: { top: 18, right: 8 } },
                 interaction: { mode: "index", intersect: false },
+                onClick: (e, els) => {
+                    const i = els.length ? els[0].index : -1;
+                    pinned = i < 0 || i === pinned ? -1 : i;
+                },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
                         filter: c => c.parsed.y != null,
                         callbacks: {
-                            title: items => (items[0] ? (cal.mode === "monthly" ? `${items[0].label} · ${fmtDay(cal.days[items[0].dataIndex].date)}` : items[0].label) : ""),
-                            label: c => c.parsed.y == null ? null : `${c.dataset.label}: ${f.full(c.parsed.y)}`
+                            title: items => {
+                                if (!items[0]) return "";
+                                const d = slotDate(items[0].dataIndex);
+                                return mode === "daily" ? fmtRange(d, d) : `${lab(d)} · ${fmtDay(d)}`;
+                            },
+                            label: c => (c.parsed.y == null ? null : `${c.dataset.label}: ${f.full(c.parsed.y)}`),
+                            // The change since the point before.
+                            afterLabel: c => {
+                                if (c.datasetIndex === planIndex || c.parsed.y == null) return "";
+                                const d = c.dataset.data;
+                                let j = c.dataIndex - 1;
+                                while (j >= 0 && d[j] == null) j--;
+                                if (j < 0) return "";
+                                if (mode === "daily" && monthToDate(field.key) && slotDate(j).slice(0, 7) !== slotDate(c.dataIndex).slice(0, 7)) return "";
+                                const dd = c.parsed.y - d[j];
+                                const flat = Math.abs(dd) < 1e-9;
+                                return `${flat ? "—" : dd > 0 ? "▲ +" : "▼ −"}${flat ? "" : f.delta(dd)} ${tr("vsPoint", { date: lab(slotDate(j)) }, "vs {date}")}`;
+                            },
+                            footer: items => {
+                                if (planIndex < 0 || !items[0]) return "";
+                                const i = items[0].dataIndex;
+                                const v = datasets[0].data[i], p = datasets[planIndex].data[i];
+                                if (v == null || p == null || !p) return "";
+                                return ceiling ? (v <= p ? tr("withinCeiling", null, "Within ceiling") : tr("aboveCeiling", null, "Above ceiling"))
+                                    : tr("ofPlan", { pct: (v / p * 100).toFixed(1) + "%" }, "{pct} of plan");
+                            }
                         }
                     }
                 },
@@ -607,20 +826,21 @@
                     y: {
                         suggestedMin: Math.max(0, min - pad),
                         suggestedMax: max + pad,
-                        ticks: { color: textMuted, maxTicksLimit: 5, callback: v => f.short(v) },
+                        ticks: { color: textMuted, maxTicksLimit: 5, callback: (v, i, ticks) => yLabels(ticks)[i] },
                         grid: { color: grid },
                         border: { display: false }
                     },
-                    // Daily: a tick on the 1st / 8th / 15th / 22nd; monthly: the months.
+                    // Daily: the finest of 1/8/15/22 … that fits the width;
+                    // Monthly / Yearly: the months / years.
                     x: {
-                        ticks: cal.ticks
-                            ? { color: textMuted, maxRotation: 0, autoSkip: false, callback: (v, i) => (cal.ticks.has(i) ? cal.labels[i] : null) }
-                            : { color: textMuted, maxRotation: 0, autoSkip: true, autoSkipPadding: 10 },
+                        ticks: cal.levels
+                            ? { color: textMuted, maxRotation: 0, autoSkip: false, callback: function (v, i) { return pickLevel(cal.levels, this.maxWidth || this.width).has(i) ? cal.labels[i] : null; } }
+                            : { color: textMuted, maxRotation: 0, autoSkip: true, autoSkipPadding: 12 },
                         grid: { display: false }
                     }
                 }
             },
-            plugins: [markersPlugin(0, planIndex, f, colors)]
+            plugins: [markersPlugin(0, planIndex, f, colors), pin]
         });
     }
 

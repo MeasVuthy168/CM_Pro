@@ -1046,6 +1046,10 @@ function crRenderHistory() {
     crRenderTableHead();
 }
 
+// The last Daily History request — the chart's Monthly / Yearly views
+// ask it again with month-end days only (cr-chart-view.js).
+let crHistoryQuery = null;
+
 async function crFetchHistory() {
     const dateFrom = document.getElementById("crHistFromDate").value;
     const dateTo = document.getElementById("crHistToDate").value;
@@ -1067,6 +1071,7 @@ async function crFetchHistory() {
         // Today's live T24 row (see CRLastMonth.addLiveToday).
         const liveP = CRLastMonth.fetchLive("/api/creditreport/summary", crToken);
         const url = `${API.BASE_URL}/api/creditreport/summary/history?${params.toString()}`;
+        crHistoryQuery = { path: "/api/creditreport/summary/history", params: params.toString() };
         const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
         const data = await res.json();
         crHideLoading();
@@ -1649,10 +1654,10 @@ let crChartPlan = null;        // the plan line's series (CRPlanLine), loaded on
 // The plan line follows the branches the history shows (none = All
 // Branch). Plans are per branch (CO + FSRO + Digital), so a team pick
 // has no plan line.
-async function crLoadChartPlan() {
+async function crLoadChartPlan(days = crHistoryData.days) {
     const { branches, teams } = crHistoryPicks();
     if (teams.length || typeof CRPlanLine === "undefined") return null;
-    return CRPlanLine.load({ dim: "branch", keys: branches, days: crHistoryData.days, token: crToken });
+    return CRPlanLine.load({ dim: "branch", keys: branches, days, token: crToken });
 }
 
 // Chart is visible only when "View History" is also enabled — same
@@ -1755,12 +1760,15 @@ function crRenderChart(section) {
         getItemForDay: day => crHistoryItemForDay(day),
         getByPath: crGetByPath,
         fmtNum: crFmtNum,
-        getPlan: (field, dateKey) => {
-            const value = CRPlanLine.planFor(crChartPlan, field.key, dateKey);
+        getPlan: (field, dateKey, series) => {
+            const value = CRPlanLine.planFor(series || crChartPlan, field.key, dateKey);
             return value === null ? null : { value, ceiling: CRPlanLine.isCeiling(field.key) };
         },
         hasPlanFor: CRPlanLine.hasPlan,
-        planDataset: (field, calDays) => CRPlanLine.dataset(crChartPlan, field, calDays || days, "")
+        planDataset: (field, calDays, series) => CRPlanLine.dataset(series || crChartPlan, field, calDays || days, ""),
+        history: crHistoryQuery && { ...crHistoryQuery, token: crToken },
+        rerender: () => crRenderChart(crActiveSection()),
+        loadPlan: d => crLoadChartPlan(d)
     });
 }
 
