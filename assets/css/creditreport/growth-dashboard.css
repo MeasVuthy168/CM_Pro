@@ -136,6 +136,17 @@
 .crv-key i.band{ height:10px; border-radius:3px; }
 /* The band is green on the good side of the plan and red on the other. */
 .crv-key i.band{ background:linear-gradient(90deg, rgba(46,160,110,.38) 50%, rgba(214,69,69,.32) 50%); }
+/* chart step 2: only the wrong side of the plan / ceiling is shaded */
+.crv-key i.band.bad{ background:rgba(214,69,69,.28); }
+
+/* Daily | Monthly | Yearly */
+.crv-head-row{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; }
+.crv-period{ display:inline-flex; gap:2px; padding:2px; border:1px solid var(--crv-line); border-radius:10px; }
+.crv-period-btn{
+    padding:4px 12px; border:0; border-radius:8px; cursor:pointer; background:transparent;
+    font:inherit; font-size:12.5px; font-weight:700; color:var(--cr-text-muted);
+}
+.crv-period-btn.active{ background:var(--cr-series-1, #3987e5); color:#fff; }
 
 /* small cards */
 .crv-minis{ display:grid; grid-template-columns:repeat(var(--crv-cols,2),minmax(0,1fr)); gap:10px; margin-top:12px; }

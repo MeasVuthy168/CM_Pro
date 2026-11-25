@@ -608,6 +608,10 @@ function crRenderHistory() {
     crRenderTableHead();
 }
 
+// The last Daily History request — the chart's Monthly / Yearly views
+// ask it again with month-end days only (cr-chart-view.js).
+let crHistoryQuery = null;
+
 async function crFetchHistory() {
     const dateFrom = document.getElementById("crHistFromDate").value;
     const dateTo = document.getElementById("crHistToDate").value;
@@ -627,6 +631,7 @@ async function crFetchHistory() {
         // Today's live T24 row (see CRLastMonth.addLiveToday).
         const liveP = CRLastMonth.fetchLive("/api/creditreport/bylocation", crToken);
         const url = `${API.BASE_URL}/api/creditreport/bylocation/history?${params.toString()}`;
+        crHistoryQuery = { path: "/api/creditreport/bylocation/history", params: params.toString() };
         const res = await fetch(url, { headers: { Authorization: `Bearer ${crToken}` } });
         const data = await res.json();
         crHideLoading();
@@ -1675,7 +1680,9 @@ function crRenderChart(section) {
         colors: crChartSeriesColors(),
         getItemForDay: crHistItemForDay,
         getByPath: crGetByPath,
-        fmtNum: crFmtNum
+        fmtNum: crFmtNum,
+        history: crHistoryQuery && { ...crHistoryQuery, token: crToken },
+        rerender: () => crRenderChart(crActiveSection())
     });
 }
 
