@@ -124,22 +124,30 @@ function pfRenderChart() {
     const join = arr => pad(hist.length - 1).concat([val(hist[hist.length - 1])], arr.map(val));
     const c = CI.chartColors();
     const ds = [
-        { label: t("creditreport.pf.actual"), data: hist.map(val).concat(pad(fc.base.length)), borderColor: c.a, backgroundColor: c.a, tension: 0.2 },
+        { label: t("creditreport.pf.actual"), data: hist.map(val).concat(pad(fc.base.length)), borderColor: c.a, backgroundColor: c.a, tension: 0 },
         ...(g.available ? [
-            { label: t("creditreport.pf.base"), data: join(fc.base), borderColor: c.b, borderDash: [6, 4], pointRadius: 2, tension: 0.2 },
-            { label: t("creditreport.pf.best"), data: join(fc.best), borderColor: c.good, borderDash: [2, 4], pointRadius: 0, tension: 0.2 },
-            { label: t("creditreport.pf.stress"), data: join(fc.stress), borderColor: c.bad, borderDash: [2, 4], pointRadius: 0, tension: 0.2 }
+            { label: t("creditreport.pf.base"), data: join(fc.base), borderColor: c.b, borderDash: [6, 4], pointRadius: 2, tension: 0 },
+            { label: t("creditreport.pf.best"), data: join(fc.best), borderColor: c.good, borderDash: [2, 4], pointRadius: 0, tension: 0 },
+            { label: t("creditreport.pf.stress"), data: join(fc.stress), borderColor: c.bad, borderDash: [2, 4], pointRadius: 0, tension: 0 }
         ] : [])
     ];
     if (pfChart) pfChart.destroy();
     if (typeof Chart === "undefined") return;
+    // Chart step 3 (cr-chart-kit.js): straight lines, the change since the
+    // month before in the tooltip, a tap pins it.
+    const K = window.CRChartKit;
+    const pin = K ? K.pin() : null;
+    const change = K ? { afterLabel: K.changeLabel(d => (pfMeasure === "pct" ? `${d.toFixed(2)} pt` : CI.money(d))) } : {};
     pfChart = new Chart(document.getElementById("pfChart"), {
         type: "line",
         data: { labels, datasets: ds },
+        plugins: pin ? [pin.plugin] : [],
         options: {
             responsive: true, maintainAspectRatio: false, spanGaps: false,
+            interaction: { mode: "index", intersect: false },
+            ...(pin ? { onClick: pin.onClick } : {}),
             plugins: { legend: { labels: { color: c.text, font: { family: "KRASAR" } } },
-                tooltip: { callbacks: { label: x => `${x.dataset.label}: ${x.raw === null ? "—" : pfMeasure === "pct" ? `${x.raw.toFixed(2)}%` : CI.money(x.raw)}` } } },
+                tooltip: { callbacks: { label: x => `${x.dataset.label}: ${x.raw === null ? "—" : pfMeasure === "pct" ? `${x.raw.toFixed(2)}%` : CI.money(x.raw)}`, ...change } } },
             scales: { x: { ticks: { color: c.text }, grid: { color: c.grid } }, y: { ticks: { color: c.text, callback: v => (pfMeasure === "pct" ? `${v}%` : CI.money(v)) }, grid: { color: c.grid } } }
         }
     });

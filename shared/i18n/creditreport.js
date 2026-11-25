@@ -1538,7 +1538,7 @@ CMI18n.register({
   "creditreport.mr.ch.causes": { km: "PAR តាមមូលហេតុដែលបានបញ្ជាក់", en: "PAR by confirmed cause" },
   "creditreport.mr.ch.forecast": { km: "PAR %៖ ប្រវត្តិ និង ៣ ខែខាងមុខ (ល្អ / មូលដ្ឋាន / ធ្ងន់)", en: "PAR %: history and the next 3 months (Best / Base / Stress)" },
   "creditreport.mr.daily": { km: "ប្រវត្តិប្រចាំថ្ងៃ", en: "Daily history" },
-  "creditreport.mr.dailyNote": { km: "ថ្ងៃដែលបានរក្សាទុកទាំងអស់ក្នុងប្រវត្តិប្រចាំថ្ងៃ ({n} ថ្ងៃ ពី {first} ដល់ {last})។", en: "Every saved day of the Daily History ({n} days, {first} to {last})." },
+  "creditreport.mr.dailyNote": { km: "ថ្ងៃដែលបានរក្សាទុកក្នុងរយៈពេល ២ ខែចុងក្រោយ ({n} ថ្ងៃ ពី {first} ដល់ {last}); ខែមុនៗ មាននៅក្នុងក្រាហ្វប្រចាំខែ។", en: "The saved days of the last 2 months ({n} days, {first} to {last}); earlier months are in the monthly chart." },
   "creditreport.mr.dailyNone": { km: "មិនទាន់មានប្រវត្តិប្រចាំថ្ងៃសម្រាប់ជម្រើសនេះទេ។", en: "No Daily History saved for this choice yet." },
   "creditreport.mr.date": { km: "ថ្ងៃ", en: "Date" },
   "creditreport.mr.exportPdf": { km: "ទាញយក PDF", en: "Export PDF" },

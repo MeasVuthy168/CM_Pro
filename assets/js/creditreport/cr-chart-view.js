@@ -77,13 +77,7 @@
     }
 
     // extra: more decimals, for axis labels that would otherwise repeat.
-    function compact(n, extra = 0) {
-        const abs = Math.abs(n);
-        if (abs >= 1e9) return (n / 1e9).toFixed(2 + extra) + "B";
-        if (abs >= 1e6) return (n / 1e6).toFixed(2 + extra) + "M";
-        if (abs >= 1e3) return (n / 1e3).toFixed(1 + extra) + "K";
-        return n.toLocaleString(undefined, { maximumFractionDigits: 2 + extra });
-    }
+    const compact = (n, extra) => window.CRChartKit.compact(n, extra);
 
     // Formats for one field: full, short (chart labels), and a change.
     function formatter(field, fmtNum) {
@@ -270,108 +264,12 @@
     }
 
     // ---------- Chart.js: peak label, latest-value bubble, plan label ----------
-    // ---------- the chart's own calendar (chart step 1, 24/11/2026) ----------
-    // The saved days are not every day (none for months, two a day …), so
-    // the line used to space them evenly and mix a year-end with October's
-    // days. The chart now lays them on a real calendar:
-    //   up to ~3 months (92 days): one slot per calendar day — a day not
-    //     saved is an empty slot, so the line breaks there;
-    //   longer: one slot per month — that month's last saved day — so a
-    //     long range reads month by month (a month with no save: a gap).
-    // Returns { days, labels, ticks, mode }; days are the saved day
-    // objects, or { date, crEmpty: true } for an empty slot.
-    const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    // Non-working days (owner, 25/11/2026): the line runs across a
-    // weekend or a Khmer public holiday (no data is made then) and breaks
-    // only where a WORKING day wasn't saved. The holidays come once from
-    // the server (the same list the Productivity heatmaps use); until
-    // they arrive, weekends only.
-    const holidays = new Set();
-    try {
-        const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-        if (token && window.API && API.BASE_URL) {
-            fetch(`${API.BASE_URL}/api/creditreport/byco/kh-holidays`, { headers: { Authorization: `Bearer ${token}` } })
-                .then(r => r.json())
-                .then(d => (d && d.holidays || []).forEach(h => holidays.add(String(h.date || h).slice(0, 10))))
-                .catch(() => {});
-        }
-    } catch (e) { /* weekends only */ }
-    const offDay = k => { const wd = new Date(`${k}T00:00:00Z`).getUTCDay(); return wd === 0 || wd === 6 || holidays.has(k); };
-    const dayMs = d => Date.parse(`${d}T00:00:00Z`);
-    const keyOf = ms => new Date(ms).toISOString().slice(0, 10);
-    // mode "daily": one slot per calendar day (an unsaved day is empty;
-    //   weekends / holidays marked crOff). levels: the x ticks from fine
-    //   to coarse (1/8/15/22 → 1/15 → the 1st → every 2nd / 3rd month →
-    //   January) — the chart picks the finest that fits its width.
-    // mode "monthly": one slot per month — its last saved day.
-    // mode "yearly": one slot per year — its last saved day, with the
-    //   year's month-ends in crMonths (month-to-date figures add them up).
-    function calendarOf(days, mode) {
-        const ds = days.filter(d => d && /^\d{4}-\d{2}-\d{2}/.test(String(d.date))).slice()
-            .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-        if (!ds.length) return { days: [], labels: [], levels: null, mode };
-        const first = String(ds[0].date).slice(0, 10), last = String(ds[ds.length - 1].date).slice(0, 10);
-        if (mode === "yearly") {
-            const byYear = new Map();
-            ds.forEach(d => {
-                const k = String(d.date).slice(0, 10);
-                const e = byYear.get(k.slice(0, 4)) || { day: d, months: new Map() };
-                e.day = d;
-                e.months.set(k.slice(0, 7), d);
-                byYear.set(k.slice(0, 4), e);
-            });
-            const out = [], labels = [];
-            for (let y = Number(first.slice(0, 4)); y <= Number(last.slice(0, 4)); y++) {
-                const e = byYear.get(String(y));
-                out.push(e ? { date: String(e.day.date).slice(0, 10), crDay: e.day, crMonths: [...e.months.values()] } : { date: `${y}-12-31`, crEmpty: true });
-                labels.push(String(y));
-            }
-            return { days: out, labels, levels: null, mode };
-        }
-        if (mode === "monthly") {
-            const lastOfMonth = new Map();
-            ds.forEach(d => lastOfMonth.set(String(d.date).slice(0, 7), d));
-            const out = [], labels = [];
-            let [y, m] = first.slice(0, 7).split("-").map(Number);
-            const [ly, lm] = last.slice(0, 7).split("-").map(Number);
-            while (y < ly || (y === ly && m <= lm)) {
-                const mk = `${y}-${String(m).padStart(2, "0")}`;
-                out.push(lastOfMonth.get(mk) || { date: `${mk}-28`, crEmpty: true });
-                labels.push(`${MON[m - 1]} ${String(y).slice(2)}`);
-                m++; if (m > 12) { m = 1; y++; }
-            }
-            return { days: out, labels, levels: null, mode };
-        }
-        const byDate = new Map(ds.map(d => [String(d.date).slice(0, 10), d]));
-        const out = [], labels = [], meta = [];
-        for (let t = dayMs(first); t <= dayMs(last); t += 86400000) {
-            const k = keyOf(t);
-            out.push(byDate.get(k) || { date: k, crEmpty: true, crOff: offDay(k) });
-            const dd = Number(k.slice(8, 10)), mm = Number(k.slice(5, 7));
-            labels.push(`${dd} ${MON[mm - 1]}`);
-            meta.push({ dd, mm });
-        }
-        const levels = [
-            x => [1, 8, 15, 22].includes(x.dd),
-            x => x.dd === 1 || x.dd === 15,
-            x => x.dd === 1,
-            x => x.dd === 1 && x.mm % 2 === 1,
-            x => x.dd === 1 && x.mm % 3 === 1,
-            x => x.dd === 1 && x.mm === 1
-        ].map(fn => {
-            const s = new Set();
-            meta.forEach((x, i) => { if (fn(x)) s.add(i); });
-            if (!s.size || out.length <= 10) s.add(0);
-            return s;
-        });
-        return { days: out, labels, levels, mode };
-    }
-
-    // The finest tick level whose labels fit the axis (~56px a label).
-    function pickLevel(levels, width) {
-        const max = Math.max(2, Math.floor((width || 300) / 56));
-        return levels.find(s => s.size <= max) || levels[levels.length - 1];
-    }
+    // The chart's calendar (daily / monthly / yearly slots, weekends and
+    // holidays), gaps, ticks, y labels and the pinned tooltip live in
+    // cr-chart-kit.js, shared with Meeting Report, Portfolio Overview and
+    // PAR Forecast.
+    const K = window.CRChartKit;
+    const { calendarOf, dayMs } = K;
 
     function markersPlugin(primaryIndex, planIndex, f, colors) {
         return {
@@ -686,18 +584,8 @@
         const datasets = [];
         let planIndex = -1;
         // A gap that holds a working day (or a month / year) stays a gap;
-        // one of weekends / holidays only is drawn across. Chart.js asks
-        // per pair of neighbouring slots (19→20, 20→21 …), so look out to
-        // the saved days on either side of the pair.
-        const workingGap = (i, j) => {
-            let a = i, b = j;
-            while (a > 0 && cal.days[a].crEmpty) a--;
-            while (b < cal.days.length - 1 && cal.days[b].crEmpty) b++;
-            for (let k = a + 1; k < b; k++) if (cal.days[k].crEmpty && !cal.days[k].crOff) return true;
-            return false;
-        };
-        const hide = c => (workingGap(c.p0DataIndex, c.p1DataIndex) ? "transparent" : undefined);
-        const bridge = { borderColor: hide, backgroundColor: hide };
+        // one of weekends / holidays only is drawn across.
+        const bridge = K.gapSegment(cal.days);
         const badShade = "rgba(214,69,69,.10)";
         groups.forEach((g, idx) => {
             const fl = g.fields.find(x => x.label === metricLabel);
@@ -807,30 +695,11 @@
         const max = values.length ? Math.max(...values) : 0;
         const pad = Math.max((max - min) * 0.18, Math.abs(max) * 0.01, field.pct ? 0.001 : 1);
         // y labels: more decimals while the short ones would repeat.
-        const yCache = new WeakMap();
-        const yLabels = ticks => {
-            if (yCache.has(ticks)) return yCache.get(ticks);
-            let out = null;
-            for (let x = 0; x <= 3 && !out; x++) {
-                const l = ticks.map(t => f.shortX(t.value, x));
-                if (new Set(l).size === l.length) out = l;
-            }
-            out = out || ticks.map(t => f.full(t.value));
-            yCache.set(ticks, out);
-            return out;
-        };
+        const yTick = K.uniqueTicks(f.shortX, f.full);
         const ceiling = !!(plan && plan.ceiling);
         const slotDate = i => String(cal.days[i].date).slice(0, 10);
-        // Tap pins the tooltip (pointer moves are ignored while pinned);
-        // tapping the same point again lets it go.
-        let pinned = -1;
-        const pin = {
-            id: "crvPin",
-            beforeEvent(chart, args) {
-                const t = args.event.type;
-                if (pinned >= 0 && (t === "mousemove" || t === "mouseout")) return false;
-            }
-        };
+        // Tap pins the tooltip; tapping the same point again lets it go.
+        const pin = K.pin();
         return new Chart(document.getElementById("crChartCanvas").getContext("2d"), {
             type: "line",
             data: { labels: cal.labels, datasets },
@@ -839,10 +708,7 @@
                 maintainAspectRatio: false,
                 layout: { padding: { top: 18, right: 8 } },
                 interaction: { mode: "index", intersect: false },
-                onClick: (e, els) => {
-                    const i = els.length ? els[0].index : -1;
-                    pinned = i < 0 || i === pinned ? -1 : i;
-                },
+                onClick: pin.onClick,
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -881,21 +747,19 @@
                     y: {
                         suggestedMin: Math.max(0, min - pad),
                         suggestedMax: max + pad,
-                        ticks: { color: textMuted, maxTicksLimit: 5, callback: (v, i, ticks) => yLabels(ticks)[i] },
+                        ticks: { color: textMuted, maxTicksLimit: 5, callback: yTick },
                         grid: { color: grid },
                         border: { display: false }
                     },
                     // Daily: the finest of 1/8/15/22 … that fits the width;
                     // Monthly / Yearly: the months / years.
                     x: {
-                        ticks: cal.levels
-                            ? { color: textMuted, maxRotation: 0, autoSkip: false, callback: function (v, i) { return pickLevel(cal.levels, this.maxWidth || this.width).has(i) ? cal.labels[i] : null; } }
-                            : { color: textMuted, maxRotation: 0, autoSkip: true, autoSkipPadding: 12 },
+                        ticks: K.dailyTicks(cal, { color: textMuted }),
                         grid: { display: false }
                     }
                 }
             },
-            plugins: [markersPlugin(0, planIndex, f, colors), pin]
+            plugins: [markersPlugin(0, planIndex, f, colors), pin.plugin]
         });
     }
 
