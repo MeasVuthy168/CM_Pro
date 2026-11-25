@@ -518,6 +518,59 @@
         panel.querySelectorAll(".crv-view-btn").forEach(b => b.classList.toggle("active", b.dataset.view === view));
     }
 
+    // ---------- Copy: the chart popup as a picture for Telegram ----------
+    // The header, latest figure, chart card and small cards (or the
+    // Analysis view) as a PNG on the clipboard — the same CRShot the
+    // table's Screenshot uses (share sheet / download where the browser
+    // can't copy an image). Buttons and tabs are left out of the picture.
+    let copyName = "Chart";
+    function copyButton(headerRoot) {
+        const header = headerRoot && headerRoot.closest(".cr-chart-header");
+        if (!header || !window.CRShot) return;
+        let btn = header.querySelector(".crv-copy-btn");
+        if (!btn) {
+            btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "cr-shot-btn crv-copy-btn";
+            btn.innerHTML = '<span class="cr-ico cr-ico-camera" aria-hidden="true"></span><span class="crv-copy-text"></span>';
+            header.insertBefore(btn, header.querySelector(".cr-chart-close"));
+            btn.addEventListener("click", copyChart);
+        }
+        btn.querySelector(".crv-copy-text").textContent = tr("copy", null, "Copy");
+    }
+
+    async function copyChart(e) {
+        const btn = e.currentTarget;
+        const panel = btn.closest(".cr-chart-panel");
+        const say = (msg, type) => (typeof window.notify === "function" ? window.notify(msg, type) : null);
+        btn.disabled = true;
+        try {
+            const how = await CRShot.capture(panel, `${copyName}.png`, {
+                keepWidth: true,
+                // (the header icon is a CSS mask, which html2canvas can't draw)
+                ignore: ["cr-chart-close", "crv-views", "cr-chart-metric-row", "crv-head-icon"],
+                // The panel as tall as what's in the picture (the tabs left
+                // out don't stretch the chart card); Analysis: the whole
+                // view, not only the part scrolled to.
+                onclone: doc => {
+                    const p = doc.querySelector(".cr-chart-panel");
+                    if (!p) return;
+                    p.style.height = "auto";
+                    p.style.maxHeight = "none";
+                    p.style.overflow = "visible";
+                    const card = panel.querySelector(".crv-chart-card"), copy = p.querySelector(".crv-chart-card");
+                    if (card && copy && card.offsetHeight) { copy.style.flex = "none"; copy.style.height = `${card.offsetHeight}px`; }
+                }
+            });
+            if (how !== "cancelled") say(tr(`copy_${how}`, null, { copied: "Chart image copied — paste it into Telegram", shared: "Chart image shared", saved: "Chart image saved" }[how] || ""), "success");
+        } catch (err) {
+            console.error("chart copy failed:", err);
+            say(tr("copy_failed", null, "Could not copy the chart"), "error");
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
     function render(opts) {
         const { section, days, metricLabel, scopeParts = [], colors, getItemForDay, getByPath, fmtNum,
             getPlan, hasPlanFor, planDataset, history } = opts;
@@ -568,9 +621,11 @@
         const have = pts.filter(p => p.value !== null);
         const last = have[have.length - 1] || null;
         const range = have.length ? fmtRange(have[0].date, last.date) : fmtRange(days[0].date, days[days.length - 1].date);
+        copyName = ["Chart", group.label, field.label, mode, last ? last.date : ""].filter(Boolean).join("_").replace(/[^\w\-]+/g, "_");
 
         // ---- header ----
         const headerRoot = document.getElementById("crChartTitle");
+        copyButton(headerRoot);
         const title = group.label;
         const unit = field.pct ? "%" : field.money ? "USD" : field.label;
         headerRoot.innerHTML = `
