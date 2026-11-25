@@ -1760,7 +1760,7 @@ function crRenderChart(section) {
             return value === null ? null : { value, ceiling: CRPlanLine.isCeiling(field.key) };
         },
         hasPlanFor: CRPlanLine.hasPlan,
-        planDataset: field => CRPlanLine.dataset(crChartPlan, field, days, "")
+        planDataset: (field, calDays) => CRPlanLine.dataset(crChartPlan, field, calDays || days, "")
     });
 }
 

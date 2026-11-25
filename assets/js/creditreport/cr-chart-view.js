@@ -269,6 +269,52 @@
     }
 
     // ---------- Chart.js: peak label, latest-value bubble, plan label ----------
+    // ---------- the chart's own calendar (chart step 1, 24/11/2026) ----------
+    // The saved days are not every day (none for months, two a day …), so
+    // the line used to space them evenly and mix a year-end with October's
+    // days. The chart now lays them on a real calendar:
+    //   up to ~3 months (92 days): one slot per calendar day — a day not
+    //     saved is an empty slot, so the line breaks there;
+    //   longer: one slot per month — that month's last saved day — so a
+    //     long range reads month by month (a month with no save: a gap).
+    // Returns { days, labels, ticks, mode }; days are the saved day
+    // objects, or { date, crEmpty: true } for an empty slot.
+    const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const dayMs = d => Date.parse(`${d}T00:00:00Z`);
+    const keyOf = ms => new Date(ms).toISOString().slice(0, 10);
+    function calendarOf(days) {
+        const ds = days.filter(d => d && /^\d{4}-\d{2}-\d{2}/.test(String(d.date))).slice()
+            .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+        if (!ds.length) return { days, labels: days.map(d => d.date), ticks: null, mode: "daily" };
+        const byDate = new Map(ds.map(d => [String(d.date).slice(0, 10), d]));
+        const first = String(ds[0].date).slice(0, 10), last = String(ds[ds.length - 1].date).slice(0, 10);
+        if ((dayMs(last) - dayMs(first)) / 86400000 > 92) {
+            const lastOfMonth = new Map();
+            ds.forEach(d => lastOfMonth.set(String(d.date).slice(0, 7), d));
+            const out = [], labels = [];
+            let [y, m] = first.slice(0, 7).split("-").map(Number);
+            const [ly, lm] = last.slice(0, 7).split("-").map(Number);
+            while (y < ly || (y === ly && m <= lm)) {
+                const mk = `${y}-${String(m).padStart(2, "0")}`;
+                out.push(lastOfMonth.get(mk) || { date: `${mk}-28`, crEmpty: true });
+                labels.push(`${MON[m - 1]} ${String(y).slice(2)}`);
+                m++; if (m > 12) { m = 1; y++; }
+            }
+            return { days: out, labels, ticks: null, mode: "monthly" };
+        }
+        const out = [], labels = [], ticks = new Set();
+        for (let t = dayMs(first), i = 0; t <= dayMs(last); t += 86400000, i++) {
+            const k = keyOf(t);
+            out.push(byDate.get(k) || { date: k, crEmpty: true });
+            const dd = Number(k.slice(8, 10));
+            labels.push(`${dd} ${MON[Number(k.slice(5, 7)) - 1]}`);
+            // Weekly ticks: the 1st, 8th, 15th and 22nd of each month.
+            if ([1, 8, 15, 22].includes(dd)) ticks.add(i);
+        }
+        if (!ticks.size || !ticks.has(0) && out.length <= 10) ticks.add(0);
+        return { days: out, labels, ticks, mode: "daily" };
+    }
+
     function markersPlugin(primaryIndex, planIndex, f, colors) {
         return {
             id: "crvMarkers",
@@ -423,17 +469,23 @@
         // ---- chart card head + datasets ----
         const datasets = [];
         let planIndex = -1;
+        const cal = calendarOf(days);
+        const calItem = d => (d.crEmpty ? null : getItemForDay(d));
         const goodShade = "rgba(46,160,110,.16)", badShade = "rgba(214,69,69,.14)";
         groups.forEach((g, idx) => {
             const fl = g.fields.find(x => x.label === metricLabel);
-            const data = pointsOf(days, getItemForDay, getByPath, fl.key).map(p => p.value);
+            const data = pointsOf(cal.days, calItem, getByPath, fl.key).map(p => p.value);
             const color = colors[idx % colors.length];
+            const n = data.filter(v => v !== null).length;
+            // Straight lines between the days (no smoothing: nothing drawn
+            // between two saved figures that wasn't there), a dot on every
+            // saved day, and a break where a day / month wasn't saved.
             datasets.push({
                 label: g.label, data, borderColor: color, backgroundColor: color,
-                pointRadius: data.length > 20 ? 0 : 3, pointHoverRadius: 5, pointBackgroundColor: color,
-                borderWidth: 2.5, tension: 0.15, cubicInterpolationMode: "monotone"
+                pointRadius: n > 62 ? 1.5 : 2.5, pointHoverRadius: 5, pointBackgroundColor: color,
+                borderWidth: 2, tension: 0, spanGaps: false
             });
-            const pds = planDataset ? planDataset(fl) : null;
+            const pds = planDataset ? planDataset(fl, cal.days) : null;
             if (pds && idx === 0) {
                 pds.label = tr("plan", null, "Plan");
                 datasets.push(pds);
@@ -453,7 +505,7 @@
             planIndex >= 0 && groups.length === 1 ? `<span class="crv-key"><i class="band"></i>${esc(tr("abovePlanKey", null, "Above plan"))}</span>` : ""
         ].join("");
         document.getElementById("crChartCardHead").innerHTML = `
-            <div class="crv-legend">${legend}${monthToDate(field.key) ? `<span class="crv-key crv-mtd">${esc(tr("mtd", null, "month to date"))}</span>` : ""}</div>`;
+            <div class="crv-legend">${legend}<span class="crv-key crv-mtd">${esc(cal.mode === "monthly" ? tr("modeMonthly", null, "Monthly · month-end") : tr("modeDaily", null, "Daily"))}</span>${monthToDate(field.key) ? `<span class="crv-key crv-mtd">${esc(tr("mtd", null, "month to date"))}</span>` : ""}</div>`;
 
         // ---- other figures + insights ----
         const others = group.fields.filter(x => x.key !== field.key).map(x => {
@@ -478,6 +530,7 @@
         const scopeText = scopeParts.filter(Boolean).join(" — ");
         const about = [
             tr("aboutText", { metric: `${group.label} · ${field.label}`, scope: scopeText, range }, "{metric} for {scope}, day by day over {range}."),
+            cal.mode === "monthly" ? tr("aboutMonthly", null, "Over more than 3 months the chart shows each month's last saved day; a month with none is left as a gap.") : tr("aboutGaps", null, "A day that wasn't saved is left as a gap in the line."),
             planIndex >= 0 ? tr("aboutPlan", null, "The solid line is the actual figure; the dashed gold line is the monthly plan, and the shaded band is the gap between them.") : "",
             monthToDate(field.key) ? tr("aboutMtd", null, "This figure is month to date, so it starts again on the 1st of each month.") : ""
         ].filter(Boolean).join(" ");
@@ -505,7 +558,7 @@
         return new Chart(document.getElementById("crChartCanvas").getContext("2d"), {
             type: "line",
             // "29-Sep-26" → "29 Sep": short enough for a phone's width.
-            data: { labels: xLabels.map(l => String(l).replace(/^(\d{1,2})-([A-Za-z]{3})-\d{2}/, "$1 $2")), datasets },
+            data: { labels: cal.labels, datasets },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -513,7 +566,13 @@
                 interaction: { mode: "index", intersect: false },
                 plugins: {
                     legend: { display: false },
-                    tooltip: { callbacks: { label: c => c.parsed.y == null ? null : `${c.dataset.label}: ${f.full(c.parsed.y)}` } }
+                    tooltip: {
+                        filter: c => c.parsed.y != null,
+                        callbacks: {
+                            title: items => (items[0] ? (cal.mode === "monthly" ? `${items[0].label} · ${fmtDay(cal.days[items[0].dataIndex].date)}` : items[0].label) : ""),
+                            label: c => c.parsed.y == null ? null : `${c.dataset.label}: ${f.full(c.parsed.y)}`
+                        }
+                    }
                 },
                 scales: {
                     y: {
@@ -523,7 +582,13 @@
                         grid: { color: grid },
                         border: { display: false }
                     },
-                    x: { ticks: { color: textMuted, maxRotation: 0, autoSkip: true, autoSkipPadding: 14, maxTicksLimit: 4 }, grid: { display: false } }
+                    // Daily: a tick on the 1st / 8th / 15th / 22nd; monthly: the months.
+                    x: {
+                        ticks: cal.ticks
+                            ? { color: textMuted, maxRotation: 0, autoSkip: false, callback: (v, i) => (cal.ticks.has(i) ? cal.labels[i] : null) }
+                            : { color: textMuted, maxRotation: 0, autoSkip: true, autoSkipPadding: 10 },
+                        grid: { display: false }
+                    }
                 }
             },
             plugins: [markersPlugin(0, planIndex, f, colors)]
