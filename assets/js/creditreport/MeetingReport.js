@@ -668,18 +668,28 @@ function mrChart(id, config) {
     const fig = el.closest(".mr-fig");
     if (!config) { if (fig) fig.hidden = true; return; }
     if (fig) fig.hidden = false;
+    // Tap pins the tooltip (cr-chart-kit.js); tap the same point to let go.
+    const pin = window.CRChartKit ? CRChartKit.pin() : null;
     const base = {
         responsive: true, maintainAspectRatio: false, animation: false,
+        ...(pin && config.type !== "doughnut" ? { onClick: pin.onClick, interaction: { mode: "index", intersect: false } } : {}),
         plugins: { legend: { labels: { color: MR_C.text, boxWidth: 12, font: { family: "KRASAR", size: 11 } } } },
         scales: {}
     };
     config.options = Object.assign(base, config.options || {});
     config.options.plugins = Object.assign(base.plugins, (config.options || {}).plugins || {});
+    if (pin) config.plugins = [...(config.plugins || []), pin.plugin];
     mrCharts.set(id, new Chart(el, config));
 }
 const mrAxis = (fmt, extra = {}) => ({ ticks: { color: MR_C.text, font: { size: 10 }, callback: fmt }, grid: { color: MR_C.grid }, ...extra });
 const mrX = () => ({ ticks: { color: MR_C.text, font: { size: 10 }, maxRotation: 0, autoSkip: true }, grid: { display: false } });
-const mrShort = v => { const n = Math.abs(v); return n >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : n >= 1e3 ? `$${Math.round(v / 1e3)}K` : `$${v}`; };
+// x: more decimals — the y axes add them while two labels would read the same.
+const mrShortX = (v, x = 0) => { const n = Math.abs(v); return n >= 1e6 ? `$${(v / 1e6).toFixed(1 + x)}M` : n >= 1e3 ? `$${(v / 1e3).toFixed(x)}K` : `$${+Number(v).toFixed(x)}`; };
+const mrShort = v => mrShortX(v, 0);
+const mrMoneyAxis = () => (window.CRChartKit ? CRChartKit.uniqueTicks(mrShortX) : mrShort);
+// Tooltip: the change since the point before (money / % points).
+const mrChangeMoney = () => (window.CRChartKit ? { afterLabel: CRChartKit.changeLabel(d => mrShort(d)) } : {});
+const mrChangePt = () => (window.CRChartKit ? { afterLabel: CRChartKit.changeLabel(d => `${d.toFixed(2)} pt`) } : {});
 const mrDM = k => { const [, m, d] = String(k).split("-"); return `${d}/${m}`; };
 
 // Achieved % of each planned figure (100% = on plan; PAR / NPL: plan ÷ actual, so above 100% = under the ceiling).
@@ -710,24 +720,40 @@ function mrChartPlan(d) {
 function mrChartMonthly(d) {
     const pts = (d.ov.trend && d.ov.trend.monthly) || [];
     if (pts.length < 2) return mrChart("mrChMonthly", null);
+    // One slot per month on the kit's calendar: a month with no save is
+    // a gap, not squeezed out; straight lines (chart step 3).
+    const K = window.CRChartKit;
+    const cal = K ? K.calendarOf(pts, "monthly") : { days: pts, labels: pts.map(p => { const [y, m] = p.date.split("-"); return `${m}/${y.slice(2)}`; }) };
+    const col = f => cal.days.map(s => (s.crEmpty ? null : f(s)));
+    const pct = k => col(s => (s[k] == null ? null : +(s[k] * 100).toFixed(2)));
+    const seg = K ? { spanGaps: true, segment: K.gapSegment(cal.days) } : {};
     mrChart("mrChMonthly", {
         data: {
-            labels: pts.map(p => { const [y, m] = p.date.split("-"); return `${m}/${y.slice(2)}`; }),
+            labels: cal.labels,
             datasets: [
-                { type: "bar", label: t("creditreport.mr.k.os"), data: pts.map(p => p.os), backgroundColor: "rgba(36,86,168,.35)", yAxisID: "y", order: 2 },
-                { type: "line", label: "PAR %", data: pts.map(p => +(p.parPct * 100).toFixed(2)), borderColor: MR_C.bad, backgroundColor: MR_C.bad, pointRadius: 2, tension: 0.25, yAxisID: "y1", order: 1 },
-                { type: "line", label: "NPL %", data: pts.map(p => +(p.nplPct * 100).toFixed(2)), borderColor: MR_C.gold, backgroundColor: MR_C.gold, pointRadius: 2, tension: 0.25, yAxisID: "y1", order: 1 }
+                { type: "bar", label: t("creditreport.mr.k.os"), data: col(s => s.os), backgroundColor: "rgba(36,86,168,.35)", yAxisID: "y", order: 2 },
+                { type: "line", label: "PAR %", data: pct("parPct"), borderColor: MR_C.bad, backgroundColor: MR_C.bad, pointRadius: 2, tension: 0, ...seg, yAxisID: "y1", order: 1 },
+                { type: "line", label: "NPL %", data: pct("nplPct"), borderColor: MR_C.gold, backgroundColor: MR_C.gold, pointRadius: 2, tension: 0, ...seg, yAxisID: "y1", order: 1 }
             ]
         },
-        options: { scales: { x: mrX(), y: mrAxis(mrShort, { position: "left" }), y1: mrAxis(v => `${v}%`, { position: "right", grid: { display: false } }) } }
+        options: {
+            plugins: { tooltip: { callbacks: mrChangePt() } },
+            scales: { x: mrX(), y: mrAxis(mrMoneyAxis(), { position: "left" }), y1: mrAxis(v => `${v}%`, { position: "right", grid: { display: false } }) }
+        }
     });
 }
 
 // Every saved day of the Daily History (the last 45 kept), newest first in the table.
 // Daily history as trend charts only (no day-by-day list — owner's
 // ask: the detail belongs in section 2.2's two charts, not a long table).
+// Daily: the saved days of the last 2 months (as Portfolio Overview's
+// Daily) — an older saved day (a year-end …) would stretch the calendar
+// over a year; those months are in the monthly chart.
+const MR_DAILY_DAYS = 62;
 function mrRenderDaily(d) {
-    const pts = (d.ov.trend && d.ov.trend.daily) || [];
+    const all = (d.ov.trend && d.ov.trend.daily) || [];
+    const lastMs = all.length ? Date.parse(`${String(all[all.length - 1].date).slice(0, 10)}T00:00:00Z`) : 0;
+    const pts = all.filter(p => lastMs - Date.parse(`${String(p.date).slice(0, 10)}T00:00:00Z`) <= MR_DAILY_DAYS * 864e5);
     const note = document.getElementById("mrDailyNote");
     if (!pts.length) {
         note.textContent = t("creditreport.mr.dailyNone");
@@ -736,27 +762,42 @@ function mrRenderDaily(d) {
         return;
     }
     note.textContent = t("creditreport.mr.dailyNote", { n: pts.length, first: CI.dmy(pts[0].date), last: CI.dmy(pts[pts.length - 1].date) });
-    const labels = pts.map(p => mrDM(p.date));
+    // Chart step 3: the days on a real calendar (cr-chart-kit.js) — the
+    // line runs across weekends / holidays and breaks where a working day
+    // wasn't saved; straight lines; x ticks 1/8/15/22 … as fit the width.
+    const K = window.CRChartKit;
+    const cal = K ? K.calendarOf(pts, "daily") : { days: pts, labels: pts.map(p => mrDM(p.date)), levels: null };
+    const col = f => cal.days.map(s => (s.crEmpty ? null : f(s)));
+    const pct = k => col(s => (s[k] == null ? null : +(s[k] * 100).toFixed(2)));
+    const seg = K ? { spanGaps: true, segment: K.gapSegment(cal.days) } : {};
+    const x = K ? { ticks: K.dailyTicks(cal, { color: MR_C.text, font: { size: 10 } }), grid: { display: false } } : mrX();
+    const title = { title: items => (items[0] ? CI.dmy(String(cal.days[items[0].dataIndex].date).slice(0, 10)) : "") };
     mrChart("mrChDailyOs", {
         data: {
-            labels,
+            labels: cal.labels,
             datasets: [
-                { type: "line", label: t("creditreport.mr.k.os"), data: pts.map(p => p.os), borderColor: MR_C.navy, backgroundColor: MR_C.navy, pointRadius: 1.5, tension: 0.2, yAxisID: "y" },
-                { type: "bar", label: t("creditreport.mr.k.disb"), data: pts.map(p => p.disb), backgroundColor: "rgba(200,150,30,.45)", yAxisID: "y1" }
+                { type: "line", label: t("creditreport.mr.k.os"), data: col(s => s.os), borderColor: MR_C.navy, backgroundColor: MR_C.navy, pointRadius: 1.5, tension: 0, ...seg, yAxisID: "y" },
+                { type: "bar", label: t("creditreport.mr.k.disb"), data: col(s => s.disb), backgroundColor: "rgba(200,150,30,.45)", yAxisID: "y1" }
             ]
         },
-        options: { scales: { x: mrX(), y: mrAxis(mrShort), y1: mrAxis(mrShort, { position: "right", grid: { display: false } }) } }
+        options: {
+            plugins: { tooltip: { callbacks: { ...title, ...mrChangeMoney() } } },
+            scales: { x, y: mrAxis(mrMoneyAxis()), y1: mrAxis(mrMoneyAxis(), { position: "right", grid: { display: false } }) }
+        }
     });
     mrChart("mrChDailyRisk", {
         type: "line",
         data: {
-            labels,
+            labels: cal.labels,
             datasets: [
-                { label: "PAR %", data: pts.map(p => +(p.parPct * 100).toFixed(2)), borderColor: MR_C.bad, backgroundColor: MR_C.bad, pointRadius: 1.5, tension: 0.2 },
-                { label: "NPL %", data: pts.map(p => +(p.nplPct * 100).toFixed(2)), borderColor: MR_C.gold, backgroundColor: MR_C.gold, pointRadius: 1.5, tension: 0.2 }
+                { label: "PAR %", data: pct("parPct"), borderColor: MR_C.bad, backgroundColor: MR_C.bad, pointRadius: 1.5, tension: 0, ...seg },
+                { label: "NPL %", data: pct("nplPct"), borderColor: MR_C.gold, backgroundColor: MR_C.gold, pointRadius: 1.5, tension: 0, ...seg }
             ]
         },
-        options: { scales: { x: mrX(), y: mrAxis(v => `${v}%`) } }
+        options: {
+            plugins: { tooltip: { callbacks: { ...title, ...mrChangePt() } } },
+            scales: { x, y: mrAxis(v => `${v}%`) }
+        }
     });
 }
 
@@ -855,13 +896,13 @@ function mrChartForecast(g) {
         data: {
             labels,
             datasets: [
-                { label: t("creditreport.pf.actual"), data: hist.map(v).concat(pad(fc.base.length)), borderColor: MR_C.navy, backgroundColor: MR_C.navy, pointRadius: 2, tension: 0.2 },
-                { label: t("creditreport.pf.base"), data: join(fc.base), borderColor: MR_C.gold, borderDash: [6, 4], pointRadius: 2, tension: 0.2 },
-                { label: t("creditreport.pf.best"), data: join(fc.best), borderColor: MR_C.good, borderDash: [2, 4], pointRadius: 0, tension: 0.2 },
-                { label: t("creditreport.pf.stress"), data: join(fc.stress), borderColor: MR_C.bad, borderDash: [2, 4], pointRadius: 0, tension: 0.2 }
+                { label: t("creditreport.pf.actual"), data: hist.map(v).concat(pad(fc.base.length)), borderColor: MR_C.navy, backgroundColor: MR_C.navy, pointRadius: 2, tension: 0 },
+                { label: t("creditreport.pf.base"), data: join(fc.base), borderColor: MR_C.gold, borderDash: [6, 4], pointRadius: 2, tension: 0 },
+                { label: t("creditreport.pf.best"), data: join(fc.best), borderColor: MR_C.good, borderDash: [2, 4], pointRadius: 0, tension: 0 },
+                { label: t("creditreport.pf.stress"), data: join(fc.stress), borderColor: MR_C.bad, borderDash: [2, 4], pointRadius: 0, tension: 0 }
             ]
         },
-        options: { spanGaps: false, scales: { x: mrX(), y: mrAxis(v2 => `${v2}%`) } }
+        options: { spanGaps: false, plugins: { tooltip: { callbacks: mrChangePt() } }, scales: { x: mrX(), y: mrAxis(v2 => `${v2}%`) } }
     });
 }
 

@@ -252,38 +252,49 @@ function piRenderTrend(d) {
     // (closed months keep only their month-end day).
     const xy = f => pts.map(p => ({ x: piDay(p.date), y: f(p) }));
     const dayText = v => { const p = pts.find(q => piDay(q.date) === v); return p ? piShortMonth(p.date) + (p.live ? " *" : "") : piShortMonth(piKeyOf(v)); };
+    // Chart step 3 (cr-chart-kit.js): straight lines, the change since the
+    // point before in the tooltip, a tap pins it; Daily ticks read "15 Oct".
+    const K = window.CRChartKit;
+    const tick = v => { const k = piKeyOf(v); return piGrain === "daily" && K ? `${Number(k.slice(8, 10))} ${K.MON[Number(k.slice(5, 7)) - 1]}` : piShortMonth(k); };
+    const change = delta => (K ? { afterLabel: K.changeLabel(delta, (j, c) => dayText(c.dataset.data[j].x)) } : {});
+    const pinOf = () => (K ? K.pin() : null);
     const base = {
         responsive: true,
         maintainAspectRatio: false,
         interaction: { mode: "index", intersect: false },
         animation: false,
         scales: {
-            x: { type: "linear", min: pts.length ? piDay(pts[0].date) : undefined, max: pts.length ? piDay(pts[pts.length - 1].date) : undefined, grid: { display: false }, ticks: { color: col.text, font, maxRotation: 0, autoSkip: true, maxTicksLimit: 5, callback: v => piShortMonth(piKeyOf(v)) } },
+            x: { type: "linear", min: pts.length ? piDay(pts[0].date) : undefined, max: pts.length ? piDay(pts[pts.length - 1].date) : undefined, grid: { display: false }, ticks: { color: col.text, font, maxRotation: 0, autoSkip: true, maxTicksLimit: 5, callback: v => tick(v) } },
             y: { grid: { color: col.grid }, border: { display: false }, ticks: { color: col.text, font } }
         }
     };
+    const pinOs = pinOf(), pinRisk = pinOf();
     piCharts.push(new Chart(document.getElementById("piChartOs"), {
         type: "line",
-        data: { datasets: [{ label: t("creditreport.pi.kOutstanding"), data: xy(p => p.os), borderColor: col.a, backgroundColor: col.a, borderWidth: 2, pointRadius: pts.length > 20 ? 2 : 4, tension: 0.25 }] },
+        plugins: pinOs ? [pinOs.plugin] : [],
+        data: { datasets: [{ label: t("creditreport.pi.kOutstanding"), data: xy(p => p.os), borderColor: col.a, backgroundColor: col.a, borderWidth: 2, pointRadius: pts.length > 20 ? 2 : 4, tension: 0 }] },
         options: {
             ...base,
-            plugins: { legend: { display: false }, tooltip: { callbacks: { title: c => dayText(c[0].parsed.x), label: c => `${c.dataset.label}: ${piMoney(c.parsed.y)}` } } },
-            scales: { ...base.scales, y: { ...base.scales.y, ticks: { ...base.scales.y.ticks, callback: v => piCompact(v) } } }
+            ...(pinOs ? { onClick: pinOs.onClick } : {}),
+            plugins: { legend: { display: false }, tooltip: { callbacks: { title: c => dayText(c[0].parsed.x), label: c => `${c.dataset.label}: ${piMoney(c.parsed.y)}`, ...change(d => piMoney(d)) } } },
+            scales: { ...base.scales, y: { ...base.scales.y, ticks: { ...base.scales.y.ticks, callback: K ? K.uniqueTicks((v, x) => (x ? "$" + K.compact(v, x - 1) : piCompact(v))) : v => piCompact(v) } } }
         }
     }));
     piCharts.push(new Chart(document.getElementById("piChartRisk"), {
         type: "line",
+        plugins: pinRisk ? [pinRisk.plugin] : [],
         data: {
             datasets: [
-                { label: t("creditreport.pi.kNplPct"), data: xy(p => p.nplPct * 100), borderColor: col.a, backgroundColor: col.a, borderWidth: 2, pointRadius: pts.length > 20 ? 2 : 4, tension: 0.25 },
-                { label: t("creditreport.pi.kParPct"), data: xy(p => p.parPct * 100), borderColor: col.b, backgroundColor: col.b, borderWidth: 2, pointRadius: pts.length > 20 ? 2 : 4, pointStyle: "rectRot", borderDash: [6, 3], tension: 0.25 }
+                { label: t("creditreport.pi.kNplPct"), data: xy(p => p.nplPct * 100), borderColor: col.a, backgroundColor: col.a, borderWidth: 2, pointRadius: pts.length > 20 ? 2 : 4, tension: 0 },
+                { label: t("creditreport.pi.kParPct"), data: xy(p => p.parPct * 100), borderColor: col.b, backgroundColor: col.b, borderWidth: 2, pointRadius: pts.length > 20 ? 2 : 4, pointStyle: "rectRot", borderDash: [6, 3], tension: 0 }
             ]
         },
         options: {
             ...base,
+            ...(pinRisk ? { onClick: pinRisk.onClick } : {}),
             plugins: {
                 legend: { display: true, position: "top", align: "start", labels: { color: col.text, font, usePointStyle: true, boxWidth: 8, boxHeight: 8 } },
-                tooltip: { callbacks: { title: c => dayText(c[0].parsed.x), label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(2)}%` } }
+                tooltip: { callbacks: { title: c => dayText(c[0].parsed.x), label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(2)}%`, ...change(d => `${d.toFixed(2)} pt`) } }
             },
             scales: { ...base.scales, y: { ...base.scales.y, ticks: { ...base.scales.y.ticks, callback: v => `${v}%` } } }
         }
