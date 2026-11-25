@@ -46,6 +46,7 @@ select.ms-native{ display:none !important; }
 .ms-item.on .ms-box{ background:#D4AF37; border-color:#D4AF37; }
 .ms-item.on .ms-box::after{ content:""; width:6px; height:11px; border-right:2.5px solid #0E1B3C; border-bottom:2.5px solid #0E1B3C; transform:translateY(-1px) rotate(45deg); }
 .ms-item.on{ font-weight:700; }
+.ms-item.ms-off{ opacity:.4; cursor:not-allowed; }
 .ms-empty{ padding:18px 4px; text-align:center; color:var(--arr-text-muted, var(--cr-text-muted, var(--ms-muted))); }
 .ms-foot{ padding-top:12px; }
 .ms-ok{ width:100%; height:48px; border:0; border-radius:14px; background:linear-gradient(180deg,#FFD700,#D4AF37); color:#0E1B3C; font:inherit; font-size:16px; font-weight:800; cursor:pointer; }
