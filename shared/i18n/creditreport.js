@@ -197,7 +197,7 @@ CMI18n.register({
   "creditreport.chartv.modeDaily": { km: "ប្រចាំថ្ងៃ", en: "Daily" },
   "creditreport.chartv.modeMonthly": { km: "ប្រចាំខែ · ចុងខែ", en: "Monthly · month-end" },
   "creditreport.chartv.aboutMonthly": { km: "លើសពី ៣ ខែ ក្រាហ្វបង្ហាញថ្ងៃរក្សាទុកចុងក្រោយនៃខែនីមួយៗ; ខែដែលគ្មានទិន្នន័យ ទុកចន្លោះទទេ។", en: "Over more than 3 months the chart shows each month's last saved day; a month with none is left as a gap." },
-  "creditreport.chartv.aboutGaps": { km: "ថ្ងៃដែលមិនបានរក្សាទុក ទុកចន្លោះទទេក្នុងខ្សែ។", en: "A day that wasn't saved is left as a gap in the line." },
+  "creditreport.chartv.aboutGaps": { km: "ខ្សែភ្ជាប់ឆ្លងចុងសប្តាហ៍ និងថ្ងៃបុណ្យ; ថ្ងៃធ្វើការដែលមិនបានរក្សាទុក ទុកចន្លោះទទេ។", en: "The line runs across weekends and public holidays; a working day that wasn't saved is left as a gap." },
   "creditreport.saved.chooseData": { km: "ជ្រើសទិន្នន័យ", en: "Choose Data" },
   "creditreport.saved.backLatest": { km: "ត្រឡប់ទៅទិន្នន័យថ្មីបំផុត", en: "Back to latest data" },
   "creditreport.saved.dateTo": { km: "ដល់ថ្ងៃ", en: "Date To" },

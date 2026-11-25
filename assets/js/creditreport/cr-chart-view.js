@@ -280,6 +280,22 @@
     // Returns { days, labels, ticks, mode }; days are the saved day
     // objects, or { date, crEmpty: true } for an empty slot.
     const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    // Non-working days (owner, 25/11/2026): the line runs across a
+    // weekend or a Khmer public holiday (no data is made then) and breaks
+    // only where a WORKING day wasn't saved. The holidays come once from
+    // the server (the same list the Productivity heatmaps use); until
+    // they arrive, weekends only.
+    const holidays = new Set();
+    try {
+        const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+        if (token && window.API && API.BASE_URL) {
+            fetch(`${API.BASE_URL}/api/creditreport/byco/kh-holidays`, { headers: { Authorization: `Bearer ${token}` } })
+                .then(r => r.json())
+                .then(d => (d && d.holidays || []).forEach(h => holidays.add(String(h.date || h).slice(0, 10))))
+                .catch(() => {});
+        }
+    } catch (e) { /* weekends only */ }
+    const offDay = k => { const wd = new Date(`${k}T00:00:00Z`).getUTCDay(); return wd === 0 || wd === 6 || holidays.has(k); };
     const dayMs = d => Date.parse(`${d}T00:00:00Z`);
     const keyOf = ms => new Date(ms).toISOString().slice(0, 10);
     function calendarOf(days) {
@@ -305,7 +321,7 @@
         const out = [], labels = [], ticks = new Set();
         for (let t = dayMs(first), i = 0; t <= dayMs(last); t += 86400000, i++) {
             const k = keyOf(t);
-            out.push(byDate.get(k) || { date: k, crEmpty: true });
+            out.push(byDate.get(k) || { date: k, crEmpty: true, crOff: offDay(k) });
             const dd = Number(k.slice(8, 10));
             labels.push(`${dd} ${MON[Number(k.slice(5, 7)) - 1]}`);
             // Weekly ticks: the 1st, 8th, 15th and 22nd of each month.
@@ -471,6 +487,19 @@
         let planIndex = -1;
         const cal = calendarOf(days);
         const calItem = d => (d.crEmpty ? null : getItemForDay(d));
+        // A gap that holds a working day (or a month) stays a gap; one of
+        // weekends / holidays only is drawn across.
+        // Chart.js asks per pair of neighbouring slots (19→20, 20→21 …),
+        // so look out to the saved days on either side of the pair.
+        const workingGap = (i, j) => {
+            let a = i, b = j;
+            while (a > 0 && cal.days[a].crEmpty) a--;
+            while (b < cal.days.length - 1 && cal.days[b].crEmpty) b++;
+            for (let k = a + 1; k < b; k++) if (cal.days[k].crEmpty && !cal.days[k].crOff) return true;
+            return false;
+        };
+        const hide = c => (workingGap(c.p0DataIndex, c.p1DataIndex) ? "transparent" : undefined);
+        const bridge = { borderColor: hide, backgroundColor: hide };
         const goodShade = "rgba(46,160,110,.16)", badShade = "rgba(214,69,69,.14)";
         groups.forEach((g, idx) => {
             const fl = g.fields.find(x => x.label === metricLabel);
@@ -483,7 +512,7 @@
             datasets.push({
                 label: g.label, data, borderColor: color, backgroundColor: color,
                 pointRadius: n > 62 ? 1.5 : 2.5, pointHoverRadius: 5, pointBackgroundColor: color,
-                borderWidth: 2, tension: 0, spanGaps: false
+                borderWidth: 2, tension: 0, spanGaps: true, segment: bridge
             });
             const pds = planDataset ? planDataset(fl, cal.days) : null;
             if (pds && idx === 0) {
@@ -530,7 +559,7 @@
         const scopeText = scopeParts.filter(Boolean).join(" — ");
         const about = [
             tr("aboutText", { metric: `${group.label} · ${field.label}`, scope: scopeText, range }, "{metric} for {scope}, day by day over {range}."),
-            cal.mode === "monthly" ? tr("aboutMonthly", null, "Over more than 3 months the chart shows each month's last saved day; a month with none is left as a gap.") : tr("aboutGaps", null, "A day that wasn't saved is left as a gap in the line."),
+            cal.mode === "monthly" ? tr("aboutMonthly", null, "Over more than 3 months the chart shows each month's last saved day; a month with none is left as a gap.") : tr("aboutGaps", null, "The line runs across weekends and public holidays; a working day that wasn't saved is left as a gap."),
             planIndex >= 0 ? tr("aboutPlan", null, "The solid line is the actual figure; the dashed gold line is the monthly plan, and the shaded band is the gap between them.") : "",
             monthToDate(field.key) ? tr("aboutMtd", null, "This figure is month to date, so it starts again on the 1st of each month.") : ""
         ].filter(Boolean).join(" ");
