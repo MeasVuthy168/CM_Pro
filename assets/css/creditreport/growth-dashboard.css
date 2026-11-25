@@ -139,6 +139,10 @@
 /* chart step 2: only the wrong side of the plan / ceiling is shaded */
 .crv-key i.band.bad{ background:rgba(214,69,69,.28); }
 
+/* Copy (chart → Telegram): beside the close button */
+.cr-chart-header .crv-copy-btn{ margin-left:auto; padding:6px 10px; }
+.cr-chart-header .crv-copy-btn + .cr-chart-close{ margin-left:0; }
+
 /* Daily | Monthly | Yearly */
 .crv-head-row{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; }
 .crv-period{ display:inline-flex; gap:2px; padding:2px; border:1px solid var(--crv-line); border-radius:10px; }

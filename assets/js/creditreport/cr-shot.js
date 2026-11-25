@@ -25,11 +25,13 @@ window.CRShot = (() => {
     }
 
     // el laid out in full (no scroll box, no sticky cells) while drawn.
-    async function render(el) {
+    // opts (the chart popup): keepWidth — drawn at its own width;
+    // ignore — more classes left out; onclone(doc) — tweaks the copy.
+    async function render(el, opts = {}) {
         await loadLib();
         if (document.fonts && document.fonts.ready) await document.fonts.ready;
         el.classList.add("cr-capturing");
-        el.style.width = "max-content";
+        if (!opts.keepWidth) el.style.width = "max-content";
         try {
             const bg = getComputedStyle(el).backgroundColor || "#ffffff";
             const canvas = await html2canvas(el, {
@@ -37,11 +39,12 @@ window.CRShot = (() => {
                 backgroundColor: bg,
                 windowWidth: Math.max(document.documentElement.clientWidth, el.scrollWidth + 80),
                 // Controls aren't part of the picture (the button, the name search).
-                ignoreElements: n => n.classList && ["cr-shot-btn", "cr-skeleton", "cr-search-wrap"].some(c => n.classList.contains(c)),
+                ignoreElements: n => n.classList && ["cr-shot-btn", "cr-skeleton", "cr-search-wrap", ...(opts.ignore || [])].some(c => n.classList.contains(c)),
                 // In html2canvas's own copy of the page: as wide as the
                 // whole table there (the notes wrap under it), at least a
                 // phone's width.
                 onclone: doc => {
+                    if (opts.onclone) return opts.onclone(doc);
                     const c = el.id && doc.getElementById(el.id);
                     const table = c && c.querySelector("table");
                     if (table) c.style.width = `${Math.max(380, table.scrollWidth + 24)}px`;
@@ -56,8 +59,8 @@ window.CRShot = (() => {
 
     // Starts drawing at once (still inside the tap, which the clipboard
     // needs) and resolves to "copied", "shared" or "saved".
-    async function capture(el, filename) {
-        const blob = render(el);
+    async function capture(el, filename, opts) {
+        const blob = render(el, opts);
         if (navigator.clipboard && window.ClipboardItem) {
             try {
                 await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
