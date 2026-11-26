@@ -221,7 +221,7 @@ function nplRenderSteps(m) {
         card("opening", tt.opening.bal, tt.opening.count, "", "base") +
         card("new", tt.new.bal, tt.new.count, "", "bad") +
         card("recovered", ex.recovered.bal, ex.recovered.count, exits, "good") +
-        card("writeOff", ex.writeOff.bal, ex.writeOff.count, "", "base") +
+        card("writeOff", ex.writeOff.bal, ex.writeOff.count, m.woSheet ? t("creditreport.npl.woSheetSub", { n: CI.num(m.woSheet.count), prn: CI.money(m.woSheet.prn), late: CI.num(m.woSheet.inPeriod.count) }) : "", "base") +
         (ex.moved.count ? card("moved", ex.moved.bal, ex.moved.count, "", "base") : "") +
         card("balanceChange", bc, tt.continuing.count, t("creditreport.npl.continuingN", { n: CI.num(tt.continuing.count) }), bc > 0 ? "bad" : bc < 0 ? "good" : "base") +
         card("closing", tt.closing.bal, tt.closing.count, "", "base");
@@ -278,10 +278,30 @@ const NPL_COLS = [
     { key: "reason", label: "creditreport.npl.colReason" }
 ];
 
+// "To write-off" (option A, 26/11/2026): the WO sheet's own rows — every
+// loan written off in the period, NPL on the opening day or not.
+const NPL_WO_COLS = [
+    { key: "ld", label: "creditreport.npl.colLoan" },
+    { key: "name", label: "creditreport.npl.colCustomer" },
+    { key: "branch", label: "creditreport.pi.branch" },
+    { key: "areaOfficer", label: "creditreport.list.colAreaOfficer" },
+    { key: "ownOfficer", label: "creditreport.list.colOwnOfficer" },
+    { key: "product", label: "creditreport.pi.product" },
+    { key: "location", label: "creditreport.npl.colLocation" },
+    { key: "woDate", label: "creditreport.npl.colWoDate" },
+    { key: "woPrn", label: "creditreport.npl.colWoPrn", money: true },
+    { key: "prevCls", label: "creditreport.npl.colPrev" },
+    { key: "openBal", label: "creditreport.npl.colOpening", money: true },
+    { key: "category", label: "creditreport.npl.colCategory" },
+    { key: "reason", label: "creditreport.npl.colReason" }
+];
+const nplCols = () => (nplTab === "writeoff" && nplHasWoSheet() ? NPL_WO_COLS : NPL_COLS);
+const nplHasWoSheet = () => !!(nplData && nplData.movement && nplData.movement.woSheet);
+
 function nplRowsOfTab() {
     const all = nplData.accounts || [];
     if (nplTab === "balance") return all.filter(a => a.category === "continuing" && a.change !== 0);
-    if (nplTab === "writeoff") return all.filter(a => a.category === "recovered" && a.exit === "written_off");
+    if (nplTab === "writeoff") return nplHasWoSheet() ? all.filter(a => a.category === "wo") : all.filter(a => a.category === "recovered" && a.exit === "written_off");
     if (nplTab === "moved") return all.filter(a => a.category === "recovered" && a.exit === "class_changed");
     if (nplTab === "recovered") return all.filter(a => a.category === "recovered" && a.exit !== "written_off" && a.exit !== "class_changed");
     return all.filter(a => a.category === nplTab);
@@ -295,7 +315,7 @@ function nplVisibleRows() {
             .some(v => String(v || "").toLowerCase().includes(q)));
     }
     const { key, dir } = nplSort;
-    const col = NPL_COLS.find(c => c.key === key);
+    const col = nplCols().find(c => c.key === key);
     return rows.slice().sort((a, b) => {
         if (col && (col.money || col.num)) return dir * ((Number(a[key]) || 0) - (Number(b[key]) || 0));
         return dir * String(a[key] || "").localeCompare(String(b[key] || ""));
@@ -303,6 +323,7 @@ function nplVisibleRows() {
 }
 
 function nplCategoryText(a) {
+    if (a.category === "wo") return t(a.inOpening ? "creditreport.npl.woFromOpening" : "creditreport.npl.woInPeriod");
     if (a.exit === "written_off") return t("creditreport.npl.step.writeOff");
     if (a.exit === "class_changed") return t("creditreport.npl.step.moved");
     const base = t(`creditreport.npl.cat.${a.category}`);
@@ -322,11 +343,12 @@ function nplRenderTable() {
     const rows = nplVisibleRows();
     document.getElementById("nplCount").textContent = t("creditreport.npl.accountsN", { n: CI.num(rows.length) });
     document.getElementById("nplMore").hidden = rows.length <= nplShown;
-    const head = `<thead><tr>${NPL_COLS.map(c => {
+    const COLS = nplCols();
+    const head = `<thead><tr>${COLS.map(c => {
         const on = nplSort.key === c.key;
         return `<th${c.money || c.num ? ' class="num"' : ""} aria-sort="${on ? (nplSort.dir > 0 ? "ascending" : "descending") : "none"}"><button type="button" class="ci-sort" data-key="${c.key}">${CI.esc(t(c.label))}${on ? (nplSort.dir > 0 ? " ▲" : " ▼") : ""}</button></th>`;
     }).join("")}</tr></thead>`;
-    const body = rows.slice(0, nplShown).map(a => `<tr>${NPL_COLS.map(c => {
+    const body = rows.slice(0, nplShown).map(a => `<tr>${COLS.map(c => {
         if (c.num) return `<td class="num">${a[c.key] ? CI.num(a[c.key]) : "—"}</td>`;
         if (c.money) {
             const v = Number(a[c.key]) || 0;
@@ -338,9 +360,11 @@ function nplRenderTable() {
         if (c.key === "location") return `<td>${CI.esc(a.district || a.location || "")}</td>`;
         if (c.key === "reason") return `<td class="ci-reason">${CI.esc(a.reason || "—")}</td>`;
         if (c.key === "name") return `<td>${CI.esc(a.name)}<div class="ci-sub">${CI.esc(a.cif)}</div></td>`;
+        if (c.key === "woDate") return `<td>${CI.esc(a.woDate ? CI.dmy(a.woDate) : "")}</td>`;
+        if (c.key === "ld") return `<td>${CI.esc(a.ld || "—")}</td>`;
         return `<td>${CI.esc(a[c.key] || "")}</td>`;
     }).join("")}</tr>`).join("");
-    document.getElementById("nplTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="${NPL_COLS.length}" class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</td></tr>`}</tbody>`;
+    document.getElementById("nplTable").innerHTML = head + `<tbody>${body || `<tr><td colspan="${COLS.length}" class="pi-note">${CI.esc(t("creditreport.pi.nothing"))}</td></tr>`}</tbody>`;
 }
 
 // The officer named on a card follows the filter's Area / Own choice.
@@ -389,7 +413,7 @@ const NPL_WHY_PAGE = 6;
 const NPL_WHY_NONE = "\u0000none";
 
 function nplRenderWhy() {
-    const all = (nplData.accounts || []).filter(a => a.category !== "recovered");
+    const all = (nplData.accounts || []).filter(a => a.category !== "recovered" && a.category !== "wo");
     const q = (document.getElementById("nplWhySearch").value || "").trim().toLowerCase();
     const rows = all.filter(a => !q || [a.cause, a.reason, a.solution, a.reasonNote, a.ld, a.cif, a.name, a.branch, a.ownOfficer, a.areaOfficer]
         .some(v => String(v || "").toLowerCase().includes(q)));
@@ -446,14 +470,16 @@ function nplExport() {
         return;
     }
     const rows = nplVisibleRows();
-    const aoa = [NPL_COLS.map(c => t(c.label))].concat(rows.map(a => NPL_COLS.map(c => {
+    const COLS = nplCols();
+    const aoa = [COLS.map(c => t(c.label))].concat(rows.map(a => COLS.map(c => {
         if (c.money || c.num) return Number(a[c.key]) || 0;
+        if (c.key === "woDate") return a.woDate ? CI.dmy(a.woDate) : "";
         if (c.key === "category") return nplCategoryText(a);
         if (c.key === "location") return a.district || a.location || "";
         return a[c.key] || "";
     })));
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws["!cols"] = NPL_COLS.map(c => ({ wch: c.key === "reason" ? 40 : c.money ? 14 : 18 }));
+    ws["!cols"] = COLS.map(c => ({ wch: c.key === "reason" ? 40 : c.money ? 14 : 18 }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "NPL");
     const m = nplData.movement;

@@ -662,7 +662,8 @@
     ];
     function nplRowsOfTab(accounts, tab) {
         if (tab === "balance") return accounts.filter(a => a.category === "continuing" && a.change !== 0);
-        if (tab === "writeoff") return accounts.filter(a => a.category === "recovered" && a.exit === "written_off");
+        // The WO sheet's own rows when the server sends them (option A).
+        if (tab === "writeoff") return accounts.some(a => a.category === "wo") ? accounts.filter(a => a.category === "wo") : accounts.filter(a => a.category === "recovered" && a.exit === "written_off");
         if (tab === "moved") return accounts.filter(a => a.category === "recovered" && a.exit === "class_changed");
         if (tab === "recovered") return accounts.filter(a => a.category === "recovered" && a.exit !== "written_off" && a.exit !== "class_changed");
         return accounts.filter(a => a.category === tab);
@@ -678,6 +679,8 @@
             textCol(t("creditreport.npl.colLocation"), r => r.district || r.location),
             textCol(t("creditreport.npl.colPrev"), r => r.prevCls),
             textCol(t("creditreport.npl.colCur"), r => r.curCls),
+            textCol(t("creditreport.npl.colWoDate"), r => (r.woDate ? r.woDate.split("-").reverse().join("/") : "")),
+            moneyCol(t("creditreport.npl.colWoPrn"), r => r.woPrn),
             moneyCol(t("creditreport.npl.colOpening"), r => r.openBal),
             moneyCol(t("creditreport.npl.colClosing"), r => r.closeBal),
             moneyCol(t("creditreport.npl.colChange"), r => r.change),
