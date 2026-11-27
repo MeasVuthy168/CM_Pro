@@ -20,9 +20,12 @@
         "osMix.small": ["osSmall"],
         "loanDisburse.loan": ["disbCount"],
         "loanDisburse.value": ["disbAmount"],
-        "nbcOverdue.total.parPct": ["nbcOverduePct", true],
-        "nbcOverdue.totalOwn.parPct": ["nbcOverduePct", true],
-        "nbcOverdue.nonPerformingLoan.parPct": ["nplPct", true]
+        "nbcOverdue.total.parPct": ["nbcOverduePct", "pct"],
+        "nbcOverdue.totalOwn.parPct": ["nbcOverduePct", "pct"],
+        "nbcOverdue.nonPerformingLoan.parPct": ["nplPct", "pct"],
+        // Balance At Risk · PAR Value $: a ceiling in dollars (27/11/2026).
+        "nbcOverdue.total.value": ["nbcOverdueValue", "max"],
+        "nbcOverdue.totalOwn.value": ["nbcOverdueValue", "max"]
     };
     const cache = new Map();
 
@@ -59,7 +62,7 @@
         if (!series || !m) return null;
         const v = (series[monthOf(dateKey)] || {})[m[0]];
         if (v === undefined || v === null) return null;
-        return m[1] ? v / 100 : v;
+        return m[1] === "pct" ? v / 100 : v;
     }
 
     function isCeiling(fieldKey) {

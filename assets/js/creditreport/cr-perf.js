@@ -121,7 +121,8 @@ window.CRPerf = (() => {
             let last;
             if (mt.lowerBetter) {
                 const d = num(m.plan) !== null && num(m.actual) !== null ? Math.round((m.actual - m.plan) * 100) / 100 : null;
-                last = d === null ? "<td>—</td>" : `<td class="cp-${d <= 0 ? "good" : "bad"}"><span class="cp-arrow">${d > 0 ? "▲" : d < 0 ? "▼" : ""}</span>${Math.abs(d).toFixed(2)}</td>`;
+                const dv = d === null ? "" : mt.money ? usd(compact(Math.abs(d))) : Math.abs(d).toFixed(2);
+                last = d === null ? "<td>—</td>" : `<td class="cp-${d <= 0 ? "good" : "bad"}"><span class="cp-arrow">${d > 0 ? "▲" : d < 0 ? "▼" : ""}</span>${dv}</td>`;
             } else {
                 const cls = achCls(m.ach, mt.disb);
                 last = num(m.ach) === null ? "<td>—</td>" : `<td class="cp-${cls}">${Math.round(m.ach * 100)}%</td>`;
