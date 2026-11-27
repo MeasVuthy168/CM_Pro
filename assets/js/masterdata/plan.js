@@ -40,7 +40,10 @@ const MP_GROUPS = [
     },
     { label: "masterdata.plan.grpDisb", metrics: [["disbCount", "masterdata.plan.colLoans"], ["disbAmount", "masterdata.plan.colAmount"]] },
     { label: "masterdata.plan.grpLos", metrics: [["losCount"]] },
-    { label: "masterdata.plan.colNbc", metrics: [["nbcOverduePct"]] },
+    // Balance At Risk (owner, 27/11/2026): PAR % and PAR Value $ — the
+    // NBC Overdue balance planned for the month (a ceiling), to bring PAR
+    // down. The 3rd item: a hint under the column head.
+    { label: "masterdata.plan.colNbc", metrics: [["nbcOverduePct", "masterdata.plan.colParPct"], ["nbcOverdueValue", "masterdata.plan.colParValue", "masterdata.plan.hintParValue"]] },
     { label: "masterdata.plan.colNpl", metrics: [["nplPct"]] },
     // "NPL Collect YTD": the yearly plan of NPL principal collected (HQ PLAN-BP).
     { label: "masterdata.plan.colRecovery", metrics: [["nplRecovery"]] },
@@ -340,7 +343,7 @@ function mpRender() {
     head += "</tr>";
     if (two) {
         head += "<tr>" + groups.filter(g => g.metrics.length > 1)
-            .flatMap(g => g.metrics.map(([, l]) => `<th>${mpEsc(t(l))}</th>`)).join("") + "</tr>";
+            .flatMap(g => g.metrics.map(([, l, hint]) => `<th>${mpEsc(t(l))}${hint ? `<small class="mp-th-hint">${mpEsc(t(hint))}</small>` : ""}</th>`)).join("") + "</tr>";
     }
     head += "</thead>";
 

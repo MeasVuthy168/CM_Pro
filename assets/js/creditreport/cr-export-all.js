@@ -215,13 +215,17 @@
                     : safeStyle(r => {
                         const v = raw(r);
                         if (v === null) return null;
+                        // A ceiling in $ (PAR Value): within the plan is good, up to 10% over amber.
+                        if (f.lowerBetter) return { color: v <= 1 ? GOOD : v <= 1.1 ? WARN : BAD };
                         const redBelow = String(f.planKey).startsWith("disb") ? 0.7 : 0.8;
                         return { color: v >= 1 ? GOOD : v >= redBelow ? WARN : BAD };
                     });
                 return { ...pctCol(f.label, raw), style };
             });
             cols.push(...achCols);
-            lanes.push({ label: anyCeiling ? "±" : t("creditreport.plan.ach"), span: achCols.length });
+            // "% / ±" when a ceiling in $ (PAR Value: a %) sits with a % ceiling (±), as on screen.
+            const allCeiling = planFields.every(f => f.ceiling);
+            lanes.push({ label: allCeiling ? "±" : anyCeiling ? `${t("creditreport.plan.ach")} / ±` : t("creditreport.plan.ach"), span: achCols.length });
         }
 
         // ---- (+/-) vs Last Month — green when it moved the good way,
@@ -282,10 +286,13 @@
     // planKey set only on the "total" (PAR %) and "nonPerformingLoan"
     // (NPL %) rows, and only when `withPlan` (Branch and Officer's Own
     // figures; Product, Location and Officer's Area have no plan).
-    function crGroupPct(prefix, label, planKey) {
+    // valuePlanKey: Balance At Risk · PAR Value $ on the total (a ceiling).
+    function crGroupPct(prefix, label, planKey, valuePlanKey) {
         return { label, fields: [
             { key: `${prefix}.count`, label: "#" },
-            { key: `${prefix}.value`, label: t("creditreport.detail.colValue") },
+            valuePlanKey
+                ? { key: `${prefix}.value`, label: t("creditreport.detail.colValue"), money: true, planKey: valuePlanKey, lowerBetter: true }
+                : { key: `${prefix}.value`, label: t("creditreport.detail.colValue") },
             { key: `${prefix}.parPct`, label: t("creditreport.detail.colParPct"), pct: true, planKey, ceiling: true }
         ] };
     }
@@ -329,7 +336,7 @@
             crGroupPct(`${prefix}.majorDefault`, t("creditreport.detail.classMajorDefault")),
             crGroupPct(`${prefix}.nonPerformingLoan`, t("creditreport.detail.classNonPerformingLoan"), pk("nplPct")),
             ...nplCollect,
-            crGroupPct(`${prefix}.${totalKey}`, t("creditreport.detail.classTotalNbcOverdue"), pk("nbcOverduePct"))
+            crGroupPct(`${prefix}.${totalKey}`, t("creditreport.detail.classTotalNbcOverdue"), pk("nbcOverduePct"), pk("nbcOverdueValue"))
         ].map(g => ({ ...g, label: sideLabel(g.label, which) }));
     }
     function writeOffGroups(prefix, which) {

@@ -102,6 +102,8 @@
 .mp-chip-warn{ color:#A15C00; border-color:#f0c97a; background:#FFF6E0; }
 
 /* Long single-column headings wrap onto two lines (narrower columns). */
+/* a hint under a column head (PAR Value $: a monthly plan to bring PAR down) */
+.mp-table th .mp-th-hint{ display:block; margin-top:3px; font-size:10.5px; font-weight:500; line-height:1.3; white-space:normal; max-width:150px; margin-left:auto; margin-right:auto; opacity:.8; }
 .mp-table th.mp-wrap{ white-space:normal; min-width:92px; max-width:150px; line-height:1.3; }
 .mp-table-wrap[hidden]{ display:none; }
 

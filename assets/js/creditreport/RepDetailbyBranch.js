@@ -260,9 +260,11 @@ function crCompareSection(sectionKey, section) {
             groups.push({ ...g, fields: crPlanFields("losCount", { withActual: true, actualLabel: t("creditreport.plan.thisYear"), planLabel: t("creditreport.plan.yearPlan") }) });
         } else if (first.startsWith("nbcOverdue.total.") || first.startsWith("nbcOverdue.nonPerformingLoan.")) {
             const metric = first.startsWith("nbcOverdue.total.") ? "nbcOverduePct" : "nplPct";
+            // Balance At Risk: PAR % and, for the total, PAR Value $ (a ceiling).
             groups.push({
                 ...g,
                 fields: crPlanFields(metric, { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct") })
+                    .concat(metric === "nbcOverduePct" ? crPlanFields("nbcOverdueValue", { money: true, withActual: true, lowerBetter: true, actualLabel: t("creditreport.plan.parValue"), planLabel: t("creditreport.plan.planMax") }) : [])
             });
         } else if (first.startsWith("nplCollect.ytd.")) {
             // NPL Collect YTD: the year's NPL principal collected vs NPL Recovery $ (yearly).
