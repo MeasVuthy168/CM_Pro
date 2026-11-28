@@ -732,7 +732,7 @@ function crBuildRow(item, section, isTotal, rank) {
         ${rank ? `<span class="cr-rank">${rank}</span>` : ""}<button type="button" class="cr-branch-link" data-branch="${crEscapeHtml(branchKey)}">${crEscapeHtml(branchLabel)}</button>`;
 
     let html = `
-      <tr${isTotal ? ' class="cr-total-row"' : ""}>
+      <tr${isTotal ? ' class="cr-total-row"' : ""} data-colf-i="${isTotal ? "" : crSummaryData.items.indexOf(item)}">
         <td class="cr-branch-col">${branchCell}</td>
         ${cells}
       </tr>`;
@@ -1264,6 +1264,16 @@ document.getElementById("crThead").addEventListener("click", (e) => {
         crSortState = { key: null, type: null, dir: 1 };
     }
     crRenderSummary();
+});
+
+// Excel-style column filters on the headers (cr-colfilter.js); its
+// Sort A→Z / Z→A sorts the table like a header click.
+CRColFilter.init({
+    sort: (key, type, dir) => { crSortState = { key, type, dir }; crRenderSummary(); },
+    // The Total of the rows a column filter keeps (current report only).
+    items: () => (crMode === "current" && crSummaryData ? crSummaryData.items : null),
+    total: () => crSummaryData && crSummaryData.total,
+    renderTotal: tot => crBuildRow(tot, crActiveSection(), true)
 });
 
 document.getElementById("crTbody").addEventListener("click", (e) => {
