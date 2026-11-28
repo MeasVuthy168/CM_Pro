@@ -567,7 +567,8 @@ const crPlanLike = () => crCompareMode() === "plan" || crCompareMode() === "proj
 
 // Plan columns of one metric: plan, then % (or ± for a
 // ceiling). withActual adds the actual first (from planVs).
-function crPlanFields(metric, { money = false, ceiling = false, withActual = false, lowerBetter = false, actualLabel, planLabel } = {}) {
+// diff: a ± in $ (actual − plan) instead of the % of plan (Projection vs Actual).
+function crPlanFields(metric, { money = false, ceiling = false, withActual = false, lowerBetter = false, diff = false, actualLabel, planLabel } = {}) {
     const base = `planVs.${metric}`;
     const kind = ceiling ? "pct" : money ? "money" : "num";
     const f = [];
@@ -575,6 +576,7 @@ function crPlanFields(metric, { money = false, ceiling = false, withActual = fal
     f.push({ key: `${base}.plan`, label: planLabel || t(ceiling ? "creditreport.plan.planMax" : "creditreport.plan.plan"), pv: kind, planCol: true });
     f.push(ceiling
         ? { key: base, label: "±", pv: "diff", planCol: true }
+        : diff ? { key: base, label: "±", pv: "diffMoney", planCol: true }
         : { key: `${base}.ach`, label: "%", pv: "ach", planCol: true, lowerBetter });
     return f;
 }
@@ -594,8 +596,23 @@ const CR_PLAN_SECTIONS = ["outstanding", "khr", "small", "disburse", "los", "nbc
 // By Officer: the Own NBC Overdue balance (the plan-vs-actual's).
 function crProjectionSection() {
     const g = crSections().nbcOverdue.groups.find(x => ((x.fields[0] || {}).key || "").startsWith("nbcOverdue.totalOwn."));
-    return { groups: g ? [{ ...g, fields: crPlanFields("nbcOverdueValue", { money: true, withActual: true, lowerBetter: true, actualLabel: t("creditreport.detail.colValue"), planLabel: t("creditreport.plan.projection") }) }] : [] };
+    return { groups: g ? [{ ...g, fields: [...crPlanFields("nbcOverdueValue", { money: true, withActual: true, lowerBetter: true, diff: true, actualLabel: t("creditreport.detail.colValue"), planLabel: t("creditreport.plan.projection") }), ...crPlanFields("projParPct", { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct"), planLabel: t("creditreport.detail.colParPct") })] }] : [] };
 }
+
+// Projection PAR % (owner, 28/11/2026) = PAR Value $ ÷ the officer's current
+// (Own) Loan Outstanding, next to the actual PAR % (NBC Overdue) — planVs.projParPct
+// on a row, for the PAR run of Projection vs Actual.
+function crWithProjectionPar(pv, os) {
+    if (!pv || !pv.nbcOverdueValue) return pv;
+    const plan = pv.nbcOverdueValue.plan;
+    const a = (pv.nbcOverduePct || {}).actual;
+    pv.projParPct = {
+        plan: plan !== null && plan !== undefined && Number(os) > 0 ? Math.round((plan / Number(os)) * 10000) / 100 : null,
+        actual: a === null || a === undefined ? null : a
+    };
+    return pv;
+}
+
 
 function crCompareSection(section) {
     const groups = [];
@@ -658,8 +675,8 @@ async function crEnsurePlan() {
         const data = await crPlanLoading;
         crPlanData = data;
         const byId = new Map((data.rows || []).map(r => [r.branch, r.metrics]));
-        crData.items.forEach(it => { it.planVs = byId.get(crPlanKey(it.id)) || null; });
-        if (crData.total) crData.total.planVs = data.total ? data.total.metrics : null;
+        crData.items.forEach(it => { it.planVs = crWithProjectionPar(byId.get(crPlanKey(it.id)) || null, (it.loanOutstanding || {}).value); });
+        if (crData.total) crData.total.planVs = crWithProjectionPar(data.total ? data.total.metrics : null, (crData.total.loanOutstanding || {}).value);
         crRenderSection();
     } catch (e) {
         console.error("officer plan vs actual failed:", e);
@@ -693,6 +710,8 @@ function crRenderPlanNote() {
         t("creditreport.plan.noteLos", { from: crFmtDateDMY(crPlanData.ytdFrom), to: crFmtDateDMY(crPlanData.toDate) }),
         t("creditreport.plan.noteRules")
     ];
+    // Projection vs Actual: what its columns are, instead of the plan rules.
+    if (crCompareMode() === "projection") lines.splice(2, lines.length - 2, t("creditreport.plan.noteProjection"));
     if (crPicks("crNbcProduct").length || crPicks("crClass").length || crPicks("crProduct").length) lines.push(t("creditreport.plan.noteFilters"));
     let html = lines.map(l => `<span>${crEscapeHtml(l)}</span>`).join("");
     if (!crPlanData.hasPlan) {
@@ -705,7 +724,7 @@ function crRenderPlanNote() {
 function crActiveSection() {
     if (crCompareMode() === "actual") return CRTable.tagSectionStarts(crCombinedSection(crSectionFor));
     if (crCompareMode() === "lastMonth") return CRTable.tagSectionStarts(crLastMonth.expand(crCombinedSection(crSectionFor)));
-    if (crCompareMode() === "projection") return CRTable.tagSectionStarts(CRTable.planBlocks(crProjectionSection(), { planLabel: t("creditreport.plan.projection") }));
+    if (crCompareMode() === "projection") return CRTable.tagSectionStarts(CRTable.planBlocks(crProjectionSection(), { planLabel: t("creditreport.plan.projection"), ratioLabel: t("creditreport.plan.variance") }));
     return CRTable.tagSectionStarts(CRTable.planBlocks(crCombinedSection(k => k === "all"
         ? { groups: CR_PLAN_SECTIONS.flatMap(sk => crCompareSection(crSections()[sk]).groups) }
         : crCompareSection(crSectionFor(k)))));
