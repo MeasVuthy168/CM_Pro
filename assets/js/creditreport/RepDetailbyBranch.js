@@ -323,6 +323,10 @@ async function crEnsurePlan() {
             return data;
         })();
     }
+    // Plan / Projection vs Actual can take a while (the server works the
+    // actual out): say so, so the page doesn't look stuck.
+    const busy = typeof showAppLoading === "function";
+    if (busy) showAppLoading(t("creditreport.loadingReportData"), { progress: true, key: "crPlan" });
     try {
         const data = await crPlanLoading;
         crPlanData = data;
@@ -334,6 +338,7 @@ async function crEnsurePlan() {
         console.error("plan vs actual failed:", e);
         notify(t("creditreport.plan.loadFailed"), "error");
     } finally {
+        if (busy && typeof hideAppLoading === "function") hideAppLoading();
         crPlanLoading = null;
         crRenderPlanNote();
     }

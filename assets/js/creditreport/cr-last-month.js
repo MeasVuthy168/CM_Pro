@@ -349,6 +349,10 @@ window.CRLastMonth = (() => {
             if (savedCompare() && !saved.cmpAt) { saved.cmpAt = daysBefore(String(data.toDate).slice(0, 10), 1); persist(); syncUi(); }
             info = null;
             note();
+            // Last Month / a saved day can take a while: say so (the app's
+            // "Loading Report Data..." overlay), so the page doesn't look stuck.
+            const busy = typeof showAppLoading === "function";
+            if (busy) showAppLoading(t("creditreport.loadingReportData"), { progress: true, key: "crLastMonth" });
             try {
                 info = await load({ endpoint: opts.endpoint, token: opts.token, toDate: data.toDate, at: compareAt() || undefined });
                 error = false;
@@ -361,6 +365,8 @@ window.CRLastMonth = (() => {
                 console.error("last month failed:", e);
                 error = true;
                 if (opts.onError) opts.onError(e);
+            } finally {
+                if (busy && typeof hideAppLoading === "function") hideAppLoading();
             }
             note();
         }
@@ -387,7 +393,11 @@ window.CRLastMonth = (() => {
             if (!saved.baseAt) { saved.baseAt = daysBefore(liveTo, 1); persist(); }
             const blocked = opts.blockedBy();
             if (blocked.length) { baseMsg = t("creditreport.saved.blocked", { filters: blocked.join(" / ") }); syncUi(); return false; }
-            const got = await load({ endpoint: opts.endpoint, token: opts.token, at: saved.baseAt });
+            const busy = typeof showAppLoading === "function";
+            if (busy) showAppLoading(t("creditreport.loadingReportData"), { progress: true, key: "crSavedBase" });
+            let got;
+            try { got = await load({ endpoint: opts.endpoint, token: opts.token, at: saved.baseAt }); }
+            finally { if (busy && typeof hideAppLoading === "function") hideAppLoading(); }
             if (!got || !got.day) { baseMsg = t("creditreport.lastMonth.noSnapshot", { date: opts.fmtDate(saved.baseAt) }); syncUi(); return false; }
             const f = filters();
             const byKey = new Map((got.day.items || []).map(it => [opts.keyOf(it), it]));
