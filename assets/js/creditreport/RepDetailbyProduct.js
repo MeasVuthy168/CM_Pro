@@ -807,7 +807,12 @@ const crLastMonth = CRLastMonth.controller({
     active: () => crCompareMode() === "lastMonth",
     data: () => crData,
     keyOf: it => it.product,
-    blockedBy: () => crProductBlocked("crAllProduct"),
+    // Product Type (Digital / Non-Digital): each product is wholly one
+    // type (owner, 28/11/2026), so a product's saved row is already its
+    // own — Last Month by product row, the Total = the shown rows added up.
+    blockedBy: () => [],
+    totalBlocked: () => crPicks("crAllProduct").length > 0,
+    sumSubset: true,
     sectionFilters: crLastMonthSectionFilters,
     render: () => crRenderSection(),
     reload: () => crRunReport(),

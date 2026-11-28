@@ -240,6 +240,7 @@ CMI18n.register({
   "creditreport.lastMonth.noteProduct": { km: "Daily History ខែមុនមិនមានតម្រង Product Type ទេ ដូច្នេះខែមុនរបស់ {sections} បង្ហាញ \"—\" (ផ្នែកផ្សេងទៀតប្រៀបធៀបធម្មតា)។", en: "Last month's Daily History has no Product Type filter, so Last Month shows \"—\" for {sections} (the other sections compare as usual)." },
   "creditreport.lastMonth.noteClass": { km: "T24 ខែមុន = NBC Overdue ខែមុន នៃ Loan Class ដូចគ្នាដែលបានជ្រើស (Normal = Minor Default)។", en: "Last month's T24 = last month's NBC Overdue for the same Loan Classes picked (Normal = Minor Default)." },
   "creditreport.lastMonth.noteT24": { km: "សមតុល្យឥណទានយឺតយ៉ាវ (T24) ខែមុន = សមតុល្យឥណទានយឺតយ៉ាវ (NBC Overdue) ខែមុន (ទិន្នន័យ EOD / EOM)។", en: "Last month's Balance Loan at Risk (T24) = last month's Balance Loan at Risk (NBC Overdue) (EOD / EOM figures)." },
+  "creditreport.lastMonth.noteSummed": { km: "ជួរសរុបខែមុន = បូកតួលេខខែមុនរបស់ផលិតផលដែលបង្ហាញ (Product Type ដែលបានជ្រើស)។", en: "Last month's Total = the products shown (the Product Type picked), added up." },
   "creditreport.lastMonth.noteTotal": { km: "ជួរសរុបបង្ហាញ \"—\" ក្នុងខែមុន ព្រោះសរុបខែមុនជាសរុបទាំងអស់ មិនមែនតែជួរដែលបានជ្រើស។", en: "The Total row shows \"—\" for Last Month: last month's total covers every row, not only the ones picked." },
   "creditreport.lastMonth.noSnapshot": { km: "មិនមាន Daily History ដែលបានរក្សាទុក នៅ ឬមុនថ្ងៃ {date} ទេ។", en: "No Daily History was saved on or before {date}." },
   "creditreport.perf.kpiOutstanding": { km: "សមតុល្យ", en: "Outstanding" },
