@@ -567,7 +567,8 @@ const crPlanLike = () => crCompareMode() === "plan" || crCompareMode() === "proj
 
 // Plan columns of one metric: plan, then % (or ± for a
 // ceiling). withActual adds the actual first (from planVs).
-function crPlanFields(metric, { money = false, ceiling = false, withActual = false, lowerBetter = false, actualLabel, planLabel } = {}) {
+// diff: a ± in $ (actual − plan) instead of the % of plan (Projection vs Actual).
+function crPlanFields(metric, { money = false, ceiling = false, withActual = false, lowerBetter = false, diff = false, actualLabel, planLabel } = {}) {
     const base = `planVs.${metric}`;
     const kind = ceiling ? "pct" : money ? "money" : "num";
     const f = [];
@@ -575,6 +576,7 @@ function crPlanFields(metric, { money = false, ceiling = false, withActual = fal
     f.push({ key: `${base}.plan`, label: planLabel || t(ceiling ? "creditreport.plan.planMax" : "creditreport.plan.plan"), pv: kind, planCol: true });
     f.push(ceiling
         ? { key: base, label: "±", pv: "diff", planCol: true }
+        : diff ? { key: base, label: "±", pv: "diffMoney", planCol: true }
         : { key: `${base}.ach`, label: "%", pv: "ach", planCol: true, lowerBetter });
     return f;
 }
@@ -594,7 +596,7 @@ const CR_PLAN_SECTIONS = ["outstanding", "khr", "small", "disburse", "los", "nbc
 // By Officer: the Own NBC Overdue balance (the plan-vs-actual's).
 function crProjectionSection() {
     const g = crSections().nbcOverdue.groups.find(x => ((x.fields[0] || {}).key || "").startsWith("nbcOverdue.totalOwn."));
-    return { groups: g ? [{ ...g, fields: [...crPlanFields("nbcOverdueValue", { money: true, withActual: true, lowerBetter: true, actualLabel: t("creditreport.detail.colValue"), planLabel: t("creditreport.plan.projection") }), ...crPlanFields("projParPct", { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct"), planLabel: t("creditreport.detail.colParPct") })] }] : [] };
+    return { groups: g ? [{ ...g, fields: [...crPlanFields("nbcOverdueValue", { money: true, withActual: true, lowerBetter: true, diff: true, actualLabel: t("creditreport.detail.colValue"), planLabel: t("creditreport.plan.projection") }), ...crPlanFields("projParPct", { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct"), planLabel: t("creditreport.detail.colParPct") })] }] : [] };
 }
 
 // Projection PAR % (owner, 28/11/2026) = PAR Value $ ÷ the officer's current
@@ -722,7 +724,7 @@ function crRenderPlanNote() {
 function crActiveSection() {
     if (crCompareMode() === "actual") return CRTable.tagSectionStarts(crCombinedSection(crSectionFor));
     if (crCompareMode() === "lastMonth") return CRTable.tagSectionStarts(crLastMonth.expand(crCombinedSection(crSectionFor)));
-    if (crCompareMode() === "projection") return CRTable.tagSectionStarts(CRTable.planBlocks(crProjectionSection(), { planLabel: t("creditreport.plan.projection") }));
+    if (crCompareMode() === "projection") return CRTable.tagSectionStarts(CRTable.planBlocks(crProjectionSection(), { planLabel: t("creditreport.plan.projection"), ratioLabel: t("creditreport.plan.variance") }));
     return CRTable.tagSectionStarts(CRTable.planBlocks(crCombinedSection(k => k === "all"
         ? { groups: CR_PLAN_SECTIONS.flatMap(sk => crCompareSection(crSections()[sk]).groups) }
         : crCompareSection(crSectionFor(k)))));

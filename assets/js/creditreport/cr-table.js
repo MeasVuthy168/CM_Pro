@@ -56,7 +56,8 @@ window.CRTable = (() => {
     // groups consecutive blocks by it into its own header row, same as
     // the Excel export's section/lane/field header), while `label` is
     // just the lane name — Plan / Actual / % (or ± for a ceiling).
-    // opts.planLabel: the plan lane's name ("Projection" for Projection vs Actual).
+    // opts.planLabel: the plan lane's name ("Projection" for Projection vs
+    // Actual); opts.ratioLabel: the ± lane's, when every column is a ±.
     function planBlocks(section, opts = {}) {
         const yearPlan = t("creditreport.plan.yearPlan");
         const groups = section.groups.flatMap(g => {
@@ -66,8 +67,8 @@ window.CRTable = (() => {
             const plans = runs.map(r => ({ ...r[1], label: r[1].label === yearPlan ? yearPlan : name(r) }));
             const actuals = runs.map(r => ({ ...r[0], pvCur: true }));
             const ratios = runs.map(r => ({ ...r[2], label: name(r) }));
-            const kinds = new Set(ratios.map(f => f.pv));
-            const ratioHead = kinds.size > 1 ? "% / ±" : kinds.has("diff") ? "±" : "%";
+            const kinds = new Set(ratios.map(f => (f.pv === "diffMoney" ? "diff" : f.pv)));
+            const ratioHead = kinds.size > 1 ? "% / ±" : kinds.has("diff") ? opts.ratioLabel || "±" : "%";
             const first = fields => fields.map((f, i) => (i ? f : { ...f, grpStart: true }));
             return [
                 { ...g, pvBlock: "plan", sectionLabel: g.label, label: opts.planLabel || t("creditreport.plan.plan"), fields: first(plans) },
@@ -92,6 +93,13 @@ window.CRTable = (() => {
             const cls = field.lowerBetter ? (v <= 1 ? "cr-pv-good" : v <= 1.1 ? "cr-pv-warn" : "cr-pv-bad")
                 : v >= 1 ? "cr-pv-good" : v >= redBelow ? "cr-pv-warn" : "cr-pv-bad";
             return `<td class="cr-col-pct cr-plan-col cr-ach ${cls}" data-x="${pct}%">${pct}%<div class="cr-ach-bar"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></div></td>`;
+        }
+        // ± in $ (Projection vs Actual's Value): actual − projection, ▲ above it (red), ▼ under it (green).
+        if (field.pv === "diffMoney") {
+            if (!v || v.plan === null || v.plan === undefined || v.actual === null || v.actual === undefined) return dash("cr-col-money cr-plan-col");
+            const d = Math.round(v.actual - v.plan);
+            if (!d) return `<td class="cr-col-money cr-plan-col" data-x="0">0</td>`;
+            return `<td class="cr-col-money cr-plan-col ${d < 0 ? "cr-pv-good" : "cr-pv-bad"}" data-x="${d}"><span class="cr-arrow">${d > 0 ? "▲" : "▼"}</span>${fmtNum(Math.abs(d))}</td>`;
         }
         // ± against a ceiling (NBC Overdue % / NPL %): ▲ above the plan (red), ▼ under it (green).
         if (field.pv === "diff") {
