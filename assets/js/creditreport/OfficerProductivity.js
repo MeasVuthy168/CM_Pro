@@ -140,7 +140,6 @@ function opCategories() {
         fields: [loan("count"), value("value"), par],
         plan: [
             { key: "nbcOverduePct", label: t("creditreport.plan.nbcPct"), pctPts: true, lowerBetter: true, head: true },
-            { key: "nbcOverdueValue", label: t("creditreport.plan.parValue"), money: true, lowerBetter: true },
             { key: "nplPct", label: t("creditreport.plan.nplPct"), pctPts: true, lowerBetter: true },
             // NPL Collect YTD (Own) vs the yearly NPL Recovery $, #LD / #CIF under it.
             { key: "nplRecovery", label: `${t("creditreport.mr.k.nplCollected")} (${t("creditreport.plan.yearPlan")})`, money: true }

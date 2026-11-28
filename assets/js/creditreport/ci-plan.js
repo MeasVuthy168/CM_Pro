@@ -31,8 +31,6 @@
         // Loan Disburse by LOS: a yearly plan against the year to date.
         { key: "losCount", kind: "count", label: "creditreport.plan.m.losCount", yearly: true },
         { key: "nbcOverduePct", kind: "pct", label: "creditreport.plan.m.parPct" },
-        // Balance At Risk · PAR Value $: the NBC Overdue balance, a monthly ceiling.
-        { key: "nbcOverdueValue", kind: "amount", label: "creditreport.plan.m.parValue", lowerBetter: true },
         { key: "nplPct", kind: "pct", label: "creditreport.plan.m.nplPct" },
         { key: "woCollected", kind: "amount", label: "creditreport.plan.m.woCollected", yearly: true },
         // WO Collected This Period: interest + principal, month to date —

@@ -207,8 +207,10 @@ function crCompareMode() {
     const v = document.getElementById("crCompare")?.value;
     // "Saved date…" is Last Month against a picked day (cr-last-month.js).
     if (CRLastMonth.isSavedCompare(v)) return "lastMonth";
-    return v === "plan" || v === "lastMonth" ? v : "actual";
+    return v === "plan" || v === "lastMonth" || v === "projection" ? v : "actual";
 }
+// Plan vs Actual and Projection vs Actual both read the plan-vs-actual data.
+const crPlanLike = () => crCompareMode() === "plan" || crCompareMode() === "projection";
 
 // Plan columns of one metric: plan, then % (or ± for a
 // ceiling). withActual adds the actual first (from planVs, for figures
@@ -264,7 +266,6 @@ function crCompareSection(sectionKey, section) {
             groups.push({
                 ...g,
                 fields: crPlanFields(metric, { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct") })
-                    .concat(metric === "nbcOverduePct" ? crPlanFields("nbcOverdueValue", { money: true, withActual: true, lowerBetter: true, actualLabel: t("creditreport.plan.parValue"), planLabel: t("creditreport.plan.planMax") }) : [])
             });
         } else if (first.startsWith("nplCollect.ytd.")) {
             // NPL Collect YTD: the year's NPL principal collected vs NPL Recovery $ (yearly).
@@ -282,10 +283,18 @@ function crCompareSection(sectionKey, section) {
 
 
 
+// "Projection vs Actual" (owner, 28/11/2026): the Monthly Plan's PAR
+// Value $ ("Monthly Project Only") against the NBC Overdue balance —
+// Balance At Risk only. Same plan-vs-actual data as Plan vs Actual.
+function crProjectionSection() {
+    const g = crSections().nbcOverdue.groups.find(x => ((x.fields[0] || {}).key || "").startsWith("nbcOverdue.total."));
+    return { groups: g ? [{ ...g, fields: crPlanFields("nbcOverdueValue", { money: true, withActual: true, lowerBetter: true, actualLabel: t("creditreport.detail.colValue"), planLabel: t("creditreport.plan.projection") }) }] : [] };
+}
+
 // Fetch Plan vs Actual (once per report load) and hang each branch's
 // metrics on its row as item.planVs, the Total's on the Total row.
 async function crEnsurePlan() {
-    if (!crSummaryData || crCompareMode() !== "plan") return crRenderPlanNote();
+    if (!crSummaryData || !crPlanLike()) return crRenderPlanNote();
     if (crPlanData) return crRenderPlanNote();
     if (!crPlanLoading) {
         crPlanLoading = (async () => {
@@ -316,7 +325,7 @@ async function crEnsurePlan() {
 function crRenderPlanNote() {
     const el = document.getElementById("crPlanNote");
     if (!el) return;
-    const show = crCompareMode() === "plan";
+    const show = crPlanLike();
     el.style.display = show ? "" : "none";
     if (!show) return;
     if (!crPlanData) {
@@ -393,7 +402,7 @@ function crTableHeadMeta() {
     if (mode === "lastMonth") {
         const last = crLastMonth.lastLabel();
         if (last) parts.push(span(`${last} → ${CRLastMonth.shortDate(d.toDate)}`));
-    } else if (mode === "plan" && crPlanData) {
+    } else if ((mode === "plan" || mode === "projection") && crPlanData) {
         const [y, m] = String(crPlanData.month || "").split("-");
         parts.push(span(t("creditreport.tblhead.planMonth", { month: `${m}-${y}` })), span(`${crFmtDateDMY(crPlanData.fromDate)} → ${crFmtDateDMY(crPlanData.toDate)}`));
     } else {
@@ -401,7 +410,7 @@ function crTableHeadMeta() {
     }
     const keys = crSectionKeys();
     const has = k => !keys.length || keys.includes(k);
-    if (mode !== "plan") {
+    if (mode !== "plan" && mode !== "projection") {
         if (has("disburse") || has("los")) parts.push(span(t("creditreport.tblhead.disb", { from: crFmtDateDMY(d.fromDate), to: crFmtDateDMY(d.toDate) })));
         if (has("writeOff")) parts.push(span(t("creditreport.tblhead.wo", { from: crFmtDateDMY(d.woFromDate), to: crFmtDateDMY(d.woToDate) })));
     }
@@ -461,7 +470,7 @@ function crReadStateFromUrl() {
     crRestorePicks("crTeam", p.getAll("team"));
 
     const compare = p.get("compare");
-    if (compare === "plan" || compare === "lastMonth" || CRLastMonth.isSavedCompare(compare)) document.getElementById("crCompare").value = compare;
+    if (compare === "plan" || compare === "projection" || compare === "lastMonth" || CRLastMonth.isSavedCompare(compare)) document.getElementById("crCompare").value = compare;
 }
 
 function crSyncStateToUrl() {
@@ -792,6 +801,7 @@ function crT24ClassGroup(prefix, label) {
 function crActiveSection() {
     if (crCompareMode() === "actual") return CRTable.tagSectionStarts(crCombinedSection(crSectionFor));
     if (crCompareMode() === "lastMonth") return CRTable.tagSectionStarts(crLastMonth.expand(crCombinedSection(crSectionFor)));
+    if (crCompareMode() === "projection") return CRTable.tagSectionStarts(CRTable.planBlocks(crProjectionSection(), { planLabel: t("creditreport.plan.projection") }));
     // All Sections: each section's own groups, so the plan columns land
     // beside the figures they belong to.
     const section = crCombinedSection(k => k === "all"
@@ -1319,11 +1329,10 @@ document.getElementById("crNbcProduct").addEventListener("change", crRunReport);
 // is a branch plan, not a team one — off while a team is picked.
 function crSyncTeamPlan() {
     const sel = document.getElementById("crCompare");
-    const opt = sel && sel.querySelector('option[value="plan"]');
-    if (!opt) return;
+    if (!sel) return;
     const team = crPicks("crTeam").length > 0;
-    opt.disabled = team; opt.hidden = team;
-    if (team && sel.value === "plan") { sel.value = "actual"; sel.dispatchEvent(new Event("change")); }
+    sel.querySelectorAll('option[value="plan"], option[value="projection"]').forEach(opt => { opt.disabled = team; opt.hidden = team; });
+    if (team && (sel.value === "plan" || sel.value === "projection")) { sel.value = "actual"; sel.dispatchEvent(new Event("change")); }
 }
 document.getElementById("crTeam").addEventListener("change", () => { crSyncTeamPlan(); crRunReport(); });
 

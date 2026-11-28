@@ -336,7 +336,7 @@
             crGroupPct(`${prefix}.majorDefault`, t("creditreport.detail.classMajorDefault")),
             crGroupPct(`${prefix}.nonPerformingLoan`, t("creditreport.detail.classNonPerformingLoan"), pk("nplPct")),
             ...nplCollect,
-            crGroupPct(`${prefix}.${totalKey}`, t("creditreport.detail.classTotalNbcOverdue"), pk("nbcOverduePct"), pk("nbcOverdueValue"))
+            crGroupPct(`${prefix}.${totalKey}`, t("creditreport.detail.classTotalNbcOverdue"), pk("nbcOverduePct"))
         ].map(g => ({ ...g, label: sideLabel(g.label, which) }));
     }
     function writeOffGroups(prefix, which) {

@@ -385,7 +385,7 @@ function mrRenderProgress(d) {
     document.getElementById("mrProgress").innerHTML = d.asOf && !(p && p.metrics) ? mrSavedProgress(d) : p && p.metrics
         // + NPL Collect YTD / THIS PERIOD_PRN-INT, between NPL % and WO collected.
         ? CIPlan.withNplCollected(
-            CIPlan.table(p, { lastMonth: lm, lmLabel: d.compare === "month" ? "creditreport.plan.lastMonth" : "creditreport.mr.before", keys: ["osAmount", "osCount", "osClients", "osKhr", "osSmall", "disbAmount", "disbCount", "losCount", "nbcOverduePct", "nbcOverdueValue", "nplPct", "woCollected", "woCollectedPeriod", "woYtd"] }),
+            CIPlan.table(p, { lastMonth: lm, lmLabel: d.compare === "month" ? "creditreport.plan.lastMonth" : "creditreport.mr.before", keys: ["osAmount", "osCount", "osClients", "osKhr", "osSmall", "disbAmount", "disbCount", "losCount", "nbcOverduePct", "nplPct", "woCollected", "woCollectedPeriod", "woYtd"] }),
             d.recB && d.recB.collected, !!lm, d.asOf ? "creditreport.mr.nplNotKept" : "creditreport.mr.nplNoData")
         : "";
     mrRenderTeamSplit(d);
@@ -696,12 +696,11 @@ const mrDM = k => { const [, m, d] = String(k).split("-"); return `${d}/${m}`; }
 function mrChartPlan(d) {
     const p = d.plan && d.plan.metrics;
     if (!p) return mrChart("mrChPlan", null);
-    const keys = [["osAmount", "creditreport.plan.m.osAmount"], ["osCount", "creditreport.plan.m.osCount"], ["disbAmount", "creditreport.plan.m.disbAmount"], ["nbcOverduePct", "PAR %"], ["nbcOverdueValue", "PAR $"], ["nplPct", "NPL %"]];
+    const keys = [["osAmount", "creditreport.plan.m.osAmount"], ["osCount", "creditreport.plan.m.osCount"], ["disbAmount", "creditreport.plan.m.disbAmount"], ["nbcOverduePct", "PAR %"], ["nplPct", "NPL %"]];
     const rows = keys.map(([k, label]) => {
         const c = p[k] || {};
         if (!c.plan || c.actual === null || c.actual === undefined) return null;
-        // Ceilings (PAR %, PAR $, NPL %): plan ÷ actual, above 100% = under it.
-        const pctKind = k === "nbcOverduePct" || k === "nplPct" || k === "nbcOverdueValue";
+        const pctKind = k === "nbcOverduePct" || k === "nplPct";
         const target = k === "disbAmount" && c.expected ? c.expected : c.plan;
         const v = pctKind ? (c.actual ? c.plan / c.actual : null) : c.actual / target;
         return v === null ? null : { label: label.startsWith("creditreport.") ? t(label) : label, v: Math.round(v * 100) };
