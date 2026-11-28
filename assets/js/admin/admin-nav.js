@@ -10,7 +10,7 @@
    ===================================================== */
 const CM_ADMIN_TOOLS = [
   { key: "hub",       label: "Overview",        labelKey: "admin.nav.hub",           icon: "home", href: "/CM_Pro/pages/admin/index.html",      status: "live" },
-  { key: "bandwidth", label: "Bandwidth Stats",  labelKey: "admin.nav.bandwidth",     icon: "signal", href: "/CM_Pro/pages/admin/bandwidth.html",  status: "live" },
+  { key: "bandwidth", label: "Server Monitoring",  labelKey: "admin.nav.bandwidth",     icon: "signal", href: "/CM_Pro/pages/admin/bandwidth.html",  status: "live" },
   { key: "users",     label: "User Management",  labelKey: "admin.nav.users",        icon: "users", href: "/CM_Pro/pages/admin/users.html",       status: "live" },
   { key: "logs",      label: "Activity Logs",    labelKey: "admin.nav.logs",         icon: "logs", href: "/CM_Pro/pages/admin/activitylogs.html",status: "live" },
   { key: "notifications", label: "Notifications", labelKey: "admin.nav.notifications", icon: "bell", href: "/CM_Pro/pages/admin/notifications.html", status: "live" },
