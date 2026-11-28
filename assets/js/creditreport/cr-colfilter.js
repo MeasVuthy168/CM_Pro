@@ -110,9 +110,13 @@
             const hide = tr.cells.length > 1 && filters.size > 0 && !keeps(tr, null, cols);
             tr.classList.toggle("cr-colf-hide", hide);
             hideNext = hide;
-            if (!hide && tr.dataset.colfI !== undefined) kept.push(Number(tr.dataset.colfI));
+            // the Total counts the rows on screen: not those the page's own
+            // search / Team pick hides either
+            if (!hide && tr.style.display !== "none" && tr.dataset.colfI !== undefined && tr.dataset.colfI !== "") kept.push(Number(tr.dataset.colfI));
         });
-        applyTotal(kept);
+        // a search / Team pick on its own (no column filter) also narrows the Total
+        const narrowed = [...((tbody() && tbody().rows) || [])].some(tr => tr.style.display === "none" && tr.dataset.colfI);
+        applyTotal(kept, narrowed);
     }
 
     // ---------- the Total of the rows kept ----------
@@ -167,15 +171,15 @@
     }
     // Swap the Total row (and the rows under it) for the rows kept's Total —
     // or back to the report's own one when no filter is on.
-    function applyTotal(kept) {
+    function applyTotal(kept, narrowed) {
         if (!config.items || !config.renderTotal) return;
         const items = config.items();
         const b = tbody();
         const row = b && [...b.rows].find(tr => tr.classList.contains("cr-total-row"));
         if (!items || !row) return;
-        const sig = filters.size ? kept.join(",") : "";
+        const sig = filters.size || narrowed ? kept.join(",") || "none" : "";
         if ((row.dataset.colfSig || "") === sig) return;
-        const tot = sig ? totalOf(kept.map(i => items[i]).filter(Boolean)) : (config.total && config.total());
+        const tot = sig ? (kept.length ? totalOf(kept.map(i => items[i]).filter(Boolean)) : null) : (config.total && config.total());
         if (!tot) return;
         const tmp = document.createElement("tbody");
         tmp.innerHTML = config.renderTotal(tot);
@@ -352,7 +356,8 @@
             requestAnimationFrame(() => { decorate(); applyRows(); busy = false; });
         };
         new MutationObserver(run).observe(h, { childList: true, subtree: true });
-        new MutationObserver(run).observe(b, { childList: true });
+        // rows re-drawn, or shown / hidden by the page's search / Team pick
+        new MutationObserver(run).observe(b, { childList: true, subtree: true, attributes: true, attributeFilter: ["style"] });
         run();
     }
     window.addEventListener("cm-language-changed", decorate);
