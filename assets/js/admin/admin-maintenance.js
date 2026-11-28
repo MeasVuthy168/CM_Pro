@@ -35,14 +35,15 @@
   // the Render Account Usage card on the Bandwidth page). Fixed independent
   // of the cleanup tools below — just context for why they matter.
   // =====================================================
-  async function fetchMongoUsage() {
+  // fresh: skip the server's 5-minute cache (right after a delete / compact).
+  async function fetchMongoUsage(fresh) {
     const loadingEl = document.getElementById("mtMongoLoading");
     const bodyEl = document.getElementById("mtMongoBody");
     const setupEl = document.getElementById("mtMongoSetup");
     if (!loadingEl) return; // card not on this page
 
     try {
-      const res = await fetch(`${API_BASE}/api/admin/mongo-usage`, { headers: authHeaders() });
+      const res = await fetch(`${API_BASE}/api/admin/mongo-usage${fresh === true ? "?fresh=1" : ""}`, { headers: authHeaders() });
       const data = await res.json();
 
       if (!data.ok) {
@@ -99,7 +100,7 @@
 
   if (document.getElementById("admMongoUsageCard")) {
     fetchMongoUsage();
-    setInterval(fetchMongoUsage, 5 * 60 * 1000);
+    setInterval(() => fetchMongoUsage(), 5 * 60 * 1000);
   }
 
   function currentEntry() {
@@ -193,6 +194,22 @@
 
   el.btnPreview.addEventListener("click", runPreview);
 
+  // A delete / compact: "Deleting..." / "Compacting..." over the page while
+  // it runs (the confirm button off), then MongoDB Storage Usage read again
+  // so the card shows what's left (owner, 28/11/2026).
+  async function busyRun(btn, textKey, work) {
+    if (btn) btn.disabled = true;
+    if (typeof showAppLoading === "function") showAppLoading(t(textKey));
+    let changed = false;
+    try {
+      changed = await work();
+    } finally {
+      if (typeof hideAppLoading === "function") hideAppLoading();
+      if (btn) btn.disabled = false;
+    }
+    if (changed && document.getElementById("admMongoUsageCard")) fetchMongoUsage(true);
+  }
+
   function openDeleteConfirmModal() {
     const entry = currentEntry();
     if (!entry || !lastPreview || lastPreview.key !== entry.key || lastPreview.days !== currentDays()) {
@@ -211,7 +228,7 @@
     const { body: mountedBody } = AdminUI.openModal({ title: t("admin.maintenance.deleteConfirmTitle"), bodyNode: body });
 
     mountedBody.querySelector("#mtDeleteCancel").addEventListener("click", () => AdminUI.closeModal());
-    mountedBody.querySelector("#mtDeleteConfirm").addEventListener("click", async () => {
+    mountedBody.querySelector("#mtDeleteConfirm").addEventListener("click", ev => busyRun(ev.currentTarget, "admin.maintenance.deletingEllipsis", async () => {
       const { key, days } = lastPreview;
       try {
         const res = await fetch(`${API_BASE}/api/maintenance/cleanup`, {
@@ -220,16 +237,18 @@
           body: JSON.stringify({ collection: key, days })
         });
         const data = await res.json();
-        if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.maintenance.deleteFailed"), "error");
+        if (!res.ok || !data.ok) { AdminUI.toast(data.message || t("admin.maintenance.deleteFailed"), "error"); return false; }
 
         AdminUI.closeModal();
         AdminUI.toast(t("admin.maintenance.deleted", { count: data.deletedCount, cutoff: data.cutoff, collection: entry.label }), "success");
         invalidatePreview();
+        return true;
       } catch (e) {
         console.error("delete failed:", e);
         AdminUI.toast(t("admin.maintenance.deleteFailedServer"), "error");
+        return false;
       }
-    });
+    }));
   }
 
   el.btnDelete.addEventListener("click", openDeleteConfirmModal);
@@ -407,6 +426,7 @@
         invalidateWipePreview();
         loadWipeSources();
         loadWipeLocks();
+        if (document.getElementById("admMongoUsageCard")) fetchMongoUsage(true);
       } catch (e) {
         console.error("wipe delete failed:", e);
         AdminUI.toast(t("admin.maintenance.wipeFailedServer"), "error");
@@ -674,7 +694,7 @@
     const { body: mountedBody } = AdminUI.openModal({ title: t("admin.maintenance.compactConfirmTitle"), bodyNode: body });
 
     mountedBody.querySelector("#cpRunCancel").addEventListener("click", () => AdminUI.closeModal());
-    mountedBody.querySelector("#cpRunConfirm").addEventListener("click", async () => {
+    mountedBody.querySelector("#cpRunConfirm").addEventListener("click", ev => busyRun(ev.currentTarget, "admin.maintenance.compactingEllipsis", async () => {
       try {
         const res = await fetch(`${API_BASE}/api/maintenance/compact-snapshots`, {
           method: "POST",
@@ -682,16 +702,18 @@
           body: JSON.stringify({})
         });
         const data = await res.json();
-        if (!res.ok || !data.ok) return AdminUI.toast(data.message || t("admin.maintenance.compactFailed"), "error");
+        if (!res.ok || !data.ok) { AdminUI.toast(data.message || t("admin.maintenance.compactFailed"), "error"); return false; }
 
         AdminUI.closeModal();
         AdminUI.toast(t("admin.maintenance.compactDone", { count: data.deletedCount, months: data.monthsAffected || 0, years: data.yearsAffected || 0 }), "success");
         invalidateCompactPreview();
+        return true;
       } catch (e) {
         console.error("compact run failed:", e);
         AdminUI.toast(t("admin.maintenance.compactFailedServer"), "error");
+        return false;
       }
-    });
+    }));
   }
 
   cp.btnRun.addEventListener("click", openCompactConfirmModal);
@@ -929,22 +951,20 @@
     const { body: mountedBody } = AdminUI.openModal({ title: t("admin.maintenance.raConfirmTitle"), bodyNode: body });
 
     mountedBody.querySelector("#raDelCancel").addEventListener("click", () => AdminUI.closeModal());
-    mountedBody.querySelector("#raDelConfirm").addEventListener("click", async (ev) => {
-      const btn = ev.currentTarget;
-      btn.disabled = true;
+    mountedBody.querySelector("#raDelConfirm").addEventListener("click", ev => busyRun(ev.currentTarget, "admin.maintenance.deletingEllipsis", async () => {
       try {
         const data = await postReasonOrphans({ cifs: raOrphans.map(o => o.cif) });
-        if (!data) return;
+        if (!data) return false;
         AdminUI.closeModal();
         AdminUI.toast(t("admin.maintenance.raDone", { count: data.deletedCount.toLocaleString() }), "success");
         runReasonPreview();
+        return true;
       } catch (e) {
         console.error("reason arrear cleanup failed:", e);
         AdminUI.toast(t("admin.maintenance.raFailedServer"), "error");
-      } finally {
-        btn.disabled = false;
+        return false;
       }
-    });
+    }));
   }
 
   ra.btnPreview.addEventListener("click", runReasonPreview);
