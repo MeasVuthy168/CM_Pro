@@ -180,3 +180,60 @@
 .cr-capturing .table-scroll{ max-height:none !important; overflow:visible !important; -webkit-mask-image:none !important; mask-image:none !important; }
 .cr-capturing th, .cr-capturing td{ position:static !important; }
 .cr-capturing thead th::after{ display:none !important; }
+
+
+/* ========================================
+   Excel-style column filters (cr-colfilter.js), like Daily Arrears:
+   a funnel button in each sortable header.
+   ======================================== */
+.cr-colf-btn{
+    display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;
+    width:20px; height:20px; margin-left:6px; padding:0; border:0; border-radius:5px;
+    background:rgba(255,255,255,.14); cursor:pointer; flex:0 0 auto;
+}
+.cr-colf-btn svg{ width:12px; height:12px; fill:none; stroke:#fff; stroke-width:2.2; stroke-linejoin:round; opacity:.85; }
+.cr-colf-btn.on{ background:#FFD700; }
+.cr-colf-btn.on svg{ fill:#1A2E57; stroke:#1A2E57; opacity:1; }
+th.cr-colf-active{ box-shadow:inset 0 -3px 0 #FFD700; }
+#crTbody tr.cr-colf-hide{ display:none !important; }
+
+.cr-colf-wrap[hidden]{ display:none; }
+.cr-colf-dim{ position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:2000; }
+.cr-colf-sheet{
+    position:fixed; left:0; right:0; bottom:0; z-index:2001;
+    max-height:82vh; display:flex; flex-direction:column; gap:8px;
+    padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+    background:var(--cr-card-bg, #fff); color:var(--cr-text, #1a2e57);
+    border-radius:18px 18px 0 0; box-shadow:0 -8px 30px rgba(0,0,0,.25);
+}
+@media (min-width:700px){
+    .cr-colf-sheet{ left:50%; right:auto; bottom:auto; top:50%; transform:translate(-50%,-50%); width:420px; border-radius:16px; max-height:80vh; }
+}
+.cr-colf-head{ display:flex; align-items:center; gap:8px; }
+.cr-colf-title{ flex:1; font-size:16px; }
+.cr-colf-x{ border:0; background:transparent; color:inherit; font-size:18px; cursor:pointer; padding:4px 8px; }
+.cr-colf-sort{ display:flex; gap:8px; }
+.cr-colf-sort[hidden]{ display:none; }
+.cr-colf-sort button,
+.cr-colf-actions button{
+    flex:1; padding:9px 10px; border-radius:10px; font:inherit; font-size:14px; cursor:pointer;
+    border:1px solid var(--cr-border, #d7dce6); background:transparent; color:inherit;
+}
+.cr-colf-search{
+    width:100%; box-sizing:border-box; padding:9px 12px; border-radius:10px; font:inherit; font-size:15px;
+    border:1px solid var(--cr-border, #d7dce6); background:var(--cr-card-bg, #fff); color:inherit;
+}
+.cr-colf-all{ display:flex; align-items:center; gap:10px; font-weight:700; padding:4px 2px; }
+.cr-colf-list{ overflow-y:auto; flex:1; min-height:120px; border-top:1px solid var(--cr-border, #e3e7ef); }
+.cr-colf-item{ display:flex; align-items:center; gap:10px; padding:8px 2px; border-bottom:1px solid var(--cr-border, #eef1f6); }
+.cr-colf-item input, .cr-colf-all input{ width:18px; height:18px; flex:0 0 auto; accent-color:#1A2E57; }
+.cr-colf-v{ flex:1; min-width:0; overflow-wrap:anywhere; }
+.cr-colf-v.blank{ font-style:italic; opacity:.7; }
+.cr-colf-item small{ opacity:.6; font-variant-numeric:tabular-nums; }
+.cr-colf-none, .cr-colf-more{ font-size:13px; opacity:.7; padding:6px 2px; }
+.cr-colf-more:empty{ display:none; }
+.cr-colf-actions{ display:flex; gap:10px; }
+.cr-colf-ok{ background:#1A2E57 !important; color:#FFD700 !important; border-color:#1A2E57 !important; font-weight:700; }
+.cr-colf-actions button:disabled{ opacity:.45; cursor:default; }
+[data-theme="dark"] .cr-colf-ok, [data-theme="darkgray"] .cr-colf-ok{ background:#FFD700 !important; color:#1A2E57 !important; border-color:#FFD700 !important; }
+body.cr-colf-open{ overflow:hidden; }

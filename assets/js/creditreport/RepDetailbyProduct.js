@@ -1052,6 +1052,10 @@ document.getElementById("crThead").addEventListener("click", (e) => {
     crRenderSection();
 });
 
+// Excel-style column filters on the headers (cr-colfilter.js); its
+// Sort A→Z / Z→A sorts the table like a header click.
+CRColFilter.init({ sort: (key, type, dir) => { crSortState = { key, type, dir }; crRenderSection(); } });
+
 // ========================================
 // PRODUCT DRILL-DOWN
 // Clicking a product name opens Product Performance for it — same

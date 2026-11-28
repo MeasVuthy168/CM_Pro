@@ -1266,6 +1266,10 @@ document.getElementById("crThead").addEventListener("click", (e) => {
     crRenderSummary();
 });
 
+// Excel-style column filters on the headers (cr-colfilter.js); its
+// Sort A→Z / Z→A sorts the table like a header click.
+CRColFilter.init({ sort: (key, type, dir) => { crSortState = { key, type, dir }; crRenderSummary(); } });
+
 document.getElementById("crTbody").addEventListener("click", (e) => {
     const expandBtn = e.target.closest(".cr-row-expand-btn");
     if (expandBtn && expandBtn.dataset.histKey) {
