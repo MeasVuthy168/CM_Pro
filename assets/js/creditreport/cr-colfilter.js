@@ -6,14 +6,23 @@
 // column filters leave), a search box, Select all, and Sort A→Z / Z→A
 // (smallest → largest for numbers). Rows not kept are hidden; the rows
 // that hang under one (a branch's CO / FSRO / Digital, "Other Address"
-// details) follow it. The Total row stays the report's total.
+// details) follow it. The Total row then counts the rows kept only
+// (owner, 28/11/2026): figures added up, PAR % from the added-up values,
+// last month the same way, plans added up (a % plan weighted by the
+// outstanding plan) and the % of plan worked out again.
 //
 // The values come from the rendered table, so a filter works in every
 // Comparison mode (its column = the header's data-sort-key). Filters
 // live in sessionStorage per page and are dropped for columns no longer
 // on screen.
 //
-//   CRColFilter.init({ sort(key, type, dir) })   — the page's own sort
+//   CRColFilter.init({
+//     sort(key, type, dir),  — the page's own sort
+//     items(),               — the rows' data (null: no Total of its own, e.g. Daily History);
+//                              each main <tr> carries data-colf-i = its index there
+//     total(),               — the report's own Total
+//     renderTotal(item)      — the Total row's HTML for a Total
+//   })
 // =========================================================
 (function () {
     const STORE_KEY = `cr_colfilters_v1:${location.pathname}`;
@@ -92,14 +101,91 @@
         let dropped = false;
         for (const k of [...filters.keys()]) if (!cols.has(k)) { filters.delete(k); dropped = true; }
         if (dropped) save();
-        let hideNext = false;
+        let hideNext = false, inTotal = false;
+        const kept = [];
         [...((tbody() && tbody().rows) || [])].forEach(tr => {
-            if (tr.classList.contains("cr-total-row")) { tr.classList.remove("cr-colf-hide"); hideNext = false; return; }
-            if (DEPENDENT.some(c => tr.classList.contains(c))) { tr.classList.toggle("cr-colf-hide", hideNext); return; }
+            if (tr.classList.contains("cr-total-row")) { tr.classList.remove("cr-colf-hide"); hideNext = false; inTotal = true; return; }
+            if (DEPENDENT.some(c => tr.classList.contains(c))) { tr.classList.toggle("cr-colf-hide", hideNext && !inTotal); return; }
+            inTotal = false;
             const hide = tr.cells.length > 1 && filters.size > 0 && !keeps(tr, null, cols);
             tr.classList.toggle("cr-colf-hide", hide);
             hideNext = hide;
+            if (!hide && tr.dataset.colfI !== undefined) kept.push(Number(tr.dataset.colfI));
         });
+        applyTotal(kept);
+    }
+
+    // ---------- the Total of the rows kept ----------
+    const PCT_PLANS = ["nbcOverduePct", "nplPct", "projParPct"];
+    const strip = it => { const o = { ...it }; delete o.lastMonth; delete o.lastMonthDiff; delete o.planVs; return o; };
+    function sumPlans(items) {
+        const pvs = items.map(it => it.planVs || {});
+        const keys = new Set(pvs.flatMap(p => Object.keys(p)));
+        const os = it => Number((it.loanOutstanding || {}).value) || 0;
+        const out = {};
+        const r2 = n => Math.round(n * 100) / 100;
+        keys.forEach(k => {
+            const cells = pvs.map(p => p[k] || {});
+            const has = f => cells.every(c => c[f] !== null && c[f] !== undefined);
+            const sum = f => cells.reduce((s, c) => s + (Number(c[f]) || 0), 0);
+            const m = {};
+            if (PCT_PLANS.includes(k)) {
+                // a % actual: weighted by the rows' outstanding; a % plan:
+                // by their outstanding plan (as the server's Total does)
+                const w = items.reduce((s, it) => s + os(it), 0);
+                m.actual = has("actual") && w ? r2(items.reduce((s, it, i) => s + Number(cells[i].actual) * os(it), 0) / w) : null;
+                const planOs = pvs.map(p => (p.osAmount || {}).plan);
+                const wp = planOs.every(v => v !== null && v !== undefined) ? planOs.reduce((s, v) => s + Number(v), 0) : 0;
+                m.plan = has("plan") && wp ? r2(cells.reduce((s, c, i) => s + Number(c.plan) * Number(planOs[i]), 0) / wp) : null;
+            } else {
+                m.actual = cells.some(c => c.actual !== null && c.actual !== undefined) ? r2(sum("actual")) : null;
+                m.plan = has("plan") ? r2(sum("plan")) : null;
+                if (cells.some(c => c.expected !== undefined)) m.expected = has("expected") ? r2(sum("expected")) : null;
+                if (cells.some(c => c.detail)) m.detail = { int: r2(cells.reduce((s, c) => s + Number((c.detail || {}).int || 0), 0)), prn: r2(cells.reduce((s, c) => s + Number((c.detail || {}).prn || 0), 0)) };
+                if (cells.some(c => c.counts)) m.counts = { ld: cells.reduce((s, c) => s + Number((c.counts || {}).ld || 0), 0), cif: cells.reduce((s, c) => s + Number((c.counts || {}).cif || 0), 0) };
+            }
+            m.ach = m.plan && m.actual !== null ? r2(m.actual / m.plan) : null;
+            out[k] = m;
+        });
+        // Projection PAR % = PAR Value $ ÷ the outstanding, for the rows kept.
+        if (out.projParPct && out.nbcOverdueValue) {
+            const w = items.reduce((s, it) => s + os(it), 0);
+            out.projParPct.plan = out.nbcOverdueValue.plan !== null && w ? r2(out.nbcOverdueValue.plan / w * 100) : null;
+        }
+        return out;
+    }
+    function totalOf(items) {
+        const LM = window.CRLastMonth;
+        if (!LM || !LM.sumRows) return null;
+        const tot = LM.sumRows(items.map(strip));
+        if (items.some(it => it.planVs)) tot.planVs = sumPlans(items);
+        if (items.some(it => it.lastMonth !== undefined)) {
+            const prev = items.map(it => it.lastMonth).filter(Boolean);
+            LM.attach(tot, prev.length === items.length ? LM.sumRows(prev) : null);
+        }
+        return tot;
+    }
+    // Swap the Total row (and the rows under it) for the rows kept's Total —
+    // or back to the report's own one when no filter is on.
+    function applyTotal(kept) {
+        if (!config.items || !config.renderTotal) return;
+        const items = config.items();
+        const b = tbody();
+        const row = b && [...b.rows].find(tr => tr.classList.contains("cr-total-row"));
+        if (!items || !row) return;
+        const sig = filters.size ? kept.join(",") : "";
+        if ((row.dataset.colfSig || "") === sig) return;
+        const tot = sig ? totalOf(kept.map(i => items[i]).filter(Boolean)) : (config.total && config.total());
+        if (!tot) return;
+        const tmp = document.createElement("tbody");
+        tmp.innerHTML = config.renderTotal(tot);
+        const rows = [...tmp.rows];
+        if (!rows.length) return;
+        rows[0].dataset.colfSig = sig;
+        // the row and the rows that hang under it
+        let next = row.nextElementSibling;
+        while (next && DEPENDENT.some(c => next.classList.contains(c))) { const n = next.nextElementSibling; next.remove(); next = n; }
+        row.replaceWith(...rows);
     }
 
     function sortValues(vals, type) {

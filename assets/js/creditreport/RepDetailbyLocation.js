@@ -348,7 +348,7 @@ function crBuildRow(item, section, isTotal, opts = {}) {
 
     const rowClass = isTotal ? ' class="cr-total-row"' : isOtherAddress ? ' class="cr-other-row"' : isDetail ? ' class="cr-other-detail-row"' : "";
     return `
-      <tr${rowClass}${nameAttr}>
+      <tr${rowClass}${nameAttr} data-colf-i="${isTotal || isDetail ? "" : crData.items.indexOf(item)}">
         <td class="cr-name-col${isDetail ? " cr-other-detail-name" : ""}">${nameCellContent}</td>
         ${familyCells}
         ${cells}
@@ -1357,7 +1357,13 @@ document.getElementById("crThead").addEventListener("click", (e) => {
 
 // Excel-style column filters on the headers (cr-colfilter.js); its
 // Sort A→Z / Z→A sorts the table like a header click.
-CRColFilter.init({ sort: (key, type, dir) => { crSortState = { key, type, dir }; crRenderSection(); } });
+CRColFilter.init({
+    sort: (key, type, dir) => { crSortState = { key, type, dir }; crRenderSection(); },
+    // The Total of the rows a column filter keeps (current report only).
+    items: () => (crMode === "current" && crData ? crData.items : null),
+    total: () => crData && crData.total,
+    renderTotal: tot => crBuildRow(tot, crActiveSection(), true)
+});
 
 // ========================================
 // MESSAGE HELPER
