@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>CM_Pro Admin — Bandwidth Dashboard</title>
+<title>CM_Pro Admin — Server Monitoring</title>
 
 <meta name="theme-color" content="#0E1B3C">
 
@@ -72,7 +72,7 @@
         <div class="adm-title-block adm-bw-title-block">
           <span class="adm-bw-title-icon" aria-hidden="true"><span class="adm-ico adm-ico-signal" aria-hidden="true"></span></span>
           <div>
-            <h1 data-i18n="admin.bandwidth.title">Bandwidth Dashboard</h1>
+            <h1 data-i18n="admin.bandwidth.title">Server Monitoring</h1>
             <p data-i18n="admin.bandwidth.subtitle">Realtime HTTP response bandwidth, by route — CM-backend (Render)</p>
           </div>
         </div>
@@ -93,6 +93,43 @@
       </div>
 
       <div class="adm-error-banner" id="admErrorBanner" hidden></div>
+
+      <!-- ========================= -->
+      <!-- SERVER MEMORY (owner, 28/11/2026) — admin-server-memory.js -->
+      <!-- ========================= -->
+      <div class="adm-card adm-render-card adm-mem-card" id="admMemCard">
+        <div class="adm-render-card-top">
+          <div class="adm-card-label adm-render-card-label">
+            <span class="adm-render-card-icon" aria-hidden="true"><span class="adm-ico adm-ico-barchart" aria-hidden="true"></span></span>
+            <span data-i18n="admin.memory.title">Server Memory · Render instance</span>
+          </div>
+          <span class="adm-mem-badge" id="admMemBadge"></span>
+        </div>
+        <div class="adm-render-loading" id="admMemLoading" data-i18n="admin.memory.loading">Loading server memory…</div>
+        <div class="adm-render-setup" id="admMemError" hidden data-i18n="admin.memory.error">Could not load the server memory.</div>
+        <div id="admMemBody" hidden>
+          <div class="adm-render-body">
+            <div class="adm-render-body-main">
+              <div class="adm-card-value adm-render-value" id="admMemTotal">— MB</div>
+              <span class="adm-card-sub" id="admMemSub"></span>
+              <div class="adm-bar-track adm-render-bar-track"><div class="adm-bar-fill" id="admMemBar"></div></div>
+              <p class="adm-render-setup adm-mem-note" id="admMemHeap"></p>
+              <p class="adm-render-setup adm-mem-note" data-i18n="admin.memory.alertNote">Admins get a notification when memory passes 85% of the limit, and after an unexpected restart.</p>
+            </div>
+            <div class="adm-mem-chart-wrap"><canvas id="admMemChart"></canvas></div>
+          </div>
+          <div class="adm-mem-lists">
+            <div>
+              <div class="adm-mem-list-title"><span data-i18n="admin.memory.restartsTitle">Restarts · last 7 days</span> <small id="admMemCrashes"></small></div>
+              <ul class="adm-mem-list" id="admMemRestarts"></ul>
+            </div>
+            <div>
+              <div class="adm-mem-list-title" data-i18n="admin.memory.cachesTitle">Biggest data held in memory</div>
+              <ul class="adm-mem-list" id="admMemCaches"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- ========================= -->
       <!-- RENDER ACCOUNT USAGE (official, matches Render's own dashboard) -->
@@ -254,6 +291,7 @@
 <script src="/CM_Pro/assets/js/admin/admin-ui.js"></script>
 <script src="/CM_Pro/assets/js/admin/admin-nav.js"></script>
 <script src="/CM_Pro/assets/js/admin/admin.js"></script>
+<script src="/CM_Pro/assets/js/admin/admin-server-memory.js"></script>
 <script src="/CM_Pro/shared/logout.js"></script>
 <script src="/CM_Pro/assets/js/toast.js"></script>
 
