@@ -326,6 +326,7 @@ CMI18n.register({
   "creditreport.plan.parValue": { km: "PAR Value $", en: "PAR Value $" },
   "creditreport.plan.compareProjection": { km: "Projection vs Actual", en: "Projection vs Actual" },
   "creditreport.plan.projection": { km: "Projection", en: "Projection" },
+  "creditreport.plan.noteProjection": { km: "Projection = PAR Value $ ក្នុង Monthly Plan (Monthly Project Only); PAR % របស់ Projection = PAR Value $ ÷ Loan Outstanding បច្ចុប្បន្ន។ Actual = សមតុល្យ NBC Overdue និង PAR % ឥឡូវ។ % = Actual ÷ Projection (ទាបជាង 100% = ល្អ); ± = PAR % Actual − Projection (▼ = ល្អ)។", en: "Projection = the Monthly Plan's PAR Value $ (Monthly Project Only); its PAR % = PAR Value $ ÷ the current Loan Outstanding. Actual = today's NBC Overdue balance and PAR %. % = actual ÷ projection (under 100% is good); ± = actual PAR % − projected (▼ is good)." },
   "creditreport.plan.plan": { km: "ផែនការ", en: "Plan" },
   "creditreport.plan.planMax": { km: "ផែនការ ≤", en: "Plan ≤" },
   "creditreport.plan.actual": { km: "សម្រេច", en: "Actual" },

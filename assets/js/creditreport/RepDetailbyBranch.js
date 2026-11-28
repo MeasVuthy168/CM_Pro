@@ -288,8 +288,23 @@ function crCompareSection(sectionKey, section) {
 // Balance At Risk only. Same plan-vs-actual data as Plan vs Actual.
 function crProjectionSection() {
     const g = crSections().nbcOverdue.groups.find(x => ((x.fields[0] || {}).key || "").startsWith("nbcOverdue.total."));
-    return { groups: g ? [{ ...g, fields: crPlanFields("nbcOverdueValue", { money: true, withActual: true, lowerBetter: true, actualLabel: t("creditreport.detail.colValue"), planLabel: t("creditreport.plan.projection") }) }] : [] };
+    return { groups: g ? [{ ...g, fields: [...crPlanFields("nbcOverdueValue", { money: true, withActual: true, lowerBetter: true, actualLabel: t("creditreport.detail.colValue"), planLabel: t("creditreport.plan.projection") }), ...crPlanFields("projParPct", { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct"), planLabel: t("creditreport.detail.colParPct") })] }] : [] };
 }
+
+// Projection PAR % (owner, 28/11/2026) = PAR Value $ ÷ the current Loan
+// Outstanding, next to the actual PAR % (NBC Overdue) — planVs.projParPct
+// on a row, for the PAR run of Projection vs Actual.
+function crWithProjectionPar(pv, os) {
+    if (!pv || !pv.nbcOverdueValue) return pv;
+    const plan = pv.nbcOverdueValue.plan;
+    const a = (pv.nbcOverduePct || {}).actual;
+    pv.projParPct = {
+        plan: plan !== null && plan !== undefined && Number(os) > 0 ? Math.round((plan / Number(os)) * 10000) / 100 : null,
+        actual: a === null || a === undefined ? null : a
+    };
+    return pv;
+}
+
 
 // Fetch Plan vs Actual (once per report load) and hang each branch's
 // metrics on its row as item.planVs, the Total's on the Total row.
@@ -310,8 +325,8 @@ async function crEnsurePlan() {
         const data = await crPlanLoading;
         crPlanData = data;
         const byBranch = new Map((data.rows || []).map(r => [r.branch, r.metrics]));
-        crSummaryData.items.forEach(it => { it.planVs = byBranch.get(it.branch) || null; });
-        if (crSummaryData.total) crSummaryData.total.planVs = data.total ? data.total.metrics : null;
+        crSummaryData.items.forEach(it => { it.planVs = crWithProjectionPar(byBranch.get(it.branch) || null, (it.loanOutstanding || {}).value); });
+        if (crSummaryData.total) crSummaryData.total.planVs = crWithProjectionPar(data.total ? data.total.metrics : null, (crSummaryData.total.loanOutstanding || {}).value);
         crRenderSummary();
     } catch (e) {
         console.error("plan vs actual failed:", e);
@@ -344,6 +359,8 @@ function crRenderPlanNote() {
         t("creditreport.plan.noteLos", { from: crFmtDateDMY(crPlanData.ytdFrom), to: crFmtDateDMY(crPlanData.toDate) }),
         t("creditreport.plan.noteRules")
     ];
+    // Projection vs Actual: what its columns are, instead of the plan rules.
+    if (crCompareMode() === "projection") lines.splice(1, lines.length - 1, t("creditreport.plan.noteProjection"));
     if (crPicks("crNbcProduct").length || crPicks("crClass").length || crPicks("crProduct").length) lines.push(t("creditreport.plan.noteFilters"));
     let html = lines.map(l => `<span>${crEscapeHtml(l)}</span>`).join("");
     if (!crPlanData.hasPlan) {
