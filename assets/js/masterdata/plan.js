@@ -40,10 +40,11 @@ const MP_GROUPS = [
     },
     { label: "masterdata.plan.grpDisb", metrics: [["disbCount", "masterdata.plan.colLoans"], ["disbAmount", "masterdata.plan.colAmount"]] },
     { label: "masterdata.plan.grpLos", metrics: [["losCount"]] },
-    // Balance At Risk (owner, 27/11/2026): PAR % and PAR Value $ — the
-    // NBC Overdue balance planned for the month (a ceiling), to bring PAR
-    // down. The 3rd item: a hint under the column head.
-    { label: "masterdata.plan.colNbc", metrics: [["nbcOverduePct", "masterdata.plan.colParPct"], ["nbcOverdueValue", "masterdata.plan.colParValue", "masterdata.plan.hintParValue"]] },
+    // Balance At Risk (owner, 27-28/11/2026): PAR Value $ — the month's
+    // projection of the NBC Overdue balance, used only by Daily
+    // Monitoring's "Projection vs Actual" — then the PAR % plan. The 3rd
+    // item: a hint under the column head.
+    { label: "masterdata.plan.colNbc", metrics: [["nbcOverdueValue", "masterdata.plan.colParValue", "masterdata.plan.hintParValue"], ["nbcOverduePct", "masterdata.plan.colParPct"]] },
     { label: "masterdata.plan.colNpl", metrics: [["nplPct"]] },
     // "NPL Collect YTD": the yearly plan of NPL principal collected (HQ PLAN-BP).
     { label: "masterdata.plan.colRecovery", metrics: [["nplRecovery"]] },

@@ -560,12 +560,14 @@ function crCompareMode() {
     const v = document.getElementById("crCompare")?.value;
     // "Saved date…" is Last Month against a picked day (cr-last-month.js).
     if (CRLastMonth.isSavedCompare(v)) return "lastMonth";
-    return v === "plan" || v === "lastMonth" ? v : "actual";
+    return v === "plan" || v === "lastMonth" || v === "projection" ? v : "actual";
 }
+// Plan vs Actual and Projection vs Actual both read the plan-vs-actual data.
+const crPlanLike = () => crCompareMode() === "plan" || crCompareMode() === "projection";
 
 // Plan columns of one metric: plan, then % (or ± for a
 // ceiling). withActual adds the actual first (from planVs).
-function crPlanFields(metric, { money = false, ceiling = false, withActual = false, actualLabel, planLabel } = {}) {
+function crPlanFields(metric, { money = false, ceiling = false, withActual = false, lowerBetter = false, actualLabel, planLabel } = {}) {
     const base = `planVs.${metric}`;
     const kind = ceiling ? "pct" : money ? "money" : "num";
     const f = [];
@@ -573,7 +575,7 @@ function crPlanFields(metric, { money = false, ceiling = false, withActual = fal
     f.push({ key: `${base}.plan`, label: planLabel || t(ceiling ? "creditreport.plan.planMax" : "creditreport.plan.plan"), pv: kind, planCol: true });
     f.push(ceiling
         ? { key: base, label: "±", pv: "diff", planCol: true }
-        : { key: `${base}.ach`, label: "%", pv: "ach", planCol: true });
+        : { key: `${base}.ach`, label: "%", pv: "ach", planCol: true, lowerBetter });
     return f;
 }
 
@@ -586,6 +588,15 @@ const CR_PLAN_SECTIONS = ["outstanding", "khr", "small", "disburse", "los", "nbc
 
 // One section's groups in Plan vs Actual: only the planned Own figures,
 // each followed by its plan columns.
+// "Projection vs Actual" (owner, 28/11/2026): the Monthly Plan's PAR
+// Value $ ("Monthly Project Only") against the NBC Overdue balance —
+// Balance At Risk only. Same plan-vs-actual data as Plan vs Actual.
+// By Officer: the Own NBC Overdue balance (the plan-vs-actual's).
+function crProjectionSection() {
+    const g = crSections().nbcOverdue.groups.find(x => ((x.fields[0] || {}).key || "").startsWith("nbcOverdue.totalOwn."));
+    return { groups: g ? [{ ...g, fields: crPlanFields("nbcOverdueValue", { money: true, withActual: true, lowerBetter: true, actualLabel: t("creditreport.detail.colValue"), planLabel: t("creditreport.plan.projection") }) }] : [] };
+}
+
 function crCompareSection(section) {
     const groups = [];
     for (const g of section.groups) {
@@ -609,8 +620,7 @@ function crCompareSection(section) {
         } else if (first.startsWith("nbcOverdue.totalOwn.") || first.startsWith("nbcOverdue.nonPerformingLoan.")) {
             const metric = first.startsWith("nbcOverdue.totalOwn.") ? "nbcOverduePct" : "nplPct";
             // Balance At Risk: PAR % and, for the total, PAR Value $ (a ceiling).
-            groups.push({ ...g, fields: crPlanFields(metric, { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct") })
-                .concat(metric === "nbcOverduePct" ? crPlanFields("nbcOverdueValue", { money: true, withActual: true, lowerBetter: true, actualLabel: t("creditreport.plan.parValue"), planLabel: t("creditreport.plan.planMax") }) : []) });
+            groups.push({ ...g, fields: crPlanFields(metric, { ceiling: true, withActual: true, actualLabel: t("creditreport.detail.colParPct") }) });
         } else if (first.startsWith("nplCollectOwn.ytd.")) {
             groups.push({ ...g, fields: crPlanFields("nplRecovery", { money: true, withActual: true, actualLabel: t("creditreport.plan.thisYear"), planLabel: t("creditreport.plan.yearPlan") }) });
         } else if (first.startsWith("writeOffOwn.woCollected.")) {
@@ -629,7 +639,7 @@ function crPlanKey(id) {
 // Fetch Plan vs Actual (once per report load, same branch / type
 // filters) and hang each officer's metrics on its row as item.planVs.
 async function crEnsurePlan() {
-    if (!crData || crCompareMode() !== "plan") return crRenderPlanNote();
+    if (!crData || !crPlanLike()) return crRenderPlanNote();
     if (crPlanData) return crRenderPlanNote();
     if (!crPlanLoading) {
         const q = new URLSearchParams();
@@ -663,7 +673,7 @@ async function crEnsurePlan() {
 function crRenderPlanNote() {
     const el = document.getElementById("crPlanNote");
     if (!el) return;
-    const show = crCompareMode() === "plan";
+    const show = crPlanLike();
     el.style.display = show ? "" : "none";
     if (!show) return;
     if (!crPlanData) {
@@ -695,6 +705,7 @@ function crRenderPlanNote() {
 function crActiveSection() {
     if (crCompareMode() === "actual") return CRTable.tagSectionStarts(crCombinedSection(crSectionFor));
     if (crCompareMode() === "lastMonth") return CRTable.tagSectionStarts(crLastMonth.expand(crCombinedSection(crSectionFor)));
+    if (crCompareMode() === "projection") return CRTable.tagSectionStarts(CRTable.planBlocks(crProjectionSection(), { planLabel: t("creditreport.plan.projection") }));
     return CRTable.tagSectionStarts(CRTable.planBlocks(crCombinedSection(k => k === "all"
         ? { groups: CR_PLAN_SECTIONS.flatMap(sk => crCompareSection(crSections()[sk]).groups) }
         : crCompareSection(crSectionFor(k)))));
@@ -1330,7 +1341,7 @@ function crTableHeadMeta() {
     if (mode === "lastMonth") {
         const last = crLastMonth.lastLabel();
         if (last) parts.push(span(`${last} → ${CRLastMonth.shortDate(d.toDate)}`));
-    } else if (mode === "plan" && crPlanData) {
+    } else if ((mode === "plan" || mode === "projection") && crPlanData) {
         const [y, m] = String(crPlanData.month || "").split("-");
         parts.push(span(t("creditreport.tblhead.planMonth", { month: `${m}-${y}` })), span(`${crFmtDateDMY(crPlanData.fromDate)} → ${crFmtDateDMY(crPlanData.toDate)}`));
     } else {
@@ -1338,7 +1349,7 @@ function crTableHeadMeta() {
     }
     const keys = crSectionKeys();
     const has = (...ks) => !keys.length || ks.some(k => keys.includes(k));
-    if (mode !== "plan") {
+    if (mode !== "plan" && mode !== "projection") {
         if (has("disburse", "disburseArea", "los", "losArea")) parts.push(span(t("creditreport.tblhead.disb", { from: crFmtDateDMY(d.fromDate), to: crFmtDateDMY(d.toDate) })));
         if (has("writeOff", "writeOffArea")) parts.push(span(t("creditreport.tblhead.wo", { from: crFmtDateDMY(d.woFromDate), to: crFmtDateDMY(d.woToDate) })));
     }
@@ -1404,7 +1415,7 @@ function crReadStateFromUrl() {
     crRestorePicks("crNbcProduct", p.getAll("nbcProduct"));
     crRestorePicks("crAreaProduct", p.getAll("areaProduct"));
 
-    if (p.get("compare") === "plan" || p.get("compare") === "lastMonth" || CRLastMonth.isSavedCompare(p.get("compare"))) document.getElementById("crCompare").value = p.get("compare");
+    if (p.get("compare") === "plan" || p.get("compare") === "projection" || p.get("compare") === "lastMonth" || CRLastMonth.isSavedCompare(p.get("compare"))) document.getElementById("crCompare").value = p.get("compare");
 }
 
 function crSyncStateToUrl() {

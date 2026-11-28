@@ -324,6 +324,8 @@ CMI18n.register({
   "creditreport.plan.nbcPct": { km: "NBC Overdue %", en: "NBC Overdue %" },
   "creditreport.plan.nplPct": { km: "NPL %", en: "NPL %" },
   "creditreport.plan.parValue": { km: "PAR Value $", en: "PAR Value $" },
+  "creditreport.plan.compareProjection": { km: "Projection vs Actual", en: "Projection vs Actual" },
+  "creditreport.plan.projection": { km: "Projection", en: "Projection" },
   "creditreport.plan.plan": { km: "ផែនការ", en: "Plan" },
   "creditreport.plan.planMax": { km: "ផែនការ ≤", en: "Plan ≤" },
   "creditreport.plan.actual": { km: "សម្រេច", en: "Actual" },

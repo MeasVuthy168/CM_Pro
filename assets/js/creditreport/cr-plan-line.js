@@ -22,10 +22,7 @@
         "loanDisburse.value": ["disbAmount"],
         "nbcOverdue.total.parPct": ["nbcOverduePct", "pct"],
         "nbcOverdue.totalOwn.parPct": ["nbcOverduePct", "pct"],
-        "nbcOverdue.nonPerformingLoan.parPct": ["nplPct", "pct"],
-        // Balance At Risk · PAR Value $: a ceiling in dollars (27/11/2026).
-        "nbcOverdue.total.value": ["nbcOverdueValue", "max"],
-        "nbcOverdue.totalOwn.value": ["nbcOverdueValue", "max"]
+        "nbcOverdue.nonPerformingLoan.parPct": ["nplPct", "pct"]
     };
     const cache = new Map();
 

@@ -56,7 +56,8 @@ window.CRTable = (() => {
     // groups consecutive blocks by it into its own header row, same as
     // the Excel export's section/lane/field header), while `label` is
     // just the lane name — Plan / Actual / % (or ± for a ceiling).
-    function planBlocks(section) {
+    // opts.planLabel: the plan lane's name ("Projection" for Projection vs Actual).
+    function planBlocks(section, opts = {}) {
         const yearPlan = t("creditreport.plan.yearPlan");
         const groups = section.groups.flatMap(g => {
             const runs = [];
@@ -69,7 +70,7 @@ window.CRTable = (() => {
             const ratioHead = kinds.size > 1 ? "% / ±" : kinds.has("diff") ? "±" : "%";
             const first = fields => fields.map((f, i) => (i ? f : { ...f, grpStart: true }));
             return [
-                { ...g, pvBlock: "plan", sectionLabel: g.label, label: t("creditreport.plan.plan"), fields: first(plans) },
+                { ...g, pvBlock: "plan", sectionLabel: g.label, label: opts.planLabel || t("creditreport.plan.plan"), fields: first(plans) },
                 { ...g, pvBlock: "cur", sectionLabel: g.label, label: t("creditreport.plan.actual"), fields: first(actuals) },
                 { ...g, pvBlock: "ratio", sectionLabel: g.label, label: ratioHead, fields: first(ratios) }
             ];
