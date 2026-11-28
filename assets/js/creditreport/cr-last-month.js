@@ -157,7 +157,7 @@ window.CRLastMonth = (() => {
 
     // The note under the table: which day "Last Month" is, and why some
     // figures show "—".
-    function renderNote(el, { showsT24, info, error, blocked, totalBlocked, filters, productSections, t24Class, fmtDate, savedMode }) {
+    function renderNote(el, { showsT24, info, error, blocked, totalBlocked, summed, filters, productSections, t24Class, fmtDate, savedMode }) {
         if (!el) return;
         el.style.display = "";
         const lines = [];
@@ -170,7 +170,7 @@ window.CRLastMonth = (() => {
         if (blocked) lines.push(t("creditreport.lastMonth.noteFilters", { filters }));
         if (productSections) lines.push(t("creditreport.lastMonth.noteProduct", { sections: productSections }));
         if (t24Class) lines.push(t("creditreport.lastMonth.noteClass"));
-        else if (totalBlocked) lines.push(t("creditreport.lastMonth.noteTotal"));
+        else if (totalBlocked) lines.push(t(summed ? "creditreport.lastMonth.noteSummed" : "creditreport.lastMonth.noteTotal"));
         const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
         el.innerHTML = lines.map(l => `<span>${esc(l)}</span>`).join("");
     }
@@ -295,6 +295,9 @@ window.CRLastMonth = (() => {
     //   sectionFilters()  { t24Class, t24Product, nbcProduct } picked
     //   blockedBy()  names of picked filters that change every figure and
     //             the snapshot lacks ([] = none) — all Last Month is "—"
+    //   sumSubset   with totalBlocked(): Last Month's Total = the shown
+    //             rows' saved figures added up, instead of "—" (by Product
+    //             with a Product Type: each product is one type, 28/11/2026)
     //   totalBlocked() true when the rows on screen are a subset (the
     //             saved total then isn't theirs)
     //   render()  re-draws the table; noteEl the note's element id
@@ -334,7 +337,7 @@ window.CRLastMonth = (() => {
                 info, error, blocked: blocked.length > 0, filters: blocked.join(" / "),
                 productSections: blocked.length ? "" : sections.join(" / "),
                 t24Class: !blocked.length && !f.t24Product.length && f.t24Class.length > 0,
-                totalBlocked: !!(opts.totalBlocked && opts.totalBlocked()), fmtDate: opts.fmtDate,
+                totalBlocked: !!(opts.totalBlocked && opts.totalBlocked()), summed: !!opts.sumSubset, fmtDate: opts.fmtDate,
                 savedMode: savedCompare()
             });
         }
@@ -349,8 +352,10 @@ window.CRLastMonth = (() => {
             try {
                 info = await load({ endpoint: opts.endpoint, token: opts.token, toDate: data.toDate, at: compareAt() || undefined });
                 error = false;
-                (data.items || []).forEach(it => attach(it, itemFor(opts.keyOf(it))));
-                attach(data.total, itemFor("total"));
+                const lastRows = [];
+                (data.items || []).forEach(it => { const p = itemFor(opts.keyOf(it)); if (p) lastRows.push(p); attach(it, p); });
+                const subset = !!(opts.totalBlocked && opts.totalBlocked());
+                attach(data.total, subset && opts.sumSubset ? (lastRows.length ? sumRows(lastRows) : null) : itemFor("total"));
                 opts.render();
             } catch (e) {
                 console.error("last month failed:", e);
