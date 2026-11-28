@@ -1059,3 +1059,9 @@ a.ci-ews-card:active{ background:var(--pi-track); }
 .ci-collect{ margin-top:16px; padding-top:14px; border-top:1px dashed var(--cr-border); }
 .ci-collect-title{ font-size:14px; font-weight:800; margin:0 0 10px; color:var(--pi-navy); }
 .ci-collect-note{ margin-top:10px; }
+
+/* From / To Date picked but not loaded yet: Done loads them (28/11/2026). */
+.ci-dates-pending { margin: 6px 0 0; color: var(--cr-gold, #D4A017); font-weight: 600; }
+.ci-done.is-pending { box-shadow: 0 0 0 3px rgba(212, 160, 23, .35); animation: ciDonePulse 1.6s ease-in-out infinite; }
+@keyframes ciDonePulse { 50% { box-shadow: 0 0 0 6px rgba(212, 160, 23, .12); } }
+@media (prefers-reduced-motion: reduce) { .ci-done.is-pending { animation: none; } }
