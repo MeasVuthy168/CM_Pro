@@ -501,6 +501,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }, true);
     CI.mountFilters({
         dates: true, compare: false, classes: true, side: true,
+        // + "This year"; the period group named for this page (not "Disbursement")
+        ytd: true, periodGroup: "creditreport.ci.gPeriodNpl",
         periodLabel: nplView === "recovery" ? "creditreport.ci.periodRecovery" : "creditreport.ci.periodNpl",
         onChange: () => {
             nplShown = NPL_PAGE;

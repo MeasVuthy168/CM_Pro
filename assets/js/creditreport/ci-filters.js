@@ -268,6 +268,8 @@
         const os = new Date(`${lastOs}T00:00:00Z`);
         const y = os.getUTCFullYear(), m = os.getUTCMonth();
         if (kind === "mtd") return { from: keyOf(new Date(Date.UTC(y, m, 1))), to: lastOs };
+        // This year: 1 January to the latest OS day (NPL Management, 28/11/2026).
+        if (kind === "ytd") return { from: `${y}-01-01`, to: lastOs };
         if (kind === "lastMonth") return { from: keyOf(new Date(Date.UTC(y, m - 1, 1))), to: keyOf(new Date(Date.UTC(y, m, 0))) };
         if (kind === "week") return { from: keyOf(new Date(Date.UTC(y, m, os.getUTCDate() - 6))), to: lastOs };
         if (kind === "day") return { from: lastOs, to: lastOs };
@@ -313,9 +315,10 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
 <p class="pi-note ci-fnote">${esc(t("creditreport.pi.focusNote"))}</p>
 </div>
 <div class="ci-fsec"${showDates ? "" : " hidden"}>
-<h3 class="ci-fgroup">${esc(t("creditreport.ci.gPeriod"))}</h3>
+<h3 class="ci-fgroup">${esc(t(opts.periodGroup || "creditreport.ci.gPeriod"))}</h3>
 <div class="ci-quick" id="ciQuick" role="group" aria-label="${esc(t("creditreport.ci.quickPeriod"))}">
 <button type="button" data-range="mtd">${esc(t("creditreport.ci.qMtd"))}</button>
+${opts.ytd ? `<button type="button" data-range="ytd">${esc(t("creditreport.ci.qYtd"))}</button>` : ""}
 <button type="button" data-range="lastMonth">${esc(t("creditreport.ci.qLastMonth"))}</button>
 <button type="button" data-range="week">${esc(t("creditreport.ci.qWeek"))}</button>
 <button type="button" data-range="day">${esc(t("creditreport.ci.qDay"))}</button>
@@ -326,6 +329,7 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
 <div class="ci-period-edit" id="ciPeriodEdit" hidden>
 <div class="cr-select-row"><label for="ciFrom" class="cr-select-label">${esc(t("creditreport.pi.fromDate"))}</label><input type="date" id="ciFrom" class="cr-select"></div>
 <div class="cr-select-row"><label for="ciTo" class="cr-select-label">${esc(t("creditreport.pi.toDate"))}</label><input type="date" id="ciTo" class="cr-select"></div>
+<p class="pi-note ci-dates-pending" id="ciDatesPending" hidden>${esc(t("creditreport.ci.datesPending"))}</p>
 </div>
 </div>
 <div class="ci-fsec"${showCompare ? "" : " hidden"}>
@@ -386,11 +390,23 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
         const syncCmp = () => { document.getElementById("ciCompareDateWrap").hidden = !showCompare || cmp.value !== "date"; };
         syncCmp();
         cmp.addEventListener("change", () => { syncCmp(); if (cmp.value !== "date" || document.getElementById("ciCompareDate").value) changed(); });
+        // From / To Date (owner, 28/11/2026): picking a day doesn't load the
+        // report yet — pick both, then Done loads it (the report used to
+        // reload after each pick).
+        let datesPending = false;
+        const pendingNote = document.getElementById("ciDatesPending");
+        const doneBtn = document.getElementById("ciDone");
+        const setPending = on => {
+            datesPending = on;
+            pendingNote.hidden = !on;
+            doneBtn.classList.toggle("is-pending", on);
+        };
+        const applyDates = () => { if (datesPending) { setPending(false); changed(); } };
         ["ciFrom", "ciTo"].forEach(id => document.getElementById(id).addEventListener("change", () => {
             const f = document.getElementById("ciFrom").value;
             const to = document.getElementById("ciTo").value;
             if (f && to) showPeriod({ fromDate: f, toDate: to });
-            changed();
+            setPending(true);
         }));
         document.getElementById("ciCompareDate").addEventListener("change", changed);
         // Back to the default period: the 1st of the month to the latest OS
@@ -403,6 +419,7 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
             if (!r) return;
             document.getElementById("ciFrom").value = r.from;
             document.getElementById("ciTo").value = r.to;
+            setPending(false);
             periodEdit.hidden = true;
             periodBtn.setAttribute("aria-expanded", "false");
             changed();
@@ -413,8 +430,17 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
             box.classList.toggle("is-open", open);
             sumBtn.setAttribute("aria-expanded", String(open));
         };
-        sumBtn.addEventListener("click", () => setOpen(!box.classList.contains("is-open")));
-        document.getElementById("ciDone").addEventListener("click", () => {
+        // Closing the choices applies dates picked but not loaded yet.
+        sumBtn.addEventListener("click", () => {
+            const open = !box.classList.contains("is-open");
+            if (!open) applyDates();
+            setOpen(open);
+        });
+        // Done: loads the report for the dates picked (if any), then closes.
+        doneBtn.addEventListener("click", () => {
+            applyDates();
+            periodEdit.hidden = true;
+            periodBtn.setAttribute("aria-expanded", "false");
             setOpen(false);
             sumBtn.scrollIntoView({ block: "nearest" });
         });
@@ -430,6 +456,7 @@ ${selectRow("ciProduct", "creditreport.pi.product", "creditreport.pi.allProducts
         }));
         document.getElementById("ciReset").addEventListener("click", () => {
             ["ciFrom", "ciTo", "ciCompareDate"].forEach(id => { document.getElementById(id).value = ""; });
+            setPending(false);
             periodEdit.hidden = true;
             periodBtn.setAttribute("aria-expanded", "false");
             cmp.value = "month";
